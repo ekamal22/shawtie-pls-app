@@ -38,16 +38,18 @@ The selected architecture is:
 
 Start with:
 
-- `docs/README.md`
-- `docs/product/PRD.md`
-- `docs/architecture/SYSTEM_ARCHITECTURE.md`
-- `docs/architecture/ARCHITECTURE_BASELINE.md`
-- `docs/architecture/ARCHITECTURE_GOVERNANCE.md`
-- `docs/architecture/DATA_MODEL.md`
-- `docs/architecture/PARTNERSHIP_STATE_MACHINE.md`
-- `docs/security/SECURITY_MODEL.md`
-- `docs/security/E2EE_ARCHITECTURE.md`
-- `docs/testing/TEST_STRATEGY.md`
+- `docs/README.md` for document authority and navigation
+- `docs/PROJECT_STATE.md` for verified current implementation state
+- `docs/ROADMAP.md` for the high-level execution sequence
+- `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
+- `docs/product/PRD.md` for product requirements
+- `docs/architecture/ARCHITECTURE_BASELINE.md` for the frozen architecture baseline
+- `docs/architecture/ARCHITECTURE_GOVERNANCE.md` for structural change control
+- `docs/security/THREAT_MODEL.md` and `docs/security/DATA_CLASSIFICATION.md` for security boundaries
+- `docs/testing/TEST_STRATEGY.md` for verification requirements
+- `docs/testing/CI_AND_REPOSITORY_HEALTH.md` for current CI and repository-health status
+
+Architecture and product documents describe intended rules and design. `PROJECT_STATE.md` and `ROADMAP_EPICS.md` are the living sources for what is actually implemented and what remains.
 
 ## Repository rule
 
