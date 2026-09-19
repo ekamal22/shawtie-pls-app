@@ -87,8 +87,13 @@ Architecture work must preserve the defining invariant:
 
 - `PROJECT_STATE.md`
 - `ROADMAP.md`
+- `ROADMAP_EPICS.md`
 
 These documents describe current planning state and execution order. They do not override accepted ADRs, the PRD, source code, or migrations.
+
+`ROADMAP_EPICS.md` is the canonical implementation epic and acceptance-gate catalog.
+
+An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 
 
 ## Change control
