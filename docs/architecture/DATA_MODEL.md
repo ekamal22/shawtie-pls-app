@@ -25,6 +25,7 @@ account_emails
 email_verifications
 account_sessions
 account_devices
+account_recovery_material
 account_deletion_requests
 username_change_history
 security_events
@@ -61,6 +62,29 @@ created_at
 The current verified email must be unique across accounts.
 
 Permanent account deletion releases the email only after the seven-day recovery period completes.
+
+### account_devices
+
+Representative fields:
+
+```text
+id
+account_id
+display_name
+created_at
+last_seen_at
+revoked_at
+crypto_identity_public_key
+crypto_protocol_version
+```
+
+Device revocation affects both authentication and cryptographic authorization.
+
+### account_recovery_material
+
+Stores only client-encrypted recovery material and metadata required by the reviewed recovery design.
+
+The server must not possess the high-entropy recovery secret needed to decrypt it.
 
 ## Partner requests
 
@@ -99,6 +123,8 @@ partnership_members
 breakup_processes
 partnership_cooldowns
 partnership_blocks
+partnership_crypto_epochs
+partnership_lifecycle_events
 ```
 
 ### partnerships
@@ -137,6 +163,41 @@ WHERE released_at IS NULL
 ```
 
 The exact migration syntax may vary with the final table design, but the invariant must exist in the database, not only in application code.
+
+### partnership_crypto_epochs
+
+Representative fields:
+
+```text
+partnership_id
+epoch
+crypto_protocol_version
+created_at
+retired_at
+rotation_reason
+```
+
+A new partnership starts with a new cryptographic root.
+
+Epoch changes do not reuse prior partnership secrets.
+
+### partnership_lifecycle_events
+
+Append-only non-content records for security-sensitive lifecycle transitions.
+
+Representative fields:
+
+```text
+id
+partnership_id
+event_type
+actor_account_id
+aggregate_version
+created_at
+metadata_json
+```
+
+The metadata must not contain private message, media, or relationship content.
 
 ## Breakup process
 
@@ -364,6 +425,19 @@ Used to bridge committed database state to:
 - email
 - worker side effects
 
+## Deletion manifests
+
+Logical tables:
+
+```text
+deletion_manifests
+deletion_targets
+```
+
+Deletion manifests coordinate revocation and cleanup across database data, media objects, push state, key envelopes, local purge notification, and backup-expiration obligations.
+
+The manifest is operational metadata and must not duplicate deleted private content.
+
 ## Optimistic concurrency
 
 Shared mutable records should contain a version.
@@ -371,6 +445,12 @@ Shared mutable records should contain a version.
 Clients send `expectedVersion`.
 
 A mutation succeeds only when the stored version still matches. Conflicts return a deterministic conflict response instead of silently overwriting the partner's newer update.
+
+## Deterministic account locking
+
+Multi-account transactions lock involved account rows in canonical immutable-ID order.
+
+The same helper must be used across all modules that acquire more than one account lock.
 
 ## Idempotency
 
