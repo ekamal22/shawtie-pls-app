@@ -3,7 +3,7 @@
 **Product name:** Shawtie pls  
 **Tagline:** Your space for just the two of you.  
 **Repository:** `shawtie-pls-app`  
-**Document status:** Draft v0.1  
+**Document status:** Draft v0.2  
 **Product type:** Privacy-focused two-person communication platform  
 **Primary client:** Progressive Web App  
 **Initial distribution:** Web and installable PWA  
@@ -186,10 +186,14 @@ Each account must have:
 - immutable internal account ID
 - unique username
 - display name
+- date of birth
 - password credential or supported authentication credential
 - account creation timestamp
 - account status
 - partnership eligibility state
+- age eligibility state
+- username-change eligibility state
+- date-of-birth correction state
 - security metadata
 - notification preferences
 
@@ -217,7 +221,19 @@ A username must:
 - have a documented minimum and maximum length
 - use a restricted character set
 - reject reserved system names
-- be rate-limited when changed
+- be changeable no more than once per year after registration
+
+The username selected during registration does not count as a username change.
+
+After a successful username change, the backend must set or derive a value such as:
+
+`nextUsernameChangeEligibleAt`
+
+The next username change must not be permitted until one calendar year has elapsed from the previous successful username change.
+
+Username-change eligibility must be enforced by the backend using trusted server time. Changing the client device clock must not affect eligibility.
+
+Before confirming a username change, the UI must explicitly tell the user that they will not be able to change their username again for one year.
 
 The first version should support username search by exact or normalized match.
 
@@ -235,12 +251,53 @@ Initial registration should use:
 
 - username
 - display name
+- date of birth
 - password
 - optional email address if account recovery is implemented
+
+A user must be at least 18 years old to register.
+
+Age eligibility must be enforced by the backend using simple calendar-date arithmetic with trusted server time.
+
+The authoritative rule is:
+
+`currentServerDate >= dateOfBirth + 18 calendar years`
+
+Equivalently, a user is eligible only when:
+
+`dateOfBirth <= currentServerDate - 18 calendar years`
+
+A calculation based only on `currentYear - birthYear` must not be used because it can incorrectly accept a user before their eighteenth birthday has occurred in the current year.
+
+The frontend may perform the same calculation for immediate feedback, but the backend remains authoritative. Changing the client device clock must not affect age eligibility.
+
+Users younger than 18 must not be allowed to complete account creation.
+
+During registration, the UI must explicitly tell the user that their date of birth can be corrected through self-service only one time after registration.
+
+After registration, a user may change their date of birth through self-service exactly one time.
+
+The initial date of birth entered during registration does not count as that one correction.
+
+Before confirming the correction, the UI must explicitly tell the user that:
+
+- this is their only self-service date-of-birth correction after registration
+- after confirmation, they will not be able to change their date of birth again through normal account settings
+- the corrected date of birth must still satisfy the minimum age requirement
+
+The backend must track whether the one allowed correction has already been used, using a field or equivalent state such as:
+
+`dateOfBirthCorrectedAt`
+
+A second self-service date-of-birth change must be rejected by the backend even if a client attempts to bypass the UI.
+
+Any corrected date of birth must pass the same server-authoritative 18+ eligibility check before it is accepted.
 
 Registration must include:
 
 - username availability validation
+- date-of-birth validation
+- minimum age validation
 - password policy validation
 - rate limiting
 - duplicate account protection where feasible
@@ -876,6 +933,12 @@ For API, database, storage, and cross-package behavior.
 
 Mandatory tests should include:
 
+- a user younger than 18 cannot complete registration
+- age eligibility cannot be bypassed by changing the client device clock
+- a username cannot be changed again before one calendar year has elapsed from the previous successful change
+- a user can correct their date of birth once after registration
+- a second self-service date-of-birth correction is rejected
+- a date-of-birth correction that would make the account ineligible under the 18+ rule is rejected
 - a user cannot access another partnership
 - a user cannot create two simultaneous partnerships
 - a user cannot bypass the cooldown through direct API calls
@@ -922,9 +985,9 @@ Logs must not contain:
 
 ## 38. Success Criteria for MVP
 
-The MVP is successful when two independent test accounts can:
+The MVP is successful when two independent eligible adult test accounts can:
 
-1. Register.
+1. Register only after passing the server-side minimum-age check.
 2. Sign in.
 3. Find one another by username.
 4. Send and accept a partner request.
@@ -944,6 +1007,9 @@ The MVP is successful when two independent test accounts can:
 
 The first stable release should not ship until the project has:
 
+- server-enforced 18+ registration eligibility
+- server-enforced one-year username-change eligibility
+- server-enforced one-time date-of-birth correction
 - secure authentication
 - database-enforced partnership exclusivity
 - robust authorization
@@ -1002,9 +1068,12 @@ Private message content should not be collected for analytics.
 ### Phase 1: Accounts
 
 - registration
+- server-enforced 18+ eligibility
 - login
 - sessions
 - username system
+- one-year username-change eligibility
+- one-time post-registration date-of-birth correction
 - account settings
 
 ### Phase 2: Partnerships
