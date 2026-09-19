@@ -369,14 +369,19 @@ A partner request has a lifecycle such as:
 
 The backend must reject requests when:
 
-- the sender already has an active partner
-- the recipient already has an active partner
+- the sender already has an active or breakup-pending partner
+- the recipient already has an active or breakup-pending partner
 - the sender is ineligible due to cooldown
+- the recipient is ineligible due to cooldown
 - the request targets the sender's own account
 - an equivalent request already exists
 - abuse or safety controls block the action
 
-The recipient must explicitly accept a request before a partnership becomes active.
+A partnership can never be created unilaterally.
+
+The recipient must explicitly consent by accepting the partner request before a partnership becomes active.
+
+Silence, inactivity, a previous partnership, or a previous acceptance must never count as consent for a new partnership.
 
 ---
 
@@ -391,76 +396,140 @@ A partnership should contain at minimum:
 - creation timestamp
 - activation timestamp
 - status
-- termination timestamp if terminated
-- termination metadata where appropriate
+- breakup initiation timestamp where applicable
+- breakup initiator account ID where applicable
+- restoration intent from each member where applicable
+- breakup deadline
+- final dissolution timestamp where applicable
 - security lifecycle metadata
 
 A partnership may be:
 
 - pending
 - active
+- breakup_pending
 - terminated
 
-The exact state model may be refined during implementation.
+An account may belong to at most one partnership that is active or breakup_pending.
 
-An account may belong to at most one active partnership.
+A breakup-pending partnership still occupies the user's one-partner slot.
 
 This must be enforced transactionally at the database level in addition to domain and API checks.
+
+A new partnership always requires the explicit consent of the invited user.
 
 ---
 
 ## 14. Three-Month Partner Rule
 
-The initial rule is:
+The rule is:
 
-> A user may form no more than one new partnership within a three-month eligibility window.
+> After a partnership reaches final dissolution, each former partner must wait three months before forming another partnership.
+
+The new partner may be the same former partner or a different eligible user.
 
 The server should store or derive a value such as:
 
 `nextPartnerEligibleAt`
 
+The cooldown starts only when the breakup process reaches final dissolution.
+
+Starting a breakup does not start the three-month cooldown.
+
+If the partnership is restored during the change-your-mind period, no cooldown is created because the partnership never reached final dissolution.
+
 Eligibility must be evaluated using trusted server time.
 
 Changing a client device clock must have no effect.
 
-The product must define exactly when the cooldown starts.
+During the cooldown:
 
-The recommended initial rule is:
+- the user cannot form a new partnership
+- the user cannot bypass the restriction through direct API calls
+- the user cannot maintain a second active or breakup-pending partnership
+- any future partnership still requires the other person's explicit consent
 
-- a partnership is formed
-- the account's next eligibility timestamp is set to three months after partnership activation
-- if the partnership remains active, another partnership is impossible regardless of the timestamp
-- if the partnership ends before the timestamp, the user must wait until the timestamp
-- if the partnership ends after the timestamp, the user may form another partnership immediately after termination
-
-This rule must be documented in the UI before a user confirms a partnership.
+The exact interpretation of three months, including whether it means three calendar months or a fixed number of days, must be resolved before implementation.
 
 The duration should be configurable in backend policy rather than duplicated as a hard-coded frontend constant.
 
 ---
 
-## 15. Partnership Termination
+## 15. Partnership Breakup, Reconsideration, Restoration, and Final Dissolution
 
-Either member may end an active partnership.
+Either member may initiate a breakup unilaterally.
 
-Termination must be an explicit server-side operation.
+Breakup initiation must be an explicit server-side operation.
 
-The system should clearly warn the user about consequences before confirmation.
+Immediately after breakup initiation:
 
-After termination:
+- the partnership enters `breakup_pending`
+- both partners are clearly notified that the breakup process has started
+- both partners are informed of the change-your-mind period and its deadline
+- the partnership still occupies both users' one-partner slot
+- both partners may continue sending and receiving messages during the reconsideration period
+- existing memories and other relationship objects become view-only
+- creation, editing, and deletion of relationship objects are disabled unless a later product rule explicitly allows an exception
+- neither partner may form or accept another partnership
 
-- neither user remains in an active partnership
-- neither user may send new messages to that partnership
-- active realtime authorization must be revoked
-- future push delivery for that partnership must stop
-- security keys must follow the defined termination lifecycle
-- old partnership data must not be attached to any future partnership
-- local clients must update their active-partnership state
-- cached access credentials associated with the partnership must be invalidated where applicable
+The initial reconsideration period lasts seven days from the trusted server-side breakup initiation timestamp.
 
-The product must define whether historical content remains visible to the original two users after termination.
+### Restoration intent
 
-This is an open product decision and should be finalized before stable release.
+During the reconsideration period, each partner is shown a restore-partnership action.
+
+Restoration requires explicit consent from both partners.
+
+If neither partner selects restore:
+
+- the original seven-day deadline remains in effect
+
+If exactly one partner selects restore before the original seven-day deadline:
+
+- that partner's restoration intent is recorded
+- the other partner is notified
+- the final deadline becomes ten days from the original breakup initiation timestamp
+- this is a single three-day extension, not a renewable extension
+- the first partner's click does not restore the partnership by itself
+
+If both partners select restore before the applicable deadline:
+
+- the partnership returns to `active`
+- the breakup process is cancelled
+- relationship objects become writable again
+- messaging continues as part of the same partnership
+- no partnership data is deleted
+- no three-month cooldown begins
+- both restoration intents and the restoration event should be auditable
+
+A partner may not create repeated extensions by clicking restore multiple times.
+
+### Final dissolution
+
+The partnership reaches final dissolution when:
+
+- seven days pass after breakup initiation and neither partner has selected restore, or
+- ten days pass after breakup initiation after exactly one partner selected restore, and the other partner still has not selected restore
+
+At final dissolution:
+
+- the partnership becomes `terminated`
+- both users are notified
+- new messages to that partnership are permanently rejected
+- realtime authorization for the partnership is revoked
+- future push delivery for the partnership stops
+- all messages are permanently deleted
+- all images, videos, files, voice messages, and other partnership media are permanently deleted
+- all memories and relationship objects are permanently deleted
+- Future Us content and other shared-space content are permanently deleted
+- partnership-specific cryptographic material follows the defined secure destruction lifecycle
+- partnership-specific local caches and authorization state must be invalidated
+- deleted data must never be attached to a future partnership
+- the three-month new-partnership cooldown begins for both former partners
+
+Final dissolution is irreversible through normal product functionality.
+
+After the cooldown expires, either former partner may form a partnership with the same person again or with another eligible user, but every new partnership requires fresh explicit consent and receives a new partnership security context.
 
 ---
 
@@ -645,6 +714,8 @@ Shared milestones.
 
 These are later-stage features and must reuse the same partnership isolation guarantees as messaging.
 
+While a partnership is `breakup_pending`, existing relationship objects and shared-space content are view-only. If the partnership is restored, normal write access returns. If the partnership reaches final dissolution, this content is permanently deleted.
+
 ---
 
 ## 24. Privacy
@@ -722,9 +793,9 @@ The server should eventually be unable to read protected message content covered
 
 ## 27. New Partnership Security
 
-Forming a new partnership must create new security context.
+Forming a new partnership must create a completely new security context.
 
-A future partner must not inherit:
+A future partnership, including a future partnership between the same two people, must not inherit:
 
 - previous partnership message keys
 - previous partnership attachment keys
@@ -732,8 +803,12 @@ A future partner must not inherit:
 - previous notification subscriptions
 - previous local decryption state
 - previous partnership caches
+- previous partnership identifiers as authorization authority
+- previous restoration state
 
-Partnership transition tests are mandatory before stable release.
+Final dissolution must sever authorization to the old partnership before either former partner can eventually form another partnership.
+
+Partnership transition and breakup lifecycle tests are mandatory before stable release.
 
 ---
 
@@ -780,21 +855,32 @@ E2EE will affect what content the service can technically inspect, so moderation
 
 ## 30. Data Retention
 
-The product must define retention for:
+Final dissolution has destructive product semantics.
 
-- terminated partnerships
+When the breakup deadline expires without mutual restoration, all user-facing partnership content must be permanently deleted, including:
+
 - messages
-- deleted messages
 - media
-- account deletion
+- voice messages
+- memories
+- Future Us content
+- saved moments
+- relationship timeline objects
+- other partnership-scoped shared content
+
+The production backup and recovery design must document how deletion propagates through backups and disaster-recovery copies. Backup retention must not silently recreate a terminated partnership or make deleted content accessible through normal product functionality.
+
+The product must separately define retention for:
+
+- account records
 - security logs
-- backups
+- abuse-prevention records
+- audit events that do not contain deleted private content
+- account deletion
 
 Users should eventually be able to delete their account.
 
 Account deletion must not accidentally transfer or expose partnership content.
-
-Retention behavior must be documented before stable release.
 
 ---
 
@@ -942,7 +1028,20 @@ Mandatory tests should include:
 - a user cannot access another partnership
 - a user cannot create two simultaneous partnerships
 - a user cannot bypass the cooldown through direct API calls
-- a terminated partner cannot send new messages
+- breakup initiation places both users into breakup_pending
+- breakup_pending users cannot form another partnership
+- both users can continue messaging during the reconsideration period
+- relationship objects are view-only during breakup_pending
+- one restore click extends the deadline from seven days to ten days exactly once
+- one restore click never restores the partnership by itself
+- two restore clicks restore the same partnership before the applicable deadline
+- restoration prevents deletion and does not start the three-month cooldown
+- no restore intent causes final dissolution at seven days
+- exactly one restore intent causes final dissolution at ten days if the other partner does not consent
+- final dissolution permanently rejects new messages to the old partnership
+- final dissolution deletes partnership messages, media, and relationship objects
+- the three-month cooldown begins only at final dissolution
+- a new partnership requires fresh explicit consent
 - a new partner cannot access previous partnership messages
 - attachment IDs cannot cross partnership boundaries
 - realtime subscriptions cannot cross partnership boundaries
@@ -990,16 +1089,25 @@ The MVP is successful when two independent eligible adult test accounts can:
 1. Register only after passing the server-side minimum-age check.
 2. Sign in.
 3. Find one another by username.
-4. Send and accept a partner request.
-5. Become an active partnership.
-6. Exchange text messages reliably.
-7. Reconnect after losing network access.
-8. Exchange supported media.
-9. Receive notifications where supported.
-10. End the partnership safely.
-11. Be prevented from violating the one-active-partner rule.
-12. Be prevented from violating the cooldown rule.
-13. Demonstrate complete isolation from unrelated accounts and partnerships.
+4. Send a partner request.
+5. Require the recipient's explicit consent before partnership creation.
+6. Become an active partnership.
+7. Exchange text messages reliably.
+8. Reconnect after losing network access.
+9. Exchange supported media.
+10. Receive notifications where supported.
+11. Allow either partner to initiate breakup.
+12. Continue messaging during the reconsideration period.
+13. Restrict relationship objects to view-only during the reconsideration period.
+14. Restore the partnership only after both partners explicitly select restore.
+15. Extend the breakup deadline by three days when exactly one partner selects restore.
+16. Reach final dissolution at the correct deadline when mutual restoration does not occur.
+17. Permanently delete partnership content at final dissolution.
+18. Start the three-month cooldown at final dissolution.
+19. Prevent either former partner from forming another partnership during cooldown.
+20. Allow a future partnership after cooldown only through fresh consent.
+21. Be prevented from violating the one-active-partner rule.
+22. Demonstrate complete isolation from unrelated accounts and partnerships.
 
 ---
 
@@ -1012,6 +1120,10 @@ The first stable release should not ship until the project has:
 - server-enforced one-time date-of-birth correction
 - secure authentication
 - database-enforced partnership exclusivity
+- server-enforced breakup reconsideration lifecycle
+- mutual-consent partnership restoration
+- tested final-dissolution deletion semantics
+- fresh explicit consent for every new partnership
 - robust authorization
 - reliable realtime messaging
 - safe media handling
@@ -1082,8 +1194,13 @@ Private message content should not be collected for analytics.
 - partner requests
 - one-partner invariant
 - partnership creation
-- three-month eligibility policy
-- partnership termination
+- explicit partner consent
+- breakup initiation
+- seven-day reconsideration period
+- one-click three-day extension
+- mutual-consent restoration
+- final dissolution and destructive cleanup
+- three-month post-dissolution eligibility policy
 
 ### Phase 3: Messaging
 
@@ -1144,18 +1261,18 @@ Private message content should not be collected for analytics.
 
 The following decisions must be resolved during development:
 
-1. Does a terminated partnership remain readable to the two original members?
-2. Can a partnership be restored after accidental termination?
-3. Exactly when does the three-month cooldown begin?
-4. Should the cooldown be exactly 90 days or three calendar months?
-5. Can a user change their username while partnered?
+1. Should the three-month cooldown mean exactly 90 days or three calendar months?
+2. Can a partner withdraw their restoration intent after selecting restore?
+3. Should the partner who initiated the breakup be allowed to cancel the breakup directly, or must restoration always require both partners to select restore?
+4. Should message editing and deletion remain available during breakup_pending, or should only new messaging remain writable?
+5. Can a user change their username while partnered or while breakup_pending?
 6. Can users block another account?
 7. How long do pending partner requests remain valid?
-8. Should a sender be able to cancel a request?
+8. Should a sender be able to cancel a pending partner request?
 9. How should account recovery work without mandatory phone numbers?
 10. What media types and size limits should be supported initially?
-11. Should message deletion remove content only locally, for both users, or according to another policy?
-12. How should historical partnership data behave after account deletion?
+11. Should message deletion during an active partnership remove content only locally, for both users, or according to another policy?
+12. How should partnership data behave if one user deletes their account while the partnership is active or breakup_pending?
 13. What data can remain server-visible after E2EE?
 14. Which shared-space features belong in the first stable release?
 15. Which infrastructure providers best satisfy cost, privacy, and portability requirements?
