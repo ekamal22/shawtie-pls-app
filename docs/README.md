@@ -17,6 +17,17 @@ The PRD defines what the product must do. Architecture documents define how the 
 
 ## Architecture baseline
 
+Architecture Baseline 1.0 is frozen as of 2026-09-20.
+
+Frozen means implementation should proceed against the accepted baseline unless concrete evidence justifies a controlled change.
+
+Governance:
+
+- `architecture/ARCHITECTURE_BASELINE.md`
+- `architecture/ARCHITECTURE_GOVERNANCE.md`
+- `adr/ADR-011-architecture-freeze-and-change-control.md`
+- `contributing/DEVELOPMENT_WORKFLOW.md`
+
 The selected architecture is:
 
 - React and TypeScript PWA in `apps/web`
@@ -52,6 +63,8 @@ The selected architecture is:
 - `architecture/CAPABILITY_MODEL.md`
 - `architecture/DELETION_ARCHITECTURE.md`
 - `architecture/VERSIONING_AND_COMPATIBILITY.md`
+- `architecture/ARCHITECTURE_BASELINE.md`
+- `architecture/ARCHITECTURE_GOVERNANCE.md`
 - `security/SECURITY_MODEL.md`
 - `security/THREAT_MODEL.md`
 - `security/DATA_CLASSIFICATION.md`
@@ -76,3 +89,14 @@ Architecture work must preserve the defining invariant:
 - `ROADMAP.md`
 
 These documents describe current planning state and execution order. They do not override accepted ADRs, the PRD, source code, or migrations.
+
+
+## Change control
+
+Implementation details that preserve the baseline do not need an ADR.
+
+A structural architecture change requires evidence and an accepted ADR before implementation, except for the documented emergency security exception.
+
+A product-rule change must update the PRD first.
+
+Use the repository pull-request template and architecture-change issue template for governed changes.
