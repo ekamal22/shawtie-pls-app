@@ -11,21 +11,21 @@ Build lifecycle correctness and security boundaries before storing valuable user
 - linting and formatting
 - CI
 - PostgreSQL development environment
-- domain capability engine
+- domain capability engine: implemented foundation
 - database invariants
 - transaction helpers
 - deterministic two-account locking helper
 - durable worker
 - transactional outbox
 - scheduled actions
-- scheduled-action generation tokens
+- scheduled-action generation tokens: domain behavior implemented, persistence pending
 - lifecycle event ledger
 - deletion manifest workflow
 - runtime contract validation
 - API versioning
 - client compatibility versioning
 - security headers and browser hardening
-- synthetic testkit
+- synthetic testkit: initial domain fixtures implemented
 
 ## Phase 1: Accounts and Devices
 
@@ -52,10 +52,10 @@ Build lifecycle correctness and security boundaries before storing valuable user
 - reciprocal request auto-pairing
 - database-enforced one-partnership occupancy
 - manual relationship date
-- breakup state machine
+- breakup state machine: pure domain foundation implemented
 - restoration
-- account-deletion interaction state
-- one-month and three-month cooldowns
+- account-deletion interaction state: pure domain foundation implemented
+- one-month and three-month cooldowns: pure domain calculation implemented
 - blocking
 - lifecycle event ledger coverage
 
@@ -150,3 +150,18 @@ Build lifecycle correctness and security boundaries before storing valuable user
 - infrastructure extraction only when measured production needs justify it
 
 Microservices and Redis are not roadmap goals by themselves.
+
+
+## Completed foundation milestone
+
+The first executable domain milestone is complete:
+
+- centralized capability evaluation
+- breakup and restoration state transitions
+- account-deletion collision behavior
+- calendar-month cooldown calculation
+- stale breakup generation rejection
+- message mutation capability rules
+- 27 passing domain tests in local validation
+
+The next milestone is repository foundation and executable guardrails, followed by PostgreSQL persistence.
