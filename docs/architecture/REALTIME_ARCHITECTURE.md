@@ -4,6 +4,14 @@
 
 Realtime transport improves responsiveness but does not replace authoritative state in PostgreSQL.
 
+## Version compatibility
+
+Realtime connections identify supported client and realtime protocol versions.
+
+Unknown critical event versions cause canonical resynchronization instead of unsafe interpretation.
+
+The client also tracks API, crypto protocol, and local schema compatibility as defined in `VERSIONING_AND_COMPATIBILITY.md`.
+
 ## Transport
 
 Use one authenticated WebSocket connection per active device where practical.
@@ -119,6 +127,23 @@ WebSocket signaling carries:
 - end state
 
 The WebSocket does not carry call media.
+
+## Push minimization
+
+Push providers should receive the minimum metadata required to wake or notify the client.
+
+Prefer opaque payloads such as:
+
+```json
+{
+  "type": "message_available",
+  "resource": "opaque-id"
+}
+```
+
+Where the platform permits it, the client fetches and decrypts content before rendering a detailed notification.
+
+Product notification preview settings still apply.
 
 ## Security
 
