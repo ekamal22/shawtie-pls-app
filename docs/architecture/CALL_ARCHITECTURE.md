@@ -38,6 +38,21 @@ TURN should support practical fallbacks such as:
 
 The final provider choice may be self-hosted or managed.
 
+## TURN credentials
+
+TURN credentials must be short-lived.
+
+The PWA must never contain a permanent TURN username and password.
+
+The authenticated API issues temporary TURN credentials only after:
+
+- validating the caller session
+- validating partnership membership
+- evaluating call capability
+- applying signaling and abuse rate limits
+
+Expired credentials cannot be refreshed without new authorization.
+
 ## Encryption
 
 WebRTC transport encryption is required.
@@ -91,6 +106,12 @@ Call history is deleted with the partnership.
 TURN relay reduces peer IP exposure but the relay necessarily observes connection metadata.
 
 The privacy policy and E2EE documentation must distinguish encrypted call content from network metadata.
+
+## Relay policy
+
+Relay-first behavior is preferred for privacy.
+
+If the implementation ever permits direct peer connectivity, the privacy impact must be documented explicitly and user expectations must not imply that peer IP addresses are always hidden.
 
 ## Failure handling
 
