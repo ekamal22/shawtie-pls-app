@@ -6,6 +6,8 @@ Partnership lifecycle behavior is a domain state machine. It must not be recreat
 
 The authoritative rules belong in `packages/domain`.
 
+The centralized capability engine derives allowed operations from account state, partnership state, breakup state, deletion state, cooldown state, device authorization, and trusted server time.
+
 ## State dimensions
 
 Do not encode every possible combination into one giant enum.
@@ -40,6 +42,21 @@ none
 ```
 
 This avoids combinatorial state explosion.
+
+## Capability evaluation
+
+Every lifecycle-sensitive mutation follows this pattern:
+
+1. authenticate
+2. load authoritative state
+3. lock required rows
+4. evaluate capability in `packages/domain`
+5. reject with a stable denial code or continue
+6. mutate transactionally
+7. append lifecycle event where applicable
+8. write outbox and scheduled actions in the same transaction
+
+Client-side capability state is never authoritative.
 
 ## Partnership creation
 
@@ -85,7 +102,9 @@ Transactionally:
 4. set one-hour initiator cancellation deadline
 5. set seven-day base deadline
 6. create scheduled actions
-7. create outbox events
+7. increment or establish the breakup process generation
+8. append lifecycle event
+9. create outbox events
 
 The interface must identify the initiator.
 
@@ -152,6 +171,8 @@ Final dissolution occurs:
 - at day 10 if exactly one partner submitted restoration intent
 
 Finalization is a durable worker action and must be idempotent.
+
+The scheduled finalization carries the expected breakup generation. If the current generation differs when the worker runs, the job is stale and must not dissolve the partnership.
 
 Effects:
 
@@ -222,6 +243,12 @@ After final dissolution, either former partner may block the other.
 
 An active block prevents future discovery, requests, and partnership formation until removed.
 
+## Lifecycle ledger
+
+Every sensitive transition appends a lifecycle event after the transition is validated and inside the same database transaction.
+
+The ledger supports audit, debugging, race analysis, and deletion verification without storing private content.
+
 ## Database protection
 
 The database must enforce one occupied partnership slot per account.
@@ -230,7 +257,7 @@ Application checks alone are insufficient.
 
 ## Race handling
 
-Transactions that involve two accounts should acquire locks in deterministic account-ID order.
+Transactions that involve two accounts use a shared helper and acquire locks in deterministic account-ID order.
 
 This protects against cases such as:
 
