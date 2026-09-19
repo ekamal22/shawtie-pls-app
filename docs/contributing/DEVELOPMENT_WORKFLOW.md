@@ -33,6 +33,22 @@ Proceed without a new ADR when the work follows accepted architecture.
 
 Update documentation when implementation details become concrete.
 
+## Epic acceptance gates
+
+Before starting implementation work, identify the roadmap epic in `../ROADMAP_EPICS.md`.
+
+Acceptance gates are part of the implementation contract.
+
+A pull request may satisfy only some gates. That is valid, but the epic remains IN_PROGRESS until all required gates are verified.
+
+Do not mark an epic DONE based on:
+
+- source code existing without tests
+- domain tests without persistence or API integration when those are required
+- UI completion without server enforcement
+- documentation describing behavior that is not implemented
+- a successful happy-path demo while required security or race gates remain
+
 ## Definition of done
 
 A change is complete only when relevant items are satisfied:
@@ -46,7 +62,8 @@ A change is complete only when relevant items are satisfied:
 - data classification is updated when handling changes
 - documentation reflects verified state
 - PROJECT_STATE does not claim unverified work
-- roadmap status is updated where appropriate
+- roadmap and epic status are updated where appropriate
+- affected epic acceptance gates have evidence
 - no secrets or real private data are committed
 
 ## Documentation discipline
