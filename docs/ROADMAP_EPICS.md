@@ -124,7 +124,23 @@ Status: DONE
 
 # F1: Repository Foundation and Executable Guardrails
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+## Current verified progress
+
+Configured repository evidence now includes:
+
+- baseline GitHub Actions workflow
+- local repository-health command
+- baseline secret-pattern and forbidden-file scanning
+- executable `packages/domain` infrastructure-import boundary
+- workflow policy checks
+- SHA-pinned external GitHub Actions
+- CODEOWNERS
+- SECURITY.md
+- local domain test command
+
+GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
 
 ## Scope
 
@@ -145,16 +161,18 @@ Status: PLANNED
 - [ ] root build command succeeds
 - [ ] root typecheck command succeeds
 - [ ] root lint command succeeds
-- [ ] root test command succeeds
+- [x] root test command succeeds
 - [ ] formatting check succeeds
-- [ ] `packages/domain` is mechanically prevented from importing React, Fastify, database clients, provider SDKs, or `apps/*`
+- [x] `packages/domain` is mechanically prevented from importing React, Fastify, database clients, provider SDKs, or `apps/*`
 - [ ] circular dependency checking is active for defined package boundaries
 - [ ] external input validation convention is implemented
-- [ ] CI runs the required baseline checks on pull requests
-- [ ] secret scanning is enabled in CI or repository tooling
-- [ ] dependency scanning is enabled
+- [ ] CI runs the required baseline checks on pull requests and has at least one verified hosted run
+- [x] baseline secret-pattern and forbidden-secret-file scanning is enabled in repository tooling
+- [ ] dependency scanning is active against a committed lockfile
 - [ ] documentation contains one canonical bootstrap command
 - [ ] no real private data or production secret is present in fixtures
+- [x] CI workflow uses explicit read-only permissions, a timeout, and SHA-pinned external actions
+- [x] CODEOWNERS and SECURITY.md are present
 
 # F2: Persistence and Worker Foundation
 
