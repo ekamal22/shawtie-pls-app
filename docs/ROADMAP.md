@@ -21,7 +21,9 @@ Do not infer completion percentages from partial layers.
 - monorepo configuration
 - TypeScript baseline
 - linting and formatting
-- CI
+- CI: baseline workflow configured, hosted validation pending
+- repository-health scanner: configured
+- CODEOWNERS and SECURITY policy: configured
 - PostgreSQL development environment
 - domain capability engine: implemented foundation
 - database invariants
@@ -189,7 +191,10 @@ Roadmap epics and acceptance gates are complete as a project-health milestone.
 Current canonical epic status:
 
 - F0: DONE
+- F1: IN_PROGRESS with baseline CI and repository health configured
 - P3: IN_PROGRESS at the pure domain layer
 - remaining implementation epics: PLANNED
 
-The next milestone is repository foundation and executable guardrails, followed by PostgreSQL persistence.
+The repository-health and baseline CI foundation is configured, but GitHub-hosted execution remains unverified.
+
+The next milestone is completing executable architecture guardrails, followed by PostgreSQL persistence.
