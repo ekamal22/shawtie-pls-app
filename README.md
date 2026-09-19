@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository is currently in architecture and foundation design.
+The repository is currently in foundation implementation. Architecture Baseline 1.0 is frozen.
 
 ## Product direction
 
@@ -41,6 +41,8 @@ Start with:
 - `docs/README.md`
 - `docs/product/PRD.md`
 - `docs/architecture/SYSTEM_ARCHITECTURE.md`
+- `docs/architecture/ARCHITECTURE_BASELINE.md`
+- `docs/architecture/ARCHITECTURE_GOVERNANCE.md`
 - `docs/architecture/DATA_MODEL.md`
 - `docs/architecture/PARTNERSHIP_STATE_MACHINE.md`
 - `docs/security/SECURITY_MODEL.md`
@@ -63,3 +65,12 @@ Do not commit:
 - personal operational notes
 
 Use synthetic data only.
+
+
+## Architecture governance
+
+Architecture Baseline 1.0 is frozen.
+
+Implementation should follow the accepted baseline. Structural changes require evidence and an accepted ADR before implementation, except for emergency security mitigation.
+
+See `docs/architecture/ARCHITECTURE_GOVERNANCE.md`.
