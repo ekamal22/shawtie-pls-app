@@ -74,7 +74,23 @@ The pre-implementation threat model and data-classification baseline are complet
 
 Architecture governance is complete. Structural changes now require the evidence-based process in `docs/architecture/ARCHITECTURE_GOVERNANCE.md`.
 
+Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EPICS.md`.
+
+Current epic status:
+
+- F0 Governance and Security Baseline: DONE
+- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence, API, worker, notification, deletion, and race gates remain
+- all other implementation epics: PLANNED
+
 Database persistence, API integration, worker integration, and CI validation are not implemented yet.
+
+## Progress reporting rule
+
+Do not report an epic as complete from a partial layer.
+
+For example, a passing domain state machine does not mean the persisted API and worker lifecycle epic is complete.
+
+Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
