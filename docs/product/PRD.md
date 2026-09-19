@@ -374,6 +374,10 @@ Changing the email address requires:
 
 The email change must not take effect until the new email address has been verified successfully.
 
+Verified email changes remain allowed during `breakup_pending` because the account remains accessible in that state.
+
+Verified email changes cannot occur during `account_deletion_pending` because account access is removed immediately when deletion is requested.
+
 ### Account deletion recovery
 
 Account deletion uses a seven-day recovery period.
@@ -382,7 +386,7 @@ When account deletion is requested:
 
 - access to the account is immediately removed from the account owner
 - all active sessions for that account are revoked
-- the account owner cannot message, send media, call, create relationship objects, modify shared data, or perform any other account action unless the account is recovered
+- the account owner cannot message, send media, call, create relationship objects, modify shared data, change email, change profile information, or perform any other account action unless the account is recovered
 - the seven-day recovery deadline is calculated using trusted server time
 - the account may be recovered during the seven-day period through the defined recovery flow
 
@@ -397,19 +401,30 @@ If account deletion is requested from an active partnership:
 If the account is recovered before the deadline:
 
 - the account regains access
-- the partnership returns to exactly the state it had immediately before account deletion was requested
+- the partnership returns to exactly the state it had immediately before account deletion was requested unless a separate breakup deadline already caused final dissolution
 - existing shared data remains intact unless a separate breakup deadline already caused final dissolution
-- no breakup cooldown is created solely because account deletion was requested and cancelled
+- no cooldown is created solely because account deletion was requested and cancelled
 
-If the seven-day recovery period expires without recovery:
+If the seven-day recovery period expires without recovery while the partnership was active:
 
 - the account is permanently deleted
-- all partnership-scoped shared data associated with that partnership is permanently deleted if it has not already been deleted by an earlier breakup deadline
+- all partnership-scoped shared data associated with that partnership is permanently deleted
 - the remaining partner is informed in-app, by push notification where available, and by email that the partner account was permanently deleted
+- the remaining partner enters a one-calendar-month partnership cooldown starting at the permanent account-deletion timestamp
+- eligibility returns at the same clock minute one calendar month later using trusted server-side calendar-month arithmetic
+
+After permanent account deletion, the deleted email address is released and may be used to register a new account, subject to normal registration and verification rules.
 
 ### Account deletion requested during breakup_pending
 
 If account deletion is requested while the partnership is already `breakup_pending`, the existing breakup countdown continues and is not reset or extended.
+
+If the account is recovered before the breakup deadline:
+
+- account access is restored
+- the original breakup remains in progress
+- the original breakup deadline remains unchanged
+- any prior restoration intent remains governed by the normal breakup rules
 
 If the breakup deadline arrives before the seven-day account-deletion recovery deadline:
 
@@ -419,6 +434,7 @@ If the breakup deadline arrives before the seven-day account-deletion recovery d
 - the remaining partner may receive a reminder such as `Your breakup will be executed in 2 days` when that timing applies
 - the account-deletion recovery process for the deleting account continues independently until recovery or its own seven-day deadline
 - recovering the account after the partnership has already reached final dissolution does not restore the deleted partnership or its deleted shared data
+- the normal three-calendar-month breakup cooldown applies because dissolution occurred through the breakup lifecycle
 
 Future support may include:
 
@@ -772,11 +788,11 @@ The placeholder must not reveal the deleted content.
 
 Message reactions are part of the MVP during active partnership state.
 
-The reaction interface should present a fixed default reaction template and also provide an add-emoji action so a user can choose another supported emoji.
+The fixed default reaction template is `❤️ 😂 😭 😮 😡 👍`. The reaction interface must also provide an add-emoji action so a user can choose another supported emoji.
 
 Partnership chat nicknames are shared metadata. A nickname change made by either partner is visible to both partners.
 
-Chat nicknames may be changed during active partnership state and during `breakup_pending`.
+Chat nicknames may be changed during active partnership state and during `breakup_pending`, including after either partner has submitted a restoration intent.
 
 During `breakup_pending`, new messages and replies remain allowed, but pre-existing messages become read-only. They may be viewed and replied to, but they may not be edited, deleted, reacted to, or otherwise modified.
 
@@ -910,7 +926,16 @@ Call recording is marked as a pending post-release feature.
 
 Any future built-in call recording must require explicit consent from both participants for every recording session before recording begins.
 
-Any future implementation must also receive a separate privacy, legal, security, retention, and consent review before development.
+After both participants consent, a recording is treated as partnership-scoped media:
+
+- both partners may access it
+- it follows partnership authorization rules
+- it must be protected by the final E2EE media model
+- it is deleted under normal user-facing deletion rules where applicable
+- it is permanently deleted at final dissolution
+- it is permanently deleted when permanent account deletion removes the partnership data
+
+Any future implementation must also receive a separate privacy, legal, security, retention, export, and consent review before development.
 
 ---
 
@@ -1127,7 +1152,7 @@ Security-sensitive failures should default to denial rather than accidental acce
 
 ## 26. End-to-End Encryption
 
-End-to-end encryption is a planned hard requirement before Shawtie pls is considered suitable for sensitive private communication at stable release.
+End-to-end encryption is a hard requirement before Shawtie pls is considered suitable for sensitive private communication at stable release.
 
 The architecture must reserve clear boundaries for:
 
@@ -1137,16 +1162,55 @@ The architecture must reserve clear boundaries for:
 - session establishment
 - message encryption
 - attachment encryption
+- relationship-object encryption
+- reaction and reply metadata where practical
 - key rotation
 - device enrollment
 - partnership termination
 - future partnership creation
+- call media encryption
 
-Cryptographic design should not be improvised.
+Cryptographic design must not be improvised.
 
-A reviewed protocol or well-established construction should be preferred over custom cryptography.
+A reviewed protocol or well-established construction must be preferred over custom cryptography.
 
-The server should eventually be unable to read protected message content covered by E2EE.
+### Server-visible metadata policy
+
+The server should retain only the metadata required to route, deliver, synchronize, secure, and operate the service.
+
+Server-visible data may include where technically required:
+
+- account and device routing identifiers
+- opaque partnership and conversation identifiers
+- server receipt timestamps
+- delivery and synchronization state
+- ciphertext sizes
+- encrypted attachment object identifiers and storage sizes
+- push-routing tokens and delivery state
+- online presence, typing, and read-receipt routing state
+- call signaling and call-session state
+- limited security and abuse-prevention metadata
+
+The server must not receive plaintext versions of protected content, including:
+
+- message bodies
+- image, video, file, and voice-message contents
+- relationship-object contents
+- For You letters
+- Future Us contents
+- memory captions or private notes
+- call audio or video media
+- call recordings if the post-release recording feature is implemented
+
+Metadata such as filenames, captions, attachment MIME types, reaction content, and other descriptive fields should be encrypted when practical rather than exposed merely for convenience.
+
+Typing indicators, presence, read receipts, and similar transient state should use the minimum retention necessary for delivery and synchronization.
+
+Security logs must avoid storing private content and should use bounded retention appropriate to abuse prevention and operational security.
+
+Voice and video call media must use end-to-end media encryption appropriate to the selected calling architecture. Relay infrastructure may necessarily observe network-level connection metadata, but it must not receive plaintext call media.
+
+The product must document unavoidable metadata exposure honestly rather than describing E2EE as metadata anonymity.
 
 ---
 
@@ -1258,7 +1322,7 @@ During that period, the deleting account has no access to the product. When dele
 
 If the account is recovered during the seven-day period, the prior account and partnership state is restored exactly.
 
-If the account is permanently deleted after the recovery period, all partnership-scoped shared data is permanently deleted and the remaining partner is notified.
+If the account is permanently deleted after the recovery period, all partnership-scoped shared data is permanently deleted and the remaining partner is notified. If the partnership was active when deletion was requested, the remaining partner enters a one-calendar-month cooldown. The deleted account's email address becomes available for a new registration after permanent deletion.
 
 If account deletion is requested while a partnership is already `breakup_pending`, the breakup countdown continues independently and is not reset.
 
@@ -1416,6 +1480,8 @@ Mandatory tests should include:
 - changing the verified email requires recent reauthentication
 - a new email address does not become active until its verification code succeeds
 - a successful email change notifies the old email address and revokes other sessions
+- verified email changes remain available during breakup_pending
+- no account changes are possible during account_deletion_pending because access is revoked
 - a username cannot be changed again before one calendar year has elapsed from the previous successful change
 - username changes are rejected during active and breakup_pending partnership states
 - a released username can be claimed by another eligible account immediately
@@ -1449,7 +1515,7 @@ Mandatory tests should include:
 - calls during breakup_pending require explicit consent from both partners
 - past messages are visible and repliable during breakup_pending
 - past messages cannot be edited, deleted, reacted to, or otherwise modified during breakup_pending
-- shared chat nicknames can still be changed during breakup_pending
+- shared chat nicknames can still be changed during breakup_pending even after a restoration intent exists
 - relationship objects are view-only during breakup_pending
 - scheduled For You and Future Us content still unlocks at the scheduled time during breakup_pending
 - a restoration intent cannot be withdrawn once submitted
@@ -1470,7 +1536,7 @@ Mandatory tests should include:
 - message deletion leaves a deletion placeholder visible to both partners
 - message editing is rejected after 30 minutes
 - edited messages display an edited indicator
-- the reaction UI exposes a fixed default template and an add-emoji path
+- the default reaction tray is `❤️ 😂 😭 😮 😡 👍` and an add-emoji path is available
 - message reactions work during active state and are blocked on pre-existing messages during breakup_pending
 - read receipts cannot be disabled
 - typing indicators cannot be disabled
@@ -1480,11 +1546,17 @@ Mandatory tests should include:
 - the remaining partner cannot form or accept another partnership during account-deletion recovery
 - no new shared data can be created during active-partnership account-deletion recovery
 - cancelling account deletion restores the exact previous account and partnership state when no earlier breakup deadline already dissolved it
+- if the account is recovered during breakup_pending, the original breakup deadline remains unchanged
 - if a breakup deadline occurs before account-deletion recovery ends, final dissolution and shared-data deletion happen at the breakup deadline
 - breakup reminders and final notices are still sent while account deletion is pending
 - recovering an account after an earlier breakup dissolution does not restore deleted partnership data
+- permanent deletion from an active partnership starts a one-calendar-month cooldown for the remaining partner
+- the deleted email address becomes reusable only after permanent deletion
 - permanent account deletion removes all remaining partnership-scoped shared data
 - serious breakup and account-deletion events generate minimal email notifications
+- E2EE prevents the server from reading protected message, media, relationship-object, and call-media content
+- server-visible E2EE metadata is limited to operationally necessary routing, delivery, synchronization, calling, and security data
+- future consensual call recordings follow partnership-media authorization and dissolution deletion rules
 - attachment IDs cannot cross partnership boundaries
 - realtime subscriptions cannot cross partnership boundaries
 - unauthorized media retrieval fails
@@ -1531,7 +1603,7 @@ The MVP is successful when two independent eligible adult test accounts can:
 1. Register only after passing the server-side minimum-age check.
 2. Verify a unique mandatory registration email through a code.
 3. Sign in and recover account access through the verified email.
-4. Change the verified email only after reauthentication and successful code verification of the new address.
+4. Change the verified email during normal and breakup_pending access only after reauthentication and successful code verification of the new address.
 5. Find one another by username and see the allowed public profile information, including age.
 6. Send, cancel, expire, decline, and rate-limit partner requests correctly.
 7. Enforce a one-hour same-recipient cooldown after a declined request.
@@ -1543,9 +1615,9 @@ The MVP is successful when two independent eligible adult test accounts can:
 13. Exchange text messages reliably.
 14. Edit a message for up to 30 minutes with an edited indicator.
 15. Delete a message for both users while leaving a deletion placeholder.
-16. Use a fixed default message-reaction template with an option to add another supported emoji.
+16. Use the default reaction tray `❤️ 😂 😭 😮 😡 👍` with an option to add another supported emoji.
 17. Use shared Messenger-style chat nicknames visible to both partners.
-18. Allow chat nickname changes during active and breakup_pending states.
+18. Allow chat nickname changes during active and breakup_pending states, including after restoration intent.
 19. Use always-on read receipts, typing indicators, online status, and last seen.
 20. Reconnect after losing network access.
 21. Exchange supported images, videos, files, and voice messages within configured limits.
@@ -1567,7 +1639,7 @@ The MVP is successful when two independent eligible adult test accounts can:
 37. Extend the breakup deadline by three days when exactly one partner selects restore.
 38. Reach final dissolution at the correct deadline when mutual restoration does not occur.
 39. Permanently delete all partnership content, including call history and content created or unlocked during breakup_pending, at final dissolution.
-40. Start the exact three-calendar-month cooldown at final dissolution.
+40. Start the exact three-calendar-month cooldown at breakup final dissolution.
 41. Calculate cooldown expiry to the same clock minute using trusted server time.
 42. Allow former partners to block each other after final dissolution and enforce that block across search, requests, and future pairing.
 43. Prevent either former partner from forming another partnership during cooldown.
@@ -1576,11 +1648,13 @@ The MVP is successful when two independent eligible adult test accounts can:
 46. Give the remaining active partner seven days of view-only shared-data access during account-deletion recovery.
 47. Prevent the remaining partner from forming or accepting another partnership while account-deletion recovery is active.
 48. Restore the exact prior state if account deletion is cancelled before any earlier breakup deadline has dissolved the partnership.
-49. If breakup final dissolution occurs first, delete shared data at that earlier breakup deadline and continue the account-deletion recovery process separately.
-50. Continue sending breakup deadline emails while account deletion is pending.
-51. Permanently delete any remaining shared partnership data when account deletion becomes permanent.
-52. Be prevented from violating the one-active-partner rule.
-53. Demonstrate complete isolation from unrelated accounts and partnerships.
+49. Preserve the original breakup deadline if an account is recovered while breakup_pending.
+50. If breakup final dissolution occurs first, delete shared data at that earlier breakup deadline and continue the account-deletion recovery process separately.
+51. Continue sending breakup deadline emails while account deletion is pending.
+52. If permanent account deletion ends an active partnership, delete the shared data and start a one-calendar-month cooldown for the remaining partner.
+53. Release the deleted account's email address for new registration after the seven-day recovery period ends in permanent deletion.
+54. Be prevented from violating the one-active-partner rule.
+55. Demonstrate complete isolation from unrelated accounts and partnerships.
 
 ---
 
@@ -1592,6 +1666,8 @@ The first stable release should not ship until the project has:
 - mandatory unique verified-email registration
 - verified-email password recovery
 - secure verified-email change flow
+- verified-email changes allowed during breakup_pending
+- no account mutation access during account_deletion_pending
 - old-email notification after successful email change
 - session revocation after successful email change
 - one-account-per-verified-email enforcement
@@ -1616,24 +1692,27 @@ The first stable release should not ship until the project has:
 - immutable submitted restoration intent
 - breakup-period call consent enforcement
 - breakup-period message mutation restrictions
+- breakup-period nickname changes even after restoration intent
 - scheduled relationship-content release during breakup_pending
 - tested final-dissolution deletion semantics
 - breakup deadline precedence over a later account-deletion recovery deadline
+- original breakup deadline preservation after account recovery
 - breakup reminder emails even when account deletion is pending
-- exact three-calendar-month cooldown calculation
+- exact three-calendar-month breakup cooldown calculation
 - fresh explicit consent for every new partnership
 - seven-day account-deletion recovery state
 - immediate access revocation on account-deletion request
 - view-only shared-data recovery period for the remaining partner
 - partnership ineligibility for the remaining partner during account-deletion recovery
+- one-calendar-month cooldown after permanent account deletion ends an active partnership
+- deleted-email release after permanent account deletion
 - exact-state restoration after account recovery when partnership data has not already been dissolved
 - robust authorization
 - reliable realtime messaging
 - 30-minute message editing
 - deletion placeholders
-- fixed default reaction template plus add-emoji support
+- default reaction set `❤️ 😂 😭 😮 😡 👍` plus add-emoji support
 - shared chat nicknames
-- breakup-period nickname changes
 - always-on read receipts and typing indicators
 - always-visible online and last-seen state
 - safe media handling
@@ -1649,14 +1728,15 @@ The first stable release should not ship until the project has:
 - documented partnership termination behavior
 - abuse controls appropriate for public registration
 - dependency and secret scanning
-- E2EE implemented and reviewed for protected communication
+- reviewed E2EE for protected messages, media, relationship objects, and call media
+- documented E2EE metadata exposure and metadata-minimization policy
 - partnership transition isolation verified
 - production backup and recovery plan
 - release-specific security review
 
 Built-in call recording is explicitly excluded from the first stable release and remains pending post-release design.
 
-Any future built-in call recording must require explicit consent from both participants for every recording session.
+Any future built-in call recording must require explicit consent from both participants for every recording session and must follow partnership-media access and deletion rules.
 
 ---
 
@@ -1706,6 +1786,8 @@ Private message content should not be collected for analytics.
 - login
 - verified-email password recovery
 - secure verified-email change flow
+- email change during breakup_pending
+- deleted-email release after permanent account deletion
 - sessions
 - username system
 - one-year username-change eligibility
@@ -1716,6 +1798,7 @@ Private message content should not be collected for analytics.
 - seven-day account-deletion recovery
 - immediate access revocation during deletion recovery
 - breakup and deletion timer precedence
+- one-month post-deletion cooldown for the remaining active partner
 - account settings
 
 ### Phase 2: Partnerships
@@ -1751,10 +1834,10 @@ Private message content should not be collected for analytics.
 - replies
 - 30-minute editing
 - deletion placeholders
-- fixed default reaction template
+- default reactions `❤️ 😂 😭 😮 😡 👍`
 - add-emoji reaction support
 - shared partnership chat nicknames
-- breakup-period nickname changes
+- breakup-period nickname changes including after restoration intent
 - realtime transport
 - delivery state
 - always-on read receipts
@@ -1810,6 +1893,10 @@ Private message content should not be collected for analytics.
 - formal design
 - threat-model update
 - protocol review
+- metadata-minimization model
+- message and relationship-content encryption
+- attachment encryption
+- call-media encryption
 - implementation
 - migration strategy
 - security testing
@@ -1829,16 +1916,15 @@ Private message content should not be collected for analytics.
 
 ## 42. Open Product Decisions
 
-The following decisions must be resolved during development:
+The core product and lifecycle rules required for initial architecture are now sufficiently defined.
 
-1. After permanent account deletion ends an active partnership, does the remaining partner immediately become eligible to form another partnership, or does the normal three-calendar-month partner cooldown apply?
-2. If account deletion is requested during `breakup_pending` and the account is recovered before the breakup deadline, does the existing breakup continue from its original deadline or should account recovery cancel that breakup?
-3. What exact fixed default reaction set should appear before the add-emoji action?
-4. Are chat nickname changes during `breakup_pending` allowed even after one partner has selected restore, or should nickname editing freeze once a restoration intent exists?
-5. Can the verified email address be changed while the account is `breakup_pending` or `account_deletion_pending`, or should sensitive account changes be blocked in those states?
-6. What data can remain server-visible after E2EE?
-7. Which infrastructure providers best satisfy cost, privacy, voice and video calling, email delivery, and portability requirements?
-8. For post-release call recording, what retention, export, deletion, and participant notification rules should apply after both participants consent?
+Remaining decisions are implementation-level or post-release design decisions and do not block the initial domain and database architecture:
+
+1. Which infrastructure providers best satisfy cost, privacy, voice and video calling, email delivery, and portability requirements?
+2. What exact reviewed E2EE protocol and key-management design will be adopted?
+3. What exact retention periods should apply to bounded security and abuse-prevention metadata?
+4. For the post-release call-recording feature, what export formats and optional user-facing deletion controls should be offered in addition to mandatory partnership-lifecycle deletion?
+5. Which specific emoji picker implementation and supported Unicode range should back the add-emoji reaction action?
 
 ---
 
