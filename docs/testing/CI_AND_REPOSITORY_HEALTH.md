@@ -30,7 +30,7 @@ Current steps are:
 4. run the domain test suite
 5. run dependency audit when a package lockfile exists
 
-The workflow uses read-only repository permissions and a job timeout.
+The workflow uses read-only repository permissions, a job timeout, concurrency cancellation, and full commit-SHA pinning for external GitHub Actions.
 
 ## Local equivalent
 
@@ -67,8 +67,17 @@ This currently combines repository health with the domain test suite.
 - workflow `write-all` permissions
 - workflows without explicit permissions
 - workflows without job timeouts
+- external GitHub Actions that are not pinned to a full commit SHA
 
 This is a baseline safety scanner, not a replacement for a dedicated secret-scanning product or security review.
+
+## Workflow supply-chain gate
+
+External GitHub Actions in repository workflows must be pinned to a full 40-character commit SHA.
+
+Human-readable version comments may be kept beside the SHA, but floating tags such as `@v4` are not sufficient for the baseline policy.
+
+The repository-health scanner enforces this rule.
 
 ## Architecture-boundary gate
 
