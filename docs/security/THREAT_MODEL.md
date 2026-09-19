@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted security baseline for pre-implementation design.
+Accepted security baseline for foundation implementation.
 
 This document identifies the assets Shawtie pls must protect, the actors and failure modes that can threaten them, the trust boundaries where controls must exist, and the mitigations that must be verified before stable release.
 
