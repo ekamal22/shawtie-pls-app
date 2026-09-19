@@ -2,7 +2,7 @@
 
 ## Status
 
-Architecture baseline accepted.
+Architecture Baseline 1.0 is accepted and frozen.
 
 Foundation implementation has started with the pure partnership domain state machine and centralized capability engine.
 
@@ -41,6 +41,8 @@ Accepted architecture decisions include:
 - reviewed E2EE before stable release
 - formal threat model
 - repository-wide data classification and handling matrix
+- architecture freeze and change-control governance
+- architecture change classification and ADR workflow
 
 ## Implementation state
 
@@ -69,6 +71,8 @@ Implemented and locally validated:
 The current domain suite contains 27 tests and passes in local validation.
 
 The pre-implementation threat model and data-classification baseline are complete and committed.
+
+Architecture governance is complete. Structural changes now require the evidence-based process in `docs/architecture/ARCHITECTURE_GOVERNANCE.md`.
 
 Database persistence, API integration, worker integration, and CI validation are not implemented yet.
 
