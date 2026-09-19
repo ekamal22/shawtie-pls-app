@@ -359,6 +359,12 @@ Authentication must provide:
 
 Password recovery must use the verified email address associated with the account.
 
+Account authentication recovery and E2EE content-key recovery are separate security processes.
+
+Verified-email recovery may restore account access, but it must not automatically grant decryption access to historical protected content.
+
+Historical protected-content recovery must require a trusted existing device, a high-entropy cryptographic recovery secret, or another reviewed cryptographic recovery mechanism.
+
 ### Email address changes
 
 The verified email address may be changed after registration.
@@ -1145,8 +1151,19 @@ The application should include:
 - secret scanning
 - branch protection
 - secure CI configuration
+- centralized server-authoritative capability evaluation
+- first-class device records and revocation
+- strict browser execution policy for the PWA
+- no third-party advertising scripts in the trusted application origin
+- no arbitrary remote JavaScript in the trusted application origin
+- explicit client, API, crypto, and local-schema compatibility versions
+- short-lived TURN credentials
+- durable deletion manifests for cross-system deletion
+- generation checks on lifecycle-sensitive scheduled jobs
 
 Security-sensitive failures should default to denial rather than accidental access.
+
+The initial architecture should not depend on Redis. PostgreSQL remains the authoritative durable coordination layer unless measured production requirements justify another state system.
 
 ---
 
@@ -1169,6 +1186,10 @@ The architecture must reserve clear boundaries for:
 - partnership termination
 - future partnership creation
 - call media encryption
+- device revocation
+- cryptographic recovery separate from account recovery
+- partnership cryptographic epochs
+- crypto protocol versioning
 
 Cryptographic design must not be improvised.
 
@@ -1211,6 +1232,12 @@ Security logs must avoid storing private content and should use bounded retentio
 Voice and video call media must use end-to-end media encryption appropriate to the selected calling architecture. Relay infrastructure may necessarily observe network-level connection metadata, but it must not receive plaintext call media.
 
 The product must document unavoidable metadata exposure honestly rather than describing E2EE as metadata anonymity.
+
+Every partnership must have a cryptographic context that is isolated from every prior or future partnership.
+
+Within a partnership, explicit cryptographic epochs may be used for reviewed key rotation, device revocation, and protocol migration.
+
+Email account recovery alone must never be sufficient to decrypt historical E2EE content.
 
 ---
 
@@ -1408,6 +1435,14 @@ The runtime consists of:
 - transactional outbox for reliable side effects
 - PostgreSQL-backed scheduled actions for lifecycle deadlines and retries
 - reviewed E2EE implementation for protected content before stable release
+- centralized domain capability engine
+- first-class device model
+- account recovery separated from cryptographic recovery
+- per-partnership cryptographic epochs
+- append-only lifecycle event ledger
+- generation-checked lifecycle jobs
+- durable deletion manifests
+- explicit version compatibility checks
 
 Microservices are intentionally not required for the initial architecture.
 
@@ -1426,12 +1461,18 @@ The durable worker owns:
 - deletion and object-purge orchestration
 - transactional outbox processing
 - retryable maintenance jobs
+- deletion manifest processing
+- stale-job rejection through generation checks
 
 Product deadlines must never depend only on in-memory timers.
 
 PostgreSQL is authoritative for lifecycle and eligibility decisions.
 
 Provider selection may change. The architecture should avoid unnecessary provider lock-in.
+
+Static TURN credentials must not be embedded in the client. TURN access must use short-lived credentials issued after authenticated call authorization.
+
+Redis is intentionally excluded from the initial architecture. It may be added only if measured production needs justify the additional state system.
 
 The initial deployment should prioritize zero-dollar or near-zero-dollar operation where practical, but privacy and correctness take priority over remaining permanently free.
 
@@ -1495,6 +1536,14 @@ Architecture rules include:
 - WebSockets are a realtime synchronization mechanism, not the sole source of truth
 - local data is partitioned by account, partnership, conversation, and cryptographic context
 - every new partnership receives a new security and local-storage namespace
+- lifecycle permissions are derived from a centralized capability engine
+- sensitive lifecycle transitions append non-content lifecycle events
+- scheduled lifecycle actions carry generation or version checks
+- cross-system deletion uses durable deletion manifests
+- account devices are first-class security principals
+- account recovery does not automatically imply E2EE history recovery
+- client, API, crypto protocol, and local schema versions are explicit
+- two-account transactions use deterministic account-lock ordering
 - media is encrypted client-side before upload once stable-release E2EE is active
 - no generic shared junk drawer
 - no real-user fixtures
@@ -1613,6 +1662,15 @@ Mandatory tests should include:
 - unauthorized media retrieval fails
 - expired sessions fail
 - account changes correctly revoke affected sessions
+- capability decisions match route enforcement across lifecycle states
+- a stale scheduled action with an old generation cannot mutate newer partnership state
+- sensitive lifecycle transitions append the expected non-content lifecycle event
+- deletion manifests remain safe and resumable after partial failure
+- email-only recovery does not expose historical E2EE plaintext
+- revoking a device revokes both authentication and cryptographic authorization
+- crypto epoch changes do not leak old active key state
+- incompatible client or crypto protocol versions fail closed
+- TURN credentials are short-lived and cannot be reused indefinitely
 
 ### End-to-end tests
 
@@ -1782,6 +1840,15 @@ The first stable release should not ship until the project has:
 - reviewed E2EE for protected messages, media, relationship objects, and call media
 - documented E2EE metadata exposure and metadata-minimization policy
 - partnership transition isolation verified
+- centralized capability model verified
+- device enrollment and revocation model verified
+- account recovery and cryptographic recovery separation verified
+- cryptographic epoch behavior verified
+- deletion manifest workflow verified
+- lifecycle generation checks verified
+- PWA trusted-origin script policy verified
+- explicit version compatibility policy verified
+- short-lived TURN credential flow verified
 - production backup and recovery plan
 - release-specific security review
 
@@ -1832,6 +1899,13 @@ Private message content should not be collected for analytics.
 - runtime contract validation
 - security baseline
 - local partnership-isolation boundary
+- centralized capability engine
+- deterministic two-account transaction helper
+- lifecycle event ledger
+- scheduled-action generation checks
+- deletion manifest framework
+- explicit compatibility versioning
+- strict trusted-origin browser execution policy
 
 ### Phase 1: Accounts
 
@@ -1856,6 +1930,9 @@ Private message content should not be collected for analytics.
 - immediate access revocation during deletion recovery
 - breakup and deletion timer precedence
 - one-month post-deletion cooldown for the remaining active partner
+- account device model
+- device management and revocation
+- separation of account recovery from cryptographic recovery
 - account settings
 
 ### Phase 2: Partnerships
@@ -1911,6 +1988,8 @@ Private message content should not be collected for analytics.
 - private storage
 - voice calls
 - video calls
+- short-lived TURN credentials
+- relay-first TURN privacy
 - call history
 - push notifications
 - serious-event email notifications
@@ -1951,6 +2030,10 @@ Private message content should not be collected for analytics.
 - threat-model update
 - protocol review
 - metadata-minimization model
+- device cryptographic identity
+- cryptographic recovery
+- partnership crypto epochs
+- crypto protocol versioning
 - message and relationship-content encryption
 - attachment encryption
 - call-media encryption
