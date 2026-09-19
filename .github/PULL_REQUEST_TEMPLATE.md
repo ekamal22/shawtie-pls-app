@@ -11,6 +11,16 @@ Select one:
 - [ ] Class C: architecture change
 - [ ] Class D: product rule change
 
+## Roadmap epic
+
+Epic ID:
+
+Acceptance gates affected:
+
+- [ ] Canonical gates reviewed in `docs/ROADMAP_EPICS.md`
+- [ ] Evidence added for gates completed by this change
+- [ ] Epic status remains accurate
+
 ## Product impact
 
 - [ ] No product-rule change
