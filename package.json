@@ -7,6 +7,9 @@
   },
   "scripts": {
     "test": "npm run test:domain",
-    "test:domain": "node --test packages/domain/tests/*.test.ts"
+    "test:domain": "node --test packages/domain/tests/*.test.ts",
+    "health:repo": "node scripts/ci/repository-health.mjs",
+    "health": "npm run health:repo && npm run test:domain",
+    "ci:baseline": "npm run health"
   }
 }
