@@ -76,9 +76,15 @@ Use:
 - security docs for threats and handling rules
 - testing docs for verification requirements
 - PROJECT_STATE for verified current state
-- ROADMAP for execution order
+- ROADMAP for high-level execution order
+- ROADMAP_EPICS for epic status and acceptance gates
+- CI_AND_REPOSITORY_HEALTH for current CI gate status
 
 Do not use Git commit messages as the only documentation for architectural decisions.
+
+Current-state claims must be refreshed in the same change that makes them stale.
+
+Do not update accepted ADRs merely to reflect implementation progress. Supersede or amend an architecture decision through the governance process when the decision itself changes.
 
 ## Experimental work
 
@@ -90,6 +96,16 @@ If an experiment is needed:
 - label it experimental
 - avoid irreversible migrations
 - do not update the frozen baseline until evidence supports adoption
+
+## Local verification while hosted CI is skipped
+
+When hosted GitHub Actions is intentionally skipped, run the local baseline where practical:
+
+```text
+npm run health
+```
+
+Record hosted CI as unverified until an actual GitHub Actions run succeeds.
 
 ## Commit discipline
 
