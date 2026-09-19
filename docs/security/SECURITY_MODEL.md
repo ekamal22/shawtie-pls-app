@@ -18,6 +18,28 @@ Security must protect confidentiality, integrity, authorization, lifecycle delet
 8. TURN infrastructure
 9. E2EE key material
 
+## Supply-chain and browser execution policy
+
+Because Shawtie pls is a PWA, hostile JavaScript executing in the trusted application origin can access decrypted content.
+
+Therefore:
+
+- do not load third-party advertising scripts
+- do not load third-party analytics scripts that can execute arbitrary code in the app origin
+- do not load arbitrary remote JavaScript
+- pin dependencies through the lockfile
+- minimize runtime dependencies
+- review high-risk dependency updates
+- enforce strict Content Security Policy
+- prohibit unsafe eval
+- avoid unsafe inline script
+- use controlled nonces only where inline execution is unavoidable
+- prefer same-origin API deployment where practical
+- use a controlled service-worker update policy
+- enforce explicit client and crypto compatibility versions
+
+Browser hardening is part of the E2EE security boundary.
+
 ## Authentication
 
 Use opaque server-managed sessions.
@@ -99,6 +121,18 @@ After successful email change:
 
 Account deletion revokes all active sessions immediately.
 
+Device revocation must revoke both authentication sessions and cryptographic authorization for that device.
+
+## Recovery separation
+
+Verified-email recovery restores account access only.
+
+It must not automatically restore historical E2EE decryption keys.
+
+Historical protected-content recovery requires an existing trusted device, a high-entropy cryptographic recovery secret, or another reviewed recovery mechanism.
+
+See `DEVICE_AND_RECOVERY.md`.
+
 ## Media
 
 Client encrypts protected media before upload once E2EE is active.
@@ -149,6 +183,8 @@ Final dissolution and permanent account deletion require coordinated removal acr
 
 Deletion jobs must be retryable and auditable without retaining deleted private content.
 
+Use durable deletion manifests and target-level completion state. Authorization and cryptographic access are revoked before asynchronous cleanup is considered complete.
+
 ## Abuse controls
 
 Apply rate limits to:
@@ -161,6 +197,7 @@ Apply rate limits to:
 - message mutation
 - media upload
 - call signaling
+- TURN credential issuance
 - password recovery
 - email change
 - account recovery
