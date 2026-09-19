@@ -31,6 +31,15 @@ The selected architecture is:
 - WebRTC for voice and video calls
 - TURN relay support, with relay-first privacy behavior
 - reviewed E2EE design with client-side encryption for protected content
+- centralized domain capability engine
+- explicit device model and device revocation
+- account recovery separated from cryptographic history recovery
+- per-partnership cryptographic epochs
+- append-only lifecycle event ledger for sensitive state changes
+- generation-checked scheduled lifecycle jobs
+- durable deletion manifests for cross-system cleanup
+- explicit client, API, crypto, and local-schema versioning
+- no Redis in the initial architecture unless measured need justifies it
 
 ## Core architecture documents
 
@@ -40,7 +49,11 @@ The selected architecture is:
 - `architecture/REALTIME_ARCHITECTURE.md`
 - `architecture/OFFLINE_ARCHITECTURE.md`
 - `architecture/CALL_ARCHITECTURE.md`
+- `architecture/CAPABILITY_MODEL.md`
+- `architecture/DELETION_ARCHITECTURE.md`
+- `architecture/VERSIONING_AND_COMPATIBILITY.md`
 - `security/SECURITY_MODEL.md`
+- `security/DEVICE_AND_RECOVERY.md`
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
 
@@ -53,3 +66,11 @@ Product rules remain in:
 Architecture work must preserve the defining invariant:
 
 > An account can occupy at most one partnership slot, and every partnership is an isolated private space whose data and cryptographic state must never leak into another partnership.
+
+
+## Living project documents
+
+- `PROJECT_STATE.md`
+- `ROADMAP.md`
+
+These documents describe current planning state and execution order. They do not override accepted ADRs, the PRD, source code, or migrations.
