@@ -1850,6 +1850,8 @@ The first stable release should not ship until the project has:
 - explicit version compatibility policy verified
 - short-lived TURN credential flow verified
 - production backup and recovery plan
+- formal threat model reviewed against implemented architecture
+- data-classification matrix reviewed against implemented storage, logging, providers, and deletion behavior
 - release-specific security review
 
 Built-in call recording is explicitly excluded from the first stable release and remains pending post-release design.
