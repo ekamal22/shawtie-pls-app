@@ -24,6 +24,8 @@ Build lifecycle correctness and security boundaries before storing valuable user
 - runtime contract validation
 - API versioning
 - client compatibility versioning
+- formal threat model: completed
+- data classification and handling matrix: completed
 - security headers and browser hardening
 - synthetic testkit: initial domain fixtures implemented
 
@@ -163,5 +165,7 @@ The first executable domain milestone is complete:
 - stale breakup generation rejection
 - message mutation capability rules
 - 27 passing domain tests in local validation
+
+The threat-model and data-classification milestone is also complete.
 
 The next milestone is repository foundation and executable guardrails, followed by PostgreSQL persistence.
