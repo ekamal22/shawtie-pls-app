@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation has started with the pure partnership domain state machine and centralized capability engine.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, and baseline CI plus repository-health tooling are configured.
 
 ## Product definition
 
@@ -74,7 +74,7 @@ Implemented and locally validated:
 
 The current domain suite contains 27 tests and passes in local validation.
 
-The pre-implementation threat model and data-classification baseline are complete and committed.
+The threat model and data-classification baseline are complete and remain the active security foundation for implementation.
 
 Architecture governance is complete. Structural changes now require the evidence-based process in `docs/architecture/ARCHITECTURE_GOVERNANCE.md`.
 
@@ -89,7 +89,7 @@ Current epic status:
 
 Database persistence, API integration, and worker integration are not implemented yet.
 
-Baseline CI is configured in `.github/workflows/ci.yml`, but GitHub-hosted validation has not yet been executed. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
+Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks, but GitHub-hosted validation has not yet been executed. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
 
 ## Progress reporting rule
 
@@ -123,3 +123,10 @@ Stable release remains blocked until:
 - browser security baseline is enforced
 - voice and video privacy behavior is verified
 - security and physical-device acceptance passes
+
+
+## Documentation freshness
+
+A repository-wide documentation audit has been completed against the current foundation state.
+
+Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.
