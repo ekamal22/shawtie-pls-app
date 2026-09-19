@@ -1884,6 +1884,12 @@ Private message content should not be collected for analytics.
 
 ## 41. Development Phases
 
+These phases describe intended product and engineering sequence, not current implementation status.
+
+Current verified implementation state is tracked in `docs/PROJECT_STATE.md`. Epic status and acceptance gates are tracked in `docs/ROADMAP_EPICS.md`.
+
+A phase item appearing below does not imply that it has been implemented.
+
 ### Phase 0: Foundation
 
 - monorepo initialization
@@ -2127,8 +2133,14 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The repository is currently in foundation design.
+The repository is in foundation implementation.
 
-No implementation should be considered authoritative until the architecture, domain rules, and initial release plan are committed and reviewed.
+Architecture Baseline 1.0 is frozen and governed through accepted ADRs and architecture change control.
 
-This PRD defines the initial product direction and may evolve through explicit documented revisions as implementation proceeds.
+The pure partnership domain state machine and centralized capability engine have an executable test baseline. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending. Database persistence, API integration, and worker integration are not yet implemented.
+
+This PRD defines intended product behavior. It is not the implementation-progress source of truth.
+
+Current verified implementation state is tracked in `docs/PROJECT_STATE.md`, and epic completion is governed by `docs/ROADMAP_EPICS.md`.
+
+This PRD may evolve through explicit documented product revisions as implementation proceeds.
