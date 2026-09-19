@@ -210,6 +210,19 @@ function checkWorkflowPolicy(relative, content) {
   if (!/timeout-minutes\s*:/.test(content)) {
     fail(`Workflow jobs must declare timeout-minutes: ${relative}`);
   }
+
+  for (const match of content.matchAll(/^\s*uses:\s*([^\s#]+)(?:\s+#.*)?$/gm)) {
+    const reference = match[1];
+
+    if (reference.startsWith("./")) continue;
+
+    const atIndex = reference.lastIndexOf("@");
+    const ref = atIndex >= 0 ? reference.slice(atIndex + 1) : "";
+
+    if (!/^[0-9a-f]{40}$/i.test(ref)) {
+      fail(`External GitHub Action must be pinned to a full commit SHA: ${relative}: ${reference}`);
+    }
+  }
 }
 
 for (const required of requiredPaths) {
