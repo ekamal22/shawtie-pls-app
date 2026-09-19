@@ -43,6 +43,10 @@ Accepted architecture decisions include:
 - repository-wide data classification and handling matrix
 - architecture freeze and change-control governance
 - architecture change classification and ADR workflow
+- baseline CI workflow configuration
+- local repository-health scanner
+- CODEOWNERS ownership metadata
+- public security-reporting policy
 
 ## Implementation state
 
@@ -79,10 +83,13 @@ Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EP
 Current epic status:
 
 - F0 Governance and Security Baseline: DONE
+- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because baseline CI and repository-health tooling are configured, but full workspace guardrails and GitHub-hosted validation remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
 
-Database persistence, API integration, worker integration, and CI validation are not implemented yet.
+Database persistence, API integration, and worker integration are not implemented yet.
+
+Baseline CI is configured in `.github/workflows/ci.yml`, but GitHub-hosted validation has not yet been executed. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
 
 ## Progress reporting rule
 
@@ -94,7 +101,7 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-1. establish full workspace configuration and executable architecture guardrails
+1. complete workspace configuration and executable architecture guardrails
 2. add `apps/worker`
 3. design PostgreSQL schema and migrations
 4. implement database invariants
