@@ -49,6 +49,9 @@ export function cancelBreakup(
   now: string,
 ): TransitionResult<PartnershipState> {
   const breakup = state.breakup;
+  if (state.accountDeletion) {
+    return { ok: false, reason: "ACCOUNT_LOCKED" };
+  }
   if (state.lifecycle !== "breakup_pending" || !breakup) {
     return { ok: false, reason: "BREAKUP_REQUIRED" };
   }
@@ -76,6 +79,9 @@ export function submitRestoreIntent(
   now: string,
 ): TransitionResult<PartnershipState> {
   const breakup = state.breakup;
+  if (state.accountDeletion) {
+    return { ok: false, reason: "ACCOUNT_LOCKED" };
+  }
   if (state.lifecycle !== "breakup_pending" || !breakup || !memberExists(state, actorId)) {
     return { ok: false, reason: "BREAKUP_REQUIRED" };
   }
