@@ -51,6 +51,7 @@ ADR:
 
 ## Verification
 
+- [ ] `npm run health` completed locally when hosted CI is skipped
 - [ ] Unit tests
 - [ ] Domain tests
 - [ ] Database tests
