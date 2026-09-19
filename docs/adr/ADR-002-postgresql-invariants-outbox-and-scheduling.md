@@ -33,6 +33,10 @@ Use a transactional outbox for side effects.
 
 Use a PostgreSQL-backed scheduled-action table for deadlines and retryable jobs.
 
+Lifecycle-sensitive scheduled actions carry an expected aggregate generation or version. Workers reject stale jobs whose generation no longer matches current authoritative state.
+
+Sensitive lifecycle transitions append a non-content lifecycle event inside the same transaction. This is an audit ledger, not full event sourcing.
+
 Worker claims should use safe locking such as `FOR UPDATE SKIP LOCKED`.
 
 Jobs must be idempotent and must re-check current authoritative state before mutating.
@@ -52,6 +56,8 @@ Costs:
 - schema and migration quality become critical
 - worker throughput depends on careful indexing and claim queries
 - stale jobs must be explicitly handled
+- lifecycle-event metadata must remain content-free
+- aggregate generations must change whenever an old scheduled action becomes invalid
 
 ## Rejected alternatives
 
