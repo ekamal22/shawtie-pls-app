@@ -1,0 +1,54 @@
+name: Baseline CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: baseline-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: Repository health and domain tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.18.0"
+          check-latest: false
+
+      - name: Runtime versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Repository health
+        run: npm run health:repo
+
+      - name: Domain tests
+        run: npm run test:domain
+
+      - name: Dependency audit when lockfile exists
+        shell: bash
+        run: |
+          if [[ -f package-lock.json ]]; then
+            npm audit --audit-level=high
+          else
+            echo "No package-lock.json yet. Dependency audit will activate when the lockfile exists."
+          fi
