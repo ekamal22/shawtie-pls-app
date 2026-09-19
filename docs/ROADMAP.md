@@ -4,6 +4,18 @@
 
 Build lifecycle correctness and security boundaries before storing valuable user content.
 
+## Canonical epic tracking
+
+Detailed implementation epics, dependencies, statuses, and acceptance gates are defined in:
+
+`docs/ROADMAP_EPICS.md`
+
+The phase list below remains the high-level sequence.
+
+An epic is DONE only when every required acceptance gate is satisfied or explicitly documented as not applicable.
+
+Do not infer completion percentages from partial layers.
+
 ## Phase 0: Architecture Foundation
 
 - monorepo configuration
@@ -171,5 +183,13 @@ The first executable domain milestone is complete:
 The threat-model and data-classification milestone is also complete.
 
 Architecture freeze and governance are complete. Architecture Baseline 1.0 is now the implementation baseline.
+
+Roadmap epics and acceptance gates are complete as a project-health milestone.
+
+Current canonical epic status:
+
+- F0: DONE
+- P3: IN_PROGRESS at the pure domain layer
+- remaining implementation epics: PLANNED
 
 The next milestone is repository foundation and executable guardrails, followed by PostgreSQL persistence.
