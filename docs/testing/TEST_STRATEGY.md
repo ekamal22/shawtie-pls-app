@@ -26,6 +26,8 @@ High-value unit coverage includes:
 - cooldown calculation
 - account deletion collision rules
 - message edit window
+- capability matrix across lifecycle states
+- stable capability denial codes
 
 ### Database invariant tests
 
@@ -41,6 +43,10 @@ Prove:
 - reciprocal request races
 - duplicate worker claims
 - stale scheduled-action safety
+- generation mismatch prevents stale lifecycle execution
+- append-only lifecycle event creation
+- deterministic two-account lock ordering
+- deletion manifest idempotency
 
 ### Integration
 
@@ -56,6 +62,8 @@ Cover:
 - partnership formation
 - breakup and restore
 - account deletion and recovery
+- device enrollment and revocation
+- separation of account recovery from cryptographic recovery
 - messaging
 - media authorization
 - relationship items
@@ -79,6 +87,10 @@ Required classes include:
 - direct API cooldown bypass
 - stale worker finalization
 - local partnership cache leakage
+- revoked device cannot continue protected access
+- TURN credentials expire and cannot be reused indefinitely
+- unsupported client or crypto version fails closed
+- deletion authorization remains revoked during cleanup retry
 
 ### E2E browser
 
@@ -142,6 +154,9 @@ Test:
 - retry after process restart
 - duplicate outbox delivery
 - already-completed target state
+- generation mismatch
+- deletion target partial failure
+- deletion manifest resume after restart
 
 ## Offline tests
 
@@ -154,6 +169,9 @@ Test:
 - partnership termination while device is offline
 - queued mutation rejected after lifecycle changes
 - purge of old partnership namespace
+- crypto epoch transition
+- local schema version migration
+- revoked device with queued mutations
 
 ## E2EE tests
 
@@ -167,6 +185,11 @@ After protocol selection, include:
 - key rotation
 - device enrollment
 - recovery
+- email-only account recovery does not reveal historical plaintext
+- trusted-device or recovery-secret key restoration
+- device revocation
+- crypto epoch rotation
+- protocol version mismatch
 - partnership termination
 - account deletion
 - future partnership cannot decrypt previous partnership content
@@ -186,6 +209,9 @@ Cover:
 - relay over TCP or TLS fallback where supported
 - breakup_pending explicit acceptance
 - account-deletion state rejection
+- short-lived TURN credential issuance
+- expired TURN credential rejection
+- relay-first path verification where supported
 
 ## Acceptance principle
 
