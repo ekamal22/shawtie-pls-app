@@ -4,7 +4,7 @@
 
 Architecture baseline accepted.
 
-Implementation remains in foundation design.
+Foundation implementation has started with the pure partnership domain state machine and centralized capability engine.
 
 ## Product definition
 
@@ -42,22 +42,44 @@ Accepted architecture decisions include:
 
 ## Implementation state
 
-No architecture document alone proves runtime implementation.
+Implemented and locally validated:
 
-Until source code and migrations exist and are tested, these documents describe intended architecture.
+- pure partnership domain types
+- trusted-time calendar helpers
+- breakup initiation
+- one-hour initiator cancellation boundary
+- irreversible restore intent
+- one-time day-ten extension
+- mutual restoration
+- generation-guarded breakup finalization
+- three-calendar-month breakup cooldown
+- account-deletion recovery overlay
+- account recovery without resetting an existing breakup
+- breakup deadline precedence over a later deletion deadline
+- one-calendar-month cooldown after permanent partner-account deletion
+- centralized capability evaluation
+- pre-breakup message mutation restrictions
+- breakup-period nickname and email capabilities
+- account-deletion view-only capability behavior
+- former-partner blocking capability
+- partnership cooldown capability
+
+The current domain suite contains 27 tests and passes in local validation.
+
+Database persistence, API integration, worker integration, and CI validation are not implemented yet.
 
 ## Next engineering work
 
-1. establish workspace and package configuration
+1. establish full workspace configuration and executable architecture guardrails
 2. add `apps/worker`
-3. implement domain capability model
-4. design PostgreSQL schema and migrations
-5. implement database invariants
-6. implement transactional outbox and scheduled actions
-7. implement lifecycle event ledger and generation checks
-8. implement deletion manifests
-9. implement account and device foundations
-10. build partnership state machine tests before higher-level product features
+3. design PostgreSQL schema and migrations
+4. implement database invariants
+5. implement transactional outbox and scheduled actions
+6. implement lifecycle event ledger persistence
+7. implement deletion manifests
+8. implement account and device foundations
+9. wire API routes to the domain capability engine
+10. add PostgreSQL race and invariant tests
 
 ## Stable release blockers
 
