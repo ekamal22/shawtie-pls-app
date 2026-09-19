@@ -4,6 +4,37 @@
 
 Testing must prove product invariants, not only happy-path UI behavior.
 
+## Current executable domain baseline
+
+The first domain test milestone is implemented under `packages/domain/tests`.
+
+Current local validation:
+
+- 27 tests
+- 27 passing
+- 0 failing
+
+Covered behavior includes:
+
+- exact breakup deadlines
+- exact one-hour initiator cancellation boundary
+- restoration intent immutability
+- single day-ten extension
+- mutual restoration
+- stale generation rejection
+- exact calendar-month cooldown arithmetic
+- account-deletion recovery overlay
+- account recovery preserving an existing breakup
+- breakup deadline precedence
+- one-month cooldown after permanent partner-account deletion
+- active, breakup, deletion, terminated, and cooldown capability states
+- pre-breakup message mutation restrictions
+- breakup-period nickname behavior
+- email-change availability during breakup
+- account-deletion view-only behavior
+
+This is a pure domain baseline. Database, API, worker, and browser integration tests remain pending.
+
 ## Test layers
 
 ### Unit
