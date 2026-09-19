@@ -53,6 +53,8 @@ The selected architecture is:
 - `architecture/DELETION_ARCHITECTURE.md`
 - `architecture/VERSIONING_AND_COMPATIBILITY.md`
 - `security/SECURITY_MODEL.md`
+- `security/THREAT_MODEL.md`
+- `security/DATA_CLASSIFICATION.md`
 - `security/DEVICE_AND_RECOVERY.md`
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
