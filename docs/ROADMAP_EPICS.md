@@ -112,6 +112,7 @@ Status: DONE
 - [x] capability domain tests exist
 - [x] current domain baseline has passing local validation
 - [x] no completed item is represented as runtime implementation unless code or tests exist
+- [x] documentation freshness model distinguishes intended design from verified runtime status
 
 ## Evidence
 
