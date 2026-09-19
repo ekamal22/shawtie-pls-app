@@ -93,7 +93,9 @@ Changing one of those rules requires a product decision and PRD change before ar
 
 ## Not frozen
 
-The following are intentionally still open implementation choices:
+The following are intentionally not frozen implementation choices.
+
+Some may already have a current implementation or configured default. They may change without a new architecture baseline when the change preserves accepted boundaries and does not introduce a new major trust assumption:
 
 - exact PostgreSQL schema details that preserve the accepted invariants
 - exact ORM or query builder
@@ -109,7 +111,7 @@ The following are intentionally still open implementation choices:
 - exact emoji picker implementation
 - exact bounded retention durations that have not yet been selected
 
-These choices may be made without changing the architecture baseline if they preserve all accepted boundaries and do not create new major trust assumptions.
+These choices may be selected or changed without updating the frozen architecture baseline if they preserve all accepted boundaries and do not create new major trust assumptions.
 
 ## Baseline change rule
 
