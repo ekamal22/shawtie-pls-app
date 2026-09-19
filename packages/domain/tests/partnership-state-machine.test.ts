@@ -143,3 +143,28 @@ test("permanent partner account deletion from active partnership gives remaining
   assert.equal(finalized.partnerEligibleAt[B], "2026-10-27T12:00:00.000Z");
   assert.equal(finalized.partnerEligibleAt[A], null);
 });
+
+test("account deletion overlay blocks breakup cancellation and new restoration intent", () => {
+  const breakup = expectOk(initiateBreakup(activePartnership(), A, START));
+  const deletion = expectOk(requestAccountDeletion(breakup, A, "2026-09-20T12:15:00.000Z"));
+
+  assert.deepEqual(
+    cancelBreakup(deletion, A, "2026-09-20T12:30:00.000Z"),
+    { ok: false, reason: "ACCOUNT_LOCKED" },
+  );
+  assert.deepEqual(
+    submitRestoreIntent(deletion, B, "2026-09-20T12:30:00.000Z"),
+    { ok: false, reason: "ACCOUNT_LOCKED" },
+  );
+});
+
+test("account deletion finalization cannot overtake an earlier breakup deadline", () => {
+  const breakup = expectOk(initiateBreakup(activePartnership(), A, START));
+  const deletion = expectOk(requestAccountDeletion(breakup, A, "2026-09-22T12:00:00.000Z"));
+  const generation = deletion.accountDeletion?.generation as number;
+
+  assert.deepEqual(
+    finalizeAccountDeletion(deletion, "2026-09-29T12:00:00.000Z", generation),
+    { ok: false, reason: "BREAKUP_DEADLINE_EXPIRED" },
+  );
+});
