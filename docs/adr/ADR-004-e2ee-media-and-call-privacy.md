@@ -18,6 +18,10 @@ Use a reviewed E2EE protocol or construction. Do not create a custom cryptograph
 
 Each device has separate cryptographic identity material.
 
+Account recovery and historical key recovery are separate. Verified-email recovery must not automatically disclose historical E2EE content.
+
+Partnership cryptographic state uses explicit epochs for reviewed rotation, device revocation, and protocol migration.
+
 Each partnership gets a new cryptographic context, even if the same two accounts pair again later.
 
 Protected media is encrypted on the client before upload.
@@ -27,6 +31,8 @@ Private object storage receives ciphertext and random object identifiers.
 Use WebRTC for calls.
 
 Use TURN relay-first behavior where practical to reduce direct peer IP exposure.
+
+TURN credentials are short-lived and issued by the authenticated API only after call authorization. Permanent TURN credentials must never be embedded in the PWA.
 
 TURN should support restrictive-network fallbacks, including TCP and TLS on port 443 where supported.
 
