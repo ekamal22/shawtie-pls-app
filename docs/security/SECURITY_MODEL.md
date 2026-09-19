@@ -1,5 +1,19 @@
 # Security Model
 
+## Canonical security references
+
+This security model is implemented together with:
+
+- `THREAT_MODEL.md`
+- `DATA_CLASSIFICATION.md`
+- `E2EE_ARCHITECTURE.md`
+- `DEVICE_AND_RECOVERY.md`
+- `../architecture/DELETION_ARCHITECTURE.md`
+
+The threat model defines attackers and failure modes.
+
+The data-classification matrix defines how each data class may be stored, logged, backed up, exposed, and deleted.
+
 ## Security objective
 
 Shawtie pls stores highly private two-person communication and relationship data.
@@ -158,6 +172,8 @@ Never log:
 - plaintext call recordings
 
 Security logs use bounded retention and minimal identifiers.
+
+All logging must comply with the allowlist and prohibited-field rules in `DATA_CLASSIFICATION.md`.
 
 ## Durable worker
 
