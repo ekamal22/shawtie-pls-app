@@ -10,6 +10,8 @@ Before making a structural change, read:
 - `docs/architecture/ARCHITECTURE_BASELINE.md`
 - `docs/architecture/ARCHITECTURE_GOVERNANCE.md`
 - `docs/contributing/DEVELOPMENT_WORKFLOW.md`
+- `docs/ROADMAP_EPICS.md`
+- `docs/testing/CI_AND_REPOSITORY_HEALTH.md`
 - `docs/security/THREAT_MODEL.md`
 - `docs/security/DATA_CLASSIFICATION.md`
 
@@ -47,4 +49,12 @@ Use the pull-request template.
 
 Keep changes focused and include the relevant tests and documentation.
 
-PROJECT_STATE must describe only verified implementation, not planned behavior.
+When hosted GitHub Actions is intentionally skipped, run the local baseline where practical:
+
+```text
+npm run health
+```
+
+A skipped hosted workflow is not evidence that CI passed.
+
+`PROJECT_STATE.md` must describe only verified implementation, not planned behavior. `ROADMAP_EPICS.md` must keep epic status and acceptance gates synchronized with repository evidence.
