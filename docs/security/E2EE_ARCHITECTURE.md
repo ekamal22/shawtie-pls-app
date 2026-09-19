@@ -32,13 +32,31 @@ account
 
 Private key material must never be stored in PostgreSQL in plaintext.
 
+## Authentication recovery is not key recovery
+
+Verified-email account recovery must not automatically reveal historical encrypted content.
+
+Account access and cryptographic history recovery are separate.
+
+Historical key recovery requires:
+
+- an already trusted device, or
+- client-encrypted recovery material protected by a high-entropy recovery secret, or
+- another reviewed cryptographic recovery design
+
+The server must not possess the secret required to decrypt client recovery material.
+
 ## Partnership cryptographic boundary
 
 Every partnership receives a new cryptographic context.
 
 A later partnership between the same two accounts must still use new partnership cryptographic state.
 
-A new partnership must never inherit:
+Each partnership also has an explicit cryptographic epoch.
+
+The epoch supports reviewed key rotation, device revocation, and protocol migration within the same partnership.
+
+A new partnership always starts from a new cryptographic root and must never inherit:
 
 - old message keys
 - old attachment keys
@@ -46,6 +64,7 @@ A new partnership must never inherit:
 - old local decryption state
 - old notification encryption state
 - old call-recording keys
+- old crypto epochs as active key material
 
 ## Package boundary
 
@@ -137,6 +156,17 @@ Prefer non-exportable WebCrypto key material where it fits the selected protocol
 
 The threat model must recognize that a compromised browser origin can access decrypted application state.
 
+## Device revocation
+
+A device record is a first-class security principal.
+
+Revocation must:
+
+- revoke authentication sessions
+- stop future partnership key delivery
+- revoke cryptographic authorization
+- trigger required rotation or epoch transition according to the reviewed protocol
+
 ## Device enrollment
 
 New-device enrollment must not be implemented by simply downloading plaintext private keys from the server.
@@ -164,6 +194,22 @@ At final dissolution:
 
 Cryptographic erasure complements storage deletion. It does not replace required data deletion.
 
+## Push metadata
+
+Push services should receive opaque routing data whenever practical.
+
+Protected message plaintext, media plaintext, relationship content, and cryptographic keys must not be placed in provider push payloads.
+
+Detailed previews should be produced client-side after authenticated fetch and decryption where platform capabilities permit.
+
+## Protocol versioning
+
+Encrypted envelopes identify their crypto protocol version.
+
+Unknown protocol versions fail closed.
+
+Protocol migration must define read compatibility, write compatibility, device upgrade ordering, recovery, and rollback limits.
+
 ## Calls
 
 Use WebRTC with end-to-end protected media appropriate to the chosen topology.
@@ -182,6 +228,8 @@ Before implementation of stable-release E2EE, document:
 - device model
 - prekey or session setup
 - multi-device behavior
+- crypto epoch model
+- device revocation behavior
 - key rotation
 - recovery
 - backup
