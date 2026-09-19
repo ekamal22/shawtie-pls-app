@@ -39,6 +39,8 @@ Accepted architecture decisions include:
 - short-lived TURN credentials
 - no Redis in the initial architecture
 - reviewed E2EE before stable release
+- formal threat model
+- repository-wide data classification and handling matrix
 
 ## Implementation state
 
@@ -65,6 +67,8 @@ Implemented and locally validated:
 - partnership cooldown capability
 
 The current domain suite contains 27 tests and passes in local validation.
+
+The pre-implementation threat model and data-classification baseline are complete and committed.
 
 Database persistence, API integration, worker integration, and CI validation are not implemented yet.
 
