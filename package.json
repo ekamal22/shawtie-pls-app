@@ -1,0 +1,12 @@
+{
+  "name": "shawtie-pls-app",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "test": "npm run test:domain",
+    "test:domain": "node --test packages/domain/tests/*.test.ts"
+  }
+}
