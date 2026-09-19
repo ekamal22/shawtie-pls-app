@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted pre-implementation data-handling baseline.
+Accepted data-handling baseline for foundation implementation.
 
 This document classifies the major data handled by Shawtie pls and defines how it may be stored, logged, backed up, exposed to providers, encrypted, and deleted.
 
