@@ -101,6 +101,35 @@ Cover:
 - notification outbox
 - call signaling
 
+### Threat-model driven security coverage
+
+Security tests must trace back to the threat register in `../security/THREAT_MODEL.md`.
+
+At minimum, automated or procedural verification must cover:
+
+- credential and verification-code abuse
+- session theft and fixation controls
+- CSRF
+- XSS-sensitive trusted-origin behavior
+- cross-partnership IDOR
+- direct API cooldown bypass
+- double-partnership races
+- stale lifecycle jobs
+- account-deletion lockout
+- former-partner realtime revocation
+- local cache isolation
+- device revocation
+- email-only recovery not revealing E2EE history
+- encrypted database and object-storage content expectations
+- push payload minimization
+- TURN credential expiry
+- deletion manifest recovery
+- backup restore not resurrecting deleted user access
+- sensitive data exclusion from logs
+- incompatible client and crypto versions failing closed
+
+Tests that inspect fixtures, logs, stored rows, or provider payloads must also verify the handling rules in `../security/DATA_CLASSIFICATION.md`.
+
 ### Security regression
 
 Maintain permanent regression tests for every security-relevant defect.
