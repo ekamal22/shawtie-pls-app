@@ -97,6 +97,20 @@ These documents describe current planning state and execution order. They do not
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 
 
+## Documentation freshness model
+
+Documentation has different freshness responsibilities:
+
+- `PROJECT_STATE.md` is the canonical record of verified current implementation state.
+- `ROADMAP_EPICS.md` is the canonical record of epic status and acceptance gates.
+- `ROADMAP.md` is the high-level execution sequence.
+- the PRD defines intended product behavior and is not a progress tracker.
+- architecture and security documents define accepted design and security boundaries, even when parts are not implemented yet.
+- accepted ADRs are historical decision records and should not be rewritten merely because implementation progresses. A later decision should supersede or amend them through a new ADR.
+- CI status must distinguish configured, locally validated, hosted validated, integration validated, and release validated.
+
+Any change that makes a current-state claim stale must update the affected living documents in the same change.
+
 ## Change control
 
 Implementation details that preserve the baseline do not need an ADR.
