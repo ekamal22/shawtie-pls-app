@@ -35,6 +35,14 @@ Covered behavior includes:
 
 This is a pure domain baseline. Database, API, worker, and browser integration tests remain pending.
 
+## CI baseline
+
+The baseline CI and repository-health policy is defined in `CI_AND_REPOSITORY_HEALTH.md`.
+
+The current hosted workflow is configured but not yet validated by a successful GitHub Actions run.
+
+Local repository health and domain tests remain usable without hosted Actions.
+
 ## Test layers
 
 ### Unit
