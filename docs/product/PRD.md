@@ -1393,20 +1393,57 @@ Performance budgets should be defined once representative screens exist.
 
 ## 34. Infrastructure Strategy
 
-The initial architecture should prioritize a zero-dollar or near-zero-dollar student deployment.
+The initial architecture is a modular monolith with a separate durable worker.
 
-Potential services include:
+The runtime consists of:
 
-- Cloudflare for web hosting and edge functionality
-- Supabase or Appwrite for selected backend services
-- PostgreSQL for relational data
-- Cloudflare R2 or equivalent object storage
-- Web Push or FCM for notifications
+- React and TypeScript PWA
+- Fastify and TypeScript API
+- separate durable worker process
+- PostgreSQL as the authoritative transactional state store
+- private object storage for encrypted media
+- WebSocket realtime transport
+- WebRTC for voice and video calls
+- TURN relay infrastructure for call privacy and restrictive-network fallback
+- transactional outbox for reliable side effects
+- PostgreSQL-backed scheduled actions for lifecycle deadlines and retries
+- reviewed E2EE implementation for protected content before stable release
+
+Microservices are intentionally not required for the initial architecture.
+
+Partnership lifecycle operations require strong transactional consistency. Keeping account, request, partnership, cooldown, messaging metadata, and lifecycle logic within one transactional backend avoids unnecessary distributed failure modes.
+
+The API should remain stateless between requests except for database-backed state and explicitly ephemeral connection state.
+
+The durable worker owns:
+
+- breakup deadlines
+- breakup reminders
+- partner-request expiry
+- account-deletion finalization
+- email delivery
+- push delivery
+- deletion and object-purge orchestration
+- transactional outbox processing
+- retryable maintenance jobs
+
+Product deadlines must never depend only on in-memory timers.
+
+PostgreSQL is authoritative for lifecycle and eligibility decisions.
+
+Provider selection may change. The architecture should avoid unnecessary provider lock-in.
+
+The initial deployment should prioritize zero-dollar or near-zero-dollar operation where practical, but privacy and correctness take priority over remaining permanently free.
+
+Potential infrastructure categories include:
+
+- static or edge PWA hosting
+- managed or self-hosted PostgreSQL
+- private object storage
+- email delivery provider
+- Web Push or compatible push infrastructure
+- TURN relay service or self-hosted TURN
 - GitHub Actions for CI
-
-The final provider selection may change.
-
-Application architecture should avoid unnecessary provider lock-in.
 
 ---
 
@@ -1418,6 +1455,7 @@ The public repository follows this high-level structure:
 apps/
   web/
   api/
+  worker/
 
 packages/
   domain/
@@ -1443,16 +1481,29 @@ docs/
 
 Architecture rules include:
 
-- business rules belong in `packages/domain`
-- API schemas belong in `packages/contracts`
-- database definitions belong in `packages/db`
-- cryptographic concerns belong in `packages/crypto`
-- reusable UI belongs in `packages/ui`
+- business rules and state transitions belong in `packages/domain`
+- API and realtime schemas belong in `packages/contracts`
+- database schema, migrations, transaction helpers, and persistence adapters belong in `packages/db`
+- cryptographic abstractions belong in `packages/crypto`
+- reusable presentation components belong in `packages/ui`
 - synthetic test helpers belong in `packages/testkit`
+- the worker is a first-class application and not an in-process timer collection
+- PostgreSQL is the authoritative source for lifecycle state
+- database constraints must protect the one-partnership invariant
+- important writes create transactional outbox events in the same database transaction
+- deadlines and retries use durable scheduled-action records
+- WebSockets are a realtime synchronization mechanism, not the sole source of truth
+- local data is partitioned by account, partnership, conversation, and cryptographic context
+- every new partnership receives a new security and local-storage namespace
+- media is encrypted client-side before upload once stable-release E2EE is active
 - no generic shared junk drawer
 - no real-user fixtures
 - no committed secrets
 - no private worklog directory
+
+Canonical architecture documents live in `docs/architecture`, `docs/security`, and `docs/testing`.
+
+The architecture must preserve provider portability. Domain rules must not depend directly on hosting, email, storage, push, or TURN provider SDKs.
 
 ---
 
@@ -1773,8 +1824,14 @@ Private message content should not be collected for analytics.
 - CI
 - test framework
 - environment handling
-- database foundation
+- PostgreSQL foundation
+- database invariants
+- durable worker foundation
+- transactional outbox
+- scheduled-action framework
+- runtime contract validation
 - security baseline
+- local partnership-isolation boundary
 
 ### Phase 1: Accounts
 
