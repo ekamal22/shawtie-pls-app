@@ -13,6 +13,8 @@ accountId
 partnershipId
 conversationId
 cryptoEpoch
+localSchemaVersion
+cryptoProtocolVersion
 ```
 
 Do not use one unscoped global message cache.
@@ -45,6 +47,8 @@ At final dissolution:
 - remove partnership-specific push and realtime state
 
 A future partnership between the same two accounts still receives a new local namespace and new cryptographic context.
+
+A cryptographic epoch transition also creates a distinct key namespace inside the same partnership.
 
 ## Offline queues
 
@@ -118,6 +122,26 @@ The service worker may cache:
 It must not create a separate uncontrolled cache of decrypted private content.
 
 Private data caching belongs in the application-controlled IndexedDB layer.
+
+## Device revocation
+
+When the server reports that the current device is revoked:
+
+- stop mutation replay
+- stop realtime and call signaling
+- discard usable partnership key state for that revoked authorization according to the E2EE design
+- require fresh authorized enrollment before protected content can be decrypted again
+
+## Compatibility
+
+Before replaying offline state, verify supported:
+
+- client version
+- API version
+- local schema version
+- crypto protocol version
+
+An incompatible client must fail closed rather than submitting mutations under an unknown state or encryption format.
 
 ## Logout and account switch
 
