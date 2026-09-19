@@ -186,7 +186,7 @@ Each account must have:
 - immutable internal account ID
 - unique username
 - display name
-- verified email address
+- unique verified email address
 - date of birth
 - password credential or supported authentication credential
 - account creation timestamp
@@ -198,6 +198,14 @@ Each account must have:
 - account-deletion recovery state
 - security metadata
 - notification preferences
+
+Each verified email address may be associated with only one Shawtie pls account.
+
+The product rule is one person, one email, one account. Without identity-document verification, the backend can strictly enforce one account per verified email address, while one-person-one-account remains an account policy rather than a claim of perfect real-world identity enforcement.
+
+Display names are non-unique and may be changed without a long-term cooldown, subject to ordinary server-side abuse and spam rate limiting.
+
+Partnership-scoped chat nicknames may be changed freely when the account and partnership state permit normal chat interaction. Chat nicknames are separate from the public account display name.
 
 Optional future fields may include:
 
@@ -237,7 +245,14 @@ Username-change eligibility must be enforced by the backend using trusted server
 
 Username changes are blocked while the account belongs to a partnership with status `active` or `breakup_pending`.
 
-Before confirming a username change, the UI must explicitly tell the user that they will not be able to change their username again for one year.
+When a username change succeeds, the previous username is released immediately and may be claimed by any eligible account.
+
+The previous owner has no reservation right over the released username. The previous owner may claim it again only if it is still available when that account is next eligible to change usernames after the one-year cooldown.
+
+Before confirming a username change, the UI must explicitly tell the user that:
+
+- the username cannot be changed again for one year
+- the old username will become immediately available to other accounts
 
 The first version should support username search by exact or normalized match.
 
@@ -259,7 +274,7 @@ Initial registration requires:
 - email address
 - password
 
-The email address is mandatory and must be verified before registration is considered complete.
+The email address is mandatory, must be unique across active accounts, and must be verified before registration is considered complete.
 
 Email verification must use a short-lived verification code sent to the supplied email address. The backend must enforce code expiration, attempt limits, replay protection, and rate limiting.
 
@@ -306,14 +321,13 @@ Any corrected date of birth that would make the account ineligible under the 18+
 Registration must include:
 
 - username availability validation
-- email validation
+- unique-email validation
 - email verification
 - date-of-birth validation
 - minimum age validation
 - password policy validation
 - rate limiting
-- duplicate account protection where feasible
-- abuse controls
+- duplicate-account abuse controls where feasible
 - acceptance of applicable terms and privacy policy before public launch
 
 The three-month partner rule is enforced per account.
@@ -322,7 +336,7 @@ The product must not claim that the rule uniquely identifies a human across mult
 
 ---
 
-## 10. Authentication
+## 10. Authentication and Account Recovery
 
 Authentication must provide:
 
@@ -339,15 +353,39 @@ Authentication must provide:
 
 Password recovery must use the verified email address associated with the account.
 
-Account deletion must use a seven-day recovery period.
+### Account deletion recovery
 
-When account deletion is requested from an active partnership, the account enters `account_deletion_pending` for seven days and the partnership enters a separate account-deletion-related partnership state rather than `breakup_pending`.
+Account deletion uses a seven-day recovery period.
 
-During the seven-day account-deletion recovery period, the user may cancel account deletion and recover the account.
+When account deletion is requested:
 
-If account deletion is requested while the partnership is already `breakup_pending`, the existing breakup countdown continues according to its existing seven-day or ten-day deadline.
+- access to the account is immediately removed from the account owner
+- all active sessions for that account are revoked
+- the account owner cannot message, send media, call, create relationship objects, modify shared data, or perform any other account action unless the account is recovered
+- the seven-day recovery deadline is calculated using trusted server time
+- the account may be recovered during the seven-day period through the defined recovery flow
 
-The exact messaging, media, call, and relationship-object permissions during `account_deletion_pending` remain a product decision that must be resolved before implementation.
+If account deletion is requested from an active partnership:
+
+- the partnership enters a distinct account-deletion-related state rather than `breakup_pending`
+- the remaining partner retains view-only access to existing shared partnership data for the seven-day recovery period
+- no new messages, media, calls, memories, relationship objects, or other shared data may be created
+- the remaining partner is informed in-app, by push notification where available, and by email that the partner account entered deletion recovery
+
+If the account is recovered before the deadline:
+
+- the account regains access
+- the partnership returns to exactly the state it had immediately before account deletion was requested
+- existing shared data remains intact
+- no breakup cooldown is created solely because account deletion was requested and cancelled
+
+If the seven-day recovery period expires without recovery:
+
+- the account is permanently deleted
+- all partnership-scoped shared data associated with that partnership is permanently deleted
+- the remaining partner is informed in-app, by push notification where available, and by email that the partner account was permanently deleted
+
+If account deletion is requested while the partnership is already `breakup_pending`, the existing breakup countdown continues and is not reset by the account-deletion request.
 
 Future support may include:
 
@@ -362,20 +400,27 @@ Future support may include:
 
 Users search for another account using a username.
 
-Search results should expose only the minimum information needed to identify the intended person, such as:
+Search results may expose:
 
 - username
 - display name
 - avatar if enabled
+- short bio if provided
+- current age
 
-The system should not expose:
+Age must be derived from the stored date of birth using trusted server date logic. The date of birth itself must not be exposed in search results.
+
+The system must not expose:
 
 - email address
+- exact date of birth
 - active session information
 - previous partners
 - partnership history
 - last known IP address
 - private profile metadata
+
+A block must remove the blocker from the blocked former partner's normal username search results.
 
 ---
 
@@ -397,6 +442,10 @@ A sender may cancel a pending request at any time before acceptance.
 
 A user may send no more than three partner requests to the same account within any rolling one-month period.
 
+If a recipient declines a partner request, the sender must wait exactly one hour before sending another request to that same account. A later request still counts toward the three-requests-per-month limit.
+
+Declining a request does not automatically block the sender.
+
 An unpartnered user may have multiple incoming pending partner requests at the same time.
 
 When one pending request is accepted and a partnership is created, all other pending incoming and outgoing partner requests that are no longer compatible with the one-partner invariant must be invalidated.
@@ -409,6 +458,7 @@ The backend must reject requests when:
 - the recipient already has an active or breakup-pending partner
 - the sender is ineligible due to cooldown
 - the recipient is ineligible due to cooldown
+- the sender is within the one-hour post-decline cooldown for that recipient
 - the request targets the sender's own account
 - the same-direction equivalent request already exists
 - the sender has reached the three-requests-per-month limit for that recipient
@@ -435,28 +485,41 @@ A partnership should contain at minimum:
 - member account IDs
 - creation timestamp
 - activation timestamp
+- manually entered relationship start date
 - status
 - breakup initiation timestamp where applicable
 - breakup initiator account ID where applicable
 - restoration intent from each member where applicable
 - breakup deadline
 - final dissolution timestamp where applicable
+- account-deletion state metadata where applicable
 - security lifecycle metadata
 
-A partnership may be:
+A partnership may include states such as:
 
 - pending
 - active
 - breakup_pending
+- account_deletion_pending
 - terminated
 
-An account may belong to at most one partnership that is active or breakup_pending.
+An account may belong to at most one partnership that is active, breakup_pending, or account_deletion_pending.
 
-A breakup-pending partnership still occupies the user's one-partner slot.
+A breakup-pending or account-deletion-pending partnership still occupies the one-partner slot.
 
 This must be enforced transactionally at the database level in addition to domain and API checks.
 
-A new partnership always requires the explicit consent of the invited user.
+A new partnership always requires consent from both accounts.
+
+### Relationship start date
+
+The relationship start date is separate from the in-app partnership activation date.
+
+The relationship start date must be manually entered rather than automatically copied from the partnership activation timestamp.
+
+Either partner may update the relationship start date without approval from the other partner while the partnership state allows edits.
+
+When the relationship start date is changed, the other partner must be notified.
 
 ---
 
@@ -511,6 +574,7 @@ Immediately after breakup initiation:
 
 - the partnership enters `breakup_pending`
 - both partners are clearly notified that the breakup process has started
+- the interface identifies which partner initiated the breakup
 - both partners are informed of the change-your-mind period and its deadline
 - the partnership still occupies both users' one-partner slot
 - both partners may continue sending and receiving messages during the reconsideration period
@@ -591,6 +655,10 @@ Supported images, videos, files, and voice messages may continue to be sent duri
 
 Calls may continue during `breakup_pending`, but every call requires explicit consent from both partners. A call media session must not begin unless one partner initiates the call and the other partner explicitly accepts it.
 
+Blocking is not available while the partnership is `breakup_pending`.
+
+Scheduled For You letters and Future Us content continue to unlock or arrive according to their existing schedule during `breakup_pending`. Their scheduled release is not treated as creation of new shared content.
+
 ### Final dissolution
 
 The partnership reaches final dissolution when:
@@ -649,6 +717,8 @@ The messaging system should support:
 - always-on read receipts
 - always-on typing indicators
 - online status and last-seen information
+- emoji message reactions during active partnership state
+- partnership-scoped chat nicknames
 - reconnection after temporary network loss
 
 Read receipts are always enabled and cannot be disabled.
@@ -665,13 +735,14 @@ During an active partnership, message deletion removes the original message cont
 
 The placeholder must not reveal the deleted content.
 
+Message reactions are part of the MVP during active partnership state.
+
 During `breakup_pending`, new messages and replies remain allowed, but pre-existing messages become read-only. They may be viewed and replied to, but they may not be edited, deleted, reacted to, or otherwise modified.
 
 Any messages created during `breakup_pending` are still partnership data and are permanently deleted if the partnership reaches final dissolution.
 
 Future capabilities may include:
 
-- reactions during active partnership state
 - message search
 - disappearing messages
 
@@ -767,6 +838,18 @@ Calls must support:
 - call end
 - clear connection state
 - safe handling of network interruption
+- call history
+
+Call history should record:
+
+- voice or video call type
+- incoming or outgoing direction
+- start time
+- end time or duration where applicable
+- missed-call state
+- partnership context
+
+Call-history records are partnership-scoped data and must follow the same final-dissolution deletion rules as other partnership data.
 
 During an active partnership, normal call initiation and acceptance rules apply.
 
@@ -775,6 +858,12 @@ During `breakup_pending`, every call requires explicit consent from both partner
 Calls must never silently auto-answer.
 
 Call signaling and media authorization must respect partnership state and membership.
+
+### Call recording
+
+Built-in call recording is not part of the MVP or first stable release.
+
+Call recording is marked as a pending post-release feature. Any future implementation must require a separate product, privacy, legal, and consent design before development.
 
 ---
 
@@ -788,10 +877,15 @@ Notifications may include:
 - incoming voice or video call
 - partner request
 - accepted partner request
+- declined partner request
 - breakup initiation
 - restoration request
 - partnership restoration
+- account-deletion initiation
+- account recovery
+- permanent account deletion
 - final dissolution
+- relationship start-date changes
 - selected memory events
 
 Message previews are shown by default.
@@ -799,6 +893,17 @@ Message previews are shown by default.
 Users must have a setting to hide message content in notification previews.
 
 When previews are hidden, notifications should use privacy-preserving generic text instead of message content.
+
+Serious account and partnership events must also generate email notifications. This includes at minimum:
+
+- breakup initiation
+- restoration request
+- partnership restoration
+- account-deletion initiation
+- permanent account deletion
+- final dissolution
+
+Serious-event email notifications should communicate the event and relevant deadline without exposing private message content.
 
 Notification content must respect partnership state and privacy settings.
 
@@ -914,7 +1019,9 @@ These must be explicit user actions and must not be inferred from behavioral sig
 
 The relationship home may contain a deterministic chronological private feed of relationship events and objects. It must not use public-social engagement mechanics, follower graphs, popularity scores, algorithmic ranking, streak pressure, or advertising incentives.
 
-While a partnership is `breakup_pending`, existing relationship objects and shared-space content are view-only. If the partnership is restored, normal write access returns. If the partnership reaches final dissolution, all relationship-space content, including content created during `breakup_pending`, is permanently deleted.
+While a partnership is `breakup_pending`, existing relationship objects and shared-space content are view-only. Scheduled For You letters and Future Us items still unlock or arrive at their scheduled time. If the partnership is restored, normal write access returns. If the partnership reaches final dissolution, all relationship-space content, including scheduled content that unlocked during `breakup_pending`, is permanently deleted.
+
+Relationship-duration experiences must use the manually entered relationship start date rather than the in-app partnership activation date.
 
 ---
 
@@ -1022,17 +1129,20 @@ Controls should include:
 - registration rate limits
 - partner-request rate limits
 - maximum three partner requests to the same account within a rolling one-month period
+- one-hour cooldown after a declined request before another request to the same account
 - username-change rate limits
 - login rate limits
 - request cancellation
 - request decline
-- blocking for former partners
+- blocking for former partners after final dissolution
 - reporting workflow before broad public launch
 - server-side abuse controls
 
-Blocking is available only after a breakup has been initiated between the two accounts.
+Blocking is not available while a partnership is active or `breakup_pending`.
 
-A block may be created during the breakup process or after final dissolution and remains effective before, during, and after the three-month cooldown unless the blocking user later removes it.
+After final dissolution, either former partner may block the other.
+
+A block may be created during the three-month cooldown or at any later time and remains effective unless the blocking account removes it.
 
 When one former partner blocks the other:
 
@@ -1040,7 +1150,9 @@ When one former partner blocks the other:
 - the blocked account must not be able to send a partner request to the blocker
 - the two accounts must not be able to form a future partnership while the block exists
 
-Blocking does not override the breakup countdown or erase content earlier than the final dissolution rules require.
+Blocking does not alter or shorten the completed breakup lifecycle and does not restore deleted content.
+
+Declining a partner request does not automatically create a block.
 
 A user must never be forced to accept or remain in a partnership.
 
@@ -1076,25 +1188,34 @@ When the breakup deadline expires without mutual restoration, all user-facing pa
 - messages created during `breakup_pending`
 - media created before or during `breakup_pending`
 - voice messages
+- call history
 - memories
 - Future Us content
+- scheduled content that unlocked during `breakup_pending`
 - saved moments
 - relationship timeline objects
 - all other partnership-scoped shared content
 
 The production backup and recovery design must document how deletion propagates through backups and disaster-recovery copies. Backup retention must not silently recreate a terminated partnership or make deleted content accessible through normal product functionality.
 
+### Account deletion retention
+
 Account deletion uses a separate seven-day recovery period.
 
-If account deletion is requested while a partnership is already `breakup_pending`, the breakup countdown continues independently.
+During that period, the deleting account has no access to the product. When deletion was initiated from an active partnership, the remaining partner has view-only access to existing shared data and cannot create new shared data.
+
+If the account is recovered during the seven-day period, the prior account and partnership state is restored exactly.
+
+If the account is permanently deleted after the recovery period, all partnership-scoped shared data is permanently deleted and the remaining partner is notified.
+
+If account deletion is requested while a partnership is already `breakup_pending`, the breakup countdown continues independently and is not reset.
 
 The product must separately define retention for:
 
-- account records
 - security logs
 - abuse-prevention records
 - audit events that do not contain deleted private content
-- completed account deletion
+- legally required minimal records where applicable
 
 Account deletion must not accidentally transfer or expose partnership content.
 
@@ -1229,7 +1350,7 @@ For pure domain logic and isolated modules.
 
 ### Integration tests
 
-For API, database, storage, and cross-package behavior.
+For API, database, storage, calling, email, and cross-package behavior.
 
 ### Security regression tests
 
@@ -1237,24 +1358,32 @@ Mandatory tests should include:
 
 - a user younger than 18 cannot complete registration
 - age eligibility cannot be bypassed by changing the client device clock
-- registration cannot complete without a verified email address
+- registration cannot complete without a unique verified email address
+- one verified email address cannot create two active accounts
 - email verification codes expire and cannot be replayed
 - a username cannot be changed again before one calendar year has elapsed from the previous successful change
 - username changes are rejected during active and breakup_pending partnership states
+- a released username can be claimed by another eligible account immediately
+- a previous username owner cannot reclaim that username during the one-year username-change cooldown
 - a user can correct their date of birth once after registration
 - a second self-service date-of-birth correction is rejected
 - a date-of-birth correction that would make the account ineligible under the 18+ rule is rejected without consuming the correction allowance
+- search results expose age but never exact date of birth or email
 - a user cannot access another partnership
 - a user cannot create two simultaneous partnerships
 - partner requests expire after seven days
 - a sender can cancel a pending partner request
 - more than three requests to the same account within one rolling month are rejected
+- a declined request creates a one-hour same-recipient request cooldown
+- declining a request does not block the sender
 - multiple incoming requests can coexist before partnership creation
 - accepting one request invalidates incompatible pending requests
 - mutual pending requests automatically create a partnership
-- a block prevents search discovery, partner requests, and future re-pairing
+- blocking is rejected during active and breakup_pending states
+- blocking after final dissolution prevents search discovery, partner requests, and future re-pairing
 - a user cannot bypass the three-month cooldown through direct API calls
 - breakup initiation places both users into breakup_pending
+- the UI identifies the breakup initiator
 - breakup_pending users cannot form another partnership
 - the breakup initiator can cancel unilaterally during the first hour
 - unilateral breakup cancellation is rejected after the one-hour window expires
@@ -1264,6 +1393,7 @@ Mandatory tests should include:
 - past messages are visible and repliable during breakup_pending
 - past messages cannot be edited, deleted, reacted to, or otherwise modified during breakup_pending
 - relationship objects are view-only during breakup_pending
+- scheduled For You and Future Us content still unlocks at the scheduled time during breakup_pending
 - a restoration intent cannot be withdrawn once submitted
 - one restore click extends the deadline from seven days to ten days exactly once
 - the waiting partner can see that restoration is pending
@@ -1274,19 +1404,26 @@ Mandatory tests should include:
 - no restore intent causes final dissolution at seven days
 - exactly one restore intent causes final dissolution at ten days if the other partner does not consent
 - final dissolution permanently rejects new messages to the old partnership
-- final dissolution deletes partnership messages, media, and relationship objects, including content created during breakup_pending
+- final dissolution deletes partnership messages, media, call history, and relationship objects, including content created or unlocked during breakup_pending
 - the three-calendar-month cooldown begins only at final dissolution
 - cooldown eligibility is calculated to the same clock minute using calendar-month arithmetic
 - a new partnership requires fresh explicit consent
-- a new partner cannot access previous partnership messages
+- a new partner cannot access previous partnership data
 - message deletion leaves a deletion placeholder visible to both partners
 - message editing is rejected after 30 minutes
 - edited messages display an edited indicator
+- message reactions work during active state and are blocked on pre-existing messages during breakup_pending
 - read receipts cannot be disabled
 - typing indicators cannot be disabled
 - online and last-seen visibility cannot be disabled
-- account deletion enters a seven-day recovery state
+- account deletion immediately revokes the deleting account's sessions and access
+- active-partnership account deletion gives the remaining partner view-only access for the recovery period
+- no new shared data can be created during active-partnership account deletion recovery
+- cancelling account deletion restores the exact previous account and partnership state
+- permanent account deletion removes all partnership-scoped shared data
 - breakup countdown continues if account deletion is requested during breakup_pending
+- serious breakup and account-deletion events generate email notifications
+- relationship start-date changes notify the other partner
 - attachment IDs cannot cross partnership boundaries
 - realtime subscriptions cannot cross partnership boundaries
 - unauthorized media retrieval fails
@@ -1331,43 +1468,54 @@ Logs must not contain:
 The MVP is successful when two independent eligible adult test accounts can:
 
 1. Register only after passing the server-side minimum-age check.
-2. Verify the mandatory registration email through a code.
+2. Verify a unique mandatory registration email through a code.
 3. Sign in and recover account access through the verified email.
-4. Find one another by username.
-5. Send, cancel, expire, and rate-limit partner requests correctly.
-6. Support multiple incoming requests and automatically invalidate incompatible requests after partnership creation.
-7. Automatically create a partnership from mutual pending requests.
-8. Become an active partnership only with consent from both accounts.
-9. Exchange text messages reliably.
-10. Edit a message for up to 30 minutes with an edited indicator.
-11. Delete a message for both users while leaving a deletion placeholder.
-12. Use always-on read receipts, typing indicators, online status, and last seen.
-13. Reconnect after losing network access.
-14. Exchange supported images, videos, files, and voice messages within configured limits.
-15. Make and receive voice and video calls.
-16. Receive notifications with previews shown by default and optionally hidden.
-17. Use the full relationship-space feature set defined in this PRD.
-18. Allow either partner to initiate breakup.
-19. Allow the breakup initiator to cancel directly during the first hour only.
-20. Continue messaging, replying, and sending supported media during the reconsideration period.
-21. Require explicit consent from both partners for each call during the reconsideration period.
-22. Keep pre-existing messages read-only except for replies during the reconsideration period.
-23. Restrict relationship objects to view-only during the reconsideration period.
-24. Prevent a submitted restoration intent from being withdrawn.
-25. Show the requester that restoration is waiting and notify the other partner who requested it.
-26. Restore the partnership only after both partners explicitly select restore once the one-hour cancellation window has expired.
-27. Extend the breakup deadline by three days when exactly one partner selects restore.
-28. Reach final dissolution at the correct deadline when mutual restoration does not occur.
-29. Permanently delete all partnership content, including content created during breakup_pending, at final dissolution.
-30. Start the exact three-calendar-month cooldown at final dissolution.
-31. Calculate cooldown expiry to the same clock minute using trusted server time.
-32. Allow former partners to block each other after breakup initiation and enforce that block across search, requests, and future pairing.
-33. Prevent either former partner from forming another partnership during cooldown.
-34. Allow a future partnership after cooldown only through fresh consent.
-35. Enter a seven-day account-deletion recovery state when account deletion is requested.
-36. Continue an existing breakup countdown if account deletion is requested during breakup_pending.
-37. Be prevented from violating the one-active-partner rule.
-38. Demonstrate complete isolation from unrelated accounts and partnerships.
+4. Find one another by username and see the allowed public profile information, including age.
+5. Send, cancel, expire, decline, and rate-limit partner requests correctly.
+6. Enforce a one-hour same-recipient cooldown after a declined request.
+7. Support multiple incoming requests and automatically invalidate incompatible requests after partnership creation.
+8. Automatically create a partnership from mutual pending requests.
+9. Become an active partnership only with consent from both accounts.
+10. Store a manually entered relationship start date separate from partnership activation date.
+11. Notify the other partner when the relationship start date changes.
+12. Exchange text messages reliably.
+13. Edit a message for up to 30 minutes with an edited indicator.
+14. Delete a message for both users while leaving a deletion placeholder.
+15. Use message reactions during active partnership state.
+16. Use freely changeable partnership chat nicknames.
+17. Use always-on read receipts, typing indicators, online status, and last seen.
+18. Reconnect after losing network access.
+19. Exchange supported images, videos, files, and voice messages within configured limits.
+20. Make and receive voice and video calls and maintain call history.
+21. Receive notifications with previews shown by default and optionally hidden.
+22. Receive email notifications for serious breakup and account events.
+23. Use the full relationship-space feature set defined in this PRD.
+24. Allow either partner to initiate breakup and clearly identify the initiator.
+25. Allow the breakup initiator to cancel directly during the first hour only.
+26. Continue messaging, replying, and sending supported media during the reconsideration period.
+27. Require explicit consent from both partners for each call during the reconsideration period.
+28. Keep pre-existing messages read-only except for replies during the reconsideration period.
+29. Restrict relationship objects to view-only during the reconsideration period.
+30. Continue scheduled For You and Future Us releases during the reconsideration period.
+31. Prevent blocking during active and breakup_pending partnership states.
+32. Prevent a submitted restoration intent from being withdrawn.
+33. Show the requester that restoration is waiting and notify the other partner who requested it.
+34. Restore the partnership only after both partners explicitly select restore once the one-hour cancellation window has expired.
+35. Extend the breakup deadline by three days when exactly one partner selects restore.
+36. Reach final dissolution at the correct deadline when mutual restoration does not occur.
+37. Permanently delete all partnership content, including call history and content created or unlocked during breakup_pending, at final dissolution.
+38. Start the exact three-calendar-month cooldown at final dissolution.
+39. Calculate cooldown expiry to the same clock minute using trusted server time.
+40. Allow former partners to block each other after final dissolution and enforce that block across search, requests, and future pairing.
+41. Prevent either former partner from forming another partnership during cooldown.
+42. Allow a future partnership after cooldown only through fresh consent.
+43. Immediately remove account access when account deletion is requested.
+44. Give the remaining active partner seven days of view-only shared-data access during account-deletion recovery.
+45. Restore the exact prior state if account deletion is cancelled during the recovery period.
+46. Permanently delete all shared partnership data when account deletion becomes permanent.
+47. Continue an existing breakup countdown if account deletion is requested during breakup_pending.
+48. Be prevented from violating the one-active-partner rule.
+49. Demonstrate complete isolation from unrelated accounts and partnerships.
 
 ---
 
@@ -1376,36 +1524,50 @@ The MVP is successful when two independent eligible adult test accounts can:
 The first stable release should not ship until the project has:
 
 - server-enforced 18+ registration eligibility
-- mandatory verified-email registration
+- mandatory unique verified-email registration
 - verified-email password recovery
+- one-account-per-verified-email enforcement
 - server-enforced one-year username-change eligibility
 - username-change blocking during active and breakup_pending states
+- immediate old-username release behavior
 - server-enforced one-time date-of-birth correction
 - secure authentication
 - database-enforced partnership exclusivity
+- manual relationship start-date support
+- relationship start-date change notifications
 - seven-day partner-request expiry
 - three-requests-per-recipient monthly limit
+- one-hour post-decline same-recipient cooldown
 - mutual-request automatic partnership creation
-- former-partner blocking
+- former-partner blocking only after final dissolution
 - server-enforced breakup reconsideration lifecycle
+- visible breakup initiator
 - one-hour initiator cancellation window
 - mutual-consent partnership restoration
 - immutable submitted restoration intent
 - breakup-period call consent enforcement
 - breakup-period message mutation restrictions
+- scheduled relationship-content release during breakup_pending
 - tested final-dissolution deletion semantics
 - exact three-calendar-month cooldown calculation
 - fresh explicit consent for every new partnership
 - seven-day account-deletion recovery state
+- immediate access revocation on account-deletion request
+- view-only shared-data recovery period for the remaining partner
+- exact-state restoration after account recovery
 - robust authorization
 - reliable realtime messaging
 - 30-minute message editing
 - deletion placeholders
+- active-state message reactions
+- freely changeable chat nicknames
 - always-on read receipts and typing indicators
 - always-visible online and last-seen state
 - safe media handling
 - voice and video calling
+- partnership-scoped call history
 - configurable notification preview privacy
+- email notifications for serious partnership and account events
 - full relationship-space feature set defined in this PRD
 - reliable offline recovery
 - security regression coverage
@@ -1418,6 +1580,8 @@ The first stable release should not ship until the project has:
 - partnership transition isolation verified
 - production backup and recovery plan
 - release-specific security review
+
+Built-in call recording is explicitly excluded from the first stable release and remains pending post-release design.
 
 ---
 
@@ -1460,38 +1624,46 @@ Private message content should not be collected for analytics.
 ### Phase 1: Accounts
 
 - registration
-- mandatory email verification by code
+- mandatory unique email verification by code
+- one-account-per-verified-email enforcement
 - server-enforced 18+ eligibility
 - login
 - verified-email password recovery
 - sessions
 - username system
 - one-year username-change eligibility
+- immediate old-username release
 - username-change state restrictions
 - one-time post-registration date-of-birth correction
+- display-name and chat-nickname behavior
 - seven-day account-deletion recovery
+- immediate access revocation during deletion recovery
 - account settings
 
 ### Phase 2: Partnerships
 
-- username discovery
+- username discovery with age and allowed profile fields
 - seven-day partner-request lifecycle
 - request cancellation
+- one-hour post-decline same-recipient cooldown
 - three-requests-per-recipient monthly limit
 - multiple incoming requests
 - mutual-request automatic pairing
 - one-partner invariant
 - partnership creation
 - explicit partner consent
-- former-partner blocking
-- breakup initiation
+- manual relationship start date
+- relationship start-date change notifications
+- breakup initiation with initiator visibility
 - one-hour initiator cancellation window
 - seven-day reconsideration period
 - breakup-period messaging and call rules
+- no blocking during active or breakup_pending states
 - irreversible restoration intent
 - one-click three-day extension
 - mutual-consent restoration
 - final dissolution and destructive cleanup
+- former-partner blocking after final dissolution
 - exact three-calendar-month post-dissolution eligibility policy
 
 ### Phase 3: Messaging
@@ -1501,6 +1673,8 @@ Private message content should not be collected for analytics.
 - replies
 - 30-minute editing
 - deletion placeholders
+- message reactions
+- partnership chat nicknames
 - realtime transport
 - delivery state
 - always-on read receipts
@@ -1517,7 +1691,9 @@ Private message content should not be collected for analytics.
 - private storage
 - voice calls
 - video calls
+- call history
 - push notifications
+- serious-event email notifications
 - notification preview settings
 
 ### Phase 5: Product Experience
@@ -1575,17 +1751,17 @@ Private message content should not be collected for analytics.
 
 The following decisions must be resolved during development:
 
-1. During `account_deletion_pending`, can the user continue messaging, sending media, calling, and viewing or changing relationship objects?
-2. When the seven-day account-deletion recovery period expires for an actively partnered account, what exact partnership transition and data-deletion behavior occurs?
-3. Should the app explicitly show which partner initiated a breakup?
-4. Should breakup initiation, restoration requests, account-deletion state, and final dissolution also trigger email notifications in addition to in-app and push notifications?
-5. What exact profile fields are visible in username search results before partnership, such as username, display name, avatar, or bio?
-6. When a username is changed, how long should the old username remain reserved before another account can claim it?
-7. Should display-name changes be unrestricted or rate-limited?
-8. Can one person create and operate multiple Shawtie pls accounts?
-9. Should active-partnership message reactions be included in MVP, and if so, which reaction model should be supported?
-10. What data can remain server-visible after E2EE?
-11. Which infrastructure providers best satisfy cost, privacy, calling, and portability requirements?
+1. If account deletion is requested during `breakup_pending` and the breakup deadline occurs before the seven-day account-deletion recovery deadline, which terminal deadline controls permanent deletion of the shared partnership data?
+2. During an active-partnership account-deletion recovery period, does the remaining partner remain ineligible to form a new partnership until the seven-day recovery period ends or the account is recovered?
+3. Are partnership chat nicknames shared metadata visible to both partners, or does each partner maintain a private local nickname for the other?
+4. Can partnership chat nicknames be changed during `breakup_pending`, or are they frozen with other existing relationship state?
+5. Must a manually entered relationship start date be today or earlier, or may a future date be entered?
+6. Can the mandatory verified email address be changed after registration, and if so, what re-verification and security rules apply?
+7. Is the one-person-one-account rule intentionally policy-based beyond the enforceable one-account-per-verified-email rule, or should stronger identity controls be considered later?
+8. What exact emoji or reaction set should be available for MVP message reactions?
+9. What data can remain server-visible after E2EE?
+10. Which infrastructure providers best satisfy cost, privacy, voice/video calling, email delivery, and portability requirements?
+11. For the pending post-release call-recording feature, should recording require explicit consent from both participants for every recording session?
 
 ---
 
