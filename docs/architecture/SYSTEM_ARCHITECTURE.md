@@ -173,6 +173,34 @@ crypto --------> reviewed crypto implementation only
 
 Avoid generic catch-all folders such as `shared`, `common`, `helpers`, or `misc`.
 
+## Central capability engine
+
+State-dependent permissions are resolved by a centralized capability engine in `packages/domain`.
+
+API handlers, workers, and UI presentation must not invent independent versions of lifecycle permission rules.
+
+The API always evaluates capabilities against authoritative state before mutation.
+
+See `CAPABILITY_MODEL.md`.
+
+## Device and recovery boundary
+
+Account authentication recovery and E2EE content recovery are separate.
+
+Verified-email recovery may restore account access, but it must not automatically expose historical encrypted plaintext.
+
+Devices are first-class security principals with revocable authentication and cryptographic authorization.
+
+See `../security/DEVICE_AND_RECOVERY.md`.
+
+## Cryptographic epochs
+
+Each partnership owns a cryptographic context with an explicit epoch.
+
+Epoch changes support reviewed key rotation, device revocation, and future protocol migration without changing the partnership identity.
+
+A completely new partnership always starts with a new cryptographic root and new epoch namespace.
+
 ## Source of truth
 
 PostgreSQL is authoritative for:
@@ -233,6 +261,34 @@ Workers claim due rows with transaction-safe locking such as `FOR UPDATE SKIP LO
 
 Every scheduled action must be idempotent.
 
+Lifecycle-sensitive scheduled actions also carry an expected aggregate generation or version.
+
+Before execution, the worker compares the expected generation with current authoritative state.
+
+A mismatch marks the job stale and prevents an outdated deadline from mutating newer state.
+
+## Lifecycle event ledger
+
+Sensitive lifecycle transitions also append a non-content event record.
+
+Examples:
+
+- breakup initiated
+- breakup cancelled
+- restore intent submitted
+- partnership restored
+- partnership dissolved
+- account deletion started
+- account recovered
+- account permanently deleted
+- cooldown started
+- cooldown ended
+- device revoked
+
+The ledger is not full event sourcing. Current relational rows remain the source of current state.
+
+Lifecycle events contain identifiers, versions, timestamps, and transition metadata, but never private message or relationship content.
+
 ## Transactional outbox
 
 Important state changes and their side effects must be connected through a transactional outbox.
@@ -252,11 +308,37 @@ The worker later delivers WebSocket events, push notifications, and email from t
 
 This prevents database state from disagreeing with notification side effects after partial failures.
 
+## Deletion workflow
+
+Cross-system deletion uses durable deletion manifests.
+
+Authorization and cryptographic access are revoked first. Physical cleanup across PostgreSQL, object storage, local clients, push state, and backup-expiration obligations is then retried until complete.
+
+See `DELETION_ARCHITECTURE.md`.
+
+## Two-account transaction helper
+
+Operations involving two accounts use a shared transaction helper that locks account rows in deterministic immutable-ID order.
+
+This applies to partnership formation, reciprocal partner requests, and other race-sensitive two-account transitions.
+
+The helper reduces deadlocks and prevents inconsistent lock ordering across modules.
+
+## Runtime dependencies
+
+Do not add Redis to the initial architecture.
+
+PostgreSQL owns durable sessions, scheduled jobs, outbox state, idempotency records, and rate-limit state where practical.
+
+Redis may be introduced later only when measured production behavior shows a clear need and its consistency model is explicitly documented.
+
 ## Deployment principle
 
 Prefer one deployment unit for the API, one for the worker, one static or edge deployment for the PWA, one PostgreSQL database, one private object store, and TURN infrastructure.
 
 Provider choice may change without changing domain contracts.
+
+TURN credentials must be short-lived and issued only after authenticated call authorization. Static TURN credentials must never be embedded in the PWA.
 
 ## Scaling path
 
