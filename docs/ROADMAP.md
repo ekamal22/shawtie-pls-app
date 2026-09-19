@@ -42,6 +42,7 @@ Do not infer completion percentages from partial layers.
 - data classification and handling matrix: completed
 - Architecture Baseline 1.0 freeze: completed
 - architecture governance and ADR change control: completed
+- documentation freshness model and repo-wide status audit: completed
 - security headers and browser hardening
 - synthetic testkit: initial domain fixtures implemented
 
@@ -187,6 +188,8 @@ The threat-model and data-classification milestone is also complete.
 Architecture freeze and governance are complete. Architecture Baseline 1.0 is now the implementation baseline.
 
 Roadmap epics and acceptance gates are complete as a project-health milestone.
+
+Repository-wide documentation status has been reconciled with the current foundation implementation state.
 
 Current canonical epic status:
 
