@@ -20,6 +20,8 @@ Use a monotonic per-conversation server sequence for synchronization.
 
 Use IndexedDB for local state, partitioned by account, partnership, conversation, and cryptographic context.
 
+Track client, API, crypto protocol, and local schema versions explicitly. Unsupported critical versions fail closed and trigger refresh, upgrade, or canonical resynchronization rather than unsafe interpretation.
+
 Use separate typed offline queues for chat and relationship mutations.
 
 All retryable mutations use idempotency keys.
@@ -41,3 +43,4 @@ Costs:
 - clients need explicit reconciliation logic
 - local schema migrations require care
 - conflict UX must be defined for shared mutable objects
+- compatibility policy must be maintained across PWA, API, crypto, realtime, and IndexedDB changes
