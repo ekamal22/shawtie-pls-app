@@ -71,6 +71,7 @@ The selected architecture is:
 - `security/DEVICE_AND_RECOVERY.md`
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
+- `testing/CI_AND_REPOSITORY_HEALTH.md`
 
 ## Product source of truth
 
