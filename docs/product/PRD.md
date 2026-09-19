@@ -424,7 +424,15 @@ A new partnership always requires the explicit consent of the invited user.
 
 The rule is:
 
-> After a partnership reaches final dissolution, each former partner must wait three months before forming another partnership.
+> After a partnership reaches final dissolution, each former partner must wait exactly three calendar months before forming another partnership.
+
+The cooldown includes weekends, holidays, non-working days, and every other calendar day without exception.
+
+Eligibility returns at the same clock minute exactly three calendar months after the trusted server-side final dissolution timestamp.
+
+The backend must calculate the eligibility timestamp using calendar-month arithmetic rather than a fixed 90-day approximation.
+
+If the corresponding calendar day does not exist in the target month, the eligibility timestamp uses the final valid day of that target month at the same clock minute.
 
 The new partner may be the same former partner or a different eligible user.
 
@@ -449,9 +457,7 @@ During the cooldown:
 - the user cannot maintain a second active or breakup-pending partnership
 - any future partnership still requires the other person's explicit consent
 
-The exact interpretation of three months, including whether it means three calendar months or a fixed number of days, must be resolved before implementation.
-
-The duration should be configurable in backend policy rather than duplicated as a hard-coded frontend constant.
+The three-month duration is a product rule and must not be duplicated as independent client-side policy.
 
 ---
 
@@ -468,17 +474,38 @@ Immediately after breakup initiation:
 - both partners are informed of the change-your-mind period and its deadline
 - the partnership still occupies both users' one-partner slot
 - both partners may continue sending and receiving messages during the reconsideration period
+- both partners may continue sending supported media during the reconsideration period
+- calls remain available only through explicit consent from both partners for each call
 - existing memories and other relationship objects become view-only
 - creation, editing, and deletion of relationship objects are disabled unless a later product rule explicitly allows an exception
 - neither partner may form or accept another partnership
 
 The initial reconsideration period lasts seven days from the trusted server-side breakup initiation timestamp.
 
+### One-hour initiator cancellation window
+
+For the first one hour after breakup initiation, the partner who initiated the breakup may cancel the breakup directly without requiring the other partner to select restore.
+
+The one-hour window is measured using trusted server time and expires exactly one hour after the breakup initiation timestamp.
+
+If the initiator cancels within this one-hour window:
+
+- the partnership immediately returns to `active`
+- the other partner is notified
+- no restoration intent is required from the other partner
+- no three-day extension is created
+- no partnership data is deleted
+- no three-month cooldown begins
+
+After the one-hour window expires, the initiator can no longer cancel the breakup unilaterally. Restoration then requires explicit consent from both partners.
+
 ### Restoration intent
 
 During the reconsideration period, each partner is shown a restore-partnership action.
 
-Restoration requires explicit consent from both partners.
+After the one-hour initiator cancellation window has expired, restoration requires explicit consent from both partners.
+
+A restoration intent is final for the current breakup process. Once a partner selects restore, that partner cannot withdraw the restoration intent.
 
 If neither partner selects restore:
 
@@ -497,12 +524,32 @@ If both partners select restore before the applicable deadline:
 - the partnership returns to `active`
 - the breakup process is cancelled
 - relationship objects become writable again
-- messaging continues as part of the same partnership
+- messaging and media continue as part of the same partnership
+- normal call behavior returns
 - no partnership data is deleted
 - no three-month cooldown begins
 - both restoration intents and the restoration event should be auditable
 
 A partner may not create repeated extensions by clicking restore multiple times.
+
+### Messaging and calls during breakup_pending
+
+New messages may continue to be sent during the reconsideration period.
+
+Past messages are read-only except that either partner may reply to them.
+
+During `breakup_pending`, past messages cannot be:
+
+- edited
+- deleted
+- reacted to
+- otherwise modified
+
+Replies to past messages are treated as new messages and remain allowed.
+
+Supported images, videos, files, and voice messages may continue to be sent during the reconsideration period.
+
+Calls may continue during `breakup_pending`, but every call requires explicit consent from both partners. A call media session must not begin unless one partner initiates the call and the other partner explicitly accepts it.
 
 ### Final dissolution
 
@@ -525,7 +572,7 @@ At final dissolution:
 - partnership-specific cryptographic material follows the defined secure destruction lifecycle
 - partnership-specific local caches and authorization state must be invalidated
 - deleted data must never be attached to a future partnership
-- the three-month new-partnership cooldown begins for both former partners
+- the exact three-calendar-month new-partnership cooldown begins for both former partners
 
 Final dissolution is irreversible through normal product functionality.
 
@@ -551,6 +598,7 @@ The messaging system should support:
 
 - sending text messages
 - receiving messages in real time
+- replying to messages
 - message timestamps
 - stable message IDs
 - optimistic UI where safe
@@ -563,12 +611,13 @@ The messaging system should support:
 
 Future capabilities may include:
 
-- replies
 - reactions
 - editing
 - deletion
 - message search
 - disappearing messages
+
+During `breakup_pending`, new messages and replies remain allowed, but pre-existing messages become read-only. They may be viewed and replied to, but they may not be edited, deleted, reacted to, or otherwise modified.
 
 These features should not compromise the partnership isolation model.
 
@@ -1030,8 +1079,15 @@ Mandatory tests should include:
 - a user cannot bypass the cooldown through direct API calls
 - breakup initiation places both users into breakup_pending
 - breakup_pending users cannot form another partnership
-- both users can continue messaging during the reconsideration period
+- the breakup initiator can cancel unilaterally during the first hour
+- unilateral breakup cancellation is rejected after the one-hour window expires
+- initiator cancellation restores the partnership without starting a cooldown
+- both users can continue messaging and sending supported media during the reconsideration period
+- calls during breakup_pending require explicit consent from both partners
+- past messages are visible and repliable during breakup_pending
+- past messages cannot be edited, deleted, reacted to, or otherwise modified during breakup_pending
 - relationship objects are view-only during breakup_pending
+- a restoration intent cannot be withdrawn once submitted
 - one restore click extends the deadline from seven days to ten days exactly once
 - one restore click never restores the partnership by itself
 - two restore clicks restore the same partnership before the applicable deadline
@@ -1040,7 +1096,8 @@ Mandatory tests should include:
 - exactly one restore intent causes final dissolution at ten days if the other partner does not consent
 - final dissolution permanently rejects new messages to the old partnership
 - final dissolution deletes partnership messages, media, and relationship objects
-- the three-month cooldown begins only at final dissolution
+- the three-calendar-month cooldown begins only at final dissolution
+- cooldown eligibility is calculated to the same clock minute using calendar-month arithmetic
 - a new partnership requires fresh explicit consent
 - a new partner cannot access previous partnership messages
 - attachment IDs cannot cross partnership boundaries
@@ -1097,17 +1154,22 @@ The MVP is successful when two independent eligible adult test accounts can:
 9. Exchange supported media.
 10. Receive notifications where supported.
 11. Allow either partner to initiate breakup.
-12. Continue messaging during the reconsideration period.
-13. Restrict relationship objects to view-only during the reconsideration period.
-14. Restore the partnership only after both partners explicitly select restore.
-15. Extend the breakup deadline by three days when exactly one partner selects restore.
-16. Reach final dissolution at the correct deadline when mutual restoration does not occur.
-17. Permanently delete partnership content at final dissolution.
-18. Start the three-month cooldown at final dissolution.
-19. Prevent either former partner from forming another partnership during cooldown.
-20. Allow a future partnership after cooldown only through fresh consent.
-21. Be prevented from violating the one-active-partner rule.
-22. Demonstrate complete isolation from unrelated accounts and partnerships.
+12. Allow the breakup initiator to cancel directly during the first hour only.
+13. Continue messaging, replying, and sending supported media during the reconsideration period.
+14. Require explicit consent from both partners for each call during the reconsideration period.
+15. Keep pre-existing messages read-only except for replies during the reconsideration period.
+16. Restrict relationship objects to view-only during the reconsideration period.
+17. Prevent a submitted restoration intent from being withdrawn.
+18. Restore the partnership only after both partners explicitly select restore once the one-hour cancellation window has expired.
+19. Extend the breakup deadline by three days when exactly one partner selects restore.
+20. Reach final dissolution at the correct deadline when mutual restoration does not occur.
+21. Permanently delete partnership content at final dissolution.
+22. Start the exact three-calendar-month cooldown at final dissolution.
+23. Calculate cooldown expiry to the same clock minute using trusted server time.
+24. Prevent either former partner from forming another partnership during cooldown.
+25. Allow a future partnership after cooldown only through fresh consent.
+26. Be prevented from violating the one-active-partner rule.
+27. Demonstrate complete isolation from unrelated accounts and partnerships.
 
 ---
 
@@ -1121,7 +1183,11 @@ The first stable release should not ship until the project has:
 - secure authentication
 - database-enforced partnership exclusivity
 - server-enforced breakup reconsideration lifecycle
+- one-hour initiator cancellation window
 - mutual-consent partnership restoration
+- immutable submitted restoration intent
+- breakup-period call consent enforcement
+- breakup-period message mutation restrictions
 - tested final-dissolution deletion semantics
 - fresh explicit consent for every new partnership
 - robust authorization
@@ -1196,11 +1262,14 @@ Private message content should not be collected for analytics.
 - partnership creation
 - explicit partner consent
 - breakup initiation
+- one-hour initiator cancellation window
 - seven-day reconsideration period
+- breakup-period messaging and call rules
+- irreversible restoration intent
 - one-click three-day extension
 - mutual-consent restoration
 - final dissolution and destructive cleanup
-- three-month post-dissolution eligibility policy
+- exact three-calendar-month post-dissolution eligibility policy
 
 ### Phase 3: Messaging
 
@@ -1261,21 +1330,17 @@ Private message content should not be collected for analytics.
 
 The following decisions must be resolved during development:
 
-1. Should the three-month cooldown mean exactly 90 days or three calendar months?
-2. Can a partner withdraw their restoration intent after selecting restore?
-3. Should the partner who initiated the breakup be allowed to cancel the breakup directly, or must restoration always require both partners to select restore?
-4. Should message editing and deletion remain available during breakup_pending, or should only new messaging remain writable?
-5. Can a user change their username while partnered or while breakup_pending?
-6. Can users block another account?
-7. How long do pending partner requests remain valid?
-8. Should a sender be able to cancel a pending partner request?
-9. How should account recovery work without mandatory phone numbers?
-10. What media types and size limits should be supported initially?
-11. Should message deletion during an active partnership remove content only locally, for both users, or according to another policy?
-12. How should partnership data behave if one user deletes their account while the partnership is active or breakup_pending?
-13. What data can remain server-visible after E2EE?
-14. Which shared-space features belong in the first stable release?
-15. Which infrastructure providers best satisfy cost, privacy, and portability requirements?
+1. Can a user change their username while partnered or while breakup_pending?
+2. Can users block another account?
+3. How long do pending partner requests remain valid?
+4. Should a sender be able to cancel a pending partner request?
+5. How should account recovery work without mandatory phone numbers?
+6. What media types and size limits should be supported initially?
+7. Should message deletion during an active partnership remove content only locally, for both users, or according to another policy?
+8. How should partnership data behave if one user deletes their account while the partnership is active or breakup_pending?
+9. What data can remain server-visible after E2EE?
+10. Which shared-space features belong in the first stable release?
+11. Which infrastructure providers best satisfy cost, privacy, and portability requirements?
 
 ---
 
