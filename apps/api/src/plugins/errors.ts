@@ -25,7 +25,9 @@ export function installErrorHandler(app: FastifyInstance): void {
       void reply.status(409).send({ error: { code: "CONFLICT" } });
       return;
     }
-    console.error("API_UNEXPECTED_ERROR", { name: error.name });
+    console.error("API_UNEXPECTED_ERROR", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
     void reply.status(500).send({ error: { code: "INTERNAL_ERROR" } });
   });
 }

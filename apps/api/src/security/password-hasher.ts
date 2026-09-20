@@ -1,20 +1,22 @@
 import {
-  Algorithm,
-  Version,
   hash,
   parseOptions,
   verify,
+  type Options,
 } from "@node-rs/argon2";
 import { normalizePassword } from "@shawtie/domain";
 
 const POLICY = {
-  algorithm: Algorithm.Argon2id,
-  version: Version.V0x13,
+  // @node-rs/argon2 declares Algorithm and Version as ambient const enums.
+  // Numeric member values preserve the explicit policy while remaining compatible
+  // with this repository's verbatimModuleSyntax and isolatedModules settings.
+  algorithm: 2,
+  version: 1,
   memoryCost: 19_456,
   timeCost: 2,
   parallelism: 1,
   outputLen: 32,
-} as const;
+} as const satisfies Options;
 
 export class PasswordHasher {
   readonly #dummyHash: Promise<string>;
