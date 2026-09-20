@@ -1,14 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  claimScheduledActions,
-  lockAccounts,
-} from "@shawtie/db";
-import {
-  closeDatabasePool,
-  requireDisposableDatabase,
-  withTwoClients,
-} from "../src/index.ts";
+import { claimScheduledActions, lockAccounts } from "@shawtie/db";
+import { closeDatabasePool, requireDisposableDatabase, withTwoClients } from "../src/index.ts";
 
 const accountA = "f2000000-0000-4000-8000-000000000001";
 const accountB = "f2000000-0000-4000-8000-000000000002";
@@ -16,18 +9,15 @@ const partnershipA = "f2000000-0000-4000-8000-000000000011";
 const partnershipB = "f2000000-0000-4000-8000-000000000012";
 
 async function prepare(database: ReturnType<typeof requireDisposableDatabase>) {
-  await database.pool.query(
-    "DELETE FROM partnership_members WHERE account_id = ANY($1::uuid[])",
-    [[accountA, accountB]],
-  );
-  await database.pool.query(
-    "DELETE FROM partnerships WHERE id = ANY($1::uuid[])",
-    [[partnershipA, partnershipB]],
-  );
-  await database.pool.query(
-    "DELETE FROM accounts WHERE id = ANY($1::uuid[])",
-    [[accountA, accountB]],
-  );
+  await database.pool.query("DELETE FROM partnership_members WHERE account_id = ANY($1::uuid[])", [
+    [accountA, accountB],
+  ]);
+  await database.pool.query("DELETE FROM partnerships WHERE id = ANY($1::uuid[])", [
+    [partnershipA, partnershipB],
+  ]);
+  await database.pool.query("DELETE FROM accounts WHERE id = ANY($1::uuid[])", [
+    [accountA, accountB],
+  ]);
   await database.pool.query(
     `INSERT INTO accounts (
        id, username_normalized, username_display, date_of_birth
@@ -70,10 +60,7 @@ test("occupied partnership contention allows exactly one current slot", async ()
 
       await assert.rejects(secondInsert, (error: unknown) => {
         return (
-          typeof error === "object" &&
-          error !== null &&
-          "code" in error &&
-          error.code === "23505"
+          typeof error === "object" && error !== null && "code" in error && error.code === "23505"
         );
       });
       await second.query("ROLLBACK");
@@ -251,9 +238,7 @@ test("claimable scheduled work query uses a queue index on realistic synthetic d
        ORDER BY lease_expires_at, id
        LIMIT 20`,
     );
-    const reclaimText = reclaimPlan.rows
-      .map((row) => row["QUERY PLAN"])
-      .join("\n");
+    const reclaimText = reclaimPlan.rows.map((row) => row["QUERY PLAN"]).join("\n");
     assert.match(reclaimText, /scheduled_actions_reclaimable/);
   } finally {
     await database.pool.query(

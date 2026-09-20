@@ -17,9 +17,8 @@ export async function mapWithConcurrency<T>(
     }
   }
 
-  const runners = Array.from(
-    { length: Math.min(concurrency, Math.max(items.length, 1)) },
-    () => run(),
+  const runners = Array.from({ length: Math.min(concurrency, Math.max(items.length, 1)) }, () =>
+    run(),
   );
   await Promise.all(runners);
 }

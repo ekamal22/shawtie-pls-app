@@ -7,8 +7,7 @@ export const POSTGRES_SQLSTATE = {
   lockNotAvailable: "55P03",
 } as const;
 
-export type KnownPostgresSqlState =
-  (typeof POSTGRES_SQLSTATE)[keyof typeof POSTGRES_SQLSTATE];
+export type KnownPostgresSqlState = (typeof POSTGRES_SQLSTATE)[keyof typeof POSTGRES_SQLSTATE];
 
 export function postgresSqlState(error: unknown): string | null {
   if (
@@ -25,7 +24,6 @@ export function postgresSqlState(error: unknown): string | null {
 export function isRetryableTransactionError(error: unknown): boolean {
   const code = postgresSqlState(error);
   return (
-    code === POSTGRES_SQLSTATE.serializationFailure ||
-    code === POSTGRES_SQLSTATE.deadlockDetected
+    code === POSTGRES_SQLSTATE.serializationFailure || code === POSTGRES_SQLSTATE.deadlockDetected
   );
 }

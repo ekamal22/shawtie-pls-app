@@ -12,14 +12,8 @@ import {
   withTransaction,
 } from "@shawtie/db";
 import { mapWithConcurrency } from "../runtime/concurrency-limit.ts";
-import {
-  PermanentWorkerError,
-  workerErrorCode,
-} from "../runtime/errors.ts";
-import {
-  retryDelayMs,
-  type RetryPolicy,
-} from "../runtime/retry-policy.ts";
+import { PermanentWorkerError, workerErrorCode } from "../runtime/errors.ts";
+import { retryDelayMs, type RetryPolicy } from "../runtime/retry-policy.ts";
 import type { ScheduledActionHandlerRegistry } from "./scheduled-handler-registry.ts";
 
 function claimFrom(action: ScheduledAction, workerId: string): DurableClaim {
@@ -53,11 +47,7 @@ async function executeClaim(
 
       const handler = registry.get(locked.actionType, locked.payloadVersion);
       if (!handler) {
-        await failScheduledAction(
-          transaction,
-          claim,
-          "UNSUPPORTED_ACTION_OR_PAYLOAD_VERSION",
-        );
+        await failScheduledAction(transaction, claim, "UNSUPPORTED_ACTION_OR_PAYLOAD_VERSION");
         return;
       }
 
@@ -65,10 +55,7 @@ async function executeClaim(
         if (!handler.loadCurrentGeneration) {
           throw new PermanentWorkerError("GENERATION_GUARD_MISSING");
         }
-        const currentGeneration = await handler.loadCurrentGeneration(
-          transaction,
-          locked,
-        );
+        const currentGeneration = await handler.loadCurrentGeneration(transaction, locked);
         if (currentGeneration !== locked.expectedGeneration) {
           await markScheduledActionStale(transaction, claim);
           return;

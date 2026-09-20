@@ -58,8 +58,7 @@ function mapAction(row: ScheduledActionRow): ScheduledAction {
     status: row.status,
     attemptCount: row.attempt_count,
     maxAttempts: row.max_attempts,
-    expectedGeneration:
-      row.expected_generation === null ? null : asBigInt(row.expected_generation),
+    expectedGeneration: row.expected_generation === null ? null : asBigInt(row.expected_generation),
     deduplicationKey: row.deduplication_key,
     payload: row.payload,
     payloadVersion: row.payload_version,

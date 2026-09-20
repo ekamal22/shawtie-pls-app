@@ -11,11 +11,7 @@ export interface DatabaseConfig {
   readonly transactionMaxRetries?: number;
 }
 
-function positiveInteger(
-  value: string | undefined,
-  fallback: number,
-  name: string,
-): number {
+function positiveInteger(value: string | undefined, fallback: number, name: string): number {
   if (value === undefined) return fallback;
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -24,9 +20,7 @@ function positiveInteger(
   return parsed;
 }
 
-export function databaseConfigFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): DatabaseConfig {
+export function databaseConfigFromEnv(env: NodeJS.ProcessEnv = process.env): DatabaseConfig {
   const connectionString = env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is required");
 

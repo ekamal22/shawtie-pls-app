@@ -6,10 +6,7 @@ export interface TransactionOptions {
   readonly maxRetries?: number;
 }
 
-async function configureTransaction(
-  client: PoolClient,
-  database: DatabasePool,
-): Promise<void> {
+async function configureTransaction(client: PoolClient, database: DatabasePool): Promise<void> {
   const policy = database.transactionPolicy;
   await client.query(
     `SELECT

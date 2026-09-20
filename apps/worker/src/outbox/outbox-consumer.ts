@@ -9,14 +9,8 @@ import {
   type OutboxEvent,
 } from "@shawtie/db";
 import { mapWithConcurrency } from "../runtime/concurrency-limit.ts";
-import {
-  PermanentWorkerError,
-  workerErrorCode,
-} from "../runtime/errors.ts";
-import {
-  retryDelayMs,
-  type RetryPolicy,
-} from "../runtime/retry-policy.ts";
+import { PermanentWorkerError, workerErrorCode } from "../runtime/errors.ts";
+import { retryDelayMs, type RetryPolicy } from "../runtime/retry-policy.ts";
 import type { OutboxHandlerRegistry } from "./outbox-handler-registry.ts";
 
 export interface OutboxConsumerOptions {
@@ -46,11 +40,7 @@ async function deliver(
   const handler = registry.get(event.eventType, event.payloadVersion);
 
   if (!handler) {
-    await failOutboxEvent(
-      database.pool,
-      claim,
-      "UNSUPPORTED_EVENT_OR_PAYLOAD_VERSION",
-    );
+    await failOutboxEvent(database.pool, claim, "UNSUPPORTED_EVENT_OR_PAYLOAD_VERSION");
     return;
   }
 
@@ -58,8 +48,7 @@ async function deliver(
     await handler.deliver({
       event,
       signal,
-      renewLease: () =>
-        renewOutboxLease(database.pool, claim, options.leaseMs),
+      renewLease: () => renewOutboxLease(database.pool, claim, options.leaseMs),
     });
 
     const delivered = await deliverOutboxEvent(database.pool, claim);

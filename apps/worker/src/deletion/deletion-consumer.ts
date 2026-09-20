@@ -10,14 +10,8 @@ import {
   type DurableClaim,
 } from "@shawtie/db";
 import { mapWithConcurrency } from "../runtime/concurrency-limit.ts";
-import {
-  PermanentWorkerError,
-  workerErrorCode,
-} from "../runtime/errors.ts";
-import {
-  retryDelayMs,
-  type RetryPolicy,
-} from "../runtime/retry-policy.ts";
+import { PermanentWorkerError, workerErrorCode } from "../runtime/errors.ts";
+import { retryDelayMs, type RetryPolicy } from "../runtime/retry-policy.ts";
 import type { DeletionHandlerRegistry } from "./deletion-handler-registry.ts";
 
 export interface DeletionConsumerOptions {
@@ -55,8 +49,7 @@ async function processTarget(
     await handler.execute({
       target,
       signal,
-      renewLease: () =>
-        renewDeletionTargetLease(database.pool, claim, options.leaseMs),
+      renewLease: () => renewDeletionTargetLease(database.pool, claim, options.leaseMs),
     });
 
     const manifestId = await completeDeletionTarget(database.pool, claim);

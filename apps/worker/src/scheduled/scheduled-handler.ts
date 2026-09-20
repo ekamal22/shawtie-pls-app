@@ -1,7 +1,4 @@
-import type {
-  QueryExecutor,
-  ScheduledAction,
-} from "@shawtie/db";
+import type { QueryExecutor, ScheduledAction } from "@shawtie/db";
 
 export interface ScheduledActionHandlerContext {
   readonly transaction: QueryExecutor;

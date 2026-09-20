@@ -1,7 +1,4 @@
-import {
-  createDatabasePool,
-  databaseConfigFromEnv,
-} from "@shawtie/db";
+import { createDatabasePool, databaseConfigFromEnv } from "@shawtie/db";
 import { workerConfigFromEnv } from "./config.ts";
 import { DeletionHandlerRegistry } from "./deletion/deletion-handler-registry.ts";
 import { OutboxHandlerRegistry } from "./outbox/outbox-handler-registry.ts";

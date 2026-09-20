@@ -1,17 +1,10 @@
 import type { QueryExecutor } from "../types/query-executor.ts";
 
 export type LifecycleMetadataKey =
-  | "reason"
-  | "generation"
-  | "previousGeneration"
-  | "deadline"
-  | "source"
-  | "status";
+  "reason" | "generation" | "previousGeneration" | "deadline" | "source" | "status";
 
 export type LifecycleMetadataValue = string | number | boolean | null;
-export type LifecycleMetadata = Partial<
-  Record<LifecycleMetadataKey, LifecycleMetadataValue>
->;
+export type LifecycleMetadata = Partial<Record<LifecycleMetadataKey, LifecycleMetadataValue>>;
 
 const allowedKeys = new Set<LifecycleMetadataKey>([
   "reason",

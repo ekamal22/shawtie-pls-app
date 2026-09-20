@@ -1,7 +1,4 @@
-import {
-  closeDatabasePool,
-  type DatabasePool,
-} from "@shawtie/db";
+import { closeDatabasePool, type DatabasePool } from "@shawtie/db";
 import type { WorkerConfig } from "../config.ts";
 import { runDeletionBatch } from "../deletion/deletion-consumer.ts";
 import type { DeletionHandlerRegistry } from "../deletion/deletion-handler-registry.ts";
@@ -38,43 +35,28 @@ export class WorkerApplication {
     };
 
     this.#loops = [
-      runPollLoop(
-        "scheduled",
-        this.#abortController.signal,
-        config.pollIntervalMs,
-        () =>
-          runScheduledBatch(
-            database,
-            workerId,
-            dependencies.scheduledHandlers,
-            common,
-          ).then(() => undefined),
+      runPollLoop("scheduled", this.#abortController.signal, config.pollIntervalMs, () =>
+        runScheduledBatch(database, workerId, dependencies.scheduledHandlers, common).then(
+          () => undefined,
+        ),
       ),
-      runPollLoop(
-        "outbox",
-        this.#abortController.signal,
-        config.pollIntervalMs,
-        () =>
-          runOutboxBatch(
-            database,
-            workerId,
-            dependencies.outboxHandlers,
-            this.#abortController.signal,
-            common,
-          ).then(() => undefined),
+      runPollLoop("outbox", this.#abortController.signal, config.pollIntervalMs, () =>
+        runOutboxBatch(
+          database,
+          workerId,
+          dependencies.outboxHandlers,
+          this.#abortController.signal,
+          common,
+        ).then(() => undefined),
       ),
-      runPollLoop(
-        "deletion",
-        this.#abortController.signal,
-        config.pollIntervalMs,
-        () =>
-          runDeletionBatch(
-            database,
-            workerId,
-            dependencies.deletionHandlers,
-            this.#abortController.signal,
-            common,
-          ).then(() => undefined),
+      runPollLoop("deletion", this.#abortController.signal, config.pollIntervalMs, () =>
+        runDeletionBatch(
+          database,
+          workerId,
+          dependencies.deletionHandlers,
+          this.#abortController.signal,
+          common,
+        ).then(() => undefined),
       ),
     ];
   }
@@ -90,10 +72,7 @@ export class WorkerApplication {
 
     let graceTimer: ReturnType<typeof setTimeout> | undefined;
     const grace = new Promise<"timeout">((resolve) => {
-      graceTimer = setTimeout(
-        () => resolve("timeout"),
-        this.#dependencies.config.shutdownGraceMs,
-      );
+      graceTimer = setTimeout(() => resolve("timeout"), this.#dependencies.config.shutdownGraceMs);
     });
 
     const result = await Promise.race([

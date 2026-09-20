@@ -25,10 +25,7 @@ import { DeletionHandlerRegistry } from "../src/deletion/deletion-handler-regist
 import { runDeletionBatch } from "../src/deletion/deletion-consumer.ts";
 import { OutboxHandlerRegistry } from "../src/outbox/outbox-handler-registry.ts";
 import { runOutboxBatch } from "../src/outbox/outbox-consumer.ts";
-import {
-  PermanentWorkerError,
-  RetryableWorkerError,
-} from "../src/runtime/errors.ts";
+import { PermanentWorkerError, RetryableWorkerError } from "../src/runtime/errors.ts";
 import { WorkerApplication } from "../src/runtime/worker-application.ts";
 import { ScheduledActionHandlerRegistry } from "../src/scheduled/scheduled-handler-registry.ts";
 import { runScheduledBatch } from "../src/scheduled/scheduled-consumer.ts";
@@ -64,22 +61,14 @@ const consumerOptions = {
 };
 
 async function resetPartnership(): Promise<void> {
-  await database.pool.query(
-    "DELETE FROM partnership_lifecycle_events WHERE partnership_id = $1",
-    [partnershipId],
-  );
-  await database.pool.query(
-    "DELETE FROM scheduled_actions WHERE aggregate_id = $1",
-    [partnershipId],
-  );
-  await database.pool.query(
-    "DELETE FROM outbox_events WHERE aggregate_id = $1",
-    [partnershipId],
-  );
-  await database.pool.query(
-    "DELETE FROM partnerships WHERE id = $1",
-    [partnershipId],
-  );
+  await database.pool.query("DELETE FROM partnership_lifecycle_events WHERE partnership_id = $1", [
+    partnershipId,
+  ]);
+  await database.pool.query("DELETE FROM scheduled_actions WHERE aggregate_id = $1", [
+    partnershipId,
+  ]);
+  await database.pool.query("DELETE FROM outbox_events WHERE aggregate_id = $1", [partnershipId]);
+  await database.pool.query("DELETE FROM partnerships WHERE id = $1", [partnershipId]);
   await database.pool.query(
     `INSERT INTO partnerships (
        id, relationship_start_date, lifecycle_state, version, generation,
@@ -162,10 +151,9 @@ test("scheduled action generation guard rejects stale work and commits matching 
     },
     async execute({ transaction }) {
       executions += 1;
-      await transaction.query(
-        "UPDATE partnerships SET version = version + 1 WHERE id = $1",
-        [partnershipId],
-      );
+      await transaction.query("UPDATE partnerships SET version = version + 1 WHERE id = $1", [
+        partnershipId,
+      ]);
     },
   });
 
@@ -179,12 +167,7 @@ test("scheduled action generation guard rejects stale work and commits matching 
     deduplicationKey: "f2-generation-stale",
   });
 
-  await runScheduledBatch(
-    database,
-    "generation-worker",
-    registry,
-    consumerOptions,
-  );
+  await runScheduledBatch(database, "generation-worker", registry, consumerOptions);
 
   let status = await database.pool.query<{ status: string }>(
     "SELECT status FROM scheduled_actions WHERE id = $1",
@@ -203,12 +186,7 @@ test("scheduled action generation guard rejects stale work and commits matching 
     deduplicationKey: "f2-generation-current",
   });
 
-  await runScheduledBatch(
-    database,
-    "generation-worker",
-    registry,
-    consumerOptions,
-  );
+  await runScheduledBatch(database, "generation-worker", registry, consumerOptions);
 
   status = await database.pool.query<{ status: string }>(
     "SELECT status FROM scheduled_actions WHERE id = $1",
@@ -245,26 +223,15 @@ test("scheduled action with unknown payload version fails closed", async () => {
     payloadVersion: 2,
   });
 
-  await runScheduledBatch(
-    database,
-    "version-worker",
-    registry,
-    consumerOptions,
-  );
+  await runScheduledBatch(database, "version-worker", registry, consumerOptions);
 
   const action = await database.pool.query<{
     status: string;
     last_error_code: string | null;
-  }>(
-    "SELECT status, last_error_code FROM scheduled_actions WHERE id = $1",
-    [actionId],
-  );
+  }>("SELECT status, last_error_code FROM scheduled_actions WHERE id = $1", [actionId]);
 
   assert.equal(action.rows[0]?.status, "failed");
-  assert.equal(
-    action.rows[0]?.last_error_code,
-    "UNSUPPORTED_ACTION_OR_PAYLOAD_VERSION",
-  );
+  assert.equal(action.rows[0]?.last_error_code, "UNSUPPORTED_ACTION_OR_PAYLOAD_VERSION");
 });
 
 test("scheduled handler failure rolls back authoritative mutation before retry scheduling", async () => {
@@ -276,10 +243,9 @@ test("scheduled handler failure rolls back authoritative mutation before retry s
     actionType: "test.rollback",
     payloadVersion: 1,
     async execute({ transaction }) {
-      await transaction.query(
-        "UPDATE partnerships SET version = version + 100 WHERE id = $1",
-        [partnershipId],
-      );
+      await transaction.query("UPDATE partnerships SET version = version + 100 WHERE id = $1", [
+        partnershipId,
+      ]);
       throw new RetryableWorkerError("SIMULATED_HANDLER_FAILURE");
     },
   });
@@ -314,10 +280,9 @@ test("outbox state change is atomic with authoritative mutation", async () => {
   const rollbackEventId = "f2420000-0000-4000-8000-000000000001";
   await assert.rejects(
     withTransaction(database, async (transaction) => {
-      await transaction.query(
-        "UPDATE partnerships SET version = version + 1 WHERE id = $1",
-        [partnershipId],
-      );
+      await transaction.query("UPDATE partnerships SET version = version + 1 WHERE id = $1", [
+        partnershipId,
+      ]);
       await insertOutboxEvent(transaction, {
         id: rollbackEventId,
         eventType: "test.atomic",
@@ -342,10 +307,9 @@ test("outbox state change is atomic with authoritative mutation", async () => {
 
   const committedEventId = "f2420000-0000-4000-8000-000000000002";
   await withTransaction(database, async (transaction) => {
-    await transaction.query(
-      "UPDATE partnerships SET version = version + 1 WHERE id = $1",
-      [partnershipId],
-    );
+    await transaction.query("UPDATE partnerships SET version = version + 1 WHERE id = $1", [
+      partnershipId,
+    ]);
     await insertOutboxEvent(transaction, {
       id: committedEventId,
       eventType: "test.atomic",
@@ -441,15 +405,9 @@ test("outbox is at-least-once, duplicate-safe, versioned, and fenced", async () 
   const unsupported = await database.pool.query<{
     status: string;
     last_error_code: string | null;
-  }>(
-    "SELECT status, last_error_code FROM outbox_events WHERE id = $1",
-    [unsupportedEventId],
-  );
+  }>("SELECT status, last_error_code FROM outbox_events WHERE id = $1", [unsupportedEventId]);
   assert.equal(unsupported.rows[0]?.status, "failed");
-  assert.equal(
-    unsupported.rows[0]?.last_error_code,
-    "UNSUPPORTED_EVENT_OR_PAYLOAD_VERSION",
-  );
+  assert.equal(unsupported.rows[0]?.last_error_code, "UNSUPPORTED_EVENT_OR_PAYLOAD_VERSION");
 
   const renewableId = "f2420000-0000-4000-8000-000000000006";
   await insertOutboxEvent(database.pool, {
@@ -460,12 +418,9 @@ test("outbox is at-least-once, duplicate-safe, versioned, and fenced", async () 
     deduplicationKey: "f2-outbox-current-renewal",
   });
 
-  const renewableClaim = (await claimOutboxEvents(
-    database.pool,
-    20,
-    "lease-owner",
-    10_000,
-  )).find((item) => item.id === renewableId);
+  const renewableClaim = (await claimOutboxEvents(database.pool, 20, "lease-owner", 10_000)).find(
+    (item) => item.id === renewableId,
+  );
   assert.ok(renewableClaim);
   assert.equal(
     await renewOutboxLease(
@@ -497,21 +452,15 @@ test("outbox is at-least-once, duplicate-safe, versioned, and fenced", async () 
     deduplicationKey: "f2-outbox-fencing",
   });
 
-  const firstClaim = (await claimOutboxEvents(
-    database.pool,
-    1,
-    "old-worker",
-    2,
-  )).find((item) => item.id === fencedId);
+  const firstClaim = (await claimOutboxEvents(database.pool, 1, "old-worker", 2)).find(
+    (item) => item.id === fencedId,
+  );
   assert.ok(firstClaim);
   await new Promise((resolve) => setTimeout(resolve, 10));
 
-  const secondClaim = (await claimOutboxEvents(
-    database.pool,
-    20,
-    "new-worker",
-    10_000,
-  )).find((item) => item.id === fencedId);
+  const secondClaim = (await claimOutboxEvents(database.pool, 20, "new-worker", 10_000)).find(
+    (item) => item.id === fencedId,
+  );
   assert.ok(secondClaim);
   assert.ok(secondClaim.claimVersion > firstClaim.claimVersion);
 
@@ -579,19 +528,14 @@ test("expired deletion claim is reclaimed with fencing and current owner can ren
   const manifestId = "f2440000-0000-4000-8000-000000000003";
   const targetId = "f2440000-0000-4000-8000-000000000031";
 
-  await database.pool.query(
-    "DELETE FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  await database.pool.query("DELETE FROM deletion_manifests WHERE id = $1", [manifestId]);
   await createDeletionManifest(database.pool, {
     id: manifestId,
     subjectType: "partnership",
     subjectId: partnershipId,
     reason: "test-expired-claim",
     accessRevokedAt: new Date(),
-    targets: [
-      { id: targetId, targetType: "test.expired", targetKey: "expired" },
-    ],
+    targets: [{ id: targetId, targetType: "test.expired", targetKey: "expired" }],
   });
 
   await database.pool.query(
@@ -607,12 +551,9 @@ test("expired deletion claim is reclaimed with fencing and current owner can ren
     [targetId],
   );
 
-  const reclaimed = (await claimDeletionTargets(
-    database.pool,
-    1,
-    "new-deletion-worker",
-    10_000,
-  )).find((target) => target.id === targetId);
+  const reclaimed = (
+    await claimDeletionTargets(database.pool, 1, "new-deletion-worker", 10_000)
+  ).find((target) => target.id === targetId);
   assert.ok(reclaimed);
   assert.equal(reclaimed.claimVersion, 5n);
 
@@ -621,40 +562,22 @@ test("expired deletion claim is reclaimed with fencing and current owner can ren
     claimedBy: "old-deletion-worker",
     claimVersion: 4n,
   };
-  assert.equal(
-    await renewDeletionTargetLease(database.pool, oldClaim, 10_000),
-    false,
-  );
-  assert.equal(
-    await completeDeletionTarget(database.pool, oldClaim),
-    null,
-  );
+  assert.equal(await renewDeletionTargetLease(database.pool, oldClaim, 10_000), false);
+  assert.equal(await completeDeletionTarget(database.pool, oldClaim), null);
 
   const currentClaim = {
     id: targetId,
     claimedBy: "new-deletion-worker",
     claimVersion: reclaimed.claimVersion,
   };
-  assert.equal(
-    await renewDeletionTargetLease(database.pool, currentClaim, 20_000),
-    true,
-  );
-  assert.equal(
-    await completeDeletionTarget(database.pool, currentClaim),
-    manifestId,
-  );
-  assert.equal(
-    await completeDeletionManifestIfReady(database.pool, manifestId),
-    true,
-  );
+  assert.equal(await renewDeletionTargetLease(database.pool, currentClaim, 20_000), true);
+  assert.equal(await completeDeletionTarget(database.pool, currentClaim), manifestId);
+  assert.equal(await completeDeletionManifestIfReady(database.pool, manifestId), true);
 
   const manifest = await database.pool.query<{
     status: string;
     access_revoked_at: Date | null;
-  }>(
-    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  }>("SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1", [manifestId]);
   assert.equal(manifest.rows[0]?.status, "completed");
   assert.ok(manifest.rows[0]?.access_revoked_at);
 });
@@ -664,10 +587,7 @@ test("deletion manifest resumes after partial failure while access stays revoked
   const targetA = "f2440000-0000-4000-8000-000000000011";
   const targetB = "f2440000-0000-4000-8000-000000000012";
 
-  await database.pool.query(
-    "DELETE FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  await database.pool.query("DELETE FROM deletion_manifests WHERE id = $1", [manifestId]);
   await createDeletionManifest(database.pool, {
     id: manifestId,
     subjectType: "partnership",
@@ -704,10 +624,7 @@ test("deletion manifest resumes after partial failure while access stays revoked
   let manifest = await database.pool.query<{
     status: string;
     access_revoked_at: Date | null;
-  }>(
-    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  }>("SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1", [manifestId]);
   assert.equal(manifest.rows[0]?.status, "processing");
   assert.ok(manifest.rows[0]?.access_revoked_at);
 
@@ -724,10 +641,7 @@ test("deletion manifest resumes after partial failure while access stays revoked
   manifest = await database.pool.query<{
     status: string;
     access_revoked_at: Date | null;
-  }>(
-    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  }>("SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1", [manifestId]);
   assert.equal(manifest.rows[0]?.status, "completed");
   assert.ok(manifest.rows[0]?.access_revoked_at);
   assert.equal(attempts.get("a"), 1);
@@ -738,19 +652,14 @@ test("permanently failed deletion target can be repaired and resumed without res
   const manifestId = "f2440000-0000-4000-8000-000000000002";
   const targetId = "f2440000-0000-4000-8000-000000000021";
 
-  await database.pool.query(
-    "DELETE FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  await database.pool.query("DELETE FROM deletion_manifests WHERE id = $1", [manifestId]);
   await createDeletionManifest(database.pool, {
     id: manifestId,
     subjectType: "partnership",
     subjectId: partnershipId,
     reason: "test-permanent",
     accessRevokedAt: new Date(),
-    targets: [
-      { id: targetId, targetType: "test.repairable", targetKey: "repairable" },
-    ],
+    targets: [{ id: targetId, targetType: "test.repairable", targetKey: "repairable" }],
   });
 
   const failingRegistry = new DeletionHandlerRegistry();
@@ -772,17 +681,11 @@ test("permanently failed deletion target can be repaired and resumed without res
   let manifest = await database.pool.query<{
     status: string;
     access_revoked_at: Date | null;
-  }>(
-    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  }>("SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1", [manifestId]);
   assert.equal(manifest.rows[0]?.status, "failed");
   assert.ok(manifest.rows[0]?.access_revoked_at);
 
-  assert.equal(
-    await resumeFailedDeletionTarget(database.pool, targetId),
-    manifestId,
-  );
+  assert.equal(await resumeFailedDeletionTarget(database.pool, targetId), manifestId);
 
   const successfulRegistry = new DeletionHandlerRegistry();
   successfulRegistry.register({
@@ -801,10 +704,7 @@ test("permanently failed deletion target can be repaired and resumed without res
   manifest = await database.pool.query<{
     status: string;
     access_revoked_at: Date | null;
-  }>(
-    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
-    [manifestId],
-  );
+  }>("SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1", [manifestId]);
   assert.equal(manifest.rows[0]?.status, "completed");
   assert.ok(manifest.rows[0]?.access_revoked_at);
 });
