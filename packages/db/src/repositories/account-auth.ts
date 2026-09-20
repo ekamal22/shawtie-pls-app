@@ -118,6 +118,7 @@ export interface EmailChallenge {
   readonly registrationIntentId: string | null;
   readonly purpose: EmailPurpose;
   readonly emailNormalized: string;
+  readonly emailDisplay: string | null;
   readonly verifier: Buffer;
   readonly challengeNonce: Buffer | null;
   readonly expiresAt: Date;
@@ -134,6 +135,7 @@ interface EmailChallengeDbRow {
   registration_intent_id: string | null;
   purpose: EmailPurpose;
   email_normalized: string;
+  email_display: string | null;
   verifier: Buffer;
   challenge_nonce: Buffer | null;
   expires_at: Date;
@@ -151,6 +153,7 @@ function mapChallenge(row: EmailChallengeDbRow): EmailChallenge {
     registrationIntentId: row.registration_intent_id,
     purpose: row.purpose,
     emailNormalized: row.email_normalized,
+    emailDisplay: row.email_display,
     verifier: row.verifier,
     challengeNonce: row.challenge_nonce,
     expiresAt: row.expires_at,
@@ -188,6 +191,7 @@ export async function insertEmailChallenge(
     registrationIntentId?: string;
     purpose: EmailPurpose;
     emailNormalized: string;
+    emailDisplay: string;
     verifier: Buffer;
     challengeNonce: Buffer;
     expiresAt: Date;
@@ -197,15 +201,16 @@ export async function insertEmailChallenge(
 ): Promise<void> {
   await executor.query(
     `INSERT INTO email_verifications (
-       id, account_id, registration_intent_id, purpose, email_normalized,
+       id, account_id, registration_intent_id, purpose, email_normalized, email_display,
        verifier, challenge_nonce, expires_at, verifier_key_version, max_attempts
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
     [
       input.id,
       input.accountId ?? null,
       input.registrationIntentId ?? null,
       input.purpose,
       input.emailNormalized,
+      input.emailDisplay,
       input.verifier,
       input.challengeNonce,
       input.expiresAt,
@@ -220,7 +225,7 @@ export async function lockActiveChallengeForRegistration(
   registrationIntentId: string,
 ): Promise<EmailChallenge | null> {
   const result = await executor.query<EmailChallengeDbRow>(
-    `SELECT id, account_id, registration_intent_id, purpose, email_normalized,
+    `SELECT id, account_id, registration_intent_id, purpose, email_normalized, email_display,
             verifier, challenge_nonce, expires_at, attempt_count, max_attempts,
             consumed_at, superseded_at, verifier_key_version
      FROM email_verifications
@@ -241,7 +246,7 @@ export async function lockActiveChallengeForAccount(
   purpose: Exclude<EmailPurpose, "registration">,
 ): Promise<EmailChallenge | null> {
   const result = await executor.query<EmailChallengeDbRow>(
-    `SELECT id, account_id, registration_intent_id, purpose, email_normalized,
+    `SELECT id, account_id, registration_intent_id, purpose, email_normalized, email_display,
             verifier, challenge_nonce, expires_at, attempt_count, max_attempts,
             consumed_at, superseded_at, verifier_key_version
      FROM email_verifications
@@ -1149,7 +1154,7 @@ export async function getChallengeForDelivery(
   id: string,
 ): Promise<EmailChallenge | null> {
   const result = await executor.query<EmailChallengeDbRow>(
-    `SELECT id, account_id, registration_intent_id, purpose, email_normalized,
+    `SELECT id, account_id, registration_intent_id, purpose, email_normalized, email_display,
             verifier, challenge_nonce, expires_at, attempt_count, max_attempts,
             consumed_at, superseded_at, verifier_key_version
      FROM email_verifications WHERE id = $1`,
@@ -1159,6 +1164,131 @@ export async function getChallengeForDelivery(
   return row ? mapChallenge(row) : null;
 }
 
+export async function getCalendarYearAfter(
+  executor: QueryExecutor,
+  at: Date,
+): Promise<Date> {
+  const result = await executor.query<{ value: Date }>(
+    "SELECT $1::timestamptz + interval '1 year' AS value",
+    [at],
+  );
+  const value = result.rows[0]?.value;
+  if (!value) throw new Error("PostgreSQL did not return calendar-year timestamp");
+  return value;
+}
+
+export async function getCurrentPartnershipForAccount(
+  executor: QueryExecutor,
+  accountId: string,
+): Promise<{
+  partnershipId: string;
+  lifecycleState: "active" | "breakup_pending";
+  generation: bigint;
+  breakupFinalDeadline: Date | null;
+  otherAccountId: string;
+} | null> {
+  const result = await executor.query<{
+    partnership_id: string;
+    lifecycle_state: "active" | "breakup_pending";
+    generation: string | number | bigint;
+    final_deadline: Date | null;
+    other_account_id: string;
+  }>(
+    `SELECT p.id AS partnership_id, p.lifecycle_state, p.generation,
+            bp.final_deadline,
+            other.account_id AS other_account_id
+     FROM partnership_members self
+     JOIN partnerships p ON p.id = self.partnership_id
+     JOIN partnership_members other
+       ON other.partnership_id = self.partnership_id
+      AND other.account_id <> self.account_id
+      AND other.released_at IS NULL
+     LEFT JOIN breakup_processes bp
+       ON bp.partnership_id = p.id
+      AND bp.restored_at IS NULL
+      AND bp.dissolved_at IS NULL
+     WHERE self.account_id = $1
+       AND self.released_at IS NULL
+       AND p.lifecycle_state IN ('active', 'breakup_pending')
+     LIMIT 1`,
+    [accountId],
+  );
+  const row = result.rows[0];
+  return row
+    ? {
+        partnershipId: row.partnership_id,
+        lifecycleState: row.lifecycle_state,
+        generation: BigInt(row.generation),
+        breakupFinalDeadline: row.final_deadline,
+        otherAccountId: row.other_account_id,
+      }
+    : null;
+}
+
+export async function finalizePartnershipForAccountDeletion(
+  executor: QueryExecutor,
+  input: {
+    partnershipId: string;
+    deletingAccountId: string;
+    remainingAccountId: string;
+    at: Date;
+    breakupDeadline: Date | null;
+  },
+): Promise<"breakup" | "partner_account_deleted"> {
+  const breakupWins =
+    input.breakupDeadline !== null && input.breakupDeadline.getTime() <= input.at.getTime();
+  const reason = breakupWins ? "breakup" : "partner_account_deleted";
+
+  await executor.query(
+    `UPDATE partnerships
+     SET lifecycle_state = 'terminated',
+         terminated_at = $2,
+         termination_reason = $3,
+         version = version + 1,
+         generation = generation + 1,
+         updated_at = $2
+     WHERE id = $1 AND lifecycle_state <> 'terminated'`,
+    [input.partnershipId, input.at, reason],
+  );
+
+  await executor.query(
+    `UPDATE partnership_members
+     SET released_at = COALESCE(released_at, $2)
+     WHERE partnership_id = $1 AND released_at IS NULL`,
+    [input.partnershipId, input.at],
+  );
+
+  if (breakupWins) {
+    await executor.query(
+      `UPDATE breakup_processes
+       SET dissolved_at = COALESCE(dissolved_at, $2)
+       WHERE partnership_id = $1
+         AND restored_at IS NULL
+         AND dissolved_at IS NULL`,
+      [input.partnershipId, input.at],
+    );
+    for (const accountId of [input.deletingAccountId, input.remainingAccountId]) {
+      await executor.query(
+        `INSERT INTO account_partner_eligibility (
+           id, account_id, source_partnership_id, reason, created_at, eligible_at
+         ) VALUES (md5($1::text || $2::text || $3::text || 'breakup_dissolution')::uuid, $1, $2, 'breakup_dissolution', $3, $3 + interval '3 months')
+         ON CONFLICT (account_id) WHERE resolved_at IS NULL DO NOTHING`,
+        [accountId, input.partnershipId, input.at],
+      );
+    }
+  } else {
+    await executor.query(
+      `INSERT INTO account_partner_eligibility (
+         id, account_id, source_partnership_id, reason, created_at, eligible_at
+       ) VALUES (md5($1::text || $2::text || $3::text || 'partner_account_deleted')::uuid, $1, $2, 'partner_account_deleted', $3, $3 + interval '1 month')
+       ON CONFLICT (account_id) WHERE resolved_at IS NULL DO NOTHING`,
+      [input.remainingAccountId, input.partnershipId, input.at],
+    );
+  }
+
+  return reason;
+}
+
 export async function getAccountDeletionGeneration(
   executor: QueryExecutor,
   accountId: string,
@@ -1166,7 +1296,7 @@ export async function getAccountDeletionGeneration(
   const result = await executor.query<{ generation: string | number | bigint }>(
     `SELECT generation
      FROM account_deletion_requests
-     WHERE account_id = $1 AND status = 'pending'
+     WHERE account_id = $1
      ORDER BY generation DESC LIMIT 1`,
     [accountId],
   );

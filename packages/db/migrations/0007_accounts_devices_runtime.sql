@@ -50,6 +50,7 @@ ALTER TABLE account_emails
 ALTER TABLE email_verifications
   DROP CONSTRAINT email_verifications_purpose_valid,
   ADD COLUMN registration_intent_id uuid REFERENCES registration_intents(id) ON DELETE CASCADE,
+  ADD COLUMN email_display text,
   ADD COLUMN challenge_nonce bytea,
   ADD COLUMN max_attempts integer NOT NULL DEFAULT 5,
   ADD COLUMN superseded_at timestamptz,
@@ -63,6 +64,8 @@ ALTER TABLE email_verifications
     CHECK (verifier_key_version > 0),
   ADD CONSTRAINT email_verifications_attempts_bounded
     CHECK (attempt_count <= max_attempts),
+  ADD CONSTRAINT email_verifications_display_nonempty
+    CHECK (email_display IS NULL OR length(email_display) > 0),
   ADD CONSTRAINT email_verifications_subject_shape
     CHECK (
       (
