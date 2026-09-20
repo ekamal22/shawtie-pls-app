@@ -148,7 +148,7 @@ Configured repository evidence now includes:
 - Zod-based external-boundary validation foundation and contract tests
 - root build, typecheck, lint, format-check, dependency-check, test, and health commands
 
-Dependency installation has now completed locally with 0 reported npm audit vulnerabilities. Repository health and static migration-plan validation pass on repeated local runs. TypeScript 6 first exposed deprecated `baseUrl`, then exposed non-relative `paths` targets after `baseUrl` removal. The shared config now uses explicit relative `./` path targets with no `baseUrl`. Typecheck and all later gates still require a fresh local run.
+Dependency installation has now completed locally with 0 reported npm audit vulnerabilities. Repository health and static migration-plan validation pass on repeated local runs. TypeScript 6 path migration issues are resolved. The next run typechecked every workspace except `@shawtie/contracts`, where Zod declarations required the standard global `URL`; the contracts package now explicitly includes the DOM library for that universal runtime-schema boundary. Typecheck and all later gates still require a fresh local run.
 
 GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
 

@@ -4,7 +4,7 @@
 
 Baseline CI and repository-health tooling are configured.
 
-The M1 workspace, TypeScript, linting, formatting, runtime-contract, and dependency-direction scaffolding is also configured. Dependency installation has completed locally. Repository health and the static migration-plan check pass. The first expanded local health run exposed deprecated `baseUrl`; the second exposed non-relative `paths` targets after `baseUrl` was removed. The shared config now uses explicit `./` path targets with no `baseUrl`, matching the TypeScript 6 migration guidance. The full local health gate must be rerun.
+The M1 workspace, TypeScript, linting, formatting, runtime-contract, and dependency-direction scaffolding is also configured. Dependency installation has completed locally. Repository health and the static migration-plan check pass. The first expanded local health run exposed deprecated `baseUrl`; the second exposed non-relative `paths` targets after `baseUrl` was removed. The shared config now uses explicit `./` path targets with no `baseUrl`, matching the TypeScript 6 migration guidance. The following local run reached `@shawtie/contracts`, where Zod's declarations required the standard `URL` global. `packages/contracts/tsconfig.json` now explicitly includes the DOM library for that universal runtime-schema boundary. The full local health gate must be rerun.
 
 The first GitHub-hosted execution is still pending.
 
@@ -53,7 +53,7 @@ npm run health
 
 With workspace dependencies installed, this is configured to combine repository health, static migration-plan validation, TypeScript typecheck, build, lint, formatting, dependency and circular-import checks, the domain suite, and runtime-contract tests.
 
-The expanded command has now been executed twice with installed workspace dependencies. Repository health and static migration-plan validation passed both times. The first typecheck exposed deprecated `baseUrl`; the second exposed that `paths` targets must be explicitly relative once `baseUrl` is removed. The shared config now uses explicit `./` targets. Typecheck and all later gates remain unverified until the command is rerun.
+The expanded command has now been executed twice with installed workspace dependencies. Repository health and static migration-plan validation passed both times. The first typecheck exposed deprecated `baseUrl`; the second exposed that `paths` targets must be explicitly relative once `baseUrl` is removed. The shared config now uses explicit `./` targets. The next run typechecked all workspaces except `@shawtie/contracts`; that package now includes the DOM library required for Zod's standard `URL` declaration. Typecheck and all later gates remain unverified until the command is rerun.
 
 ## Repository-health policy
 
