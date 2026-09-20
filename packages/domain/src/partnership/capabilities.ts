@@ -1,9 +1,4 @@
-import type {
-  CapabilityContext,
-  CapabilityDecision,
-  CapabilityName,
-  DenialCode,
-} from "./types.ts";
+import type { CapabilityContext, CapabilityDecision, CapabilityName, DenialCode } from "./types.ts";
 import { isAtOrAfter, isBefore } from "./time.ts";
 
 const ALLOW: CapabilityDecision = { allowed: true, reason: null };
@@ -169,8 +164,8 @@ export function evaluateCapability(
 export function callRequiresExplicitBreakupAcceptance(ctx: CapabilityContext): boolean {
   return Boolean(
     ctx.partnership &&
-      ctx.partnership.lifecycle === "breakup_pending" &&
-      !ctx.partnership.accountDeletion &&
-      !accountLocked(ctx),
+    ctx.partnership.lifecycle === "breakup_pending" &&
+    !ctx.partnership.accountDeletion &&
+    !accountLocked(ctx),
   );
 }
