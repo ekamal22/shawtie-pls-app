@@ -41,6 +41,9 @@ jobs:
       - name: Repository health
         run: npm run health:repo
 
+      - name: Migration plan
+        run: npm run db:migrations:check
+
       - name: Domain tests
         run: npm run test:domain
 
