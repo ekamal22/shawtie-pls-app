@@ -70,6 +70,12 @@ High-value unit coverage includes:
 
 ### Database invariant tests
 
+The initial invariant SQL suite is committed at `packages/db/tests/invariants.sql`.
+
+It currently covers current verified-email uniqueness, one occupied partnership slot, idempotency uniqueness, self-request rejection, breakup deadline shape, lifecycle-event append-only behavior, device ownership, maximum two partnership members, and scheduled-action deduplication.
+
+The suite has not yet been executed against real PostgreSQL.
+
 Run against real PostgreSQL.
 
 Prove:
