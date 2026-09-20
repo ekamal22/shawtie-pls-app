@@ -242,7 +242,27 @@ Client clocks are display-only.
 
 The concrete persistence and worker implementation design is defined in `F2_PERSISTENCE_WORKER_DESIGN.md`.
 
-That design preserves this baseline and adds planned implementation detail for transaction ownership, queue claim leases, crash recovery, bounded worker concurrency, retry behavior, outbox delivery semantics, lifecycle-event metadata, deletion-target processing, and the F2 integration test matrix.
+F2 is implemented and locally verified. It provides the transaction kernel, durable worker, scheduled actions, outbox, claim fencing, lifecycle-event persistence, deletion runtime, and PostgreSQL integration harness used by later epics.
+
+## A1 accounts and authentication design
+
+The active account and authentication implementation design is defined in `A1_ACCOUNTS_DEVICES_DESIGN.md`.
+
+A1 preserves this system architecture and adds implementation detail for:
+
+- Argon2id password credentials
+- registration intents and verified-email challenges
+- opaque server-revocable browser sessions
+- versioned HMAC verifiers and key rotation
+- device records and non-authenticating device handles
+- exact-origin, Fetch Metadata, and custom-header CSRF defenses
+- explicit trusted-proxy handling
+- PostgreSQL-backed authentication rate limits
+- durable security-email delivery through the F2 outbox
+- account deletion request, recovery, and generation-guarded finalization
+- strict account-recovery versus cryptographic-recovery separation
+
+A1 adds no Redis, stateless browser JWT session model, or new lifecycle authority. PostgreSQL remains authoritative.
 
 ## Durable deadlines
 

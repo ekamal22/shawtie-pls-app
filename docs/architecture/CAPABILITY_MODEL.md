@@ -72,6 +72,18 @@ The API:
 4. rejects denied operations
 5. performs the mutation transactionally
 
+A1 extends this pattern to sensitive account actions.
+
+Examples:
+
+- verified email change requires active account access plus recent strong reauthentication
+- username change uses the central `change_username` capability and authoritative partnership state
+- account deletion requires active account access and recent reauthentication before the deletion transaction revokes all sessions
+- account recovery uses the dedicated recovery path rather than treating a deletion-pending account as ordinarily authenticated
+- device revocation is account-owned and does not depend on client-provided authorization state
+
+Authentication state, recent reauthentication, and device ownership are API security prerequisites. Partnership-dependent eligibility remains in the pure capability engine rather than being copied into route handlers.
+
 ## UI use
 
 The client may receive a server-derived capability snapshot for presentation.

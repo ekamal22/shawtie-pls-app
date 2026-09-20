@@ -2,7 +2,26 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented in `packages/db/migrations` and has passed local disposable-database validation through migration `0006_durable_runtime_reliability.sql`.
+The PostgreSQL migration set is implemented in `packages/db/migrations` and has passed local disposable-database validation through migration `0006_durable_runtime_reliability.sql`. The next planned migration is A1 migration `0007_accounts_devices_runtime.sql`; it is design-only and is not yet present in the verified migration set.
+
+## Next planned migration
+
+A1 reserves `0007_accounts_devices_runtime.sql`.
+
+Its refined design scope includes:
+
+- registration intents
+- password credentials
+- account-email display form
+- email challenge subject and key-version hardening
+- active-challenge uniqueness
+- session token-generation fencing
+- device-handle verifiers
+- PostgreSQL authentication rate-limit buckets
+- durable security-email deliveries
+- append-only security-event hardening
+
+Until migration 0007 is committed and passes migration-from-zero plus A1 PostgreSQL tests, the verified migration count remains six.
 
 ## Policy
 

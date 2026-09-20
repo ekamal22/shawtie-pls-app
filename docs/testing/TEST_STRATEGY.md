@@ -115,6 +115,42 @@ Prove:
 
 The F2-specific items in this list have committed local evidence and the F2 PostgreSQL suite passes 17/17. Later product-epic items remain future coverage.
 
+### A1 accounts and authentication verification
+
+A1 uses the refined test architecture in `../architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`.
+
+Required A1 evidence includes:
+
+- pure domain age, username, password-policy, and DOB-correction tests
+- migration 0007 from zero
+- username and verified-email ownership races
+- registration completion races
+- one-active-challenge and attempt-exhaustion races
+- opaque session verifier uniqueness
+- session absolute and idle expiry
+- fenced session-token rotation
+- device revocation fan-out to sessions
+- HMAC key-version rotation and unknown-version fail-closed behavior
+- trusted-proxy spoofing regression
+- PostgreSQL auth-rate-limit contention
+- registration, login, logout, password recovery, email change, username, DOB, deletion recovery, and device API integration
+- raw password, raw code, raw session token, and raw device handle exclusion from logs and durable storage
+- CSRF, origin, Fetch Metadata, and cookie regressions
+- account-recovery versus cryptographic-recovery separation
+- complete account-deletion-specific partnership persistence before partnered deletion is enabled
+
+Planned local commands are:
+
+```text
+npm run test:accounts
+npm run test:a1:postgres
+npm run test:a1:api
+npm run test:a1:security
+npm run test:a1:local
+```
+
+These commands are planned and must not be described as passing until implemented and executed.
+
 ### Integration
 
 Exercise API plus PostgreSQL plus provider fakes.

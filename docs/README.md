@@ -97,6 +97,8 @@ These documents describe current planning state and execution order. They do not
 
 `ROADMAP_EPICS.md` is the canonical implementation epic and acceptance-gate catalog.
 
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` is the active refined implementation design for the current A1 epic.
+
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 
 

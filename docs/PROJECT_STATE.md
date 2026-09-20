@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, and F2 Persistence and Worker Foundation are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all six PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2 durable runtime passes its complete local PostgreSQL integration matrix, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, and F2 Persistence and Worker Foundation are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all six PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2 durable runtime passes its complete local PostgreSQL integration matrix, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -164,6 +164,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A repository-wide documentation audit has been completed against the current foundation state and was rerun after local PostgreSQL verification. Stale PostgreSQL-status claims in the root README, database package README, PRD, and data-model documentation were reconciled with the verified local evidence.
+A repository-wide documentation audit has been completed against the F2-complete and refined-A1 state. The root README, project state, milestone roadmap, epic gates, system architecture, data model, migration plan, capability model, deletion architecture, security model, recovery model, threat model, testing strategy, CI guidance, and PRD are reconciled with the current evidence boundary. A1 is described as refined design only; no A1 runtime acceptance gate is claimed complete.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

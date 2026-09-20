@@ -142,6 +142,34 @@ Deletion observability may record identifiers, states, attempts, timestamps, and
 
 It must not retain deleted private content.
 
+## A1 account deletion boundary
+
+A1 owns the account-level start and recovery mechanics:
+
+- immediate account status lockout
+- immediate session revocation
+- account deletion request record
+- exact seven-day recovery deadline
+- recovery email challenge
+- generation-guarded account-deletion finalizer
+- device and authentication cleanup
+
+For a partnered account, A1 must not enable deletion until the account-deletion-specific partnership path is correct end to end.
+
+That path uses the accepted P3 domain rules for:
+
+- active-partnership deletion overlay
+- remaining-partner view-only behavior
+- recovery to the exact prior partnership state when still valid
+- breakup/deletion deadline precedence
+- permanent dissolution when the account-deletion deadline controls
+- one-calendar-month cooldown for the remaining partner
+- shared partnership deletion manifest creation and serious-event notices
+
+This account-deletion-specific implementation may close individual P3 gates. It does not make the entire P3 epic complete.
+
+Account recovery restores authentication state only. It does not recreate cryptographic trust or historical E2EE keys.
+
 ## Failure behavior
 
 If a deletion target fails:

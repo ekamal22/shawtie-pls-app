@@ -64,6 +64,8 @@ npm ci
 
 The clean-install path from the committed lockfile has been validated successfully.
 
+A1 will add new runtime dependencies and local verification commands. When A1 dependencies are committed, the lockfile must be regenerated, `npm ci` must remain valid, and the full local health baseline must remain green. Planned A1 PostgreSQL/API/security suites are tracked separately from `npm run health` until they are implemented and intentionally integrated into the closure path.
+
 ## Repository-health policy
 
 `scripts/ci/repository-health.mjs` checks the current repository for:

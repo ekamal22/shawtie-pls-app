@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository is currently in foundation implementation. Architecture Baseline 1.0 is frozen, F0 Governance and Security Baseline, F1 Repository Foundation, and F2 Persistence and Worker Foundation are complete locally, and the pure partnership domain baseline remains locally validated. F2 includes all six PostgreSQL migrations, the durable worker substrate, transactional outbox, lifecycle ledger persistence, deletion recovery infrastructure, a passing 17/17 disposable PostgreSQL integration suite, and a green full repository health regression.
+The repository has completed its verified foundation milestones. Architecture Baseline 1.0 is frozen; F0 Governance and Security Baseline, F1 Repository Foundation, and F2 Persistence and Worker Foundation are DONE locally. A1 Accounts and Devices is now the active implementation epic with a refined implementation-grade architecture covering registration, Argon2id credentials, opaque revocable sessions, verified-email recovery, secure email change, account deletion recovery, device revocation, HMAC key rotation, CSRF/origin protections, and PostgreSQL-backed security rate limiting.
 
 ## Product direction
 
@@ -40,7 +40,8 @@ Start with:
 
 - `docs/README.md` for document authority and navigation
 - `docs/PROJECT_STATE.md` for verified current implementation state
-- `docs/ROADMAP.md` for the high-level execution sequence
+- `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
+- `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the active A1 implementation design
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements
 - `docs/architecture/ARCHITECTURE_BASELINE.md` for the frozen architecture baseline
