@@ -127,6 +127,7 @@ export interface EmailChallenge {
   readonly consumedAt: Date | null;
   readonly supersededAt: Date | null;
   readonly verifierKeyVersion: number;
+  readonly createdAt: Date;
 }
 
 interface EmailChallengeDbRow {
@@ -144,6 +145,7 @@ interface EmailChallengeDbRow {
   consumed_at: Date | null;
   superseded_at: Date | null;
   verifier_key_version: number;
+  created_at: Date;
 }
 
 function mapChallenge(row: EmailChallengeDbRow): EmailChallenge {
@@ -162,6 +164,7 @@ function mapChallenge(row: EmailChallengeDbRow): EmailChallenge {
     consumedAt: row.consumed_at,
     supersededAt: row.superseded_at,
     verifierKeyVersion: row.verifier_key_version,
+    createdAt: row.created_at,
   };
 }
 
@@ -227,7 +230,7 @@ export async function lockActiveChallengeForRegistration(
   const result = await executor.query<EmailChallengeDbRow>(
     `SELECT id, account_id, registration_intent_id, purpose, email_normalized, email_display,
             verifier, challenge_nonce, expires_at, attempt_count, max_attempts,
-            consumed_at, superseded_at, verifier_key_version
+            consumed_at, superseded_at, verifier_key_version, created_at
      FROM email_verifications
      WHERE registration_intent_id = $1
        AND purpose = 'registration'
@@ -248,7 +251,7 @@ export async function lockActiveChallengeForAccount(
   const result = await executor.query<EmailChallengeDbRow>(
     `SELECT id, account_id, registration_intent_id, purpose, email_normalized, email_display,
             verifier, challenge_nonce, expires_at, attempt_count, max_attempts,
-            consumed_at, superseded_at, verifier_key_version
+            consumed_at, superseded_at, verifier_key_version, created_at
      FROM email_verifications
      WHERE account_id = $1
        AND purpose = $2
@@ -1034,6 +1037,21 @@ export async function consumeRateLimitBuckets(
   return { allowed: retryAfterMs === 0, retryAfterMs };
 }
 
+export async function resetRateLimitBucket(
+  executor: QueryExecutor,
+  scope: string,
+  keyHash: Buffer,
+  at: Date,
+): Promise<void> {
+  await executor.query(
+    `UPDATE security_rate_limit_buckets
+     SET attempt_count = 0, blocked_until = NULL,
+         last_outcome = 'reset', window_started_at = $3, updated_at = $3
+     WHERE scope = $1 AND key_hash = $2`,
+    [scope, keyHash, at],
+  );
+}
+
 const SECURITY_METADATA_KEYS = new Set([
   "generation",
   "reason",
@@ -1156,7 +1174,7 @@ export async function getChallengeForDelivery(
   const result = await executor.query<EmailChallengeDbRow>(
     `SELECT id, account_id, registration_intent_id, purpose, email_normalized, email_display,
             verifier, challenge_nonce, expires_at, attempt_count, max_attempts,
-            consumed_at, superseded_at, verifier_key_version
+            consumed_at, superseded_at, verifier_key_version, created_at
      FROM email_verifications WHERE id = $1`,
     [id],
   );

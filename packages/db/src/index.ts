@@ -101,6 +101,7 @@ export {
   releaseCurrentEmail,
   renameDevice,
   requestAccountDeletion,
+  resetRateLimitBucket,
   revokeAllSessionsForAccount,
   revokeDevice,
   revokeSession,

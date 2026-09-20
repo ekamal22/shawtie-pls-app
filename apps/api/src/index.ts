@@ -1,9 +1,2 @@
-import Fastify, { type FastifyInstance } from "fastify";
-
-export function createApiApplication(): FastifyInstance {
-  const app = Fastify({ logger: false });
-
-  app.get("/health", async () => ({ status: "ok" }));
-
-  return app;
-}
+export { createApiApplication, type ApiApplicationDependencies } from "./application.ts";
+export { apiConfigFromEnv, type ApiConfig, type AuthKeyConfig } from "./config.ts";
