@@ -4,7 +4,9 @@ import path from "node:path";
 
 const root = process.cwd();
 const migrationsDir = path.join(root, "packages", "db", "migrations");
-const EM_DASH = "\\u2014";
+const EM_DASH = String.fromCodePoint(0x2014);
+const BACKSLASH = String.fromCharCode(92);
+const NEWLINE = String.fromCharCode(10);
 
 const entries = (await readdir(migrationsDir))
   .filter((name) => name.endsWith(".sql"))
@@ -17,7 +19,7 @@ if (entries.length === 0) {
 let expectedVersion = 1;
 
 for (const filename of entries) {
-  const match = /^(\\d{4})_([a-z0-9_]+)\\.sql$/.exec(filename);
+  const match = /^([0-9]{4})_([a-z0-9_]+)[.]sql$/.exec(filename);
 
   if (!match) {
     throw new Error("Invalid migration filename: " + filename);
@@ -40,16 +42,25 @@ for (const filename of entries) {
     throw new Error("Unicode em dash is forbidden in migration: " + filename);
   }
 
-  if (/^\\s*(BEGIN|COMMIT|ROLLBACK)\\s*;/im.test(content)) {
-    throw new Error(
-      "Migration transaction control is runner-owned and must not appear in " + filename,
-    );
-  }
+  for (const rawLine of content.split(NEWLINE)) {
+    const line = rawLine.trimStart();
+    const upper = line.toUpperCase();
 
-  if (/^\\s*\\\\/m.test(content)) {
-    throw new Error(
-      "psql meta-commands are forbidden inside migration files: " + filename,
-    );
+    if (
+      upper.startsWith("BEGIN;")
+      || upper.startsWith("COMMIT;")
+      || upper.startsWith("ROLLBACK;")
+    ) {
+      throw new Error(
+        "Migration transaction control is runner-owned and must not appear in " + filename,
+      );
+    }
+
+    if (line.startsWith(BACKSLASH)) {
+      throw new Error(
+        "psql meta-commands are forbidden inside migration files: " + filename,
+      );
+    }
   }
 
   const checksum = createHash("sha256").update(content).digest("hex");
