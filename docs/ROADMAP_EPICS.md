@@ -148,7 +148,7 @@ Configured repository evidence now includes:
 - Zod-based external-boundary validation foundation and contract tests
 - root build, typecheck, lint, format-check, dependency-check, test, and health commands
 
-Dependency installation has now completed locally with 0 reported npm audit vulnerabilities. Repository health and static migration-plan validation pass on repeated local runs. TypeScript 6 path migration issues are resolved. The next run typechecked every workspace except `@shawtie/contracts`, where Zod declarations required the standard global `URL`; the contracts package now explicitly includes the DOM library for that universal runtime-schema boundary. Typecheck and all later gates still require a fresh local run.
+Dependency installation has completed locally with 0 reported npm audit vulnerabilities. Repository health, static migration-plan validation, typecheck, build, and lint now pass locally across the configured workspaces. The next failing gate was formatting because the Windows checkout used CRLF while Prettier expected LF and the repository had no explicit line-ending policy. `.gitattributes` now normalizes committed text to LF and Prettier tolerates local platform endings. Formatting and later gates still require a fresh local run.
 
 GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
 
