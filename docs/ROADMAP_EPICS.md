@@ -177,7 +177,29 @@ GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplet
 
 # F2: Persistence and Worker Foundation
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+## Current verified progress
+
+Committed repository artifacts now include:
+
+- five ordered PostgreSQL migrations
+- migration checksum ledger and forward migration runner
+- static migration-plan validation
+- identity, partnership, lifecycle, durable-operation, messaging, relationship, media, and call schema foundations
+- partial unique constraint for one occupied partnership slot per account
+- partial unique constraint for current verified email ownership
+- database-level idempotency uniqueness
+- exact breakup timing checks
+- relational membership hardening
+- append-only lifecycle event update protection
+- scheduled-action and outbox deduplication
+- deletion manifest and target schema
+- deterministic account-lock SQL pattern
+- scheduled-action `FOR UPDATE SKIP LOCKED` claim SQL
+- invariant test SQL
+
+These are committed artifacts, not PostgreSQL execution evidence. Real migration, invariant, concurrency, worker, outbox, and deletion-retry verification remains pending.
 
 ## Scope
 
@@ -198,7 +220,7 @@ Status: PLANNED
 
 - [ ] migrations create a clean database from zero
 - [ ] migrations are repeatably testable in CI
-- [ ] rollback or forward-recovery policy is documented
+- [x] rollback or forward-recovery policy is documented
 - [ ] one occupied partnership slot per account is enforced by PostgreSQL
 - [ ] current verified email uniqueness is enforced by PostgreSQL
 - [ ] idempotency uniqueness is enforced at the database level
