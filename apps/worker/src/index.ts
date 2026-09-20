@@ -29,3 +29,7 @@ export {
   createDefaultDeletionHandlers,
   createDefaultScheduledHandlers,
 } from "./auth/default-account-handlers.ts";
+
+export { runOutboxBatch } from "./outbox/outbox-consumer.ts";
+export { runScheduledBatch } from "./scheduled/scheduled-consumer.ts";
+export { runDeletionBatch } from "./deletion/deletion-consumer.ts";

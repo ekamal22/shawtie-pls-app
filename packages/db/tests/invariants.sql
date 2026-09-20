@@ -303,4 +303,115 @@ BEGIN
 END;
 $$;
 
+
+INSERT INTO registration_intents (
+  id, username_normalized, username_display, display_name, date_of_birth,
+  email_normalized, email_display, password_hash, expires_at
+) VALUES (
+  '73000000-0000-4000-8000-000000000001',
+  'registration-test',
+  'Registration-Test',
+  'Registration Test',
+  DATE '2000-01-01',
+  'registration@example.test',
+  'registration@example.test',
+  'argon2-test-hash',
+  now() + interval '1 day'
+);
+
+INSERT INTO email_verifications (
+  id, registration_intent_id, purpose, email_normalized, email_display,
+  verifier, challenge_nonce, expires_at
+) VALUES (
+  '73100000-0000-4000-8000-000000000001',
+  '73000000-0000-4000-8000-000000000001',
+  'registration',
+  'registration@example.test',
+  'registration@example.test',
+  decode('01', 'hex'),
+  decode('02', 'hex'),
+  now() + interval '10 minutes'
+);
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO email_verifications (
+      id, registration_intent_id, purpose, email_normalized, email_display,
+      verifier, challenge_nonce, expires_at
+    ) VALUES (
+      '73100000-0000-4000-8000-000000000002',
+      '73000000-0000-4000-8000-000000000001',
+      'registration',
+      'registration@example.test',
+      'registration@example.test',
+      decode('03', 'hex'),
+      decode('04', 'hex'),
+      now() + interval '10 minutes'
+    );
+    RAISE EXCEPTION 'expected one active registration challenge violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$$;
+
+INSERT INTO account_sessions (
+  id, account_id, device_id, token_verifier, created_at, expires_at, idle_expires_at
+) VALUES (
+  '73200000-0000-4000-8000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '70000000-0000-0000-0000-000000000001',
+  decode('aa', 'hex'),
+  now(),
+  now() + interval '1 hour',
+  now() + interval '1 hour'
+);
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO account_sessions (
+      id, account_id, device_id, token_verifier, created_at, expires_at, idle_expires_at
+    ) VALUES (
+      '73200000-0000-4000-8000-000000000002',
+      '00000000-0000-0000-0000-000000000001',
+      '70000000-0000-0000-0000-000000000001',
+      decode('aa', 'hex'),
+      now(),
+      now() + interval '1 hour',
+      now() + interval '1 hour'
+    );
+    RAISE EXCEPTION 'expected session token verifier uniqueness violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$$;
+
+INSERT INTO security_events (
+  id, account_id, event_type, metadata_json
+) VALUES (
+  '73300000-0000-4000-8000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'test_security_event',
+  '{}'::jsonb
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE security_events
+    SET event_type = 'mutated'
+    WHERE id = '73300000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected security event append-only trigger rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'security_events rows are append-only while retained' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
 ROLLBACK;
