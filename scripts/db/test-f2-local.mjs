@@ -1,13 +1,11 @@
 import { spawnSync } from "node:child_process";
 
 const image = process.env.SHAWTIE_TEST_POSTGRES_IMAGE ?? "postgres:16-alpine";
-const port = process.env.SHAWTIE_TEST_POSTGRES_PORT ?? "55432";
+const requestedPort = process.env.SHAWTIE_TEST_POSTGRES_PORT;
 const containerName = `shawtie-f2-postgres-${process.pid}`;
 const user = "shawtie_test";
 const password = "shawtie_test";
 const database = "shawtie_f2_test";
-const databaseUrl =
-  `postgresql://${user}:${password}@127.0.0.1:${port}/${database}`;
 
 function run(command, args, options = {}) {
   return spawnSync(command, args, {
@@ -61,7 +59,15 @@ const docker = findDocker();
 let started = false;
 
 try {
-  console.log("F2_LOCAL_POSTGRES_START image=" + image + " port=" + port);
+  console.log(
+    "F2_LOCAL_POSTGRES_START image="
+      + image
+      + (requestedPort ? " port=" + requestedPort : " port=dynamic"),
+  );
+
+  const publish = requestedPort
+    ? "127.0.0.1:" + requestedPort + ":5432"
+    : "127.0.0.1::5432";
 
   runDocker(
     docker,
@@ -80,7 +86,7 @@ try {
       "-e",
       "POSTGRES_DB=" + database,
       "-p",
-      "127.0.0.1:" + port + ":5432",
+      publish,
       image,
     ],
     { stdio: ["ignore", "pipe", "pipe"] },
@@ -118,7 +124,24 @@ try {
     );
   }
 
-  console.log("F2_LOCAL_POSTGRES_READY");
+  const portOutput = runDocker(
+    docker,
+    ["port", containerName, "5432/tcp"],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+  const portMatch = portOutput.match(/:(\d+)\s*$/);
+  if (!portMatch) {
+    throw new Error(
+      "Could not determine the disposable PostgreSQL host port from Docker: "
+        + portOutput,
+    );
+  }
+
+  const port = portMatch[1];
+  const databaseUrl =
+    `postgresql://${user}:${password}@127.0.0.1:${port}/${database}`;
+
+  console.log("F2_LOCAL_POSTGRES_READY port=" + port);
 
   const npmCli = process.env.npm_execpath;
   if (!npmCli) {
