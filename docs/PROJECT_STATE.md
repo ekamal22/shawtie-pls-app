@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, and baseline CI plus repository-health tooling are configured.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, and the initial PostgreSQL schema and migration system are committed.
 
 ## Product definition
 
@@ -47,6 +47,12 @@ Accepted architecture decisions include:
 - local repository-health scanner
 - CODEOWNERS ownership metadata
 - public security-reporting policy
+- initial PostgreSQL schema migrations
+- migration checksum ledger and runner
+- static migration-plan validation
+- database invariant test suite
+- deterministic account-lock SQL pattern
+- scheduled-action `FOR UPDATE SKIP LOCKED` claim pattern
 
 ## Implementation state
 
@@ -84,10 +90,11 @@ Current epic status:
 
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because baseline CI and repository-health tooling are configured, but full workspace guardrails and GitHub-hosted validation remain incomplete
-- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence, API, worker, notification, deletion, and race gates remain
+- F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, migration tooling, database invariants, and canonical lock/claim SQL are committed, but real PostgreSQL execution, race validation, worker integration, outbox integration, and deletion retry behavior remain unverified
+- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
 
-Database persistence, API integration, and worker integration are not implemented yet.
+The persistence schema foundation is implemented as SQL migrations but has not yet been executed against a real PostgreSQL instance. API integration and worker integration are not implemented yet.
 
 Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks, but GitHub-hosted validation has not yet been executed. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
 
@@ -102,15 +109,15 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 ## Next engineering work
 
 1. complete workspace configuration and executable architecture guardrails
-2. add `apps/worker`
-3. design PostgreSQL schema and migrations
-4. implement database invariants
-5. implement transactional outbox and scheduled actions
-6. implement lifecycle event ledger persistence
-7. implement deletion manifests
-8. implement account and device foundations
-9. wire API routes to the domain capability engine
-10. add PostgreSQL race and invariant tests
+2. execute the committed migrations against disposable PostgreSQL and fix any syntax or compatibility issues
+3. run the committed database invariant suite
+4. add PostgreSQL concurrency and race tests
+5. add `apps/worker` and integrate scheduled-action claiming
+6. integrate transactional outbox writes and delivery
+7. integrate lifecycle event persistence
+8. integrate deletion-manifest retries
+9. implement account and device repositories
+10. wire API routes to the domain capability engine
 
 ## Stable release blockers
 
