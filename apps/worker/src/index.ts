@@ -14,3 +14,18 @@ export { WorkerApplication } from "./runtime/worker-application.ts";
 export { createWorkerIdentity } from "./runtime/worker-identity.ts";
 
 export const workerFoundationStatus = "f2-durable-runtime-implemented" as const;
+
+export {
+  createEmailChallengeOutboxHandler,
+  createSecurityEmailOutboxHandler,
+} from "./auth/auth-email-handlers.ts";
+export type { EmailDeliveryPort, SecurityEmailMessage } from "./auth/email-delivery-port.ts";
+export {
+  WorkerAuthKeyRing,
+  workerAuthKeyConfigFromEnv,
+  type WorkerAuthKeyConfig,
+} from "./auth/worker-auth-key-ring.ts";
+export {
+  createDefaultDeletionHandlers,
+  createDefaultScheduledHandlers,
+} from "./auth/default-account-handlers.ts";

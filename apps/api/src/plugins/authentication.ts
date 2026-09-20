@@ -1,6 +1,7 @@
 import type { FastifyRequest } from "fastify";
 import {
   findSessionByVerifier,
+  getClockTimestamp,
   touchSession,
   type AuthenticatedSession,
   type DatabasePool,
@@ -34,7 +35,7 @@ export async function requireAuthentication(
   }
   if (!session) throw new ApiError(401, "AUTH_REQUIRED");
 
-  const now = new Date();
+  const now = await getClockTimestamp(database.pool);
   if (
     session.accountStatus !== "active" ||
     session.deviceRevokedAt !== null ||
@@ -56,7 +57,11 @@ export async function requireAuthentication(
   return { session, rawToken };
 }
 
-export function requireRecentReauthentication(session: AuthenticatedSession, now = new Date()): void {
+export async function requireRecentReauthentication(
+  session: AuthenticatedSession,
+  database: DatabasePool,
+): Promise<void> {
+  const now = await getClockTimestamp(database.pool);
   if (
     !session.reauthenticatedAt ||
     now.getTime() - session.reauthenticatedAt.getTime() > 10 * 60_000

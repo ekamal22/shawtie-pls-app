@@ -469,7 +469,7 @@ export class AccountService {
     } catch {
       identifier = input.identifier.trim().toLowerCase();
     }
-    const identifierHash = this.keys.activeVerifier("rate-limit-key", `login:${identifier}`).value;
+    const identifierHash = this.keys.activeVerifier("rate-limit-key", identifier).value;
     await this.consumeSecurityRateLimit([
       { scope: "login_network", subject: networkKey, limit: 50, windowMs: 15 * MINUTE, blockMs: 15 * MINUTE },
       { scope: "login_identifier", subject: identifier, limit: 10, windowMs: 15 * MINUTE, blockMs: 15 * MINUTE },
@@ -892,7 +892,6 @@ export class AccountService {
           eventType: "account_deletion_started",
           aggregateVersion: partnership.generation,
           metadata: { generation: Number(generation), status: "deletion_pending" },
-          createdAt: now,
         });
       }
       await insertScheduledAction(transaction, {

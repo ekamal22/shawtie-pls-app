@@ -1374,16 +1374,16 @@ export async function lockPendingAccountDeletion(
   executor: QueryExecutor,
   accountId: string,
   generation: bigint,
-): Promise<{ id: string; recoverUntil: Date } | null> {
-  const result = await executor.query<{ id: string; recover_until: Date }>(
-    `SELECT id, recover_until
+): Promise<{ id: string; requestedAt: Date; recoverUntil: Date } | null> {
+  const result = await executor.query<{ id: string; requested_at: Date; recover_until: Date }>(
+    `SELECT id, requested_at, recover_until
      FROM account_deletion_requests
      WHERE account_id = $1 AND status = 'pending' AND generation = $2
      FOR UPDATE`,
     [accountId, generation.toString()],
   );
   const row = result.rows[0];
-  return row ? { id: row.id, recoverUntil: row.recover_until } : null;
+  return row ? { id: row.id, requestedAt: row.requested_at, recoverUntil: row.recover_until } : null;
 }
 
 export async function finalizeAccountDeletionState(

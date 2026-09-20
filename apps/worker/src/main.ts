@@ -1,18 +1,19 @@
 import { createDatabasePool, databaseConfigFromEnv } from "@shawtie/db";
 import { workerConfigFromEnv } from "./config.ts";
-import { DeletionHandlerRegistry } from "./deletion/deletion-handler-registry.ts";
+import { createDefaultDeletionHandlers, createDefaultScheduledHandlers } from "./auth/default-account-handlers.ts";
 import { OutboxHandlerRegistry } from "./outbox/outbox-handler-registry.ts";
-import { ScheduledActionHandlerRegistry } from "./scheduled/scheduled-handler-registry.ts";
 import { WorkerApplication } from "./runtime/worker-application.ts";
 import { createWorkerIdentity } from "./runtime/worker-identity.ts";
 
+const database = createDatabasePool(databaseConfigFromEnv());
+
 const application = new WorkerApplication({
-  database: createDatabasePool(databaseConfigFromEnv()),
+  database,
   workerId: createWorkerIdentity("shawtie-worker"),
   config: workerConfigFromEnv(),
-  scheduledHandlers: new ScheduledActionHandlerRegistry(),
+  scheduledHandlers: createDefaultScheduledHandlers(),
   outboxHandlers: new OutboxHandlerRegistry(),
-  deletionHandlers: new DeletionHandlerRegistry(),
+  deletionHandlers: createDefaultDeletionHandlers(database),
 });
 
 let stopping = false;

@@ -1,7 +1,7 @@
 export class ApiError extends Error {
   readonly statusCode: number;
   readonly code: string;
-  readonly retryAfterSeconds?: number;
+  readonly retryAfterSeconds: number | undefined;
 
   constructor(statusCode: number, code: string, message = code, retryAfterSeconds?: number) {
     super(message);

@@ -159,7 +159,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
 
   app.post("/api/v1/me/email-change/start", async (request) => {
     const auth = await requireAuthentication(request, database, config, keys);
-    requireRecentReauthentication(auth.session);
+    await requireRecentReauthentication(auth.session, database);
     const input = parseAtBoundary(emailChangeStartSchema, request.body);
     await service.startEmailChange(auth, input, network(request));
     return { ok: true };
@@ -167,14 +167,14 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
 
   app.post("/api/v1/me/email-change/resend", async (request) => {
     const auth = await requireAuthentication(request, database, config, keys);
-    requireRecentReauthentication(auth.session);
+    await requireRecentReauthentication(auth.session, database);
     await service.resendEmailChange(auth, network(request));
     return { ok: true };
   });
 
   app.post("/api/v1/me/email-change/complete", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
-    requireRecentReauthentication(auth.session);
+    await requireRecentReauthentication(auth.session, database);
     const input = parseAtBoundary(emailChangeCompleteSchema, request.body);
     const result = await service.completeEmailChange(auth, input.code);
     setSessionCookie(reply, config, result.sessionToken);
@@ -197,7 +197,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
 
   app.post("/api/v1/me/account-deletion", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
-    requireRecentReauthentication(auth.session);
+    await requireRecentReauthentication(auth.session, database);
     await service.requestDeletion(auth);
     clearSessionCookie(reply, config);
     return { ok: true };
