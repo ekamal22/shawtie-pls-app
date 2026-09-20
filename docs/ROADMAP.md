@@ -135,7 +135,7 @@ Implement:
 - challenge state and active-challenge uniqueness
 - session token-generation fencing
 - device handle verifiers
-- PostgreSQL auth rate-limit buckets
+- PostgreSQL security rate-limit buckets
 - append-only typed security events
 - durable security-email delivery records
 - account/auth repositories

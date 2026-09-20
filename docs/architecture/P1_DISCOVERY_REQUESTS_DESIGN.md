@@ -67,9 +67,24 @@ Reason:
 - the product requires immediate automatic partnership formation
 - returning two pending requests without pairing would be a product-rule violation
 
-The P1 integration test application may explicitly enable request-only mode for verification.
+The application uses an explicit mode:
 
-Production startup or route registration must fail closed if partner-request creation is enabled without the P2 coordinator.
+~~~text
+partnerRequestMode =
+  disabled
+  | request_only_test
+  | paired
+~~~
+
+Rules:
+
+- production accepts only disabled or paired
+- request_only_test is rejected by production configuration validation
+- paired requires a registered P2 PartnershipFormationCoordinator
+- disabled does not register the create route
+- request_only_test exists only for P1 integration tests before P2 is implemented
+
+Production startup or route registration fails closed if paired mode is selected without the P2 coordinator.
 
 Discovery and request read models may be exercised independently in test environments.
 
@@ -504,12 +519,17 @@ Extend allowed outcomes to cover explicit P1 decisions such as:
 created
 rate_limited
 decline_cooldown
-blocked
-ineligible
+monthly_limit
+sender_ineligible
+target_unavailable
 duplicate
 self_request
 target_changed
 ~~~
+
+New P1 code records generic target_unavailable rather than distinguishing block, recipient occupancy, recipient cooldown, or recipient deletion state in the attempt ledger.
+
+Legacy outcome values already permitted by older migrations remain readable if present, but new writes use the minimized P1 vocabulary.
 
 The public API need not expose these internal outcome distinctions.
 
@@ -656,7 +676,9 @@ Order:
 created_at DESC, id DESC
 ~~~
 
-The cursor carries the last visible createdAt and requestId in a versioned base64url envelope.
+The cursor carries the last visible createdAt, requestId, and direction in a versioned base64url envelope.
+
+Cursor version 1 is a canonical JSON payload encoded with base64url. It is not signed because it contains no authority or secret; all fields are schema-validated and re-applied only as query bounds.
 
 The cursor is not a secret, but it is schema-validated and direction-bound. Invalid or mismatched cursors fail with VALIDATION_FAILED.
 
@@ -735,7 +757,8 @@ Policy:
 
 - client key length: 16 through 128 ASCII characters
 - stored scope: partner_request_create
-- retention: at least 24 hours
+- successful create or paired responses are retained at least until the original request expires
+- denied create responses are retained for at least 24 hours
 - request fingerprint includes recipientAccountId and normalized expectedUsername
 - the authenticated account ID is already part of the idempotency-record scope
 - same key plus same fingerprint replays the stored HTTP status and response
@@ -765,11 +788,12 @@ Security throttling is intentionally separate from the authoritative request tra
 Flow:
 
 1. authenticate and validate the request
-2. perform a non-locking lookup for an already-completed matching idempotency result; if found, replay it without charging a new abuse attempt
-3. run a short security-rate-limit transaction that atomically consumes account and network buckets
-4. commit the rate-limit transaction
-5. run the authoritative pair transaction
-6. commit the business result and idempotency response
+2. perform a non-locking lookup for an already-completed matching idempotency result; if found, replay it without charging a new partner-request creation bucket
+3. the replay remains subject to ordinary infrastructure request-rate protection so one completed key cannot become an unlimited resource-consumption bypass
+4. run a short security-rate-limit transaction that atomically consumes account and network buckets
+5. commit the rate-limit transaction
+6. run the authoritative pair transaction
+7. commit the business result and idempotency response
 
 This separation is deliberate.
 
@@ -780,6 +804,30 @@ A business rollback does not erase the already-consumed abuse attempt.
 Rate-limit bucket locks are therefore never held while account, partnership, or request rows are locked.
 
 A rate-limit storage failure fails closed for request creation rather than silently bypassing the abuse control.
+
+## HTTP and cache semantics
+
+P1 uses stable HTTP behavior:
+
+- unauthenticated: 401
+- CSRF/origin rejection: 403
+- invalid contract or cursor: 400
+- discovery success including no result: 200
+- request list: 200
+- request create success: 201 unless P2 defines a paired response status in the same contract revision
+- completed idempotency replay: original stored status
+- product-state conflict such as monthly limit, decline cooldown, duplicate, target changed, or target unavailable: 409
+- abuse-rate limit: 429 with Retry-After where a safe bounded retry value exists
+- unknown request and wrong request owner: same 404 shape
+- cancel or decline of an owned terminal request: 200 with current terminal state
+
+All authenticated P1 responses use:
+
+~~~text
+Cache-Control: private, no-store
+~~~
+
+P1 does not put usernames, request IDs, or cursors into server-generated redirect URLs.
 
 ## Request creation transaction
 
@@ -875,6 +923,32 @@ A P1-specific pure helper composes:
 
 P1 must not copy a second incompatible implementation of occupancy or cooldown rules into route handlers.
 
+## P2 coordinator interface
+
+P1 integrates with P2 through one transaction-scoped interface.
+
+Conceptually:
+
+~~~text
+PartnershipFormationCoordinator.handleReciprocalCandidate(
+  executor,
+  candidate,
+  now
+) -> PairingOutcome
+~~~
+
+Requirements:
+
+- executor is the current F2 transaction executor
+- the coordinator must not start a nested authoritative transaction
+- the same sorted account locks remain held
+- candidate account IDs and request IDs are revalidated inside the transaction
+- no provider call occurs
+- pairing outcome is returned to P1 so the final public response can be stored in the same idempotency record
+- an unavailable or misconfigured coordinator fails closed before production request creation is enabled
+
+This interface is a modular-monolith boundary, not a network boundary.
+
 ## Reciprocal request boundary with P2
 
 P1 detects reciprocal active requests.
@@ -939,15 +1013,16 @@ Cancellation transaction:
 1. authenticate account
 2. begin transaction
 3. load PostgreSQL transaction time
-4. load the request identity without exposing it publicly
+4. load only the request participant IDs needed to determine lock order
 5. lock both request accounts in immutable UUID order
-6. lock the request row
-7. return the same not-found response for unknown request and wrong sender
-8. if already terminal, return the stable terminal state without overwriting it
-9. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
-10. otherwise set status = cancelled
-11. set cancelled_at = transaction time
-12. commit
+6. re-read and lock the request row
+7. verify the locked row still has the same immutable participants
+8. return the same not-found response for unknown request and wrong sender
+9. if already terminal, return the stable terminal state without overwriting it
+10. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
+11. otherwise set status = cancelled
+12. set cancelled_at = transaction time
+13. commit
 
 Cancellation does not erase the original created attempt from the rolling one-month count.
 
@@ -958,15 +1033,16 @@ Decline transaction:
 1. authenticate account
 2. begin transaction
 3. load PostgreSQL transaction time
-4. load the request identity without exposing it publicly
+4. load only the request participant IDs needed to determine lock order
 5. lock both request accounts in immutable UUID order
-6. lock the request row
-7. return the same not-found response for unknown request and wrong recipient
-8. if already terminal, return the stable terminal state without overwriting it
-9. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
-10. otherwise set status = declined
-11. set declined_at = transaction time
-12. commit
+6. re-read and lock the request row
+7. verify the locked row still has the same immutable participants
+8. return the same not-found response for unknown request and wrong recipient
+9. if already terminal, return the stable terminal state without overwriting it
+10. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
+11. otherwise set status = declined
+12. set declined_at = transaction time
+13. commit
 
 Decline does not create a block.
 
@@ -996,6 +1072,8 @@ invalidatePendingRequestsForPair(
 ~~~
 
 Callers must already hold the relevant account rows in deterministic UUID order.
+
+The invalidation query locks matching pending request rows in immutable request-ID order before updating them.
 
 Required integrations:
 
@@ -1140,16 +1218,14 @@ Requirements:
 
 ## Security events
 
-Expected minimal security/abuse event types include:
+Expected security/abuse event types are intentionally narrow:
 
 ~~~text
 partner_discovery_rate_limited
 partner_request_rate_limited
-partner_request_created
-partner_request_cancelled
-partner_request_declined
-partner_request_expired
 ~~~
+
+Normal request creation, cancellation, decline, expiry, acceptance, and invalidation are already represented by partner_requests and partner_request_attempts and are not duplicated into the general security-event ledger by default.
 
 High-volume successful discovery is not written to the security-event ledger.
 
@@ -1391,11 +1467,13 @@ Exit gate:
 
 1. exact-search UI
 2. safe result card
-3. send action
-4. incoming/outgoing request list
+3. send action with one idempotency key per logical attempt
+4. cursor-paginated incoming/outgoing request lists
 5. cancel and decline controls
 6. canonical refresh after mutations
-7. abuse/security regression suite
+7. no-store response verification
+8. production/test feature-mode validation
+9. abuse/security regression suite
 
 Exit gate:
 

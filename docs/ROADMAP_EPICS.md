@@ -430,7 +430,7 @@ No A1 runtime gate is checked merely because the design exists.
 - registration intents
 - email challenges
 - sessions and devices
-- PostgreSQL-backed auth rate limits
+- PostgreSQL-backed security rate limits
 - typed security events
 
 ### A1-B Authentication security kernel
@@ -546,12 +546,15 @@ P1 is designed now, but runtime implementation depends on A1 account contracts a
 
 ### P1-A Domain, contracts, migration, repositories
 
-- request domain rules and time boundaries
-- exact discovery contracts
+- request domain rules and exact time boundaries
+- discovery, cursor, and mutation contracts
 - migration 0008
+- forward-safe request terminal-shape backfill
 - discovery repository
 - partner-request repository
-- request-attempt hardening
+- append-only request-attempt hardening
+- cross-epic invalidation helpers
+- create-request idempotency integration
 - F2 scheduled expiry integration
 
 ### P1-B Discovery
@@ -566,6 +569,8 @@ P1 is designed now, but runtime implementation depends on A1 account contracts a
 ### P1-C Request creation
 
 - stable account target plus expected username
+- required idempotency key
+- separate committed security-rate-limit preflight
 - deterministic two-account locking
 - sender and recipient eligibility
 - either-direction block enforcement
@@ -573,15 +578,18 @@ P1 is designed now, but runtime implementation depends on A1 account contracts a
 - exact one-hour decline cooldown
 - rolling one-month limit
 - seven-day request insert
-- reciprocal-request detection for P2
+- reciprocal-request detection
+- same-transaction P2 coordinator handoff
+- fail-closed production feature mode
 
 ### P1-D Cancel, decline, expiry
 
-- outgoing cancel
-- incoming decline
+- pair-locked outgoing cancel
+- pair-locked incoming decline
 - exact scheduled expiry
 - lazy logical expiry
-- active request lists
+- cursor-paginated active request lists
+- A1/P2/P3 invalidation integration
 
 ### P1-E Client and abuse closure
 

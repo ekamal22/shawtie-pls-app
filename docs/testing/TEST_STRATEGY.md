@@ -132,7 +132,7 @@ Required A1 evidence includes:
 - device revocation fan-out to sessions
 - HMAC key-version rotation and unknown-version fail-closed behavior
 - trusted-proxy spoofing regression
-- PostgreSQL auth-rate-limit contention
+- PostgreSQL security-rate-limit contention
 - registration, login, logout, password recovery, email change, username, DOB, deletion recovery, and device API integration
 - raw password, raw code, raw session token, and raw device handle exclusion from logs and durable storage
 - CSRF, origin, Fetch Metadata, and cookie regressions
