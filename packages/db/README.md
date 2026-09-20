@@ -2,11 +2,11 @@
 
 ## Status
 
-The PostgreSQL schema and migration foundation is implemented in this package.
+The PostgreSQL schema and migration foundation is implemented in this package and has passed local disposable-database validation against PostgreSQL 16.15.
 
-The migrations have not yet been executed against a real PostgreSQL instance in this repository workflow.
+All five migrations have been applied from a blank database twice. Migration rerun idempotency, checksum-drift rejection, the invariant suite, critical catalog objects, occupied-slot concurrency, scheduled-action claim concurrency, and deterministic account-lock ordering have been validated locally.
 
-Do not describe the persistence foundation as verified until the migrations and invariant tests pass against PostgreSQL.
+Hosted PostgreSQL CI, committed automated race regression tests, worker integration, outbox transaction integration, deletion-manifest retry integration, and query-plan validation remain pending.
 
 ## Migration order
 
@@ -78,4 +78,4 @@ The migration files, migration runner, static migration-plan checker, determinis
 
 The static migration plan is part of the local health command and baseline CI configuration.
 
-Real PostgreSQL execution remains pending.
+Real PostgreSQL execution has passed locally against disposable PostgreSQL 16.15. The remaining verification boundary is hosted PostgreSQL CI plus runtime integration for worker, outbox, deletion, and automated concurrency regression coverage.
