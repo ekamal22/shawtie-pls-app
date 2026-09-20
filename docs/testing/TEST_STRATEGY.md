@@ -78,6 +78,8 @@ The suite passed locally on 2026-09-20 against a disposable PostgreSQL 16.15 dat
 
 Separate two-session exercises passed for occupied partnership-slot contention, scheduled-action `SKIP LOCKED` claiming, and deterministic account lock ordering. Those race exercises are not yet committed as automated regression tests.
 
+F2 promotes those manual exercises into a reusable disposable-database harness under `packages/testkit` and adds runtime failure tests for claim leases, worker crash recovery, stale generations, outbox atomicity, duplicate delivery, lifecycle metadata privacy, deletion resumption, and graceful shutdown. The canonical design is `../architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
+
 Prove:
 
 - one occupied partnership slot per account
@@ -92,6 +94,13 @@ Prove:
 - append-only lifecycle event creation
 - deterministic two-account lock ordering
 - deletion manifest idempotency
+- expired durable claim recovery after worker crash
+- claim ownership validation before acknowledgement
+- outbox state-change atomicity
+- duplicate-safe at-least-once outbox delivery
+- lifecycle event private-content exclusion
+- deletion manifest resume after process restart
+- bounded worker concurrency and graceful shutdown
 
 The remaining items in this list are future coverage unless explicitly identified above as locally exercised.
 

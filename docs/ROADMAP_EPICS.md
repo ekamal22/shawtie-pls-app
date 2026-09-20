@@ -222,6 +222,14 @@ GitHub Actions capacity is unavailable through the remainder of September 2026, 
 
 Status: IN_PROGRESS
 
+## Design status
+
+The implementation architecture and execution sequence are defined in:
+
+`docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
+
+The design preserves Architecture Baseline 1.0 and does not itself count as runtime implementation.
+
 ## Current verified progress
 
 Committed repository artifacts and local PostgreSQL evidence now include:
@@ -247,7 +255,77 @@ Committed repository artifacts and local PostgreSQL evidence now include:
 - catalog verification of critical indexes, foreign keys, checks, and triggers
 - successful occupied-slot, scheduled-action claim, and deterministic account-lock concurrency exercises
 
-The database foundation has local PostgreSQL execution evidence. Committed race automation, PostgreSQL CI, worker integration, outbox transaction integration, and deletion-retry verification remain pending.
+The current database foundation has local PostgreSQL execution evidence.
+
+The F2 runtime design identifies a missing crash-recovery primitive for durable work already moved to `processing`. F2 therefore plans a forward reliability migration that introduces lease-based reclaim semantics without changing the accepted PostgreSQL-backed queue architecture. That migration is planned and does not yet exist.
+
+## Implementation sequence
+
+### F2-A Persistence kernel and race automation
+
+- PostgreSQL connection pool and transaction helper
+- transaction-scoped query executor
+- PostgreSQL-authoritative time helper
+- SQLSTATE normalization
+- planned durable-work lease migration
+- deterministic account-lock repository
+- reusable disposable-database testkit
+- automated occupied-partnership contention test
+- automated scheduled-action `SKIP LOCKED` test
+- automated deterministic two-account lock-order test
+
+### F2-B Durable worker runtime
+
+- runtime configuration
+- unique worker identity
+- bounded polling and concurrency
+- scheduled-action claim and execution
+- claim leases and expired-claim recovery
+- retry classification and backoff
+- expected-generation protection
+- graceful shutdown
+- multi-worker tests
+
+### F2-C Transactional outbox
+
+- outbox insert in authoritative transactions
+- worker claim and lease recovery
+- handler registry
+- delivery acknowledgement
+- retry and permanent-failure handling
+- duplicate-delivery safety
+- commit and rollback atomicity tests
+
+### F2-D Lifecycle event persistence
+
+- append-only runtime repository
+- typed allowlisted metadata
+- transaction integration
+- append-only regression
+- private-content exclusion regression
+
+### F2-E Deletion manifest runtime
+
+- manifest and target creation
+- target claiming and lease recovery
+- idempotent target handlers
+- retry and permanent-failure handling
+- manifest completion
+- partial-failure restart and resume
+- authorization-remains-revoked regression
+
+### F2-F Integration verification
+
+- transaction rollback and commit tests
+- worker crash and lease reclaim
+- stale-generation rejection
+- outbox atomicity and duplicate delivery
+- lifecycle-event privacy
+- deletion resume after restart
+- graceful shutdown
+- full repository health regression
+
+Hosted execution remains a separate V1 concern and is not an F2 local completion requirement.
 
 ## Scope
 
@@ -255,32 +333,45 @@ The database foundation has local PostgreSQL execution evidence. Committed race 
 - migration system
 - database schema foundation
 - database constraints
+- database runtime connection and transaction mechanics
 - deterministic multi-account locking
 - durable worker
 - transactional outbox
 - scheduled actions
+- claim leases and crash recovery
 - generation guards
 - lifecycle ledger persistence
 - deletion manifests
 - idempotency persistence
+- reusable PostgreSQL integration and race-test infrastructure
 
 ## Acceptance gates
 
 - [x] migrations create a clean database from zero
-- [ ] migrations are repeatably testable in CI
 - [x] rollback or forward-recovery policy is documented
 - [x] one occupied partnership slot per account is enforced by PostgreSQL
 - [x] current verified email uniqueness is enforced by PostgreSQL
 - [x] idempotency uniqueness is enforced at the database level
 - [x] deterministic two-account locking helper exists
 - [x] concurrent partnership creation cannot create two occupied partnerships
-- [ ] worker claims scheduled work safely across multiple worker instances
-- [ ] lifecycle-sensitive jobs reject stale generations
-- [ ] outbox write occurs in the same transaction as authoritative state mutation
-- [ ] duplicate outbox delivery is safe
-- [ ] lifecycle events are append-only and contain no private content
-- [ ] deletion manifests resume after partial failure
 - [x] PostgreSQL invariant and selected race tests pass locally
+- [ ] database runtime uses one checked-out connection for each authoritative transaction
+- [ ] authoritative lifecycle time is read from PostgreSQL
+- [ ] planned durable-work reliability migration is implemented and validated from zero
+- [ ] occupied-slot, scheduled-claim, and deterministic-lock races are committed as repeatable automated tests
+- [ ] worker claims scheduled work safely across multiple worker instances
+- [ ] claimed scheduled, outbox, and deletion work can be reclaimed after worker crash or lease expiry
+- [ ] durable acknowledgements verify current claim ownership
+- [ ] worker concurrency is bounded and graceful shutdown stops new claims before exit
+- [ ] lifecycle-sensitive jobs reject stale generations inside the same transaction as the authoritative mutation
+- [ ] outbox write occurs in the same transaction as authoritative state mutation
+- [ ] outbox delivery is treated as at-least-once and duplicate delivery is safe
+- [ ] external provider calls do not occur inside authoritative database transactions
+- [ ] lifecycle events are append-only and contain only allowlisted non-content metadata
+- [ ] deletion authorization remains revoked while physical cleanup retries
+- [ ] deletion manifests resume after partial failure or process restart
+- [ ] complete F2 local integration and failure-recovery suite passes
+- [ ] full repository health regression remains green
 
 # A1: Accounts and Devices
 

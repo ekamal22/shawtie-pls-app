@@ -73,6 +73,18 @@ Targets may include:
 - local-purge notification
 - backup-expiration record
 
+## Runtime target processing
+
+F2 processes deletion targets as durable worker jobs. Targets use claim ownership and recoverable leases so a worker crash does not strand cleanup indefinitely.
+
+The manifest remains the durable proof of deletion scope, while individual targets are the normal unit of claiming and retry.
+
+After each target completion, the runtime checks whether every target for the manifest is complete. Only then is the manifest marked complete.
+
+A failed or expired target remains resumable. Access must remain revoked for the entire retry period.
+
+See `F2_PERSISTENCE_WORKER_DESIGN.md` for the concrete worker and repository design.
+
 ## Idempotency
 
 Every deletion target handler must be idempotent.

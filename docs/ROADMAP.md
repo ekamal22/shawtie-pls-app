@@ -30,12 +30,13 @@ Do not infer completion percentages from partial layers.
 - database invariants: committed and passing against local disposable PostgreSQL 16
 - transaction helpers: canonical account-lock SQL committed, application integration pending
 - deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
-- durable worker: application scaffold configured, runtime integration pending
-- transactional outbox: schema committed, runtime integration pending
-- scheduled actions: schema and claim SQL committed, runtime integration pending
+- F2 runtime design: complete in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`, implementation pending
+- durable worker: application scaffold configured; bounded consumer, lease-recovery, retry, and shutdown runtime pending
+- transactional outbox: schema committed; atomic write and at-least-once delivery runtime pending
+- scheduled actions: schema and claim SQL committed; recoverable lease and execution runtime pending
 - scheduled-action generation tokens: domain behavior implemented, persistence pending
 - lifecycle event ledger: schema and append-only update protection locally validated against PostgreSQL
-- deletion manifest workflow: schema committed, retry integration pending
+- deletion manifest workflow: schema committed; target lease, retry, resume, and completion runtime pending
 - runtime contract validation: Zod boundary foundation configured and locally validated
 - API versioning
 - client compatibility versioning
@@ -203,4 +204,4 @@ Current canonical epic status:
 
 The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 
-The next foundation milestones are automating the locally proven PostgreSQL races and integrating the durable worker and outbox. Hosted baseline verification will resume separately under V1 when GitHub Actions capacity returns.
+The next foundation milestone is F2-A: PostgreSQL runtime kernel, durable-work lease support, disposable-database test infrastructure, and automated race regressions. F2 then proceeds through worker runtime, outbox, lifecycle persistence, deletion runtime, and integration verification. Hosted baseline verification remains separate under V1.

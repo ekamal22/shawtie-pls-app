@@ -109,16 +109,28 @@ On 2026-09-20, a disposable PostgreSQL 16.15 Docker container was used to verify
 - two sessions using the committed scheduled-action claim SQL do not claim the same row
 - opposite caller orders using the committed account-lock SQL acquire accounts in immutable UUID order without deadlock
 
+## Planned F2 forward migration
+
+The F2 runtime design identifies a crash-recovery gap in durable work that has already been marked `processing`.
+
+A future forward migration, expected to be `0006_durable_runtime_reliability.sql`, is planned to add lease and retry-availability fields needed for scheduled actions, outbox events, and deletion targets. This migration does not exist yet and must not be treated as applied or verified until implementation.
+
+The exact planned behavior is documented in `../architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
+
 ## What remains unverified
 
 The following cannot yet be claimed as complete:
 
+- planned durable-work reliability migration
 - automated race coverage committed to the repository
-- PostgreSQL execution in hosted CI
+- database runtime pool and transaction integration
 - integrated worker-instance behavior beyond the database claim SQL
-- outbox transaction integration
-- deletion-manifest retry integration
+- lease expiry and crash recovery
+- outbox transaction and delivery integration
+- lifecycle-event runtime persistence
+- deletion-manifest retry and resume integration
 - query-plan and index validation
+- PostgreSQL hosted verification, tracked separately under V1
 
 ## PostgreSQL verification command
 

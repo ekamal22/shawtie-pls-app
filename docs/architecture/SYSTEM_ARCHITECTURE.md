@@ -236,6 +236,12 @@ Examples:
 
 Client clocks are display-only.
 
+## F2 runtime design
+
+The concrete persistence and worker implementation design is defined in `F2_PERSISTENCE_WORKER_DESIGN.md`.
+
+That design preserves this baseline and adds planned implementation detail for transaction ownership, queue claim leases, crash recovery, bounded worker concurrency, retry behavior, outbox delivery semantics, lifecycle-event metadata, deletion-target processing, and the F2 integration test matrix.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.
@@ -258,6 +264,8 @@ scheduled_actions
 ```
 
 Workers claim due rows with transaction-safe locking such as `FOR UPDATE SKIP LOCKED`.
+
+F2 requires claimed durable work to use recoverable lease semantics so a worker crash cannot leave a row permanently stranded in `processing`. Claim transactions remain short and must not hold row locks while external work executes.
 
 Every scheduled action must be idempotent.
 
@@ -305,6 +313,8 @@ COMMIT
 ```
 
 The worker later delivers WebSocket events, push notifications, and email from the outbox.
+
+Outbox delivery is at-least-once. Consumers must tolerate duplicate delivery and should use provider idempotency where available. External provider calls do not occur inside the authoritative database transaction.
 
 This prevents database state from disagreeing with notification side effects after partial failures.
 

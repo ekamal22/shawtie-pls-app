@@ -55,6 +55,7 @@ The selected architecture is:
 ## Core architecture documents
 
 - `architecture/SYSTEM_ARCHITECTURE.md`
+- `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 - `architecture/DATA_MODEL.md`
 - `architecture/PARTNERSHIP_STATE_MACHINE.md`
 - `architecture/REALTIME_ARCHITECTURE.md`
