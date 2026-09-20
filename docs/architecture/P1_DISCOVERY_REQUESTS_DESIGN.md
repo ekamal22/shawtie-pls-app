@@ -450,13 +450,7 @@ Longer abuse-metadata retention remains governed by the security metadata policy
 
 ## A1 rate-limit primitive refinement
 
-Before A1 runtime implementation, rename the planned generic table:
-
-~~~text
-auth_rate_limit_buckets
-~~~
-
-to:
+Before A1 runtime implementation, the previously auth-specific draft name for the generic rate-limit table is replaced by:
 
 ~~~text
 security_rate_limit_buckets
