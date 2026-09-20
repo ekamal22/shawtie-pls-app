@@ -7,7 +7,7 @@ export interface ApiConfig {
   readonly environment: "development" | "test" | "production";
   readonly appOrigin: string;
   readonly allowInsecureLoopbackCookies: boolean;
-  readonly trustedProxy: false | readonly string[];
+  readonly trustedProxy: false | string[];
   readonly authKeys: AuthKeyConfig;
 }
 
@@ -41,7 +41,7 @@ function parseOrigin(raw: string | undefined, environment: ApiConfig["environmen
   return url.origin;
 }
 
-function parseTrustedProxy(raw: string | undefined): false | readonly string[] {
+function parseTrustedProxy(raw: string | undefined): false | string[] {
   if (!raw) return false;
   const values = raw.split(",").map((value) => value.trim()).filter(Boolean);
   if (values.length === 0) return false;

@@ -2,19 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
 import {
-  insertEmailChallenge,
-  insertOutboxEvent,
-  insertPasswordCredential,
-  insertCurrentEmail,
-  insertAccount,
-  insertAccountProfile,
-  insertScheduledAction,
-  requestAccountDeletion,
-} from "@shawtie/db";
-import {
   closeDatabasePool,
   createDatabasePool,
   databaseConfigFromEnv,
+  insertAccount,
+  insertAccountProfile,
+  insertCurrentEmail,
+  insertEmailChallenge,
+  insertOutboxEvent,
+  insertPasswordCredential,
+  insertScheduledAction,
+  requestAccountDeletion,
   type DatabasePool,
 } from "@shawtie/db";
 import { OutboxHandlerRegistry } from "../src/outbox/outbox-handler-registry.ts";
@@ -187,6 +185,108 @@ test("A1 deletion finalizer revokes account permanently and deletion worker scru
       [accountId],
     );
     assert.equal(manifest.rows[0]?.status, "completed");
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("A1 breakup deadline wins when it precedes account deletion recovery deadline", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await database.pool.query("TRUNCATE TABLE accounts, registration_intents CASCADE");
+    const deletingAccountId = randomUUID();
+    const remainingAccountId = randomUUID();
+    const partnershipId = randomUUID();
+    const breakupId = randomUUID();
+    const now = new Date();
+    const deletionRequestedAt = new Date(now.getTime() - 2 * 24 * 60 * 60_000);
+    const recoverUntil = new Date(deletionRequestedAt.getTime() + 7 * 24 * 60 * 60_000);
+    const breakupInitiatedAt = new Date(now.getTime() - 8 * 24 * 60 * 60_000);
+    const breakupDeadline = new Date(breakupInitiatedAt.getTime() + 7 * 24 * 60 * 60_000);
+
+    for (const [id, username] of [
+      [deletingAccountId, "collision-delete"],
+      [remainingAccountId, "collision-remain"],
+    ] as const) {
+      await insertAccount(database.pool, {
+        id,
+        usernameNormalized: username,
+        usernameDisplay: username,
+        dateOfBirth: "2000-01-01",
+        createdAt: breakupInitiatedAt,
+      });
+    }
+
+    await database.pool.query(
+      `INSERT INTO partnerships (
+         id, relationship_start_date, lifecycle_state, generation, version,
+         activated_at, created_at, updated_at
+       ) VALUES ($1, DATE '2025-01-01', 'breakup_pending', 3, 3, $2, $2, $2)`,
+      [partnershipId, breakupInitiatedAt],
+    );
+    await database.pool.query(
+      `INSERT INTO partnership_members (partnership_id, account_id, joined_at)
+       VALUES ($1,$2,$4), ($1,$3,$4)`,
+      [partnershipId, deletingAccountId, remainingAccountId, breakupInitiatedAt],
+    );
+    await database.pool.query(
+      `INSERT INTO breakup_processes (
+         id, partnership_id, initiated_by_account_id, initiated_at,
+         initiator_cancel_until, base_deadline, final_deadline, generation
+       ) VALUES ($1,$2,$3,$4,$4 + interval '1 hour',$4 + interval '7 days',$5,3)`,
+      [breakupId, partnershipId, deletingAccountId, breakupInitiatedAt, breakupDeadline],
+    );
+    await requestAccountDeletion(database.pool, {
+      id: randomUUID(),
+      accountId: deletingAccountId,
+      requestedAt: deletionRequestedAt,
+      recoverUntil,
+      generation: 1n,
+    });
+    await insertScheduledAction(database.pool, {
+      id: randomUUID(),
+      actionType: "account_deletion_breakup_precedence_finalize",
+      aggregateType: "account",
+      aggregateId: deletingAccountId,
+      executeAt: breakupDeadline,
+      expectedGeneration: 1n,
+      deduplicationKey: "a1-breakup-precedence-" + partnershipId,
+      payload: { partnershipId },
+    });
+
+    await runScheduledBatch(
+      database,
+      "a1-precedence-worker",
+      createDefaultScheduledHandlers(),
+      { batchSize: 10, concurrency: 1, leaseMs: 60_000, retryPolicy: defaultRetryPolicy },
+    );
+
+    const partnership = await database.pool.query<{
+      lifecycle_state: string;
+      termination_reason: string | null;
+      terminated_at: Date | null;
+    }>(
+      "SELECT lifecycle_state, termination_reason, terminated_at FROM partnerships WHERE id = $1",
+      [partnershipId],
+    );
+    assert.equal(partnership.rows[0]?.lifecycle_state, "terminated");
+    assert.equal(partnership.rows[0]?.termination_reason, "breakup");
+    assert.equal(partnership.rows[0]?.terminated_at?.toISOString(), breakupDeadline.toISOString());
+
+    const account = await database.pool.query<{ status: string }>(
+      "SELECT status FROM accounts WHERE id = $1",
+      [deletingAccountId],
+    );
+    assert.equal(account.rows[0]?.status, "deletion_pending");
+
+    const cooldown = await database.pool.query<{ reason: string; eligible_at: Date }>(
+      `SELECT reason, eligible_at
+       FROM account_partner_eligibility
+       WHERE account_id = $1 AND resolved_at IS NULL`,
+      [remainingAccountId],
+    );
+    assert.equal(cooldown.rows[0]?.reason, "breakup_dissolution");
   } finally {
     await closeDatabasePool(database);
   }

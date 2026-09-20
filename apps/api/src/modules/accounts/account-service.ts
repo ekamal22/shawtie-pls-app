@@ -912,6 +912,25 @@ export class AccountService {
           metadata: { generation: Number(generation), status: "deletion_pending" },
         });
       }
+      if (
+        partnership?.lifecycleState === "breakup_pending" &&
+        partnership.breakupFinalDeadline &&
+        partnership.breakupFinalDeadline.getTime() < recoverUntil.getTime()
+      ) {
+        await insertScheduledAction(transaction, {
+          id: randomUUID(),
+          actionType: "account_deletion_breakup_precedence_finalize",
+          aggregateType: "account",
+          aggregateId: auth.session.accountId,
+          executeAt: partnership.breakupFinalDeadline,
+          expectedGeneration: generation,
+          deduplicationKey:
+            `account-deletion-breakup-precedence:${auth.session.accountId}:${partnership.partnershipId}:${generation}`,
+          payload: { partnershipId: partnership.partnershipId },
+          payloadVersion: 1,
+        });
+      }
+
       await insertScheduledAction(transaction, {
         id: randomUUID(),
         actionType: "account_deletion_finalize",

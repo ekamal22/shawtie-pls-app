@@ -52,11 +52,16 @@ export const accountDeletionFinalizeHandler: ScheduledActionHandler = {
       throw new RetryableWorkerError("PARTNERSHIP_CHANGED_DURING_LOCK");
     }
     if (partnership) {
+      const partnershipEffectiveAt =
+        partnership.breakupFinalDeadline &&
+        partnership.breakupFinalDeadline.getTime() <= now.getTime()
+          ? partnership.breakupFinalDeadline
+          : now;
       const reason = await finalizePartnershipForAccountDeletion(transaction, {
         partnershipId: partnership.partnershipId,
         deletingAccountId: action.aggregateId,
         remainingAccountId: partnership.otherAccountId,
-        at: now,
+        at: partnershipEffectiveAt,
         breakupDeadline: partnership.breakupFinalDeadline,
       });
       await appendLifecycleEvent(transaction, {
