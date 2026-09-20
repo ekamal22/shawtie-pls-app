@@ -27,8 +27,9 @@ Current steps are:
 1. checkout with persisted credentials disabled
 2. use Node 22.18.0
 3. run repository-health checks
-4. run the domain test suite
-5. run dependency audit when a package lockfile exists
+4. run the static database migration-plan check
+5. run the domain test suite
+6. run dependency audit when a package lockfile exists
 
 The workflow uses read-only repository permissions, a job timeout, concurrency cancellation, and full commit-SHA pinning for external GitHub Actions.
 
@@ -48,7 +49,7 @@ Run the current full local baseline:
 npm run health
 ```
 
-This currently combines repository health with the domain test suite.
+This currently combines repository health, static migration-plan validation, and the domain test suite.
 
 ## Repository-health policy
 
@@ -170,6 +171,7 @@ As the repository foundation grows, Baseline CI should add hard steps for:
 - build
 - circular-dependency checks
 - runtime contract tests
+- real PostgreSQL migration-from-zero and invariant tests when PostgreSQL CI infrastructure is available
 
 As persistence is implemented, add:
 
