@@ -6,6 +6,7 @@ import path from "node:path";
 const root = process.cwd();
 const databaseUrl = process.env.DATABASE_URL;
 const migrationsDir = path.join(root, "packages", "db", "migrations");
+const NEWLINE = String.fromCharCode(10);
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
@@ -66,16 +67,17 @@ const appliedOutput = runPsql([
   "-A",
   "-t",
   "-F",
-  "\\t",
+  "|",
   "-c",
   "SELECT filename, checksum FROM _schema_migrations ORDER BY filename",
 ]);
 
 const applied = new Map();
 
-for (const rawLine of appliedOutput.split(/\\r?\\n/)) {
-  if (!rawLine.trim()) continue;
-  const [filename, checksum] = rawLine.split("\\t");
+for (const rawLine of appliedOutput.split(NEWLINE)) {
+  const line = rawLine.trim();
+  if (!line) continue;
+  const [filename, checksum] = line.split("|");
   applied.set(filename, checksum);
 }
 
@@ -124,7 +126,7 @@ for (const filename of filenames) {
     "INSERT INTO _schema_migrations (filename, checksum)",
     "VALUES ('" + safeFilename + "', '" + checksum + "');",
     "",
-  ].join("\\n");
+  ].join(NEWLINE);
 
   runPsql(
     ["--single-transaction", "-q", "-f", "-"],
