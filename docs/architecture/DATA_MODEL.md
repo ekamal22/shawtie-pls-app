@@ -6,6 +6,16 @@ This document defines the logical persistence model and the database invariants 
 
 PostgreSQL is the authoritative transactional store.
 
+## Physical schema status
+
+The first physical schema foundation is committed under `packages/db/migrations`.
+
+It currently includes identity, partnership lifecycle, durable operations, content metadata, and relational-integrity hardening.
+
+The physical schema has not yet been executed against PostgreSQL, so this document remains the logical model and the migrations remain implementation artifacts pending database verification.
+
+Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
+
 ## Identifier policy
 
 Use immutable random identifiers for externally referenced records.
