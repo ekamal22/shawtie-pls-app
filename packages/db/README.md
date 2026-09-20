@@ -31,7 +31,7 @@ Static migration-plan check:
 npm run db:migrations:check
 ```
 
-Apply migrations to `DATABASE_URL` using the local `psql` executable:
+Apply migrations to `DATABASE_URL` using the repository's pinned Node PostgreSQL driver:
 
 ```text
 npm run db:migrate
@@ -43,7 +43,7 @@ Run invariant tests against a disposable test database:
 DB_TEST_CONFIRM=1 npm run db:test:invariants
 ```
 
-On PowerShell:
+On PowerShell with an existing disposable PostgreSQL database:
 
 ```powershell
 $env:DATABASE_URL = "postgresql://..."
@@ -51,6 +51,14 @@ $env:DB_TEST_CONFIRM = "1"
 npm run db:migrate
 npm run db:test:invariants
 ```
+
+For the complete F2 PostgreSQL verification path, Docker Desktop can provide the disposable database automatically:
+
+```text
+npm run test:f2:local
+```
+
+The local F2 command starts an ephemeral PostgreSQL 16 container, injects the disposable connection string, runs the full F2 PostgreSQL suite, and removes the container afterward. A separately installed `psql` executable is not required.
 
 ## Safety
 

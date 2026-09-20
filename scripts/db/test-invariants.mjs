@@ -1,6 +1,9 @@
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
+import pg from "pg";
 
+const { Client } = pg;
 const root = process.cwd();
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -33,16 +36,22 @@ function run(command, args) {
 run(process.execPath, ["scripts/db/check-migrations.mjs"]);
 run(process.execPath, ["scripts/db/migrate.mjs"]);
 
-run(
-  "psql",
-  [
-    databaseUrl,
-    "-X",
-    "-v",
-    "ON_ERROR_STOP=1",
-    "-f",
-    path.join("packages", "db", "tests", "invariants.sql"),
-  ],
+const invariantSql = await readFile(
+  path.join(root, "packages", "db", "tests", "invariants.sql"),
+  "utf8",
 );
+
+const client = new Client({
+  connectionString: databaseUrl,
+  application_name: "shawtie-invariants",
+});
+
+await client.connect();
+
+try {
+  await client.query(invariantSql);
+} finally {
+  await client.end();
+}
 
 console.log("DATABASE_INVARIANTS_PASS");

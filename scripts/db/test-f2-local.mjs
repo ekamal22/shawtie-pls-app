@@ -1,0 +1,153 @@
+import { spawnSync } from "node:child_process";
+
+const image = process.env.SHAWTIE_TEST_POSTGRES_IMAGE ?? "postgres:16-alpine";
+const port = process.env.SHAWTIE_TEST_POSTGRES_PORT ?? "55432";
+const containerName = `shawtie-f2-postgres-${process.pid}`;
+const user = "shawtie_test";
+const password = "shawtie_test";
+const database = "shawtie_f2_test";
+const databaseUrl =
+  `postgresql://${user}:${password}@127.0.0.1:${port}/${database}`;
+
+function run(command, args, options = {}) {
+  return spawnSync(command, args, {
+    encoding: "utf8",
+    ...options,
+  });
+}
+
+function findDocker() {
+  const candidates = [
+    process.env.DOCKER_CLI,
+    process.platform === "win32"
+      ? "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"
+      : undefined,
+    "docker",
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const result = run(candidate, ["version", "--format", "{{.Server.Version}}"], {
+      stdio: "ignore",
+    });
+    if (!result.error && result.status === 0) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    "Docker CLI or Docker Desktop engine is unavailable. Start Docker Desktop and retry. "
+      + "If docker.exe is in a custom location, set DOCKER_CLI to its full path.",
+  );
+}
+
+function runDocker(docker, args, options = {}) {
+  const result = run(docker, args, options);
+
+  if (result.error) throw result.error;
+
+  if (result.status !== 0) {
+    const message = result.stderr?.trim() || result.stdout?.trim();
+    throw new Error(message || "docker exited with status " + result.status);
+  }
+
+  return result.stdout?.trim() ?? "";
+}
+
+function sleep(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+const docker = findDocker();
+let started = false;
+
+try {
+  console.log("F2_LOCAL_POSTGRES_START image=" + image + " port=" + port);
+
+  runDocker(
+    docker,
+    [
+      "run",
+      "--detach",
+      "--rm",
+      "--name",
+      containerName,
+      "--label",
+      "com.shawtie.role=f2-disposable-postgres",
+      "-e",
+      "POSTGRES_USER=" + user,
+      "-e",
+      "POSTGRES_PASSWORD=" + password,
+      "-e",
+      "POSTGRES_DB=" + database,
+      "-p",
+      "127.0.0.1:" + port + ":5432",
+      image,
+    ],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+  started = true;
+
+  let ready = false;
+  for (let attempt = 1; attempt <= 60; attempt += 1) {
+    const result = run(
+      docker,
+      [
+        "exec",
+        containerName,
+        "pg_isready",
+        "-U",
+        user,
+        "-d",
+        database,
+      ],
+      { stdio: "ignore" },
+    );
+
+    if (!result.error && result.status === 0) {
+      ready = true;
+      break;
+    }
+
+    await sleep(1_000);
+  }
+
+  if (!ready) {
+    const logs = runDocker(docker, ["logs", containerName]);
+    throw new Error(
+      "Disposable PostgreSQL did not become ready. Container logs:\n" + logs,
+    );
+  }
+
+  console.log("F2_LOCAL_POSTGRES_READY");
+
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  const testResult = run(npm, ["run", "test:f2:postgres"], {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      DATABASE_URL: databaseUrl,
+      DB_TEST_CONFIRM: "1",
+    },
+  });
+
+  if (testResult.error) throw testResult.error;
+  if (testResult.status !== 0) {
+    throw new Error(
+      "F2 PostgreSQL suite exited with status " + testResult.status,
+    );
+  }
+
+  console.log("F2_LOCAL_POSTGRES_PASS");
+} finally {
+  if (started) {
+    const cleanup = run(docker, ["stop", "--time", "2", containerName], {
+      stdio: "ignore",
+    });
+
+    if (cleanup.error || cleanup.status !== 0) {
+      console.error("F2_LOCAL_POSTGRES_CLEANUP_WARNING", {
+        containerName,
+      });
+    }
+  }
+}

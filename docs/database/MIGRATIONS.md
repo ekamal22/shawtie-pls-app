@@ -144,21 +144,28 @@ The following cannot yet be claimed as complete:
 - queue query-plan and index validation against realistically sized synthetic data
 - PostgreSQL hosted verification, tracked separately under V1
 
-## PostgreSQL verification command
+## PostgreSQL verification commands
 
-Use a disposable PostgreSQL database.
+The migration runner and invariant runner use the repository's pinned Node PostgreSQL driver and do not require a separately installed `psql` executable.
 
-Set `DATABASE_URL`, then run:
+With an existing disposable PostgreSQL database, set `DATABASE_URL` and `DB_TEST_CONFIRM=1`, then run:
 
 ```text
 npm run db:migrations:check
 npm run db:migrate
 npm run db:test:invariants
+npm run test:f2:postgres
 ```
 
-The invariant test command requires `DB_TEST_CONFIRM=1`.
+For local development with Docker Desktop, the preferred complete F2 path is:
 
-Do not run the invariant test command against production.
+```text
+npm run test:f2:local
+```
+
+That command starts an ephemeral PostgreSQL 16 container, waits for readiness, supplies the disposable connection string, runs the full F2 PostgreSQL suite, and removes the container afterward.
+
+Do not run invariant or F2 integration tests against production.
 
 
 ## Committed verification artifacts
