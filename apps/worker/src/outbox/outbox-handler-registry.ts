@@ -7,6 +7,10 @@ function key(eventType: string, payloadVersion: number): string {
 export class OutboxHandlerRegistry {
   readonly #handlers = new Map<string, OutboxHandler>();
 
+  get size(): number {
+    return this.#handlers.size;
+  }
+
   register(handler: OutboxHandler): void {
     const handlerKey = key(handler.eventType, handler.payloadVersion);
     if (this.#handlers.has(handlerKey)) {

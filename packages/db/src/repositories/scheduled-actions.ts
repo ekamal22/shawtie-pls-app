@@ -71,7 +71,15 @@ function mapAction(row: ScheduledActionRow): ScheduledAction {
   };
 }
 
-const actionColumns = `
+const returningColumns = `
+  action.id, action.action_type, action.aggregate_type, action.aggregate_id,
+  action.execute_at, action.available_at, action.status, action.attempt_count,
+  action.max_attempts, action.expected_generation, action.deduplication_key,
+  action.payload, action.payload_version, action.claimed_at, action.claimed_by,
+  action.lease_expires_at, action.claim_version, action.last_error_code
+`;
+
+const selectColumns = `
   id, action_type, aggregate_type, aggregate_id, execute_at, available_at,
   status, attempt_count, max_attempts, expected_generation, deduplication_key,
   payload, payload_version, claimed_at, claimed_by, lease_expires_at,
@@ -107,7 +115,7 @@ export async function insertScheduledAction(
       input.aggregateType,
       input.aggregateId,
       input.executeAt,
-      input.expectedGeneration ?? null,
+      input.expectedGeneration?.toString() ?? null,
       input.deduplicationKey,
       JSON.stringify(input.payload ?? {}),
       input.payloadVersion ?? 1,
@@ -148,7 +156,7 @@ export async function claimScheduledActions(
        attempt_count = action.attempt_count + 1
      FROM candidates
      WHERE action.id = candidates.id
-     RETURNING ${actionColumns}`,
+     RETURNING ${returningColumns}`,
     [batchSize, workerId, leaseMs],
   );
 
@@ -160,7 +168,7 @@ export async function lockScheduledActionClaim(
   claim: DurableClaim,
 ): Promise<ScheduledAction | null> {
   const result = await executor.query<ScheduledActionRow>(
-    `SELECT ${actionColumns}
+    `SELECT ${selectColumns}
      FROM scheduled_actions
      WHERE id = $1
        AND status = 'processing'
@@ -202,8 +210,7 @@ async function finishScheduledAction(
     `UPDATE scheduled_actions
      SET
        status = $4,
-       completed_at = CASE WHEN $4 IN ('completed', 'stale', 'failed', 'cancelled')
-         THEN clock_timestamp() ELSE completed_at END,
+       completed_at = clock_timestamp(),
        last_error_code = $5,
        claimed_at = NULL,
        claimed_by = NULL,

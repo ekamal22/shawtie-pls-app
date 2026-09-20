@@ -7,6 +7,10 @@ function key(actionType: string, payloadVersion: number): string {
 export class ScheduledActionHandlerRegistry {
   readonly #handlers = new Map<string, ScheduledActionHandler>();
 
+  get size(): number {
+    return this.#handlers.size;
+  }
+
   register(handler: ScheduledActionHandler): void {
     const handlerKey = key(handler.actionType, handler.payloadVersion);
     if (this.#handlers.has(handlerKey)) {

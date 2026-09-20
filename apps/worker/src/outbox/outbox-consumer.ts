@@ -61,7 +61,11 @@ async function deliver(
       renewLease: () =>
         renewOutboxLease(database.pool, claim, options.leaseMs),
     });
-    await deliverOutboxEvent(database.pool, claim);
+
+    const delivered = await deliverOutboxEvent(database.pool, claim);
+    if (!delivered) {
+      console.error("OUTBOX_ACKNOWLEDGEMENT_LOST", { eventId: event.id });
+    }
   } catch (error) {
     const code = workerErrorCode(error);
     if (error instanceof PermanentWorkerError) {
@@ -85,6 +89,8 @@ export async function runOutboxBatch(
   signal: AbortSignal,
   options: OutboxConsumerOptions,
 ): Promise<number> {
+  if (registry.size === 0) return 0;
+
   const events = await claimOutboxEvents(
     database.pool,
     options.batchSize,

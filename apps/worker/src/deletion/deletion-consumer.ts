@@ -86,6 +86,8 @@ export async function runDeletionBatch(
   signal: AbortSignal,
   options: DeletionConsumerOptions,
 ): Promise<number> {
+  if (registry.size === 0) return 0;
+
   const targets = await claimDeletionTargets(
     database.pool,
     options.batchSize,

@@ -103,6 +103,8 @@ export async function runScheduledBatch(
   registry: ScheduledActionHandlerRegistry,
   options: ScheduledConsumerOptions,
 ): Promise<number> {
+  if (registry.size === 0) return 0;
+
   const actions = await claimScheduledActions(
     database.pool,
     options.batchSize,

@@ -39,10 +39,12 @@ interface OutboxRow {
   last_error_code: string | null;
 }
 
-const columns = `
-  id, event_type, aggregate_type, aggregate_id, deduplication_key, payload,
-  payload_version, status, attempt_count, max_attempts, available_at,
-  claimed_at, claimed_by, lease_expires_at, claim_version, last_error_code
+const returningColumns = `
+  event.id, event.event_type, event.aggregate_type, event.aggregate_id,
+  event.deduplication_key, event.payload, event.payload_version, event.status,
+  event.attempt_count, event.max_attempts, event.available_at, event.claimed_at,
+  event.claimed_by, event.lease_expires_at, event.claim_version,
+  event.last_error_code
 `;
 
 function mapRow(row: OutboxRow): OutboxEvent {
@@ -134,7 +136,7 @@ export async function claimOutboxEvents(
        attempt_count = event.attempt_count + 1
      FROM candidates
      WHERE event.id = candidates.id
-     RETURNING ${columns}`,
+     RETURNING ${returningColumns}`,
     [batchSize, workerId, leaseMs],
   );
   return result.rows.map(mapRow);

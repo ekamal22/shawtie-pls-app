@@ -2,7 +2,11 @@ ALTER TABLE scheduled_actions
   ADD COLUMN available_at timestamptz;
 
 UPDATE scheduled_actions
-SET available_at = execute_at
+SET
+  available_at = execute_at,
+  status = CASE WHEN status = 'processing' THEN 'pending' ELSE status END,
+  claimed_at = CASE WHEN status = 'processing' THEN NULL ELSE claimed_at END,
+  claimed_by = CASE WHEN status = 'processing' THEN NULL ELSE claimed_by END
 WHERE available_at IS NULL;
 
 ALTER TABLE scheduled_actions
@@ -41,6 +45,13 @@ CREATE INDEX scheduled_actions_reclaimable
   ON scheduled_actions (lease_expires_at, id)
   WHERE status = 'processing';
 
+UPDATE outbox_events
+SET
+  status = 'pending',
+  claimed_at = NULL,
+  claimed_by = NULL
+WHERE status = 'processing';
+
 ALTER TABLE outbox_events
   ADD COLUMN lease_expires_at timestamptz,
   ADD COLUMN max_attempts integer NOT NULL DEFAULT 12,
@@ -72,6 +83,10 @@ ALTER TABLE outbox_events
 CREATE INDEX outbox_events_reclaimable
   ON outbox_events (lease_expires_at, id)
   WHERE status = 'processing';
+
+UPDATE deletion_targets
+SET status = 'pending'
+WHERE status = 'processing';
 
 ALTER TABLE deletion_targets
   ADD COLUMN available_at timestamptz NOT NULL DEFAULT now(),
