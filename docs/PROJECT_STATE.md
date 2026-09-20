@@ -140,6 +140,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A repository-wide documentation audit has been completed against the current foundation state.
+A repository-wide documentation audit has been completed against the current foundation state and was rerun after local PostgreSQL verification. Stale PostgreSQL-status claims in the root README, database package README, PRD, and data-model documentation were reconciled with the verified local evidence.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.
