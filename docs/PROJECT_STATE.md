@@ -114,7 +114,7 @@ Current epic status:
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
 - V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
-- F2 Persistence and Worker Foundation: IN_PROGRESS. The runtime architecture and implementation sequence are designed and refined in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`; the approved design now includes claim-version fencing, controlled lease renewal, `READ COMMITTED` transaction policy, bounded whole-transaction retry, database timeout policy, PostgreSQL clock semantics, durable payload versions, optional notification wake-ups with polling fallback, direct expired-claim reclaim, and queue query-plan gates. Schema, migrations, database invariants, and canonical lock/claim SQL already have local PostgreSQL evidence, while the refined runtime remains unimplemented
+- F2 Persistence and Worker Foundation: IN_PROGRESS. The designed database runtime, reliability migration, fencing-aware durable repositories, worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, and F2 PostgreSQL integration test matrix are now implemented on the feature branch. Dependency lockfile refresh and full local TypeScript/build/lint/format/PostgreSQL validation are still pending, so no new F2 acceptance gate is yet reported as verified
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
@@ -136,12 +136,12 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 F2 implementation now follows the approved implementation design in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
 
-1. F2-A: implement the PostgreSQL runtime kernel with pool error handling, transaction isolation and retry policy, PostgreSQL business and lease clocks, defensive timeouts, the planned durable-work reliability migration with fencing tokens and payload versions, reusable database test harness, automated race regressions, and queue query-plan verification
-2. F2-B: implement the durable worker runtime, bounded consumers, direct expired-claim reclaim, fenced acknowledgements, controlled lease renewal, payload-version dispatch, generation guards, retries, optional notification wake-ups, and graceful shutdown
-3. F2-C: implement the transactional outbox runtime and duplicate-safe delivery test adapters
-4. F2-D: implement lifecycle-event persistence with allowlisted non-content metadata
-5. F2-E: implement deletion-manifest and deletion-target claiming, retry, resume, and completion
-6. F2-F: run the complete local F2 integration and failure-recovery matrix, then the full repository health regression
+1. refresh the npm lockfile for the newly pinned PostgreSQL dependency
+2. run typecheck, build, lint, formatting, dependency-boundary checks, and ordinary tests; fix any failures
+3. apply all six migrations to a disposable PostgreSQL database and run invariant tests
+4. run `npm run test:f2:postgres` to validate races, reclaim, fencing, generation guards, outbox atomicity, lifecycle privacy, deletion resume, transaction policy, and worker shutdown
+5. run the complete `npm run health` regression
+6. update F2 acceptance gates and current-state documentation only from the resulting verified evidence
 7. after F2, continue into account/device and partnership application work
 8. when GitHub Actions capacity returns, complete the separate V1 hosted verification track
 
