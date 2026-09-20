@@ -17,12 +17,12 @@
     "sourceMap": true,
     "skipLibCheck": false,
     "paths": {
-      "@shawtie/domain": ["packages/domain/src/index.ts"],
-      "@shawtie/contracts": ["packages/contracts/src/index.ts"],
-      "@shawtie/db": ["packages/db/src/index.ts"],
-      "@shawtie/crypto": ["packages/crypto/src/index.ts"],
-      "@shawtie/ui": ["packages/ui/src/index.ts"],
-      "@shawtie/testkit": ["packages/testkit/src/index.ts"]
+      "@shawtie/domain": ["./packages/domain/src/index.ts"],
+      "@shawtie/contracts": ["./packages/contracts/src/index.ts"],
+      "@shawtie/db": ["./packages/db/src/index.ts"],
+      "@shawtie/crypto": ["./packages/crypto/src/index.ts"],
+      "@shawtie/ui": ["./packages/ui/src/index.ts"],
+      "@shawtie/testkit": ["./packages/testkit/src/index.ts"]
     }
   }
 }

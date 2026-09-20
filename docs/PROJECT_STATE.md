@@ -67,7 +67,7 @@ Configured but not yet locally execution-validated:
 - Zod-based runtime boundary-validation convention with contract tests
 - root build, typecheck, lint, formatting, dependency-check, test, and health commands
 
-Dependency installation completed locally with 180 packages installed and 0 reported npm audit vulnerabilities. The repository-health check and static migration-plan check passed. The first expanded `npm run health` attempt then stopped at TypeScript typecheck because TypeScript 6 rejects the deprecated shared `baseUrl` option. The shared configuration has been corrected by removing `baseUrl`; typecheck, build, lint, formatting, dependency checks, and expanded tests still require a fresh local run. A generated `package-lock.json` exists locally but is not yet committed.
+Dependency installation completed locally with 180 packages installed and 0 reported npm audit vulnerabilities. Repository health and static migration-plan validation pass on repeated local runs. The first expanded `npm run health` attempt stopped because TypeScript 6 rejects deprecated `baseUrl`. After removing `baseUrl`, the second attempt exposed that the existing `paths` targets also needed explicit `./` prefixes when resolved relative to the shared config. The shared configuration now follows the TypeScript 6 migration form: no `baseUrl`, with explicit relative `paths` targets. Typecheck, build, lint, formatting, dependency checks, and expanded tests still require a fresh local run. A generated `package-lock.json` exists locally but is not yet committed.
 
 Implemented and locally validated:
 
@@ -109,7 +109,7 @@ Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EP
 Current epic status:
 
 - F0 Governance and Security Baseline: DONE
-- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because dependency installation, repository health, and migration-plan validation have passed locally, but the corrected TypeScript configuration still needs a fresh full local health run, the generated lockfile is not yet committed, and GitHub-hosted validation remains incomplete
+- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because dependency installation, repository health, and migration-plan validation have passed locally, but the TypeScript 6 path-resolution correction still needs a fresh full local health run, the generated lockfile is not yet committed, and GitHub-hosted validation remains incomplete
 - F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, database invariants, and the canonical lock/claim SQL have passed local PostgreSQL validation, but committed race automation, worker integration, outbox integration, deletion retry behavior, and PostgreSQL CI remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
