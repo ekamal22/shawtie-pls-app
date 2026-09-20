@@ -16,6 +16,7 @@ function runPsql(args = [], input) {
   const result = spawnSync(
     "psql",
     [
+      "--dbname",
       databaseUrl,
       "-X",
       "-v",
