@@ -48,6 +48,7 @@ Start with:
 - `docs/security/THREAT_MODEL.md` and `docs/security/DATA_CLASSIFICATION.md` for security boundaries
 - `docs/testing/TEST_STRATEGY.md` for verification requirements
 - `docs/testing/CI_AND_REPOSITORY_HEALTH.md` for current CI and repository-health status
+- `docs/database/MIGRATIONS.md` for PostgreSQL migration policy and verification
 
 Architecture and product documents describe intended rules and design. `PROJECT_STATE.md` and `ROADMAP_EPICS.md` are the living sources for what is actually implemented and what remains.
 
