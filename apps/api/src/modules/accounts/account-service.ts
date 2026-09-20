@@ -31,6 +31,7 @@ import {
   isVerifiedEmailAvailable,
   listDevices,
   lockAccountForProfileMutation,
+  lockAuthenticatedSession,
   lockAccounts,
   lockActiveChallengeForAccount,
   lockActiveChallengeForRegistration,
@@ -117,6 +118,15 @@ export class AccountService {
     readonly keys: AuthKeyRing,
     readonly passwords: PasswordHasher,
   ) {}
+
+  async #assertSession(transaction: QueryExecutor, auth: AuthContext): Promise<void> {
+    const valid = await lockAuthenticatedSession(transaction, {
+      sessionId: auth.session.sessionId,
+      accountId: auth.session.accountId,
+      expectedGeneration: auth.session.tokenGeneration,
+    });
+    if (!valid) throw new ApiError(401, "AUTH_REQUIRED");
+  }
 
   async consumeSecurityRateLimit(
     scopes: readonly {
@@ -572,10 +582,12 @@ export class AccountService {
     return profile;
   }
 
-  async updateProfile(accountId: string, input: ProfileUpdateInput): Promise<void> {
+  async updateProfile(auth: AuthContext, input: ProfileUpdateInput): Promise<void> {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      await updateDisplayName(transaction, accountId, input.displayName.trim().normalize("NFC"), now);
+      await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
+      await updateDisplayName(transaction, auth.session.accountId, input.displayName.trim().normalize("NFC"), now);
     });
   }
 
@@ -686,6 +698,7 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
       if (!(await isVerifiedEmailAvailable(transaction, email.normalized, auth.session.accountId))) {
         throw new ApiError(409, "EMAIL_UNAVAILABLE");
       }
@@ -715,6 +728,7 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
       const challenge = await lockActiveChallengeForAccount(
         transaction,
         auth.session.accountId,
@@ -744,6 +758,7 @@ export class AccountService {
     const decision = await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
       const challenge = await lockActiveChallengeForAccount(
         transaction,
         auth.session.accountId,
@@ -817,6 +832,7 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const account = await lockAccountForProfileMutation(transaction, auth.session.accountId);
+      await this.#assertSession(transaction, auth);
       if (!account || account.status !== "active") throw new ApiError(401, "AUTH_REQUIRED");
       const occupied = await accountHasOccupiedPartnership(transaction, auth.session.accountId);
       const decision = evaluateUsernameChange(now, account.nextUsernameChangeEligibleAt, occupied);
@@ -850,6 +866,7 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const account = await lockAccountForProfileMutation(transaction, auth.session.accountId);
+      await this.#assertSession(transaction, auth);
       if (!account || account.status !== "active") throw new ApiError(401, "AUTH_REQUIRED");
       const decision = evaluateDateOfBirthCorrection(
         utcDate(now),
@@ -871,6 +888,7 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const locked = await lockAccountForProfileMutation(transaction, auth.session.accountId);
+      await this.#assertSession(transaction, auth);
       if (!locked || locked.status !== "active") throw new ApiError(409, "ACCOUNT_LOCKED");
       const currentGeneration = await getAccountDeletionGeneration(transaction, auth.session.accountId);
       const generation = currentGeneration + 1n;
@@ -1005,10 +1023,12 @@ export class AccountService {
     return listDevices(this.database.pool, accountId);
   }
 
-  async renameDevice(accountId: string, deviceId: string, displayName: string): Promise<void> {
+  async renameDevice(auth: AuthContext, deviceId: string, displayName: string): Promise<void> {
     const renamed = await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      return renameDevice(transaction, accountId, deviceId, displayName.trim(), now);
+      await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
+      return renameDevice(transaction, auth.session.accountId, deviceId, displayName.trim(), now);
     });
     if (!renamed) throw new ApiError(404, "DEVICE_NOT_FOUND");
   }
@@ -1019,6 +1039,8 @@ export class AccountService {
   ): Promise<{ currentDeviceRevoked: boolean }> {
     const result = await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
+      await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
       const revoked = await revokeDevice(transaction, auth.session.accountId, deviceId, now);
       if (!revoked) return null;
       await appendSecurityEvent(transaction, {

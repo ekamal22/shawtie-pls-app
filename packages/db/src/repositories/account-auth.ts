@@ -703,6 +703,31 @@ export async function rotateSessionToken(
   return row ? BigInt(row.token_generation) : null;
 }
 
+export async function lockAuthenticatedSession(
+  executor: QueryExecutor,
+  input: {
+    sessionId: string;
+    accountId: string;
+    expectedGeneration: bigint;
+  },
+): Promise<boolean> {
+  const result = await executor.query(
+    `SELECT 1
+     FROM account_sessions s
+     LEFT JOIN account_devices d ON d.id = s.device_id
+     WHERE s.id = $1
+       AND s.account_id = $2
+       AND s.token_generation = $3
+       AND s.revoked_at IS NULL
+       AND s.expires_at > transaction_timestamp()
+       AND s.idle_expires_at > transaction_timestamp()
+       AND (s.device_id IS NULL OR d.revoked_at IS NULL)
+     FOR UPDATE OF s`,
+    [input.sessionId, input.accountId, input.expectedGeneration.toString()],
+  );
+  return result.rowCount === 1;
+}
+
 export async function getPasswordHash(
   executor: QueryExecutor,
   accountId: string,

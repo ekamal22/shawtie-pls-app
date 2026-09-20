@@ -2,8 +2,24 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createApiApplication } from "../src/application.ts";
 import { AuthKeyRing } from "../src/security/auth-key-ring.ts";
-import { requireDisposableDatabase, closeDatabasePool } from "@shawtie/testkit";
+import {
+  closeDatabasePool,
+  createDatabasePool,
+  databaseConfigFromEnv,
+  type DatabasePool,
+} from "@shawtie/db";
 import type { ApiConfig } from "../src/config.ts";
+
+function requireDisposableDatabase(): DatabasePool {
+  if (process.env.DB_TEST_CONFIRM !== "1") {
+    throw new Error("DB_TEST_CONFIRM=1 is required for disposable A1 integration tests");
+  }
+  return createDatabasePool({
+    ...databaseConfigFromEnv(),
+    applicationName: "shawtie-a1-api-test",
+    maxConnections: 12,
+  });
+}
 
 const rootKey = Buffer.alloc(32, 7);
 const config: ApiConfig = {
@@ -25,14 +41,14 @@ function cookieHeader(response: { headers: Record<string, unknown> }): string {
   return values.map((value) => value.split(";")[0]).join("; ");
 }
 
-async function reset(database: ReturnType<typeof requireDisposableDatabase>) {
+async function reset(database: DatabasePool) {
   await database.pool.query("TRUNCATE TABLE accounts, registration_intents CASCADE");
   await database.pool.query("DELETE FROM security_rate_limit_buckets");
   await database.pool.query("DELETE FROM security_email_deliveries");
 }
 
 async function latestCode(
-  database: ReturnType<typeof requireDisposableDatabase>,
+  database: DatabasePool,
   where: { registrationIntentId?: string; accountId?: string; purpose: string },
 ): Promise<string> {
   const result = await database.pool.query<{
@@ -68,7 +84,7 @@ async function latestCode(
 
 async function register(
   app: ReturnType<typeof createApiApplication>,
-  database: ReturnType<typeof requireDisposableDatabase>,
+  database: DatabasePool,
   suffix: string,
 ) {
   const password = "very secure account password " + suffix;

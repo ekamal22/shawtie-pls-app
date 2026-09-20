@@ -153,7 +153,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
   app.patch("/api/v1/me/profile", async (request) => {
     const auth = await requireAuthentication(request, database, config, keys);
     const input = parseAtBoundary(profileUpdateSchema, request.body);
-    await service.updateProfile(auth.session.accountId, input);
+    await service.updateProfile(auth, input);
     return { ok: true };
   });
 
@@ -218,7 +218,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
     const auth = await requireAuthentication(request, database, config, keys);
     const params = parseAtBoundary(deviceIdParamsSchema, request.params);
     const input = parseAtBoundary(deviceRenameSchema, request.body);
-    await service.renameDevice(auth.session.accountId, params.deviceId, input.displayName);
+    await service.renameDevice(auth, params.deviceId, input.displayName);
     return { ok: true };
   });
 

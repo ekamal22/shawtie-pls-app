@@ -11,7 +11,12 @@ import {
   insertScheduledAction,
   requestAccountDeletion,
 } from "@shawtie/db";
-import { closeDatabasePool, requireDisposableDatabase } from "@shawtie/testkit";
+import {
+  closeDatabasePool,
+  createDatabasePool,
+  databaseConfigFromEnv,
+  type DatabasePool,
+} from "@shawtie/db";
 import { OutboxHandlerRegistry } from "../src/outbox/outbox-handler-registry.ts";
 import { runOutboxBatch } from "../src/outbox/outbox-consumer.ts";
 import { runScheduledBatch } from "../src/scheduled/scheduled-consumer.ts";
@@ -27,6 +32,17 @@ import {
 import { WorkerAuthKeyRing } from "../src/auth/worker-auth-key-ring.ts";
 import type { EmailDeliveryPort, SecurityEmailMessage } from "../src/auth/email-delivery-port.ts";
 import { defaultRetryPolicy } from "../src/runtime/retry-policy.ts";
+
+function requireDisposableDatabase(): DatabasePool {
+  if (process.env.DB_TEST_CONFIRM !== "1") {
+    throw new Error("DB_TEST_CONFIRM=1 is required for disposable A1 integration tests");
+  }
+  return createDatabasePool({
+    ...databaseConfigFromEnv(),
+    applicationName: "shawtie-a1-worker-test",
+    maxConnections: 12,
+  });
+}
 
 const key = Buffer.alloc(32, 7);
 

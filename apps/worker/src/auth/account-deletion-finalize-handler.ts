@@ -44,6 +44,13 @@ export const accountDeletionFinalizeHandler: ScheduledActionHandler = {
       transaction,
       action.aggregateId,
     );
+    if (
+      partnership &&
+      (!initialPartnership ||
+        partnership.otherAccountId !== initialPartnership.otherAccountId)
+    ) {
+      throw new RetryableWorkerError("PARTNERSHIP_CHANGED_DURING_LOCK");
+    }
     if (partnership) {
       const reason = await finalizePartnershipForAccountDeletion(transaction, {
         partnershipId: partnership.partnershipId,

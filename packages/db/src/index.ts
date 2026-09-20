@@ -91,6 +91,7 @@ export {
   isVerifiedEmailAvailable,
   listDevices,
   lockAccountForProfileMutation,
+  lockAuthenticatedSession,
   lockActiveChallengeForAccount,
   lockActiveChallengeForRegistration,
   lockPendingAccountDeletion,
