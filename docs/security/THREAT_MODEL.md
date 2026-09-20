@@ -534,13 +534,52 @@ Impact: Critical
 Controls:
 
 - expected generation on lifecycle jobs
-- current-state re-check
+- current-state re-check inside the authoritative transaction
 - idempotent handlers
 - stale job rejection
+- claim-version fencing for durable acknowledgements
 
 Verification:
 
 - stale-generation regression tests
+- reclaimed-job stale-acknowledgement tests
+
+### T12A: Worker crash strands durable work or causes concurrent stale execution
+
+Impact: High to Critical depending work type
+
+Controls:
+
+- recoverable claim leases
+- normal claim query reclaims expired processing rows
+- monotonically increasing claim-version fencing
+- lease renewal checks ownership and claim version
+- bounded worker concurrency
+- idempotent handlers
+- polling remains the correctness path
+
+Verification:
+
+- crash-after-claim tests
+- expired-lease reclaim tests
+- stale-worker acknowledgement rejection
+- lease-renewal ownership tests
+
+### T12B: Durable payload version mismatch causes unsafe worker interpretation
+
+Impact: High
+
+Controls:
+
+- explicit payload version on scheduled actions and outbox events
+- dispatch by work type and payload version
+- unknown versions fail closed
+- rollout compatibility planning
+
+Verification:
+
+- old-worker/new-payload compatibility tests
+- unsupported payload-version regression tests
 
 ### T13: Account-deletion timer overrides earlier breakup deadline
 
@@ -748,6 +787,8 @@ Controls:
 - immediate authorization revocation
 - idempotent cleanup
 - retry with backoff
+- recoverable target leases
+- claim-version fencing
 - incomplete-manifest alerting
 
 Verification:

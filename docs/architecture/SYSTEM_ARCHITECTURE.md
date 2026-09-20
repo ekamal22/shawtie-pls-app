@@ -224,7 +224,9 @@ Clients may cache state but may not decide authoritative lifecycle outcomes.
 
 ## Time
 
-All authoritative timestamps are server-generated and stored as UTC instants.
+All authoritative timestamps are generated from trusted server infrastructure and stored as UTC instants.
+
+For PostgreSQL-backed authoritative mutations, transaction-consistent business time comes from PostgreSQL transaction time. Lease expiry and renewal use an explicitly advancing PostgreSQL clock rather than Node process time.
 
 Calendar-month rules are computed on the server.
 
@@ -265,7 +267,9 @@ scheduled_actions
 
 Workers claim due rows with transaction-safe locking such as `FOR UPDATE SKIP LOCKED`.
 
-F2 requires claimed durable work to use recoverable lease semantics so a worker crash cannot leave a row permanently stranded in `processing`. Claim transactions remain short and must not hold row locks while external work executes.
+F2 requires claimed durable work to use recoverable lease semantics plus a monotonically increasing fencing token so a worker crash cannot leave a row permanently stranded in `processing` and a late stale worker cannot acknowledge reclaimed work. Normal claim queries reclaim expired processing rows directly. Claim transactions remain short and must not hold row locks while external work executes.
+
+Polling remains the correctness mechanism. PostgreSQL `LISTEN/NOTIFY` may be added only as an optional wake-up optimization with polling fallback.
 
 Every scheduled action must be idempotent.
 
@@ -314,7 +318,7 @@ COMMIT
 
 The worker later delivers WebSocket events, push notifications, and email from the outbox.
 
-Outbox delivery is at-least-once. Consumers must tolerate duplicate delivery and should use provider idempotency where available. External provider calls do not occur inside the authoritative database transaction.
+Outbox delivery is at-least-once. Consumers must tolerate duplicate delivery and should use provider idempotency where available. Scheduled-action and outbox durable payloads are explicitly versioned and unsupported versions fail closed. External provider calls do not occur inside the authoritative database transaction.
 
 This prevents database state from disagreeing with notification side effects after partial failures.
 
@@ -333,6 +337,16 @@ Operations involving two accounts use a shared transaction helper that locks acc
 This applies to partnership formation, reciprocal partner requests, and other race-sensitive two-account transitions.
 
 The helper reduces deadlocks and prevents inconsistent lock ordering across modules.
+
+## Database runtime safety
+
+F2 normally uses PostgreSQL `READ COMMITTED` with explicit row locks and database constraints.
+
+The database runtime owns whole-transaction retry classification for retryable PostgreSQL failures such as deadlocks and serialization failures.
+
+Application connections use bounded statement, lock, and idle-in-transaction timeout policy. The Node PostgreSQL pool owns idle-client error handling and guarantees client release.
+
+Queue indexes must be validated against realistic synthetic queue sizes and the intended due-work query plans.
 
 ## Runtime dependencies
 

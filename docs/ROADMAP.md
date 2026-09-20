@@ -30,7 +30,7 @@ Do not infer completion percentages from partial layers.
 - database invariants: committed and passing against local disposable PostgreSQL 16
 - transaction helpers: canonical account-lock SQL committed, application integration pending
 - deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
-- F2 runtime design: complete in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`, implementation pending
+- F2 runtime design: refined and approved in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`; fencing tokens, lease renewal, transaction retry and timeout policy, PostgreSQL clock semantics, durable payload versions, polling fallback, direct expired-claim reclaim, and query-plan gates are designed but not implemented
 - durable worker: application scaffold configured; bounded consumer, lease-recovery, retry, and shutdown runtime pending
 - transactional outbox: schema committed; atomic write and at-least-once delivery runtime pending
 - scheduled actions: schema and claim SQL committed; recoverable lease and execution runtime pending
@@ -204,4 +204,4 @@ Current canonical epic status:
 
 The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 
-The next foundation milestone is F2-A: PostgreSQL runtime kernel, durable-work lease support, disposable-database test infrastructure, and automated race regressions. F2 then proceeds through worker runtime, outbox, lifecycle persistence, deletion runtime, and integration verification. Hosted baseline verification remains separate under V1.
+The next foundation milestone is F2-A: PostgreSQL runtime kernel, transaction and timeout policy, durable-work fencing and lease support, payload versions, disposable-database test infrastructure, automated race regressions, and queue query-plan verification. F2 then proceeds through worker runtime, outbox, lifecycle persistence, deletion runtime, and integration verification. Hosted baseline verification remains separate under V1.

@@ -113,7 +113,16 @@ On 2026-09-20, a disposable PostgreSQL 16.15 Docker container was used to verify
 
 The F2 runtime design identifies a crash-recovery gap in durable work that has already been marked `processing`.
 
-A future forward migration, expected to be `0006_durable_runtime_reliability.sql`, is planned to add lease and retry-availability fields needed for scheduled actions, outbox events, and deletion targets. This migration does not exist yet and must not be treated as applied or verified until implementation.
+A future forward migration, expected to be `0006_durable_runtime_reliability.sql`, is planned to add the durable runtime fields required by the refined F2 design. This migration does not exist yet and must not be treated as applied or verified until implementation.
+
+Planned changes include:
+
+- scheduled actions: retry `available_at`, `lease_expires_at`, monotonically increasing `claim_version`, and `payload_version`
+- outbox events: `lease_expires_at`, `max_attempts`, monotonically increasing `claim_version`, and `payload_version`
+- deletion targets: `available_at`, `claimed_at`, `claimed_by`, `lease_expires_at`, and monotonically increasing `claim_version`
+- indexes that support both due pending work and direct reclaim of expired processing work
+
+`execute_at` remains the original scheduled-action business deadline and is not repurposed for retry timing.
 
 The exact planned behavior is documented in `../architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
 
@@ -121,7 +130,9 @@ The exact planned behavior is documented in `../architecture/F2_PERSISTENCE_WORK
 
 The following cannot yet be claimed as complete:
 
-- planned durable-work reliability migration
+- planned durable-work reliability migration with fencing tokens and payload versions
+- direct expired-claim reclaim behavior
+- lease renewal ownership rules
 - automated race coverage committed to the repository
 - database runtime pool and transaction integration
 - integrated worker-instance behavior beyond the database claim SQL
@@ -129,7 +140,8 @@ The following cannot yet be claimed as complete:
 - outbox transaction and delivery integration
 - lifecycle-event runtime persistence
 - deletion-manifest retry and resume integration
-- query-plan and index validation
+- transaction isolation, retry, and timeout runtime policy
+- queue query-plan and index validation against realistically sized synthetic data
 - PostgreSQL hosted verification, tracked separately under V1
 
 ## PostgreSQL verification command

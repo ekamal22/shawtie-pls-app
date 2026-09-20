@@ -118,6 +118,10 @@ Repositories expose explicit persistence operations.
 
 Every authoritative multi-step mutation uses one checked-out database connection for the complete transaction.
 
+The normal transaction isolation level is PostgreSQL `READ COMMITTED`. F2 relies on explicit row locking, uniqueness constraints, check constraints, and authoritative re-checks rather than globally raising isolation for every operation.
+
+The transaction kernel owns retry classification for transaction-level PostgreSQL failures that are safe to replay, including serialization failures and deadlocks. Repositories and handlers must not each invent independent retry loops.
+
 Conceptually:
 
 ```text
@@ -151,13 +155,21 @@ Application code must not switch back to pool-level queries inside an active tra
 
 Nested independent transactions are forbidden for one authoritative mutation.
 
+The database runtime must configure defensive timeout policy for application connections. The implementation must define and test bounded values for PostgreSQL `statement_timeout`, `lock_timeout`, and `idle_in_transaction_session_timeout`. Node-side connection and query timeouts may also be used as a secondary safety layer. Exact values remain implementation configuration and must be chosen from test evidence rather than guessed in this design.
+
+The PostgreSQL pool must own an `error` listener for idle-client and backend connection errors, and every checked-out client must be released on both success and failure paths.
+
 ## Server-authoritative time
 
 Authoritative mutation time comes from PostgreSQL.
 
-The transaction obtains database time and passes that value to pure domain transitions.
+For one authoritative business transaction, use PostgreSQL transaction time semantics so all statements observe one consistent business timestamp. `transaction_timestamp()` or its equivalent `now()` is the normal source for lifecycle transitions, deadlines, cooldown calculations, and audit timestamps within that transaction.
 
-Do not make Node process clocks authoritative for lifecycle deadlines, cooldowns, eligibility, or finalization.
+Lease and timeout behavior is different. Lease expiry and renewal need advancing wall-clock semantics, so lease code must use PostgreSQL `clock_timestamp()` or another explicitly advancing PostgreSQL clock where required.
+
+The transaction obtains the appropriate PostgreSQL timestamp and passes business time to pure domain transitions.
+
+Do not make Node process clocks authoritative for lifecycle deadlines, cooldowns, eligibility, finalization, or durable claim expiry.
 
 Client clocks remain display-only.
 
@@ -210,6 +222,8 @@ Add:
 
 - `available_at` for retry eligibility
 - `lease_expires_at` for crash recovery
+- `claim_version` as a monotonically increasing fencing token
+- `payload_version` for durable payload compatibility
 
 `execute_at` must not be rewritten merely to schedule a retry because that would destroy the original business deadline.
 
@@ -221,6 +235,8 @@ Add:
 
 - `lease_expires_at`
 - `max_attempts`
+- `claim_version` as a monotonically increasing fencing token
+- `payload_version` for durable payload compatibility
 
 ### deletion_targets
 
@@ -230,12 +246,13 @@ Add:
 - `claimed_at`
 - `claimed_by`
 - `lease_expires_at`
+- `claim_version` as a monotonically increasing fencing token
 
 The implementation must also add or adjust indexes for due, reclaimable work.
 
 Exact column defaults and index definitions are implementation details and must be verified with migration and query-plan tests.
 
-## Claim ownership
+## Claim ownership and fencing
 
 Each worker process receives a unique runtime identity.
 
@@ -245,10 +262,34 @@ A durable claim records:
 - `claimed_by`
 - `claimed_at`
 - `lease_expires_at`
+- `claim_version`
 
-Completion or retry updates must verify that the current claim still belongs to the worker attempting the acknowledgement.
+Every successful claim or reclaim increments `claim_version`.
 
-This prevents a stale worker from completing a row after another worker has reclaimed it.
+Completion, retry, lease renewal, stale marking, and failure acknowledgement must match both the worker identity and the claim version originally returned by the claim operation.
+
+Conceptually:
+
+```text
+WHERE id = claimed_id
+  AND claimed_by = worker_id
+  AND claim_version = claimed_version
+```
+
+This fencing token prevents a stale worker from acknowledging work after another worker has reclaimed the same row, even if timestamps are close or a previous worker resumes late.
+
+## Lease duration and renewal
+
+Handlers should normally finish comfortably inside the configured lease duration.
+
+Long-running handlers may renew a lease through an explicit repository operation. Lease renewal must:
+
+- verify current claim ownership and `claim_version`
+- extend from an advancing PostgreSQL clock
+- never change the original product deadline
+- stop succeeding after another worker has reclaimed the job
+
+Lease renewal is not a substitute for idempotency. Durable handlers remain safe under repeated execution because process death may occur after an external effect but before acknowledgement.
 
 ## Queue claiming
 
@@ -258,14 +299,20 @@ The canonical pattern remains PostgreSQL `FOR UPDATE SKIP LOCKED`.
 
 A claim transaction:
 
-1. finds eligible rows
-2. locks candidate rows with `SKIP LOCKED`
-3. marks them `processing`
-4. records worker ownership and lease expiry
-5. increments attempt count where applicable
-6. commits immediately
+1. finds ordinary pending work whose `available_at` is due
+2. also considers `processing` work whose lease has expired
+3. locks candidates with `SKIP LOCKED`
+4. marks or keeps them `processing`
+5. records worker ownership and lease expiry
+6. increments `claim_version`
+7. increments attempt count where the attempt policy requires it
+8. commits immediately
+
+Expired claims should be reclaimed directly by the normal claim query rather than requiring correctness to depend on a separate sweeper process.
 
 Do not hold row locks while running domain transitions, provider calls, or deletion handlers.
+
+Polling is the correctness mechanism. F2 may optionally add PostgreSQL `LISTEN/NOTIFY` as a wake-up optimization to reduce idle polling latency, but notifications must never become the durable queue or the only signal that work exists. Workers must still poll because notifications can be missed around startup, reconnect, or listener failure.
 
 ## Scheduled-action execution
 
@@ -383,6 +430,20 @@ On SIGTERM or SIGINT:
 
 The worker must not intentionally terminate while an authoritative transaction is partially applied.
 
+## Durable payload compatibility
+
+Scheduled-action and outbox payloads carry an explicit `payload_version`.
+
+Workers must dispatch by both durable work type and payload version.
+
+Unknown or unsupported payload versions fail closed. A worker must not guess how to interpret a newer payload shape.
+
+Rolling deployment compatibility must be considered before an API or worker begins writing a new durable payload version.
+
+Deletion target behavior should use explicit target types and typed target keys. If a deletion target later requires a structured versioned payload, it must adopt the same fail-closed compatibility rule.
+
+See `VERSIONING_AND_COMPATIBILITY.md`.
+
 ## Retry policy
 
 Durable handlers classify outcomes as:
@@ -395,6 +456,8 @@ Durable handlers classify outcomes as:
 Retryable work returns to `pending` with a future `available_at`.
 
 Use bounded exponential backoff with jitter.
+
+The transaction kernel centrally classifies retryable PostgreSQL transaction failures. Worker-level retry policy handles durable job attempts. These layers must not multiply retries accidentally.
 
 Only allowlisted operational error codes belong in durable job rows. Private content, provider payloads, stack traces containing secrets, and arbitrary exception bodies must not be copied into `last_error_code` or metadata fields.
 
@@ -475,9 +538,13 @@ Only after this commit does asynchronous physical cleanup begin.
 
 Cleanup failure must never make deleted content reachable again.
 
-## Database error normalization
+## Database error normalization and transaction retry
 
 The database package may normalize PostgreSQL SQLSTATEs that application or worker code needs to classify.
+
+The normal isolation level is `READ COMMITTED`.
+
+The transaction kernel owns bounded retries for safe-to-replay transaction failures such as serialization failure and deadlock detection. A retry restarts the whole authoritative transaction callback using a fresh database transaction. Partial retry from the middle of a failed transaction is forbidden.
 
 Examples include:
 
@@ -491,6 +558,14 @@ Examples include:
 Do not leak raw PostgreSQL errors into the domain package.
 
 Do not collapse every database condition into one opaque generic error when retry or conflict behavior depends on the SQLSTATE.
+
+## Query-plan verification
+
+Queue correctness is not enough if due-work queries degrade into repeated full-table scans.
+
+After the reliability migration exists, F2 must use realistically sized synthetic queue data and PostgreSQL plan inspection to verify that due pending work and expired processing work use the intended indexes.
+
+Query-plan tests should assert useful plan properties without overfitting exact cost numbers that vary by PostgreSQL version or machine.
 
 ## Test infrastructure
 
@@ -514,41 +589,50 @@ All fixtures remain synthetic.
 ### F2-A Persistence kernel and race automation
 
 1. add PostgreSQL runtime dependency
-2. implement pool and transaction kernel
+2. implement pool, pool error handling, and transaction kernel
 3. implement query-executor and transaction types
-4. implement PostgreSQL time helper
-5. implement SQLSTATE normalization
-6. add the planned durable-runtime reliability migration
-7. implement deterministic account-lock repository
-8. build reusable disposable-database test harness
-9. automate occupied-partnership contention
-10. automate scheduled-action `SKIP LOCKED` contention
-11. automate deterministic two-account lock ordering
+4. define `READ COMMITTED` transaction policy and bounded whole-transaction retry
+5. implement PostgreSQL business-time and lease-time helpers
+6. configure defensive PostgreSQL and Node-side timeout policy
+7. implement SQLSTATE normalization
+8. add the planned durable-runtime reliability migration with fencing tokens and payload versions
+9. implement deterministic account-lock repository
+10. build reusable disposable-database test harness
+11. automate occupied-partnership contention
+12. automate scheduled-action `SKIP LOCKED` contention and expired-claim reclaim
+13. automate deterministic two-account lock ordering
+14. verify queue query plans against realistically sized synthetic data
 
 ### F2-B Durable worker runtime
 
 1. worker configuration
 2. unique worker identity
 3. bounded poll loop
-4. scheduled-action claim repository
-5. scheduled-action consumer
-6. handler registry
-7. lease expiry recovery
-8. retry policy
-9. expected-generation guard
-10. graceful shutdown
-11. multi-worker integration tests
+4. optional PostgreSQL wake-up notification layer with polling fallback
+5. scheduled-action claim repository
+6. scheduled-action consumer
+7. handler registry
+8. expired-claim reclaim
+9. fenced acknowledgement
+10. lease renewal for approved long-running handlers
+11. retry policy
+12. expected-generation guard
+13. durable payload-version dispatch
+14. graceful shutdown
+15. multi-worker integration tests
 
 ### F2-C Transactional outbox
 
 1. transactional insert primitive
-2. outbox claim repository
-3. delivery handler registry
-4. acknowledgement
-5. retry and permanent failure
-6. expired-claim recovery
-7. duplicate-delivery safety tests
-8. state and outbox atomicity tests
+2. versioned durable payload contract
+3. outbox claim and direct expired-claim reclaim
+4. delivery handler registry
+5. fenced acknowledgement
+6. lease renewal where a provider operation justifies it
+7. retry and permanent failure
+8. duplicate-delivery safety tests
+9. state and outbox atomicity tests
+10. unsupported payload-version fail-closed tests
 
 ### F2-D Lifecycle event persistence
 
@@ -579,8 +663,14 @@ Complete F2 with repeatable local evidence for:
 - deterministic account locking
 - occupied-partnership contention
 - multi-worker scheduled claims
-- worker crash and lease reclaim
+- worker crash and direct expired-lease reclaim
+- fencing-token rejection of stale acknowledgement
+- lease renewal ownership checks
 - stale-generation rejection
+- unknown durable payload version fails closed
+- transaction timeout and transaction-retry behavior
+- pool error handling does not become an unhandled process failure
+- queue claim queries use intended indexes on realistic synthetic queue sizes
 - outbox atomicity and rollback
 - outbox deduplication
 - duplicate-safe outbox delivery
@@ -610,19 +700,19 @@ lockAccounts()
 scheduledActions
   insert
   claim
+  renewLease
   complete
   retry
   markStale
   markFailed
-  reclaimExpired
 
 outbox
   insert
   claim
+  renewLease
   delivered
   retry
   failed
-  reclaimExpired
 
 lifecycleEvents
   append
@@ -631,6 +721,7 @@ deletionManifests
   create
   addTargets
   claimTargets
+  renewTargetLease
   completeTarget
   retryTarget
   failTarget
@@ -645,7 +736,11 @@ F2 implements:
 
 - database runtime connection and transaction mechanics
 - repository primitives
-- durable claim leases
+- durable claim leases and fencing tokens
+- direct expired-claim reclaim
+- controlled lease renewal
+- durable payload versioning
+- transaction retry and timeout policy
 - retry infrastructure
 - scheduled-action runtime
 - outbox runtime
@@ -687,6 +782,12 @@ Reject an F2 implementation change if it does any of the following:
 10. places private content into lifecycle, outbox, deletion, or routine operational logs
 11. locks multiple accounts in caller-provided order
 12. makes a client or Node process clock authoritative over PostgreSQL time
+13. acknowledges work using only timestamps without a fencing token
+14. requires a separate sweeper for correctness of expired-claim reclaim
+15. interprets an unknown durable payload version
+16. uses `LISTEN/NOTIFY` as the durable queue rather than an optional wake-up optimization
+17. omits defensive database timeout policy or pool error handling
+18. adds a queue index without verifying the intended due-work query plan
 
 ## Completion rule
 

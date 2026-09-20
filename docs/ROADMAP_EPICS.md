@@ -263,25 +263,32 @@ The F2 runtime design identifies a missing crash-recovery primitive for durable 
 
 ### F2-A Persistence kernel and race automation
 
-- PostgreSQL connection pool and transaction helper
+- PostgreSQL connection pool with required pool error handling
 - transaction-scoped query executor
-- PostgreSQL-authoritative time helper
+- `READ COMMITTED` policy with bounded whole-transaction retry
+- PostgreSQL business-time and lease-time helpers
+- defensive statement, lock, idle-transaction, connection, and query timeout policy
 - SQLSTATE normalization
-- planned durable-work lease migration
+- planned durable-work reliability migration with fencing tokens and payload versions
 - deterministic account-lock repository
 - reusable disposable-database testkit
 - automated occupied-partnership contention test
-- automated scheduled-action `SKIP LOCKED` test
+- automated scheduled-action `SKIP LOCKED` and expired-claim reclaim test
 - automated deterministic two-account lock-order test
+- queue query-plan verification against realistic synthetic data
 
 ### F2-B Durable worker runtime
 
 - runtime configuration
 - unique worker identity
 - bounded polling and concurrency
+- optional `LISTEN/NOTIFY` wake-up optimization with polling fallback
 - scheduled-action claim and execution
-- claim leases and expired-claim recovery
+- direct expired-claim reclaim
+- claim-version fencing
+- controlled lease renewal for long-running handlers
 - retry classification and backoff
+- durable payload-version dispatch
 - expected-generation protection
 - graceful shutdown
 - multi-worker tests
@@ -289,11 +296,14 @@ The F2 runtime design identifies a missing crash-recovery primitive for durable 
 ### F2-C Transactional outbox
 
 - outbox insert in authoritative transactions
-- worker claim and lease recovery
+- versioned durable payload contract
+- worker claim and direct expired-claim reclaim
 - handler registry
-- delivery acknowledgement
+- fenced delivery acknowledgement
+- controlled lease renewal where justified
 - retry and permanent-failure handling
 - duplicate-delivery safety
+- unsupported-payload fail-closed behavior
 - commit and rollback atomicity tests
 
 ### F2-D Lifecycle event persistence
@@ -317,8 +327,14 @@ The F2 runtime design identifies a missing crash-recovery primitive for durable 
 ### F2-F Integration verification
 
 - transaction rollback and commit tests
-- worker crash and lease reclaim
+- worker crash and direct expired-lease reclaim
+- stale claim-version acknowledgement rejection
+- lease renewal ownership checks
 - stale-generation rejection
+- unsupported durable payload version fails closed
+- transaction timeout and whole-transaction retry behavior
+- pool error handling
+- queue query-plan verification
 - outbox atomicity and duplicate delivery
 - lifecycle-event privacy
 - deletion resume after restart
@@ -356,12 +372,19 @@ Hosted execution remains a separate V1 concern and is not an F2 local completion
 - [x] concurrent partnership creation cannot create two occupied partnerships
 - [x] PostgreSQL invariant and selected race tests pass locally
 - [ ] database runtime uses one checked-out connection for each authoritative transaction
-- [ ] authoritative lifecycle time is read from PostgreSQL
+- [ ] normal authoritative transactions use the documented `READ COMMITTED` policy
+- [ ] retryable PostgreSQL transaction failures restart the whole transaction through one bounded retry policy
+- [ ] authoritative business time uses PostgreSQL transaction time and lease logic uses an advancing PostgreSQL clock
+- [ ] defensive database and Node-side timeout policy is implemented and tested
+- [ ] PostgreSQL pool idle-client errors are handled and checked-out clients are always released
 - [ ] planned durable-work reliability migration is implemented and validated from zero
 - [ ] occupied-slot, scheduled-claim, and deterministic-lock races are committed as repeatable automated tests
 - [ ] worker claims scheduled work safely across multiple worker instances
-- [ ] claimed scheduled, outbox, and deletion work can be reclaimed after worker crash or lease expiry
-- [ ] durable acknowledgements verify current claim ownership
+- [ ] claimed scheduled, outbox, and deletion work can be reclaimed directly by normal claim queries after worker crash or lease expiry
+- [ ] durable claims use monotonically increasing fencing tokens and stale acknowledgements are rejected
+- [ ] approved long-running handlers renew leases only while worker identity and claim version still match
+- [ ] polling remains sufficient for correctness if optional wake-up notifications are missed
+- [ ] scheduled-action and outbox payloads are explicitly versioned and unknown versions fail closed
 - [ ] worker concurrency is bounded and graceful shutdown stops new claims before exit
 - [ ] lifecycle-sensitive jobs reject stale generations inside the same transaction as the authoritative mutation
 - [ ] outbox write occurs in the same transaction as authoritative state mutation
@@ -370,6 +393,7 @@ Hosted execution remains a separate V1 concern and is not an F2 local completion
 - [ ] lifecycle events are append-only and contain only allowlisted non-content metadata
 - [ ] deletion authorization remains revoked while physical cleanup retries
 - [ ] deletion manifests resume after partial failure or process restart
+- [ ] due and expired-work queue queries use intended indexes on realistically sized synthetic data
 - [ ] complete F2 local integration and failure-recovery suite passes
 - [ ] full repository health regression remains green
 

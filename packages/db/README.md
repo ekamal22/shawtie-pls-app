@@ -6,7 +6,7 @@ The PostgreSQL schema and migration foundation is implemented in this package an
 
 All five migrations have been applied from a blank database twice. Migration rerun idempotency, checksum-drift rejection, the invariant suite, critical catalog objects, occupied-slot concurrency, scheduled-action claim concurrency, and deterministic account-lock ordering have been validated locally.
 
-The F2 runtime architecture and implementation sequence are now designed in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`. The database runtime, planned durable-work lease migration, committed automated race regressions, worker integration, outbox transaction integration, lifecycle-event runtime, deletion-manifest retry/resume integration, and query-plan validation remain pending.
+The F2 runtime architecture and implementation sequence are designed and refined in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`. The approved design includes claim-version fencing, controlled lease renewal, `READ COMMITTED` transaction policy, bounded whole-transaction retry, defensive timeout policy, PostgreSQL clock semantics, durable payload versions, direct expired-claim reclaim, and queue query-plan gates. The database runtime and all of those refinements remain pending implementation.
 
 ## Migration order
 
@@ -20,7 +20,7 @@ Current implemented migrations:
 4. `0004_content_metadata.sql`
 5. `0005_relational_integrity.sql`
 
-F2 plans a future forward migration, expected to be `0006_durable_runtime_reliability.sql`, for recoverable durable-work leases and retry availability. It is design-only and does not exist yet.
+F2 plans a future forward migration, expected to be `0006_durable_runtime_reliability.sql`, for recoverable durable-work leases, direct expired-claim reclaim, claim-version fencing, retry availability, and scheduled-action/outbox payload versions. It is design-only and does not exist yet.
 
 ## Commands
 
@@ -80,4 +80,4 @@ The migration files, migration runner, static migration-plan checker, determinis
 
 The static migration plan is part of the local health command and baseline CI configuration.
 
-Real PostgreSQL execution has passed locally against disposable PostgreSQL 16.15. The remaining F2 verification boundary is runtime integration for the database kernel, durable leases, worker, outbox, lifecycle events, deletion, and automated concurrency regression coverage. Hosted PostgreSQL verification is tracked separately under V1.
+Real PostgreSQL execution has passed locally against disposable PostgreSQL 16.15. The remaining F2 verification boundary is runtime integration for the database kernel, transaction retry and timeout policy, durable leases and fencing, worker payload compatibility, direct expired-claim reclaim, outbox, lifecycle events, deletion, automated concurrency regressions, and queue query-plan coverage. Hosted PostgreSQL verification is tracked separately under V1.

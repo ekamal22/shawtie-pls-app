@@ -428,6 +428,19 @@ Used for:
 - scheduled relationship unlocks
 - bounded cleanup
 
+The current physical table already stores status, attempt count, claim metadata, expected generation, deduplication key, and payload.
+
+F2 plans to add runtime-reliability fields including:
+
+- `available_at`
+- `lease_expires_at`
+- monotonically increasing `claim_version`
+- `payload_version`
+
+`execute_at` remains the original product deadline. Retry scheduling must not destroy that historical business time.
+
+The normal claim query will consider both due pending work and processing work whose lease expired. `claim_version` fences late acknowledgements from stale workers.
+
 ### outbox_events
 
 Used to bridge committed database state to:
@@ -436,6 +449,15 @@ Used to bridge committed database state to:
 - push
 - email
 - worker side effects
+
+F2 plans to add:
+
+- `lease_expires_at`
+- `max_attempts`
+- monotonically increasing `claim_version`
+- `payload_version`
+
+Outbox delivery remains at-least-once. Durable payload versions fail closed when unsupported.
 
 ## Deletion manifests
 
@@ -447,6 +469,8 @@ deletion_targets
 ```
 
 Deletion manifests coordinate revocation and cleanup across database data, media objects, push state, key envelopes, local purge notification, and backup-expiration obligations.
+
+F2 plans claim ownership, lease expiry, and a monotonically increasing `claim_version` on deletion targets so cleanup can resume safely after worker crash while stale workers are fenced from acknowledgement.
 
 The manifest is operational metadata and must not duplicate deleted private content.
 

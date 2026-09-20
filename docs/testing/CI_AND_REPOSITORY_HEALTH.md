@@ -185,10 +185,11 @@ As persistence is implemented, add:
 
 - migration-from-zero test
 - PostgreSQL invariant tests
-- PostgreSQL race tests
-- worker tests
-- outbox tests
-- deletion-manifest tests
+- PostgreSQL race and expired-claim reclaim tests
+- queue query-plan checks
+- worker fencing, lease-renewal, retry, timeout, and shutdown tests
+- outbox atomicity, payload-version, and duplicate-delivery tests
+- deletion-manifest fencing and resume tests
 
 Later epics add:
 

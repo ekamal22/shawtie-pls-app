@@ -15,9 +15,12 @@ clientVersion
 apiVersion
 cryptoProtocolVersion
 localSchemaVersion
+durablePayloadVersion
 ```
 
 Additional feature-specific protocol versions may be added when needed.
+
+Durable work stored in PostgreSQL can outlive one process deployment, so scheduled-action and outbox payload compatibility must also be explicit.
 
 ## API version
 
@@ -67,6 +70,24 @@ The service worker update flow must avoid serving an incompatible mix of old app
 
 Where safe operation cannot be guaranteed, fail closed and require an application refresh.
 
+## Durable worker payload compatibility
+
+Scheduled actions and outbox events carry an explicit payload version.
+
+Workers dispatch by work type plus payload version.
+
+Unknown durable payload versions must fail closed. A worker must not guess how to interpret a payload written by a newer deployment.
+
+Before writing a new durable payload version, rollout planning must define:
+
+- which deployed worker versions can read it
+- whether the old payload version remains writable
+- upgrade ordering between API and worker deployments
+- retry behavior for already persisted older payloads
+- rollback limitations
+
+Durable payload versioning does not replace aggregate generation checks. Payload versions protect serialization compatibility, while aggregate generations protect lifecycle correctness.
+
 ## Realtime compatibility
 
 Realtime messages contain a schema or protocol version.
@@ -83,3 +104,7 @@ Compatibility testing must include:
 - interrupted service-worker update
 - IndexedDB migration failure
 - forced minimum-version upgrade
+- old worker against a newer durable payload version
+- new worker processing a supported older durable payload version
+- unknown scheduled-action payload version fails closed
+- unknown outbox payload version fails closed

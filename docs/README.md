@@ -35,7 +35,7 @@ The selected architecture is:
 - separate durable worker in `apps/worker`
 - PostgreSQL as the authoritative transactional state store
 - transactional outbox for reliable side effects
-- PostgreSQL-backed scheduled actions for deadlines and retries
+- PostgreSQL-backed scheduled actions for deadlines and retries, with the F2 design requiring recoverable leases and claim-version fencing
 - WebSockets for realtime invalidation and signaling
 - IndexedDB for partnership-scoped local cache and offline queues
 - private object storage for encrypted media
@@ -49,7 +49,7 @@ The selected architecture is:
 - append-only lifecycle event ledger for sensitive state changes
 - generation-checked scheduled lifecycle jobs
 - durable deletion manifests for cross-system cleanup
-- explicit client, API, crypto, and local-schema versioning
+- explicit client, API, crypto, local-schema, realtime, and durable-work payload versioning where applicable
 - no Redis in the initial architecture unless measured need justifies it
 
 ## Core architecture documents
