@@ -502,15 +502,17 @@ export async function findActiveDeviceByHandle(
   executor: QueryExecutor,
   accountId: string,
   handleVerifier: Buffer,
+  handleKeyVersion: number,
 ): Promise<{ id: string; handleKeyVersion: number } | null> {
   const result = await executor.query<{ id: string; handle_key_version: number }>(
     `SELECT id, handle_key_version
      FROM account_devices
      WHERE account_id = $1
        AND handle_verifier = $2
+       AND handle_key_version = $3
        AND revoked_at IS NULL
      LIMIT 1`,
-    [accountId, handleVerifier],
+    [accountId, handleVerifier, handleKeyVersion],
   );
   const row = result.rows[0];
   return row ? { id: row.id, handleKeyVersion: row.handle_key_version } : null;
@@ -582,6 +584,7 @@ export interface AuthenticatedSession {
 export async function findSessionByVerifier(
   executor: QueryExecutor,
   verifier: Buffer,
+  keyVersion: number,
 ): Promise<AuthenticatedSession | null> {
   const result = await executor.query<{
     session_id: string;
@@ -604,9 +607,10 @@ export async function findSessionByVerifier(
      JOIN accounts a ON a.id = s.account_id
      LEFT JOIN account_devices d ON d.id = s.device_id
      WHERE s.token_verifier = $1
+       AND s.token_key_version = $2
        AND s.revoked_at IS NULL
      LIMIT 1`,
-    [verifier],
+    [verifier, keyVersion],
   );
   const row = result.rows[0];
   return row
@@ -984,6 +988,7 @@ export async function revokeDevice(
 
 export interface RateLimitBucketInput {
   readonly scope: string;
+  readonly keyVersion: number;
   readonly keyHash: Buffer;
   readonly windowMs: number;
   readonly limit: number;
@@ -1002,17 +1007,19 @@ export async function consumeRateLimitBuckets(
 ): Promise<RateLimitDecision> {
   const ordered = [...inputs].sort((a, b) => {
     const scopeOrder = a.scope.localeCompare(b.scope);
-    return scopeOrder !== 0 ? scopeOrder : Buffer.compare(a.keyHash, b.keyHash);
+    if (scopeOrder !== 0) return scopeOrder;
+    const versionOrder = a.keyVersion - b.keyVersion;
+    return versionOrder !== 0 ? versionOrder : Buffer.compare(a.keyHash, b.keyHash);
   });
 
   let retryAfterMs = 0;
   for (const input of ordered) {
     await executor.query(
       `INSERT INTO security_rate_limit_buckets (
-         scope, key_hash, window_started_at, attempt_count, updated_at
-       ) VALUES ($1,$2,$3,0,$3)
-       ON CONFLICT (scope, key_hash) DO NOTHING`,
-      [input.scope, input.keyHash, at],
+         scope, key_version, key_hash, window_started_at, attempt_count, updated_at
+       ) VALUES ($1,$2,$3,$4,0,$4)
+       ON CONFLICT (scope, key_version, key_hash) DO NOTHING`,
+      [input.scope, input.keyVersion, input.keyHash, at],
     );
 
     const locked = await executor.query<{
@@ -1022,9 +1029,9 @@ export async function consumeRateLimitBuckets(
     }>(
       `SELECT window_started_at, attempt_count, blocked_until
        FROM security_rate_limit_buckets
-       WHERE scope = $1 AND key_hash = $2
+       WHERE scope = $1 AND key_version = $2 AND key_hash = $3
        FOR UPDATE`,
-      [input.scope, input.keyHash],
+      [input.scope, input.keyVersion, input.keyHash],
     );
     const row = locked.rows[0];
     if (!row) throw new Error("Rate-limit bucket disappeared");
@@ -1042,19 +1049,27 @@ export async function consumeRateLimitBuckets(
       const blockedUntil = new Date(at.getTime() + input.blockMs);
       await executor.query(
         `UPDATE security_rate_limit_buckets
-         SET window_started_at = $3, attempt_count = $4,
-             blocked_until = $5, last_outcome = 'blocked', updated_at = $6
-         WHERE scope = $1 AND key_hash = $2`,
-        [input.scope, input.keyHash, nextWindow, nextCount, blockedUntil, at],
+         SET window_started_at = $4, attempt_count = $5,
+             blocked_until = $6, last_outcome = 'blocked', updated_at = $7
+         WHERE scope = $1 AND key_version = $2 AND key_hash = $3`,
+        [
+          input.scope,
+          input.keyVersion,
+          input.keyHash,
+          nextWindow,
+          nextCount,
+          blockedUntil,
+          at,
+        ],
       );
       retryAfterMs = Math.max(retryAfterMs, input.blockMs);
     } else {
       await executor.query(
         `UPDATE security_rate_limit_buckets
-         SET window_started_at = $3, attempt_count = $4,
-             blocked_until = NULL, last_outcome = 'allowed', updated_at = $5
-         WHERE scope = $1 AND key_hash = $2`,
-        [input.scope, input.keyHash, nextWindow, nextCount, at],
+         SET window_started_at = $4, attempt_count = $5,
+             blocked_until = NULL, last_outcome = 'allowed', updated_at = $6
+         WHERE scope = $1 AND key_version = $2 AND key_hash = $3`,
+        [input.scope, input.keyVersion, input.keyHash, nextWindow, nextCount, at],
       );
     }
   }
@@ -1065,15 +1080,16 @@ export async function consumeRateLimitBuckets(
 export async function resetRateLimitBucket(
   executor: QueryExecutor,
   scope: string,
+  keyVersion: number,
   keyHash: Buffer,
   at: Date,
 ): Promise<void> {
   await executor.query(
     `UPDATE security_rate_limit_buckets
      SET attempt_count = 0, blocked_until = NULL,
-         last_outcome = 'reset', window_started_at = $3, updated_at = $3
-     WHERE scope = $1 AND key_hash = $2`,
-    [scope, keyHash, at],
+         last_outcome = 'reset', window_started_at = $4, updated_at = $4
+     WHERE scope = $1 AND key_version = $2 AND key_hash = $3`,
+    [scope, keyVersion, keyHash, at],
   );
 }
 

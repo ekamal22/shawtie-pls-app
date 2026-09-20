@@ -141,13 +141,16 @@ export class AccountService {
       const now = await getTransactionTimestamp(transaction);
       return consumeRateLimitBuckets(
         transaction,
-        scopes.map((item) => ({
-          scope: item.scope,
-          keyHash: this.keys.activeVerifier("rate-limit-key", item.subject).value,
-          limit: item.limit,
-          windowMs: item.windowMs,
-          blockMs: item.blockMs,
-        })),
+        scopes.flatMap((item) =>
+          this.keys.versions.map((version) => ({
+            scope: item.scope,
+            keyVersion: version,
+            keyHash: this.keys.verifier("rate-limit-key", item.subject, version),
+            limit: item.limit,
+            windowMs: item.windowMs,
+            blockMs: item.blockMs,
+          })),
+        ),
         now,
       );
     });
@@ -235,7 +238,12 @@ export class AccountService {
     if (rawDeviceHandle) {
       for (const version of this.keys.versions) {
         const verifier = this.keys.verifier("device-handle-verifier", rawDeviceHandle, version);
-        const found = await findActiveDeviceByHandle(transaction, accountId, verifier);
+        const found = await findActiveDeviceByHandle(
+          transaction,
+          accountId,
+          verifier,
+          version,
+        );
         if (found) {
           deviceId = found.id;
           break;
@@ -479,7 +487,10 @@ export class AccountService {
     } catch {
       identifier = input.identifier.trim().toLowerCase();
     }
-    const identifierHash = this.keys.activeVerifier("rate-limit-key", identifier).value;
+    const identifierHashes = this.keys.versions.map((version) => ({
+      version,
+      value: this.keys.verifier("rate-limit-key", identifier, version),
+    }));
     await this.consumeSecurityRateLimit([
       { scope: "login_network", subject: networkKey, limit: 50, windowMs: 15 * MINUTE, blockMs: 15 * MINUTE },
       { scope: "login_identifier", subject: identifier, limit: 10, windowMs: 15 * MINUTE, blockMs: 15 * MINUTE },
@@ -515,7 +526,15 @@ export class AccountService {
         rawDeviceHandle,
         now,
       );
-      await resetRateLimitBucket(transaction, "login_identifier", identifierHash, now);
+      for (const identifierHash of identifierHashes) {
+        await resetRateLimitBucket(
+          transaction,
+          "login_identifier",
+          identifierHash.version,
+          identifierHash.value,
+          now,
+        );
+      }
       await appendSecurityEvent(transaction, {
         id: randomUUID(),
         accountId: credential.accountId,

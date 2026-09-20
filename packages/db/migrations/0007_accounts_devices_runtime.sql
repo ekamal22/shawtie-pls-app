@@ -134,13 +134,16 @@ CREATE UNIQUE INDEX account_devices_handle_verifier_unique
 
 CREATE TABLE security_rate_limit_buckets (
   scope text NOT NULL,
+  key_version integer NOT NULL,
   key_hash bytea NOT NULL,
   window_started_at timestamptz NOT NULL,
   attempt_count integer NOT NULL DEFAULT 0,
   blocked_until timestamptz,
   last_outcome text,
   updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (scope, key_hash),
+  PRIMARY KEY (scope, key_version, key_hash),
+  CONSTRAINT security_rate_limit_key_version_positive
+    CHECK (key_version > 0),
   CONSTRAINT security_rate_limit_scope_nonempty
     CHECK (length(scope) > 0),
   CONSTRAINT security_rate_limit_attempt_count_nonnegative

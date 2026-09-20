@@ -30,6 +30,7 @@ export async function requireAuthentication(
     session = await findSessionByVerifier(
       database.pool,
       keys.verifier("session-verifier", rawToken, version),
+      version,
     );
     if (session) break;
   }
