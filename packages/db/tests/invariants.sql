@@ -264,12 +264,14 @@ INSERT INTO scheduled_actions (
   aggregate_type,
   aggregate_id,
   execute_at,
+  available_at,
   deduplication_key
 ) VALUES (
   '72000000-0000-0000-0000-000000000001',
   'test',
   'partnership',
   '20000000-0000-0000-0000-000000000001',
+  now(),
   now(),
   'same-scheduled-action'
 );
@@ -283,12 +285,14 @@ BEGIN
       aggregate_type,
       aggregate_id,
       execute_at,
+      available_at,
       deduplication_key
     ) VALUES (
       '72000000-0000-0000-0000-000000000002',
       'test',
       'partnership',
       '20000000-0000-0000-0000-000000000001',
+      now(),
       now(),
       'same-scheduled-action'
     );

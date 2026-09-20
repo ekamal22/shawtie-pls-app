@@ -123,6 +123,9 @@ test("two workers never claim the same scheduled action", async () => {
     assert.equal(second.filter((item) => firstIds.has(item.id)).length, 0);
     assert.equal(first.length + second.length, 10);
   } finally {
+    await database.pool.query(
+      "DELETE FROM scheduled_actions WHERE deduplication_key LIKE 'f2-race-%'",
+    );
     await closeDatabasePool(database);
   }
 });
@@ -151,6 +154,9 @@ test("expired scheduled claim is reclaimed with a higher fencing version", async
     assert.equal(claimed[0]?.claimVersion, 5n);
     assert.equal(claimed[0]?.claimedBy, "worker-new");
   } finally {
+    await database.pool.query(
+      "DELETE FROM scheduled_actions WHERE id = 'f2300000-0000-4000-8000-000000000001'",
+    );
     await closeDatabasePool(database);
   }
 });
@@ -220,7 +226,17 @@ test("claimable scheduled work query uses a queue index on realistic synthetic d
          status = 'processing',
          claimed_at = clock_timestamp() - interval '2 minutes',
          claimed_by = 'expired-plan-worker',
-         lease_expires_at = clock_timestamp() - interval '1 minute',
+         lease_expires_at = CASE
+           WHEN deduplication_key IN (
+             'f2-plan-1',
+             'f2-plan-2',
+             'f2-plan-3',
+             'f2-plan-4',
+             'f2-plan-5'
+           )
+             THEN clock_timestamp() - interval '1 minute'
+           ELSE clock_timestamp() + interval '1 hour'
+         END,
          claim_version = claim_version + 1
        WHERE deduplication_key LIKE 'f2-plan-%'`,
     );
@@ -240,6 +256,9 @@ test("claimable scheduled work query uses a queue index on realistic synthetic d
       .join("\n");
     assert.match(reclaimText, /scheduled_actions_reclaimable/);
   } finally {
+    await database.pool.query(
+      "DELETE FROM scheduled_actions WHERE deduplication_key LIKE 'f2-plan-%'",
+    );
     await closeDatabasePool(database);
   }
 });
