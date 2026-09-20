@@ -28,15 +28,15 @@ Do not infer completion percentages from partial layers.
 - PostgreSQL schema and migrations: committed and locally validated twice from a blank PostgreSQL 16 database
 - domain capability engine: implemented foundation
 - database invariants: committed and passing against local disposable PostgreSQL 16
-- transaction helpers: canonical account-lock SQL committed, application integration pending
-- deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
-- F2 runtime: design is refined and the persistence kernel, migration 0006, fencing-aware repositories, worker consumers, outbox runtime, lifecycle ledger, deletion runtime, and integration matrix are committed; lockfile refresh and full local validation are pending
-- durable worker: bounded consumers, lease reclaim, retry, payload-version dispatch, generation-guard hooks, and graceful shutdown runtime committed; local validation pending
-- transactional outbox: atomic insert, claim, fencing, retry, at-least-once delivery, and duplicate-safety test infrastructure committed; local validation pending
-- scheduled actions: recoverable leases, direct expired-claim reclaim, fencing, execution transaction, generation guard, and retry runtime committed; local validation pending
-- scheduled-action generation tokens: domain behavior implemented, persistence pending
+- transaction helpers: PostgreSQL transaction kernel and deterministic account-lock repository implemented and locally verified
+- deterministic two-account locking helper: runtime helper implemented and concurrency-verified
+- F2 runtime: DONE with the persistence kernel, migration 0006, fencing-aware repositories, worker consumers, outbox runtime, lifecycle ledger, deletion runtime, Docker-backed PostgreSQL harness, 17/17 F2 integration tests, and final full health regression locally verified
+- durable worker: bounded consumers, direct lease reclaim, fencing, retry, payload-version dispatch, generation guards, and graceful shutdown implemented and locally verified
+- transactional outbox: atomic insert, claim, fencing, retry, at-least-once delivery, payload-version handling, and duplicate-safety behavior locally verified
+- scheduled actions: recoverable leases, direct expired-claim reclaim, fencing, execution transactions, generation guards, retry behavior, and queue index plans locally verified
+- scheduled-action generation tokens: domain behavior and persistence guard path implemented and locally verified
 - lifecycle event ledger: schema and append-only update protection locally validated against PostgreSQL
-- deletion manifest workflow: target lease, fencing, retry, permanent failure, repair resume, and completion runtime committed; local validation pending
+- deletion manifest workflow: target leases, fencing, retry, permanent failure, repair resume, authorization revocation, and completion locally verified
 - runtime contract validation: Zod boundary foundation configured and locally validated
 - API versioning
 - client compatibility versioning
@@ -216,7 +216,7 @@ Current canonical epic status:
 - F0: DONE
 - F1: DONE with successful `npm ci` bootstrap from the committed lockfile and a complete passing local health baseline
 - V1: BLOCKED until GitHub Actions capacity returns; hosted CI verification is non-blocking for implementation and remains required before public-readiness closure
-- F2: IN_PROGRESS with local PostgreSQL migration, invariant, schema, and selected concurrency validation complete; worker and CI integration remain
+- F2: DONE with six migrations from zero, 17/17 PostgreSQL integration tests, committed lockfile, and a final passing full local health regression
 - P3: IN_PROGRESS at the pure domain layer
 - X1 Post-stable Maturity: PLANNED after stable release
 - X2 Deferred Heavy Features: DEFERRED and optional; call recording remains here pending post-stable evidence
@@ -224,4 +224,4 @@ Current canonical epic status:
 
 The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 
-The F2 implementation slices are now committed. The immediate milestone is validation: refresh the npm lockfile, run the full local repository health gate, apply all six migrations to disposable PostgreSQL, run invariant tests, then run `npm run test:f2:postgres` and close only the gates supported by those results. Hosted baseline verification remains separate under V1.
+F2 is locally complete. The next implementation work moves into A1 Accounts and Devices and P1 Discovery and Requests while P3 continues from its verified pure-domain foundation. Hosted baseline verification remains separate under V1 and is still required before R2 Public Readiness can close.

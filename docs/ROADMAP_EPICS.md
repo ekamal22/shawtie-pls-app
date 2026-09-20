@@ -226,7 +226,7 @@ GitHub Actions capacity is unavailable through the remainder of September 2026, 
 
 # F2: Persistence and Worker Foundation
 
-Status: IN_PROGRESS
+Status: DONE
 
 ## Design status
 
@@ -234,13 +234,13 @@ The implementation architecture and execution sequence are defined in:
 
 `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 
-The design preserves Architecture Baseline 1.0. Its F2 persistence, worker, outbox, lifecycle-ledger, deletion, and test-harness implementation is now committed, but the newly implemented gates remain unchecked until full local validation passes.
+The design preserves Architecture Baseline 1.0. The persistence kernel, durable worker, transactional outbox, lifecycle-event persistence, deletion runtime, disposable PostgreSQL harness, and F2 verification matrix are implemented and locally verified.
 
 ## Current verified progress
 
 Committed repository artifacts and local PostgreSQL evidence now include:
 
-- five ordered PostgreSQL migrations
+- six ordered PostgreSQL migrations
 - migration checksum ledger and forward migration runner
 - static migration-plan validation
 - identity, partnership, lifecycle, durable-operation, messaging, relationship, media, and call schema foundations
@@ -255,15 +255,15 @@ Committed repository artifacts and local PostgreSQL evidence now include:
 - deterministic account-lock SQL pattern
 - scheduled-action `FOR UPDATE SKIP LOCKED` claim SQL
 - invariant test SQL
-- two clean migration-from-zero passes against disposable PostgreSQL 16
-- idempotent migration rerun with five checksum-verified skips
+- repeatable migration-from-zero evidence against disposable PostgreSQL 16, including all six migrations in the completed F2 run
+- migration checksum ledger and earlier rerun idempotency evidence, plus committed checksum validation for all six migrations
 - passing invariant SQL for verified-email ownership, occupied partnership slots, idempotency, request and breakup checks, append-only lifecycle events, device ownership, member limits, and scheduled-action deduplication
 - catalog verification of critical indexes, foreign keys, checks, and triggers
 - successful occupied-slot, scheduled-action claim, and deterministic account-lock concurrency exercises
 
 The current database foundation has local PostgreSQL execution evidence.
 
-The F2 runtime now includes `0006_durable_runtime_reliability.sql`, PostgreSQL runtime repositories, claim fencing and leases, direct expired-claim reclaim, worker consumers, outbox delivery infrastructure, lifecycle-ledger persistence, deletion retry/resume infrastructure, and committed PostgreSQL integration tests. These artifacts are implementation evidence only; they are not yet verification evidence.
+The F2 runtime includes `0006_durable_runtime_reliability.sql`, PostgreSQL runtime repositories, claim fencing and leases, direct expired-claim reclaim, worker consumers, outbox delivery infrastructure, lifecycle-ledger persistence, deletion retry/resume infrastructure, and committed PostgreSQL integration tests. The Docker-backed local F2 run applied all six migrations from zero, passed database invariants, and passed 17/17 integration tests. A final `npm run health` also passed with repository health, migration-plan checks, all workspace typechecks and builds, lint, formatting, dependency checks, 27 domain tests, 2 contract tests, and 3 worker unit tests.
 
 ## Implementation sequence
 
@@ -288,7 +288,7 @@ The F2 runtime now includes `0006_durable_runtime_reliability.sql`, PostgreSQL r
 - runtime configuration
 - unique worker identity
 - bounded polling and concurrency
-- optional `LISTEN/NOTIFY` wake-up optimization with polling fallback
+- polling correctness path verified; optional `LISTEN/NOTIFY` remains a non-required future latency optimization
 - scheduled-action claim and execution
 - direct expired-claim reclaim
 - claim-version fencing
@@ -377,31 +377,33 @@ Hosted execution remains a separate V1 concern and is not an F2 local completion
 - [x] deterministic two-account locking helper exists
 - [x] concurrent partnership creation cannot create two occupied partnerships
 - [x] PostgreSQL invariant and selected race tests pass locally
-- [ ] database runtime uses one checked-out connection for each authoritative transaction
-- [ ] normal authoritative transactions use the documented `READ COMMITTED` policy
-- [ ] retryable PostgreSQL transaction failures restart the whole transaction through one bounded retry policy
-- [ ] authoritative business time uses PostgreSQL transaction time and lease logic uses an advancing PostgreSQL clock
-- [ ] defensive database and Node-side timeout policy is implemented and tested
-- [ ] PostgreSQL pool idle-client errors are handled and checked-out clients are always released
-- [ ] planned durable-work reliability migration is implemented and validated from zero
-- [ ] occupied-slot, scheduled-claim, and deterministic-lock races are committed as repeatable automated tests
-- [ ] worker claims scheduled work safely across multiple worker instances
-- [ ] claimed scheduled, outbox, and deletion work can be reclaimed directly by normal claim queries after worker crash or lease expiry
-- [ ] durable claims use monotonically increasing fencing tokens and stale acknowledgements are rejected
-- [ ] approved long-running handlers renew leases only while worker identity and claim version still match
-- [ ] polling remains sufficient for correctness if optional wake-up notifications are missed
-- [ ] scheduled-action and outbox payloads are explicitly versioned and unknown versions fail closed
-- [ ] worker concurrency is bounded and graceful shutdown stops new claims before exit
-- [ ] lifecycle-sensitive jobs reject stale generations inside the same transaction as the authoritative mutation
-- [ ] outbox write occurs in the same transaction as authoritative state mutation
-- [ ] outbox delivery is treated as at-least-once and duplicate delivery is safe
-- [ ] external provider calls do not occur inside authoritative database transactions
-- [ ] lifecycle events are append-only and contain only allowlisted non-content metadata
-- [ ] deletion authorization remains revoked while physical cleanup retries
-- [ ] deletion manifests resume after partial failure or process restart
-- [ ] due and expired-work queue queries use intended indexes on realistically sized synthetic data
-- [ ] complete F2 local integration and failure-recovery suite passes
-- [ ] full repository health regression remains green
+- [x] database runtime uses one checked-out connection for each authoritative transaction
+- [x] normal authoritative transactions use the documented `READ COMMITTED` policy
+- [x] retryable PostgreSQL transaction failures restart the whole transaction through one bounded retry policy
+- [x] authoritative business time uses PostgreSQL transaction time and lease logic uses an advancing PostgreSQL clock
+- [x] defensive database and Node-side timeout policy is implemented and tested
+- [x] PostgreSQL pool idle-client errors are handled and checked-out clients are always released
+- [x] durable-work reliability migration is implemented and validated from zero
+- [x] occupied-slot, scheduled-claim, and deterministic-lock races are committed as repeatable automated tests
+- [x] worker claims scheduled work safely across multiple worker instances
+- [x] claimed scheduled, outbox, and deletion work can be reclaimed directly by normal claim queries after worker crash or lease expiry
+- [x] durable claims use monotonically increasing fencing tokens and stale acknowledgements are rejected
+- [x] approved long-running handlers renew leases only while worker identity and claim version still match
+- [x] polling remains sufficient for correctness if optional wake-up notifications are missed
+- [x] scheduled-action and outbox payloads are explicitly versioned and unknown versions fail closed
+- [x] worker concurrency is bounded and graceful shutdown stops new claims before exit
+- [x] lifecycle-sensitive jobs reject stale generations inside the same transaction as the authoritative mutation
+- [x] outbox write occurs in the same transaction as authoritative state mutation
+- [x] outbox delivery is treated as at-least-once and duplicate delivery is safe
+- [x] external provider calls do not occur inside authoritative database transactions
+- [x] lifecycle events are append-only and contain only allowlisted non-content metadata
+- [x] deletion authorization remains revoked while physical cleanup retries
+- [x] deletion manifests resume after partial failure or process restart
+- [x] due and expired-work queue queries use intended indexes on realistically sized synthetic data
+- [x] complete F2 local integration and failure-recovery suite passes
+- [x] full repository health regression remains green
+
+F2 local completion does not close V1 Hosted CI Verification. V1 remains a separate prerequisite for R2 Public Readiness.
 
 # A1: Accounts and Devices
 

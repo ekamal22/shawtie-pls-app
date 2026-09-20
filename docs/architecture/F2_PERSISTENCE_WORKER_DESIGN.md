@@ -2,7 +2,7 @@
 
 ## Status
 
-IMPLEMENTED, VALIDATION PENDING
+IMPLEMENTED AND LOCALLY VERIFIED
 
 Effective design date: 2026-09-20.
 
@@ -10,7 +10,7 @@ This document is the implementation design for F2 Persistence and Worker Foundat
 
 It refines Architecture Baseline 1.0 without changing any frozen architecture decision. No ADR is required because the design keeps PostgreSQL authoritative, preserves the modular monolith plus separate durable worker, keeps the domain package infrastructure-free, uses the accepted transactional outbox and scheduled-action models, and introduces no new trust boundary or persistent state system.
 
-Source code, migrations, and tests remain the authority for what is actually implemented. The F2 runtime described here is now committed on the feature branch, but completion remains blocked on dependency lockfile refresh plus full local TypeScript, build, lint, formatting, repository-health, migration, invariant, and PostgreSQL integration validation.
+Source code, migrations, and tests remain the authority for what is actually implemented. The F2 runtime described here is committed and locally verified. The committed lockfile includes the PostgreSQL runtime dependency, the complete local PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full repository health regression is green.
 
 ## Goals
 
@@ -197,15 +197,15 @@ A stale lifecycle action is not a system failure. It means the aggregate generat
 
 ## Durable-runtime reliability migration
 
-The previously verified schema contains five migrations.
+The verified schema contains six migrations.
 
-F2 now commits the sixth forward migration:
+F2 added the sixth forward migration:
 
 `0006_durable_runtime_reliability.sql`
 
-It implements the designed lease, fencing, retry-availability, payload-version, and reclaim fields. It is not yet counted as verified until migration-from-zero and the F2 PostgreSQL test matrix pass locally.
+It implements the designed lease, fencing, retry-availability, payload-version, and reclaim fields. Migration from zero, invariants, claim recovery, fencing, and queue-plan behavior are locally verified.
 
-Implemented additions, validation pending:
+Verified additions:
 
 ### scheduled_actions
 
@@ -243,7 +243,7 @@ Add:
 
 The implementation must also add or adjust indexes for due, reclaimable work.
 
-Column defaults and indexes are now implemented and remain subject to migration and query-plan verification.
+Column defaults and indexes are implemented and their migration and query-plan behavior is locally verified.
 
 ## Claim ownership and fencing
 
@@ -675,53 +675,57 @@ Complete F2 with repeatable local evidence for:
 
 Hosted execution is tracked separately under V1 and does not block F2 implementation or local F2 completion.
 
-## Proposed public database surface
+## Implemented public database surface
 
 Keep the application-facing `@shawtie/db` surface intentionally small.
 
-Planned capabilities:
+Implemented capabilities include:
 
 ```text
+databaseConfigFromEnv()
 createDatabasePool()
 closeDatabasePool()
 
 withTransaction()
-getDatabaseNow()
+getTransactionTimestamp()
+getClockTimestamp()
 
 lockAccounts()
 
-scheduledActions
+scheduled actions
   insert
   claim
-  renewLease
+  lock claim
+  renew lease
   complete
   retry
-  markStale
-  markFailed
+  mark stale
+  fail
 
 outbox
   insert
   claim
-  renewLease
-  delivered
+  renew lease
+  deliver
   retry
-  failed
+  fail
 
-lifecycleEvents
+lifecycle events
   append
+  validate allowlisted metadata
 
-deletionManifests
+deletion manifests
   create
-  addTargets
-  claimTargets
-  renewTargetLease
-  completeTarget
-  retryTarget
-  failTarget
-  completeIfReady
+  claim targets
+  renew target lease
+  complete target
+  retry target
+  fail target
+  resume failed target
+  complete manifest when ready
 ```
 
-Names may change during implementation, but the responsibility boundaries should remain.
+The runtime also exports normalized PostgreSQL error helpers and the explicit query-executor and durable-claim types required by these repositories.
 
 ## Scope boundary
 
@@ -786,4 +790,4 @@ Reject an F2 implementation change if it does any of the following:
 
 F2 is DONE only when every F2 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed implementation and repeatable local evidence.
 
-The runtime implementation is now committed, but F2 remains IN_PROGRESS until the dependency lockfile is refreshed and the complete local verification matrix passes.
+All F2 acceptance gates in `docs/ROADMAP_EPICS.md` are satisfied with committed implementation and repeatable local evidence. F2 is DONE. Hosted GitHub Actions verification remains separate under V1.

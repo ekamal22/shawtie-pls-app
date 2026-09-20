@@ -76,9 +76,9 @@ It currently covers current verified-email uniqueness, one occupied partnership 
 
 The suite passed locally on 2026-09-20 against a disposable PostgreSQL 16.15 database after a clean migration from zero. The same migration and invariant sequence also passed after destroying and recreating the test container.
 
-Separate two-session exercises passed for occupied partnership-slot contention, scheduled-action `SKIP LOCKED` claiming, and deterministic account lock ordering. Those original manual race exercises are now represented by committed F2 integration tests, but the new automated tests have not yet been locally executed against migration 0006.
+Separate two-session exercises passed for occupied partnership-slot contention, scheduled-action `SKIP LOCKED` claiming, and deterministic account lock ordering. Those original manual race exercises are now represented by committed F2 integration tests.
 
-F2 now includes a reusable disposable-database harness under `packages/testkit` plus committed runtime failure tests for claim leases, claim-version fencing, direct expired-claim reclaim, controlled lease renewal, worker crash recovery, stale generations, durable payload compatibility, transaction retry and timeout behavior, pool error handling, outbox atomicity, duplicate delivery, lifecycle metadata privacy, deletion resumption, graceful shutdown, and queue query plans. The canonical design is `../architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
+F2 includes a reusable disposable-database harness under `packages/testkit` plus runtime failure tests for claim leases, claim-version fencing, direct expired-claim reclaim, controlled lease renewal, worker crash recovery, stale generations, durable payload compatibility, transaction retry and timeout behavior, pool error handling, outbox atomicity, duplicate delivery, lifecycle metadata privacy, deletion resumption, graceful shutdown, and queue query plans. The Docker-backed F2 run applies all six migrations and passes 17/17 PostgreSQL integration tests. The canonical design is `../architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
 
 Prove:
 
@@ -113,7 +113,7 @@ Prove:
 - pool error handling and checked-out client release
 - intended queue indexes are used for due and expired work on realistically sized synthetic data
 
-The F2-specific items in this list now have committed test implementations where applicable, but they remain unverified until the local F2 PostgreSQL suite passes. Later product-epic items remain future coverage.
+The F2-specific items in this list have committed local evidence and the F2 PostgreSQL suite passes 17/17. Later product-epic items remain future coverage.
 
 ### Integration
 

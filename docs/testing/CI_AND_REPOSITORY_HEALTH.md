@@ -54,7 +54,7 @@ npm run health
 
 With workspace dependencies installed, this is configured to combine repository health, static migration-plan validation, TypeScript typecheck, build, lint, formatting, dependency and circular-import checks, the domain suite, and runtime-contract tests.
 
-The expanded command now has a complete passing local run. It verified repository health, static migration-plan validation, TypeScript typecheck, production builds, lint, formatting, dependency-direction and circular-dependency checks, 27 domain tests, and 2 runtime-contract tests.
+The expanded command has a complete passing local run on the F2-complete branch. It verified repository health across 234 scanned files, six static migration-plan entries, all workspace TypeScript typechecks and production builds, lint, formatting, dependency-direction and circular-dependency checks, 27 domain tests, 2 runtime-contract tests, and 3 worker unit tests.
 
 The canonical clean-clone dependency bootstrap is:
 
@@ -173,23 +173,11 @@ V1 remains deferred while Actions capacity is unavailable. Once Actions executio
 
 ## Future gate expansion
 
-Local disposable PostgreSQL validation completed on 2026-09-20 for migration from zero, invariant SQL, migration rerun idempotency, schema catalog inspection, and selected two-session races. Hosted reproduction of those checks can be added later without blocking current development.
+Local disposable PostgreSQL F2 verification is complete. The Docker-backed path applies all six migrations from zero, runs database invariants, and passes 17/17 F2 integration tests covering races, expired-claim reclaim, fencing, lease ownership, transaction retry and clocks, outbox atomicity and duplicate safety, lifecycle privacy, deletion recovery, queue plans, and worker shutdown.
 
-Baseline CI now contains hard steps for lockfile installation, the complete local repository baseline, and dependency audit.
+Baseline CI still contains the intentionally small lockfile, repository-baseline, and dependency-audit job. Hosted GitHub Actions execution remains blocked under V1 while Actions capacity is being conserved.
 
-Future CI expansion still needs:
-
-- real PostgreSQL migration-from-zero and invariant tests when PostgreSQL CI infrastructure is available
-
-As persistence is implemented, add:
-
-- migration-from-zero test
-- PostgreSQL invariant tests
-- PostgreSQL race and expired-claim reclaim tests
-- queue query-plan checks
-- worker fencing, lease-renewal, retry, timeout, and shutdown tests
-- outbox atomicity, payload-version, and duplicate-delivery tests
-- deletion-manifest fencing and resume tests
+When hosted PostgreSQL CI infrastructure is justified, it can reproduce the already-passing local F2 database matrix. That hosted reproduction is a V1 or later CI-expansion concern and is not required to reopen F2.
 
 Later epics add:
 

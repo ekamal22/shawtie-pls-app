@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository is currently in foundation implementation. Architecture Baseline 1.0 is frozen, the pure domain baseline is locally validated, and the initial PostgreSQL migration and invariant foundation has passed local disposable-database validation.
+The repository is currently in foundation implementation. Architecture Baseline 1.0 is frozen, F0 Governance and Security Baseline, F1 Repository Foundation, and F2 Persistence and Worker Foundation are complete locally, and the pure partnership domain baseline remains locally validated. F2 includes all six PostgreSQL migrations, the durable worker substrate, transactional outbox, lifecycle ledger persistence, deletion recovery infrastructure, a passing 17/17 disposable PostgreSQL integration suite, and a green full repository health regression.
 
 ## Product direction
 

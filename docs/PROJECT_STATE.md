@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and F1 Repository Foundation and Executable Guardrails is complete based on clean lockfile installation plus the full local health baseline. Hosted GitHub Actions verification is tracked separately and does not block continued development.
+Foundation implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, and F2 Persistence and Worker Foundation are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all six PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2 durable runtime passes its complete local PostgreSQL integration matrix, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -93,7 +93,7 @@ Implemented and locally validated:
 - account-deletion view-only capability behavior
 - former-partner blocking capability
 - partnership cooldown capability
-- clean PostgreSQL migration from zero across all five migrations
+- clean PostgreSQL migration from zero across all six migrations
 - migration rerun idempotency and checksum-drift rejection
 - database invariant SQL against PostgreSQL 16
 - critical constraint, index, foreign-key, and trigger creation
@@ -114,13 +114,13 @@ Current epic status:
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
 - V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
-- F2 Persistence and Worker Foundation: IN_PROGRESS. The designed database runtime, reliability migration, fencing-aware durable repositories, worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, and F2 PostgreSQL integration test matrix are now implemented on the feature branch. Dependency lockfile refresh and full local TypeScript/build/lint/format/PostgreSQL validation are still pending, so no new F2 acceptance gate is yet reported as verified
+- F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
 - all other pre-release implementation epics: PLANNED
 
-The persistence schema foundation has been executed twice from a blank disposable PostgreSQL 16 database. The invariant suite, migration ledger, second-run skipping, selected schema inspection, occupied-slot race, scheduled-action claim race, and deterministic account-lock ordering passed locally. API integration and worker integration are not implemented yet.
+The persistence schema foundation has repeatable disposable PostgreSQL evidence. Earlier schema verification covered migration rerun idempotency, checksum drift, catalog inspection, occupied-slot contention, scheduled-action claim contention, and deterministic account-lock ordering. F2 then applied all six migrations from zero and passed 17/17 runtime integration tests covering transaction policy, retries, PostgreSQL clocks, stale generations, durable payload versions, rollback, outbox atomicity and duplicate safety, claim fencing and reclaim, lifecycle privacy, deletion recovery, queue plans, and graceful worker shutdown. Product-specific API and lifecycle integration remain work for later epics.
 
 Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks. GitHub-hosted validation has not yet been executed and is tracked separately under V1. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
 
@@ -134,16 +134,12 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-F2 implementation now follows the approved implementation design in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
+F2 is complete locally.
 
-1. refresh the npm lockfile for the newly pinned PostgreSQL dependency
-2. run typecheck, build, lint, formatting, dependency-boundary checks, and ordinary tests; fix any failures
-3. apply all six migrations to a disposable PostgreSQL database and run invariant tests
-4. run `npm run test:f2:postgres` to validate races, reclaim, fencing, generation guards, outbox atomicity, lifecycle privacy, deletion resume, transaction policy, and worker shutdown
-5. run the complete `npm run health` regression
-6. update F2 acceptance gates and current-state documentation only from the resulting verified evidence
-7. after F2, continue into account/device and partnership application work
-8. when GitHub Actions capacity returns, complete the separate V1 hosted verification track
+1. begin A1 Accounts and Devices and P1 Discovery and Requests on top of the verified F2 persistence substrate
+2. continue P3 product-specific lifecycle persistence and API integration as its dependencies become available
+3. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
+4. when hosted Actions execution is available, run the baseline workflow without a skip marker and record the successful V1 evidence before R2 Public Readiness
 
 ## Deferred heavy feature policy
 

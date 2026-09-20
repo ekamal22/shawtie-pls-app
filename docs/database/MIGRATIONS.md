@@ -2,7 +2,7 @@
 
 ## Status
 
-The initial PostgreSQL migration set is implemented in `packages/db/migrations` and has passed local disposable-database validation against PostgreSQL 16.15.
+The PostgreSQL migration set is implemented in `packages/db/migrations` and has passed local disposable-database validation through migration `0006_durable_runtime_reliability.sql`.
 
 ## Policy
 
@@ -96,26 +96,40 @@ The schema defines database-level protection for:
 
 ## Local verification record
 
-On 2026-09-20, a disposable PostgreSQL 16.15 Docker container was used to verify:
+The database foundation has repeatable local PostgreSQL 16 evidence.
 
-- all five migrations apply from an empty database
-- a second blank container reproduces the migration and invariant results
-- a second migration run skips all five checksum-matched migrations
-- `_schema_migrations` contains five distinct filenames and valid SHA-256 checksum shapes
-- checksum drift is rejected with a nonzero exit
-- the invariant SQL suite passes
-- critical indexes, checks, foreign keys, and triggers exist in the PostgreSQL catalogs
-- concurrent partnership inserts cannot occupy the same account twice
-- two sessions using the committed scheduled-action claim SQL do not claim the same row
-- opposite caller orders using the committed account-lock SQL acquire accounts in immutable UUID order without deadlock
+Earlier verification established:
+
+- clean migration from zero for migrations 0001 through 0005
+- migration rerun idempotency and checksum-drift rejection
+- invariant SQL success
+- critical index, check, foreign-key, and trigger creation
+- occupied partnership-slot contention safety
+- scheduled-action `SKIP LOCKED` contention safety
+- deterministic account-lock ordering
+
+F2 completion then verified:
+
+- all six migrations apply from an empty disposable PostgreSQL 16 container
+- `0006_durable_runtime_reliability.sql` applies successfully
+- database invariants pass after the six-migration run
+- the complete F2 PostgreSQL integration suite passes 17/17
+- direct expired-claim reclaim works for scheduled actions, outbox work, and deletion targets
+- fencing rejects stale ownership and stale acknowledgement
+- current owners can renew approved leases
+- `READ COMMITTED`, whole-transaction retry, PostgreSQL business time, and advancing lease time behave as designed
+- outbox state changes are atomic with authoritative mutations and duplicate delivery is safe
+- lifecycle metadata is append-only and rejects content-shaped fields
+- deletion manifests resume after retryable and repairable permanent failure while access remains revoked
+- intended scheduled-work queue indexes are used on realistically sized synthetic data
+- bounded worker shutdown behavior passes
+- the final full repository health regression remains green
 
 ## F2 durable-runtime migration
 
-The F2 runtime design identifies a crash-recovery gap in durable work that has already been marked `processing`.
+`0006_durable_runtime_reliability.sql` closes the crash-recovery gap for durable work already marked `processing`.
 
-`0006_durable_runtime_reliability.sql` is now committed and adds the durable runtime fields required by the refined F2 design. It must not be treated as verified until it passes clean migration-from-zero, invariant, race, reclaim, fencing, and query-plan validation against disposable PostgreSQL.
-
-Implemented changes, validation pending:
+Verified changes include:
 
 - scheduled actions: retry `available_at`, `lease_expires_at`, monotonically increasing `claim_version`, and `payload_version`
 - outbox events: `lease_expires_at`, `max_attempts`, monotonically increasing `claim_version`, and `payload_version`
@@ -124,25 +138,7 @@ Implemented changes, validation pending:
 
 `execute_at` remains the original scheduled-action business deadline and is not repurposed for retry timing.
 
-The exact planned behavior is documented in `../architecture/F2_PERSISTENCE_WORKER_DESIGN.md`.
-
-## What remains unverified
-
-The following cannot yet be claimed as complete:
-
-- migration 0006 execution and invariants for fencing tokens, payload versions, and claim-shape constraints
-- direct expired-claim reclaim behavior
-- lease renewal ownership rules
-- automated race coverage execution against migration 0006
-- database runtime pool and transaction integration execution
-- integrated worker-instance behavior beyond the database claim SQL
-- lease expiry and crash recovery
-- outbox transaction and delivery integration
-- lifecycle-event runtime persistence
-- deletion-manifest retry and resume integration
-- transaction isolation, retry, and timeout runtime policy
-- queue query-plan and index validation against realistically sized synthetic data
-- PostgreSQL hosted verification, tracked separately under V1
+Local F2 verification is complete. Hosted PostgreSQL reproduction remains separate under V1 and does not change the local F2 DONE status.
 
 ## PostgreSQL verification commands
 
@@ -179,4 +175,4 @@ The repository now includes:
 - `packages/db/sql/lock-accounts.sql`
 - `packages/db/sql/claim-scheduled-actions.sql`
 
-These artifacts define the repeatable PostgreSQL verification path. F2 now also commits automated runtime and concurrency tests under `packages/testkit/tests` and `apps/worker/tests`; they remain unverified until `npm run test:f2:postgres` passes locally.
+These artifacts define the repeatable PostgreSQL verification path. Automated runtime and concurrency tests under `packages/testkit/tests` and `apps/worker/tests` pass locally through `npm run test:f2:local`.

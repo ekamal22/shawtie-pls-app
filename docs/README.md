@@ -35,7 +35,7 @@ The selected architecture is:
 - separate durable worker in `apps/worker`
 - PostgreSQL as the authoritative transactional state store
 - transactional outbox for reliable side effects
-- PostgreSQL-backed scheduled actions for deadlines and retries, with the F2 design requiring recoverable leases and claim-version fencing
+- PostgreSQL-backed scheduled actions for deadlines and retries, with locally verified recoverable leases, direct expired-claim reclaim, and claim-version fencing
 - WebSockets for realtime invalidation and signaling
 - IndexedDB for partnership-scoped local cache and offline queues
 - private object storage for encrypted media

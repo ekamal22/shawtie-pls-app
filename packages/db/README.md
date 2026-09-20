@@ -2,11 +2,11 @@
 
 ## Status
 
-The PostgreSQL schema and migration foundation is implemented in this package and has passed local disposable-database validation against PostgreSQL 16.15.
+The PostgreSQL schema, migration foundation, and F2 database runtime are implemented and locally verified.
 
-All five migrations have been applied from a blank database twice. Migration rerun idempotency, checksum-drift rejection, the invariant suite, critical catalog objects, occupied-slot concurrency, scheduled-action claim concurrency, and deterministic account-lock ordering have been validated locally.
+Earlier database validation established migration rerun idempotency, checksum-drift rejection, invariant coverage, critical catalog objects, occupied-slot contention safety, scheduled-action claim contention safety, and deterministic account-lock ordering. The completed F2 run applies all six migrations from a blank disposable PostgreSQL 16 database and passes 17/17 PostgreSQL integration tests.
 
-The F2 runtime architecture is now implemented in this package and `apps/worker`. It includes claim-version fencing, controlled lease renewal, `READ COMMITTED` transaction policy, bounded whole-transaction retry, defensive timeout policy, PostgreSQL clock semantics, durable payload versions, direct expired-claim reclaim, lifecycle-event persistence, outbox repositories, deletion recovery, and queue query-plan tests. Full local validation remains pending.
+The F2 runtime in this package and `apps/worker` includes claim-version fencing, controlled lease renewal, `READ COMMITTED` transaction policy, bounded whole-transaction retry, defensive timeout policy, PostgreSQL clock semantics, durable payload versions, direct expired-claim reclaim, lifecycle-event persistence, outbox repositories, deletion recovery, and queue query-plan verification.
 
 ## Migration order
 
@@ -21,7 +21,7 @@ Current implemented migrations:
 5. `0005_relational_integrity.sql`
 6. `0006_durable_runtime_reliability.sql`
 
-Migration 0006 implements recoverable durable-work leases, direct expired-claim reclaim, claim-version fencing, retry availability, and scheduled-action/outbox payload versions. It is committed but not yet locally verified.
+Migration 0006 implements recoverable durable-work leases, direct expired-claim reclaim, claim-version fencing, retry availability, and scheduled-action/outbox payload versions. It is locally verified from a blank database as part of the passing F2 suite.
 
 ## Commands
 
@@ -85,8 +85,8 @@ Application repositories should reuse these semantics rather than inventing alte
 
 ## Current verification boundary
 
-The migration files, migration runner, static migration-plan checker, deterministic lock query, scheduled-action claim query, and invariant test suite are committed.
+Local F2 database verification is complete.
 
-The static migration plan is part of the local health command and baseline CI configuration.
+The static migration plan is part of the local health command and baseline CI configuration. The disposable Docker path applies all six migrations, runs invariants, and executes the complete F2 PostgreSQL integration matrix. The latest F2 run passes 17/17, and the final full repository health regression is green.
 
-Real PostgreSQL execution has passed locally for migrations 0001 through 0005. Migration 0006 and the newly implemented F2 runtime remain inside the verification boundary until the lockfile is refreshed and the complete local repository plus PostgreSQL test matrix passes. Hosted PostgreSQL verification is tracked separately under V1.
+Hosted GitHub Actions and hosted PostgreSQL reproduction remain separate under V1. They are required before R2 Public Readiness, not for reopening F2.
