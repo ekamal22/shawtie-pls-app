@@ -2,13 +2,13 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented in `packages/db/migrations` and has passed local disposable-database validation through migration `0006_durable_runtime_reliability.sql`. The next planned migration is A1 migration `0007_accounts_devices_runtime.sql`; it is design-only and is not yet present in the verified migration set.
+The PostgreSQL migration set is implemented in `packages/db/migrations` through A1 migration `0007_accounts_devices_runtime.sql`. Disposable-database validation is still verified only through `0006_durable_runtime_reliability.sql`; migration 0007 is committed but has not yet passed the complete A1 local PostgreSQL verification path.
 
-## Next planned migration
+## Current and next migration
 
-A1 reserves `0007_accounts_devices_runtime.sql`.
+A1 migration `0007_accounts_devices_runtime.sql` is committed.
 
-Its refined design scope includes:
+Its implemented scope includes:
 
 - registration intents
 - password credentials
@@ -17,13 +17,13 @@ Its refined design scope includes:
 - active-challenge uniqueness
 - session token-generation fencing
 - device-handle verifiers
-- PostgreSQL authentication rate-limit buckets
+- PostgreSQL security-rate-limit buckets
 - durable security-email deliveries
 - append-only security-event hardening
 
 P1 reserves the next prefix after A1 as `0008_partner_discovery_requests_runtime.sql`. Its planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit query indexes, decline-cooldown query indexes, and append-only request-attempt evidence.
 
-Until migrations 0007 and 0008 are actually committed and validated, the verified migration count remains six.
+P1 migration 0008 remains planned. Until migration 0007 passes the complete A1 disposable-PostgreSQL validation path, the verified migration count remains six even though seven migration files are committed.
 
 ## Policy
 

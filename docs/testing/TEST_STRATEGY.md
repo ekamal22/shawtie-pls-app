@@ -139,7 +139,7 @@ Required A1 evidence includes:
 - account-recovery versus cryptographic-recovery separation
 - complete account-deletion-specific partnership persistence before partnered deletion is enabled
 
-Planned local commands are:
+Committed A1 verification commands are:
 
 ```text
 npm run test:accounts
@@ -149,7 +149,7 @@ npm run test:a1:security
 npm run test:a1:local
 ```
 
-These commands are planned and must not be described as passing until implemented and executed.
+These commands are implemented in the repository but must not be described as passing until the current branch, refreshed lockfile, and disposable PostgreSQL path execute successfully.
 
 ### P1 discovery and request verification
 

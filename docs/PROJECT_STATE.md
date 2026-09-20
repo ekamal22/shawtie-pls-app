@@ -118,7 +118,7 @@ Current epic status:
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
-- A1 Accounts and Devices: IN_PROGRESS at the refined architecture and implementation-design layer; runtime implementation has not started. The design closes cookie-environment behavior, key rotation, session fencing, trusted-proxy rate limiting, challenge races, deterministic lock order, durable security-email delivery, and partnered account-deletion correctness before A1-A begins
+- A1 Accounts and Devices: IN_PROGRESS with runtime implementation committed and validation pending. Committed work includes account domain rules and contracts, migration 0007, password/session/device/challenge/rate-limit/security-email persistence, Argon2id credentials, versioned HMAC verifiers, revocable cookies, CSRF/origin protection, registration/login/recovery/account-change routes, account deletion/recovery and breakup-deletion precedence handlers, device management, A1 worker email/deletion handlers, A1 unit/integration/security tests, the Docker-backed `test:a1:local` harness, a runnable API entrypoint, and the mobile-first A1 web foundation. No A1 acceptance gate is closed until the refreshed lockfile, TypeScript/build/health checks, migration 0007, and complete disposable-PostgreSQL A1 suite pass locally
 - P1 Discovery and Partner Requests: IN_PROGRESS at the refined architecture and implementation-design layer; runtime implementation has not started. The design now defines exact authenticated discovery, privacy-safe projection, exact request timing, create idempotency with lifetime-aware retention, separate abuse-rate-limit preflight, pair-wide lock ordering, cursor pagination, minimized attempt metadata, cross-epic invalidation, an explicit same-transaction P2 coordinator, F2 expiry scheduling, and typed fail-closed production gating
 - all other pre-release implementation epics except the separately listed P3: PLANNED
 
@@ -136,14 +136,16 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1 Accounts and Devices is now the active implementation epic.
+A1 implementation is committed. Validation and closure are now the active engineering task.
 
-1. implement A1-A domain rules, contracts, migration 0007, and account/auth repositories from docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md
-2. implement A1-B authentication security kernel with Argon2id, opaque cookies, server-side sessions, CSRF/origin protections, and PostgreSQL rate limits
-3. continue through registration/login, recovery, sensitive account changes, account deletion/recovery, and device management in the documented A1 sequence
-4. implement P1-A domain rules and contracts in parallel where safe, but do not land migration 0008 before A1 migration 0007 and do not claim full P1 API integration before A1-C sessions exist
-5. keep P2 partnership formation separate: P1 detects reciprocal requests, P2 performs the actual transactional pairing
-6. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
+1. preserve the current local install/format changes safely, pull the latest A1 fixes, then refresh the dependency lockfile against the current branch
+2. run the complete workspace TypeScript check and fix any remaining compile errors
+3. run `npm run health` after formatting and lockfile reconciliation
+4. run `npm run test:a1:local` against disposable PostgreSQL 16 and capture migration, API, worker, race, and security evidence
+5. commit only the validated lockfile/format changes and any required implementation fixes with `[skip ci]`
+6. mark A1 acceptance gates complete only from passing evidence and then update A1 to DONE
+7. continue P1-A implementation only after the shared A1 account identifiers, sessions, username normalization, and security-rate-limit primitives are validated
+8. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
@@ -166,6 +168,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A repository-wide documentation audit has been completed against the F2-complete and refined-A1 state. The root README, project state, milestone roadmap, epic gates, system architecture, data model, migration plan, capability model, deletion architecture, security model, recovery model, threat model, testing strategy, CI guidance, and PRD are reconciled with the current evidence boundary. A1 is described as refined design only; no A1 runtime acceptance gate is claimed complete.
+A repository-wide documentation audit has been completed against the F2-complete and A1-implemented-but-unvalidated state. The root README, project state, milestone roadmap, epic gates, A1 design, system architecture, data model, migration plan, database package README, testing strategy, CI guidance, and PRD now distinguish committed A1 runtime code from missing validation evidence. No A1 runtime acceptance gate is claimed complete.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

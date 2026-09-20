@@ -24,7 +24,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | F1 Repository Foundation and Executable Guardrails | DONE | clean lockfile bootstrap and full local health |
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
-| A1 Accounts and Devices | IN_PROGRESS | refined architecture complete, runtime implementation pending |
+| A1 Accounts and Devices | IN_PROGRESS | runtime implementation committed; lockfile, TypeScript/health, migration 0007, and A1 local suite validation pending |
 | P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
@@ -112,17 +112,17 @@ No foundation work should be reopened without concrete implementation evidence t
 
 # Milestone 1: A1 Accounts and Devices
 
-Status: ACTIVE.
+Status: IMPLEMENTED, VALIDATION PENDING.
 
 Canonical design:
 
 `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 
-A1 is the primary implementation path.
+A1-A through A1-E runtime work is committed. A1-F validation and gate closure are the active path.
 
 ## A1-A: Domain, contracts, migration, repositories
 
-Implement:
+Committed implementation:
 
 - account domain types and stable denial codes
 - server-date age rules
@@ -151,7 +151,7 @@ Exit evidence:
 
 ## A1-B: Authentication security kernel
 
-Implement:
+Committed implementation:
 
 - Argon2id password service
 - versioned HMAC key ring
@@ -182,7 +182,7 @@ Exit evidence:
 
 ## A1-C: Registration and login
 
-Implement:
+Committed implementation:
 
 - registration start
 - verification challenge creation
@@ -211,7 +211,7 @@ Exit evidence:
 
 ## A1-D: Recovery and sensitive account changes
 
-Implement:
+Committed implementation:
 
 - password recovery
 - password reset and all-session revocation
@@ -236,7 +236,7 @@ Exit evidence:
 
 ## A1-E: Account deletion and devices
 
-Implement:
+Committed implementation:
 
 - deletion request
 - immediate account lockout
@@ -267,7 +267,7 @@ Exit evidence:
 
 ## A1-F: Integration closure
 
-Implement and run:
+Validation closure pending:
 
 - `npm run test:accounts`
 - `npm run test:a1:postgres`
@@ -278,7 +278,7 @@ Implement and run:
 - complete `npm run health`
 - repository-wide documentation reconciliation
 
-A1 closure requires all 20 A1 acceptance gates in `ROADMAP_EPICS.md`.
+The commands and harness are committed, but they are not yet recorded as passing on the complete A1 branch. A1 closure requires all 20 A1 acceptance gates in `ROADMAP_EPICS.md`, a refreshed committed lockfile, a green full repository health regression, and the disposable PostgreSQL A1 suite.
 
 **REDMI PHONE REQUIRED: NO for A1 closure.**
 

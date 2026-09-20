@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL schema, migration foundation, and F2 database runtime are implemented and locally verified.
+The PostgreSQL schema and F2 database runtime are locally verified through migration 0006. A1 migration 0007 and its account/auth repositories are implemented and committed, with complete A1 disposable-database validation still pending.
 
 Earlier database validation established migration rerun idempotency, checksum-drift rejection, invariant coverage, critical catalog objects, occupied-slot contention safety, scheduled-action claim contention safety, and deterministic account-lock ordering. The completed F2 run applies all six migrations from a blank disposable PostgreSQL 16 database and passes 17/17 PostgreSQL integration tests.
 
@@ -20,8 +20,11 @@ Current implemented migrations:
 4. `0004_content_metadata.sql`
 5. `0005_relational_integrity.sql`
 6. `0006_durable_runtime_reliability.sql`
+7. `0007_accounts_devices_runtime.sql`
 
 Migration 0006 implements recoverable durable-work leases, direct expired-claim reclaim, claim-version fencing, retry availability, and scheduled-action/outbox payload versions. It is locally verified from a blank database as part of the passing F2 suite.
+
+Migration 0007 implements the A1 account/auth runtime schema. It is committed but must not be called verified until `npm run test:a1:local` applies all seven migrations from zero and the A1 integration matrix passes.
 
 ## Commands
 

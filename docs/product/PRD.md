@@ -2142,11 +2142,15 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The repository is in foundation implementation.
+The repository has completed the verified F0, F1, and F2 foundation milestones and now contains committed A1 Accounts and Devices runtime implementation.
 
-Architecture Baseline 1.0 is frozen and governed through accepted ADRs and architecture change control.
+Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 
-The pure partnership domain state machine and centralized capability engine have an executable test baseline. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending. The initial PostgreSQL schema, ordered migrations, migration tooling, and invariant-test foundation have passed local disposable-database validation against PostgreSQL 16.15, including selected concurrency exercises. API integration and worker integration are not yet implemented.
+The committed A1 surface includes migration 0007, account domain rules and contracts, password/session/device/challenge/rate-limit persistence, Fastify authentication and account APIs, account deletion/recovery workers, security-email workers, A1 verification suites, a Docker-backed A1 PostgreSQL harness, a runnable API server, and the mobile-first account/device web foundation.
+
+A1 is not yet verified complete. The refreshed dependency lockfile, full TypeScript/build/health regression, migration 0007 from zero, and complete A1 PostgreSQL/API/worker/security suite still require passing local evidence before the A1 acceptance gates may close.
+
+The pure partnership domain state machine and centralized capability engine remain locally verified. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending under V1.
 
 This PRD defines intended product behavior. It is not the implementation-progress source of truth.
 

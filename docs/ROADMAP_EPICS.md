@@ -409,15 +409,15 @@ F2 local completion does not close V1 Hosted CI Verification. V1 remains a separ
 
 Status: IN_PROGRESS
 
-## Design status
+## Implementation status
 
-The refined architecture and implementation sequence are defined in:
+The refined architecture remains defined in:
 
 `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 
-The design preserves Architecture Baseline 1.0 and builds directly on the verified F2 transaction, outbox, worker, scheduled-action, deletion, and PostgreSQL test substrate. The second-pass refinement closes cookie-environment behavior, versioned HMAC key rotation, session rotation fencing, trusted-proxy rate limiting, challenge races, deterministic lock order, durable security-email delivery, credential scrubbing, and partnered account-deletion correctness before runtime implementation begins.
+The committed A1 runtime follows this design and builds directly on the verified F2 transaction, outbox, worker, scheduled-action, deletion, and PostgreSQL substrate. Runtime code now exists for A1-A through A1-E plus the A1-F verification commands and disposable PostgreSQL harness. The implementation includes the account/device web foundation and runnable API entrypoint.
 
-No A1 runtime gate is checked merely because the design exists.
+Validation is still pending on the complete branch. No A1 runtime gate is checked merely because source code or tests exist.
 
 ## Implementation sequence
 

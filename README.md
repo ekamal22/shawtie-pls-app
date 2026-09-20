@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository has completed its verified foundation milestones. Architecture Baseline 1.0 is frozen; F0 Governance and Security Baseline, F1 Repository Foundation, and F2 Persistence and Worker Foundation are DONE locally. A1 Accounts and Devices is now the active implementation epic with a refined implementation-grade architecture covering registration, Argon2id credentials, opaque revocable sessions, verified-email recovery, secure email change, account deletion recovery, device revocation, HMAC key rotation, CSRF/origin protections, and PostgreSQL-backed security rate limiting.
+The repository has completed its verified foundation milestones. Architecture Baseline 1.0 is frozen; F0 Governance and Security Baseline, F1 Repository Foundation, and F2 Persistence and Worker Foundation are DONE locally. A1 Accounts and Devices now has committed runtime implementation across domain rules, contracts, migration 0007, database repositories, Fastify authentication/security, account APIs, durable worker handlers, verification suites, a disposable PostgreSQL harness, a runnable API entrypoint, and the mobile-first account/device web foundation. A1 remains IN_PROGRESS because the new dependency lockfile, TypeScript/build/health regression, migration 0007, and complete A1 PostgreSQL/API/security matrix have not yet produced final local passing evidence.
 
 ## Product direction
 

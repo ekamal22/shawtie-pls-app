@@ -181,11 +181,19 @@ Baseline CI still contains the intentionally small lockfile, repository-baseline
 
 When hosted PostgreSQL CI infrastructure is justified, it can reproduce the already-passing local F2 database matrix. That hosted reproduction is a V1 or later CI-expansion concern and is not required to reopen F2.
 
+A1 now commits:
+
+- API integration tests
+- authentication/security regression tests
+- worker integration tests
+- `test:a1:local` disposable PostgreSQL orchestration
+- new API/runtime dependencies that require a refreshed committed lockfile
+
+These A1 paths are not yet recorded as passing on the complete branch. A1 remains IN_PROGRESS until the lockfile is reconciled, `npm run health` is green, migration 0007 applies from zero, and `npm run test:a1:local` passes.
+
 Later epics add:
 
-- API integration
-- security regression
-- browser E2E
+- browser E2E beyond the current A1 web foundation
 - physical-device evidence where required
 
 ## Gate truthfulness

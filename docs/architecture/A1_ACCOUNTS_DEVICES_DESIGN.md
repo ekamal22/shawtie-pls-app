@@ -2,7 +2,7 @@
 
 ## Status
 
-REFINED DESIGN, IMPLEMENTATION PENDING
+IMPLEMENTED, VALIDATION PENDING
 
 Effective design date: 2026-09-21.
 
@@ -10,7 +10,7 @@ This document is the canonical implementation design for A1 Accounts and Devices
 
 It preserves Architecture Baseline 1.0 and uses the completed F2 persistence and worker substrate. It does not add a new persistent state system, trust boundary, lifecycle authority, or dependency direction, so no new ADR is required under the current architecture-governance rules.
 
-Source code, migrations, and tests remain authoritative for implemented behavior. This document defines the A1 runtime shape and implementation sequence before runtime work begins.
+Source code, migrations, and tests remain authoritative for implemented behavior. The A1 runtime described here is now committed across domain, contracts, migration 0007, database repositories, API security and account flows, durable workers, verification tests, local PostgreSQL harness, runnable API, and the account/device web foundation. Final local validation and acceptance-gate closure remain pending.
 
 ## Refinement review
 
@@ -32,6 +32,37 @@ The refinement closes implementation ambiguities in:
 - compatibility and rollback behavior during key rotation
 
 No accepted product rule or Architecture Baseline 1.0 decision changes. No ADR is required.
+
+## Implementation snapshot
+
+Committed runtime evidence now includes:
+
+- account domain rules and A1 boundary contracts
+- migration `0007_accounts_devices_runtime.sql`
+- account/auth database repositories and server-authoritative timing
+- Argon2id password hashing and policy checks
+- versioned HMAC session, device, challenge, and security-rate-limit verifiers
+- opaque revocable sessions with fenced rotation
+- production and local-development cookie policy
+- exact-origin, Fetch Metadata, and custom-header CSRF checks
+- PostgreSQL-backed durable security rate limiting
+- registration, login, logout, password recovery, reauthentication, email change, username, DOB correction, account deletion/recovery, and device APIs
+- durable security-email and verification-email worker handlers
+- generation-guarded account-deletion finalization
+- earlier-breakup-deadline precedence during account deletion
+- account-auth deletion-manifest target cleanup
+- A1 domain, contract, API security, API integration, worker unit, and worker integration tests
+- `test:a1:local` disposable PostgreSQL 16 harness
+- runnable Fastify API entrypoint with graceful shutdown
+- mobile-first web account/device foundation
+
+Pending validation:
+
+- refreshed committed `package-lock.json`
+- complete workspace TypeScript/build/lint/format/dependency health regression
+- migration 0007 from zero on the complete branch
+- A1 PostgreSQL/API/worker/security suite execution
+- final acceptance-gate evidence
 
 ## Goals
 
@@ -1798,9 +1829,9 @@ Exit gate:
 7. update repository-wide current-state docs
 8. mark only verified A1 gates complete
 
-## Proposed local commands
+## Committed local verification commands
 
-Expected additions:
+Committed commands:
 
 ~~~text
 npm run test:accounts
@@ -1810,7 +1841,7 @@ npm run test:a1:security
 npm run test:a1:local
 ~~~
 
-A1 local completion should use one top-level command that starts disposable PostgreSQL, runs migrations, exercises API and worker integration, and cleans up automatically, following the F2 test-f2-local pattern.
+The committed `npm run test:a1:local` command follows the F2 disposable-database pattern: it starts PostgreSQL 16 on a dynamic local port, runs the A1 migration/invariant/build/integration path, and cleans up automatically. It must not be described as passing until executed successfully on the reconciled branch.
 
 ## Acceptance mapping
 
