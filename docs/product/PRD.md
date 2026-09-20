@@ -928,7 +928,9 @@ Call signaling and media authorization must respect partnership state and member
 
 Built-in call recording is not part of the MVP or first stable release.
 
-Call recording is marked as a pending post-release feature.
+Call recording is a deferred post-stable feature. It must not be scheduled merely because the stable release has shipped. The product should first gather post-stable evidence about real call usage, storage growth, bandwidth cost, deletion and backup-expiry cost, and user demand.
+
+Implementation is optional and should proceed only if that evidence justifies the feature.
 
 Any future built-in call recording must require explicit consent from both participants for every recording session before recording begins.
 
@@ -941,7 +943,7 @@ After both participants consent, a recording is treated as partnership-scoped me
 - it is permanently deleted at final dissolution
 - it is permanently deleted when permanent account deletion removes the partnership data
 
-Any future implementation must also receive a separate privacy, legal, security, retention, export, and consent review before development.
+Before any future implementation, the team must first select and document a viable recording model and receive separate privacy, legal, security, retention, export, consent, storage-cost, bandwidth-cost, deletion, and backup-expiry review.
 
 ---
 
@@ -1221,7 +1223,7 @@ The server must not receive plaintext versions of protected content, including:
 - Future Us contents
 - memory captions or private notes
 - call audio or video media
-- call recordings if the post-release recording feature is implemented
+- call recordings if the deferred post-stable recording feature is ever implemented
 
 Metadata such as filenames, captions, attachment MIME types, reaction content, and other descriptive fields should be encrypted when practical rather than exposed merely for convenience.
 

@@ -83,7 +83,13 @@ S1 E2EE and Crypto Recovery
 R2 Public Readiness
         |
         v
-X1 Post-release Features
+STABLE RELEASE
+        |
+        v
+X1 Post-stable Maturity
+        |
+        v
+X2 Deferred Heavy Features
 ```
 
 Some work may overlap when dependencies are already satisfied, but gates must still be met.
@@ -819,17 +825,67 @@ Status: PLANNED
 - [ ] E2EE release review passes
 - [ ] staged launch rollback path is documented and tested
 
-# X1: Post-release Features
+# X1: Post-stable Maturity
 
 Status: PLANNED
 
+## Purpose
+
+Stabilize the released product and gather real operational evidence before adding storage-heavy or infrastructure-heavy features.
+
+X1 begins only after R2 Public Readiness is DONE and the first stable release is live.
+
 ## Scope
 
-Only post-release work approved after the stable release baseline.
+- production reliability and incident follow-up
+- real storage and bandwidth measurement
+- media growth and deletion-cost measurement
+- worker and deletion-manifest operational evidence
+- calling quality and failure-rate evidence
+- retention and backup cost evidence
+- user demand evidence for expensive optional features
+- targeted performance and cost optimization
+- native clients only if justified by real product evidence
+- infrastructure extraction only when measured production needs justify it
 
-Initial known candidate:
+Call recording is explicitly excluded from X1.
+
+## Acceptance gates
+
+- [ ] stable release has meaningful operational evidence
+- [ ] storage and bandwidth baselines are measured
+- [ ] media deletion and backup-expiry behavior is proven operationally
+- [ ] calling reliability and usage are measured
+- [ ] major post-release reliability defects are addressed or explicitly accepted
+- [ ] cost drivers are documented well enough to evaluate storage-heavy features
+
+# X2: Deferred Heavy Features
+
+Status: DEFERRED
+
+## Purpose
+
+Hold optional features with disproportionate storage, bandwidth, privacy, legal, deletion, cryptographic, or infrastructure cost until post-stable evidence justifies them.
+
+X2 is not required for stable release and does not begin automatically when X1 starts.
+
+## Initial candidate
 
 - consensual call recording
+
+Call recording should be implemented only if post-stable usage evidence and economics justify it.
+
+Before implementation begins, choose and document the storage model. Options may include encrypted cloud storage with quotas, paid storage, local-device-only recording, short-retention export workflows, audio-only recording, or deciding not to ship recording.
+
+## Entry gates for call recording
+
+- [ ] X1 Post-stable Maturity has enough production evidence to evaluate the feature
+- [ ] user demand justifies the feature
+- [ ] projected storage and bandwidth cost is acceptable
+- [ ] recording retention and quota model is defined
+- [ ] deletion and backup-expiry cost is acceptable
+- [ ] recording architecture is compatible with the reviewed E2EE model
+- [ ] privacy and legal feasibility is confirmed before implementation
 
 ## Acceptance gates for call recording
 

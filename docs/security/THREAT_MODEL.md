@@ -936,7 +936,7 @@ Verification:
 - interrupted update tests
 - stale-client tests
 
-### T35: Call-recording consent bypass after post-release implementation
+### T35: Call-recording consent bypass after deferred post-stable implementation
 
 Impact: Critical
 
@@ -1028,5 +1028,5 @@ Re-run or update the threat model when any of the following occurs:
 - backup provider or retention policy changes
 - account recovery changes
 - cryptographic recovery changes
-- call recording enters implementation
+- deferred post-stable call recording enters implementation
 - major infrastructure provider changes

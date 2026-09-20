@@ -163,12 +163,30 @@ Do not infer completion percentages from partial layers.
 - final security review
 - staged public launch
 
-## Post-release
+## Post-stable maturity
 
-- consensual call recording
-- recording export and deletion UX
-- native clients if justified
+After the first stable release, prioritize operational evidence and product stabilization before storage-heavy optional features.
+
+- production reliability and incident follow-up
+- measure real storage and bandwidth growth
+- measure media deletion and backup-expiry cost
+- measure call usage and reliability
+- optimize proven cost or performance bottlenecks
+- native clients only if justified
 - infrastructure extraction only when measured production needs justify it
+
+## Deferred heavy features
+
+Call recording is intentionally deferred beyond the initial post-stable maturity period.
+
+Potential later work:
+
+- consensual call recording, only if user demand and economics justify it
+- recording export and deletion UX
+- recording retention and quota controls
+- alternative recording models such as local-only, audio-only, short-retention export, or paid encrypted storage
+
+Call recording is not required for stable release or X1 completion.
 
 Microservices and Redis are not roadmap goals by themselves.
 
@@ -200,7 +218,9 @@ Current canonical epic status:
 - V1: BLOCKED until GitHub Actions capacity returns; hosted CI verification is non-blocking for implementation and remains required before public-readiness closure
 - F2: IN_PROGRESS with local PostgreSQL migration, invariant, schema, and selected concurrency validation complete; worker and CI integration remain
 - P3: IN_PROGRESS at the pure domain layer
-- remaining implementation epics: PLANNED
+- X1 Post-stable Maturity: PLANNED after stable release
+- X2 Deferred Heavy Features: DEFERRED and optional; call recording remains here pending post-stable evidence
+- remaining pre-release implementation epics: PLANNED
 
 The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 

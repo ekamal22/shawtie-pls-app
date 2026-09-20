@@ -4,7 +4,7 @@
 
 Voice and video calls are part of MVP.
 
-Built-in call recording is post-release.
+Built-in call recording is deferred beyond the first stable release and beyond the initial post-stable maturity period.
 
 ## Transport
 
@@ -126,7 +126,13 @@ The client must handle:
 - peer disconnect
 - app backgrounding where browser behavior permits
 
-## Post-release call recording
+## Deferred post-stable call recording
+
+Call recording is not an automatic post-release milestone.
+
+Before implementation, post-stable production evidence must justify the storage and bandwidth cost, retention model, deletion and backup-expiry obligations, legal and privacy burden, user demand, and E2EE-compatible recording architecture.
+
+The chosen design may be cloud-hosted, quota-limited, paid, local-only, audio-only, short-retention export, or omitted entirely if the economics or privacy model are not acceptable.
 
 Call recording remains outside MVP and stable release.
 

@@ -97,7 +97,7 @@ The server must not receive plaintext for:
 - Future Us contents
 - memory captions and private notes
 - call media
-- future call recordings
+- deferred post-stable call recordings, if ever implemented
 
 ## Metadata minimization
 

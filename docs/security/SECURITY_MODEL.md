@@ -169,7 +169,7 @@ Never log:
 - plaintext message bodies
 - plaintext media
 - plaintext relationship objects
-- plaintext call recordings
+- plaintext call recordings if the deferred post-stable feature is ever implemented
 
 Security logs use bounded retention and minimal identifiers.
 

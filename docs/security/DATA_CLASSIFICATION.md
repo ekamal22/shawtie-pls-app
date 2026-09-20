@@ -283,7 +283,7 @@ Update this matrix when:
 - location features gain external map providers
 - native clients are added
 - moderation workflows change
-- call recording is implemented
+- deferred post-stable call recording is approved for implementation
 - data export is implemented
 - backup policy changes
 - legal retention requirements become applicable

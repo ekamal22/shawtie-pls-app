@@ -116,7 +116,9 @@ Current epic status:
 - V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
 - F2 Persistence and Worker Foundation: IN_PROGRESS. The runtime architecture and implementation sequence are designed and refined in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`; the approved design now includes claim-version fencing, controlled lease renewal, `READ COMMITTED` transaction policy, bounded whole-transaction retry, database timeout policy, PostgreSQL clock semantics, durable payload versions, optional notification wake-ups with polling fallback, direct expired-claim reclaim, and queue query-plan gates. Schema, migrations, database invariants, and canonical lock/claim SQL already have local PostgreSQL evidence, while the refined runtime remains unimplemented
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
-- all other implementation epics: PLANNED
+- X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
+- X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
+- all other pre-release implementation epics: PLANNED
 
 The persistence schema foundation has been executed twice from a blank disposable PostgreSQL 16 database. The invariant suite, migration ledger, second-run skipping, selected schema inspection, occupied-slot race, scheduled-action claim race, and deterministic account-lock ordering passed locally. API integration and worker integration are not implemented yet.
 
@@ -142,6 +144,12 @@ F2 implementation now follows the approved implementation design in `docs/archit
 6. F2-F: run the complete local F2 integration and failure-recovery matrix, then the full repository health regression
 7. after F2, continue into account/device and partnership application work
 8. when GitHub Actions capacity returns, complete the separate V1 hosted verification track
+
+## Deferred heavy feature policy
+
+Call recording is intentionally outside the first stable release and outside the initial post-stable maturity milestone. It is tracked under X2 Deferred Heavy Features and is not a required product milestone.
+
+No implementation should begin until real production evidence shows sufficient user demand and acceptable storage, bandwidth, retention, deletion, backup-expiry, privacy, legal, and E2EE cost.
 
 ## Stable release blockers
 
