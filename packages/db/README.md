@@ -18,6 +18,7 @@ Current migrations:
 2. `0002_partnership_lifecycle.sql`
 3. `0003_durable_operations.sql`
 4. `0004_content_metadata.sql`
+5. `0005_relational_integrity.sql`
 
 ## Commands
 
@@ -69,3 +70,12 @@ UUIDv7 remains preferred for application-generated identifiers when the implemen
 `sql/claim-scheduled-actions.sql` defines the worker claim pattern using `FOR UPDATE SKIP LOCKED`.
 
 Application repositories should reuse these semantics rather than inventing alternate locking behavior.
+
+
+## Current verification boundary
+
+The migration files, migration runner, static migration-plan checker, deterministic lock query, scheduled-action claim query, and invariant test suite are committed.
+
+The static migration plan is part of the local health command and baseline CI configuration.
+
+Real PostgreSQL execution remains pending.
