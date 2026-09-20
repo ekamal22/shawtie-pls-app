@@ -2137,7 +2137,7 @@ The repository is in foundation implementation.
 
 Architecture Baseline 1.0 is frozen and governed through accepted ADRs and architecture change control.
 
-The pure partnership domain state machine and centralized capability engine have an executable test baseline. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending. Database persistence, API integration, and worker integration are not yet implemented.
+The pure partnership domain state machine and centralized capability engine have an executable test baseline. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending. The initial PostgreSQL schema, ordered migrations, migration tooling, and invariant-test foundation are committed, while real PostgreSQL execution remains pending. API integration and worker integration are not yet implemented.
 
 This PRD defines intended product behavior. It is not the implementation-progress source of truth.
 
