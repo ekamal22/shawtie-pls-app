@@ -18,9 +18,9 @@ Do not infer completion percentages from partial layers.
 
 ## Phase 0: Architecture Foundation
 
-- monorepo configuration
-- TypeScript baseline
-- linting and formatting
+- monorepo workspace scaffold: configured, dependency-installed validation pending
+- TypeScript baseline: configured, dependency-installed validation pending
+- linting and formatting: configured, dependency-installed validation pending
 - CI: baseline workflow configured, hosted validation pending
 - repository-health scanner: configured
 - CODEOWNERS and SECURITY policy: configured
@@ -30,13 +30,13 @@ Do not infer completion percentages from partial layers.
 - database invariants: committed and passing against local disposable PostgreSQL 16
 - transaction helpers: canonical account-lock SQL committed, application integration pending
 - deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
-- durable worker
+- durable worker: application scaffold configured, runtime integration pending
 - transactional outbox: schema committed, runtime integration pending
 - scheduled actions: schema and claim SQL committed, runtime integration pending
 - scheduled-action generation tokens: domain behavior implemented, persistence pending
 - lifecycle event ledger: schema and append-only update protection locally validated against PostgreSQL
 - deletion manifest workflow: schema committed, retry integration pending
-- runtime contract validation
+- runtime contract validation: Zod boundary foundation configured, execution validation pending
 - API versioning
 - client compatibility versioning
 - formal threat model: completed
@@ -45,7 +45,7 @@ Do not infer completion percentages from partial layers.
 - architecture governance and ADR change control: completed
 - documentation freshness model and repo-wide status audit: completed
 - security headers and browser hardening
-- synthetic testkit: initial domain fixtures implemented
+- synthetic testkit: package scaffold configured; initial domain fixtures implemented
 
 ## Phase 1: Accounts and Devices
 
@@ -195,11 +195,11 @@ Repository-wide documentation status has been reconciled with the current founda
 Current canonical epic status:
 
 - F0: DONE
-- F1: IN_PROGRESS with baseline CI and repository health configured
+- F1: IN_PROGRESS with baseline CI, repository health, workspace scaffolding, and executable guardrails configured; dependency-installed local validation and hosted CI remain pending
 - F2: IN_PROGRESS with local PostgreSQL migration, invariant, schema, and selected concurrency validation complete; worker and CI integration remain
 - P3: IN_PROGRESS at the pure domain layer
 - remaining implementation epics: PLANNED
 
 The repository-health and baseline CI foundation is configured, but GitHub-hosted execution remains unverified.
 
-The next foundation milestones are completing executable architecture guardrails, automating the locally proven PostgreSQL races, and integrating the durable worker and outbox.
+The next foundation milestones are validating and closing the executable architecture guardrails with a committed lockfile and local runs, automating the locally proven PostgreSQL races, and integrating the durable worker and outbox.

@@ -4,6 +4,8 @@
 
 Baseline CI and repository-health tooling are configured.
 
+The M1 workspace, TypeScript, linting, formatting, runtime-contract, and dependency-direction scaffolding is also configured. Dependency-installed local execution of those new gates is still pending.
+
 The first GitHub-hosted execution is still pending.
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
@@ -49,7 +51,9 @@ Run the current full local baseline:
 npm run health
 ```
 
-This currently combines repository health, static migration-plan validation, and the domain test suite.
+With workspace dependencies installed, this is configured to combine repository health, static migration-plan validation, TypeScript typecheck, build, lint, formatting, dependency and circular-import checks, the domain suite, and runtime-contract tests.
+
+The expanded command has not yet been executed with installed workspace dependencies, so none of those newly added M1 gates should be described as passing yet.
 
 ## Repository-health policy
 
@@ -96,9 +100,9 @@ It rejects imports from infrastructure or application frameworks including:
 - sibling Shawtie packages
 - `apps/*`
 
-This is intentionally narrow.
+This remains the dedicated hard boundary for domain purity.
 
-The full executable-guardrails milestone still needs TypeScript project boundaries, lint rules, formatting, typecheck, and circular-dependency enforcement.
+The M1 scaffold now additionally defines strict TypeScript configuration and path aliases, ESLint and Prettier configuration, workspace package boundaries, and `scripts/ci/check-dependencies.mjs`. The dependency checker enforces the accepted workspace dependency directions and rejects circular source or workspace dependencies. Its authored script has passed syntax and scaffold-only static checks, but full-repository dependency-installed execution remains pending.
 
 ## Secret handling
 

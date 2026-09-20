@@ -140,6 +140,15 @@ Configured repository evidence now includes:
 - CODEOWNERS
 - SECURITY.md
 - local domain test command
+- npm workspace configuration for apps and packages
+- strict shared TypeScript configuration and package path aliases
+- web, API, and durable-worker executable scaffolds
+- ESLint and Prettier configuration
+- workspace dependency-direction and circular-dependency scanner
+- Zod-based external-boundary validation foundation and contract tests
+- root build, typecheck, lint, format-check, dependency-check, test, and health commands
+
+The newly configured M1 items have passed authoring-time JSON, script-syntax, no-em-dash, and scaffold dependency-check validation only. Dependency-installed full-repository execution is still pending.
 
 GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
 
@@ -162,7 +171,7 @@ GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplet
 - [ ] root build command succeeds
 - [ ] root typecheck command succeeds
 - [ ] root lint command succeeds
-- [x] root test command succeeds
+- [ ] root test command succeeds
 - [ ] formatting check succeeds
 - [x] `packages/domain` is mechanically prevented from importing React, Fastify, database clients, provider SDKs, or `apps/*`
 - [ ] circular dependency checking is active for defined package boundaries

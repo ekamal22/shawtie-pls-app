@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, and the initial PostgreSQL schema and migration system have passed local disposable-database validation.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and the M1 executable workspace/tooling scaffold is configured but still awaits dependency-installed local validation.
 
 ## Product definition
 
@@ -56,6 +56,19 @@ Accepted architecture decisions include:
 
 ## Implementation state
 
+Configured but not yet locally execution-validated:
+
+- npm workspace layout for `apps/*` and `packages/*`
+- strict shared TypeScript configuration and package path aliases
+- executable scaffolds for `apps/web`, `apps/api`, and `apps/worker`
+- package scaffolds for contracts, crypto, database, UI, and testkit boundaries
+- ESLint and Prettier configuration
+- workspace dependency-direction and circular-dependency scanner
+- Zod-based runtime boundary-validation convention with contract tests
+- root build, typecheck, lint, formatting, dependency-check, test, and health commands
+
+These M1 items have passed authoring-time JSON, script-syntax, no-em-dash, and scaffold dependency-check validation only. Package installation, lockfile generation, full typecheck, build, lint, formatting, and expanded test execution remain pending.
+
 Implemented and locally validated:
 
 - pure partnership domain types
@@ -96,7 +109,7 @@ Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EP
 Current epic status:
 
 - F0 Governance and Security Baseline: DONE
-- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because baseline CI and repository-health tooling are configured, but full workspace guardrails and GitHub-hosted validation remain incomplete
+- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because the workspace and executable guardrail scaffold is configured, but dependency-installed local validation, a committed lockfile, and GitHub-hosted validation remain incomplete
 - F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, database invariants, and the canonical lock/claim SQL have passed local PostgreSQL validation, but committed race automation, worker integration, outbox integration, deletion retry behavior, and PostgreSQL CI remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
@@ -115,10 +128,10 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-1. complete workspace configuration and executable architecture guardrails
+1. install workspace dependencies, generate and commit the lockfile, run and fix the full M1 local gates, then document the canonical clean-clone bootstrap command
 2. turn the locally exercised PostgreSQL race scenarios into repeatable automated tests
 3. add PostgreSQL migration and invariant execution to CI when hosted capacity is available
-4. add `apps/worker` and integrate scheduled-action claiming
+4. integrate scheduled-action claiming into the scaffolded `apps/worker`
 5. integrate transactional outbox writes and delivery
 6. integrate lifecycle event persistence
 7. integrate deletion-manifest retries
