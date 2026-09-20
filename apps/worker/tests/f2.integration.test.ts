@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   appendLifecycleEvent,
+  claimDeletionTargets,
   claimOutboxEvents,
   closeDatabasePool,
+  completeDeletionManifestIfReady,
+  completeDeletionTarget,
   createDatabasePool,
   createDeletionManifest,
   databaseConfigFromEnv,
@@ -12,6 +15,7 @@ import {
   getTransactionTimestamp,
   insertOutboxEvent,
   insertScheduledAction,
+  renewDeletionTargetLease,
   renewOutboxLease,
   resumeFailedDeletionTarget,
   validateLifecycleMetadata,
@@ -569,6 +573,90 @@ test("lifecycle event ledger is append-only and metadata rejects content-shaped 
       message: "private content must not enter the lifecycle ledger",
     });
   });
+});
+
+test("expired deletion claim is reclaimed with fencing and current owner can renew", async () => {
+  const manifestId = "f2440000-0000-4000-8000-000000000003";
+  const targetId = "f2440000-0000-4000-8000-000000000031";
+
+  await database.pool.query(
+    "DELETE FROM deletion_manifests WHERE id = $1",
+    [manifestId],
+  );
+  await createDeletionManifest(database.pool, {
+    id: manifestId,
+    subjectType: "partnership",
+    subjectId: partnershipId,
+    reason: "test-expired-claim",
+    accessRevokedAt: new Date(),
+    targets: [
+      { id: targetId, targetType: "test.expired", targetKey: "expired" },
+    ],
+  });
+
+  await database.pool.query(
+    `UPDATE deletion_targets
+     SET
+       status = 'processing',
+       claimed_at = clock_timestamp() - interval '2 minutes',
+       claimed_by = 'old-deletion-worker',
+       lease_expires_at = clock_timestamp() - interval '1 minute',
+       claim_version = 4,
+       attempt_count = 1
+     WHERE id = $1`,
+    [targetId],
+  );
+
+  const reclaimed = (await claimDeletionTargets(
+    database.pool,
+    1,
+    "new-deletion-worker",
+    10_000,
+  )).find((target) => target.id === targetId);
+  assert.ok(reclaimed);
+  assert.equal(reclaimed.claimVersion, 5n);
+
+  const oldClaim = {
+    id: targetId,
+    claimedBy: "old-deletion-worker",
+    claimVersion: 4n,
+  };
+  assert.equal(
+    await renewDeletionTargetLease(database.pool, oldClaim, 10_000),
+    false,
+  );
+  assert.equal(
+    await completeDeletionTarget(database.pool, oldClaim),
+    null,
+  );
+
+  const currentClaim = {
+    id: targetId,
+    claimedBy: "new-deletion-worker",
+    claimVersion: reclaimed.claimVersion,
+  };
+  assert.equal(
+    await renewDeletionTargetLease(database.pool, currentClaim, 20_000),
+    true,
+  );
+  assert.equal(
+    await completeDeletionTarget(database.pool, currentClaim),
+    manifestId,
+  );
+  assert.equal(
+    await completeDeletionManifestIfReady(database.pool, manifestId),
+    true,
+  );
+
+  const manifest = await database.pool.query<{
+    status: string;
+    access_revoked_at: Date | null;
+  }>(
+    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
+    [manifestId],
+  );
+  assert.equal(manifest.rows[0]?.status, "completed");
+  assert.ok(manifest.rows[0]?.access_revoked_at);
 });
 
 test("deletion manifest resumes after partial failure while access stays revoked", async () => {
