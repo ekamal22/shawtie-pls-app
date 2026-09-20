@@ -9,7 +9,10 @@
     "test": "npm run test:domain",
     "test:domain": "node --test packages/domain/tests/*.test.ts",
     "health:repo": "node scripts/ci/repository-health.mjs",
-    "health": "npm run health:repo && npm run test:domain",
-    "ci:baseline": "npm run health"
+    "health": "npm run health:repo && npm run db:migrations:check && npm run test:domain",
+    "ci:baseline": "npm run health",
+    "db:migrations:check": "node scripts/db/check-migrations.mjs",
+    "db:migrate": "node scripts/db/migrate.mjs",
+    "db:test:invariants": "node scripts/db/test-invariants.mjs"
   }
 }
