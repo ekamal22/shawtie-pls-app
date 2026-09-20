@@ -120,15 +120,25 @@ try {
 
   console.log("F2_LOCAL_POSTGRES_READY");
 
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  const testResult = run(npm, ["run", "test:f2:postgres"], {
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      DATABASE_URL: databaseUrl,
-      DB_TEST_CONFIRM: "1",
+  const npmCli = process.env.npm_execpath;
+  if (!npmCli) {
+    throw new Error(
+      "npm_execpath is unavailable. Run this command through npm: npm run test:f2:local",
+    );
+  }
+
+  const testResult = run(
+    process.execPath,
+    [npmCli, "run", "test:f2:postgres"],
+    {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        DATABASE_URL: databaseUrl,
+        DB_TEST_CONFIRM: "1",
+      },
     },
-  });
+  );
 
   if (testResult.error) throw testResult.error;
   if (testResult.status !== 0) {
