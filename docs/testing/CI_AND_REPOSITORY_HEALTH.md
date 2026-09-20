@@ -162,6 +162,8 @@ Once Actions execution is available again:
 
 ## Future gate expansion
 
+Local disposable PostgreSQL validation completed on 2026-09-20 for migration from zero, invariant SQL, migration rerun idempotency, schema catalog inspection, and selected two-session races. This is local evidence only and does not satisfy the still-pending GitHub-hosted gate.
+
 As the repository foundation grows, Baseline CI should add hard steps for:
 
 - package installation from a committed lockfile

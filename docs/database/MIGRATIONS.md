@@ -2,9 +2,7 @@
 
 ## Status
 
-The initial PostgreSQL migration set is implemented in `packages/db/migrations`.
-
-It is not yet verified against a real PostgreSQL instance.
+The initial PostgreSQL migration set is implemented in `packages/db/migrations` and has passed local disposable-database validation against PostgreSQL 16.15.
 
 ## Policy
 
@@ -96,21 +94,33 @@ The schema defines database-level protection for:
 - reply messages constrained to the same conversation
 - call and receipt actors constrained to the partnership
 
+## Local verification record
+
+On 2026-09-20, a disposable PostgreSQL 16.15 Docker container was used to verify:
+
+- all five migrations apply from an empty database
+- a second blank container reproduces the migration and invariant results
+- a second migration run skips all five checksum-matched migrations
+- `_schema_migrations` contains five distinct filenames and valid SHA-256 checksum shapes
+- checksum drift is rejected with a nonzero exit
+- the invariant SQL suite passes
+- critical indexes, checks, foreign keys, and triggers exist in the PostgreSQL catalogs
+- concurrent partnership inserts cannot occupy the same account twice
+- two sessions using the committed scheduled-action claim SQL do not claim the same row
+- opposite caller orders using the committed account-lock SQL acquire accounts in immutable UUID order without deadlock
+
 ## What remains unverified
 
-Until PostgreSQL is available, the following cannot be claimed as complete:
+The following cannot yet be claimed as complete:
 
-- migration syntax execution
-- clean-database migration from zero
-- invariant SQL test pass
-- concurrency behavior
-- deterministic two-account race behavior
-- multi-worker `SKIP LOCKED` behavior
+- automated race coverage committed to the repository
+- PostgreSQL execution in hosted CI
+- integrated worker-instance behavior beyond the database claim SQL
 - outbox transaction integration
 - deletion-manifest retry integration
 - query-plan and index validation
 
-## First PostgreSQL verification
+## PostgreSQL verification command
 
 Use a disposable PostgreSQL database.
 
@@ -138,4 +148,4 @@ The repository now includes:
 - `packages/db/sql/lock-accounts.sql`
 - `packages/db/sql/claim-scheduled-actions.sql`
 
-These artifacts define how the first real PostgreSQL verification should be performed once a database is available.
+These artifacts define the repeatable PostgreSQL verification path. The concurrency exercises should be promoted into committed automation before they are treated as a durable regression gate.

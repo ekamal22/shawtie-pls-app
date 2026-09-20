@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, and the initial PostgreSQL schema and migration system are committed.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, and the initial PostgreSQL schema and migration system have passed local disposable-database validation.
 
 ## Product definition
 
@@ -77,6 +77,13 @@ Implemented and locally validated:
 - account-deletion view-only capability behavior
 - former-partner blocking capability
 - partnership cooldown capability
+- clean PostgreSQL migration from zero across all five migrations
+- migration rerun idempotency and checksum-drift rejection
+- database invariant SQL against PostgreSQL 16
+- critical constraint, index, foreign-key, and trigger creation
+- occupied partnership-slot concurrency protection
+- scheduled-action `FOR UPDATE SKIP LOCKED` claim concurrency
+- deterministic two-account lock ordering
 
 The current domain suite contains 27 tests and passes in local validation.
 
@@ -90,11 +97,11 @@ Current epic status:
 
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because baseline CI and repository-health tooling are configured, but full workspace guardrails and GitHub-hosted validation remain incomplete
-- F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, migration tooling, database invariants, and canonical lock/claim SQL are committed, but real PostgreSQL execution, race validation, worker integration, outbox integration, and deletion retry behavior remain unverified
+- F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, database invariants, and the canonical lock/claim SQL have passed local PostgreSQL validation, but committed race automation, worker integration, outbox integration, deletion retry behavior, and PostgreSQL CI remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
 
-The persistence schema foundation is implemented as SQL migrations but has not yet been executed against a real PostgreSQL instance. API integration and worker integration are not implemented yet.
+The persistence schema foundation has been executed twice from a blank disposable PostgreSQL 16 database. The invariant suite, migration ledger, second-run skipping, selected schema inspection, occupied-slot race, scheduled-action claim race, and deterministic account-lock ordering passed locally. API integration and worker integration are not implemented yet.
 
 Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks, but GitHub-hosted validation has not yet been executed. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
 
@@ -109,15 +116,14 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 ## Next engineering work
 
 1. complete workspace configuration and executable architecture guardrails
-2. execute the committed migrations against disposable PostgreSQL and fix any syntax or compatibility issues
-3. run the committed database invariant suite
-4. add PostgreSQL concurrency and race tests
-5. add `apps/worker` and integrate scheduled-action claiming
-6. integrate transactional outbox writes and delivery
-7. integrate lifecycle event persistence
-8. integrate deletion-manifest retries
-9. implement account and device repositories
-10. wire API routes to the domain capability engine
+2. turn the locally exercised PostgreSQL race scenarios into repeatable automated tests
+3. add PostgreSQL migration and invariant execution to CI when hosted capacity is available
+4. add `apps/worker` and integrate scheduled-action claiming
+5. integrate transactional outbox writes and delivery
+6. integrate lifecycle event persistence
+7. integrate deletion-manifest retries
+8. implement account and device repositories
+9. wire API routes to the domain capability engine
 
 ## Stable release blockers
 

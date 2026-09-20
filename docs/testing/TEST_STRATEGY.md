@@ -33,7 +33,7 @@ Covered behavior includes:
 - email-change availability during breakup
 - account-deletion view-only behavior
 
-This is a pure domain baseline. Database, API, worker, and browser integration tests remain pending.
+This is the pure domain baseline. The initial database invariant suite has separate local PostgreSQL evidence; API, worker, browser, and full integration tests remain pending.
 
 ## CI baseline
 
@@ -74,9 +74,9 @@ The initial invariant SQL suite is committed at `packages/db/tests/invariants.sq
 
 It currently covers current verified-email uniqueness, one occupied partnership slot, idempotency uniqueness, self-request rejection, breakup deadline shape, lifecycle-event append-only behavior, device ownership, maximum two partnership members, and scheduled-action deduplication.
 
-The suite has not yet been executed against real PostgreSQL.
+The suite passed locally on 2026-09-20 against a disposable PostgreSQL 16.15 database after a clean migration from zero. The same migration and invariant sequence also passed after destroying and recreating the test container.
 
-Run against real PostgreSQL.
+Separate two-session exercises passed for occupied partnership-slot contention, scheduled-action `SKIP LOCKED` claiming, and deterministic account lock ordering. Those race exercises are not yet committed as automated regression tests.
 
 Prove:
 
@@ -92,6 +92,8 @@ Prove:
 - append-only lifecycle event creation
 - deterministic two-account lock ordering
 - deletion manifest idempotency
+
+The remaining items in this list are future coverage unless explicitly identified above as locally exercised.
 
 ### Integration
 

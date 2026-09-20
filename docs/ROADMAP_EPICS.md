@@ -181,7 +181,7 @@ Status: IN_PROGRESS
 
 ## Current verified progress
 
-Committed repository artifacts now include:
+Committed repository artifacts and local PostgreSQL evidence now include:
 
 - five ordered PostgreSQL migrations
 - migration checksum ledger and forward migration runner
@@ -198,8 +198,13 @@ Committed repository artifacts now include:
 - deterministic account-lock SQL pattern
 - scheduled-action `FOR UPDATE SKIP LOCKED` claim SQL
 - invariant test SQL
+- two clean migration-from-zero passes against disposable PostgreSQL 16
+- idempotent migration rerun with five checksum-verified skips
+- passing invariant SQL for verified-email ownership, occupied partnership slots, idempotency, request and breakup checks, append-only lifecycle events, device ownership, member limits, and scheduled-action deduplication
+- catalog verification of critical indexes, foreign keys, checks, and triggers
+- successful occupied-slot, scheduled-action claim, and deterministic account-lock concurrency exercises
 
-These are committed artifacts, not PostgreSQL execution evidence. Real migration, invariant, concurrency, worker, outbox, and deletion-retry verification remains pending.
+The database foundation has local PostgreSQL execution evidence. Committed race automation, PostgreSQL CI, worker integration, outbox transaction integration, and deletion-retry verification remain pending.
 
 ## Scope
 
@@ -218,21 +223,21 @@ These are committed artifacts, not PostgreSQL execution evidence. Real migration
 
 ## Acceptance gates
 
-- [ ] migrations create a clean database from zero
+- [x] migrations create a clean database from zero
 - [ ] migrations are repeatably testable in CI
 - [x] rollback or forward-recovery policy is documented
-- [ ] one occupied partnership slot per account is enforced by PostgreSQL
-- [ ] current verified email uniqueness is enforced by PostgreSQL
-- [ ] idempotency uniqueness is enforced at the database level
-- [ ] deterministic two-account locking helper exists
-- [ ] concurrent partnership creation cannot create two occupied partnerships
+- [x] one occupied partnership slot per account is enforced by PostgreSQL
+- [x] current verified email uniqueness is enforced by PostgreSQL
+- [x] idempotency uniqueness is enforced at the database level
+- [x] deterministic two-account locking helper exists
+- [x] concurrent partnership creation cannot create two occupied partnerships
 - [ ] worker claims scheduled work safely across multiple worker instances
 - [ ] lifecycle-sensitive jobs reject stale generations
 - [ ] outbox write occurs in the same transaction as authoritative state mutation
 - [ ] duplicate outbox delivery is safe
 - [ ] lifecycle events are append-only and contain no private content
 - [ ] deletion manifests resume after partial failure
-- [ ] PostgreSQL invariant and race tests pass
+- [x] PostgreSQL invariant and selected race tests pass locally
 
 # A1: Accounts and Devices
 

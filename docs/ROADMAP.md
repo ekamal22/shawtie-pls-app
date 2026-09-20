@@ -24,17 +24,17 @@ Do not infer completion percentages from partial layers.
 - CI: baseline workflow configured, hosted validation pending
 - repository-health scanner: configured
 - CODEOWNERS and SECURITY policy: configured
-- PostgreSQL development environment: pending execution
-- PostgreSQL schema and migrations: committed, real database validation pending
+- PostgreSQL development environment: disposable Docker environment locally validated
+- PostgreSQL schema and migrations: committed and locally validated twice from a blank PostgreSQL 16 database
 - domain capability engine: implemented foundation
-- database invariants: defined in migrations, PostgreSQL validation pending
+- database invariants: committed and passing against local disposable PostgreSQL 16
 - transaction helpers: canonical account-lock SQL committed, application integration pending
 - deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
 - durable worker
 - transactional outbox: schema committed, runtime integration pending
 - scheduled actions: schema and claim SQL committed, runtime integration pending
 - scheduled-action generation tokens: domain behavior implemented, persistence pending
-- lifecycle event ledger: schema and append-only update protection committed, PostgreSQL validation pending
+- lifecycle event ledger: schema and append-only update protection locally validated against PostgreSQL
 - deletion manifest workflow: schema committed, retry integration pending
 - runtime contract validation
 - API versioning
@@ -196,10 +196,10 @@ Current canonical epic status:
 
 - F0: DONE
 - F1: IN_PROGRESS with baseline CI and repository health configured
-- F2: IN_PROGRESS with PostgreSQL schema and migration tooling committed but unverified on PostgreSQL
+- F2: IN_PROGRESS with local PostgreSQL migration, invariant, schema, and selected concurrency validation complete; worker and CI integration remain
 - P3: IN_PROGRESS at the pure domain layer
 - remaining implementation epics: PLANNED
 
 The repository-health and baseline CI foundation is configured, but GitHub-hosted execution remains unverified.
 
-The next foundation milestones are completing executable architecture guardrails and validating the committed persistence foundation against real PostgreSQL.
+The next foundation milestones are completing executable architecture guardrails, automating the locally proven PostgreSQL races, and integrating the durable worker and outbox.
