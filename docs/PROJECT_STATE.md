@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and the M1 executable workspace/tooling scaffold is configured but still awaits dependency-installed local validation.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and the M1 executable workspace/tooling scaffold has begun dependency-installed local validation.
 
 ## Product definition
 
@@ -67,7 +67,7 @@ Configured but not yet locally execution-validated:
 - Zod-based runtime boundary-validation convention with contract tests
 - root build, typecheck, lint, formatting, dependency-check, test, and health commands
 
-These M1 items have passed authoring-time JSON, script-syntax, no-em-dash, and scaffold dependency-check validation only. Package installation, lockfile generation, full typecheck, build, lint, formatting, and expanded test execution remain pending.
+Dependency installation completed locally with 180 packages installed and 0 reported npm audit vulnerabilities. The repository-health check and static migration-plan check passed. The first expanded `npm run health` attempt then stopped at TypeScript typecheck because TypeScript 6 rejects the deprecated shared `baseUrl` option. The shared configuration has been corrected by removing `baseUrl`; typecheck, build, lint, formatting, dependency checks, and expanded tests still require a fresh local run. A generated `package-lock.json` exists locally but is not yet committed.
 
 Implemented and locally validated:
 
@@ -109,7 +109,7 @@ Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EP
 Current epic status:
 
 - F0 Governance and Security Baseline: DONE
-- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because the workspace and executable guardrail scaffold is configured, but dependency-installed local validation, a committed lockfile, and GitHub-hosted validation remain incomplete
+- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because dependency installation, repository health, and migration-plan validation have passed locally, but the corrected TypeScript configuration still needs a fresh full local health run, the generated lockfile is not yet committed, and GitHub-hosted validation remains incomplete
 - F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, database invariants, and the canonical lock/claim SQL have passed local PostgreSQL validation, but committed race automation, worker integration, outbox integration, deletion retry behavior, and PostgreSQL CI remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
@@ -128,7 +128,7 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-1. install workspace dependencies, generate and commit the lockfile, run and fix the full M1 local gates, then document the canonical clean-clone bootstrap command
+1. rerun the full M1 local health gate after the TypeScript configuration fix, fix any remaining failures, commit the generated lockfile, then document the canonical clean-clone bootstrap command
 2. turn the locally exercised PostgreSQL race scenarios into repeatable automated tests
 3. add PostgreSQL migration and invariant execution to CI when hosted capacity is available
 4. integrate scheduled-action claiming into the scaffolded `apps/worker`

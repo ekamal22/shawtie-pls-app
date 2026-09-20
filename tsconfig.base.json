@@ -16,7 +16,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "skipLibCheck": false,
-    "baseUrl": ".",
     "paths": {
       "@shawtie/domain": ["packages/domain/src/index.ts"],
       "@shawtie/contracts": ["packages/contracts/src/index.ts"],

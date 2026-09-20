@@ -148,7 +148,7 @@ Configured repository evidence now includes:
 - Zod-based external-boundary validation foundation and contract tests
 - root build, typecheck, lint, format-check, dependency-check, test, and health commands
 
-The newly configured M1 items have passed authoring-time JSON, script-syntax, no-em-dash, and scaffold dependency-check validation only. Dependency-installed full-repository execution is still pending.
+Dependency installation has now completed locally with 0 reported npm audit vulnerabilities. Repository health and static migration-plan validation passed. The first full health attempt stopped at TypeScript typecheck because the shared config used deprecated `baseUrl`; that root configuration defect has been fixed by removing `baseUrl`. Typecheck and all later gates still require a fresh local run.
 
 GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
 

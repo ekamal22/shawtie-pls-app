@@ -4,7 +4,7 @@
 
 Baseline CI and repository-health tooling are configured.
 
-The M1 workspace, TypeScript, linting, formatting, runtime-contract, and dependency-direction scaffolding is also configured. Dependency-installed local execution of those new gates is still pending.
+The M1 workspace, TypeScript, linting, formatting, runtime-contract, and dependency-direction scaffolding is also configured. Dependency installation has completed locally. Repository health and the static migration-plan check passed; the first expanded local health run stopped at TypeScript typecheck because the shared config still used the TypeScript 6 deprecated `baseUrl` option. That option has now been removed and the full local health gate must be rerun.
 
 The first GitHub-hosted execution is still pending.
 
@@ -53,7 +53,7 @@ npm run health
 
 With workspace dependencies installed, this is configured to combine repository health, static migration-plan validation, TypeScript typecheck, build, lint, formatting, dependency and circular-import checks, the domain suite, and runtime-contract tests.
 
-The expanded command has not yet been executed with installed workspace dependencies, so none of those newly added M1 gates should be described as passing yet.
+The expanded command has now been executed with installed workspace dependencies. Repository health and static migration-plan validation passed. Typecheck failed before later gates could run because the shared TypeScript configuration used deprecated `baseUrl`. The configuration has been corrected, but typecheck and all later gates remain unverified until the command is rerun.
 
 ## Repository-health policy
 
@@ -116,7 +116,7 @@ Before public stable release, repository settings or CI should also provide dedi
 
 The baseline workflow runs `npm audit --audit-level=high` only when `package-lock.json` exists.
 
-There is no package lockfile yet, so the dependency-audit path is configured but not active.
+A package lockfile has now been generated locally by `npm install`, and npm reported 0 vulnerabilities during that install. The lockfile is not yet committed, so repository and CI dependency-audit enforcement is not active yet.
 
 When the workspace and dependency graph are established, the lockfile becomes mandatory and dependency scanning must become a hard gate.
 
