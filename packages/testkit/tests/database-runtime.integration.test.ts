@@ -213,6 +213,32 @@ test("claimable scheduled work query uses a queue index on realistic synthetic d
     );
     const text = plan.rows.map((row) => row["QUERY PLAN"]).join("\n");
     assert.match(text, /scheduled_actions_claimable/);
+
+    await database.pool.query(
+      `UPDATE scheduled_actions
+       SET
+         status = 'processing',
+         claimed_at = clock_timestamp() - interval '2 minutes',
+         claimed_by = 'expired-plan-worker',
+         lease_expires_at = clock_timestamp() - interval '1 minute',
+         claim_version = claim_version + 1
+       WHERE deduplication_key LIKE 'f2-plan-%'`,
+    );
+    await database.pool.query("ANALYZE scheduled_actions");
+
+    const reclaimPlan = await database.pool.query<{ "QUERY PLAN": string }>(
+      `EXPLAIN (FORMAT TEXT)
+       SELECT id
+       FROM scheduled_actions
+       WHERE status = 'processing'
+         AND lease_expires_at <= clock_timestamp()
+       ORDER BY lease_expires_at, id
+       LIMIT 20`,
+    );
+    const reclaimText = reclaimPlan.rows
+      .map((row) => row["QUERY PLAN"])
+      .join("\n");
+    assert.match(reclaimText, /scheduled_actions_reclaimable/);
   } finally {
     await closeDatabasePool(database);
   }

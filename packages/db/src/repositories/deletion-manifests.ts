@@ -231,6 +231,39 @@ export async function failDeletionTarget(
   return manifestId;
 }
 
+export async function resumeFailedDeletionTarget(
+  executor: QueryExecutor,
+  targetId: string,
+  delayMs = 0,
+): Promise<string | null> {
+  const result = await executor.query<{ manifest_id: string }>(
+    `UPDATE deletion_targets
+     SET
+       status = 'pending',
+       available_at = clock_timestamp() + ($2 * interval '1 millisecond'),
+       last_error_code = NULL,
+       completed_at = NULL,
+       claimed_at = NULL,
+       claimed_by = NULL,
+       lease_expires_at = NULL
+     WHERE id = $1
+       AND status = 'failed'
+     RETURNING manifest_id`,
+    [targetId, delayMs],
+  );
+
+  const manifestId = result.rows[0]?.manifest_id ?? null;
+  if (manifestId) {
+    await executor.query(
+      `UPDATE deletion_manifests
+       SET status = 'pending', completed_at = NULL, last_error_code = NULL
+       WHERE id = $1 AND status = 'failed'`,
+      [manifestId],
+    );
+  }
+  return manifestId;
+}
+
 export async function completeDeletionManifestIfReady(
   executor: QueryExecutor,
   manifestId: string,

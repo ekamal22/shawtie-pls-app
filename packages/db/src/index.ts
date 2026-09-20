@@ -63,6 +63,7 @@ export {
   createDeletionManifest,
   failDeletionTarget,
   renewDeletionTargetLease,
+  resumeFailedDeletionTarget,
   retryDeletionTarget,
   type CreateDeletionManifest,
   type DeletionTarget,
