@@ -502,7 +502,7 @@ A pending partner request expires exactly seven days after creation if it has no
 
 A sender may cancel a pending request at any time before acceptance.
 
-A user may send no more than three partner requests to the same account within any rolling one-month period.
+A user may send no more than three partner requests to the same account within any rolling one-month period. The rolling boundary uses trusted server calendar arithmetic; a request created at exactly the one-month cutoff no longer counts, while newer successfully sent requests do count even if they were later cancelled, declined, expired, or invalidated.
 
 If a recipient declines a partner request, the sender must wait exactly one hour before sending another request to that same account. At the exact one-hour server-time boundary, a new request may be sent if every other eligibility rule passes. A later request still counts toward the three-requests-per-month limit.
 

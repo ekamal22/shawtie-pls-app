@@ -25,7 +25,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | IN_PROGRESS | refined architecture complete, runtime implementation pending |
-| P1 Discovery and Partner Requests | IN_PROGRESS | architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
+| P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -299,6 +299,8 @@ Safe parallelization:
 - P1 full API integration waits until A1-C provides real authenticated accounts and sessions.
 - P1 reuses the generalized A1 PostgreSQL-backed security-rate-limit primitive rather than inventing an independent limiter.
 - P1 detects reciprocal active requests; P2 owns the same-transaction partnership formation coordinator.
+- Production request creation remains fail-closed until that P2 coordinator is registered.
+- P1 create uses explicit idempotency, pair-wide deterministic locks, cursor-paginated request lists, and cross-epic invalidation hooks.
 
 Implement:
 

@@ -165,10 +165,14 @@ Required evidence includes:
 - rolling one-calendar-month successful-request count
 - multiple incoming requests
 - self and duplicate rejection
-- deterministic same-direction and opposite-direction races
+- deterministic same-direction, same-idempotency-key, opposite-direction, cancel/accept, and decline/accept races
 - direct API eligibility bypass rejection
 - discovery and create abuse-rate limits
 - generic target-unavailable mapping for private recipient state
+- lost-response create replay through Idempotency-Key
+- cursor pagination without active-request omission or duplication
+- production request creation disabled without the P2 formation coordinator
+- A1 deletion, P2 formation, and P3 block invalidation hooks
 - cancel and decline availability despite exhausted discovery/create abuse buckets
 - scheduled expiry through F2
 - reciprocal pair detection for P2 without P1 creating a partnership

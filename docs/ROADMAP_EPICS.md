@@ -532,11 +532,13 @@ Status: IN_PROGRESS
 
 ## Design status
 
-The architecture and implementation sequence are defined in:
+The refined architecture and implementation sequence are defined in:
 
 \`docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md\`
 
 P1 preserves Architecture Baseline 1.0 and builds on F2 plus the refined A1 account/session/security substrate.
+
+The second-pass refinement adds create idempotency, separate abuse-rate-limit transactions, pair locking for cancel/decline, cursor pagination, cross-epic invalidation hooks, migration backfill rules, attempt retention, and fail-closed production gating until P2 formation is wired.
 
 P1 is designed now, but runtime implementation depends on A1 account contracts and sessions. No P1 acceptance gate is checked from design work alone.
 

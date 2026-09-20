@@ -513,7 +513,8 @@ Controls:
 - three successful sends per pair per rolling calendar month
 - exact one-hour cooldown after decline
 - sender and network abuse buckets
-- deterministic two-account locking
+- deterministic two-account locking for create, cancel, decline, future accept, and block-sensitive paths
+- request-create idempotency for lost-response retries
 - database same-direction pending uniqueness
 - exact logical expiry independent of worker timing
 - F2 durable expiry scheduling
@@ -522,7 +523,7 @@ Controls:
 
 Verification:
 
-- same-direction and opposite-direction concurrency tests
+- same-direction, same-idempotency-key, opposite-direction, cancel/accept, and decline/accept concurrency tests
 - exact time-boundary tests
 - block and cooldown bypass tests
 - create versus account deletion race

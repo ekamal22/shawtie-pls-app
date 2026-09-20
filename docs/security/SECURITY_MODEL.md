@@ -227,6 +227,12 @@ P1 product rules and abuse rules are distinct:
 
 P1 reuses the PostgreSQL security-rate-limit primitive planned by A1.
 
+Request-creation abuse buckets are consumed in a separate short transaction before the pair mutation. This ensures rejected new logical attempts may still count toward abuse throttling, while only successful request creation contributes to the three-request product limit.
+
+Create requests use an idempotency key so a lost HTTP response can be replayed safely instead of generating a second logical send.
+
+Pair-sensitive create, cancel, decline, future accept, block, and invalidation paths lock both account rows in the same deterministic order.
+
 ## Abuse controls
 
 Apply rate limits to:

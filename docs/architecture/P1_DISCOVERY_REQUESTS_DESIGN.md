@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGNED, IMPLEMENTATION PENDING
+REFINED DESIGN, IMPLEMENTATION PENDING
 
 Effective design date: 2026-09-21.
 
@@ -13,6 +13,27 @@ P1 preserves Architecture Baseline 1.0 and builds on the verified F2 transaction
 No new trust boundary, lifecycle authority, persistent state system, provider, or dependency direction is introduced. No ADR is required.
 
 Source code, migrations, and tests remain authoritative for behavior that is actually implemented.
+
+## Refinement review
+
+The initial P1 design was reviewed again before runtime implementation.
+
+The refinement closes ambiguity in:
+
+- create-request idempotency and lost-response retries
+- security-rate-limit transaction boundaries
+- deterministic lock ordering for cancel and decline
+- production enablement before P2 exists
+- cross-epic request invalidation hooks
+- exact rolling-month boundary counting
+- cursor pagination and response caps
+- migration backfill and terminal-shape compatibility
+- invalidation reasons for A1, P2, and P3 integration
+- cache-control and browser request privacy
+- terminal mutation replay behavior
+- cleanup and retention for request-attempt evidence
+
+No accepted partnership or request product rule is changed.
 
 ## Dependency boundary
 
@@ -28,10 +49,29 @@ Implementation dependencies are:
 - P1 reuses A1 security_rate_limit_buckets
 - P1 full API integration waits for A1-C authenticated accounts and sessions
 - P2 consumes P1 reciprocal-request detection to perform actual partnership formation
+- production user-facing request creation remains disabled until the P2 partnership-formation coordinator is wired, because reciprocal pending requests must auto-pair as one transaction
 
 P1 does not create partnerships.
 
 P2 owns explicit acceptance and transactional partnership formation.
+
+## Production feature-enable boundary
+
+P1 may reach DONE from local domain, PostgreSQL, API, race, security, and browser evidence before P2 is complete.
+
+However, a production-capable application must not expose partner-request creation to end users unless the P2 partnership-formation coordinator is registered.
+
+Reason:
+
+- two opposite pending requests are fresh consent from both users
+- the product requires immediate automatic partnership formation
+- returning two pending requests without pairing would be a product-rule violation
+
+The P1 integration test application may explicitly enable request-only mode for verification.
+
+Production startup or route registration must fail closed if partner-request creation is enabled without the P2 coordinator.
+
+Discovery and request read models may be exercised independently in test environments.
 
 ## Goals
 
@@ -140,10 +180,12 @@ For a proposed request at transaction time now, count prior created attempts whe
 
 ~~~text
 created_at > now - interval '1 month'
-AND created_at < now
+AND created_at <= now
 ~~~
 
 At the exact one-calendar-month boundary, the older request no longer counts.
+
+Because request creation for a pair is serialized by deterministic account locks, the proposed new request is not yet in the ledger when this query runs. Existing successful attempts with the same PostgreSQL transaction timestamp still count because the upper bound is inclusive.
 
 Cancelled, declined, expired, or later invalidated requests still count because they were successfully sent.
 
@@ -156,6 +198,10 @@ Discovery is authenticated.
 There is no unauthenticated username lookup endpoint.
 
 The first version accepts one normalized username query and returns at most one result.
+
+All P1 authenticated responses use Cache-Control: private, no-store.
+
+The discovery query remains in a JSON POST body rather than a URL query string to reduce accidental username exposure in access logs, browser history, intermediary logs, and copied URLs.
 
 No prefix, fuzzy, wildcard, phonetic, typo-tolerant, popularity-ranked, or paginated account search exists in P1.
 
@@ -229,6 +275,17 @@ The request transaction locks the recipient account and verifies that the curren
 If the username changed after discovery, request creation fails with TARGET_CHANGED and the client must search again.
 
 This prevents a stale search result from accidentally targeting a different username owner after an old username is released and later reclaimed.
+
+## External implementation basis
+
+The refinement follows established platform guidance:
+
+- PostgreSQL explicit row locks are appropriate for application-controlled concurrency when MVCC alone is insufficient
+- PostgreSQL recommends acquiring locks on multiple objects in a consistent order to reduce deadlocks
+- API resource-consumption defenses should enforce server-side limits on request frequency and response size
+- an Idempotency-Key convention is appropriate for making non-idempotent POST retries fault-tolerant
+
+These external references support the implementation mechanics. Product rules remain defined by the Shawtie PRD.
 
 ## Runtime architecture
 
@@ -370,6 +427,7 @@ Add:
 
 ~~~text
 expired_at timestamptz
+invalidated_reason text
 ~~~
 
 Add a terminal-shape constraint.
@@ -402,10 +460,31 @@ expired:
 
 invalidated:
   invalidated_at non-null
+  invalidated_reason non-null
   all other terminal timestamps null
 ~~~
 
 Existing exact seven-day expires_at constraint remains authoritative.
+
+Allowed invalidation reasons are intentionally small and cross-epic:
+
+~~~text
+account_unavailable
+partnership_formed
+block_created
+~~~
+
+The invalidation reason is internal state and is not exposed in the normal request API.
+
+Migration 0008 is forward-safe:
+
+1. add expired_at and invalidated_reason as nullable
+2. deterministically backfill existing status = expired rows with expired_at = expires_at
+3. reject migration if any other legacy terminal row has an impossible timestamp shape rather than guessing a timestamp
+4. add terminal-shape and invalidation-reason constraints after deterministic backfill
+5. add indexes and append-only attempt protection
+
+Migration 0008 does not rewrite historical request creation time or expiry time.
 
 Add indexes for:
 
@@ -547,16 +626,21 @@ Discovery is read-only but remains JSON-only.
 ### List active partner requests
 
 ~~~text
-GET /api/v1/partner-requests
+GET /api/v1/partner-requests?direction=incoming|outgoing&limit=25&cursor=...
 ~~~
 
-Response:
+One direction is requested per page.
+
+Default limit:
 
 ~~~text
-{
-  incoming: [...],
-  outgoing: [...]
-}
+25
+~~~
+
+Maximum limit:
+
+~~~text
+50
 ~~~
 
 Only logically active pending requests are returned:
@@ -566,7 +650,26 @@ status = pending
 AND expires_at > transaction_time
 ~~~
 
-Each entry exposes:
+Order:
+
+~~~text
+created_at DESC, id DESC
+~~~
+
+The cursor carries the last visible createdAt and requestId in a versioned base64url envelope.
+
+The cursor is not a secret, but it is schema-validated and direction-bound. Invalid or mismatched cursors fail with VALIDATION_FAILED.
+
+Response:
+
+~~~text
+{
+  items: [...],
+  nextCursor: string | null
+}
+~~~
+
+Each item exposes:
 
 - requestId
 - direction
@@ -577,6 +680,8 @@ Each entry exposes:
 It never exposes counterpart email, exact DOB, partnership history, cooldown, or block metadata.
 
 The list operation does not require a database write merely to clean overdue rows.
+
+P1 does not silently cap a direction at 100 entries. Cursor pagination guarantees that all still-active requests remain retrievable.
 
 ### Create partner request
 
@@ -620,6 +725,62 @@ P1 has no accept endpoint.
 
 Acceptance and partnership creation belong to P2.
 
+## Request creation idempotency
+
+POST /api/v1/partner-requests requires an Idempotency-Key header.
+
+The key identifies one logical create attempt for one authenticated sender.
+
+Policy:
+
+- client key length: 16 through 128 ASCII characters
+- stored scope: partner_request_create
+- retention: at least 24 hours
+- request fingerprint includes recipientAccountId and normalized expectedUsername
+- the authenticated account ID is already part of the idempotency-record scope
+- same key plus same fingerprint replays the stored HTTP status and response
+- same key plus different fingerprint fails with IDEMPOTENCY_KEY_REUSED
+- idempotency responses never store private recipient-state reasons
+
+The existing F2 idempotency_records table is reused.
+
+Lost-response behavior:
+
+1. client sends a create request
+2. server commits the request and idempotency response
+3. network response is lost
+4. client retries with the same key
+5. server replays the original success instead of returning REQUEST_ALREADY_PENDING
+
+Concurrent same-key requests use the unique account/scope/key constraint.
+
+The business transaction attempts to reserve the key after account locks are acquired. If another transaction already committed that key, the second request reloads and replays the completed result. If the first transaction rolled back, the second may acquire the key and proceed.
+
+Cancel and decline are naturally idempotent through terminal request state and do not require an Idempotency-Key in P1.
+
+## Security-rate-limit transaction boundary
+
+Security throttling is intentionally separate from the authoritative request transaction.
+
+Flow:
+
+1. authenticate and validate the request
+2. perform a non-locking lookup for an already-completed matching idempotency result; if found, replay it without charging a new abuse attempt
+3. run a short security-rate-limit transaction that atomically consumes account and network buckets
+4. commit the rate-limit transaction
+5. run the authoritative pair transaction
+6. commit the business result and idempotency response
+
+This separation is deliberate.
+
+A malformed, blocked, duplicate, ineligible, or otherwise rejected new logical attempt may still consume abuse budget even though it does not consume the three-successful-request product allowance.
+
+A business rollback does not erase the already-consumed abuse attempt.
+
+Rate-limit bucket locks are therefore never held while account, partnership, or request rows are locked.
+
+A rate-limit storage failure fails closed for request creation rather than silently bypassing the abuse control.
+
 ## Request creation transaction
 
 Request creation is one authoritative F2 transaction.
@@ -627,8 +788,8 @@ Request creation is one authoritative F2 transaction.
 Order:
 
 1. authenticate sender before entering the business transaction
-2. validate boundary input
-3. apply account/network abuse-rate-limit buckets
+2. validate boundary input and normalize expectedUsername
+3. complete the separate security-rate-limit preflight described above
 4. begin authoritative transaction
 5. load PostgreSQL transaction time
 6. lock sender and recipient accounts in immutable UUID order
@@ -646,15 +807,21 @@ Order:
 18. check latest sender-to-recipient decline cooldown
 19. count prior successfully created pair attempts inside the rolling calendar month
 20. evaluate both accounts for prospective partnership eligibility
-21. insert partner request with created_at = transaction time
-22. set expires_at = created_at + interval '7 days'
-23. append request-attempt outcome created
-24. insert F2 scheduled action for exact request expiry
-25. detect active reciprocal request
-26. return reciprocal-pair signal to the application service
-27. commit
+21. reserve or replay the create idempotency record after account locks are held
+22. insert partner request with created_at = transaction time
+23. set expires_at = created_at + interval '7 days'
+24. append request-attempt outcome created
+25. insert F2 scheduled action for exact request expiry
+26. detect active reciprocal request
+27. invoke the P2 coordinator before commit when production pairing is enabled
+28. store the public response in the idempotency record
+29. commit
 
 The database unique index remains final protection against same-direction duplicate races.
+
+Expected business denials are returned as committed decision results rather than thrown as transaction errors when the transaction intentionally records an attempt or idempotency response.
+
+Unexpected infrastructure failures still roll back the authoritative business transaction.
 
 ## Eligibility and public denial mapping
 
@@ -772,14 +939,15 @@ Cancellation transaction:
 1. authenticate account
 2. begin transaction
 3. load PostgreSQL transaction time
-4. lock sender account
-5. lock request row
-6. return not found if the authenticated account is not the sender
-7. if already terminal, return stable terminal-state result
-8. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
-9. otherwise set status = cancelled
-10. set cancelled_at = transaction time
-11. commit
+4. load the request identity without exposing it publicly
+5. lock both request accounts in immutable UUID order
+6. lock the request row
+7. return the same not-found response for unknown request and wrong sender
+8. if already terminal, return the stable terminal state without overwriting it
+9. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
+10. otherwise set status = cancelled
+11. set cancelled_at = transaction time
+12. commit
 
 Cancellation does not erase the original created attempt from the rolling one-month count.
 
@@ -790,18 +958,80 @@ Decline transaction:
 1. authenticate account
 2. begin transaction
 3. load PostgreSQL transaction time
-4. lock recipient account
-5. lock request row
-6. return not found if the authenticated account is not the recipient
-7. if already terminal, return stable terminal-state result
-8. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
-9. otherwise set status = declined
-10. set declined_at = transaction time
-11. commit
+4. load the request identity without exposing it publicly
+5. lock both request accounts in immutable UUID order
+6. lock the request row
+7. return the same not-found response for unknown request and wrong recipient
+8. if already terminal, return the stable terminal state without overwriting it
+9. if pending but transaction time is at or after expires_at, mark expired with expired_at = expires_at and return expired
+10. otherwise set status = declined
+11. set declined_at = transaction time
+12. commit
 
 Decline does not create a block.
 
 A later request from the same sender is prohibited until the exact one-hour boundary.
+
+## Cross-epic request invalidation hooks
+
+P1 owns request-state invalidation helpers so A1, P2, and P3 do not duplicate partner-request SQL.
+
+The repository exposes transaction-scoped operations such as:
+
+~~~text
+invalidatePendingRequestsForAccount(
+  executor,
+  accountId,
+  invalidatedAt,
+  reason
+)
+
+invalidatePendingRequestsForPair(
+  executor,
+  accountA,
+  accountB,
+  invalidatedAt,
+  reason
+)
+~~~
+
+Callers must already hold the relevant account rows in deterministic UUID order.
+
+Required integrations:
+
+### A1 account deletion
+
+In the same authoritative account-deletion transaction, invalidate all pending incoming and outgoing requests for the deleting account with:
+
+~~~text
+reason = account_unavailable
+~~~
+
+Account recovery does not resurrect those requests.
+
+Fresh consent requires fresh requests.
+
+### P2 partnership formation
+
+In the same partnership-formation transaction, invalidate every other incompatible pending incoming and outgoing request for both newly partnered accounts with:
+
+~~~text
+reason = partnership_formed
+~~~
+
+The two requests used for reciprocal formation become accepted, not invalidated.
+
+### P3 former-partner block creation
+
+In the same block-creation transaction, invalidate pending requests between the blocked pair in both directions with:
+
+~~~text
+reason = block_created
+~~~
+
+Invalidation never erases the original created-attempt row, so the successful send still counts in the rolling product limit until it ages out.
+
+These hooks are idempotent and never transition an already terminal request.
 
 ## Request expiry worker
 
@@ -834,17 +1064,37 @@ Correctness never depends on the worker running at the exact deadline because ev
 
 ## Request list projection
 
-Incoming and outgoing lists use a bounded deterministic order:
+Request lists use keyset pagination defined in the public API section.
+
+The repository query uses the logical-active predicate and deterministic tuple ordering:
 
 ~~~text
-created_at DESC, id DESC
+ORDER BY created_at DESC, id DESC
 ~~~
 
-P1 returns at most 100 active requests per direction in one response.
+A next page uses:
 
-This is a safety cap, not a product limit on receiving requests.
+~~~text
+(created_at, id) < (cursor_created_at, cursor_id)
+~~~
 
-No offset pagination is required for P1 because current product constraints should keep practical request volume low. If real production evidence requires pagination, add cursor pagination without changing request semantics.
+with the same direction and logical-active predicate.
+
+Offset pagination is not used.
+
+## Request-attempt retention and cleanup
+
+Correctness of the three-request rolling product limit depends on successful created-attempt history.
+
+Therefore:
+
+- a created attempt must never be deleted while it can still fall inside any one-month lookback window
+- cleanup uses PostgreSQL time
+- cleanup retains a small operational safety buffer beyond the one-month product window
+- rejected-attempt retention may be shorter or longer according to the security metadata retention policy
+- cleanup is asynchronous and never changes request eligibility because eligibility queries only depend on rows still inside the authoritative time window
+
+Cleanup must not mutate retained attempt rows.
 
 ## Lock order
 
@@ -857,8 +1107,10 @@ For pair operations:
 2. partnership rows when required
 3. partner request rows in immutable request-ID order
 4. block/cooldown rows when explicitly locked
-5. lower-ranked A1 session/device/challenge/idempotency/rate-limit rows when the operation requires them
+5. idempotency rows
 ~~~
+
+Security-rate-limit bucket locks are not part of this rank because they are consumed in a separate short preflight transaction.
 
 A1 authentication lookup happens before the P1 business transaction and is not held as a row lock through the business mutation.
 
@@ -931,9 +1183,9 @@ P1 client UI requires:
 
 - exact username search box
 - one-result profile card
-- send-request action
-- outgoing active-request list
-- incoming active-request list
+- send-request action with a fresh idempotency key for each logical attempt
+- cursor-paginated outgoing active-request list
+- cursor-paginated incoming active-request list
 - cancel outgoing action
 - decline incoming action
 - exact expiresAt display
@@ -985,6 +1237,8 @@ Cover:
 Cover:
 
 - simultaneous same-direction create
+- simultaneous same-idempotency-key create
+- same idempotency key reused with a different payload
 - simultaneous opposite-direction create
 - fourth monthly request racing another create
 - create at exact one-month cutoff
@@ -994,6 +1248,7 @@ Cover:
 - request create racing future P2 partnership formation
 - request create racing future P3 block creation
 - request create racing account deletion
+- cancel or decline racing P2 acceptance
 
 Expected result: one serializable product outcome under READ COMMITTED plus explicit locks and database constraints.
 
@@ -1021,6 +1276,7 @@ Cover:
 - target-unavailable generic mapping
 - multiple incoming requests
 - request list hides overdue logical requests
+- cursor pagination returns every active request without duplication or omission
 - scheduled expiry persists expired state
 - reciprocal pair signal emitted exactly once in the serialized opposite-direction race
 
@@ -1036,6 +1292,8 @@ Cover:
 - target partnership/cooldown status not exposed
 - cancel and decline remain available despite discovery/create abuse bucket exhaustion
 - request body is absent from routine logs
+- P1 responses use private no-store cache control
+- production route enablement fails closed without the P2 coordinator
 - direct API call cannot bypass occupancy, cooldown, pair limit, block, or decline cooldown
 - stale username/accountId pair cannot target a new username owner
 - overdue pending row cannot be cancelled or declined as if still active
@@ -1060,13 +1318,16 @@ The top-level local command should reuse the disposable PostgreSQL harness patte
 
 1. add partner-request domain types and denial codes
 2. add exact time-boundary helpers
-3. add discovery and request contracts
-4. generalize planned A1 auth rate-limit table name to security_rate_limit_buckets before A1 migration lands
+3. add discovery, cursor, and request contracts
+4. keep the shared security_rate_limit_buckets design aligned with A1
 5. add migration 0008 after 0007 is present
-6. add discovery repository
-7. add partner-request repository
-8. harden attempt ledger
-9. add request expiry scheduled-action repository integration
+6. add expired_at and invalidated_reason with forward-safe backfill
+7. add discovery repository
+8. add partner-request repository
+9. add request invalidation helpers for A1/P2/P3
+10. harden append-only attempt ledger and retention queries
+11. add request expiry scheduled-action repository integration
+12. wire existing idempotency_records for create-request replay
 
 Exit gate:
 
@@ -1091,18 +1352,22 @@ Exit gate:
 ### P1-C Request creation
 
 1. stable target accountId plus expectedUsername contract
-2. deterministic two-account locking
-3. logical pair-request expiry cleanup
-4. sender/recipient eligibility
-5. either-direction block check
-6. duplicate check
-7. decline cooldown
-8. rolling one-month limit
-9. created-attempt append
-10. seven-day request insert
-11. scheduled expiry insert
-12. reciprocal-pair detection
-13. generic target-unavailable mapping
+2. required create-request idempotency key
+3. separate committed security-rate-limit preflight
+4. deterministic two-account locking
+5. logical pair-request expiry cleanup
+6. sender/recipient eligibility
+7. either-direction block check
+8. duplicate check
+9. decline cooldown
+10. rolling one-month limit
+11. created-attempt append
+12. seven-day request insert
+13. scheduled expiry insert
+14. reciprocal-pair detection
+15. P2 coordinator integration point
+16. generic target-unavailable mapping
+17. persisted idempotency response
 
 Exit gate:
 
@@ -1110,12 +1375,13 @@ Exit gate:
 
 ### P1-D Cancellation, decline, expiry worker
 
-1. outgoing cancellation
-2. incoming decline
+1. outgoing cancellation with pair-account locking
+2. incoming decline with pair-account locking
 3. exact expiry worker
 4. overdue lazy-expiry behavior
 5. terminal-state idempotency
-6. active incoming/outgoing lists
+6. cursor-paginated active incoming/outgoing lists
+7. cross-epic invalidation helpers
 
 Exit gate:
 
@@ -1194,13 +1460,20 @@ Reject a P1 implementation change if it:
 12. checks block or occupancy only in the client
 13. performs pair-sensitive mutations without deterministic account locking
 14. allows more than one same-direction active pending request
-15. creates partnership state inside P1
+15. creates partnership state inside P1 before the registered P2 coordinator owns that transaction
 16. uses an asynchronous event as the authority for reciprocal partnership formation
 17. duplicates A1 security-rate-limit storage
 18. stores private profile content in request-attempt rows
 19. treats an overdue pending row as active because the worker has not run
 20. lets a stale request mutation overwrite an already terminal state
 21. creates provider calls inside the request transaction
+22. lets a lost create response turn a retry into a duplicate error instead of replaying by idempotency key
+23. holds security-rate-limit bucket locks while pair account locks are held
+24. cancel or decline locks only one account in a pair-sensitive mutation
+25. silently truncates active request lists instead of paginating them
+26. enables production request creation without a P2 coordinator
+27. resurrects invalidated requests after account recovery, partnership dissolution, or block removal
+28. deletes successful attempt evidence while it can still affect the rolling one-month limit
 
 ## Completion rule
 
