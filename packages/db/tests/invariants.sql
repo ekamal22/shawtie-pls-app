@@ -201,4 +201,102 @@ BEGIN
 END;
 $$;
 
+
+INSERT INTO account_devices (
+  id,
+  account_id,
+  display_name,
+  created_at
+) VALUES (
+  '70000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'Alpha Device',
+  now()
+);
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO account_sessions (
+      id,
+      account_id,
+      device_id,
+      token_verifier,
+      created_at,
+      expires_at
+    ) VALUES (
+      '71000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      '70000000-0000-0000-0000-000000000001',
+      decode('00', 'hex'),
+      now(),
+      now() + interval '1 hour'
+    );
+    RAISE EXCEPTION 'expected device ownership foreign key violation';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO partnership_members (
+      partnership_id,
+      account_id,
+      joined_at
+    ) VALUES (
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000003',
+      now()
+    );
+    RAISE EXCEPTION 'expected partnership member limit violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO scheduled_actions (
+  id,
+  action_type,
+  aggregate_type,
+  aggregate_id,
+  execute_at,
+  deduplication_key
+) VALUES (
+  '72000000-0000-0000-0000-000000000001',
+  'test',
+  'partnership',
+  '20000000-0000-0000-0000-000000000001',
+  now(),
+  'same-scheduled-action'
+);
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO scheduled_actions (
+      id,
+      action_type,
+      aggregate_type,
+      aggregate_id,
+      execute_at,
+      deduplication_key
+    ) VALUES (
+      '72000000-0000-0000-0000-000000000002',
+      'test',
+      'partnership',
+      '20000000-0000-0000-0000-000000000001',
+      now(),
+      'same-scheduled-action'
+    );
+    RAISE EXCEPTION 'expected scheduled action deduplication violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$;
+
 ROLLBACK;
