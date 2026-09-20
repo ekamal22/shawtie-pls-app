@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -b tsconfig.json --pretty false --stopBuildOnErrors",
-    "typecheck": "tsc -b tsconfig.json --pretty false --stopBuildOnErrors"
+    "typecheck": "tsc -b tsconfig.json --pretty false --stopBuildOnErrors",
+    "start": "node dist/main.js"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",
