@@ -214,7 +214,7 @@ INSERT INTO account_devices (
   now()
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO account_sessions (
@@ -237,9 +237,9 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO partnership_members (
@@ -256,7 +256,7 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO scheduled_actions (
   id,
@@ -274,7 +274,7 @@ INSERT INTO scheduled_actions (
   'same-scheduled-action'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO scheduled_actions (
@@ -297,6 +297,6 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 ROLLBACK;
