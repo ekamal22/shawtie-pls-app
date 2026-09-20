@@ -50,6 +50,8 @@ Do not infer completion percentages from partial layers.
 
 ## Phase 1: Accounts and Devices
 
+A1 architecture and implementation sequence are designed in docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md. Runtime implementation is next.
+
 - registration
 - age validation
 - verified email
@@ -220,8 +222,9 @@ Current canonical epic status:
 - P3: IN_PROGRESS at the pure domain layer
 - X1 Post-stable Maturity: PLANNED after stable release
 - X2 Deferred Heavy Features: DEFERRED and optional; call recording remains here pending post-stable evidence
-- remaining pre-release implementation epics: PLANNED
+- A1: IN_PROGRESS at the design layer; runtime implementation pending
+- remaining pre-release implementation epics except P3: PLANNED
 
 The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 
-F2 is locally complete. The next implementation work moves into A1 Accounts and Devices and P1 Discovery and Requests while P3 continues from its verified pure-domain foundation. Hosted baseline verification remains separate under V1 and is still required before R2 Public Readiness can close.
+F2 is locally complete. A1 Accounts and Devices is now designed and is the primary next implementation epic. P1 Discovery and Requests may proceed in parallel only where it does not destabilize the account substrate, while P3 continues from its verified pure-domain foundation. Hosted baseline verification remains separate under V1 and is still required before R2 Public Readiness can close.

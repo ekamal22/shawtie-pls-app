@@ -407,7 +407,83 @@ F2 local completion does not close V1 Hosted CI Verification. V1 remains a separ
 
 # A1: Accounts and Devices
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+## Design status
+
+The architecture and implementation sequence are defined in:
+
+docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md
+
+The design preserves Architecture Baseline 1.0 and builds directly on the verified F2 transaction, outbox, worker, scheduled-action, deletion, and PostgreSQL test substrate.
+
+No A1 runtime gate is checked merely because the design exists.
+
+## Implementation sequence
+
+### A1-A Domain, contracts, migration, and repositories
+
+- account domain rules and stable denial codes
+- boundary schemas
+- migration 0007
+- password credential persistence
+- registration intents
+- email challenges
+- sessions and devices
+- PostgreSQL-backed auth rate limits
+- typed security events
+
+### A1-B Authentication security kernel
+
+- Argon2id password service
+- opaque revocable session cookies
+- device-handle identification
+- authentication middleware
+- exact-origin and Fetch Metadata checks
+- custom-header CSRF protection
+- generic auth failures
+- deterministic durable rate limiting
+
+### A1-C Registration and login
+
+- registration start
+- verification email outbox
+- verification resend and replay protection
+- transactional registration completion
+- login
+- logout
+- session introspection
+- initial device binding
+
+### A1-D Recovery and sensitive changes
+
+- password recovery
+- recent reauthentication
+- verified email change
+- old-email notification
+- other-session revocation
+- profile display name
+- username change
+- DOB correction
+
+### A1-E Account deletion and devices
+
+- deletion request and immediate account lockout
+- seven-day account recovery
+- scheduled finalization substrate
+- device list and rename
+- device revocation
+- crypto-recovery separation
+
+### A1-F Integration closure
+
+- disposable PostgreSQL tests
+- Fastify API integration tests
+- authentication race tests
+- security regressions
+- new-dependency audit
+- full repository health regression
+- repo-wide documentation closure
 
 ## Scope
 

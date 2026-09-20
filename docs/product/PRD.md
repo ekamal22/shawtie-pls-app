@@ -234,8 +234,11 @@ A username must:
 - be unique
 - be case-insensitive for uniqueness checks
 - have a normalized canonical representation
-- have a documented minimum and maximum length
-- use a restricted character set
+- be 3 through 30 characters in the initial implementation
+- normalize with NFKC before canonical comparison
+- use lowercase ASCII letters, digits, period, and underscore in canonical form
+- begin and end with an alphanumeric character
+- reject consecutive period or underscore separators
 - reject reserved system names
 - be changeable no more than once per year after registration
 
@@ -346,7 +349,9 @@ The product must not claim that the rule uniquely identifies a human across mult
 
 Authentication must provide:
 
-- secure password hashing
+- passwords of at least 15 Unicode code points in the initial password-only implementation, with no composition rule and no silent truncation
+- password support up to at least 128 Unicode code points subject to a defensive encoded-size limit
+- secure Argon2id password hashing
 - secure session creation
 - session expiration
 - logout

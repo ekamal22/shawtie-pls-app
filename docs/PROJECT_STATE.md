@@ -118,7 +118,8 @@ Current epic status:
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
-- all other pre-release implementation epics: PLANNED
+- A1 Accounts and Devices: IN_PROGRESS at the architecture and implementation-design layer; runtime implementation has not started
+- all other pre-release implementation epics except the separately listed P3: PLANNED
 
 The persistence schema foundation has repeatable disposable PostgreSQL evidence. Earlier schema verification covered migration rerun idempotency, checksum drift, catalog inspection, occupied-slot contention, scheduled-action claim contention, and deterministic account-lock ordering. F2 then applied all six migrations from zero and passed 17/17 runtime integration tests covering transaction policy, retries, PostgreSQL clocks, stale generations, durable payload versions, rollback, outbox atomicity and duplicate safety, claim fencing and reclaim, lifecycle privacy, deletion recovery, queue plans, and graceful worker shutdown. Product-specific API and lifecycle integration remain work for later epics.
 
@@ -134,12 +135,13 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-F2 is complete locally.
+A1 Accounts and Devices is now the active implementation epic.
 
-1. begin A1 Accounts and Devices and P1 Discovery and Requests on top of the verified F2 persistence substrate
-2. continue P3 product-specific lifecycle persistence and API integration as its dependencies become available
-3. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
-4. when hosted Actions execution is available, run the baseline workflow without a skip marker and record the successful V1 evidence before R2 Public Readiness
+1. implement A1-A domain rules, contracts, migration 0007, and account/auth repositories from docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md
+2. implement A1-B authentication security kernel with Argon2id, opaque cookies, server-side sessions, CSRF/origin protections, and PostgreSQL rate limits
+3. continue through registration/login, recovery, sensitive account changes, account deletion/recovery, and device management in the documented A1 sequence
+4. keep P1 available for parallel work only when it does not destabilize the A1 account substrate
+5. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
