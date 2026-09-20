@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGNED, IMPLEMENTATION PENDING
+REFINED DESIGN, IMPLEMENTATION PENDING
 
 Effective design date: 2026-09-21.
 
@@ -11,6 +11,27 @@ This document is the canonical implementation design for A1 Accounts and Devices
 It preserves Architecture Baseline 1.0 and uses the completed F2 persistence and worker substrate. It does not add a new persistent state system, trust boundary, lifecycle authority, or dependency direction, so no new ADR is required under the current architecture-governance rules.
 
 Source code, migrations, and tests remain authoritative for implemented behavior. This document defines the A1 runtime shape and implementation sequence before runtime work begins.
+
+## Refinement review
+
+The initial A1 design was reviewed again before implementation.
+
+The refinement closes implementation ambiguities in:
+
+- password Unicode normalization
+- production versus local-development cookie names
+- session-token rotation after reauthentication and sensitive identity changes
+- HMAC key versioning and rotation
+- registration-intent credential scrubbing
+- email-challenge uniqueness and concurrent attempt handling
+- trusted-proxy handling for network rate-limit keys
+- deterministic database lock order
+- durable security-email delivery metadata
+- partnered account-deletion end-to-end correctness
+- startup validation for security-critical configuration
+- compatibility and rollback behavior during key rotation
+
+No accepted product rule or Architecture Baseline 1.0 decision changes. No ADR is required.
 
 ## Goals
 
@@ -118,7 +139,7 @@ The first A1 password policy is:
 - minimum: 15 Unicode code points
 - maximum: 128 Unicode code points
 - maximum encoded size: 1024 UTF-8 bytes
-- Unicode normalization before hashing: NFKC
+- Unicode normalization before hashing: NFC
 - no uppercase, lowercase, digit, or symbol composition requirement
 - no silent truncation
 - paste is allowed
@@ -159,12 +180,15 @@ Initial browser-session policy:
 
 - opaque random session token: 32 random bytes, base64url encoded
 - client storage: cookie only
-- cookie name: __Host-shawtie-session
-- Secure: true outside explicit local-development test mode
-- HttpOnly: true
-- SameSite: Strict
-- Path: /
-- Domain attribute: omitted
+- production cookie name: __Host-shawtie-session
+- production Secure: always true
+- production HttpOnly: true
+- production SameSite: Strict
+- production Path: /
+- production Domain attribute: omitted
+- local HTTP development cookie name: shawtie-session-dev
+- the production __Host- cookie name is never emitted without Secure
+- insecure development cookies are allowed only on loopback hosts with an explicit development-only configuration flag
 - absolute server lifetime: 30 days
 - idle server lifetime: 7 days
 - last-seen write coalescing: no more than once per 5 minutes per active session
@@ -434,6 +458,9 @@ Rules:
 
 - intent expiry: 24 hours
 - password is stored only as an Argon2id hash
+- password_hash is nullable after terminal processing
+- successful completion clears password_hash in the same transaction that creates account_password_credentials
+- cleanup scrubs password_hash from expired abandoned intents before or while deleting them
 - an intent does not reserve username or email ownership permanently
 - username and email uniqueness are rechecked in the completion transaction
 - expired or completed intents cannot complete
@@ -487,8 +514,13 @@ Subject rules:
 - registration challenges bind to one registration intent
 - email-change, password-recovery, and account-recovery challenges bind to one account
 - one challenge may never bind to both account and registration intent
+- partial unique indexes permit at most one unsuperseded, unconsumed challenge for each subject and purpose
+- creating a replacement challenge locks and supersedes the previous active challenge before inserting the replacement
+- challenge submission increments attempt_count atomically under a row lock
+- the fifth failed attempt exhausts the challenge in the same transaction
 - the verifier is keyed
 - consumed, superseded, expired, or attempt-exhausted challenges fail closed
+- successful consumption clears verifier and challenge nonce after any required durable email work has been recorded
 
 ### account_sessions additions
 
@@ -496,12 +528,18 @@ Representative additions:
 
 ~~~text
 token_key_version
+token_generation
 idle_expires_at
 reauthenticated_at
+rotated_at
 last_seen_at
 ~~~
 
 Add a unique index on token_verifier.
+
+token_generation begins at 1 and increases on every token rotation.
+
+Sensitive rotation operations use the observed token_generation as a fencing value so two concurrent rotations cannot both succeed.
 
 Session validity requires all of:
 
@@ -520,6 +558,10 @@ handle_verifier
 handle_key_version
 updated_at
 ~~~
+
+Add a unique partial index on handle_verifier where the verifier is present.
+
+A successful password login rotates the device handle to the active key version. A revoked device row is never silently un-revoked.
 
 The device handle is identification convenience, not an authentication factor.
 
@@ -563,6 +605,48 @@ Add update rejection equivalent to the existing lifecycle-event protection.
 
 A1 repositories expose typed event names and allowlisted scalar metadata only.
 
+## Authentication key ring and verifier rotation
+
+A1 uses versioned server-side HMAC keys for opaque verifiers.
+
+The database stores key version identifiers, never the key material.
+
+One active root HMAC key version is configured at a time. Runtime subkeys are derived with HKDF using fixed domain-separation labels for:
+
+~~~text
+session-verifier
+device-handle-verifier
+email-code-derivation
+email-code-verifier
+rate-limit-key
+~~~
+
+Requirements:
+
+- every configured root key contains at least 256 bits of random key material
+- new rows always use the active key version
+- reads use the key version recorded on the row
+- unknown key versions fail closed
+- key material never appears in logs, database rows, outbox payloads, or API responses
+- local tests use synthetic test keys only
+- production startup fails if required key material is missing, duplicated, malformed, or shorter than policy
+
+Normal rotation sequence:
+
+1. deploy readers with old and new key versions
+2. mark the new version active for new writes
+3. lazily rotate session and device verifiers when the raw token or handle is legitimately presented
+4. allow old email challenges to expire
+5. retain old session-verifier keys for at least the maximum remaining session lifetime unless intentionally forcing logout
+6. retain old rate-limit keys for at least the longest configured rate-limit window
+7. remove an old key only after no still-valid security object requires it
+
+Emergency compromise response may retire a key immediately and intentionally invalidate affected sessions or handles.
+
+Device handles are not authentication factors, so loss of an old handle key may require a new password-authenticated device record but must not bypass authentication.
+
+A1 does not require a password pepper in the first implementation. Adding a pepper later requires a separate operational key-management review.
+
 ## Password hashing
 
 A1 uses @node-rs/argon2 with explicit Argon2id policy.
@@ -589,6 +673,36 @@ Password values never enter:
 - database error messages
 - idempotency response bodies
 
+## Security-critical runtime configuration
+
+The API validates security configuration before accepting traffic.
+
+Production startup fails when:
+
+- the application origin is missing or not HTTPS
+- the production session-cookie name lacks the __Host- prefix
+- production cookies are configured without Secure
+- a Domain attribute is configured for __Host- cookies
+- required HMAC keys are missing or invalid
+- database configuration is missing
+- trusted-proxy configuration uses trust-all or hop-count-only semantics
+- an explicitly configured production proxy address or CIDR cannot be parsed
+
+Fastify trustProxy remains false by default.
+
+If deployed behind a reverse proxy, production must use an explicit proxy IP or CIDR allowlist or a custom address-validation function. Forwarded headers are never trusted merely because they exist.
+
+request.ip is used only after trusted-proxy resolution and validation. It is not an authorization factor.
+
+For rate limiting, A1 derives privacy-preserving network keys from:
+
+- IPv4 /24 prefixes
+- IPv6 /64 prefixes
+
+before HMACing them with the rate-limit subkey.
+
+Identifier and network buckets are both used so shared networks do not become the only authentication throttle.
+
 ## Opaque session tokens
 
 A1 generates session tokens with Node cryptographic randomness.
@@ -598,7 +712,7 @@ The client receives the raw token only in the session cookie.
 PostgreSQL stores:
 
 ~~~text
-HMAC(auth_key, "session" || raw_session_token)
+HMAC(versioned_session_subkey, "session" || raw_session_token)
 ~~~
 
 and never stores the raw session token.
@@ -617,19 +731,28 @@ in one bounded database operation and reject any revoked or expired component.
 
 ## Device handle
 
-A second opaque cookie may identify a previously seen device:
+A second opaque cookie may identify a previously seen device.
+
+Production:
 
 ~~~text
 __Host-shawtie-device
 ~~~
 
+Local HTTP development:
+
+~~~text
+shawtie-device-dev
+~~~
+
 Properties:
 
-- Secure outside explicit local test mode
+- the production cookie is always Secure
 - HttpOnly
 - SameSite Strict
 - Path /
 - no Domain
+- local insecure form is permitted only on loopback with the explicit development flag
 - long-lived compared with an auth session
 - not sufficient for authentication
 
@@ -638,8 +761,10 @@ The database stores only a keyed verifier.
 On successful password authentication:
 
 - matching active device handle for that account reuses the device row
+- the handle verifier is rotated to the active key version and a replacement handle cookie is issued after commit
 - missing, invalid, foreign, or revoked handle creates a new device row
 - a revoked device may later become a new device only after a new successful login
+- the old revoked row stays revoked
 - no previous cryptographic authorization is silently restored
 
 ## Browser CSRF and request-origin policy
@@ -652,7 +777,8 @@ Every state-changing browser route requires:
 
 - non-GET method
 - exact configured application Origin when Origin is present
-- conservative Referer fallback when required
+- conservative Referer fallback only when Origin is absent
+- fail closed when neither Origin nor an acceptable Referer is present on a browser state-changing request
 - rejection of Sec-Fetch-Site cross-site
 - same-site treated as untrusted for state-changing operations unless deployment explicitly proves sibling subdomains are trusted
 - a custom header such as X-Shawtie-CSRF: 1
@@ -663,6 +789,35 @@ The custom header is not a secret. Its value is useful because hostile cross-ori
 Session SameSite Strict remains defense in depth rather than the only CSRF control.
 
 No GET, HEAD, or OPTIONS route may mutate server state.
+
+## Canonical database lock order
+
+A1 transactions use a documented lock rank so independent account features do not introduce deadlocks.
+
+For authenticated account mutations, acquire locks in this order:
+
+~~~text
+1. account rows, immutable UUID order when more than one
+2. partnership row when the operation touches partnership state
+3. session rows
+4. device rows
+5. email or challenge rows
+6. idempotency or rate-limit rows in deterministic key order
+~~~
+
+Registration has no existing account row and uses:
+
+~~~text
+1. registration intent
+2. registration email challenge
+3. final unique inserts
+~~~
+
+Challenge-only unauthenticated flows lock their challenge before mutation and do not later acquire an account lock. Account-bound challenge completion loads and locks the account first, then locks the challenge.
+
+No transaction may acquire these ranks in reverse order.
+
+Database unique constraints remain the final arbiter for username, email, token-verifier, and active-challenge races.
 
 ## Server-authoritative dates and times
 
@@ -733,6 +888,37 @@ The worker must not send a challenge that is already:
 - consumed
 - superseded
 - attempt-exhausted
+
+## Durable security-email records
+
+Verification challenges are authoritative enough to reconstruct their own verification emails, but other security notifications need a durable destination snapshot.
+
+Migration 0007 therefore adds a security_email_deliveries table.
+
+Representative fields:
+
+~~~text
+id
+account_id nullable
+destination_email
+template
+parameters_json
+created_at
+delivered_at nullable
+expires_at
+~~~
+
+Rules:
+
+- parameters_json uses a template-specific allowlist of scalar values
+- password, session token, device handle, recovery secret, partnership content, and private-message content are forbidden
+- outbox payloads carry securityEmailDeliveryId rather than copying destination email or template parameters
+- the worker loads the delivery row immediately before provider delivery
+- the destination is a snapshot because old-email notifications must still reach the old address after current-email ownership changes
+- delivery records remain until the associated outbox event is terminal plus the documented short security-email retention window
+- delivery records are not used as an account audit ledger; security_events owns audit evidence
+
+Verification-code email may reference the challenge directly because the worker can safely derive the still-valid code from challenge state.
 
 ## Email provider boundary
 
@@ -879,7 +1065,9 @@ POST /api/v1/auth/password-recovery/start
 POST /api/v1/auth/password-recovery/complete
 ~~~
 
-Start always returns a generic accepted response.
+Start always returns the same HTTP status and response shape whether or not the identifier exists.
+
+The server follows the same cheap normalization, rate-limit, and challenge-preparation shape for existent and non-existent identifiers. It does not use branch-specific password hashing or synchronous provider calls. The email provider runs asynchronously through the outbox, so provider latency cannot become an account-enumeration side channel.
 
 Complete accepts:
 
@@ -917,7 +1105,9 @@ Successful account recovery:
 - restores account status to active
 - cancels or invalidates the scheduled account-deletion finalizer
 - restores the existing partnership overlay exactly through the accepted domain rules where applicable
-- creates a new session only after successful recovery authentication
+- does not automatically create an authenticated session
+- requires the user to authenticate normally after recovery
+- allows the separate password-recovery flow if the password is no longer known
 - does not restore or copy historical E2EE keys by email alone
 
 ## Authenticated routes
@@ -930,9 +1120,22 @@ POST /api/v1/auth/logout
 POST /api/v1/auth/reauthenticate
 ~~~
 
-Reauthentication verifies the current password and updates the current session reauthenticated_at timestamp.
+Reauthentication verifies the current password and atomically rotates the current session token.
 
-It does not create a new privilege-bearing token.
+The transaction:
+
+1. locks the current session
+2. verifies that the request authenticated with the current token generation
+3. writes a new token verifier using the active HMAC key version
+4. increments token_generation
+5. sets reauthenticated_at
+6. records the security event
+7. commits
+8. emits the replacement cookie only after commit
+
+The previous token becomes invalid immediately.
+
+Concurrent rotations use compare-and-swap semantics on token_generation. A stale concurrent rotation fails rather than invalidating a newer token returned by another request.
 
 ### Account profile
 
@@ -966,10 +1169,11 @@ Completion transaction:
 7. promotes the new verified current email
 8. consumes the challenge
 9. revokes every other active session
-10. rotates the current session token
+10. rotates the current session token using token_generation fencing
 11. records a security event
-12. writes an outbox event to notify the old email
-13. commits
+12. creates the durable old-email security delivery record
+13. writes an outbox event referencing that delivery ID
+14. commits
 
 No provider call occurs inside the transaction.
 
@@ -1239,16 +1443,19 @@ A1 owns:
 - unpartnered permanent account cleanup
 - device/auth cleanup
 
-P3 owns the complete partnership-specific persistence behavior:
+A1 must also implement the complete partnership interaction required by the account-deletion path before that route is considered enabled for partnered accounts:
 
 - active-partnership deletion overlay
+- recovery back to the exact pre-deletion partnership state
 - breakup/deletion deadline precedence
 - remaining-partner view-only behavior
-- permanent partnership dissolution
+- permanent partnership dissolution when the deletion deadline controls
 - remaining-partner one-month cooldown
-- shared partnership deletion manifests and notices
+- shared partnership deletion manifest creation and required notices
 
-A1 may implement the minimum shared persistence adapter needed for request and recovery tests, but P3 gates remain independently measured.
+These behaviors use the already accepted P3 domain state machine and F2 persistence primitives.
+
+Completing these account-deletion-specific P3 behaviors may close individual P3 gates, but it does not make the entire P3 epic complete. Other breakup, restoration, and lifecycle API work remains independently measured.
 
 No duplicated alternate account-deletion rule is allowed.
 
@@ -1267,6 +1474,31 @@ It does not:
 If recovery happens on a device that still independently possesses valid historical cryptographic state, S1 may later define how that trusted device participates in history recovery.
 
 Email recovery alone never manufactures that cryptographic trust.
+
+## Key rotation, deployment, and rollback compatibility
+
+A1 deployments must support rolling replacement of HMAC keys and password-hash policy without making durable rows unreadable.
+
+Rules:
+
+- key version is persisted beside every verifier that needs a server key
+- writers emit only the configured active version
+- readers may accept a bounded configured set of older versions
+- unknown versions fail closed
+- removing a key is an operationally destructive action and must be reviewed against the maximum valid lifetime of rows using it
+- password-hash upgrades happen only after successful password verification
+- deployment rollback must retain every key and password algorithm needed by rows written by the newer deployment
+- migration 0007 is forward-only and must not be edited after application
+- API code must tolerate nullable A1 fields on pre-A1 rows where the migration intentionally permits them
+
+A staged key-rotation test must prove:
+
+1. old-key session accepted while old key is configured
+2. successful sensitive rotation rewrites the verifier under the new key
+3. old raw token fails after rotation
+4. new token succeeds
+5. unknown recorded key version fails closed
+6. old key can be removed only after no still-valid object requires it
 
 ## Error model
 
@@ -1404,6 +1636,20 @@ Cover:
 
 Permanent regressions for:
 
+- production __Host- cookie attributes
+- local HTTP development cookie uses a separate non-__Host- name
+- production startup rejects insecure cookie configuration
+- trustProxy defaults false
+- untrusted X-Forwarded-For cannot choose the network rate-limit key
+- configured proxy CIDR resolution works
+- HMAC key rotation and unknown-key fail-closed behavior
+- concurrent session rotation fencing
+- old session token rejection after reauthentication
+- device-handle rotation after password login
+- only one active challenge per subject and purpose
+- concurrent fifth challenge attempt cannot exceed max_attempts
+- registration-intent password hash is cleared after successful completion
+- durable old-email notification references a security-email delivery row instead of copying PII into outbox JSON
 - credential enumeration response shape
 - verification-code replay
 - verification attempt exhaustion
@@ -1444,12 +1690,14 @@ Production runtime must never expose a code-retrieval endpoint.
 2. add server-date age helper
 3. freeze username and password policy constants
 4. add A1 request/response schemas
-5. add migration 0007
+5. add migration 0007 with schema-shape constraints, active-challenge uniqueness, session-generation fencing, device-handle uniqueness, security-email deliveries, and append-only security events
 6. extend database invariant suite
 7. add A1 database repositories
 8. add typed security-event repository
-9. add PostgreSQL rate-limit repository
-10. add email challenge repository
+9. add PostgreSQL rate-limit repository with deterministic multi-bucket locking
+10. add email challenge repository with atomic attempt accounting
+11. add security-email delivery repository
+12. add key-version-aware verifier helpers
 
 Exit gate:
 
@@ -1467,10 +1715,14 @@ Exit gate:
 6. implement opaque session service
 7. implement device-handle service
 8. implement session authentication plugin
-9. implement exact-origin and Fetch Metadata checks
-10. implement custom-header CSRF gate
-11. implement security-safe error mapper
-12. implement PostgreSQL rate limits
+9. implement fenced session-token rotation
+10. implement production/dev cookie policy and startup validation
+11. implement explicit trusted-proxy configuration
+12. implement exact-origin and Fetch Metadata checks
+13. implement custom-header CSRF gate
+14. implement security-safe error mapper
+15. implement PostgreSQL rate limits
+16. implement HMAC key-ring rotation support
 
 Exit gate:
 
@@ -1523,12 +1775,13 @@ Exit gate:
 3. account recovery start
 4. account recovery completion
 5. scheduled deletion-finalization substrate
-6. minimum partnership adapter required by accepted deletion state model
-7. device list
-8. device rename
-9. device revoke
-10. current-device logout
-11. crypto-recovery separation regression
+6. complete account-deletion-specific partnership persistence path required by the accepted P3 state model
+7. partnered recovery and finalization race coverage
+8. device list
+9. device rename
+10. device revoke
+11. current-device logout
+12. crypto-recovery separation regression
 
 Exit gate:
 
@@ -1610,6 +1863,32 @@ Reject an A1 implementation change if it does any of the following:
 20. makes rate-limit correctness depend only on one API process memory
 21. logs raw passwords, codes, session tokens, recovery secrets, or device handles
 22. duplicates account-deletion product rules instead of using the accepted domain model
+23. emits a production __Host- cookie without Secure or with a Domain attribute
+24. trusts arbitrary X-Forwarded-* headers or enables trustProxy=true in production
+25. rotates a session token without fencing concurrent rotation
+26. removes an HMAC key while still-valid rows require that version without intentionally accepting the resulting logout or handle reset
+27. allows more than one active challenge for the same subject and purpose
+28. copies old-email notification destinations or parameters into general outbox JSON when a security-email delivery row should own them
+29. enables partnered account deletion before the complete partnered deletion and recovery path is correct
+
+## Deliberately deferred from A1
+
+The following are intentionally outside A1 unless a concrete implementation blocker appears:
+
+- passkeys
+- MFA or TOTP
+- SMS recovery
+- CAPTCHA provider integration
+- third-party breach-password API calls at request time
+- risk-scoring vendors
+- IP reputation vendors
+- geolocation-based authentication policy
+- trusted-device approval for E2EE keys
+- production email-provider selection
+- administrative account-recovery tooling
+- user-visible session history beyond the device-management foundation
+
+The architecture leaves room for these features without making A1 depend on them.
 
 ## Completion rule
 

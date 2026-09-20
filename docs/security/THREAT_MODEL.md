@@ -342,8 +342,10 @@ Controls:
 Verification:
 
 - authentication integration tests
-- rate-limit tests
+- rate-limit tests including proxy-spoofing regression
 - password-hash configuration review
+- session-token rotation race tests
+- HMAC key-rotation compatibility tests
 
 ### T02: Verification-code brute force or replay
 
@@ -391,10 +393,12 @@ Controls:
 - HttpOnly cookies
 - Secure cookies
 - appropriate SameSite policy
-- session rotation
+- fresh session creation after authentication
+- fenced session-token rotation after password reauthentication and sensitive identity changes
 - server-side revocation
 - fixation protection
 - session revocation after sensitive changes
+- versioned HMAC verifiers with staged key rotation
 
 Verification:
 

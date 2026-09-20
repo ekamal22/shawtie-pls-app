@@ -69,7 +69,7 @@ Preferred browser session properties:
 
 Do not store long-lived bearer authentication tokens in localStorage.
 
-A1 uses a server-managed opaque session token in a `__Host-` cookie, with the raw token absent from PostgreSQL. State-changing browser requests use exact-origin or conservative Referer validation, Fetch Metadata rejection for cross-site requests, a required custom CSRF header, and SameSite Strict cookies as defense in depth. No state-changing GET route is permitted.
+A1 uses a server-managed opaque session token in a `__Host-` cookie in secure environments, with the raw token absent from PostgreSQL. Local HTTP development uses a different non-`__Host-` cookie name under an explicit loopback-only development flag because browsers require `__Host-` cookies to be Secure. State-changing browser requests use exact-origin or conservative Referer validation, Fetch Metadata rejection for cross-site requests, a required custom CSRF header, and SameSite Strict cookies as defense in depth. No state-changing GET route is permitted.
 
 ## Authorization
 
@@ -115,7 +115,7 @@ Required browser hardening includes:
 
 Verification codes are low-entropy secrets.
 
-Store a keyed verifier such as an HMAC, not a raw code and not a plain unsalted hash.
+Store a keyed verifier such as an HMAC, not a raw code and not a plain unsalted hash. A1 persists a key version for every server-keyed verifier and uses domain-separated subkeys so session, device, verification-code, and rate-limit verifiers can be rotated without changing their data model.
 
 A1 additionally stores a random challenge nonce and derives the short-lived delivery code only when needed by the durable email worker. The raw code is not stored in PostgreSQL or outbox JSON.
 
@@ -135,7 +135,10 @@ After successful email change:
 
 - notify old email
 - revoke other sessions
+- rotate the current session token with generation fencing
 - preserve only the current trusted flow as defined by implementation
+
+Password reauthentication for a sensitive operation also rotates the current session token so a previously stolen token does not inherit the newly elevated reauthentication state.
 
 Account deletion revokes all active sessions immediately.
 

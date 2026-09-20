@@ -351,6 +351,7 @@ Authentication must provide:
 
 - passwords of at least 15 Unicode code points in the initial password-only implementation, with no composition rule and no silent truncation
 - password support up to at least 128 Unicode code points subject to a defensive encoded-size limit
+- Unicode passwords normalized with NFC before hashing
 - secure Argon2id password hashing
 - secure session creation
 - session expiration
