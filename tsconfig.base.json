@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": false,
+    "baseUrl": ".",
+    "paths": {
+      "@shawtie/domain": ["packages/domain/src/index.ts"],
+      "@shawtie/contracts": ["packages/contracts/src/index.ts"],
+      "@shawtie/db": ["packages/db/src/index.ts"],
+      "@shawtie/crypto": ["packages/crypto/src/index.ts"],
+      "@shawtie/ui": ["packages/ui/src/index.ts"],
+      "@shawtie/testkit": ["packages/testkit/src/index.ts"]
+    }
+  }
+}

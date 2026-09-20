@@ -1,0 +1,6 @@
+node_modules/
+dist/
+build/
+coverage/
+packages/db/migrations/
+packages/db/sql/
