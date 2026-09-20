@@ -12,6 +12,7 @@ Before making a structural change, read:
 - `docs/contributing/DEVELOPMENT_WORKFLOW.md`
 - `docs/ROADMAP_EPICS.md`
 - `docs/testing/CI_AND_REPOSITORY_HEALTH.md`
+- `docs/database/MIGRATIONS.md`
 - `docs/security/THREAT_MODEL.md`
 - `docs/security/DATA_CLASSIFICATION.md`
 
