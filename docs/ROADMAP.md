@@ -25,7 +25,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | IN_PROGRESS | refined architecture complete, runtime implementation pending |
-| P1 Discovery and Partner Requests | PLANNED | may overlap after stable A1 account contracts exist |
+| P1 Discovery and Partner Requests | IN_PROGRESS | architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -286,13 +286,19 @@ A1 may be completed with browser/API/PostgreSQL evidence. Device records in A1 a
 
 # Milestone 2: P1 Discovery and Requests
 
-Status: PLANNED.
+Status: IN_PROGRESS at the design layer.
+
+Canonical design:
+
+`docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`
 
 Safe parallelization:
 
-- P1 domain and contracts may begin after A1-A stabilizes account identifiers and public-profile contracts.
-- P1 full API integration should wait until A1-C provides real authenticated accounts and sessions.
-- P1 must reuse A1 PostgreSQL-backed abuse-rate-limit primitives rather than inventing an independent limiter.
+- P1 domain rules and contracts may begin alongside A1-A once shared account identifiers and username normalization are stable.
+- P1 migration 0008 follows A1 migration 0007.
+- P1 full API integration waits until A1-C provides real authenticated accounts and sessions.
+- P1 reuses the generalized A1 PostgreSQL-backed security-rate-limit primitive rather than inventing an independent limiter.
+- P1 detects reciprocal active requests; P2 owns the same-transaction partnership formation coordinator.
 
 Implement:
 

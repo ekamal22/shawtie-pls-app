@@ -21,7 +21,9 @@ Its refined design scope includes:
 - durable security-email deliveries
 - append-only security-event hardening
 
-Until migration 0007 is committed and passes migration-from-zero plus A1 PostgreSQL tests, the verified migration count remains six.
+P1 reserves the next prefix after A1 as `0008_partner_discovery_requests_runtime.sql`. Its planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit query indexes, decline-cooldown query indexes, and append-only request-attempt evidence.
+
+Until migrations 0007 and 0008 are actually committed and validated, the verified migration count remains six.
 
 ## Policy
 

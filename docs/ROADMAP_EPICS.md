@@ -528,7 +528,75 @@ No A1 runtime gate is checked merely because the design exists.
 
 # P1: Discovery and Partner Requests
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+## Design status
+
+The architecture and implementation sequence are defined in:
+
+\`docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md\`
+
+P1 preserves Architecture Baseline 1.0 and builds on F2 plus the refined A1 account/session/security substrate.
+
+P1 is designed now, but runtime implementation depends on A1 account contracts and sessions. No P1 acceptance gate is checked from design work alone.
+
+## Implementation sequence
+
+### P1-A Domain, contracts, migration, repositories
+
+- request domain rules and time boundaries
+- exact discovery contracts
+- migration 0008
+- discovery repository
+- partner-request repository
+- request-attempt hardening
+- F2 scheduled expiry integration
+
+### P1-B Discovery
+
+- authenticated exact username lookup
+- safe public projection
+- trusted-server age projection
+- self suppression
+- blocker-hidden behavior
+- durable discovery abuse limits
+
+### P1-C Request creation
+
+- stable account target plus expected username
+- deterministic two-account locking
+- sender and recipient eligibility
+- either-direction block enforcement
+- duplicate rejection
+- exact one-hour decline cooldown
+- rolling one-month limit
+- seven-day request insert
+- reciprocal-request detection for P2
+
+### P1-D Cancel, decline, expiry
+
+- outgoing cancel
+- incoming decline
+- exact scheduled expiry
+- lazy logical expiry
+- active request lists
+
+### P1-E Client and abuse closure
+
+- exact search UI
+- incoming/outgoing request UI
+- cancel and decline controls
+- generic recipient-unavailable behavior
+- security and abuse regressions
+
+### P1-F Integration closure
+
+- PostgreSQL suite
+- API suite
+- race suite
+- security suite
+- full repository health
+- repo-wide documentation closure
 
 ## Scope
 
@@ -560,6 +628,8 @@ Status: PLANNED
 - [ ] direct API calls cannot bypass request eligibility
 - [ ] request race tests pass
 - [ ] abuse-rate-limit tests pass
+
+P1 detects reciprocal requests but does not create partnerships. P2 owns explicit acceptance and transactional partnership formation.
 
 # P2: Partnership Formation and Relationship Date
 

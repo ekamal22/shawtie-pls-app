@@ -56,6 +56,7 @@ The selected architecture is:
 
 - `architecture/SYSTEM_ARCHITECTURE.md`
 - `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
+- `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 - `architecture/DATA_MODEL.md`
 - `architecture/PARTNERSHIP_STATE_MACHINE.md`

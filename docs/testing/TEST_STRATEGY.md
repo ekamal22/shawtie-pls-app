@@ -151,6 +151,40 @@ npm run test:a1:local
 
 These commands are planned and must not be described as passing until implemented and executed.
 
+### P1 discovery and request verification
+
+P1 uses the test architecture in `../architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`.
+
+Required evidence includes:
+
+- exact authenticated username discovery
+- safe public projection with no exact DOB or email
+- blocker-hidden discovery behavior
+- exact seven-day logical and persisted expiry
+- exact one-hour decline-cooldown boundary
+- rolling one-calendar-month successful-request count
+- multiple incoming requests
+- self and duplicate rejection
+- deterministic same-direction and opposite-direction races
+- direct API eligibility bypass rejection
+- discovery and create abuse-rate limits
+- generic target-unavailable mapping for private recipient state
+- cancel and decline availability despite exhausted discovery/create abuse buckets
+- scheduled expiry through F2
+- reciprocal pair detection for P2 without P1 creating a partnership
+
+Planned commands:
+
+```text
+npm run test:partner-requests
+npm run test:p1:postgres
+npm run test:p1:api
+npm run test:p1:security
+npm run test:p1:local
+```
+
+These remain planned until implementation exists.
+
 ### Integration
 
 Exercise API plus PostgreSQL plus provider fakes.

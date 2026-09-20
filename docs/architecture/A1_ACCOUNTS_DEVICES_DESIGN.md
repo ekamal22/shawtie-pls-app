@@ -242,7 +242,7 @@ Fastify API
    +-- email challenges
    +-- sessions
    +-- devices
-   +-- auth rate-limit buckets
+   +-- security rate-limit buckets
    +-- security events
    +-- account deletion requests
    +-- F2 outbox
@@ -311,7 +311,7 @@ A1 expects the API to add:
 
 A1 does not require Redis.
 
-A1 does not make @fastify/rate-limit authoritative. Security-sensitive rate limits are PostgreSQL-backed so behavior remains correct across API process restarts and future multiple API instances.
+A1 does not make @fastify/rate-limit authoritative. Security-sensitive rate limits are PostgreSQL-backed in the generic `security_rate_limit_buckets` table so authentication and later abuse-sensitive product features such as P1 can share one durable primitive while using separate scope values.
 
 A1 does not use JWT access tokens for browser authentication.
 
@@ -567,7 +567,7 @@ The device handle is identification convenience, not an authentication factor.
 
 Possession of a device handle alone never grants account access or E2EE history access.
 
-### auth_rate_limit_buckets
+### security_rate_limit_buckets
 
 A1 uses PostgreSQL-backed security rate limits.
 

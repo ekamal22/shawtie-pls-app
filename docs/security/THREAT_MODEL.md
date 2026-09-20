@@ -481,6 +481,53 @@ Verification:
 - media authorization tests
 - guessed-ID tests
 
+### T08A: Discovery enumeration and partner-request privacy oracle
+
+Impact: High
+
+Controls:
+
+- authenticated exact-match discovery only
+- no prefix, fuzzy, paginated directory, or broad account listing
+- bounded account and network discovery rate limits
+- safe profile projection only
+- blocker-hidden search behavior
+- generic target-unavailable response for recipient partnership, cooldown, block, deletion, or other safety ineligibility
+- stable account ID plus expected username prevents stale username reassignment targeting
+- request bodies excluded from routine logs
+
+Verification:
+
+- discovery privacy tests
+- block-visibility tests
+- abuse-rate-limit tests
+- recipient-state oracle regression
+- stale username targeting regression
+
+### T08B: Partner-request spam or lifecycle race
+
+Impact: High
+
+Controls:
+
+- three successful sends per pair per rolling calendar month
+- exact one-hour cooldown after decline
+- sender and network abuse buckets
+- deterministic two-account locking
+- database same-direction pending uniqueness
+- exact logical expiry independent of worker timing
+- F2 durable expiry scheduling
+- either-direction block enforcement
+- direct API re-evaluation of both accounts
+
+Verification:
+
+- same-direction and opposite-direction concurrency tests
+- exact time-boundary tests
+- block and cooldown bypass tests
+- create versus account deletion race
+- future create versus partnership formation and block-creation races
+
 ### T09: Double partnership caused by concurrent requests
 
 Impact: Critical

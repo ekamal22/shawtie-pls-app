@@ -208,6 +208,25 @@ Deletion jobs must be retryable and auditable without retaining deleted private 
 
 Use durable deletion manifests and target-level completion state. Authorization and cryptographic access are revoked before asynchronous cleanup is considered complete.
 
+## Discovery and partner-request privacy
+
+P1 discovery is authenticated and exact-match only.
+
+It returns at most one safe profile projection and does not expose email, exact date of birth, partnership state, cooldown state, block state, session state, device state, or partnership history.
+
+A target that has blocked the authenticated account is absent from that blocked account's normal search results.
+
+Partner-request creation maps recipient-side occupancy, cooldown, block, deletion, and other safety ineligibility to a generic target-unavailable response.
+
+P1 product rules and abuse rules are distinct:
+
+- three successfully created requests per sender/recipient rolling calendar month is a product rule
+- one-hour post-decline cooldown is a product rule
+- discovery and request-creation security buckets are abuse controls
+- cancellation and decline remain available even when discovery/create abuse buckets are exhausted
+
+P1 reuses the PostgreSQL security-rate-limit primitive planned by A1.
+
 ## Abuse controls
 
 Apply rate limits to:

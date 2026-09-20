@@ -264,6 +264,24 @@ A1 preserves this system architecture and adds implementation detail for:
 
 A1 adds no Redis, stateless browser JWT session model, or new lifecycle authority. PostgreSQL remains authoritative.
 
+## P1 discovery and partner-request design
+
+The partner-discovery and request implementation design is defined in `P1_DISCOVERY_REQUESTS_DESIGN.md`.
+
+P1 uses:
+
+- authenticated exact username discovery
+- privacy-safe profile projection
+- A1 sessions and username normalization
+- deterministic F2 account locking
+- PostgreSQL partner-request state
+- PostgreSQL pair-limit history
+- generalized A1 security-rate-limit buckets
+- F2 scheduled actions for request expiry
+- logical expiry checks so worker timing cannot extend product deadlines
+
+P1 detects reciprocal requests but does not create partnerships. P2 performs explicit acceptance and transactional partnership formation while holding the same deterministic account locks.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

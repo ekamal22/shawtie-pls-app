@@ -468,6 +468,7 @@ Search results may expose:
 - avatar if enabled
 - short bio if provided
 - current age
+- an opaque account identifier used only by the authenticated client as request-targeting transport metadata
 
 Age must be derived from the stored date of birth using trusted server date logic. The date of birth itself must not be exposed in search results.
 
@@ -497,13 +498,13 @@ A partner request has a lifecycle such as:
 - cancelled
 - expired
 
-A pending partner request expires exactly seven days after creation if it has not been accepted, declined, or cancelled.
+A pending partner request expires exactly seven days after creation if it has not been accepted, declined, or cancelled. The request is considered expired at that exact server-time deadline even if background cleanup persists the terminal status later.
 
 A sender may cancel a pending request at any time before acceptance.
 
 A user may send no more than three partner requests to the same account within any rolling one-month period.
 
-If a recipient declines a partner request, the sender must wait exactly one hour before sending another request to that same account. A later request still counts toward the three-requests-per-month limit.
+If a recipient declines a partner request, the sender must wait exactly one hour before sending another request to that same account. At the exact one-hour server-time boundary, a new request may be sent if every other eligibility rule passes. A later request still counts toward the three-requests-per-month limit.
 
 Declining a request does not automatically block the sender.
 

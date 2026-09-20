@@ -16,7 +16,9 @@ The physical schema has passed local disposable-database validation against Post
 
 This document remains the logical model. F2 repository integration, automated concurrency regression coverage, worker infrastructure, outbox transaction infrastructure, deletion retry infrastructure, and query-plan validation are implemented and locally verified. Hosted PostgreSQL reproduction remains a separate V1 concern.
 
-A1 is the next planned physical-schema extension. The refined design reserves migration `0007_accounts_devices_runtime.sql` for registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, PostgreSQL auth rate-limit buckets, durable security-email deliveries, and append-only security-event hardening. Migration 0007 is not implemented or verified yet.
+A1 is the next planned physical-schema extension. The refined design reserves migration `0007_accounts_devices_runtime.sql` for registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening. Migration 0007 is not implemented or verified yet.
+
+P1 reserves the following planned migration `0008_partner_discovery_requests_runtime.sql` to add exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, and append-only attempt behavior. Migration 0008 is also design-only.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
