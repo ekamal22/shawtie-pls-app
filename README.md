@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository is currently in foundation implementation. Architecture Baseline 1.0 is frozen.
+The repository is currently in foundation implementation. Architecture Baseline 1.0 is frozen, the pure domain baseline is locally validated, and the initial PostgreSQL migration and invariant foundation has passed local disposable-database validation.
 
 ## Product direction
 
