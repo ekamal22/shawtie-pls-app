@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   baseline:
-    name: Repository health and domain tests
+    name: Repository foundation
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -38,20 +38,11 @@ jobs:
           node --version
           npm --version
 
-      - name: Repository health
-        run: npm run health:repo
+      - name: Install dependencies from lockfile
+        run: npm ci
 
-      - name: Migration plan
-        run: npm run db:migrations:check
+      - name: Full repository baseline
+        run: npm run ci:baseline
 
-      - name: Domain tests
-        run: npm run test:domain
-
-      - name: Dependency audit when lockfile exists
-        shell: bash
-        run: |
-          if [[ -f package-lock.json ]]; then
-            npm audit --audit-level=high
-          else
-            echo "No package-lock.json yet. Dependency audit will activate when the lockfile exists."
-          fi
+      - name: Dependency audit
+        run: npm audit --audit-level=high

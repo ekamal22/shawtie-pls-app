@@ -52,6 +52,24 @@ Start with:
 
 Architecture and product documents describe intended rules and design. `PROJECT_STATE.md` and `ROADMAP_EPICS.md` are the living sources for what is actually implemented and what remains.
 
+## Canonical bootstrap
+
+Use Node.js 22.18.0 or newer.
+
+From a clean clone, the canonical dependency bootstrap command is:
+
+```text
+npm ci
+```
+
+After bootstrap, run the complete local repository baseline:
+
+```text
+npm run health
+```
+
+`npm ci` is the supported clean-install path because the repository commits `package-lock.json`.
+
 ## Repository rule
 
 Every committed byte should be treated as permanently public.

@@ -44,6 +44,22 @@ Never commit:
 - production database exports
 - provider secrets
 
+## Local bootstrap and validation
+
+Use Node.js 22.18.0 or newer.
+
+From a clean clone, install exactly from the committed lockfile:
+
+```text
+npm ci
+```
+
+The complete local repository baseline is:
+
+```text
+npm run health
+```
+
 ## Pull requests
 
 Use the pull-request template.

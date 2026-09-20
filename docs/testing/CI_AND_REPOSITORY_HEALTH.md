@@ -28,10 +28,9 @@ Current steps are:
 
 1. checkout with persisted credentials disabled
 2. use Node 22.18.0
-3. run repository-health checks
-4. run the static database migration-plan check
-5. run the domain test suite
-6. run dependency audit when a package lockfile exists
+3. install exactly from the committed lockfile with `npm ci`
+4. run the complete repository baseline through `npm run ci:baseline`
+5. run `npm audit --audit-level=high` as a hard dependency gate
 
 The workflow uses read-only repository permissions, a job timeout, concurrency cancellation, and full commit-SHA pinning for external GitHub Actions.
 
@@ -53,7 +52,15 @@ npm run health
 
 With workspace dependencies installed, this is configured to combine repository health, static migration-plan validation, TypeScript typecheck, build, lint, formatting, dependency and circular-import checks, the domain suite, and runtime-contract tests.
 
-The expanded command has now been executed twice with installed workspace dependencies. Repository health and static migration-plan validation passed both times. The first typecheck exposed deprecated `baseUrl`; the second exposed that `paths` targets must be explicitly relative once `baseUrl` is removed. The shared config now uses explicit `./` targets, and the contracts package includes the DOM library required for Zod's standard `URL` declaration. The latest local run passed typecheck, build, and lint across all workspaces. Formatting was the next failing gate due to cross-platform line endings; the repository now defines LF normalization in `.gitattributes` and allows Prettier to respect local checkout endings. Formatting and later gates remain unverified until the command is rerun.
+The expanded command now has a complete passing local run. It verified repository health, static migration-plan validation, TypeScript typecheck, production builds, lint, formatting, dependency-direction and circular-dependency checks, 27 domain tests, and 2 runtime-contract tests.
+
+The canonical clean-clone dependency bootstrap is:
+
+```text
+npm ci
+```
+
+A separate clean-install validation from the committed lockfile is still pending.
 
 ## Repository-health policy
 
@@ -102,7 +109,7 @@ It rejects imports from infrastructure or application frameworks including:
 
 This remains the dedicated hard boundary for domain purity.
 
-The M1 scaffold now additionally defines strict TypeScript configuration and path aliases, ESLint and Prettier configuration, workspace package boundaries, and `scripts/ci/check-dependencies.mjs`. The dependency checker enforces the accepted workspace dependency directions and rejects circular source or workspace dependencies. Its authored script has passed syntax and scaffold-only static checks, but full-repository dependency-installed execution remains pending.
+The M1 foundation additionally defines strict TypeScript configuration and path aliases, ESLint and Prettier configuration, workspace package boundaries, and `scripts/ci/check-dependencies.mjs`. The dependency checker enforces the accepted workspace dependency directions and rejects circular source or workspace dependencies. Full-repository dependency-installed execution now passes locally.
 
 ## Secret handling
 
@@ -114,11 +121,9 @@ Before public stable release, repository settings or CI should also provide dedi
 
 ## Dependency scanning
 
-The baseline workflow runs `npm audit --audit-level=high` only when `package-lock.json` exists.
+The repository commits `package-lock.json`.
 
-A package lockfile has now been generated locally by `npm install`, and npm reported 0 vulnerabilities during that install. The lockfile is not yet committed, so repository and CI dependency-audit enforcement is not active yet.
-
-When the workspace and dependency graph are established, the lockfile becomes mandatory and dependency scanning must become a hard gate.
+Baseline CI installs with `npm ci` and then runs `npm audit --audit-level=high` as an unconditional hard gate. The local dependency installation that generated the committed lockfile reported 0 vulnerabilities. Hosted execution of the audit gate is still pending.
 
 ## CODEOWNERS
 
@@ -168,15 +173,10 @@ Once Actions execution is available again:
 
 Local disposable PostgreSQL validation completed on 2026-09-20 for migration from zero, invariant SQL, migration rerun idempotency, schema catalog inspection, and selected two-session races. This is local evidence only and does not satisfy the still-pending GitHub-hosted gate.
 
-As the repository foundation grows, Baseline CI should add hard steps for:
+Baseline CI now contains hard steps for lockfile installation, the complete local repository baseline, and dependency audit.
 
-- package installation from a committed lockfile
-- formatting
-- linting
-- TypeScript typecheck
-- build
-- circular-dependency checks
-- runtime contract tests
+Future CI expansion still needs:
+
 - real PostgreSQL migration-from-zero and invariant tests when PostgreSQL CI infrastructure is available
 
 As persistence is implemented, add:

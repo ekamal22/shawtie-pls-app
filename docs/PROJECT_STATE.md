@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, baseline CI plus repository-health tooling are configured, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and the M1 executable workspace/tooling scaffold has begun dependency-installed local validation.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and the F1 executable repository foundation now has a complete passing local health run. Hosted GitHub Actions validation remains pending.
 
 ## Product definition
 
@@ -56,18 +56,21 @@ Accepted architecture decisions include:
 
 ## Implementation state
 
-Configured but not yet locally execution-validated:
+M1 repository foundation implemented and locally validated:
 
 - npm workspace layout for `apps/*` and `packages/*`
 - strict shared TypeScript configuration and package path aliases
 - executable scaffolds for `apps/web`, `apps/api`, and `apps/worker`
 - package scaffolds for contracts, crypto, database, UI, and testkit boundaries
-- ESLint and Prettier configuration
+- ESLint and Prettier configuration with cross-platform line-ending handling
 - workspace dependency-direction and circular-dependency scanner
-- Zod-based runtime boundary-validation convention with contract tests
+- Zod-based runtime boundary-validation convention with two passing contract tests
 - root build, typecheck, lint, formatting, dependency-check, test, and health commands
+- committed `package-lock.json`
+- local dependency installation with 0 reported npm audit vulnerabilities
+- full `npm run health` pass covering repository health, migration-plan validation, all workspace typechecks, all workspace builds, lint, formatting, dependency/cycle checks, 27 domain tests, and 2 contract tests
 
-Dependency installation completed locally with 180 packages installed and 0 reported npm audit vulnerabilities. Repository health and static migration-plan validation pass on repeated local runs. The first expanded `npm run health` attempt stopped because TypeScript 6 rejects deprecated `baseUrl`. After removing `baseUrl`, the second attempt exposed that the existing `paths` targets also needed explicit `./` prefixes when resolved relative to the shared config. The shared configuration now follows the TypeScript 6 migration form: no `baseUrl`, with explicit relative `paths` targets. The next local run progressed through typechecking every workspace except `@shawtie/contracts`, where Zod's declarations referenced the standard global `URL` while that package exposed only the ES2023 library. The contracts package now explicitly includes the DOM standard library so the shared runtime-schema package can typecheck universal web-platform globals without weakening `skipLibCheck` or adding Node globals repository-wide. The following local run passed repository health, migration-plan validation, typecheck across all workspaces, production builds across all workspaces, and lint. Formatting then failed because the Windows checkout used CRLF while Prettier expected LF and the repository had no explicit line-ending policy. The repository now normalizes committed text to LF through `.gitattributes`, while Prettier uses `endOfLine: auto` so local checks do not fail solely because of platform checkout endings. Formatting, dependency checks, and expanded tests still require a fresh local run. A generated `package-lock.json` exists locally but is not yet committed.
+The full local health run passed on 2026-09-20. The canonical clean-clone bootstrap command is now documented as `npm ci`, but a separate clean-install validation from the committed lockfile is still pending. GitHub-hosted CI validation is also still pending.
 
 Implemented and locally validated:
 
@@ -109,7 +112,7 @@ Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EP
 Current epic status:
 
 - F0 Governance and Security Baseline: DONE
-- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because dependency installation, repository health, migration-plan validation, typecheck, build, and lint now pass locally, but formatting must be rerun after the cross-platform line-ending fix, later local gates remain unverified, the generated lockfile is not yet committed, and GitHub-hosted validation remains incomplete
+- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because the full local health baseline now passes and the lockfile is committed, while clean `npm ci` bootstrap validation and GitHub-hosted validation remain incomplete
 - F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, database invariants, and the canonical lock/claim SQL have passed local PostgreSQL validation, but committed race automation, worker integration, outbox integration, deletion retry behavior, and PostgreSQL CI remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
@@ -128,7 +131,7 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-1. rerun the full M1 local health gate after the TypeScript configuration fix, fix any remaining failures, commit the generated lockfile, then document the canonical clean-clone bootstrap command
+1. validate the canonical `npm ci` clean bootstrap from the committed lockfile, then perform one intentional hosted Baseline CI run when Actions capacity is available
 2. turn the locally exercised PostgreSQL race scenarios into repeatable automated tests
 3. add PostgreSQL migration and invariant execution to CI when hosted capacity is available
 4. integrate scheduled-action claiming into the scaffolded `apps/worker`

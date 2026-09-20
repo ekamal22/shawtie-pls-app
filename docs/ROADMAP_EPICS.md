@@ -148,7 +148,7 @@ Configured repository evidence now includes:
 - Zod-based external-boundary validation foundation and contract tests
 - root build, typecheck, lint, format-check, dependency-check, test, and health commands
 
-Dependency installation has completed locally with 0 reported npm audit vulnerabilities. Repository health, static migration-plan validation, typecheck, build, and lint now pass locally across the configured workspaces. The next failing gate was formatting because the Windows checkout used CRLF while Prettier expected LF and the repository had no explicit line-ending policy. `.gitattributes` now normalizes committed text to LF and Prettier tolerates local platform endings. Formatting and later gates still require a fresh local run.
+Dependency installation completed locally with 0 reported npm audit vulnerabilities. A complete `npm run health` pass on 2026-09-20 verified repository health, static migration-plan validation, all workspace typechecks, all workspace builds, lint, Prettier formatting, workspace dependency-direction and circular-dependency checks, 27 domain tests, and 2 runtime-contract tests. `package-lock.json` is committed. The canonical clean-clone bootstrap command is documented as `npm ci`. Current fixtures are synthetic-only.
 
 GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
 
@@ -168,19 +168,19 @@ GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplet
 ## Acceptance gates
 
 - [ ] clean clone installs with the documented package-manager command
-- [ ] root build command succeeds
-- [ ] root typecheck command succeeds
-- [ ] root lint command succeeds
-- [ ] root test command succeeds
-- [ ] formatting check succeeds
+- [x] root build command succeeds
+- [x] root typecheck command succeeds
+- [x] root lint command succeeds
+- [x] root test command succeeds
+- [x] formatting check succeeds
 - [x] `packages/domain` is mechanically prevented from importing React, Fastify, database clients, provider SDKs, or `apps/*`
-- [ ] circular dependency checking is active for defined package boundaries
-- [ ] external input validation convention is implemented
+- [x] circular dependency checking is active for defined package boundaries
+- [x] external input validation convention is implemented
 - [ ] CI runs the required baseline checks on pull requests and has at least one verified hosted run
 - [x] baseline secret-pattern and forbidden-secret-file scanning is enabled in repository tooling
-- [ ] dependency scanning is active against a committed lockfile
-- [ ] documentation contains one canonical bootstrap command
-- [ ] no real private data or production secret is present in fixtures
+- [x] dependency scanning is active against a committed lockfile
+- [x] documentation contains one canonical bootstrap command
+- [x] no real private data or production secret is present in fixtures
 - [x] CI workflow uses explicit read-only permissions, a timeout, and SHA-pinned external actions
 - [x] CODEOWNERS and SECURITY.md are present
 
