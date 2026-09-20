@@ -12,7 +12,9 @@ The first physical schema foundation is committed under `packages/db/migrations`
 
 It currently includes identity, partnership lifecycle, durable operations, content metadata, and relational-integrity hardening.
 
-The physical schema has not yet been executed against PostgreSQL, so this document remains the logical model and the migrations remain implementation artifacts pending database verification.
+The physical schema has passed local disposable-database validation against PostgreSQL 16.15. All five migrations apply from zero, the invariant suite passes, selected catalog objects were inspected, and the occupied-slot, scheduled-action claim, and deterministic account-lock concurrency scenarios passed locally.
+
+This document remains the logical model. Runtime repository integration, automated concurrency regression coverage, hosted PostgreSQL CI, worker integration, outbox transaction integration, deletion retry behavior, and query-plan validation remain separate implementation work.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
