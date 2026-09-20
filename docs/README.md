@@ -72,6 +72,7 @@ The selected architecture is:
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
+- `database/MIGRATIONS.md`
 
 ## Product source of truth
 
