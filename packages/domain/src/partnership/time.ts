@@ -21,15 +21,17 @@ export function addCalendarMonthsUtc(iso: string, months: number): string {
   const lastDay = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
   const targetDay = Math.min(day, lastDay);
 
-  return new Date(Date.UTC(
-    targetYear,
-    normalizedMonth,
-    targetDay,
-    input.getUTCHours(),
-    input.getUTCMinutes(),
-    input.getUTCSeconds(),
-    input.getUTCMilliseconds(),
-  )).toISOString();
+  return new Date(
+    Date.UTC(
+      targetYear,
+      normalizedMonth,
+      targetDay,
+      input.getUTCHours(),
+      input.getUTCMinutes(),
+      input.getUTCSeconds(),
+      input.getUTCMilliseconds(),
+    ),
+  ).toISOString();
 }
 
 export function isBefore(a: string, b: string): boolean {

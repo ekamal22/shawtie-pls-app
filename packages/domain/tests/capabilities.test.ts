@@ -25,13 +25,25 @@ function ctx(partnership: PartnershipState | null, now = START): CapabilityConte
 
 function assertAllowed(context: CapabilityContext, ...capabilities: CapabilityName[]): void {
   for (const capability of capabilities) {
-    assert.deepEqual(evaluateCapability(capability, context), { allowed: true, reason: null }, capability);
+    assert.deepEqual(
+      evaluateCapability(capability, context),
+      { allowed: true, reason: null },
+      capability,
+    );
   }
 }
 
-function assertDenied(context: CapabilityContext, reason: string, ...capabilities: CapabilityName[]): void {
+function assertDenied(
+  context: CapabilityContext,
+  reason: string,
+  ...capabilities: CapabilityName[]
+): void {
   for (const capability of capabilities) {
-    assert.deepEqual(evaluateCapability(capability, context), { allowed: false, reason }, capability);
+    assert.deepEqual(
+      evaluateCapability(capability, context),
+      { allowed: false, reason },
+      capability,
+    );
   }
 }
 
@@ -69,7 +81,12 @@ test("breakup_pending keeps messaging, media, calls, nicknames, and email change
     "submit_restore_intent",
   );
   assert.equal(callRequiresExplicitBreakupAcceptance(context), true);
-  assertDenied(context, "RELATIONSHIP_OBJECTS_VIEW_ONLY", "create_relationship_object", "edit_relationship_object");
+  assertDenied(
+    context,
+    "RELATIONSHIP_OBJECTS_VIEW_ONLY",
+    "create_relationship_object",
+    "edit_relationship_object",
+  );
   assertDenied(context, "BLOCK_NOT_ALLOWED", "block_former_partner");
   assertDenied(context, "PARTNERSHIP_OCCUPIED", "form_partnership");
 });
@@ -77,7 +94,11 @@ test("breakup_pending keeps messaging, media, calls, nicknames, and email change
 test("only the initiator can cancel breakup and only before the exact one-hour boundary", () => {
   const pending = expectOk(initiateBreakup(activePartnership(), A, START));
   assertAllowed(ctx(pending, "2026-09-20T12:59:59.999Z"), "cancel_breakup");
-  assertDenied(ctx(pending, "2026-09-20T13:00:00.000Z"), "BREAKUP_WINDOW_EXPIRED", "cancel_breakup");
+  assertDenied(
+    ctx(pending, "2026-09-20T13:00:00.000Z"),
+    "BREAKUP_WINDOW_EXPIRED",
+    "cancel_breakup",
+  );
 
   const other: CapabilityContext = {
     actor: activeAccount(B),
@@ -102,7 +123,13 @@ test("pre-breakup messages are visible and repliable but immutable during breaku
     message,
   };
   assertAllowed(context, "view_shared_data", "reply_message");
-  assertDenied(context, "PRE_BREAKUP_MESSAGE_LOCKED", "edit_message", "delete_message", "react_message");
+  assertDenied(
+    context,
+    "PRE_BREAKUP_MESSAGE_LOCKED",
+    "edit_message",
+    "delete_message",
+    "react_message",
+  );
 });
 
 test("messages created after breakup initiation retain normal edit, delete, and reaction behavior", () => {
@@ -129,7 +156,12 @@ test("message edit capability expires at exactly thirty minutes", () => {
     createdAt: START,
     deletedAt: null,
   };
-  const before: CapabilityContext = { actor: activeAccount(A), partnership: activePartnership(), now: "2026-09-20T12:29:59.999Z", message };
+  const before: CapabilityContext = {
+    actor: activeAccount(A),
+    partnership: activePartnership(),
+    now: "2026-09-20T12:29:59.999Z",
+    message,
+  };
   const at: CapabilityContext = { ...before, now: "2026-09-20T12:30:00.000Z" };
   assertAllowed(before, "edit_message");
   assertDenied(at, "MESSAGE_EDIT_WINDOW_EXPIRED", "edit_message");
@@ -149,7 +181,15 @@ test("account deletion overlay makes shared partnership view-only and locks dele
     now: "2026-09-21T12:00:00.000Z",
   };
   assertAllowed(deleting, "recover_account");
-  assertDenied(deleting, "ACCOUNT_LOCKED", "send_message", "send_media", "start_call", "change_email", "change_nickname");
+  assertDenied(
+    deleting,
+    "ACCOUNT_LOCKED",
+    "send_message",
+    "send_media",
+    "start_call",
+    "change_email",
+    "change_nickname",
+  );
 
   const remaining: CapabilityContext = {
     actor: activeAccount(B),
@@ -157,7 +197,15 @@ test("account deletion overlay makes shared partnership view-only and locks dele
     now: "2026-09-21T12:00:00.000Z",
   };
   assertAllowed(remaining, "view_shared_data");
-  assertDenied(remaining, "ACCOUNT_LOCKED", "send_message", "send_media", "start_call", "create_relationship_object", "change_nickname");
+  assertDenied(
+    remaining,
+    "ACCOUNT_LOCKED",
+    "send_message",
+    "send_media",
+    "start_call",
+    "create_relationship_object",
+    "change_nickname",
+  );
   assertDenied(remaining, "PARTNERSHIP_OCCUPIED", "form_partnership");
 });
 

@@ -1,8 +1,4 @@
-import type {
-  MemberId,
-  PartnershipState,
-  TransitionResult,
-} from "./types.ts";
+import type { MemberId, PartnershipState, TransitionResult } from "./types.ts";
 import { addCalendarMonthsUtc, addDays, addHours, isAtOrAfter, isBefore } from "./time.ts";
 
 function memberExists(state: PartnershipState, memberId: MemberId): boolean {

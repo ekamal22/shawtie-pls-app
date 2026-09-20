@@ -1,9 +1,4 @@
-import type {
-  CapabilityContext,
-  CapabilityDecision,
-  CapabilityName,
-  DenialCode,
-} from "./types.ts";
+import type { CapabilityContext, CapabilityDecision, CapabilityName, DenialCode } from "./types.ts";
 import { isAtOrAfter, isBefore } from "./time.ts";
 
 const ALLOW: CapabilityDecision = { allowed: true, reason: null };
@@ -51,7 +46,10 @@ export function evaluateCapability(
   const partnership = ctx.partnership;
 
   if (capability === "recover_account") {
-    if (ctx.actor.status === "deletion_pending" || partnership?.accountDeletion?.accountId === ctx.actor.id) {
+    if (
+      ctx.actor.status === "deletion_pending" ||
+      partnership?.accountDeletion?.accountId === ctx.actor.id
+    ) {
       return ALLOW;
     }
     return deny("ACCOUNT_LOCKED");
@@ -67,8 +65,12 @@ export function evaluateCapability(
   }
 
   if (capability === "change_username") {
-    if (partnership && partnership.lifecycle !== "terminated") return deny("USERNAME_CHANGE_BLOCKED");
-    if (ctx.actor.nextUsernameChangeEligibleAt && isBefore(ctx.now, ctx.actor.nextUsernameChangeEligibleAt)) {
+    if (partnership && partnership.lifecycle !== "terminated")
+      return deny("USERNAME_CHANGE_BLOCKED");
+    if (
+      ctx.actor.nextUsernameChangeEligibleAt &&
+      isBefore(ctx.now, ctx.actor.nextUsernameChangeEligibleAt)
+    ) {
       return deny("USERNAME_CHANGE_BLOCKED");
     }
     return ALLOW;
@@ -96,16 +98,20 @@ export function evaluateCapability(
   }
 
   if (capability === "cancel_breakup") {
-    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup) return deny("BREAKUP_REQUIRED");
+    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup)
+      return deny("BREAKUP_REQUIRED");
     if (partnership.breakup.initiatedBy !== ctx.actor.id) return deny("NOT_BREAKUP_INITIATOR");
-    if (!isBefore(ctx.now, partnership.breakup.initiatorCancelUntil)) return deny("BREAKUP_WINDOW_EXPIRED");
+    if (!isBefore(ctx.now, partnership.breakup.initiatorCancelUntil))
+      return deny("BREAKUP_WINDOW_EXPIRED");
     return ALLOW;
   }
 
   if (capability === "submit_restore_intent") {
     if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup) return deny("BREAKUP_REQUIRED");
-    if (isAtOrAfter(ctx.now, partnership.breakup.finalDeadline)) return deny("BREAKUP_DEADLINE_EXPIRED");
-    if (partnership.breakup.restoreIntentAt[ctx.actor.id]) return deny("RESTORE_INTENT_ALREADY_SUBMITTED");
+    if (isAtOrAfter(ctx.now, partnership.breakup.finalDeadline))
+      return deny("BREAKUP_DEADLINE_EXPIRED");
+    if (partnership.breakup.restoreIntentAt[ctx.actor.id])
+      return deny("RESTORE_INTENT_ALREADY_SUBMITTED");
     return ALLOW;
   }
 
@@ -118,18 +124,30 @@ export function evaluateCapability(
     return ALLOW;
   }
 
-  if (capability === "send_message" || capability === "reply_message" || capability === "send_media" || capability === "start_call") {
+  if (
+    capability === "send_message" ||
+    capability === "reply_message" ||
+    capability === "send_media" ||
+    capability === "start_call"
+  ) {
     return ALLOW;
   }
 
-  if (capability === "edit_message" || capability === "delete_message" || capability === "react_message") {
+  if (
+    capability === "edit_message" ||
+    capability === "delete_message" ||
+    capability === "react_message"
+  ) {
     const base = messageBaseDecision(ctx);
     if (base) return base;
     if (!ctx.message) return deny("MESSAGE_DELETED");
     if (partnership.lifecycle === "breakup_pending" && isPreBreakupMessage(ctx)) {
       return deny("PRE_BREAKUP_MESSAGE_LOCKED");
     }
-    if ((capability === "edit_message" || capability === "delete_message") && ctx.message.senderId !== ctx.actor.id) {
+    if (
+      (capability === "edit_message" || capability === "delete_message") &&
+      ctx.message.senderId !== ctx.actor.id
+    ) {
       return deny("MESSAGE_NOT_OWNED");
     }
     if (capability === "edit_message") {
@@ -144,9 +162,9 @@ export function evaluateCapability(
 
 export function callRequiresExplicitBreakupAcceptance(ctx: CapabilityContext): boolean {
   return Boolean(
-    ctx.partnership
-    && ctx.partnership.lifecycle === "breakup_pending"
-    && !ctx.partnership.accountDeletion
-    && !accountLocked(ctx),
+    ctx.partnership &&
+      ctx.partnership.lifecycle === "breakup_pending" &&
+      !ctx.partnership.accountDeletion &&
+      !accountLocked(ctx),
   );
 }

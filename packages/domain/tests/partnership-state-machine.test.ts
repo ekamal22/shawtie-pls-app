@@ -137,7 +137,9 @@ test("breakup deadline takes precedence over a later account deletion deadline",
 test("permanent partner account deletion from active partnership gives remaining partner one-calendar-month cooldown", () => {
   const pending = expectOk(requestAccountDeletion(activePartnership(), A, START));
   const generation = pending.accountDeletion?.generation as number;
-  const finalized = expectOk(finalizeAccountDeletion(pending, "2026-09-27T12:00:00.000Z", generation));
+  const finalized = expectOk(
+    finalizeAccountDeletion(pending, "2026-09-27T12:00:00.000Z", generation),
+  );
   assert.equal(finalized.lifecycle, "terminated");
   assert.equal(finalized.terminationReason, "partner_account_deleted");
   assert.equal(finalized.partnerEligibleAt[B], "2026-10-27T12:00:00.000Z");
