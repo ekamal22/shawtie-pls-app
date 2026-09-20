@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGNED, NOT YET IMPLEMENTED
+IMPLEMENTED, VALIDATION PENDING
 
 Effective design date: 2026-09-20.
 
@@ -10,7 +10,7 @@ This document is the implementation design for F2 Persistence and Worker Foundat
 
 It refines Architecture Baseline 1.0 without changing any frozen architecture decision. No ADR is required because the design keeps PostgreSQL authoritative, preserves the modular monolith plus separate durable worker, keeps the domain package infrastructure-free, uses the accepted transactional outbox and scheduled-action models, and introduces no new trust boundary or persistent state system.
 
-Source code, migrations, and tests remain the authority for what is actually implemented. This document describes the intended F2 runtime shape until implementation evidence exists.
+Source code, migrations, and tests remain the authority for what is actually implemented. The F2 runtime described here is now committed on the feature branch, but completion remains blocked on dependency lockfile refresh plus full local TypeScript, build, lint, formatting, repository-health, migration, invariant, and PostgreSQL integration validation.
 
 ## Goals
 
@@ -81,33 +81,28 @@ F2 turns `packages/db` from schema-only scaffolding into the persistence kernel.
 
 The preferred implementation is a narrow PostgreSQL runtime using `pg` directly rather than an ORM. This preserves visibility into transaction, locking, queue, and SQLSTATE behavior that is already central to the accepted design.
 
-Planned structure:
+Current implementation structure:
 
 ```text
 packages/db/src/
 ├── index.ts
 ├── connection/
+│   ├── database-config.ts
 │   ├── pool.ts
-│   ├── transaction.ts
-│   └── database-config.ts
+│   ├── time.ts
+│   └── transaction.ts
 ├── repositories/
 │   ├── accounts.ts
-│   ├── partnerships.ts
 │   ├── scheduled-actions.ts
 │   ├── outbox-events.ts
 │   ├── lifecycle-events.ts
 │   └── deletion-manifests.ts
-├── queries/
-│   ├── lock-accounts.ts
-│   ├── claim-scheduled-actions.ts
-│   ├── claim-outbox-events.ts
-│   └── claim-deletion-targets.ts
 ├── errors/
 │   ├── database-error.ts
 │   └── postgres-error-codes.ts
 └── types/
-    ├── query-executor.ts
-    └── transaction.ts
+    ├── claim.ts
+    └── query-executor.ts
 ```
 
 Do not introduce a generic BaseRepository or an unrestricted application-facing execute-any-SQL abstraction.
@@ -200,19 +195,17 @@ Scheduled actions additionally support `stale`, `cancelled`, and terminal `faile
 
 A stale lifecycle action is not a system failure. It means the aggregate generation changed after the action was scheduled.
 
-## Planned durable-runtime reliability migration
+## Durable-runtime reliability migration
 
-The current verified schema contains five migrations.
+The previously verified schema contains five migrations.
 
-F2 plans one forward migration, expected to be named:
+F2 now commits the sixth forward migration:
 
 `0006_durable_runtime_reliability.sql`
 
-The migration does not exist yet.
+It implements the designed lease, fencing, retry-availability, payload-version, and reclaim fields. It is not yet counted as verified until migration-from-zero and the F2 PostgreSQL test matrix pass locally.
 
-Its intended purpose is to make claimed work recoverable after worker crashes.
-
-Planned additions:
+Implemented additions, validation pending:
 
 ### scheduled_actions
 
@@ -250,7 +243,7 @@ Add:
 
 The implementation must also add or adjust indexes for due, reclaimable work.
 
-Exact column defaults and index definitions are implementation details and must be verified with migration and query-plan tests.
+Column defaults and indexes are now implemented and remain subject to migration and query-plan verification.
 
 ## Claim ownership and fencing
 
@@ -370,7 +363,7 @@ F2 establishes the registries and contracts. Later epics register product-specif
 
 ## Worker application
 
-Planned worker structure:
+Current worker structure:
 
 ```text
 apps/worker/src/
@@ -793,4 +786,4 @@ Reject an F2 implementation change if it does any of the following:
 
 F2 is DONE only when every F2 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed implementation and repeatable local evidence.
 
-Design completion alone does not change F2 from IN_PROGRESS to DONE.
+The runtime implementation is now committed, but F2 remains IN_PROGRESS until the dependency lockfile is refreshed and the complete local verification matrix passes.

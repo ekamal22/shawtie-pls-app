@@ -30,13 +30,13 @@ Do not infer completion percentages from partial layers.
 - database invariants: committed and passing against local disposable PostgreSQL 16
 - transaction helpers: canonical account-lock SQL committed, application integration pending
 - deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
-- F2 runtime design: refined and approved in `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`; fencing tokens, lease renewal, transaction retry and timeout policy, PostgreSQL clock semantics, durable payload versions, polling fallback, direct expired-claim reclaim, and query-plan gates are designed but not implemented
-- durable worker: application scaffold configured; bounded consumer, lease-recovery, retry, and shutdown runtime pending
-- transactional outbox: schema committed; atomic write and at-least-once delivery runtime pending
-- scheduled actions: schema and claim SQL committed; recoverable lease and execution runtime pending
+- F2 runtime: design is refined and the persistence kernel, migration 0006, fencing-aware repositories, worker consumers, outbox runtime, lifecycle ledger, deletion runtime, and integration matrix are committed; lockfile refresh and full local validation are pending
+- durable worker: bounded consumers, lease reclaim, retry, payload-version dispatch, generation-guard hooks, and graceful shutdown runtime committed; local validation pending
+- transactional outbox: atomic insert, claim, fencing, retry, at-least-once delivery, and duplicate-safety test infrastructure committed; local validation pending
+- scheduled actions: recoverable leases, direct expired-claim reclaim, fencing, execution transaction, generation guard, and retry runtime committed; local validation pending
 - scheduled-action generation tokens: domain behavior implemented, persistence pending
 - lifecycle event ledger: schema and append-only update protection locally validated against PostgreSQL
-- deletion manifest workflow: schema committed; target lease, retry, resume, and completion runtime pending
+- deletion manifest workflow: target lease, fencing, retry, permanent failure, repair resume, and completion runtime committed; local validation pending
 - runtime contract validation: Zod boundary foundation configured and locally validated
 - API versioning
 - client compatibility versioning
@@ -224,4 +224,4 @@ Current canonical epic status:
 
 The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 
-The next foundation milestone is F2-A: PostgreSQL runtime kernel, transaction and timeout policy, durable-work fencing and lease support, payload versions, disposable-database test infrastructure, automated race regressions, and queue query-plan verification. F2 then proceeds through worker runtime, outbox, lifecycle persistence, deletion runtime, and integration verification. Hosted baseline verification remains separate under V1.
+The F2 implementation slices are now committed. The immediate milestone is validation: refresh the npm lockfile, run the full local repository health gate, apply all six migrations to disposable PostgreSQL, run invariant tests, then run `npm run test:f2:postgres` and close only the gates supported by those results. Hosted baseline verification remains separate under V1.

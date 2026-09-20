@@ -109,13 +109,13 @@ On 2026-09-20, a disposable PostgreSQL 16.15 Docker container was used to verify
 - two sessions using the committed scheduled-action claim SQL do not claim the same row
 - opposite caller orders using the committed account-lock SQL acquire accounts in immutable UUID order without deadlock
 
-## Planned F2 forward migration
+## F2 durable-runtime migration
 
 The F2 runtime design identifies a crash-recovery gap in durable work that has already been marked `processing`.
 
-A future forward migration, expected to be `0006_durable_runtime_reliability.sql`, is planned to add the durable runtime fields required by the refined F2 design. This migration does not exist yet and must not be treated as applied or verified until implementation.
+`0006_durable_runtime_reliability.sql` is now committed and adds the durable runtime fields required by the refined F2 design. It must not be treated as verified until it passes clean migration-from-zero, invariant, race, reclaim, fencing, and query-plan validation against disposable PostgreSQL.
 
-Planned changes include:
+Implemented changes, validation pending:
 
 - scheduled actions: retry `available_at`, `lease_expires_at`, monotonically increasing `claim_version`, and `payload_version`
 - outbox events: `lease_expires_at`, `max_attempts`, monotonically increasing `claim_version`, and `payload_version`
@@ -130,11 +130,11 @@ The exact planned behavior is documented in `../architecture/F2_PERSISTENCE_WORK
 
 The following cannot yet be claimed as complete:
 
-- planned durable-work reliability migration with fencing tokens and payload versions
+- migration 0006 execution and invariants for fencing tokens, payload versions, and claim-shape constraints
 - direct expired-claim reclaim behavior
 - lease renewal ownership rules
-- automated race coverage committed to the repository
-- database runtime pool and transaction integration
+- automated race coverage execution against migration 0006
+- database runtime pool and transaction integration execution
 - integrated worker-instance behavior beyond the database claim SQL
 - lease expiry and crash recovery
 - outbox transaction and delivery integration
@@ -172,4 +172,4 @@ The repository now includes:
 - `packages/db/sql/lock-accounts.sql`
 - `packages/db/sql/claim-scheduled-actions.sql`
 
-These artifacts define the repeatable PostgreSQL verification path. The concurrency exercises should be promoted into committed automation before they are treated as a durable regression gate.
+These artifacts define the repeatable PostgreSQL verification path. F2 now also commits automated runtime and concurrency tests under `packages/testkit/tests` and `apps/worker/tests`; they remain unverified until `npm run test:f2:postgres` passes locally.

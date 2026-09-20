@@ -234,7 +234,7 @@ The implementation architecture and execution sequence are defined in:
 
 `docs/architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 
-The design preserves Architecture Baseline 1.0 and does not itself count as runtime implementation.
+The design preserves Architecture Baseline 1.0. Its F2 persistence, worker, outbox, lifecycle-ledger, deletion, and test-harness implementation is now committed, but the newly implemented gates remain unchecked until full local validation passes.
 
 ## Current verified progress
 
@@ -263,7 +263,7 @@ Committed repository artifacts and local PostgreSQL evidence now include:
 
 The current database foundation has local PostgreSQL execution evidence.
 
-The F2 runtime design identifies a missing crash-recovery primitive for durable work already moved to `processing`. F2 therefore plans a forward reliability migration that introduces lease-based reclaim semantics without changing the accepted PostgreSQL-backed queue architecture. That migration is planned and does not yet exist.
+The F2 runtime now includes `0006_durable_runtime_reliability.sql`, PostgreSQL runtime repositories, claim fencing and leases, direct expired-claim reclaim, worker consumers, outbox delivery infrastructure, lifecycle-ledger persistence, deletion retry/resume infrastructure, and committed PostgreSQL integration tests. These artifacts are implementation evidence only; they are not yet verification evidence.
 
 ## Implementation sequence
 
@@ -275,7 +275,7 @@ The F2 runtime design identifies a missing crash-recovery primitive for durable 
 - PostgreSQL business-time and lease-time helpers
 - defensive statement, lock, idle-transaction, connection, and query timeout policy
 - SQLSTATE normalization
-- planned durable-work reliability migration with fencing tokens and payload versions
+- durable-work reliability migration with fencing tokens and payload versions
 - deterministic account-lock repository
 - reusable disposable-database testkit
 - automated occupied-partnership contention test
