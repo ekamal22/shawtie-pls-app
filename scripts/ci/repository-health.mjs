@@ -53,6 +53,8 @@ const requiredPaths = [
   "docs/security/DATA_CLASSIFICATION.md",
   "docs/testing/TEST_STRATEGY.md",
   "docs/testing/CI_AND_REPOSITORY_HEALTH.md",
+  "docs/database/MIGRATIONS.md",
+  "packages/db/README.md",
   ".github/PULL_REQUEST_TEMPLATE.md",
   ".github/CODEOWNERS",
 ];
