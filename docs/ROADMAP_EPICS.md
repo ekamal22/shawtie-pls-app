@@ -45,6 +45,8 @@ F0 Governance and Security Baseline
         v
 F1 Repository Foundation
         |
+        +-----------------------> V1 Hosted CI Verification
+        |                          (non-blocking for development)
         v
 F2 Persistence and Worker Foundation
         |
@@ -125,7 +127,7 @@ Status: DONE
 
 # F1: Repository Foundation and Executable Guardrails
 
-Status: IN_PROGRESS
+Status: DONE
 
 ## Current verified progress
 
@@ -148,9 +150,9 @@ Configured repository evidence now includes:
 - Zod-based external-boundary validation foundation and contract tests
 - root build, typecheck, lint, format-check, dependency-check, test, and health commands
 
-Dependency installation completed locally with 0 reported npm audit vulnerabilities. A complete `npm run health` pass on 2026-09-20 verified repository health, static migration-plan validation, all workspace typechecks, all workspace builds, lint, Prettier formatting, workspace dependency-direction and circular-dependency checks, 27 domain tests, and 2 runtime-contract tests. `package-lock.json` is committed. The canonical clean-clone bootstrap command is documented as `npm ci`. Current fixtures are synthetic-only.
+Dependency installation completed locally with 0 reported npm audit vulnerabilities. A complete `npm run health` pass on 2026-09-20 verified repository health, static migration-plan validation, all workspace typechecks, all workspace builds, lint, Prettier formatting, workspace dependency-direction and circular-dependency checks, 27 domain tests, and 2 runtime-contract tests. `package-lock.json` is committed. The canonical clean-clone bootstrap command `npm ci` was then executed successfully from the committed lockfile, installed 180 packages, reported 0 vulnerabilities, and was followed by another complete passing `npm run health` run. Current fixtures are synthetic-only.
 
-GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplete.
+Hosted GitHub Actions execution is tracked separately under V1 and is not an F1 completion gate.
 
 ## Scope
 
@@ -167,7 +169,7 @@ GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplet
 
 ## Acceptance gates
 
-- [ ] clean clone installs with the documented package-manager command
+- [x] clean clone installs with the documented package-manager command
 - [x] root build command succeeds
 - [x] root typecheck command succeeds
 - [x] root lint command succeeds
@@ -176,13 +178,45 @@ GitHub-hosted CI execution is still pending, so hosted CI gates remain incomplet
 - [x] `packages/domain` is mechanically prevented from importing React, Fastify, database clients, provider SDKs, or `apps/*`
 - [x] circular dependency checking is active for defined package boundaries
 - [x] external input validation convention is implemented
-- [ ] CI runs the required baseline checks on pull requests and has at least one verified hosted run
+- [x] CI workflow is configured to run the required baseline checks on pull requests
 - [x] baseline secret-pattern and forbidden-secret-file scanning is enabled in repository tooling
 - [x] dependency scanning is active against a committed lockfile
 - [x] documentation contains one canonical bootstrap command
 - [x] no real private data or production secret is present in fixtures
 - [x] CI workflow uses explicit read-only permissions, a timeout, and SHA-pinned external actions
 - [x] CODEOWNERS and SECURITY.md are present
+
+# V1: Hosted CI Verification
+
+Status: BLOCKED
+
+## Purpose
+
+Verify the already-configured baseline CI workflow on GitHub-hosted infrastructure once Actions capacity is available again.
+
+V1 is intentionally separate from F1 and is not a prerequisite for F2, accounts, partnerships, messaging, relationship-space, media, calling, or other implementation work. It must be completed before R2 Public Readiness can be marked DONE.
+
+## Current blocker
+
+GitHub Actions capacity is unavailable through the remainder of September 2026, so hosted verification is deferred without blocking development.
+
+## Scope
+
+- execute Baseline CI on GitHub-hosted Ubuntu
+- verify the workflow trigger and permissions behavior
+- verify clean lockfile installation under the hosted runner
+- verify the full repository baseline under the hosted runner
+- verify dependency audit under the hosted runner
+- record hosted-run evidence in project state
+
+## Acceptance gates
+
+- [ ] at least one GitHub-hosted Baseline CI run completes successfully
+- [ ] hosted `npm ci` succeeds from the committed lockfile
+- [ ] hosted `npm run ci:baseline` succeeds
+- [ ] hosted `npm audit --audit-level=high` succeeds
+- [ ] workflow permissions, pinned actions, timeout, and trigger behavior are confirmed in a real run
+- [ ] successful run evidence is recorded in `docs/PROJECT_STATE.md`
 
 # F2: Persistence and Worker Foundation
 
@@ -652,6 +686,7 @@ Status: PLANNED
 
 ## Acceptance gates
 
+- [ ] V1 Hosted CI Verification is DONE
 - [ ] all stable-release PRD gates are satisfied
 - [ ] required CI checks are green
 - [ ] no unresolved critical or high security finding blocks release

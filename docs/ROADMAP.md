@@ -21,7 +21,7 @@ Do not infer completion percentages from partial layers.
 - monorepo workspace scaffold: configured and locally validated
 - TypeScript baseline: configured and locally validated
 - linting and formatting: configured and locally validated
-- CI: full baseline workflow configured from committed lockfile, hosted validation pending
+- CI: full baseline workflow configured from committed lockfile; hosted execution is tracked separately under V1 and does not block development
 - repository-health scanner: configured
 - CODEOWNERS and SECURITY policy: configured
 - PostgreSQL development environment: disposable Docker environment locally validated
@@ -195,11 +195,12 @@ Repository-wide documentation status has been reconciled with the current founda
 Current canonical epic status:
 
 - F0: DONE
-- F1: IN_PROGRESS with a passing full local health baseline and committed lockfile; clean `npm ci` bootstrap validation and hosted CI remain pending
+- F1: DONE with successful `npm ci` bootstrap from the committed lockfile and a complete passing local health baseline
+- V1: BLOCKED until GitHub Actions capacity returns; hosted CI verification is non-blocking for implementation and remains required before public-readiness closure
 - F2: IN_PROGRESS with local PostgreSQL migration, invariant, schema, and selected concurrency validation complete; worker and CI integration remain
 - P3: IN_PROGRESS at the pure domain layer
 - remaining implementation epics: PLANNED
 
-The repository-health and baseline CI foundation is configured, but GitHub-hosted execution remains unverified.
+The repository-health and baseline CI foundation is configured and locally validated. GitHub-hosted execution remains unverified under the separate V1 verification track.
 
-The next foundation milestones are validating the canonical clean `npm ci` bootstrap, performing one intentional hosted baseline CI run, automating the locally proven PostgreSQL races, and integrating the durable worker and outbox.
+The next foundation milestones are automating the locally proven PostgreSQL races and integrating the durable worker and outbox. Hosted baseline verification will resume separately under V1 when GitHub Actions capacity returns.

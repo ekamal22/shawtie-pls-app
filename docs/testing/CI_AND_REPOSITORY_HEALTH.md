@@ -4,9 +4,11 @@
 
 Baseline CI and repository-health tooling are configured.
 
-The M1 workspace, TypeScript, linting, formatting, runtime-contract, and dependency-direction scaffolding is also configured. Dependency installation has completed locally. Repository health and the static migration-plan check pass. The first expanded local health run exposed deprecated `baseUrl`; the second exposed non-relative `paths` targets after `baseUrl` was removed. The shared config now uses explicit `./` path targets with no `baseUrl`, matching the TypeScript 6 migration guidance. `packages/contracts/tsconfig.json` explicitly includes the DOM library required by Zod's standard `URL` declaration. The next local run passed typecheck, build, and lint across all workspaces, then stopped at formatting because the Windows checkout used CRLF while Prettier expected LF and the repository had no explicit line-ending policy. `.gitattributes` now normalizes committed text to LF, and Prettier uses `endOfLine: auto` so local checks do not fail solely on platform checkout endings. The full local health gate must be rerun.
+The M1 workspace, TypeScript, linting, formatting, runtime-contract, dependency-direction, circular-dependency, and repository-health guardrails are locally validated. On 2026-09-20, the canonical `npm ci` bootstrap succeeded from the committed lockfile, installed 180 packages, reported 0 vulnerabilities, and was followed by a complete passing `npm run health` run.
 
-The first GitHub-hosted execution is still pending.
+F1 Repository Foundation and Executable Guardrails is therefore complete.
+
+GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. V1 is currently blocked by Actions capacity and does not block ongoing implementation work. It remains required before R2 Public Readiness can be marked DONE.
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
@@ -60,7 +62,7 @@ The canonical clean-clone dependency bootstrap is:
 npm ci
 ```
 
-A separate clean-install validation from the committed lockfile is still pending.
+The clean-install path from the committed lockfile has been validated successfully.
 
 ## Repository-health policy
 
@@ -161,7 +163,7 @@ When GitHub Actions execution is intentionally being avoided, commits may use Gi
 
 A skipped workflow is not evidence that CI passed.
 
-Once Actions execution is available again:
+V1 remains deferred while Actions capacity is unavailable. Once Actions execution is available again:
 
 1. create or push a commit without a skip marker, or manually dispatch Baseline CI
 2. inspect the workflow result
@@ -171,7 +173,7 @@ Once Actions execution is available again:
 
 ## Future gate expansion
 
-Local disposable PostgreSQL validation completed on 2026-09-20 for migration from zero, invariant SQL, migration rerun idempotency, schema catalog inspection, and selected two-session races. This is local evidence only and does not satisfy the still-pending GitHub-hosted gate.
+Local disposable PostgreSQL validation completed on 2026-09-20 for migration from zero, invariant SQL, migration rerun idempotency, schema catalog inspection, and selected two-session races. Hosted reproduction of those checks can be added later without blocking current development.
 
 Baseline CI now contains hard steps for lockfile installation, the complete local repository baseline, and dependency audit.
 

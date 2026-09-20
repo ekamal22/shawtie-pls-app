@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and the F1 executable repository foundation now has a complete passing local health run. Hosted GitHub Actions validation remains pending.
+Foundation implementation is underway. The pure partnership domain state machine and centralized capability engine are implemented, the initial PostgreSQL schema and migration system have passed local disposable-database validation, and F1 Repository Foundation and Executable Guardrails is complete based on clean lockfile installation plus the full local health baseline. Hosted GitHub Actions verification is tracked separately and does not block continued development.
 
 ## Product definition
 
@@ -70,7 +70,7 @@ M1 repository foundation implemented and locally validated:
 - local dependency installation with 0 reported npm audit vulnerabilities
 - full `npm run health` pass covering repository health, migration-plan validation, all workspace typechecks, all workspace builds, lint, formatting, dependency/cycle checks, 27 domain tests, and 2 contract tests
 
-The full local health run passed on 2026-09-20. The canonical clean-clone bootstrap command is now documented as `npm ci`, but a separate clean-install validation from the committed lockfile is still pending. GitHub-hosted CI validation is also still pending.
+The full local health run passed on 2026-09-20. The canonical clean-clone bootstrap command `npm ci` was then executed successfully from the committed lockfile, installed 180 packages, reported 0 vulnerabilities, and was followed by another complete passing `npm run health` run. Hosted GitHub Actions validation is tracked separately under V1 and is not a prerequisite for further implementation.
 
 Implemented and locally validated:
 
@@ -112,14 +112,15 @@ Roadmap epics and objective acceptance gates are now defined in `docs/ROADMAP_EP
 Current epic status:
 
 - F0 Governance and Security Baseline: DONE
-- F1 Repository Foundation and Executable Guardrails: IN_PROGRESS because the full local health baseline now passes and the lockfile is committed, while clean `npm ci` bootstrap validation and GitHub-hosted validation remain incomplete
+- F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
+- V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
 - F2 Persistence and Worker Foundation: IN_PROGRESS because schema, migrations, database invariants, and the canonical lock/claim SQL have passed local PostgreSQL validation, but committed race automation, worker integration, outbox integration, deletion retry behavior, and PostgreSQL CI remain incomplete
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - all other implementation epics: PLANNED
 
 The persistence schema foundation has been executed twice from a blank disposable PostgreSQL 16 database. The invariant suite, migration ledger, second-run skipping, selected schema inspection, occupied-slot race, scheduled-action claim race, and deterministic account-lock ordering passed locally. API integration and worker integration are not implemented yet.
 
-Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks, but GitHub-hosted validation has not yet been executed. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
+Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks. GitHub-hosted validation has not yet been executed and is tracked separately under V1. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
 
 ## Progress reporting rule
 
@@ -131,15 +132,14 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-1. validate the canonical `npm ci` clean bootstrap from the committed lockfile, then perform one intentional hosted Baseline CI run when Actions capacity is available
-2. turn the locally exercised PostgreSQL race scenarios into repeatable automated tests
-3. add PostgreSQL migration and invariant execution to CI when hosted capacity is available
-4. integrate scheduled-action claiming into the scaffolded `apps/worker`
-5. integrate transactional outbox writes and delivery
-6. integrate lifecycle event persistence
-7. integrate deletion-manifest retries
-8. implement account and device repositories
-9. wire API routes to the domain capability engine
+1. turn the locally exercised PostgreSQL race scenarios into repeatable automated tests
+2. integrate scheduled-action claiming into the scaffolded `apps/worker`
+3. integrate transactional outbox writes and delivery
+4. integrate lifecycle event persistence
+5. integrate deletion-manifest retries
+6. implement account and device repositories
+7. wire API routes to the domain capability engine
+8. when GitHub Actions capacity returns, complete the separate V1 hosted CI verification track and add PostgreSQL migration and invariant execution to hosted CI
 
 ## Stable release blockers
 
