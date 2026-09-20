@@ -107,7 +107,8 @@ export function evaluateCapability(
   }
 
   if (capability === "submit_restore_intent") {
-    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup)\n      return deny("BREAKUP_REQUIRED");
+    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup)
+      return deny("BREAKUP_REQUIRED");
     if (isAtOrAfter(ctx.now, partnership.breakup.finalDeadline))
       return deny("BREAKUP_DEADLINE_EXPIRED");
     if (partnership.breakup.restoreIntentAt[ctx.actor.id])
