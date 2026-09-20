@@ -1,4 +1,9 @@
-import type { CapabilityContext, CapabilityDecision, CapabilityName, DenialCode } from "./types.ts";
+import type {
+  CapabilityContext,
+  CapabilityDecision,
+  CapabilityName,
+  DenialCode,
+} from "./types.ts";
 import { isAtOrAfter, isBefore } from "./time.ts";
 
 const ALLOW: CapabilityDecision = { allowed: true, reason: null };

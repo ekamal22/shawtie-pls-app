@@ -71,20 +71,15 @@ test("restoration intent is rejected at the exact final deadline", () => {
   assert.deepEqual(result, { ok: false, reason: "BREAKUP_DEADLINE_EXPIRED" });
 });
 
-test(
-  "stale day-seven finalizer cannot dissolve after the first restore intent extended the deadline",
-  () => {
+test("stale day-seven finalizer cannot dissolve after the first restore intent extended the deadline", () => {
     const pending = expectOk(initiateBreakup(activePartnership(), A, START));
     const oldGeneration = pending.breakup?.generation as number;
     const extended = expectOk(submitRestoreIntent(pending, B, "2026-09-22T12:00:00.000Z"));
     const result = finalizeBreakup(extended, "2026-09-27T12:00:00.000Z", oldGeneration);
     assert.deepEqual(result, { ok: false, reason: "STALE_GENERATION" });
-  },
-);
+});
 
-test(
-  "breakup finalization uses the deadline as dissolution time and starts exact three-calendar-month cooldown",
-  () => {
+test("breakup finalization uses the deadline as dissolution time and starts exact three-calendar-month cooldown", () => {
     const start = "2026-01-31T23:45:00.000Z";
     const pending = expectOk(initiateBreakup(activePartnership(), A, start));
     const generation = pending.breakup?.generation as number;
@@ -92,8 +87,7 @@ test(
     assert.equal(finalized.terminatedAt, "2026-02-07T23:45:00.000Z");
     assert.equal(finalized.partnerEligibleAt[A], "2026-05-07T23:45:00.000Z");
     assert.equal(finalized.partnerEligibleAt[B], "2026-05-07T23:45:00.000Z");
-  },
-);
+});
 
 test("calendar-month arithmetic clamps to the last valid target day", () => {
   assert.equal(
@@ -113,15 +107,12 @@ test("account deletion from active partnership creates a seven-day recovery over
   assert.equal(pending.accountDeletion?.recoverUntil, "2026-09-27T12:00:00.000Z");
 });
 
-test(
-  "account recovery restores the exact partnership lifecycle before the recovery deadline",
-  () => {
+test("account recovery restores the exact partnership lifecycle before the recovery deadline", () => {
     const pending = expectOk(requestAccountDeletion(activePartnership(), A, START));
     const recovered = expectOk(recoverDeletedAccount(pending, A, "2026-09-26T12:00:00.000Z"));
     assert.equal(recovered.lifecycle, "active");
     assert.equal(recovered.accountDeletion, null);
-  },
-);
+});
 
 test("account deletion requested during breakup does not reset the breakup deadline", () => {
   const breakup = expectOk(initiateBreakup(activePartnership(), A, START));
@@ -143,9 +134,7 @@ test("breakup deadline takes precedence over a later account deletion deadline",
   assert.equal(finalized.terminatedAt, "2026-09-27T12:00:00.000Z");
 });
 
-test(
-  "permanent partner account deletion from active partnership gives remaining partner one-calendar-month cooldown",
-  () => {
+test("permanent partner account deletion from active partnership gives remaining partner one-calendar-month cooldown", () => {
     const pending = expectOk(requestAccountDeletion(activePartnership(), A, START));
     const generation = pending.accountDeletion?.generation as number;
     const finalized = expectOk(
@@ -155,8 +144,7 @@ test(
     assert.equal(finalized.terminationReason, "partner_account_deleted");
     assert.equal(finalized.partnerEligibleAt[B], "2026-10-27T12:00:00.000Z");
     assert.equal(finalized.partnerEligibleAt[A], null);
-  },
-);
+});
 
 test("account deletion overlay blocks breakup cancellation and new restoration intent", () => {
   const breakup = expectOk(initiateBreakup(activePartnership(), A, START));
