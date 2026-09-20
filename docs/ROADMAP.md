@@ -24,17 +24,18 @@ Do not infer completion percentages from partial layers.
 - CI: baseline workflow configured, hosted validation pending
 - repository-health scanner: configured
 - CODEOWNERS and SECURITY policy: configured
-- PostgreSQL development environment
+- PostgreSQL development environment: pending execution
+- PostgreSQL schema and migrations: committed, real database validation pending
 - domain capability engine: implemented foundation
-- database invariants
-- transaction helpers
-- deterministic two-account locking helper
+- database invariants: defined in migrations, PostgreSQL validation pending
+- transaction helpers: canonical account-lock SQL committed, application integration pending
+- deterministic two-account locking helper: canonical SQL pattern committed, application helper pending
 - durable worker
-- transactional outbox
-- scheduled actions
+- transactional outbox: schema committed, runtime integration pending
+- scheduled actions: schema and claim SQL committed, runtime integration pending
 - scheduled-action generation tokens: domain behavior implemented, persistence pending
-- lifecycle event ledger
-- deletion manifest workflow
+- lifecycle event ledger: schema and append-only update protection committed, PostgreSQL validation pending
+- deletion manifest workflow: schema committed, retry integration pending
 - runtime contract validation
 - API versioning
 - client compatibility versioning
@@ -195,9 +196,10 @@ Current canonical epic status:
 
 - F0: DONE
 - F1: IN_PROGRESS with baseline CI and repository health configured
+- F2: IN_PROGRESS with PostgreSQL schema and migration tooling committed but unverified on PostgreSQL
 - P3: IN_PROGRESS at the pure domain layer
 - remaining implementation epics: PLANNED
 
 The repository-health and baseline CI foundation is configured, but GitHub-hosted execution remains unverified.
 
-The next milestone is completing executable architecture guardrails, followed by PostgreSQL persistence.
+The next foundation milestones are completing executable architecture guardrails and validating the committed persistence foundation against real PostgreSQL.
