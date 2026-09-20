@@ -13,6 +13,7 @@ import {
   insertOutboxEvent,
   insertScheduledAction,
   renewOutboxLease,
+  resumeFailedDeletionTarget,
   validateLifecycleMetadata,
   withTransaction,
 } from "@shawtie/db";
@@ -20,7 +21,10 @@ import { DeletionHandlerRegistry } from "../src/deletion/deletion-handler-regist
 import { runDeletionBatch } from "../src/deletion/deletion-consumer.ts";
 import { OutboxHandlerRegistry } from "../src/outbox/outbox-handler-registry.ts";
 import { runOutboxBatch } from "../src/outbox/outbox-consumer.ts";
-import { RetryableWorkerError } from "../src/runtime/errors.ts";
+import {
+  PermanentWorkerError,
+  RetryableWorkerError,
+} from "../src/runtime/errors.ts";
 import { WorkerApplication } from "../src/runtime/worker-application.ts";
 import { ScheduledActionHandlerRegistry } from "../src/scheduled/scheduled-handler-registry.ts";
 import { runScheduledBatch } from "../src/scheduled/scheduled-consumer.ts";
@@ -216,6 +220,49 @@ test("scheduled action generation guard rejects stale work and commits matching 
   assert.equal(executions, 1);
 });
 
+test("scheduled action with unknown payload version fails closed", async () => {
+  await resetPartnership();
+
+  const actionId = "f2410000-0000-4000-8000-000000000004";
+  const registry = new ScheduledActionHandlerRegistry();
+  registry.register({
+    actionType: "test.versioned",
+    payloadVersion: 1,
+    async execute() {},
+  });
+
+  await insertScheduledAction(database.pool, {
+    id: actionId,
+    actionType: "test.versioned",
+    aggregateType: "partnership",
+    aggregateId,
+    executeAt: new Date(Date.now() - 1_000),
+    deduplicationKey: "f2-scheduled-unsupported-version",
+    payloadVersion: 2,
+  });
+
+  await runScheduledBatch(
+    database,
+    "version-worker",
+    registry,
+    consumerOptions,
+  );
+
+  const action = await database.pool.query<{
+    status: string;
+    last_error_code: string | null;
+  }>(
+    "SELECT status, last_error_code FROM scheduled_actions WHERE id = $1",
+    [actionId],
+  );
+
+  assert.equal(action.rows[0]?.status, "failed");
+  assert.equal(
+    action.rows[0]?.last_error_code,
+    "UNSUPPORTED_ACTION_OR_PAYLOAD_VERSION",
+  );
+});
+
 test("scheduled handler failure rolls back authoritative mutation before retry scheduling", async () => {
   await resetPartnership();
 
@@ -400,6 +447,43 @@ test("outbox is at-least-once, duplicate-safe, versioned, and fenced", async () 
     "UNSUPPORTED_EVENT_OR_PAYLOAD_VERSION",
   );
 
+  const renewableId = "f2420000-0000-4000-8000-000000000006";
+  await insertOutboxEvent(database.pool, {
+    id: renewableId,
+    eventType: "test.delivery",
+    aggregateType: "partnership",
+    aggregateId,
+    deduplicationKey: "f2-outbox-current-renewal",
+  });
+
+  const renewableClaim = (await claimOutboxEvents(
+    database.pool,
+    20,
+    "lease-owner",
+    10_000,
+  )).find((item) => item.id === renewableId);
+  assert.ok(renewableClaim);
+  assert.equal(
+    await renewOutboxLease(
+      database.pool,
+      {
+        id: renewableClaim.id,
+        claimedBy: "lease-owner",
+        claimVersion: renewableClaim.claimVersion,
+      },
+      20_000,
+    ),
+    true,
+  );
+  assert.equal(
+    await deliverOutboxEvent(database.pool, {
+      id: renewableClaim.id,
+      claimedBy: "lease-owner",
+      claimVersion: renewableClaim.claimVersion,
+    }),
+    true,
+  );
+
   const fencedId = "f2420000-0000-4000-8000-000000000005";
   await insertOutboxEvent(database.pool, {
     id: fencedId,
@@ -560,6 +644,81 @@ test("deletion manifest resumes after partial failure while access stays revoked
   assert.ok(manifest.rows[0]?.access_revoked_at);
   assert.equal(attempts.get("a"), 1);
   assert.equal(attempts.get("b"), 2);
+});
+
+test("permanently failed deletion target can be repaired and resumed without restoring access", async () => {
+  const manifestId = "f2440000-0000-4000-8000-000000000002";
+  const targetId = "f2440000-0000-4000-8000-000000000021";
+
+  await database.pool.query(
+    "DELETE FROM deletion_manifests WHERE id = $1",
+    [manifestId],
+  );
+  await createDeletionManifest(database.pool, {
+    id: manifestId,
+    subjectType: "partnership",
+    subjectId: partnershipId,
+    reason: "test-permanent",
+    accessRevokedAt: new Date(),
+    targets: [
+      { id: targetId, targetType: "test.repairable", targetKey: "repairable" },
+    ],
+  });
+
+  const failingRegistry = new DeletionHandlerRegistry();
+  failingRegistry.register({
+    targetType: "test.repairable",
+    async execute() {
+      throw new PermanentWorkerError("SIMULATED_PERMANENT_DELETE_FAILURE");
+    },
+  });
+
+  await runDeletionBatch(
+    database,
+    "deletion-failing-worker",
+    failingRegistry,
+    new AbortController().signal,
+    consumerOptions,
+  );
+
+  let manifest = await database.pool.query<{
+    status: string;
+    access_revoked_at: Date | null;
+  }>(
+    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
+    [manifestId],
+  );
+  assert.equal(manifest.rows[0]?.status, "failed");
+  assert.ok(manifest.rows[0]?.access_revoked_at);
+
+  assert.equal(
+    await resumeFailedDeletionTarget(database.pool, targetId),
+    manifestId,
+  );
+
+  const successfulRegistry = new DeletionHandlerRegistry();
+  successfulRegistry.register({
+    targetType: "test.repairable",
+    async execute() {},
+  });
+
+  await runDeletionBatch(
+    database,
+    "deletion-repair-worker",
+    successfulRegistry,
+    new AbortController().signal,
+    consumerOptions,
+  );
+
+  manifest = await database.pool.query<{
+    status: string;
+    access_revoked_at: Date | null;
+  }>(
+    "SELECT status, access_revoked_at FROM deletion_manifests WHERE id = $1",
+    [manifestId],
+  );
+  assert.equal(manifest.rows[0]?.status, "completed");
+  assert.ok(manifest.rows[0]?.access_revoked_at);
 });
 
 test("worker with no registered product handlers stays inert and shuts down cleanly", async () => {
