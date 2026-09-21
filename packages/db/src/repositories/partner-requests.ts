@@ -186,7 +186,6 @@ export async function lockPairPendingRequests(
   return result.rows.map(mapRequest);
 }
 
-
 export async function lockPartnerRequestsById(
   executor: QueryExecutor,
   requestIds: readonly string[],

@@ -101,11 +101,7 @@ async function latestRegistrationCode(
   );
 }
 
-async function register(
-  app: App,
-  database: DatabasePool,
-  suffix: string,
-): Promise<TestAccount> {
+async function register(app: App, database: DatabasePool, suffix: string): Promise<TestAccount> {
   const username = "p2_" + suffix;
   const password = "very secure P2 password " + suffix;
   const start = await app.inject({
@@ -280,10 +276,7 @@ test("P2 explicit accept forms, invalidates, and replays", async () => {
     const request = await database.pool.query<{
       status: string;
       accepted_partnership_id: string | null;
-    }>(
-      "SELECT status, accepted_partnership_id FROM partner_requests WHERE id = $1",
-      [requestId],
-    );
+    }>("SELECT status, accepted_partnership_id FROM partner_requests WHERE id = $1", [requestId]);
     assert.equal(request.rows[0]?.status, "accepted");
     assert.equal(request.rows[0]?.accepted_partnership_id, acceptedBody.partnershipId);
 
@@ -372,12 +365,7 @@ test("P2 accept races with cancel and decline without split-brain state", async 
       const alice = await register(app, database, "terminal_" + action + "_alice");
       const bob = await register(app, database, "terminal_" + action + "_bob");
 
-      const created = await createRequest(
-        app,
-        alice,
-        bob,
-        "p2-terminal-race-" + action,
-      );
+      const created = await createRequest(app, alice, bob, "p2-terminal-race-" + action);
       assert.equal(created.statusCode, 201, created.body);
       const requestId = (created.json() as { requestId: string }).requestId;
 
@@ -397,10 +385,7 @@ test("P2 accept races with cancel and decline without split-brain state", async 
       const row = await database.pool.query<{
         status: string;
         accepted_partnership_id: string | null;
-      }>(
-        "SELECT status, accepted_partnership_id FROM partner_requests WHERE id = $1",
-        [requestId],
-      );
+      }>("SELECT status, accepted_partnership_id FROM partner_requests WHERE id = $1", [requestId]);
       const request = row.rows[0];
       assert.ok(request);
 
@@ -412,10 +397,7 @@ test("P2 accept races with cancel and decline without split-brain state", async 
         assert.equal(accepted.statusCode, 200);
         assert.ok(request.accepted_partnership_id);
         assert.equal(partnerships.rows[0]?.count, "1");
-        assert.equal(
-          (terminal.json() as { status: string }).status,
-          "accepted",
-        );
+        assert.equal((terminal.json() as { status: string }).status, "accepted");
       } else {
         assert.equal(request.status, action === "cancel" ? "cancelled" : "declined");
         assert.equal(request.accepted_partnership_id, null);
@@ -471,11 +453,7 @@ test("P2 formation fences an already-processing expiry claim", async () => {
     });
 
     const terminal = await withTransaction(database, (transaction) =>
-      setPartnerRequestExpired(
-        transaction,
-        requestId,
-        new Date("2999-01-01T00:00:00.000Z"),
-      ),
+      setPartnerRequestExpired(transaction, requestId, new Date("2999-01-01T00:00:00.000Z")),
     );
     assert.equal(terminal, "terminal");
   } finally {
@@ -492,23 +470,11 @@ test("P2 reciprocal request uses the triggering date and stable replay", async (
     const alice = await register(app, database, "reciprocal_alice");
     const bob = await register(app, database, "reciprocal_bob");
 
-    const first = await createRequest(
-      app,
-      alice,
-      bob,
-      "p2-reciprocal-first",
-      "2019-05-10",
-    );
+    const first = await createRequest(app, alice, bob, "p2-reciprocal-first", "2019-05-10");
     assert.equal(first.statusCode, 201, first.body);
     assert.equal((first.json() as { outcome: string }).outcome, "created");
 
-    const second = await createRequest(
-      app,
-      bob,
-      alice,
-      "p2-reciprocal-second",
-      "2020-06-20",
-    );
+    const second = await createRequest(app, bob, alice, "p2-reciprocal-second", "2020-06-20");
     assert.equal(second.statusCode, 201, second.body);
     const paired = second.json() as {
       outcome: string;
@@ -519,10 +485,9 @@ test("P2 reciprocal request uses the triggering date and stable replay", async (
 
     const partnership = await database.pool.query<{
       relationship_start_date: string;
-    }>(
-      "SELECT relationship_start_date::text FROM partnerships WHERE id = $1",
-      [paired.partnershipId],
-    );
+    }>("SELECT relationship_start_date::text FROM partnerships WHERE id = $1", [
+      paired.partnershipId,
+    ]);
     assert.equal(partnership.rows[0]?.relationship_start_date, "2020-06-20");
 
     const accepted = await database.pool.query<{ count: string }>(
@@ -563,13 +528,7 @@ test("P2 reciprocal request uses the triggering date and stable replay", async (
     );
     assert.equal(epochs.rows[0]?.count, "0");
 
-    const replay = await createRequest(
-      app,
-      bob,
-      alice,
-      "p2-reciprocal-second",
-      "2020-06-20",
-    );
+    const replay = await createRequest(app, bob, alice, "p2-reciprocal-second", "2020-06-20");
     assert.equal(replay.statusCode, 201, replay.body);
     assert.deepEqual(replay.json(), paired);
   } finally {
@@ -597,12 +556,14 @@ test("P2 relationship date updates version, notify once, and isolate reads", asy
 
     const aliceCurrent = await currentPartnership(app, alice);
     assert.equal(aliceCurrent.statusCode, 200, aliceCurrent.body);
-    const initial = (aliceCurrent.json() as {
-      partnership: {
-        metadataVersion: number;
-        capabilities: { changeRelationshipStartDate: boolean };
-      };
-    }).partnership;
+    const initial = (
+      aliceCurrent.json() as {
+        partnership: {
+          metadataVersion: number;
+          capabilities: { changeRelationshipStartDate: boolean };
+        };
+      }
+    ).partnership;
     assert.equal(initial.metadataVersion, 1);
     assert.equal(initial.capabilities.changeRelationshipStartDate, true);
 
@@ -778,8 +739,8 @@ test("P2 notification pagination is snapshot-bound", async () => {
 
     const pageTwo = await app.inject({
       method: "GET",
-      url: "/api/v1/notifications?limit=25&cursor=" +
-        encodeURIComponent(firstPage.nextCursor ?? ""),
+      url:
+        "/api/v1/notifications?limit=25&cursor=" + encodeURIComponent(firstPage.nextCursor ?? ""),
       headers: { cookie: alice.cookie },
     });
     assert.equal(pageTwo.statusCode, 200, pageTwo.body);
@@ -791,9 +752,7 @@ test("P2 notification pagination is snapshot-bound", async () => {
       ["partnership_formed"],
     );
     assert.equal(
-      secondPage.items.some(
-        (item) => item.notificationId === firstPage.items[0]?.notificationId,
-      ),
+      secondPage.items.some((item) => item.notificationId === firstPage.items[0]?.notificationId),
       false,
     );
   } finally {
@@ -848,10 +807,10 @@ test("P2 competing accepts create exactly one partnership", async () => {
        ORDER BY id`,
       [[requestB, requestC]],
     );
-    assert.deepEqual(
-      requestStates.rows.map((row) => row.status).sort(),
-      ["accepted", "invalidated"],
-    );
+    assert.deepEqual(requestStates.rows.map((row) => row.status).sort(), [
+      "accepted",
+      "invalidated",
+    ]);
     const acceptedRequest = requestStates.rows.find((row) => row.status === "accepted");
     const invalidatedRequest = requestStates.rows.find((row) => row.status === "invalidated");
     assert.ok(acceptedRequest?.accepted_partnership_id);
@@ -911,10 +870,7 @@ test("P2 explicit accept versus reciprocal create converges on one partnership",
       assert.equal((reciprocal.json() as { outcome: string }).outcome, "paired");
       assert.equal(requests.rows.length, 2);
       assert.ok(requests.rows.every((row) => row.status === "accepted"));
-      assert.equal(
-        new Set(requests.rows.map((row) => row.accepted_partnership_id)).size,
-        1,
-      );
+      assert.equal(new Set(requests.rows.map((row) => row.accepted_partnership_id)).size, 1);
     } else {
       assert.equal(requests.rows.length, 1);
       assert.equal(requests.rows[0]?.status, "accepted");
@@ -1012,9 +968,7 @@ test("P2 formation and account deletion serialize without bypassing view-only st
       [alice.accountId],
     );
     assert.equal(rows.rows[0]?.alice_status, "deletion_pending");
-    assert.ok(
-      rows.rows[0]?.partnership_count === "0" || rows.rows[0]?.partnership_count === "1",
-    );
+    assert.ok(rows.rows[0]?.partnership_count === "0" || rows.rows[0]?.partnership_count === "1");
 
     const requestState = await database.pool.query<{
       status: string;
@@ -1034,11 +988,13 @@ test("P2 formation and account deletion serialize without bypassing view-only st
 
       const current = await currentPartnership(app, bob);
       assert.equal(current.statusCode, 200, current.body);
-      const capability = (current.json() as {
-        partnership: {
-          capabilities: { changeRelationshipStartDate: boolean };
-        };
-      }).partnership.capabilities.changeRelationshipStartDate;
+      const capability = (
+        current.json() as {
+          partnership: {
+            capabilities: { changeRelationshipStartDate: boolean };
+          };
+        }
+      ).partnership.capabilities.changeRelationshipStartDate;
       assert.equal(capability, false);
     } else {
       assert.equal(rows.rows[0]?.partnership_count, "0");

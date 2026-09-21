@@ -121,14 +121,15 @@ test("P2 relationship-date change enforces metadata version", () => {
     trustedServerDate: "2026-09-21",
   };
 
-  assert.deepEqual(
-    evaluateRelationshipStartDateMutation({ ...base, expectedMetadataVersion: 7 }),
-    { ok: false, reason: "VERSION_CONFLICT" },
-  );
-  assert.deepEqual(
-    evaluateRelationshipStartDateMutation({ ...base, expectedMetadataVersion: 8 }),
-    { ok: true, changed: true, metadataVersion: 9 },
-  );
+  assert.deepEqual(evaluateRelationshipStartDateMutation({ ...base, expectedMetadataVersion: 7 }), {
+    ok: false,
+    reason: "VERSION_CONFLICT",
+  });
+  assert.deepEqual(evaluateRelationshipStartDateMutation({ ...base, expectedMetadataVersion: 8 }), {
+    ok: true,
+    changed: true,
+    metadataVersion: 9,
+  });
 });
 
 test("P2 relationship-date capability follows lifecycle state", () => {

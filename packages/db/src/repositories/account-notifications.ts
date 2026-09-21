@@ -1,8 +1,6 @@
 import type { QueryExecutor } from "../types/query-executor.ts";
 
-export type AccountNotificationEventType =
-  | "partnership_formed"
-  | "relationship_start_date_changed";
+export type AccountNotificationEventType = "partnership_formed" | "relationship_start_date_changed";
 
 export interface AccountNotification {
   readonly id: string;

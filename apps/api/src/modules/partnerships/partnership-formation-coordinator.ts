@@ -31,10 +31,7 @@ function sortedPair(accountA: string, accountB: string): readonly [string, strin
   return accountA.localeCompare(accountB) <= 0 ? [accountA, accountB] : [accountB, accountA];
 }
 
-function samePair(
-  left: readonly [string, string],
-  right: readonly [string, string],
-): boolean {
+function samePair(left: readonly [string, string], right: readonly [string, string]): boolean {
   return left[0] === right[0] && left[1] === right[1];
 }
 
@@ -61,8 +58,7 @@ async function assertFormationEligibility(
     if (
       account.status !== "active" ||
       account.occupied ||
-      (account.partnerEligibleAt !== null &&
-        account.partnerEligibleAt.getTime() > now.getTime())
+      (account.partnerEligibleAt !== null && account.partnerEligibleAt.getTime() > now.getTime())
     ) {
       throw new ApiError(409, "PARTNERSHIP_UNAVAILABLE");
     }
@@ -125,12 +121,7 @@ async function formLockedPair(
   );
 
   for (const accountId of input.accountIds) {
-    await invalidatePendingRequestsForAccount(
-      executor,
-      accountId,
-      now,
-      "partnership_formed",
-    );
+    await invalidatePendingRequestsForAccount(executor, accountId, now, "partnership_formed");
   }
 
   await appendLifecycleEvent(executor, {
@@ -145,9 +136,8 @@ async function formLockedPair(
   const notificationRecipient =
     input.consent.source === "explicit_accept"
       ? input.requests[0]?.senderAccountId
-      : input.requests.find(
-          (request) => request.id !== input.consent.triggeringRequestId,
-        )?.senderAccountId;
+      : input.requests.find((request) => request.id !== input.consent.triggeringRequestId)
+          ?.senderAccountId;
 
   if (!notificationRecipient) {
     throw new Error("Formation notification recipient could not be derived");

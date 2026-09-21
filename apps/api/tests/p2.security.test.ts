@@ -3,9 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { apiConfigFromEnv } from "../src/config.ts";
-import {
-  createP2PartnershipFormationCoordinator,
-} from "../src/modules/partnerships/partnership-formation-coordinator.ts";
+import { createP2PartnershipFormationCoordinator } from "../src/modules/partnerships/partnership-formation-coordinator.ts";
 
 const key = Buffer.alloc(32, 7).toString("base64");
 
@@ -38,14 +36,8 @@ test("P2 notification repository does not persist private relationship content",
     "utf8",
   );
 
-  assert.equal(
-    /(^|[^A-Za-z0-9_])relationship_start_date([^A-Za-z0-9_]|$)/.test(source),
-    false,
-  );
-  assert.equal(
-    /(^|[^A-Za-z0-9_])relationshipStartDate([^A-Za-z0-9_]|$)/.test(source),
-    false,
-  );
+  assert.equal(/(^|[^A-Za-z0-9_])relationship_start_date([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])relationshipStartDate([^A-Za-z0-9_]|$)/.test(source), false);
   assert.equal(/(^|[^A-Za-z0-9_])message_body([^A-Za-z0-9_]|$)/.test(source), false);
   assert.equal(/(^|[^A-Za-z0-9_])messageBody([^A-Za-z0-9_]|$)/.test(source), false);
   assert.equal(/(^|[^A-Za-z0-9_])email([^A-Za-z0-9_]|$)/.test(source), false);

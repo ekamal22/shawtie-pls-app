@@ -73,7 +73,6 @@ test("P2 relationship-date mutation requires id, date, and metadata version", ()
   );
 });
 
-
 test("P2 relationship-date response exposes the new metadata version and change flag", () => {
   assert.equal(
     safeParseAtBoundary(relationshipStartDateUpdateResponseSchema, {

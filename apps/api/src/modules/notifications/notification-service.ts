@@ -109,12 +109,7 @@ export class NotificationService {
   ): Promise<{ notificationId: string; readAt: string }> {
     const result = await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      return markAccountNotificationRead(
-        transaction,
-        auth.session.accountId,
-        notificationId,
-        now,
-      );
+      return markAccountNotificationRead(transaction, auth.session.accountId, notificationId, now);
     });
 
     if (!result?.readAt) throw new ApiError(404, "NOTIFICATION_NOT_FOUND");

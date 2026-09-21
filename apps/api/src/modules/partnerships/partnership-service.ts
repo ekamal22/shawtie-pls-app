@@ -96,7 +96,10 @@ export class PartnershipService {
     this.database = database;
   }
 
-  async accept(auth: AuthContext, requestId: string): Promise<{
+  async accept(
+    auth: AuthContext,
+    requestId: string,
+  ): Promise<{
     outcome: "formed" | "already_accepted";
     partnershipId: string;
   }> {
@@ -182,10 +185,7 @@ export class PartnershipService {
   }> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) return { partnership: null };
 
       const memberIds = [auth.session.accountId, current.otherMember.accountId].sort();
@@ -307,8 +307,7 @@ export class PartnershipService {
         actorAccountId: auth.session.accountId,
         partnershipId,
         eventType: "relationship_start_date_changed",
-        deduplicationKey:
-          `relationship-start-date-changed:${partnershipId}:${nextVersion}:${otherMemberId}`,
+        deduplicationKey: `relationship-start-date-changed:${partnershipId}:${nextVersion}:${otherMemberId}`,
         createdAt: now,
       });
 

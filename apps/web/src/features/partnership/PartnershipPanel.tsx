@@ -67,16 +67,13 @@ export function PartnershipPanel() {
         relationshipStartDate: string;
         metadataVersion: number;
         changed: boolean;
-      }>(
-        `/api/v1/partnerships/${partnership.partnershipId}/relationship-start-date`,
-        {
-          method: "PATCH",
-          body: {
-            relationshipStartDate,
-            expectedMetadataVersion: partnership.metadataVersion,
-          },
+      }>(`/api/v1/partnerships/${partnership.partnershipId}/relationship-start-date`, {
+        method: "PATCH",
+        body: {
+          relationshipStartDate,
+          expectedMetadataVersion: partnership.metadataVersion,
         },
-      );
+      });
       setNotice(
         result.changed ? "Relationship start date updated." : "Relationship date is current.",
       );
