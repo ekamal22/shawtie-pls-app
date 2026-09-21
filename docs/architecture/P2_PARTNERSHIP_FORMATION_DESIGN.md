@@ -2,7 +2,7 @@
 
 ## Status
 
-HARDENED DESIGN, RUNTIME SOURCE IMPLEMENTED, VERIFICATION PENDING
+IMPLEMENTED AND LOCALLY VERIFIED
 
 Effective design date: 2026-09-21.
 
@@ -16,7 +16,7 @@ Source code, migrations, and tests remain authoritative for behavior that is act
 
 ## Refinement review
 
-The P2 design was originally refined before P1 runtime implementation and is now revalidated against the locally verified P1 runtime seam. P1 is DONE; P2 does not require changing that seam to begin implementation.
+The P2 design was originally refined before P1 runtime implementation, then implemented against the locally verified P1 runtime seam without reopening its public contract. P1 and P2 are both DONE locally.
 
 The refinement closes ambiguity in:
 
@@ -972,35 +972,36 @@ npm run test:p2:local
 
 `test:p2:local` follows the F2/A1/P1 disposable PostgreSQL pattern and also reruns the P1 integration surface with the real coordinator in `paired` mode.
 
-## Implemented source sequence and pending exit evidence
+## Implemented source sequence and verified exit evidence
 
 ### P2-A Domain and contracts
 
 Committed source includes relationship-date validation, formation types, stable denial codes, the centralized `change_relationship_start_date` capability, the existing P1 relationship-date/reciprocal handoff contract, and P2 accept/current/date/notification contracts.
 
-Pending exit evidence:
+Verified exit evidence:
 
-- execute the committed domain and contract tests successfully
-- retain the verified P1/P2 contract boundary without reopening P1
+- P2 domain/contracts pass 14/14
+- the verified P1/P2 contract boundary remains intact without reopening P1
 
 ### P2-B Migration and repositories
 
 Committed source consumes migration 0008 unchanged, adds migration 0009, accepted-request partnership linkage, legacy-safe `NOT VALID` linkage-shape constraints, `account_notifications`, formation/partnership/notification repositories, expiry-action cancellation, and database invariants.
 
-Pending exit evidence:
+Verified exit evidence:
 
 - migrations 0001 through 0009 apply from zero
-- invariant suite passes
-- new indexes and constraints are inspected
-- the pinned migration-0008 checksum remains unchanged
+- database invariant suite passes
+- migration and catalog checks pass
+- migration 0008 remains unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`
 
 ### P2-C Formation coordinator and explicit acceptance
 
 Committed source includes the transaction-scoped coordinator, recipient accept route, pair-locked eligibility rechecks, partnership and two-member creation, fresh partnership-ID namespace creation, accepted-request linkage, pending-expiry cancellation, incompatible-request invalidation, lifecycle evidence, deterministic formation notification, and retention-scoped stable replay.
 
-Pending exit evidence:
+Verified exit evidence:
 
-- explicit acceptance, replay, invalidation, occupancy, rollback, accept-versus-cancel, and accept-versus-decline tests pass
+- explicit acceptance, replay, invalidation, occupancy, rollback, accept-versus-cancel, and accept-versus-decline coverage passes
+- persisted-state assertions verify the partnership-formation lifecycle event
 
 ### P2-D Reciprocal integration
 
@@ -1008,10 +1009,10 @@ Committed source registers the P2 coordinator in the application, forms from rec
 
 The standalone historical `test:p1:local` harness remains request-only. P2 closure separately reruns the P1 integration surface with the real coordinator in `paired` mode.
 
-Pending exit evidence:
+Verified exit evidence:
 
 - reciprocal formation races produce exactly one partnership
-- explicit-accept versus reciprocal-create race converges on one partnership
+- explicit-accept versus reciprocal-create converges on one partnership
 - already-processing expiry work observes accepted request state and becomes a safe no-op
 - production fail-closed configuration tests pass
 
@@ -1019,22 +1020,29 @@ Pending exit evidence:
 
 Committed source includes current-partnership reads, `expectedMetadataVersion` relationship-date mutation with canonical account-then-partnership locking, same-date lost-response no-op behavior, durable other-partner notification, notification list/read endpoints, request/accept/current-partnership browser flows, and relationship-date editing UI.
 
-Pending exit evidence:
+Verified exit evidence:
 
-- relationship-date and notification acceptance tests pass
+- relationship-date and notification acceptance coverage passes
+- persisted-state assertions verify metadata edits leave lifecycle generation unchanged
+- persisted-state assertions verify exact other-partner notification routing
 - notification pagination remains snapshot-bound
-- browser/API integration proves canonical refresh and no stale-request UI authority
+- browser/API integration preserves canonical refresh and does not grant stale request UI authority
 
 ### P2-F Integration closure
 
-The local verification harness is committed. Remaining work is evidence execution, not missing feature source:
+Local closure is complete at commit `fa2301d0aab2e74aeac20336a4d675728922779e`.
 
-1. run the complete P2 domain/contract suite
-2. run the disposable PostgreSQL/API/race/security suite
-3. rerun the P1 integration surface with the real P2 coordinator in `paired` mode through the P2 closure suite
-4. run the dependency audit
-5. run full `npm run health`
-6. record only green evidence in acceptance gates and current-state docs
+Verified matrix:
+
+1. P2 domain/contracts: 14/14 PASS
+2. P2 security: 5/5 PASS
+3. disposable PostgreSQL/API/worker integration: 27/27 PASS with `P2_LOCAL_POSTGRES_PASS`
+4. migrations: 9/9 applied from zero
+5. database invariants: PASS
+6. full `npm run health`: PASS, including Domain 45/45, Contracts 15/15, API unit/security 16/16, Worker 4/4, typecheck, builds, lint, Prettier, and dependency checks
+7. `npm audit --audit-level=high`: 0 vulnerabilities
+
+The final test-quality review found missing persisted-state assertions rather than a production defect. Those assertions were added and the full verification remained green.
 
 ## Acceptance mapping
 

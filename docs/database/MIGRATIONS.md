@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented and locally verified through P2 migration `0009_partnership_formation_runtime.sql`. All nine migrations apply from zero in the completed P2 disposable PostgreSQL path, and database invariants pass.
+The PostgreSQL migration set is implemented and locally verified through P2 migration `0009_partnership_formation_runtime.sql`. All nine migrations apply from zero in the completed P2 disposable PostgreSQL path at closure commit `fa2301d0`, and database invariants pass.
 
 ## Current and next migration
 

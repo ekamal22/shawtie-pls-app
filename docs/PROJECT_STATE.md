@@ -136,11 +136,13 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 
 `main` is fast-forwarded through the verified P1 closure at `69cb238`.
 
-The active implementation branch is:
+The most recently verified milestone branch is:
 
 ```text
-feat/p2-partnership-formation
+feat/p2-partnership-formation @ fa2301d0
 ```
+
+P2 is closed on that branch. The branch has not yet been merged into `main`; merging the verified closure is the next repository-state transition before a dependent P3 milestone branch is created.
 
 The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
 

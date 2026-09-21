@@ -284,7 +284,7 @@ P1 is locally verified and exposes the reciprocal-candidate seam while intention
 
 ## P2 partnership formation design
 
-The hardened P2 design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md`. Its runtime is implemented against the committed P1 interface and locally verified at all 11 P2 acceptance gates.
+The hardened P2 design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md`. Its runtime is implemented against the committed P1 interface and locally verified at all 11 P2 acceptance gates on closure commit `fa2301d0`. The verified matrix includes domain/contracts 14/14, security 5/5, nine migrations with database invariants green, disposable integration 27/27 with `P2_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
 
 P2 preserves the modular-monolith transaction boundary:
 

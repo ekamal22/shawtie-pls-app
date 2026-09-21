@@ -135,10 +135,10 @@ P3 already has a verified pure-domain layer, but its persistence, API, worker, r
 
 ### P2 Partnership Formation and Relationship Date
 
-Active branch:
+Verified closure branch:
 
 ~~~text
-feat/p2-partnership-formation
+feat/p2-partnership-formation @ fa2301d0
 ~~~
 
 Verified implementation state:
@@ -169,16 +169,16 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main
+main @ verified P1 closure
   |
-  +--> feat/p2-partnership-formation
+  +--> feat/p2-partnership-formation @ fa2301d0
           |
-          +--> implement
-          +--> verify every P2 acceptance gate
-          +--> reconcile documentation
+          +--> P2 implementation DONE
+          +--> P2 verification 11/11 DONE
+          +--> documentation reconciled
           +--> merge to main
                     |
-                    +--> create the next dependent milestone branch
+                    +--> create the P3 milestone branch from updated main
 ~~~
 
 From P2 onward:
@@ -222,8 +222,7 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 The shortest dependency path from the current active milestone to stable release is:
 
 ~~~text
-P2
- -> P3
+P3
  -> M1
  -> M2
  -> M3/C1

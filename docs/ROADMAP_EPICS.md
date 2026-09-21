@@ -678,7 +678,7 @@ The refined architecture and implementation sequence are defined in:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P2 hardened design and runtime implementation are complete on `feat/p2-partnership-formation`. Local closure is verified by P2 domain/contracts 14/14, P2 security 5/5, all nine migrations from zero, passing database invariants, the disposable PostgreSQL/API/worker integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
+P2 hardened design and runtime implementation are complete on `feat/p2-partnership-formation` at closure commit `fa2301d0`. Local closure is verified by P2 domain/contracts 14/14, P2 security 5/5, all nine migrations from zero, passing database invariants, the disposable PostgreSQL/API/worker integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`, full repository health with Domain 45/45, Contracts 15/15, API unit/security 16/16, Worker 4/4 plus all static/build checks, and a zero-high-severity dependency audit. The final test-quality review strengthened persisted-state evidence for the formation lifecycle event, unchanged lifecycle generation after metadata edits, and exact other-partner notification routing without requiring semantic production-code changes.
 
 The design now consumes the committed P1 relationship-date request substrate and exact `handleReciprocalCandidate(executor, candidate, now)` seam. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
 

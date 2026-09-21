@@ -351,7 +351,7 @@ Exit evidence is defined by the P1 gates in `ROADMAP_EPICS.md`.
 
 # Milestone 3: P2 Partnership Formation
 
-Status: DONE. The hardened design and full P2 runtime are implemented and locally verified on the milestone branch.
+Status: DONE. The hardened design and full P2 runtime are implemented and locally verified on `feat/p2-partnership-formation` at closure commit `fa2301d0`.
 
 Canonical design:
 
@@ -382,7 +382,7 @@ Implemented source sequence:
 5. P2-E relationship-date update, notification read model, and browser client flows
 6. P2-F disposable PostgreSQL/API/race/security harness plus a rerun of the P1 integration surface in real `paired` mode; the standalone historical `test:p1:local` harness remains request-only
 
-Closure evidence is green: P2 domain/contracts 14/14, P2 security 5/5, nine migrations from zero, database invariants, and the disposable PostgreSQL/API/worker integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit also pass.
+Closure evidence is green: P2 domain/contracts 14/14, P2 security 5/5, nine migrations from zero, database invariants, and the disposable PostgreSQL/API/worker integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 45/45, Contracts 15/15, API unit/security 16/16, Worker 4/4, typecheck, builds, lint, Prettier, and dependency checks green. The high-severity dependency audit reports 0 vulnerabilities. Final persisted-state evidence covers the formation lifecycle event, unchanged lifecycle generation after metadata edits, and exact other-partner notification routing.
 
 Exit evidence:
 

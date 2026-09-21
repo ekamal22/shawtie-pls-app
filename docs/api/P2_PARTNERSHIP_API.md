@@ -6,7 +6,7 @@ IMPLEMENTED AND LOCALLY VERIFIED
 
 This document describes the authenticated HTTP surface implemented by P2 Partnership Formation and Relationship Date.
 
-Runtime source is committed on `feat/p2-partnership-formation`. P2 is DONE at all 11 acceptance gates with green local domain/contracts, security, disposable PostgreSQL/API/worker/race, full health, and high-severity dependency-audit evidence.
+Runtime source is locally closed on `feat/p2-partnership-formation` at commit `fa2301d0`. P2 is DONE at all 11 acceptance gates with domain/contracts 14/14, security 5/5, disposable PostgreSQL/API/worker integration 27/27 with `P2_LOCAL_POSTGRES_PASS`, nine migrations from zero, passing database invariants, full repository health, and 0 high-severity dependency-audit vulnerabilities.
 
 All P2 responses that expose partnership, request, or notification state use:
 

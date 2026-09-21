@@ -103,7 +103,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, and `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates, with green domain/contracts, security, nine-migration PostgreSQL, database-invariant, API/worker/race, full health, and dependency-audit evidence.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, and `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates at closure commit `fa2301d0`, with domain/contracts 14/14, security 5/5, nine-migration PostgreSQL and database-invariant evidence, disposable integration 27/27 with `P2_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

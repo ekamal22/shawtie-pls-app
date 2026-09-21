@@ -155,7 +155,7 @@ The completed A1 branch has the required local evidence: the expanded disposable
 
 P1 uses the test architecture in `../architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`.
 
-Required evidence includes:
+Verified P2 closure evidence includes:
 
 - exact authenticated username discovery
 - safe public projection with no exact DOB or email
@@ -214,7 +214,9 @@ Required evidence includes:
 - relationship-date expectedMetadataVersion conflict behavior
 - lost-response retry of an already-applied relationship date returning a no-op with current metadataVersion
 - active and breakup-pending relationship-date mutation capability, with account-deletion and terminated-state denial
-- durable other-partner relationship-date notification
+- durable other-partner relationship-date notification, including exact persisted recipient routing
+- persisted partnership-formation lifecycle event evidence
+- persisted proof that relationship-date metadata edits do not change lifecycle generation
 - notification account isolation, private no-store responses, snapshot-bound pagination, and a persistence-column allowlist that excludes private content
 - no fake E2EE key or epoch creation before S1
 - P2 closure reruns the P1 integration surface with the real P2 coordinator in `paired` mode; standalone `npm run test:p1:local` remains the original request-only P1 evidence
@@ -230,7 +232,7 @@ npm run test:p2:security
 npm run test:p2:local
 ```
 
-P2 verification is complete: the domain/contracts suite passes 14/14, the security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health passes, and `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
+P2 verification is complete at closure commit `fa2301d0`: the domain/contracts suite passes 14/14, the security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 45/45, Contracts 15/15, API unit/security 16/16, Worker 4/4, typecheck, builds, lint, Prettier, and dependency checks green. `npm audit --audit-level=high` reports 0 vulnerabilities. The final test-quality review found only missing persisted-state assertions, which were added before the full green rerun. Hosted GitHub Actions verification remains separate under V1.
 
 ### Integration
 
