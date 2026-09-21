@@ -169,9 +169,9 @@ async function insertFormerPartnerBlockFixture(
        created_at, activated_at, terminated_at, termination_reason, updated_at
      ) VALUES (
        $1, DATE '2025-01-01', 'terminated', 1, 2,
-       $4, $4, $4, 'breakup', $4
+       $2, $2, $2, 'breakup', $2
      )`,
-    [partnershipId, blockerAccountId, blockedAccountId, at],
+    [partnershipId, at],
   );
   await database.pool.query(
     `INSERT INTO partnership_members (
@@ -647,11 +647,7 @@ test("P1 expected denial is replayed from idempotency even after hidden target s
     await reset(database);
     const alice = await register(app, database, "denial_alice");
     const bob = await register(app, database, "denial_bob");
-    const blockId = await insertFormerPartnerBlockFixture(
-      database,
-      bob.accountId,
-      alice.accountId,
-    );
+    const blockId = await insertFormerPartnerBlockFixture(database, bob.accountId, alice.accountId);
 
     const key = "p1-denial-replay-001";
     const denied = await createRequest(app, alice, bob, key);

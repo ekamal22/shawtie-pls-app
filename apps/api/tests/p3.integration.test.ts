@@ -152,12 +152,7 @@ async function register(app: App, database: DatabasePool, suffix: string): Promi
   };
 }
 
-async function createRequest(
-  app: App,
-  sender: TestAccount,
-  target: TestAccount,
-  key: string,
-) {
+async function createRequest(app: App, sender: TestAccount, target: TestAccount, key: string) {
   return app.inject({
     method: "POST",
     url: "/api/v1/partner-requests",
@@ -252,11 +247,7 @@ test("P3 breakup cancellation is replay-safe and preserves metadata version", as
     const wrongActor = await app.inject({
       method: "POST",
       url:
-        "/api/v1/partnerships/" +
-        partnershipId +
-        "/breakups/" +
-        startedBody.breakupId +
-        "/cancel",
+        "/api/v1/partnerships/" + partnershipId + "/breakups/" + startedBody.breakupId + "/cancel",
       headers: mutationHeaders(bob.cookie, "p3-cancel-wrong-actor"),
     });
     assert.equal(wrongActor.statusCode, 409);
@@ -268,12 +259,8 @@ test("P3 breakup cancellation is replay-safe and preserves metadata version", as
     const cancelled = await app.inject({
       method: "POST",
       url:
-        "/api/v1/partnerships/" +
-        partnershipId +
-        "/breakups/" +
-        startedBody.breakupId +
-        "/cancel",
-      headers: mutationHeaders(alice.cookie, "p3-cancel-owner"),
+        "/api/v1/partnerships/" + partnershipId + "/breakups/" + startedBody.breakupId + "/cancel",
+      headers: mutationHeaders(alice.cookie, "p3-cancel-owner-key"),
     });
     assert.equal(cancelled.statusCode, 200, cancelled.body);
     assert.equal((cancelled.json() as { generation: number }).generation, 3);
@@ -514,7 +501,8 @@ test("P3 account deletion overlay is view-only and recovery preserves the same p
       headers: jsonHeaders(),
       payload: { identifier: alice.username },
     });
-    assert.equal(recoveryStart.statusCode, 200, recoveryStart.body);
+    assert.equal(recoveryStart.statusCode, 202, recoveryStart.body);
+    assert.deepEqual(recoveryStart.json(), { accepted: true });
     const code = await latestAccountRecoveryCode(database, alice.accountId);
     const recovered = await app.inject({
       method: "POST",
@@ -583,7 +571,7 @@ test("P3 former-partner block is private and a request race cannot leave an unsa
       app.inject({
         method: "POST",
         url: "/api/v1/partnerships/" + partnershipId + "/block",
-        headers: mutationHeaders(alice.cookie, "p3-block-race"),
+        headers: mutationHeaders(alice.cookie, "p3-block-race-key"),
       }),
       createRequest(app, bob, alice, "p3-block-request-race"),
     ]);
@@ -618,7 +606,7 @@ test("P3 former-partner block is private and a request race cannot leave an unsa
     const unblock = await app.inject({
       method: "DELETE",
       url: "/api/v1/partnerships/" + partnershipId + "/block",
-      headers: mutationHeaders(alice.cookie, "p3-unblock"),
+      headers: mutationHeaders(alice.cookie, "p3-unblock-key-0001"),
     });
     assert.equal(unblock.statusCode, 200, unblock.body);
     assert.equal((unblock.json() as { blocked: boolean }).blocked, false);
