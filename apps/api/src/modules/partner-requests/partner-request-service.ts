@@ -471,7 +471,7 @@ export class PartnerRequestService {
       });
 
       if (!eligibility.allowed) {
-        let code = eligibility.reason ?? "TARGET_UNAVAILABLE";
+        let code: string = eligibility.reason ?? "TARGET_UNAVAILABLE";
         if (code === "SENDER_INELIGIBLE") {
           if (sender.status !== "active") code = "ACCOUNT_LOCKED";
           else if (sender.occupied) code = "PARTNERSHIP_OCCUPIED";
