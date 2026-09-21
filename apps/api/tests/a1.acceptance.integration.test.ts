@@ -47,6 +47,12 @@ function cookieHeader(response: { headers: Record<string, unknown> }): string {
   return values.map((value) => value.split(";")[0]).join("; ");
 }
 
+function cookieValue(header: string, name: string): string {
+  const part = header.split("; ").find((value) => value.startsWith(name + "="));
+  if (!part) throw new Error("Missing cookie: " + name);
+  return part.slice(name.length + 1);
+}
+
 async function reset(database: DatabasePool): Promise<void> {
   await database.pool.query(
     "TRUNCATE TABLE accounts, registration_intents, outbox_events, scheduled_actions, deletion_manifests CASCADE",
@@ -808,6 +814,13 @@ test("A1 device API lists, renames, revokes, and refuses silent revival of a rev
     await reset(database);
     const user = await register(app, database, "devices_acceptance");
     const firstSession = await currentSession(app, user.cookie);
+    const rawDeviceHandle = cookieValue(user.cookie, "shawtie-device-dev");
+    const rawHandleMatches = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM account_devices " +
+        "WHERE account_id = $1 AND encode(handle_verifier, 'escape') = $2",
+      [user.accountId, rawDeviceHandle],
+    );
+    assert.equal(rawHandleMatches.rows[0]?.count, "0");
 
     const secondLogin = await app.inject({
       method: "POST",
