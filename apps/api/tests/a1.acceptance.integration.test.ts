@@ -681,10 +681,7 @@ test("A1 email change requires recent reauthentication", async () => {
       payload: { email: "reauth-required@example.test" },
     });
     assert.equal(denied.statusCode, 403);
-    assert.equal(
-      (denied.json() as { error: { code: string } }).error.code,
-      "REAUTH_REQUIRED",
-    );
+    assert.equal((denied.json() as { error: { code: string } }).error.code, "REAUTH_REQUIRED");
 
     const reauth = await app.inject({
       method: "POST",
@@ -843,17 +840,22 @@ test("A1 device API lists, renames, revokes, and refuses silent revival of a rev
       headers: { cookie: user.cookie },
     });
     assert.equal(list.statusCode, 200, list.body);
-    const devices = (list.json() as {
-      devices: Array<{
-        id: string;
-        displayName: string;
-        isCurrent: boolean;
-        activeSessionCount: number;
-      }>;
-    }).devices;
+    const devices = (
+      list.json() as {
+        devices: Array<{
+          id: string;
+          displayName: string;
+          isCurrent: boolean;
+          activeSessionCount: number;
+        }>;
+      }
+    ).devices;
     assert.equal(devices.length, 2);
     assert.equal(devices.find((device) => device.id === firstSession.deviceId)?.isCurrent, true);
-    assert.equal(devices.find((device) => device.id === secondSession.deviceId)?.activeSessionCount, 1);
+    assert.equal(
+      devices.find((device) => device.id === secondSession.deviceId)?.activeSessionCount,
+      1,
+    );
 
     const rename = await app.inject({
       method: "PATCH",
@@ -967,10 +969,7 @@ test("A1 account recovery rejects the exact seven-day deadline", async () => {
       },
     });
     assert.equal(complete.statusCode, 409);
-    assert.equal(
-      (complete.json() as { error: { code: string } }).error.code,
-      "ACCOUNT_LOCKED",
-    );
+    assert.equal((complete.json() as { error: { code: string } }).error.code, "ACCOUNT_LOCKED");
     const account = await database.pool.query<{ status: string }>(
       "SELECT status FROM accounts WHERE id = $1",
       [user.accountId],
@@ -982,7 +981,6 @@ test("A1 account recovery rejects the exact seven-day deadline", async () => {
   }
 });
 
-
 test("A1 concurrent fifth challenge attempt cannot exceed max attempts", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -993,10 +991,9 @@ test("A1 concurrent fifth challenge attempt cannot exceed max attempts", async (
       email: "challenge-race@example.test",
       suffix: "challenge-race",
     });
-    await database.pool.query(
-      "UPDATE email_verifications SET attempt_count = 4 WHERE id = $1",
-      [started.challengeId],
-    );
+    await database.pool.query("UPDATE email_verifications SET attempt_count = 4 WHERE id = $1", [
+      started.challengeId,
+    ]);
     const wrongCode = started.code === "00000000" ? "00000001" : "00000000";
     const responses = await Promise.all([
       app.inject({
@@ -1147,7 +1144,6 @@ test("A1 failed login and recovery start keep generic response shapes", async ()
   }
 });
 
-
 test("A1 concurrent registration resend preserves one active challenge", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -1215,10 +1211,7 @@ test("A1 registration start enforces the durable per-email rate limit", async ()
       });
       statuses.push(response.statusCode);
       if (index === 4) {
-        assert.equal(
-          (response.json() as { error: { code: string } }).error.code,
-          "RATE_LIMITED",
-        );
+        assert.equal((response.json() as { error: { code: string } }).error.code, "RATE_LIMITED");
         assert.ok(Number(response.headers["retry-after"]) >= 1);
       }
     }

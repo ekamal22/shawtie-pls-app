@@ -66,11 +66,7 @@ async function latestCode(
        AND superseded_at IS NULL
      ORDER BY created_at DESC
      LIMIT 1`,
-    [
-      where.purpose,
-      where.registrationIntentId ?? null,
-      where.accountId ?? null,
-    ],
+    [where.purpose, where.registrationIntentId ?? null, where.accountId ?? null],
   );
   const row = result.rows[0];
   if (!row) throw new Error("Missing active challenge");
@@ -258,7 +254,10 @@ test("password recovery revokes sessions and accepts only the new password", asy
       payload: { identifier: user.email },
     });
     assert.equal(start.statusCode, 202);
-    const code = await latestCode(database, { accountId: user.accountId, purpose: "password_recovery" });
+    const code = await latestCode(database, {
+      accountId: user.accountId,
+      purpose: "password_recovery",
+    });
     const newPassword = "a completely different secure password";
     const complete = await app.inject({
       method: "POST",
@@ -357,7 +356,10 @@ test("account deletion immediately removes access and email recovery does not al
       payload: { identifier: user.email },
     });
     assert.equal(start.statusCode, 202);
-    const code = await latestCode(database, { accountId: user.accountId, purpose: "account_recovery" });
+    const code = await latestCode(database, {
+      accountId: user.accountId,
+      purpose: "account_recovery",
+    });
     const complete = await app.inject({
       method: "POST",
       url: "/api/v1/auth/account-recovery/complete",

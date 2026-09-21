@@ -124,7 +124,6 @@ export {
   type RegistrationIntentRow,
 } from "./repositories/account-auth.ts";
 
-
 export {
   findDiscoverableAccountByUsername,
   type DiscoverableAccount,

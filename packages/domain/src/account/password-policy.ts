@@ -25,8 +25,7 @@ export function validatePasswordPolicy(value: string): RuleDecision {
   let encodedBytes = 0;
   for (const character of normalized) {
     const codePoint = character.codePointAt(0) ?? 0;
-    encodedBytes +=
-      codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4;
+    encodedBytes += codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4;
   }
   if (encodedBytes > 1024) {
     return { allowed: false, reason: "PASSWORD_TOO_LARGE" };

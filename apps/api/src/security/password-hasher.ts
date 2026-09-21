@@ -1,9 +1,4 @@
-import {
-  hash,
-  parseOptions,
-  verify,
-  type Options,
-} from "@node-rs/argon2";
+import { hash, parseOptions, verify, type Options } from "@node-rs/argon2";
 import { normalizePassword } from "@shawtie/domain";
 
 const POLICY = {

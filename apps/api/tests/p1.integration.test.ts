@@ -230,13 +230,7 @@ test("P1 create is idempotent, lists both directions, and cancel is owner-safe",
     assert.equal(replay.statusCode, 201, replay.body);
     assert.deepEqual(replay.json(), createdBody);
 
-    const changedFingerprint = await createRequest(
-      app,
-      alice,
-      bob,
-      key,
-      "2024-01-01",
-    );
+    const changedFingerprint = await createRequest(app, alice, bob, key, "2024-01-01");
     assert.equal(changedFingerprint.statusCode, 409);
     assert.equal(
       (changedFingerprint.json() as { error: { code: string } }).error.code,
@@ -312,12 +306,7 @@ test("P1 decline creates no block and enforces the exact same-pair cooldown", as
     );
     assert.equal(blocks.rowCount, 0);
 
-    const blockedByCooldown = await createRequest(
-      app,
-      alice,
-      bob,
-      "p1-decline-0000002",
-    );
+    const blockedByCooldown = await createRequest(app, alice, bob, "p1-decline-0000002");
     assert.equal(blockedByCooldown.statusCode, 409);
     assert.equal(
       (blockedByCooldown.json() as { error: { code: string } }).error.code,
@@ -465,7 +454,10 @@ test("P1 list cursor is snapshot-bound and excludes later inserts", async () => 
     const second = pageTwo.json() as {
       items: Array<{ counterpart: { accountId: string } }>;
     };
-    assert.equal(second.items.some((item) => item.counterpart.accountId === dave.accountId), false);
+    assert.equal(
+      second.items.some((item) => item.counterpart.accountId === dave.accountId),
+      false,
+    );
     assert.equal(second.items.length, 1);
   } finally {
     await app.close();
@@ -481,13 +473,7 @@ test("P1 future relationship date and recipient-side block map to safe denials",
     const alice = await register(app, database, "safe_alice");
     const bob = await register(app, database, "safe_bob");
 
-    const future = await createRequest(
-      app,
-      alice,
-      bob,
-      "p1-future-key-00001",
-      "2999-01-01",
-    );
+    const future = await createRequest(app, alice, bob, "p1-future-key-00001", "2999-01-01");
     assert.equal(future.statusCode, 409);
     assert.equal(
       (future.json() as { error: { code: string } }).error.code,
@@ -583,16 +569,12 @@ test("P1 create abuse limit is durable and returns 429 after thirty attempts", a
       "p1-abuse-key-000031",
     );
     assert.equal(limited.statusCode, 429, limited.body);
-    assert.equal(
-      (limited.json() as { error: { code: string } }).error.code,
-      "RATE_LIMITED",
-    );
+    assert.equal((limited.json() as { error: { code: string } }).error.code, "RATE_LIMITED");
   } finally {
     await app.close();
     await closeDatabasePool(database);
   }
 });
-
 
 test("P1 self request is rejected and retained as explicit attempt evidence", async () => {
   const database = requireDisposableDatabase();
@@ -608,10 +590,7 @@ test("P1 self request is rejected and retained as explicit attempt evidence", as
       "p1-self-key-000001",
     );
     assert.equal(response.statusCode, 409, response.body);
-    assert.equal(
-      (response.json() as { error: { code: string } }).error.code,
-      "REQUEST_SELF",
-    );
+    assert.equal((response.json() as { error: { code: string } }).error.code, "REQUEST_SELF");
 
     const attempts = await database.pool.query<{ outcome: string }>(
       "SELECT outcome FROM partner_request_attempts " +
@@ -644,10 +623,7 @@ test("P1 expected denial is replayed from idempotency even after hidden target s
     const key = "p1-denial-replay-001";
     const denied = await createRequest(app, alice, bob, key);
     assert.equal(denied.statusCode, 409, denied.body);
-    assert.equal(
-      (denied.json() as { error: { code: string } }).error.code,
-      "TARGET_UNAVAILABLE",
-    );
+    assert.equal((denied.json() as { error: { code: string } }).error.code, "TARGET_UNAVAILABLE");
 
     await database.pool.query(
       "UPDATE partnership_blocks SET removed_at = clock_timestamp() WHERE id = $1",
@@ -723,17 +699,9 @@ test("P1 direct create API cannot bypass recipient partnership occupancy", async
       [partnershipId, bob.accountId, charlie.accountId],
     );
 
-    const response = await createRequest(
-      app,
-      alice,
-      bob,
-      "p1-occupied-key-001",
-    );
+    const response = await createRequest(app, alice, bob, "p1-occupied-key-001");
     assert.equal(response.statusCode, 409, response.body);
-    assert.equal(
-      (response.json() as { error: { code: string } }).error.code,
-      "TARGET_UNAVAILABLE",
-    );
+    assert.equal((response.json() as { error: { code: string } }).error.code, "TARGET_UNAVAILABLE");
   } finally {
     await app.close();
     await closeDatabasePool(database);

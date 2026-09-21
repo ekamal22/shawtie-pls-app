@@ -20,7 +20,9 @@ export function normalizeEmail(value: string): NormalizedEmail {
 
 export function normalizeLoginIdentifier(value: string): string {
   const trimmed = value.trim();
-  return trimmed.includes("@") ? normalizeEmail(trimmed).normalized : normalizeUsername(trimmed).normalized;
+  return trimmed.includes("@")
+    ? normalizeEmail(trimmed).normalized
+    : normalizeUsername(trimmed).normalized;
 }
 
 export function networkPrefix(ip: string): string {

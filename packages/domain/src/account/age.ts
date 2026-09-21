@@ -4,10 +4,7 @@ export function ageOnDate(dateOfBirth: string, onDate: string): number {
   const birth = parseDateOnly(dateOfBirth);
   const current = parseDateOnly(onDate);
   let age = current.year - birth.year;
-  if (
-    current.month < birth.month ||
-    (current.month === birth.month && current.day < birth.day)
-  ) {
+  if (current.month < birth.month || (current.month === birth.month && current.day < birth.day)) {
     age -= 1;
   }
   return age;

@@ -85,10 +85,7 @@ test("P1 scheduled expiry persists the exact request deadline", async () => {
       status: string;
       expires_at: Date;
       expired_at: Date;
-    }>(
-      "SELECT status, expires_at, expired_at FROM partner_requests WHERE id = $1",
-      [requestId],
-    );
+    }>("SELECT status, expires_at, expired_at FROM partner_requests WHERE id = $1", [requestId]);
     assert.equal(request.rows[0]?.status, "expired");
     assert.equal(
       request.rows[0]?.expired_at.toISOString(),
@@ -104,7 +101,6 @@ test("P1 scheduled expiry persists the exact request deadline", async () => {
     await closeDatabasePool(database);
   }
 });
-
 
 test("P1 scheduled expiry is a no-op after the request became terminal", async () => {
   const database = requireDisposableDatabase();
@@ -142,20 +138,17 @@ test("P1 scheduled expiry is a no-op after the request became terminal", async (
       payloadVersion: 1,
     });
 
-    await runScheduledBatch(
-      database,
-      "p1-terminal-worker",
-      createDefaultScheduledHandlers(),
-      { batchSize: 10, concurrency: 1, leaseMs: 60_000, retryPolicy: defaultRetryPolicy },
-    );
+    await runScheduledBatch(database, "p1-terminal-worker", createDefaultScheduledHandlers(), {
+      batchSize: 10,
+      concurrency: 1,
+      leaseMs: 60_000,
+      retryPolicy: defaultRetryPolicy,
+    });
 
     const request = await database.pool.query<{
       status: string;
       expired_at: Date | null;
-    }>(
-      "SELECT status, expired_at FROM partner_requests WHERE id = $1",
-      [requestId],
-    );
+    }>("SELECT status, expired_at FROM partner_requests WHERE id = $1", [requestId]);
     assert.equal(request.rows[0]?.status, "cancelled");
     assert.equal(request.rows[0]?.expired_at, null);
   } finally {

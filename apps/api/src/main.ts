@@ -1,8 +1,4 @@
-import {
-  closeDatabasePool,
-  createDatabasePool,
-  databaseConfigFromEnv,
-} from "@shawtie/db";
+import { closeDatabasePool, createDatabasePool, databaseConfigFromEnv } from "@shawtie/db";
 import { createApiApplication } from "./application.ts";
 import { apiConfigFromEnv } from "./config.ts";
 

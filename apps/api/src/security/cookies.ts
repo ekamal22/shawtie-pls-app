@@ -7,8 +7,7 @@ export interface CookieNames {
 }
 
 export function cookieNames(config: ApiConfig): CookieNames {
-  const insecure =
-    config.environment !== "production" && config.allowInsecureLoopbackCookies;
+  const insecure = config.environment !== "production" && config.allowInsecureLoopbackCookies;
   return insecure
     ? { session: "shawtie-session-dev", device: "shawtie-device-dev" }
     : { session: "__Host-shawtie-session", device: "__Host-shawtie-device" };
@@ -42,11 +41,7 @@ export function clearSessionCookie(reply: FastifyReply, config: ApiConfig): void
   });
 }
 
-export function setDeviceCookie(
-  reply: FastifyReply,
-  config: ApiConfig,
-  value: string,
-): void {
+export function setDeviceCookie(reply: FastifyReply, config: ApiConfig, value: string): void {
   reply.setCookie(cookieNames(config).device, value, {
     path: "/",
     httpOnly: true,

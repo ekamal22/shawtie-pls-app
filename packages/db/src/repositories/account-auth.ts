@@ -2,10 +2,7 @@ import type { QueryExecutor } from "../types/query-executor.ts";
 
 export type AccountStatus = "active" | "deletion_pending" | "deleted";
 export type EmailPurpose =
-  | "registration"
-  | "email_change"
-  | "password_recovery"
-  | "account_recovery";
+  "registration" | "email_change" | "password_recovery" | "account_recovery";
 
 export interface RegistrationIntentRow {
   readonly id: string;
@@ -442,7 +439,12 @@ export async function findLoginCredential(
 export async function findAccountByIdentifier(
   executor: QueryExecutor,
   identifierNormalized: string,
-): Promise<{ accountId: string; status: AccountStatus; emailNormalized: string; emailDisplay: string } | null> {
+): Promise<{
+  accountId: string;
+  status: AccountStatus;
+  emailNormalized: string;
+  emailDisplay: string;
+} | null> {
   const result = await executor.query<{
     account_id: string;
     status: AccountStatus;
@@ -1052,15 +1054,7 @@ export async function consumeRateLimitBuckets(
          SET window_started_at = $4, attempt_count = $5,
              blocked_until = $6, last_outcome = 'blocked', updated_at = $7
          WHERE scope = $1 AND key_version = $2 AND key_hash = $3`,
-        [
-          input.scope,
-          input.keyVersion,
-          input.keyHash,
-          nextWindow,
-          nextCount,
-          blockedUntil,
-          at,
-        ],
+        [input.scope, input.keyVersion, input.keyHash, nextWindow, nextCount, blockedUntil, at],
       );
       retryAfterMs = Math.max(retryAfterMs, input.blockMs);
     } else {
@@ -1093,13 +1087,7 @@ export async function resetRateLimitBucket(
   );
 }
 
-const SECURITY_METADATA_KEYS = new Set([
-  "generation",
-  "reason",
-  "scope",
-  "status",
-  "source",
-]);
+const SECURITY_METADATA_KEYS = new Set(["generation", "reason", "scope", "status", "source"]);
 
 export async function appendSecurityEvent(
   executor: QueryExecutor,
@@ -1223,10 +1211,7 @@ export async function getChallengeForDelivery(
   return row ? mapChallenge(row) : null;
 }
 
-export async function getCalendarYearAfter(
-  executor: QueryExecutor,
-  at: Date,
-): Promise<Date> {
+export async function getCalendarYearAfter(executor: QueryExecutor, at: Date): Promise<Date> {
   const result = await executor.query<{ value: Date }>(
     "SELECT $1::timestamptz + interval '1 year' AS value",
     [at],
@@ -1394,13 +1379,7 @@ export async function requestAccountDeletion(
     `INSERT INTO account_deletion_requests (
        id, account_id, requested_at, recover_until, generation
      ) VALUES ($1,$2,$3,$4,$5)`,
-    [
-      input.id,
-      input.accountId,
-      input.requestedAt,
-      input.recoverUntil,
-      input.generation.toString(),
-    ],
+    [input.id, input.accountId, input.requestedAt, input.recoverUntil, input.generation.toString()],
   );
 }
 
@@ -1418,10 +1397,10 @@ export async function recoverAccountDeletion(
     [accountId, at],
   );
   if (result.rowCount !== 1) return false;
-  await executor.query(
-    "UPDATE accounts SET status = 'active', updated_at = $2 WHERE id = $1",
-    [accountId, at],
-  );
+  await executor.query("UPDATE accounts SET status = 'active', updated_at = $2 WHERE id = $1", [
+    accountId,
+    at,
+  ]);
   return true;
 }
 
@@ -1438,7 +1417,9 @@ export async function lockPendingAccountDeletion(
     [accountId, generation.toString()],
   );
   const row = result.rows[0];
-  return row ? { id: row.id, requestedAt: row.requested_at, recoverUntil: row.recover_until } : null;
+  return row
+    ? { id: row.id, requestedAt: row.requested_at, recoverUntil: row.recover_until }
+    : null;
 }
 
 export async function finalizeAccountDeletionState(
@@ -1447,10 +1428,10 @@ export async function finalizeAccountDeletionState(
   deletionRequestId: string,
   at: Date,
 ): Promise<void> {
-  await executor.query(
-    "UPDATE accounts SET status = 'deleted', updated_at = $2 WHERE id = $1",
-    [accountId, at],
-  );
+  await executor.query("UPDATE accounts SET status = 'deleted', updated_at = $2 WHERE id = $1", [
+    accountId,
+    at,
+  ]);
   await executor.query(
     `UPDATE account_deletion_requests
      SET status = 'finalized', finalized_at = $2
@@ -1466,7 +1447,9 @@ export async function scrubAccountAuthenticationData(
   await executor.query("DELETE FROM email_verifications WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_sessions WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_recovery_material WHERE account_id = $1", [accountId]);
-  await executor.query("DELETE FROM account_password_credentials WHERE account_id = $1", [accountId]);
+  await executor.query("DELETE FROM account_password_credentials WHERE account_id = $1", [
+    accountId,
+  ]);
   await executor.query("DELETE FROM account_emails WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_devices WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_profiles WHERE account_id = $1", [accountId]);

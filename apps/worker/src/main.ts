@@ -1,6 +1,9 @@
 import { createDatabasePool, databaseConfigFromEnv } from "@shawtie/db";
 import { workerConfigFromEnv } from "./config.ts";
-import { createDefaultDeletionHandlers, createDefaultScheduledHandlers } from "./auth/default-account-handlers.ts";
+import {
+  createDefaultDeletionHandlers,
+  createDefaultScheduledHandlers,
+} from "./auth/default-account-handlers.ts";
 import { OutboxHandlerRegistry } from "./outbox/outbox-handler-registry.ts";
 import { WorkerApplication } from "./runtime/worker-application.ts";
 import { createWorkerIdentity } from "./runtime/worker-identity.ts";

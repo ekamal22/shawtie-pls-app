@@ -181,9 +181,7 @@ export class AccountService {
       input.transaction,
       {
         ...(input.accountId ? { accountId: input.accountId } : {}),
-        ...(input.registrationIntentId
-          ? { registrationIntentId: input.registrationIntentId }
-          : {}),
+        ...(input.registrationIntentId ? { registrationIntentId: input.registrationIntentId } : {}),
       },
       input.purpose,
       input.now,
@@ -191,9 +189,7 @@ export class AccountService {
     await insertEmailChallenge(input.transaction, {
       id,
       ...(input.accountId ? { accountId: input.accountId } : {}),
-      ...(input.registrationIntentId
-        ? { registrationIntentId: input.registrationIntentId }
-        : {}),
+      ...(input.registrationIntentId ? { registrationIntentId: input.registrationIntentId } : {}),
       purpose: input.purpose,
       emailNormalized: input.emailNormalized,
       emailDisplay: input.emailDisplay,
@@ -214,7 +210,11 @@ export class AccountService {
     return { id, expiresAt };
   }
 
-  #verifyChallenge(challenge: EmailChallenge, code: string, now: Date): "ok" | "invalid" | "expired" {
+  #verifyChallenge(
+    challenge: EmailChallenge,
+    code: string,
+    now: Date,
+  ): "ok" | "invalid" | "expired" {
     if (
       challenge.consumedAt ||
       challenge.supersededAt ||
@@ -244,12 +244,7 @@ export class AccountService {
     if (rawDeviceHandle) {
       for (const version of this.keys.versions) {
         const verifier = this.keys.verifier("device-handle-verifier", rawDeviceHandle, version);
-        const found = await findActiveDeviceByHandle(
-          transaction,
-          accountId,
-          verifier,
-          version,
-        );
+        const found = await findActiveDeviceByHandle(transaction, accountId, verifier, version);
         if (found) {
           deviceId = found.id;
           break;
@@ -309,9 +304,11 @@ export class AccountService {
   ): Promise<{ registrationIntentId: string; expiresAt: string; resendAfterSeconds: number }> {
     const username = normalizeUsername(input.username);
     const usernameDecision = validateUsername(input.username);
-    if (!usernameDecision.allowed) throw new ApiError(400, usernameDecision.reason ?? "USERNAME_INVALID");
+    if (!usernameDecision.allowed)
+      throw new ApiError(400, usernameDecision.reason ?? "USERNAME_INVALID");
     const passwordDecision = validatePasswordPolicy(input.password);
-    if (!passwordDecision.allowed) throw new ApiError(400, passwordDecision.reason ?? "VALIDATION_FAILED");
+    if (!passwordDecision.allowed)
+      throw new ApiError(400, passwordDecision.reason ?? "VALIDATION_FAILED");
     let email;
     try {
       email = normalizeEmail(input.email);
@@ -320,9 +317,27 @@ export class AccountService {
     }
 
     await this.consumeSecurityRateLimit([
-      { scope: "registration_network", subject: networkKey, limit: 5, windowMs: HOUR, blockMs: HOUR },
-      { scope: "registration_email", subject: email.normalized, limit: 3, windowMs: HOUR, blockMs: HOUR },
-      { scope: "registration_username", subject: username.normalized, limit: 3, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "registration_network",
+        subject: networkKey,
+        limit: 5,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "registration_email",
+        subject: email.normalized,
+        limit: 3,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "registration_username",
+        subject: username.normalized,
+        limit: 3,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
 
     const passwordHash = await this.passwords.hash(input.password);
@@ -372,8 +387,20 @@ export class AccountService {
     networkKey: string,
   ): Promise<{ expiresAt: string; resendAfterSeconds: number }> {
     await this.consumeSecurityRateLimit([
-      { scope: "verification_send_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
-      { scope: "verification_send_registration", subject: registrationIntentId, limit: 5, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "verification_send_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "verification_send_registration",
+        subject: registrationIntentId,
+        limit: 5,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
 
     return withTransaction(this.database, async (transaction) => {
@@ -422,7 +449,8 @@ export class AccountService {
       }
       const verification = this.#verifyChallenge(challenge, input.code, now);
       if (verification !== "ok") {
-        if (verification === "invalid") await recordChallengeFailure(transaction, challenge.id, now);
+        if (verification === "invalid")
+          await recordChallengeFailure(transaction, challenge.id, now);
         return {
           ok: false as const,
           code: verification === "expired" ? "EMAIL_CHALLENGE_EXPIRED" : "EMAIL_CHALLENGE_INVALID",
@@ -498,8 +526,20 @@ export class AccountService {
       value: this.keys.verifier("rate-limit-key", identifier, version),
     }));
     await this.consumeSecurityRateLimit([
-      { scope: "login_network", subject: networkKey, limit: 50, windowMs: 15 * MINUTE, blockMs: 15 * MINUTE },
-      { scope: "login_identifier", subject: identifier, limit: 10, windowMs: 15 * MINUTE, blockMs: 15 * MINUTE },
+      {
+        scope: "login_network",
+        subject: networkKey,
+        limit: 50,
+        windowMs: 15 * MINUTE,
+        blockMs: 15 * MINUTE,
+      },
+      {
+        scope: "login_identifier",
+        subject: identifier,
+        limit: 10,
+        windowMs: 15 * MINUTE,
+        blockMs: 15 * MINUTE,
+      },
     ]);
 
     const credential = await findLoginCredential(this.database.pool, identifier);
@@ -524,7 +564,8 @@ export class AccountService {
       if (!current || current.accountId !== credential.accountId || current.status !== "active") {
         throw new ApiError(401, "AUTH_INVALID");
       }
-      if (nextHash) await updatePasswordCredential(transaction, credential.accountId, nextHash, now);
+      if (nextHash)
+        await updatePasswordCredential(transaction, credential.accountId, nextHash, now);
       const session = await this.#issueSession(
         transaction,
         credential.accountId,
@@ -567,10 +608,7 @@ export class AccountService {
     });
   }
 
-  async reauthenticate(
-    auth: AuthContext,
-    password: string,
-  ): Promise<{ sessionToken: string }> {
+  async reauthenticate(auth: AuthContext, password: string): Promise<{ sessionToken: string }> {
     const hash = await getPasswordHash(this.database.pool, auth.session.accountId);
     if (!hash || !(await this.passwords.verify(hash, password))) {
       throw new ApiError(401, "AUTH_INVALID");
@@ -612,7 +650,12 @@ export class AccountService {
       const now = await getTransactionTimestamp(transaction);
       await lockAccounts(transaction, [auth.session.accountId]);
       await this.#assertSession(transaction, auth);
-      await updateDisplayName(transaction, auth.session.accountId, input.displayName.trim().normalize("NFC"), now);
+      await updateDisplayName(
+        transaction,
+        auth.session.accountId,
+        input.displayName.trim().normalize("NFC"),
+        now,
+      );
     });
   }
 
@@ -624,8 +667,20 @@ export class AccountService {
       identifier = identifierInput.trim().toLowerCase();
     }
     await this.consumeSecurityRateLimit([
-      { scope: "password_recovery_identifier", subject: identifier, limit: 5, windowMs: HOUR, blockMs: HOUR },
-      { scope: "password_recovery_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "password_recovery_identifier",
+        subject: identifier,
+        limit: 5,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "password_recovery_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
 
     const account = await findAccountByIdentifier(this.database.pool, identifier);
@@ -661,7 +716,13 @@ export class AccountService {
       throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
     }
     await this.consumeSecurityRateLimit([
-      { scope: "verification_submit_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "verification_submit_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
     const account = await findAccountByIdentifier(this.database.pool, identifier);
     const newHash = await this.passwords.hash(input.newPassword);
@@ -678,7 +739,8 @@ export class AccountService {
       if (!challenge) return { ok: false as const, code: "EMAIL_CHALLENGE_INVALID" };
       const verification = this.#verifyChallenge(challenge, input.code, now);
       if (verification !== "ok") {
-        if (verification === "invalid") await recordChallengeFailure(transaction, challenge.id, now);
+        if (verification === "invalid")
+          await recordChallengeFailure(transaction, challenge.id, now);
         return {
           ok: false as const,
           code: verification === "expired" ? "EMAIL_CHALLENGE_EXPIRED" : "EMAIL_CHALLENGE_INVALID",
@@ -717,14 +779,28 @@ export class AccountService {
       throw new ApiError(400, "VALIDATION_FAILED");
     }
     await this.consumeSecurityRateLimit([
-      { scope: "verification_send_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
-      { scope: "email_change_account", subject: auth.session.accountId, limit: 5, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "verification_send_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "email_change_account",
+        subject: auth.session.accountId,
+        limit: 5,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       await lockAccounts(transaction, [auth.session.accountId]);
       await this.#assertSession(transaction, auth);
-      if (!(await isVerifiedEmailAvailable(transaction, email.normalized, auth.session.accountId))) {
+      if (
+        !(await isVerifiedEmailAvailable(transaction, email.normalized, auth.session.accountId))
+      ) {
         throw new ApiError(409, "EMAIL_UNAVAILABLE");
       }
       await this.#createChallenge({
@@ -747,8 +823,20 @@ export class AccountService {
 
   async resendEmailChange(auth: AuthContext, networkKey: string): Promise<void> {
     await this.consumeSecurityRateLimit([
-      { scope: "verification_send_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
-      { scope: "email_change_account", subject: auth.session.accountId, limit: 5, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "verification_send_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "email_change_account",
+        subject: auth.session.accountId,
+        limit: 5,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
@@ -774,10 +862,7 @@ export class AccountService {
     });
   }
 
-  async completeEmailChange(
-    auth: AuthContext,
-    code: string,
-  ): Promise<{ sessionToken: string }> {
+  async completeEmailChange(auth: AuthContext, code: string): Promise<{ sessionToken: string }> {
     const rawToken = randomOpaqueToken();
     const newVerifier = this.keys.activeVerifier("session-verifier", rawToken);
     const decision = await withTransaction(this.database, async (transaction) => {
@@ -794,13 +879,20 @@ export class AccountService {
       }
       const verification = this.#verifyChallenge(challenge, code, now);
       if (verification !== "ok") {
-        if (verification === "invalid") await recordChallengeFailure(transaction, challenge.id, now);
+        if (verification === "invalid")
+          await recordChallengeFailure(transaction, challenge.id, now);
         return {
           ok: false as const,
           code: verification === "expired" ? "EMAIL_CHALLENGE_EXPIRED" : "EMAIL_CHALLENGE_INVALID",
         };
       }
-      if (!(await isVerifiedEmailAvailable(transaction, challenge.emailNormalized, auth.session.accountId))) {
+      if (
+        !(await isVerifiedEmailAvailable(
+          transaction,
+          challenge.emailNormalized,
+          auth.session.accountId,
+        ))
+      ) {
         return { ok: false as const, code: "EMAIL_UNAVAILABLE" };
       }
       const old = await releaseCurrentEmail(transaction, auth.session.accountId, now);
@@ -861,7 +953,8 @@ export class AccountService {
       if (!account || account.status !== "active") throw new ApiError(401, "AUTH_REQUIRED");
       const occupied = await accountHasOccupiedPartnership(transaction, auth.session.accountId);
       const decision = evaluateUsernameChange(now, account.nextUsernameChangeEligibleAt, occupied);
-      if (!decision.allowed) throw new ApiError(409, decision.reason ?? "USERNAME_CHANGE_NOT_ALLOWED");
+      if (!decision.allowed)
+        throw new ApiError(409, decision.reason ?? "USERNAME_CHANGE_NOT_ALLOWED");
       if (!(await isUsernameAvailable(transaction, username.normalized))) {
         throw new ApiError(409, "USERNAME_UNAVAILABLE");
       }
@@ -884,10 +977,7 @@ export class AccountService {
     });
   }
 
-  async correctDateOfBirth(
-    auth: AuthContext,
-    input: DateOfBirthCorrectionInput,
-  ): Promise<void> {
+  async correctDateOfBirth(auth: AuthContext, input: DateOfBirthCorrectionInput): Promise<void> {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const account = await lockAccountForProfileMutation(transaction, auth.session.accountId);
@@ -915,7 +1005,10 @@ export class AccountService {
       const locked = await lockAccountForProfileMutation(transaction, auth.session.accountId);
       await this.#assertSession(transaction, auth);
       if (!locked || locked.status !== "active") throw new ApiError(409, "ACCOUNT_LOCKED");
-      const currentGeneration = await getAccountDeletionGeneration(transaction, auth.session.accountId);
+      const currentGeneration = await getAccountDeletionGeneration(
+        transaction,
+        auth.session.accountId,
+      );
       const generation = currentGeneration + 1n;
       const recoverUntil = addMilliseconds(now, 7 * DAY);
       await requestAccountDeletion(transaction, {
@@ -932,7 +1025,10 @@ export class AccountService {
         "account_unavailable",
       );
       await revokeAllSessionsForAccount(transaction, auth.session.accountId, now);
-      const partnership = await getCurrentPartnershipForAccount(transaction, auth.session.accountId);
+      const partnership = await getCurrentPartnershipForAccount(
+        transaction,
+        auth.session.accountId,
+      );
       if (partnership) {
         await appendLifecycleEvent(transaction, {
           id: randomUUID(),
@@ -955,8 +1051,7 @@ export class AccountService {
           aggregateId: auth.session.accountId,
           executeAt: partnership.breakupFinalDeadline,
           expectedGeneration: generation,
-          deduplicationKey:
-            `account-deletion-breakup-precedence:${auth.session.accountId}:${partnership.partnershipId}:${generation}`,
+          deduplicationKey: `account-deletion-breakup-precedence:${auth.session.accountId}:${partnership.partnershipId}:${generation}`,
           payload: { partnershipId: partnership.partnershipId },
           payloadVersion: 1,
         });
@@ -1002,8 +1097,20 @@ export class AccountService {
       identifier = identifierInput.trim().toLowerCase();
     }
     await this.consumeSecurityRateLimit([
-      { scope: "account_recovery_identifier", subject: identifier, limit: 5, windowMs: HOUR, blockMs: HOUR },
-      { scope: "account_recovery_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "account_recovery_identifier",
+        subject: identifier,
+        limit: 5,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
+      {
+        scope: "account_recovery_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
     const account = await findAccountByIdentifier(this.database.pool, identifier);
     if (!account || account.status !== "deletion_pending") return;
@@ -1032,7 +1139,13 @@ export class AccountService {
       throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
     }
     await this.consumeSecurityRateLimit([
-      { scope: "verification_submit_network", subject: networkKey, limit: 20, windowMs: HOUR, blockMs: HOUR },
+      {
+        scope: "verification_submit_network",
+        subject: networkKey,
+        limit: 20,
+        windowMs: HOUR,
+        blockMs: HOUR,
+      },
     ]);
     const account = await findAccountByIdentifier(this.database.pool, identifier);
     if (!account || account.status !== "deletion_pending") {
@@ -1049,7 +1162,8 @@ export class AccountService {
       if (!challenge) return { ok: false as const, code: "EMAIL_CHALLENGE_INVALID" };
       const verification = this.#verifyChallenge(challenge, input.code, now);
       if (verification !== "ok") {
-        if (verification === "invalid") await recordChallengeFailure(transaction, challenge.id, now);
+        if (verification === "invalid")
+          await recordChallengeFailure(transaction, challenge.id, now);
         return {
           ok: false as const,
           code: verification === "expired" ? "EMAIL_CHALLENGE_EXPIRED" : "EMAIL_CHALLENGE_INVALID",

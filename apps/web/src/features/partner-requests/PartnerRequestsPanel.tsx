@@ -64,20 +64,14 @@ export function PartnerRequestsPanel() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
-  async function page(
-    direction: "incoming" | "outgoing",
-    cursor?: string,
-  ): Promise<RequestPage> {
+  async function page(direction: "incoming" | "outgoing", cursor?: string): Promise<RequestPage> {
     const search = new URLSearchParams({ direction, limit: "25" });
     if (cursor) search.set("cursor", cursor);
     return apiRequest<RequestPage>("/api/v1/partner-requests?" + search.toString());
   }
 
   async function refreshLists() {
-    const [incomingPage, outgoingPage] = await Promise.all([
-      page("incoming"),
-      page("outgoing"),
-    ]);
+    const [incomingPage, outgoingPage] = await Promise.all([page("incoming"), page("outgoing")]);
     setIncoming(incomingPage.items);
     setOutgoing(outgoingPage.items);
     setIncomingCursor(incomingPage.nextCursor);
@@ -125,18 +119,15 @@ export function PartnerRequestsPanel() {
       const idempotencyKey = sendAttemptKey ?? crypto.randomUUID();
       if (!sendAttemptKey) setSendAttemptKey(idempotencyKey);
       try {
-        const response = await apiRequest<{ outcome: string }>(
-          "/api/v1/partner-requests",
-          {
-            method: "POST",
-            headers: { "idempotency-key": idempotencyKey },
-            body: {
-              recipientAccountId: result.accountId,
-              expectedUsername: result.username,
-              relationshipStartDate,
-            },
+        const response = await apiRequest<{ outcome: string }>("/api/v1/partner-requests", {
+          method: "POST",
+          headers: { "idempotency-key": idempotencyKey },
+          body: {
+            recipientAccountId: result.accountId,
+            expectedUsername: result.username,
+            relationshipStartDate,
           },
-        );
+        });
         setSendAttemptKey(null);
         setNotice(
           response.outcome === "reciprocal_pair_ready"
@@ -198,14 +189,18 @@ export function PartnerRequestsPanel() {
             required
           />
         </label>
-        <button className="secondary" disabled={busy}>Search</button>
+        <button className="secondary" disabled={busy}>
+          Search
+        </button>
       </form>
 
       {result ? (
         <article className="profile-card">
           <div>
             <strong>{result.displayName}</strong>
-            <p className="muted">@{result.username} · age {result.age}</p>
+            <p className="muted">
+              @{result.username} · age {result.age}
+            </p>
             {result.bio ? <p>{result.bio}</p> : null}
           </div>
           <label className="field">
@@ -256,11 +251,7 @@ export function PartnerRequestsPanel() {
             ))}
           </div>
           {incomingCursor ? (
-            <button
-              className="link"
-              disabled={busy}
-              onClick={() => void loadMore("incoming")}
-            >
+            <button className="link" disabled={busy} onClick={() => void loadMore("incoming")}>
               Load more incoming
             </button>
           ) : null}
@@ -289,11 +280,7 @@ export function PartnerRequestsPanel() {
             ))}
           </div>
           {outgoingCursor ? (
-            <button
-              className="link"
-              disabled={busy}
-              onClick={() => void loadMore("outgoing")}
-            >
+            <button className="link" disabled={busy} onClick={() => void loadMore("outgoing")}>
               Load more outgoing
             </button>
           ) : null}

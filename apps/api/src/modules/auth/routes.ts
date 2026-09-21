@@ -19,7 +19,10 @@ import {
 } from "@shawtie/contracts";
 import type { DatabasePool } from "@shawtie/db";
 import type { ApiConfig } from "../../config.ts";
-import { requireAuthentication, requireRecentReauthentication } from "../../plugins/authentication.ts";
+import {
+  requireAuthentication,
+  requireRecentReauthentication,
+} from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import {
   clearDeviceCookie,
@@ -72,24 +75,14 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
   app.post("/api/v1/auth/registration/verify", async (request, reply) => {
     const input = parseAtBoundary(registrationVerifySchema, request.body);
     const result = await service.verifyRegistration(input, deviceHandle(request, config));
-    writeSessionCookies(
-      reply,
-      config,
-      result.session.sessionToken,
-      result.session.deviceToken,
-    );
+    writeSessionCookies(reply, config, result.session.sessionToken, result.session.deviceToken);
     return { accountId: result.accountId };
   });
 
   app.post("/api/v1/auth/login", async (request, reply) => {
     const input = parseAtBoundary(loginSchema, request.body);
     const result = await service.login(input, network(request), deviceHandle(request, config));
-    writeSessionCookies(
-      reply,
-      config,
-      result.session.sessionToken,
-      result.session.deviceToken,
-    );
+    writeSessionCookies(reply, config, result.session.sessionToken, result.session.deviceToken);
     return { accountId: result.accountId };
   });
 

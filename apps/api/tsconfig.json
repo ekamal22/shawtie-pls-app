@@ -3,16 +3,12 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "composite": true,
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "disableSourceOfProjectReferenceRedirect": true
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "references": [
     {
       "path": "../../packages/domain"

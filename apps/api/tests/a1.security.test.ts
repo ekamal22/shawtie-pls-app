@@ -76,7 +76,6 @@ test("normalization avoids provider-specific rewriting and network key uses pref
   assert.equal(networkPrefix("192.168.10.44"), "192.168.10.0/24");
 });
 
-
 test("local development session cookie uses a separate insecure loopback name", async () => {
   const config: ApiConfig = {
     environment: "test",

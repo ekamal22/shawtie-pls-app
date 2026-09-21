@@ -54,7 +54,8 @@ export function workerAuthKeyConfigFromEnv(
       throw new Error("AUTH_HMAC_KEYS must use version:base64 entries");
     }
     const decoded = Buffer.from(value, "base64");
-    if (decoded.length < 32) throw new Error("AUTH_HMAC_KEYS entries must contain at least 32 bytes");
+    if (decoded.length < 32)
+      throw new Error("AUTH_HMAC_KEYS entries must contain at least 32 bytes");
     keys.set(version, decoded);
   }
   const activeVersion = Number.parseInt(activeRaw ?? "", 10);

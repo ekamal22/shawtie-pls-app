@@ -201,7 +201,9 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
   return (
     <main className="shell auth-shell">
       <section className="brand">
-        <div className="brand-mark" aria-hidden="true">S</div>
+        <div className="brand-mark" aria-hidden="true">
+          S
+        </div>
         <div>
           <h1>Shawtie pls</h1>
           <p>Your private space for just the two of you.</p>
@@ -213,7 +215,10 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
           <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>
             Sign in
           </button>
-          <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>
+          <button
+            className={mode === "register" ? "active" : ""}
+            onClick={() => setMode("register")}
+          >
             Create account
           </button>
         </nav>
@@ -223,9 +228,24 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
 
         {mode === "login" ? (
           <form onSubmit={login} className="stack">
-            <Field label="Username or email" name="identifier" value={identifier} onChange={setIdentifier} autoComplete="username" />
-            <Field label="Password" name="password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
-            <button className="primary" disabled={busy}>Sign in</button>
+            <Field
+              label="Username or email"
+              name="identifier"
+              value={identifier}
+              onChange={setIdentifier}
+              autoComplete="username"
+            />
+            <Field
+              label="Password"
+              name="password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+            />
+            <button className="primary" disabled={busy}>
+              Sign in
+            </button>
             <button type="button" className="link" onClick={() => setMode("password-recovery")}>
               Forgot password?
             </button>
@@ -237,21 +257,69 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
 
         {mode === "register" && !registrationIntentId ? (
           <form onSubmit={startRegistration} className="stack">
-            <Field label="Username" name="username" value={username} onChange={setUsername} autoComplete="username" />
-            <Field label="Display name" name="displayName" value={displayName} onChange={setDisplayName} autoComplete="name" />
-            <Field label="Date of birth" name="dateOfBirth" type="date" value={dateOfBirth} onChange={setDateOfBirth} autoComplete="bday" />
-            <Field label="Email" name="email" type="email" value={email} onChange={setEmail} autoComplete="email" />
-            <Field label="Password" name="newPassword" type="password" value={password} onChange={setPassword} autoComplete="new-password" />
+            <Field
+              label="Username"
+              name="username"
+              value={username}
+              onChange={setUsername}
+              autoComplete="username"
+            />
+            <Field
+              label="Display name"
+              name="displayName"
+              value={displayName}
+              onChange={setDisplayName}
+              autoComplete="name"
+            />
+            <Field
+              label="Date of birth"
+              name="dateOfBirth"
+              type="date"
+              value={dateOfBirth}
+              onChange={setDateOfBirth}
+              autoComplete="bday"
+            />
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+            />
+            <Field
+              label="Password"
+              name="newPassword"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+            />
             <p className="hint">Use at least 15 characters. No forced symbol or uppercase rules.</p>
-            <button className="primary" disabled={busy}>Send verification code</button>
+            <button className="primary" disabled={busy}>
+              Send verification code
+            </button>
           </form>
         ) : null}
 
         {mode === "register" && registrationIntentId ? (
           <form onSubmit={finishRegistration} className="stack">
-            <Field label="8-digit verification code" name="code" value={code} onChange={setCode} autoComplete="one-time-code" />
-            <button className="primary" disabled={busy}>Verify and create account</button>
-            <button type="button" className="secondary" onClick={resendRegistration} disabled={busy}>
+            <Field
+              label="8-digit verification code"
+              name="code"
+              value={code}
+              onChange={setCode}
+              autoComplete="one-time-code"
+            />
+            <button className="primary" disabled={busy}>
+              Verify and create account
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={resendRegistration}
+              disabled={busy}
+            >
               Resend code
             </button>
           </form>
@@ -259,22 +327,81 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
 
         {mode === "password-recovery" ? (
           <div className="stack">
-            <Field label="Username or email" name="recoveryIdentifier" value={identifier} onChange={setIdentifier} autoComplete="username" />
-            <button className="secondary" onClick={() => void startRecovery("password")} disabled={busy}>Send recovery code</button>
-            <Field label="Verification code" name="recoveryCode" value={code} onChange={setCode} autoComplete="one-time-code" />
-            <Field label="New password" name="recoveryPassword" type="password" value={newPassword} onChange={setNewPassword} autoComplete="new-password" />
-            <button className="primary" onClick={() => void completeRecovery("password")} disabled={busy}>Reset password</button>
-            <button className="link" onClick={() => setMode("login")}>Back to sign in</button>
+            <Field
+              label="Username or email"
+              name="recoveryIdentifier"
+              value={identifier}
+              onChange={setIdentifier}
+              autoComplete="username"
+            />
+            <button
+              className="secondary"
+              onClick={() => void startRecovery("password")}
+              disabled={busy}
+            >
+              Send recovery code
+            </button>
+            <Field
+              label="Verification code"
+              name="recoveryCode"
+              value={code}
+              onChange={setCode}
+              autoComplete="one-time-code"
+            />
+            <Field
+              label="New password"
+              name="recoveryPassword"
+              type="password"
+              value={newPassword}
+              onChange={setNewPassword}
+              autoComplete="new-password"
+            />
+            <button
+              className="primary"
+              onClick={() => void completeRecovery("password")}
+              disabled={busy}
+            >
+              Reset password
+            </button>
+            <button className="link" onClick={() => setMode("login")}>
+              Back to sign in
+            </button>
           </div>
         ) : null}
 
         {mode === "account-recovery" ? (
           <div className="stack">
-            <Field label="Username or email" name="accountRecoveryIdentifier" value={identifier} onChange={setIdentifier} autoComplete="username" />
-            <button className="secondary" onClick={() => void startRecovery("account")} disabled={busy}>Send account recovery code</button>
-            <Field label="Verification code" name="accountRecoveryCode" value={code} onChange={setCode} autoComplete="one-time-code" />
-            <button className="primary" onClick={() => void completeRecovery("account")} disabled={busy}>Recover account</button>
-            <button className="link" onClick={() => setMode("login")}>Back to sign in</button>
+            <Field
+              label="Username or email"
+              name="accountRecoveryIdentifier"
+              value={identifier}
+              onChange={setIdentifier}
+              autoComplete="username"
+            />
+            <button
+              className="secondary"
+              onClick={() => void startRecovery("account")}
+              disabled={busy}
+            >
+              Send account recovery code
+            </button>
+            <Field
+              label="Verification code"
+              name="accountRecoveryCode"
+              value={code}
+              onChange={setCode}
+              autoComplete="one-time-code"
+            />
+            <button
+              className="primary"
+              onClick={() => void completeRecovery("account")}
+              disabled={busy}
+            >
+              Recover account
+            </button>
+            <button className="link" onClick={() => setMode("login")}>
+              Back to sign in
+            </button>
           </div>
         ) : null}
       </section>
@@ -339,7 +466,11 @@ function AccountScreen({
     }
   }
 
-  async function mutate(path: string, body?: unknown, method: "POST" | "PATCH" | "DELETE" = "POST") {
+  async function mutate(
+    path: string,
+    body?: unknown,
+    method: "POST" | "PATCH" | "DELETE" = "POST",
+  ) {
     await apiRequest(path, { method, ...(body !== undefined ? { body } : {}) });
   }
 
@@ -376,7 +507,9 @@ function AccountScreen({
           <strong>{me.displayName}</strong>
           <span>@{me.username}</span>
         </div>
-        <button className="secondary compact" onClick={() => void logout()} disabled={busy}>Sign out</button>
+        <button className="secondary compact" onClick={() => void logout()} disabled={busy}>
+          Sign out
+        </button>
       </header>
 
       {error ? <p className="banner error">{error}</p> : null}
@@ -397,25 +530,55 @@ function AccountScreen({
             }, "Display name updated.");
           }}
         >
-          <Field label="Display name" name="profileDisplayName" value={displayName} onChange={setDisplayName} />
-          <button className="primary" disabled={busy}>Save display name</button>
+          <Field
+            label="Display name"
+            name="profileDisplayName"
+            value={displayName}
+            onChange={setDisplayName}
+          />
+          <button className="primary" disabled={busy}>
+            Save display name
+          </button>
         </form>
       </section>
 
       <section className="panel">
         <h2>Security confirmation</h2>
-        <p className="hint">Email changes and account deletion require a recent password confirmation.</p>
+        <p className="hint">
+          Email changes and account deletion require a recent password confirmation.
+        </p>
         <form className="stack" onSubmit={reauthenticate}>
-          <Field label="Current password" name="reauthPassword" type="password" value={reauthPassword} onChange={setReauthPassword} autoComplete="current-password" />
-          <button className="secondary" disabled={busy}>Confirm password</button>
-          <span className="hint">Last confirmed: {session.reauthenticatedAt ? new Date(session.reauthenticatedAt).toLocaleString() : "not recently"}</span>
+          <Field
+            label="Current password"
+            name="reauthPassword"
+            type="password"
+            value={reauthPassword}
+            onChange={setReauthPassword}
+            autoComplete="current-password"
+          />
+          <button className="secondary" disabled={busy}>
+            Confirm password
+          </button>
+          <span className="hint">
+            Last confirmed:{" "}
+            {session.reauthenticatedAt
+              ? new Date(session.reauthenticatedAt).toLocaleString()
+              : "not recently"}
+          </span>
         </form>
       </section>
 
       <section className="panel">
         <h2>Verified email</h2>
         <div className="stack">
-          <Field label="New email" name="newEmail" type="email" value={newEmail} onChange={setNewEmail} autoComplete="email" />
+          <Field
+            label="New email"
+            name="newEmail"
+            type="email"
+            value={newEmail}
+            onChange={setNewEmail}
+            autoComplete="email"
+          />
           <button
             className="secondary"
             disabled={busy}
@@ -428,7 +591,13 @@ function AccountScreen({
           >
             Send verification code
           </button>
-          <Field label="Verification code" name="emailCode" value={emailCode} onChange={setEmailCode} autoComplete="one-time-code" />
+          <Field
+            label="Verification code"
+            name="emailCode"
+            value={emailCode}
+            onChange={setEmailCode}
+            autoComplete="one-time-code"
+          />
           <button
             className="primary"
             disabled={busy}
@@ -465,7 +634,13 @@ function AccountScreen({
         </div>
         <div className="stack">
           <h2>Date of birth</h2>
-          <Field label="One-time correction" name="dateOfBirthCorrection" type="date" value={dateOfBirth} onChange={setDateOfBirth} />
+          <Field
+            label="One-time correction"
+            name="dateOfBirthCorrection"
+            type="date"
+            value={dateOfBirth}
+            onChange={setDateOfBirth}
+          />
           <button
             className="secondary"
             disabled={busy}
@@ -501,11 +676,14 @@ function AccountScreen({
                   className="danger compact"
                   disabled={busy}
                   onClick={() =>
-                    void run(async () => {
-                      await mutate(`/api/v1/me/devices/${device.id}`, undefined, "DELETE");
-                      if (device.isCurrent) onSignedOut();
-                      else await load();
-                    }, device.isCurrent ? undefined : "Device revoked.")
+                    void run(
+                      async () => {
+                        await mutate(`/api/v1/me/devices/${device.id}`, undefined, "DELETE");
+                        if (device.isCurrent) onSignedOut();
+                        else await load();
+                      },
+                      device.isCurrent ? undefined : "Device revoked.",
+                    )
                   }
                 >
                   Revoke
@@ -520,7 +698,8 @@ function AccountScreen({
       <section className="panel danger-zone">
         <h2>Delete account</h2>
         <p>
-          Access is removed immediately. You have exactly seven days to recover the account by verified email.
+          Access is removed immediately. You have exactly seven days to recover the account by
+          verified email.
         </p>
         <button
           className="danger"
@@ -562,7 +741,9 @@ export function App() {
   if (session === undefined) {
     return (
       <main className="shell auth-shell">
-        <section className="panel"><p>Loading Shawtie pls...</p></section>
+        <section className="panel">
+          <p>Loading Shawtie pls...</p>
+        </section>
       </main>
     );
   }

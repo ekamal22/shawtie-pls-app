@@ -1,17 +1,10 @@
 import type { AccountStatus } from "../partnership/types.ts";
 
 export type PartnerRequestStatus =
-  | "pending"
-  | "accepted"
-  | "declined"
-  | "cancelled"
-  | "expired"
-  | "invalidated";
+  "pending" | "accepted" | "declined" | "cancelled" | "expired" | "invalidated";
 
 export type PartnerRequestInvalidationReason =
-  | "account_unavailable"
-  | "partnership_formed"
-  | "block_created";
+  "account_unavailable" | "partnership_formed" | "block_created";
 
 export type PartnerRequestDenialCode =
   | "REQUEST_SELF"

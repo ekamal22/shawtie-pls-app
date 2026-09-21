@@ -40,14 +40,10 @@ export const accountDeletionFinalizeHandler: ScheduledActionHandler = {
       throw new RetryableWorkerError("ACCOUNT_DELETION_TOO_EARLY");
     }
 
-    const partnership = await getCurrentPartnershipForAccount(
-      transaction,
-      action.aggregateId,
-    );
+    const partnership = await getCurrentPartnershipForAccount(transaction, action.aggregateId);
     if (
       partnership &&
-      (!initialPartnership ||
-        partnership.otherAccountId !== initialPartnership.otherAccountId)
+      (!initialPartnership || partnership.otherAccountId !== initialPartnership.otherAccountId)
     ) {
       throw new RetryableWorkerError("PARTNERSHIP_CHANGED_DURING_LOCK");
     }
@@ -74,12 +70,7 @@ export const accountDeletionFinalizeHandler: ScheduledActionHandler = {
       });
     }
 
-    await finalizeAccountDeletionState(
-      transaction,
-      action.aggregateId,
-      deletion.id,
-      now,
-    );
+    await finalizeAccountDeletionState(transaction, action.aggregateId, deletion.id, now);
     await appendSecurityEvent(transaction, {
       id: randomUUID(),
       accountId: action.aggregateId,

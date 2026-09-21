@@ -21,9 +21,7 @@ export interface ApiApplicationDependencies {
   readonly partnershipFormationCoordinator?: PartnershipFormationCoordinator;
 }
 
-export function createApiApplication(
-  dependencies?: ApiApplicationDependencies,
-): FastifyInstance {
+export function createApiApplication(dependencies?: ApiApplicationDependencies): FastifyInstance {
   const app = Fastify({
     logger: false,
     trustProxy: dependencies?.config.trustedProxy ?? false,
@@ -38,11 +36,7 @@ export function createApiApplication(
   installMutationSecurity(app, dependencies.config);
 
   const keys = new AuthKeyRing(dependencies.config.authKeys);
-  const service = new AccountService(
-    dependencies.database,
-    keys,
-    new PasswordHasher(),
-  );
+  const service = new AccountService(dependencies.database, keys, new PasswordHasher());
   registerAccountRoutes(app, {
     database: dependencies.database,
     config: dependencies.config,
@@ -51,16 +45,12 @@ export function createApiApplication(
   });
 
   const partnerRequestMode = dependencies.config.partnerRequestMode ?? "disabled";
-  const partnerRequestService = new PartnerRequestService(
-    dependencies.database,
-    service,
-    {
-      mode: partnerRequestMode,
-      ...(dependencies.partnershipFormationCoordinator
-        ? { coordinator: dependencies.partnershipFormationCoordinator }
-        : {}),
-    },
-  );
+  const partnerRequestService = new PartnerRequestService(dependencies.database, service, {
+    mode: partnerRequestMode,
+    ...(dependencies.partnershipFormationCoordinator
+      ? { coordinator: dependencies.partnershipFormationCoordinator }
+      : {}),
+  });
   registerPartnerRequestRoutes(app, {
     database: dependencies.database,
     config: dependencies.config,

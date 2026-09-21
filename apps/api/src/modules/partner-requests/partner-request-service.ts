@@ -344,204 +344,207 @@ export class PartnerRequestService {
       },
     ]);
 
-    const decision = await withTransaction(this.database, async (transaction): Promise<CreateDecision> => {
-      const now = await getTransactionTimestamp(transaction);
-      const accountIds = await lockAccounts(transaction, [
-        auth.session.accountId,
-        input.recipientAccountId,
-      ]);
-      const sender = await loadPartnerAccountEligibility(transaction, auth.session.accountId);
-      const recipient = await loadPartnerAccountEligibility(transaction, input.recipientAccountId);
+    const decision = await withTransaction(
+      this.database,
+      async (transaction): Promise<CreateDecision> => {
+        const now = await getTransactionTimestamp(transaction);
+        const accountIds = await lockAccounts(transaction, [
+          auth.session.accountId,
+          input.recipientAccountId,
+        ]);
+        const sender = await loadPartnerAccountEligibility(transaction, auth.session.accountId);
+        const recipient = await loadPartnerAccountEligibility(
+          transaction,
+          input.recipientAccountId,
+        );
 
-      if (!sender) return { ok: false, statusCode: 401, code: "AUTH_REQUIRED" };
+        if (!sender) return { ok: false, statusCode: 401, code: "AUTH_REQUIRED" };
 
-      const reservation = await reservePartnerRequestIdempotency(transaction, {
-        id: randomUUID(),
-        accountId: auth.session.accountId,
-        idempotencyKey,
-        fingerprint,
-        createdAt: now,
-      });
-      if (!sameFingerprint(reservation.record.fingerprint, fingerprint)) {
-        return { ok: false, statusCode: 409, code: "IDEMPOTENCY_KEY_REUSED" };
-      }
-      if (reservation.record.responseStatus !== null) {
-        return {
-          ok: true,
-          statusCode: reservation.record.responseStatus,
-          body: reservation.record.responseBody,
+        const reservation = await reservePartnerRequestIdempotency(transaction, {
+          id: randomUUID(),
+          accountId: auth.session.accountId,
+          idempotencyKey,
+          fingerprint,
+          createdAt: now,
+        });
+        if (!sameFingerprint(reservation.record.fingerprint, fingerprint)) {
+          return { ok: false, statusCode: 409, code: "IDEMPOTENCY_KEY_REUSED" };
+        }
+        if (reservation.record.responseStatus !== null) {
+          return {
+            ok: true,
+            statusCode: reservation.record.responseStatus,
+            body: reservation.record.responseBody,
+          };
+        }
+
+        const deny = async (code: string, recordAttempt: boolean): Promise<CreateError> => {
+          if (recordAttempt) {
+            await this.recordAttempt(
+              transaction,
+              auth.session.accountId,
+              input.recipientAccountId,
+              code,
+              now,
+            );
+          }
+          await completePartnerRequestIdempotency(transaction, {
+            id: reservation.record.id,
+            fingerprint,
+            responseStatus: 409,
+            responseBody: { error: { code } },
+            expiresAt: new Date(now.getTime() + IDEMPOTENCY_DENIAL_RETENTION),
+          });
+          return { ok: false, statusCode: 409, code };
         };
-      }
 
-      const deny = async (
-        code: string,
-        recordAttempt: boolean,
-      ): Promise<CreateError> => {
-        if (recordAttempt) {
-          await this.recordAttempt(
+        if (!relationshipStartDateAllowed(input.relationshipStartDate, trustedUtcDate(now))) {
+          return deny("RELATIONSHIP_DATE_FUTURE", false);
+        }
+        if (auth.session.accountId === input.recipientAccountId) {
+          return deny("REQUEST_SELF", true);
+        }
+        if (accountIds.length !== 2 || !recipient) {
+          return deny("TARGET_UNAVAILABLE", false);
+        }
+        if (recipient.usernameNormalized !== normalizedUsername) {
+          return deny("TARGET_CHANGED", true);
+        }
+
+        const lockedPair = await lockPairPendingRequests(
+          transaction,
+          auth.session.accountId,
+          input.recipientAccountId,
+        );
+        await expirePartnerRequestsById(
+          transaction,
+          lockedPair.map((request) => request.id),
+          now,
+        );
+        const activePair = activeRequestsAt(lockedPair, now);
+        const sameDirectionPending = activePair.some(
+          (request) =>
+            request.senderAccountId === auth.session.accountId &&
+            request.recipientAccountId === input.recipientAccountId,
+        );
+        const reciprocal = activePair.find(
+          (request) =>
+            request.senderAccountId === input.recipientAccountId &&
+            request.recipientAccountId === auth.session.accountId,
+        );
+
+        const lastDeclinedAt = await latestDeclinedPartnerRequestAt(
+          transaction,
+          auth.session.accountId,
+          input.recipientAccountId,
+        );
+        const cutoff = new Date(rollingMonthCutoffUtc(now.toISOString()));
+        const createdAttempts = await countCreatedPartnerRequestAttemptsSince(
+          transaction,
+          auth.session.accountId,
+          input.recipientAccountId,
+          cutoff,
+          now,
+        );
+        const blockedEitherDirection = await activeBlockExistsForPair(
+          transaction,
+          auth.session.accountId,
+          input.recipientAccountId,
+        );
+
+        const eligibility = evaluatePartnerRequestPair({
+          sender: {
+            accountId: sender.accountId,
+            status: sender.status,
+            occupied: sender.occupied,
+            partnerEligibleAt: sender.partnerEligibleAt?.toISOString() ?? null,
+          },
+          recipient: {
+            accountId: recipient.accountId,
+            status: recipient.status,
+            occupied: recipient.occupied,
+            partnerEligibleAt: recipient.partnerEligibleAt?.toISOString() ?? null,
+          },
+          blockedEitherDirection,
+          sameDirectionPending,
+          createdAttemptsInRollingMonth: createdAttempts,
+          lastDeclinedAt: lastDeclinedAt?.toISOString() ?? null,
+          now: now.toISOString(),
+        });
+
+        if (!eligibility.allowed) {
+          let code: string = eligibility.reason ?? "TARGET_UNAVAILABLE";
+          if (code === "SENDER_INELIGIBLE") {
+            if (sender.status !== "active") code = "ACCOUNT_LOCKED";
+            else if (sender.occupied) code = "PARTNERSHIP_OCCUPIED";
+            else code = "COOLDOWN_ACTIVE";
+          }
+          return deny(code, true);
+        }
+
+        const requestId = randomUUID();
+        const expiresAt = addDays(now, 7);
+        await insertPartnerRequest(transaction, {
+          id: requestId,
+          senderAccountId: auth.session.accountId,
+          recipientAccountId: input.recipientAccountId,
+          relationshipStartDate: input.relationshipStartDate,
+          createdAt: now,
+          expiresAt,
+        });
+        await appendPartnerRequestAttempt(transaction, {
+          id: randomUUID(),
+          requestId,
+          senderAccountId: auth.session.accountId,
+          recipientAccountId: input.recipientAccountId,
+          outcome: "created",
+          createdAt: now,
+        });
+        await insertScheduledAction(transaction, {
+          id: randomUUID(),
+          actionType: "partner_request_expire",
+          aggregateType: "partner_request",
+          aggregateId: requestId,
+          executeAt: expiresAt,
+          deduplicationKey: `partner-request-expire:${requestId}`,
+          payload: {},
+          payloadVersion: 1,
+        });
+
+        let body: unknown = {
+          outcome: reciprocal ? "reciprocal_pair_ready" : "created",
+          requestId,
+          expiresAt: expiresAt.toISOString(),
+        };
+
+        if (reciprocal && this.mode === "paired") {
+          if (!this.coordinator) throw new Error("P2 coordinator missing in paired mode");
+          const accountPair = sortedPair(auth.session.accountId, input.recipientAccountId);
+          const requestPair = sortedRequestPair(reciprocal.id, requestId);
+          const formed = await this.coordinator.handleReciprocalCandidate(
             transaction,
-            auth.session.accountId,
-            input.recipientAccountId,
-            code,
+            {
+              accountIds: accountPair,
+              requestIds: requestPair,
+              triggeringRequestId: requestId,
+              relationshipStartDate: input.relationshipStartDate,
+              observedAt: now,
+            },
             now,
           );
+          body = { outcome: "paired", requestId, partnershipId: formed.partnershipId };
         }
+
         await completePartnerRequestIdempotency(transaction, {
           id: reservation.record.id,
           fingerprint,
-          responseStatus: 409,
-          responseBody: { error: { code } },
-          expiresAt: new Date(now.getTime() + IDEMPOTENCY_DENIAL_RETENTION),
+          responseStatus: 201,
+          responseBody: body,
+          expiresAt,
         });
-        return { ok: false, statusCode: 409, code };
-      };
-
-      if (!relationshipStartDateAllowed(input.relationshipStartDate, trustedUtcDate(now))) {
-        return deny("RELATIONSHIP_DATE_FUTURE", false);
-      }
-      if (auth.session.accountId === input.recipientAccountId) {
-        return deny("REQUEST_SELF", true);
-      }
-      if (accountIds.length !== 2 || !recipient) {
-        return deny("TARGET_UNAVAILABLE", false);
-      }
-      if (recipient.usernameNormalized !== normalizedUsername) {
-        return deny("TARGET_CHANGED", true);
-      }
-
-      const lockedPair = await lockPairPendingRequests(
-        transaction,
-        auth.session.accountId,
-        input.recipientAccountId,
-      );
-      await expirePartnerRequestsById(
-        transaction,
-        lockedPair.map((request) => request.id),
-        now,
-      );
-      const activePair = activeRequestsAt(lockedPair, now);
-      const sameDirectionPending = activePair.some(
-        (request) =>
-          request.senderAccountId === auth.session.accountId &&
-          request.recipientAccountId === input.recipientAccountId,
-      );
-      const reciprocal = activePair.find(
-        (request) =>
-          request.senderAccountId === input.recipientAccountId &&
-          request.recipientAccountId === auth.session.accountId,
-      );
-
-      const lastDeclinedAt = await latestDeclinedPartnerRequestAt(
-        transaction,
-        auth.session.accountId,
-        input.recipientAccountId,
-      );
-      const cutoff = new Date(rollingMonthCutoffUtc(now.toISOString()));
-      const createdAttempts = await countCreatedPartnerRequestAttemptsSince(
-        transaction,
-        auth.session.accountId,
-        input.recipientAccountId,
-        cutoff,
-        now,
-      );
-      const blockedEitherDirection = await activeBlockExistsForPair(
-        transaction,
-        auth.session.accountId,
-        input.recipientAccountId,
-      );
-
-      const eligibility = evaluatePartnerRequestPair({
-        sender: {
-          accountId: sender.accountId,
-          status: sender.status,
-          occupied: sender.occupied,
-          partnerEligibleAt: sender.partnerEligibleAt?.toISOString() ?? null,
-        },
-        recipient: {
-          accountId: recipient.accountId,
-          status: recipient.status,
-          occupied: recipient.occupied,
-          partnerEligibleAt: recipient.partnerEligibleAt?.toISOString() ?? null,
-        },
-        blockedEitherDirection,
-        sameDirectionPending,
-        createdAttemptsInRollingMonth: createdAttempts,
-        lastDeclinedAt: lastDeclinedAt?.toISOString() ?? null,
-        now: now.toISOString(),
-      });
-
-      if (!eligibility.allowed) {
-        let code: string = eligibility.reason ?? "TARGET_UNAVAILABLE";
-        if (code === "SENDER_INELIGIBLE") {
-          if (sender.status !== "active") code = "ACCOUNT_LOCKED";
-          else if (sender.occupied) code = "PARTNERSHIP_OCCUPIED";
-          else code = "COOLDOWN_ACTIVE";
-        }
-        return deny(code, true);
-      }
-
-      const requestId = randomUUID();
-      const expiresAt = addDays(now, 7);
-      await insertPartnerRequest(transaction, {
-        id: requestId,
-        senderAccountId: auth.session.accountId,
-        recipientAccountId: input.recipientAccountId,
-        relationshipStartDate: input.relationshipStartDate,
-        createdAt: now,
-        expiresAt,
-      });
-      await appendPartnerRequestAttempt(transaction, {
-        id: randomUUID(),
-        requestId,
-        senderAccountId: auth.session.accountId,
-        recipientAccountId: input.recipientAccountId,
-        outcome: "created",
-        createdAt: now,
-      });
-      await insertScheduledAction(transaction, {
-        id: randomUUID(),
-        actionType: "partner_request_expire",
-        aggregateType: "partner_request",
-        aggregateId: requestId,
-        executeAt: expiresAt,
-        deduplicationKey: `partner-request-expire:${requestId}`,
-        payload: {},
-        payloadVersion: 1,
-      });
-
-      let body: unknown = {
-        outcome: reciprocal ? "reciprocal_pair_ready" : "created",
-        requestId,
-        expiresAt: expiresAt.toISOString(),
-      };
-
-      if (reciprocal && this.mode === "paired") {
-        if (!this.coordinator) throw new Error("P2 coordinator missing in paired mode");
-        const accountPair = sortedPair(auth.session.accountId, input.recipientAccountId);
-        const requestPair = sortedRequestPair(reciprocal.id, requestId);
-        const formed = await this.coordinator.handleReciprocalCandidate(
-          transaction,
-          {
-            accountIds: accountPair,
-            requestIds: requestPair,
-            triggeringRequestId: requestId,
-            relationshipStartDate: input.relationshipStartDate,
-            observedAt: now,
-          },
-          now,
-        );
-        body = { outcome: "paired", requestId, partnershipId: formed.partnershipId };
-      }
-
-      await completePartnerRequestIdempotency(transaction, {
-        id: reservation.record.id,
-        fingerprint,
-        responseStatus: 201,
-        responseBody: body,
-        expiresAt,
-      });
-      return { ok: true, statusCode: 201, body };
-    });
+        return { ok: true, statusCode: 201, body };
+      },
+    );
 
     if (!decision.ok) throw new ApiError(decision.statusCode, decision.code);
     return { statusCode: decision.statusCode, body: decision.body };

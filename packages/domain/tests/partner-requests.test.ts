@@ -26,10 +26,7 @@ test("P1 request expiry is exact at the seven-day deadline", () => {
 });
 
 test("P1 decline cooldown ends at the exact one-hour boundary", () => {
-  assert.equal(
-    declineCooldownActive("2026-09-21T12:00:00.000Z", "2026-09-21T12:59:59.999Z"),
-    true,
-  );
+  assert.equal(declineCooldownActive("2026-09-21T12:00:00.000Z", "2026-09-21T12:59:59.999Z"), true);
   assert.equal(
     declineCooldownActive("2026-09-21T12:00:00.000Z", "2026-09-21T13:00:00.000Z"),
     false,
@@ -37,10 +34,7 @@ test("P1 decline cooldown ends at the exact one-hour boundary", () => {
 });
 
 test("P1 rolling calendar month clamps month-end in UTC", () => {
-  assert.equal(
-    rollingMonthCutoffUtc("2026-03-31T10:30:00.000Z"),
-    "2026-02-28T10:30:00.000Z",
-  );
+  assert.equal(rollingMonthCutoffUtc("2026-03-31T10:30:00.000Z"), "2026-02-28T10:30:00.000Z");
 });
 
 test("P1 relationship date accepts today and rejects future or invalid calendar dates", () => {
@@ -77,10 +71,10 @@ test("P1 pair eligibility keeps recipient-side unavailability generic", () => {
     }),
     { allowed: false, reason: "TARGET_UNAVAILABLE" },
   );
-  assert.deepEqual(
-    evaluatePartnerRequestPair({ ...base, blockedEitherDirection: true }),
-    { allowed: false, reason: "TARGET_UNAVAILABLE" },
-  );
+  assert.deepEqual(evaluatePartnerRequestPair({ ...base, blockedEitherDirection: true }), {
+    allowed: false,
+    reason: "TARGET_UNAVAILABLE",
+  });
 });
 
 test("P1 pair eligibility enforces duplicate, cooldown, and rolling monthly limit", () => {
@@ -103,7 +97,10 @@ test("P1 pair eligibility enforces duplicate, cooldown, and rolling monthly limi
     lastDeclinedAt: null,
     now: "2026-09-21T12:00:00.000Z",
   };
-  assert.equal(evaluatePartnerRequestPair({ ...base, sameDirectionPending: true }).reason, "REQUEST_ALREADY_PENDING");
+  assert.equal(
+    evaluatePartnerRequestPair({ ...base, sameDirectionPending: true }).reason,
+    "REQUEST_ALREADY_PENDING",
+  );
   assert.equal(
     evaluatePartnerRequestPair({
       ...base,

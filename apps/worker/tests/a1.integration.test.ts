@@ -94,13 +94,12 @@ test("A1 auth email outbox derives code without storing raw code", async () => {
     const fake = new FakeEmail();
     const registry = new OutboxHandlerRegistry();
     registry.register(createEmailChallengeOutboxHandler(database, fake, ring));
-    await runOutboxBatch(
-      database,
-      "a1-email-worker",
-      registry,
-      new AbortController().signal,
-      { batchSize: 10, concurrency: 1, leaseMs: 60_000, retryPolicy: defaultRetryPolicy },
-    );
+    await runOutboxBatch(database, "a1-email-worker", registry, new AbortController().signal, {
+      batchSize: 10,
+      concurrency: 1,
+      leaseMs: 60_000,
+      retryPolicy: defaultRetryPolicy,
+    });
     assert.equal(fake.messages.length, 1);
     assert.equal(fake.messages[0]?.parameters.code, code);
 
@@ -137,7 +136,11 @@ test("A1 deletion finalizer revokes account permanently and deletion worker scru
       dateOfBirth: "2000-01-01",
       createdAt: requestedAt,
     });
-    await insertAccountProfile(database.pool, { accountId, displayName: "Delete Worker", at: requestedAt });
+    await insertAccountProfile(database.pool, {
+      accountId,
+      displayName: "Delete Worker",
+      at: requestedAt,
+    });
     await insertPasswordCredential(database.pool, accountId, "hash", requestedAt);
     await insertCurrentEmail(database.pool, {
       id: randomUUID(),
@@ -164,12 +167,12 @@ test("A1 deletion finalizer revokes account permanently and deletion worker scru
       payload: {},
     });
 
-    await runScheduledBatch(
-      database,
-      "a1-scheduled-worker",
-      createDefaultScheduledHandlers(),
-      { batchSize: 10, concurrency: 1, leaseMs: 60_000, retryPolicy: defaultRetryPolicy },
-    );
+    await runScheduledBatch(database, "a1-scheduled-worker", createDefaultScheduledHandlers(), {
+      batchSize: 10,
+      concurrency: 1,
+      leaseMs: 60_000,
+      retryPolicy: defaultRetryPolicy,
+    });
 
     const state = await database.pool.query<{ status: string }>(
       "SELECT status FROM accounts WHERE id = $1",
@@ -199,7 +202,6 @@ test("A1 deletion finalizer revokes account permanently and deletion worker scru
     await closeDatabasePool(database);
   }
 });
-
 
 test("A1 breakup deadline wins when it precedes account deletion recovery deadline", async () => {
   const database = requireDisposableDatabase();
@@ -270,12 +272,12 @@ test("A1 breakup deadline wins when it precedes account deletion recovery deadli
       payload: { partnershipId },
     });
 
-    await runScheduledBatch(
-      database,
-      "a1-precedence-worker",
-      createDefaultScheduledHandlers(),
-      { batchSize: 10, concurrency: 1, leaseMs: 60_000, retryPolicy: defaultRetryPolicy },
-    );
+    await runScheduledBatch(database, "a1-precedence-worker", createDefaultScheduledHandlers(), {
+      batchSize: 10,
+      concurrency: 1,
+      leaseMs: 60_000,
+      retryPolicy: defaultRetryPolicy,
+    });
 
     const partnership = await database.pool.query<{
       lifecycle_state: string;

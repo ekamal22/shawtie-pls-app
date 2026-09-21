@@ -24,7 +24,8 @@ function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): 
       throw new Error("AUTH_HMAC_KEYS must use version:base64 entries");
     }
     const decoded = Buffer.from(value, "base64");
-    if (decoded.length < 32) throw new Error("AUTH_HMAC_KEYS entries must contain at least 32 bytes");
+    if (decoded.length < 32)
+      throw new Error("AUTH_HMAC_KEYS entries must contain at least 32 bytes");
     if (keys.has(version)) throw new Error("AUTH_HMAC_KEYS contains a duplicate version");
     keys.set(version, decoded);
   }
@@ -46,7 +47,10 @@ function parseOrigin(raw: string | undefined, environment: ApiConfig["environmen
 
 function parseTrustedProxy(raw: string | undefined): false | string[] {
   if (!raw) return false;
-  const values = raw.split(",").map((value) => value.trim()).filter(Boolean);
+  const values = raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
   if (values.length === 0) return false;
   if (values.some((value) => value === "*" || value === "true" || /^\d+$/.test(value))) {
     throw new Error("TRUSTED_PROXY must use explicit IP or CIDR entries");

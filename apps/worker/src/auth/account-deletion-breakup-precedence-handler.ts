@@ -38,10 +38,7 @@ export const accountDeletionBreakupPrecedenceHandler: ScheduledActionHandler = {
     ) {
       throw new RetryableWorkerError("PARTNERSHIP_CHANGED_DURING_LOCK");
     }
-    if (
-      partnership.lifecycleState !== "breakup_pending" ||
-      !partnership.breakupFinalDeadline
-    ) {
+    if (partnership.lifecycleState !== "breakup_pending" || !partnership.breakupFinalDeadline) {
       return;
     }
     if (partnership.breakupFinalDeadline.getTime() > now.getTime()) {
