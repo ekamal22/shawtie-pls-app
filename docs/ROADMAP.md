@@ -24,10 +24,39 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | F1 Repository Foundation and Executable Guardrails | DONE | clean lockfile bootstrap and full local health |
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
-| A1 Accounts and Devices | IN_PROGRESS | runtime implementation committed; lockfile, TypeScript/health, migration 0007, and A1 local suite validation pending |
+| A1 Accounts and Devices | IN_PROGRESS | implementation and core local validation are green at `ceb3d93`; 19/20 acceptance gates are reconciled; canonical A1 evidence-matrix completion remains |
 | P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
+
+## Milestone summary
+
+| Milestone | Status | Current boundary |
+| --- | --- | --- |
+| 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
+| 1 A1 Accounts and Devices | IN_PROGRESS | implementation green; 19/20 acceptance gates reconciled; complete canonical test-matrix evidence still required |
+| 2 P1 Discovery and Requests | IN_PROGRESS | refined design complete; runtime implementation follows A1 closure |
+| 3 P2 Partnership Formation | PLANNED | depends on A1 plus P1 |
+| 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
+| 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
+| 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
+| 7 M3 Media and Voice Messages | PLANNED | requires realtime/offline substrate |
+| 8 C1 Voice and Video Calling | PLANNED | physical-device and TURN verification required |
+| 9 S1 E2EE and Cryptographic Recovery | PLANNED | reviewed protocol selection required before implementation |
+| 10 R2 Public Readiness | PLANNED | requires all pre-release epics plus V1 |
+| Stable Release | BLOCKED | waits on R2 |
+| X1 Post-stable Maturity | PLANNED | operational evidence and stabilization after release |
+| X2 Deferred Heavy Features | DEFERRED | optional heavy features only after production evidence |
+| V1 Hosted CI Verification | BLOCKED | separate verification track; required before R2 closes |
+
+## Immediate execution sequence
+
+1. close the remaining A1 acceptance-evidence gap against the canonical test matrix
+2. run the explicit dependency audit on the current lockfile
+3. rerun `npm run test:a1:local` and `npm run health`
+4. mark A1 DONE only after gate 20 is supported by complete committed evidence
+5. begin P1-A runtime implementation
+6. keep V1 separate until GitHub Actions capacity returns
 
 ## Execution graph
 
@@ -112,13 +141,13 @@ No foundation work should be reopened without concrete implementation evidence t
 
 # Milestone 1: A1 Accounts and Devices
 
-Status: IMPLEMENTED, VALIDATION PENDING.
+Status: IN_PROGRESS. IMPLEMENTED AND CORE VALIDATION GREEN; ACCEPTANCE COVERAGE PENDING.
 
 Canonical design:
 
 `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 
-A1-A through A1-E runtime work is committed. A1-F validation and gate closure are the active path.
+A1-A through A1-E runtime work is committed. The current branch has a green full repository health run and a green disposable PostgreSQL A1 run. A1-F remains open because the canonical A1 test matrix is broader than the committed integration/security coverage.
 
 ## A1-A: Domain, contracts, migration, repositories
 
@@ -267,19 +296,24 @@ Exit evidence:
 
 ## A1-F: Integration closure
 
-Validation closure pending:
+Verified on the current A1 branch:
 
-- `npm run test:accounts`
-- `npm run test:a1:postgres`
-- `npm run test:a1:api`
-- `npm run test:a1:security`
-- `npm run test:a1:local`
-- dependency audit for newly added auth packages
-- complete `npm run health`
-- repository-wide documentation reconciliation
+- migration plan passes with seven migrations
+- all seven migrations apply from zero
+- database invariants pass
+- `npm run test:a1:local` passes 9/9 integration tests and reports `A1_LOCAL_POSTGRES_PASS`
+- `npm run health` passes repository health, typecheck, builds, lint, Prettier, dependency-direction checks, and all 44 current unit/contract/security/worker tests
+- the final account-deletion/breakup precedence PostgreSQL defect is fixed in `ceb3d93`
+- 19 of 20 A1 acceptance gates are reconciled against committed behavior evidence
 
-The commands and harness are committed, but they are not yet recorded as passing on the complete A1 branch. A1 closure requires all 20 A1 acceptance gates in `ROADMAP_EPICS.md`, a refreshed committed lockfile, a green full repository health regression, and the disposable PostgreSQL A1 suite.
+Remaining before A1 may be marked DONE:
 
+- complete the canonical A1 verification matrix where current committed tests are still thinner than the design, including challenge expiry/attempt/rate-limit cases, ownership/race cases, logout and revoked-cookie rejection, session expiry/fencing, username API acceptance, device-list/revocation acceptance, and the remaining browser-security negative paths
+- run an explicit `npm audit --audit-level=high` against the current committed lockfile
+- rerun `npm run test:a1:local` and `npm run health` after the coverage additions
+- check the twentieth A1 gate only when the complete integration and security evidence is committed
+
+A1 is therefore not reopened at the implementation layer. The remaining work is acceptance-evidence closure.
 **REDMI PHONE REQUIRED: NO for A1 closure.**
 
 A1 may be completed with browser/API/PostgreSQL evidence. Device records in A1 are server security principals, not yet the physical-device cryptographic acceptance gate.
