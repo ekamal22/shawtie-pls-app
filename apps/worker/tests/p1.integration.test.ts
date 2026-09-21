@@ -27,7 +27,9 @@ function requireDisposableDatabase(): DatabasePool {
 }
 
 async function reset(database: DatabasePool): Promise<void> {
-  await database.pool.query("TRUNCATE TABLE accounts, scheduled_actions CASCADE");
+  await database.pool.query(
+    "TRUNCATE TABLE accounts, partnerships, scheduled_actions CASCADE",
+  );
 }
 
 async function account(database: DatabasePool, username: string, at: Date): Promise<string> {

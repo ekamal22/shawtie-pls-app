@@ -60,7 +60,7 @@ function cookieHeader(response: { headers: Record<string, unknown> }): string {
 
 async function reset(database: DatabasePool): Promise<void> {
   await database.pool.query(
-    "TRUNCATE TABLE accounts, registration_intents, outbox_events, scheduled_actions, deletion_manifests CASCADE",
+    "TRUNCATE TABLE accounts, partnerships, registration_intents, outbox_events, scheduled_actions, deletion_manifests CASCADE",
   );
   await database.pool.query("DELETE FROM security_rate_limit_buckets");
 }

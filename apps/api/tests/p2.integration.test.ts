@@ -67,7 +67,7 @@ function cookieHeader(response: { headers: Record<string, unknown> }): string {
 
 async function reset(database: DatabasePool): Promise<void> {
   await database.pool.query(
-    "TRUNCATE TABLE accounts, registration_intents, outbox_events, scheduled_actions, deletion_manifests CASCADE",
+    "TRUNCATE TABLE accounts, partnerships, registration_intents, outbox_events, scheduled_actions, deletion_manifests CASCADE",
   );
   await database.pool.query("DELETE FROM security_rate_limit_buckets");
 }
@@ -588,11 +588,15 @@ test("P2 relationship date updates version, notify once, and isolate reads", asy
     const charlie = await register(app, database, "date_charlie");
 
     const created = await createRequest(app, alice, bob, "p2-date-request");
+    assert.equal(created.statusCode, 201, created.body);
     const requestId = (created.json() as { requestId: string }).requestId;
+
     const accepted = await acceptRequest(app, bob, requestId);
+    assert.equal(accepted.statusCode, 200, accepted.body);
     const partnershipId = (accepted.json() as { partnershipId: string }).partnershipId;
 
     const aliceCurrent = await currentPartnership(app, alice);
+    assert.equal(aliceCurrent.statusCode, 200, aliceCurrent.body);
     const initial = (aliceCurrent.json() as {
       partnership: {
         metadataVersion: number;
@@ -730,8 +734,10 @@ test("P2 notification pagination is snapshot-bound", async () => {
     const bob = await register(app, database, "notification_page_bob");
 
     const created = await createRequest(app, alice, bob, "p2-notification-page-request");
+    assert.equal(created.statusCode, 201, created.body);
     const requestId = (created.json() as { requestId: string }).requestId;
     const accepted = await acceptRequest(app, bob, requestId);
+    assert.equal(accepted.statusCode, 200, accepted.body);
     const partnershipId = (accepted.json() as { partnershipId: string }).partnershipId;
 
     const firstChange = await app.inject({
@@ -807,6 +813,8 @@ test("P2 competing accepts create exactly one partnership", async () => {
 
     const aToB = await createRequest(app, alice, bob, "p2-race-accept-b");
     const aToC = await createRequest(app, alice, charlie, "p2-race-accept-c");
+    assert.equal(aToB.statusCode, 201, aToB.body);
+    assert.equal(aToC.statusCode, 201, aToC.body);
     const requestB = (aToB.json() as { requestId: string }).requestId;
     const requestC = (aToC.json() as { requestId: string }).requestId;
 
@@ -863,6 +871,7 @@ test("P2 explicit accept versus reciprocal create converges on one partnership",
     const bob = await register(app, database, "race_reciprocal_bob");
 
     const first = await createRequest(app, alice, bob, "p2-race-reciprocal-first");
+    assert.equal(first.statusCode, 201, first.body);
     const requestId = (first.json() as { requestId: string }).requestId;
 
     const [accept, reciprocal] = await Promise.all([
@@ -926,8 +935,10 @@ test("P2 concurrent relationship-date writes allow one version winner", async ()
     const bob = await register(app, database, "race_date_bob");
 
     const created = await createRequest(app, alice, bob, "p2-race-date-request");
+    assert.equal(created.statusCode, 201, created.body);
     const requestId = (created.json() as { requestId: string }).requestId;
     const accepted = await acceptRequest(app, bob, requestId);
+    assert.equal(accepted.statusCode, 200, accepted.body);
     const partnershipId = (accepted.json() as { partnershipId: string }).partnershipId;
 
     const responses = await Promise.all([
@@ -975,6 +986,7 @@ test("P2 formation and account deletion serialize without bypassing view-only st
     const bob = await register(app, database, "race_delete_bob");
 
     const created = await createRequest(app, alice, bob, "p2-race-delete-request");
+    assert.equal(created.statusCode, 201, created.body);
     const requestId = (created.json() as { requestId: string }).requestId;
     const reauthedAliceCookie = await reauthenticate(app, alice);
 
