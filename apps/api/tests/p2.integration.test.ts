@@ -286,6 +286,30 @@ test("P2 explicit accept forms, invalidates, and replays", async () => {
     );
     assert.equal(members.rows[0]?.count, "2");
 
+    const lifecycleEvents = await database.pool.query<{
+      actor_account_id: string | null;
+      event_type: string;
+      aggregate_version: string;
+      source: string | null;
+    }>(
+      `SELECT actor_account_id,
+              event_type,
+              aggregate_version::text AS aggregate_version,
+              metadata_json ->> 'source' AS source
+       FROM partnership_lifecycle_events
+       WHERE partnership_id = $1
+       ORDER BY created_at, id`,
+      [acceptedBody.partnershipId],
+    );
+    assert.deepEqual(lifecycleEvents.rows, [
+      {
+        actor_account_id: bob.accountId,
+        event_type: "partnership_formed",
+        aggregate_version: "1",
+        source: "explicit_accept",
+      },
+    ]);
+
     const invalidated = await database.pool.query<{
       status: string;
       invalidated_reason: string | null;
@@ -601,14 +625,44 @@ test("P2 relationship date updates version, notify once, and isolate reads", asy
       changed: false,
     });
 
-    const dateNotifications = await database.pool.query<{ count: string }>(
-      `SELECT count(*)::text AS count
+    const persistedPartnership = await database.pool.query<{
+      relationship_start_date: string;
+      version: string;
+      generation: string;
+    }>(
+      `SELECT relationship_start_date::text AS relationship_start_date,
+              version::text AS version,
+              generation::text AS generation
+       FROM partnerships
+       WHERE id = $1`,
+      [partnershipId],
+    );
+    assert.deepEqual(persistedPartnership.rows, [
+      {
+        relationship_start_date: "2018-02-03",
+        version: "2",
+        generation: "1",
+      },
+    ]);
+
+    const dateNotifications = await database.pool.query<{
+      recipient_account_id: string;
+      actor_account_id: string | null;
+      event_type: string;
+    }>(
+      `SELECT recipient_account_id, actor_account_id, event_type
        FROM account_notifications
        WHERE partnership_id = $1
          AND event_type = 'relationship_start_date_changed'`,
       [partnershipId],
     );
-    assert.equal(dateNotifications.rows[0]?.count, "1");
+    assert.deepEqual(dateNotifications.rows, [
+      {
+        recipient_account_id: bob.accountId,
+        actor_account_id: alice.accountId,
+        event_type: "relationship_start_date_changed",
+      },
+    ]);
 
     const future = await app.inject({
       method: "PATCH",
