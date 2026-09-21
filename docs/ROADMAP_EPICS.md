@@ -556,7 +556,7 @@ Status: IN_PROGRESS
 
 ## Design status
 
-The refined architecture and implementation sequence are defined in:
+The hardened architecture and implementation sequence are defined in:
 
 \`docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md\`
 
@@ -678,9 +678,9 @@ The refined architecture and implementation sequence are defined in:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P2 hardened design is complete. Runtime implementation remains pending and follows the P1 request substrate.
+P2 hardened design is complete and has been revalidated against the committed P1 runtime seam at `355037d`. Runtime implementation remains pending while P1 validation completes.
 
-The refined design resolves the reciprocal-formation relationship-date problem by requiring every P1 request to carry a manually entered `relationshipStartDate`. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
+The design now consumes the committed P1 relationship-date request substrate and exact `handleReciprocalCandidate(executor, candidate, now)` seam. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
 
 P2 uses the fresh immutable partnership ID itself as the local and future cryptographic namespace root, adds no redundant security-context identifier, and deliberately does not invent cryptographic keys or epochs before S1 protocol review.
 
@@ -691,17 +691,17 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 - relationship-date trusted-server validation
 - formation types and stable denial codes
 - `change_relationship_start_date` capability
-- P1 create/list contract refinement with `relationshipStartDate`
-- reciprocal candidate refinement with triggering request identity
+- consume the committed P1 create/list relationship-date contract
+- implement a thin adapter over the committed reciprocal candidate seam
 - P2 accept/current/date/notification contracts
 
 ### P2-B Migration and repositories
 
-- P1 migration 0008 request relationship-date field
+- consume committed P1 migration 0008 without rewriting it
 - migration 0009 partnership-formation runtime
 - fresh partnership-ID namespace with no redundant security-context column
 - accepted request to partnership linkage
-- accepted-shape constraints
+- legacy-safe `NOT VALID` accepted-linkage constraints
 - minimal durable account notifications
 - formation, partnership, and notification repositories
 - invariant and index coverage
@@ -712,10 +712,11 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 - deterministic pair locking and full eligibility recheck
 - partnership and two-member creation
 - request acceptance linkage
+- cancellation of still-pending P1 request-expiry jobs
 - incompatible request invalidation
 - formation lifecycle evidence
 - durable formation notifications
-- lost-response replay
+- retention-scoped lost-response replay
 
 ### P2-D Reciprocal integration
 
@@ -724,6 +725,7 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 - both reciprocal requests accepted to one partnership
 - paired response persisted in P1 idempotency record
 - explicit-accept versus reciprocal race coverage
+- expiry-worker versus formation race coverage
 - production `paired` mode enabled only with coordinator registered
 
 ### P2-E Relationship metadata and notification closure
@@ -731,7 +733,7 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 - current partnership read model
 - account-lock-serialized relationship date update using `expectedMetadataVersion`
 - future-date rejection
-- same-date no-op
+- same-date lost-response retry is a no-op even if the submitted expectedMetadataVersion is now stale
 - durable other-partner notification
 - minimal notification list/read API
 - request/accept/current-partnership client flows
@@ -754,7 +756,7 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 - manually entered relationship start date
 - relationship date updates
 - durable relationship-date notification
-- fresh partnership security namespace
+- fresh partnership-ID namespace
 
 ## Acceptance gates
 

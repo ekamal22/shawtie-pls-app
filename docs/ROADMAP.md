@@ -353,13 +353,13 @@ Exit evidence is defined by the P1 gates in `ROADMAP_EPICS.md`.
 
 # Milestone 3: P2 Partnership Formation
 
-Status: IN_PROGRESS at the refined design layer.
+Status: IN_PROGRESS at the hardened design layer, revalidated against the committed P1 runtime seam.
 
 Canonical design:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-Runtime depends on the P1 request substrate, but the cross-epic contract is fixed before P1 implementation.
+P1 runtime substrate is now committed and under validation. P2 has been revalidated against the exact committed coordinator seam so P2 implementation does not need to reopen the P1 public interface.
 
 Key design decisions:
 
@@ -368,7 +368,8 @@ Key design decisions:
 - reciprocal auto-pair uses the triggering second request's date
 - formation executes in one PostgreSQL transaction under deterministic pair locks
 - the occupied-slot database invariant remains final defense against double partnership
-- accepted requests link to the resulting partnership for stable lost-response replay
+- accepted requests link to the resulting partnership for retention-scoped lost-response replay
+- still-pending P1 expiry actions for accepted requests are cancelled in the same transaction; an already-processing expiry worker becomes a safe terminal no-op
 - every other incompatible pending request is invalidated in the same transaction
 - relationship-date edits use `expectedMetadataVersion` against optimistic partnership `version`, not lifecycle `generation`, and serialize with account-deletion state through the canonical account-then-partnership lock order
 - the fresh `partnershipId` itself is the local namespace root and future S1 cryptographic namespace; P2 creates no redundant security identifier or fake E2EE keys
@@ -376,8 +377,8 @@ Key design decisions:
 
 Implementation sequence:
 
-1. P2-A domain/contracts plus P1 relationship-date handoff refinement
-2. P2-B migration 0009 and repositories
+1. P2-A domain/contracts plus thin adapter over the committed P1 reciprocal coordinator seam
+2. P2-B migration 0009 and repositories without rewriting committed migration 0008
 3. P2-C explicit accept and formation coordinator
 4. P2-D reciprocal integration into P1 paired mode
 5. P2-E relationship-date update, notifications, and client read model
@@ -388,10 +389,12 @@ Exit evidence:
 - one-way request cannot form until recipient accepts
 - reciprocal request race produces exactly one partnership
 - explicit accept versus reciprocal create produces one partnership
+- accept versus cancel/decline produces exactly one terminal outcome
+- expiry-worker versus formation is safe whether the job is pending or already processing
 - database occupancy invariant survives competing formations
 - incompatible requests are invalidated atomically
 - future relationship date is rejected by trusted server date
-- concurrent date edits produce one version winner
+- concurrent real date edits produce one version winner, while a lost-response retry of an already-applied date returns the current metadata version as a no-op
 - the other partner receives a durable date-change notification
 - a new partnership always gets a new partnership ID and never reuses an old local or cryptographic namespace
 

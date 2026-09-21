@@ -119,8 +119,8 @@ Current epic status:
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
-- P1 Discovery and Partner Requests: IN_PROGRESS at the hardened architecture and implementation-design layer; runtime implementation has not started. The design now defines exact authenticated discovery, privacy-safe projection, UTC calendar boundaries, create idempotency whose fingerprint includes recipient identity plus canonical relationshipStartDate, snapshot-bound cursor pagination, separate abuse-rate-limit preflight, pair-wide deterministic locking, minimized attempt metadata, cross-epic invalidation, an explicit same-transaction P2 coordinator, F2 expiry scheduling, legacy-compatible request-date persistence with new-write database enforcement, and typed fail-closed production gating
-- P2 Partnership Formation and Relationship Date: IN_PROGRESS at the hardened design layer; runtime implementation is pending behind P1. The canonical design defines explicit accept, same-transaction reciprocal auto-pairing, deterministic account/request locking, one-slot recheck, restrictive accepted-request partnership linkage for replay, incompatible-request invalidation, account-lock-serialized relationship-date metadata updates with expectedMetadataVersion, deterministic durable notification recipients/deduplication, and reuse of the fresh immutable partnership ID as the local/future cryptographic namespace without premature E2EE implementation
+- P1 Discovery and Partner Requests: IN_PROGRESS with runtime implementation committed through domain/contracts, migration 0008, repositories, API, worker expiry, client UI, and expanded tests at `355037d`; full local PostgreSQL/security/health validation is still pending. Do not mark P1 DONE until that evidence is green.
+- P2 Partnership Formation and Relationship Date: IN_PROGRESS at the hardened design layer; runtime implementation is pending while P1 validation completes. The design has been revalidated against P1's committed `handleReciprocalCandidate` seam and now additionally fixes accepted-request expiry-action cancellation, processing-worker no-op races, accept/cancel/decline terminal races, legacy-safe migration 0009 linkage constraints, retention-scoped replay, and lost-response relationship-date retry semantics.
 - all other pre-release implementation epics not listed above: PLANNED
 
 The persistence schema foundation has repeatable disposable PostgreSQL evidence. Earlier schema verification covered migration rerun idempotency, checksum drift, catalog inspection, occupied-slot contention, scheduled-action claim contention, and deterministic account-lock ordering. F2 then applied all six migrations from zero and passed 17/17 runtime integration tests covering transaction policy, retries, PostgreSQL clocks, stale generations, durable payload versions, rollback, outbox atomicity and duplicate safety, claim fencing and reclaim, lifecycle privacy, deletion recovery, queue plans, and graceful worker shutdown. Product-specific API and lifecycle integration remain work for later epics.
@@ -137,14 +137,15 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1 is complete. P1 Discovery and Partner Requests is now the active feature epic.
+A1 is complete. P1 runtime is committed and currently in validation; P2 remains the next dependent runtime epic.
 
-1. start P1-A domain, contracts, migration 0008, and repositories from the already-refined design
-2. reuse the now-verified A1 account identifiers, authenticated sessions, username normalization, trusted PostgreSQL time, and security-rate-limit primitive
-3. implement P1 against the hardened P2 handoff: every request carries canonical relationshipStartDate, the idempotency fingerprint includes it, pagination is snapshot-bound, and reciprocal candidates carry the triggering request identity
-4. wire the P2 formation coordinator before production `paired` request mode is enabled
-5. keep P3 persistence/API/worker work coordinated with P1/P2 dependency boundaries
-6. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
+1. finish P1 local security, disposable PostgreSQL, repository-health, and dependency-audit validation
+2. fix only evidence-backed P1 defects without weakening the P1/P2 contract
+3. once P1 is green, implement P2-A against the exact committed reciprocal coordinator seam
+4. add migration 0009 without rewriting committed migration 0008
+5. keep production `paired` mode disabled until the real P2 coordinator and full P1-with-P2 integration suite are green
+6. keep P3 persistence/API/worker work coordinated with P1/P2 dependency boundaries
+7. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 

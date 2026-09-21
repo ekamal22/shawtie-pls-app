@@ -179,7 +179,7 @@ Required evidence includes:
 - scheduled expiry through F2
 - reciprocal pair detection for P2 without P1 creating a partnership
 
-Planned commands:
+Committed P1 verification commands are:
 
 ```text
 npm run test:partner-requests
@@ -189,7 +189,7 @@ npm run test:p1:security
 npm run test:p1:local
 ```
 
-These remain planned until implementation exists.
+P1 implementation now exists; these commands are under active local validation. Do not infer P1 completion until their results plus full repository health are green.
 
 ### P2 partnership formation verification
 
@@ -200,19 +200,24 @@ Required evidence includes:
 - manually entered request relationship date and trusted-server future-date rejection
 - explicit acceptance only by the request recipient
 - reciprocal automatic formation in the same P1 transaction
-- accepted-request linkage and lost-response replay
+- accepted-request linkage and retention-scoped lost-response replay
 - deterministic two-account locking
 - occupied-slot database protection under competing formation
 - explicit-accept versus reciprocal-request race
+- accept versus sender-cancel and recipient-decline races
+- accepted-request expiry-action cancellation
+- already-processing expiry worker safely observing accepted terminal state
 - incompatible request invalidation
 - fresh partnership-ID namespace with no reuse of prior local or cryptographic state
 - current partnership read isolation
-- relationship-date expected-version conflict behavior
+- relationship-date expectedMetadataVersion conflict behavior
+- lost-response retry of an already-applied relationship date returning a no-op with current metadataVersion
 - active and breakup-pending relationship-date mutation capability, with account-deletion and terminated-state denial
 - durable other-partner relationship-date notification
 - notification account isolation and private no-store responses
 - no fake E2EE key or epoch creation before S1
 - complete P1 local suite rerun with the real P2 coordinator registered in `paired` mode
+- migration 0009 verification that committed migration 0008 is consumed unchanged
 
 Planned commands:
 

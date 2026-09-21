@@ -280,22 +280,23 @@ P1 uses:
 - F2 scheduled actions for request expiry
 - logical expiry checks so worker timing cannot extend product deadlines
 
-P1 detects reciprocal requests but does not create partnerships. P2 performs explicit acceptance and transactional partnership formation while holding the same deterministic account locks.
+P1 now has a committed reciprocal-candidate seam but does not create partnerships in test-only request mode. P2 implements that exact seam for transactional reciprocal formation and also owns explicit acceptance while preserving the same deterministic account locks.
 
 ## P2 partnership formation design
 
-The refined P2 implementation design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md`.
+The hardened P2 implementation design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md` and has been revalidated against the committed P1 runtime interface.
 
 P2 preserves the modular-monolith transaction boundary:
 
-- P1 owns request creation, request timing, limits, and reciprocal detection
-- P2 owns explicit acceptance and formation
-- reciprocal formation executes before the P1 create transaction commits
+- P1 owns request creation, request timing, limits, reciprocal detection, idempotency, and request-expiry scheduling
+- P2 owns explicit acceptance and formation, and cancels still-pending expiry actions for requests consumed by formation
+- reciprocal formation executes through P1's committed `handleReciprocalCandidate` seam before the P1 create transaction commits
 - both accounts are locked in deterministic order
 - PostgreSQL occupied-slot uniqueness is the final double-partnership defense
 - every request carries a manually entered relationship start date so reciprocal formation never invents one from activation time
 - metadata edits use partnership `version`; lifecycle deadlines use `generation`
 - the fresh immutable partnership ID is the local and future cryptographic namespace root; actual cryptographic keys and epochs remain deferred to S1
+- an expiry action already processing when formation wins must observe the accepted terminal request and complete as a safe no-op
 - P2 provides durable in-app partnership notifications without requiring push transport
 
 ## Durable deadlines

@@ -2,7 +2,7 @@
 
 ## Status
 
-REFINED DESIGN, IMPLEMENTATION PENDING
+HARDENED DESIGN, IMPLEMENTATION PENDING
 
 Effective design date: 2026-09-21.
 
@@ -16,7 +16,7 @@ Source code, migrations, and tests remain authoritative for behavior that is act
 
 ## Refinement review
 
-The P2 design was refined before P1 runtime implementation so the cross-epic contract can be correct on the first implementation pass.
+The P2 design was originally refined before P1 runtime implementation and is now revalidated against the committed P1 runtime seam at `355037d`. P1 validation is still in progress; P2 does not require changing that P1 seam during the validation run.
 
 The refinement closes ambiguity in:
 
@@ -33,6 +33,10 @@ The refinement closes ambiguity in:
 - use of the fresh partnership ID itself as the local and future cryptographic namespace without pretending S1 E2EE is already implemented
 - privacy-safe public error mapping
 - P1 production enablement once the formation coordinator exists
+- cancellation of request-expiry scheduled actions after successful formation
+- accept versus cancel/decline terminal-state races
+- legacy-safe migration 0009 constraints over committed migration 0008
+- relationship-date lost-response retry semantics
 
 No accepted product rule is changed.
 
@@ -57,7 +61,7 @@ P2 preserves the PRD rules that:
 
 A1 is complete.
 
-P1 remains the active runtime epic. P2 runtime integration depends on P1 supplying:
+P1 runtime implementation is committed and under validation. P2 runtime integration uses the committed P1 substrate supplying:
 
 - authenticated partner requests
 - deterministic sorted account locks
@@ -66,6 +70,8 @@ P1 remains the active runtime epic. P2 runtime integration depends on P1 supplyi
 - request invalidation helpers
 - reciprocal candidate detection
 - request creation idempotency
+- the committed `PartnershipFormationCoordinator.handleReciprocalCandidate(executor, candidate, now)` seam
+- one `partner_request_expire` scheduled action per newly created request
 
 P2 owns:
 
@@ -85,9 +91,9 @@ M1 owns primary conversation creation and messaging runtime.
 
 S1 owns the reviewed cryptographic protocol, real key material, device key delivery, cryptographic epochs, rotation, and recovery.
 
-## Cross-epic refinement required before P1 implementation
+## Cross-epic contract now implemented by P1
 
-Every partner request must carry the sender's manually entered proposed relationship start date.
+Every new partner request carries the sender's manually entered proposed relationship start date. This is now implemented by P1 migration 0008, contracts, repositories, API, and client flow.
 
 P1 create input becomes conceptually:
 
@@ -197,7 +203,7 @@ Silence, old requests, expired requests, old partnerships, or prior acceptance n
 
 ## Central formation invariant
 
-Formation is one PostgreSQL transaction.
+Formation is one PostgreSQL transaction. For reciprocal pairing, it is the same transaction already opened by P1 for creation of the triggering second request.
 
 The transaction either commits all of:
 
@@ -205,7 +211,8 @@ The transaction either commits all of:
 - two membership rows
 - accepted request state and accepted partnership linkage
 - incompatible request invalidation
-- fresh security namespace
+- cancellation of still-pending expiry jobs for consumed requests
+- fresh partnership-ID namespace
 - partnership-formed lifecycle record
 - required durable in-app notifications
 
@@ -265,43 +272,66 @@ Both sources create the same active partnership shape.
 
 ## Transaction-scoped coordinator
 
-The modular-monolith boundary is conceptually:
+P1 now exposes this committed seam:
 
 ~~~text
-PartnershipFormationCoordinator.formLockedPair(
+PartnershipFormationCoordinator.handleReciprocalCandidate(
   executor,
   candidate,
+  now
+) -> { partnershipId }
+~~~
+
+The committed P1 candidate contains:
+
+~~~text
+ReciprocalPairCandidate {
+  accountIds: sorted [accountA, accountB]
+  requestIds: sorted [requestA, requestB]
+  triggeringRequestId
+  relationshipStartDate
+  observedAt
+}
+~~~
+
+P2 implements that exact interface as a thin adapter. P1 does not need a contract change merely to implement P2.
+
+Internally, P2 uses one common primitive:
+
+~~~text
+formLockedPair(
+  executor,
+  {
+    accountIds,
+    requestIds,
+    triggeringRequestId,
+    relationshipStartDate,
+    source,
+    actorAccountId
+  },
   now
 ) -> FormationOutcome
 ~~~
 
-Candidate shape:
-
-~~~text
-FormationCandidate {
-  accountIds: sorted [accountA, accountB]
-  requestIds: [one explicit request] | [two reciprocal requests]
-  triggeringRequestId
-  relationshipStartDate
-  source: explicit_accept | reciprocal_request
-  actorAccountId
-}
-~~~
+The reciprocal adapter derives `source = reciprocal_request` and derives the actor from the authoritative triggering request after re-reading it. The explicit-accept path calls the same internal primitive with `source = explicit_accept` and the authenticated recipient as actor.
 
 Requirements:
 
 - `executor` is the caller's current F2 transaction executor
-- the coordinator does not start a nested authoritative transaction
-- callers already hold the sorted account locks
-- candidate IDs are never trusted without re-reading authoritative rows
+- the coordinator never starts a nested authoritative transaction
+- reciprocal callers already hold the sorted account locks
+- explicit accept acquires the same account locks before invoking the common primitive
+- every candidate ID, direction, date, and actor relation is re-read from authoritative request rows
+- `now` from PostgreSQL transaction time is authoritative
+- `candidate.observedAt` is diagnostic only and must match the same transaction-time observation; it never overrides `now`
 - request expiry is rechecked using transaction time
 - account status, occupancy, cooldown, and pair block state are rechecked
 - reciprocal candidates must still be opposite directions for the same two accounts
+- the triggering request must be one of the candidate request IDs and its persisted relationship date must equal the proposed initial date
 - explicit acceptance must still identify the authenticated recipient
-- the coordinator returns the committed partnership identity to the caller
+- the coordinator returns only the resulting partnership identity to P1
 
-P1's existing `handleReciprocalCandidate` integration point becomes a thin adapter into this coordinator.
-
+This adapter design lets P2 integrate with the P1 code currently under validation without reopening the P1 public interface.
 ## Explicit acceptance API
 
 ~~~text
@@ -322,7 +352,7 @@ Transaction:
 6. re-read and lock the request row
 7. verify the authenticated account is the recipient
 8. lazily expire the request if the exact seven-day deadline has arrived
-9. if already accepted by this formation path, replay the same partnership success
+9. if already accepted by this formation path, replay the same partnership identity while retained
 10. if otherwise terminal, return request unavailable
 11. recheck both accounts, blocks, cooldowns, and occupancy
 12. validate the request's relationship start date against trusted server date
@@ -354,6 +384,8 @@ This makes explicit acceptance naturally idempotent without requiring a separate
 
 An accepted request never creates a second partnership on replay. Replay returns the original formation identity, not a claim that the partnership is still active; the client refreshes `GET /api/v1/partnerships/current` for current lifecycle state.
 
+Replay guarantees are retention-scoped. Explicit accept replays through the retained accepted request and its `accepted_partnership_id`. Reciprocal P1 create replay uses P1's retained idempotency record. After those bounded records are legitimately purged, clients use `GET /api/v1/partnerships/current` as canonical state rather than expecting an old mutation request to remain replayable forever.
+
 ## Reciprocal request transaction
 
 P1 creates the second request only after its existing preflight and pair checks.
@@ -367,11 +399,12 @@ Before that transaction commits:
 5. P2 rechecks pair formation eligibility
 6. P2 creates one partnership
 7. P2 marks both reciprocal requests accepted with the same partnership ID
-8. P2 invalidates all other incompatible pending requests for both accounts
-9. P2 creates durable partnership-formed notifications
-10. P2 returns the pairing outcome to P1
-11. P1 stores the final paired response in its existing create idempotency record
-12. the single transaction commits
+8. P2 cancels still-pending `partner_request_expire` scheduled actions for both accepted requests
+9. P2 invalidates all other incompatible pending requests for both accounts
+10. P2 creates durable partnership-formed notifications
+11. P2 returns the pairing outcome to P1
+12. P1 stores the final paired response in its existing create idempotency record
+13. the single transaction commits
 
 P1's paired create response remains HTTP 201 and includes:
 
@@ -404,6 +437,23 @@ The first successful formation occupies the slot and invalidates incompatible re
 ### Two recipients accept requests from the same sender
 
 The shared sender account lock serializes both transactions. Only one formation can commit.
+
+### Accept versus cancel or decline
+
+Accept, sender cancel, and recipient decline all acquire the same two account locks and then the request row.
+
+The first terminal transition to commit wins:
+
+- if cancel commits first, accept returns request unavailable
+- if decline commits first, accept returns request unavailable
+- if accept commits first, later cancel or decline observes the accepted terminal row and cannot rewrite it
+- no race may produce both a partnership and a cancelled/declined source request
+
+### Expiry worker versus formation
+
+P1 schedules `partner_request_expire` before the reciprocal coordinator runs.
+
+On successful formation, P2 cancels any still-pending expiry action whose aggregate is a consumed request. If an expiry action was already claimed and is processing, P2 does not steal or rewrite the worker claim. Request-row locking serializes the race: after formation commits, the worker re-reads a terminal accepted request and completes as a no-op.
 
 ### Database defense
 
@@ -468,10 +518,10 @@ Rules:
 - `expectedMetadataVersion` must equal the current partnership `version`
 - a successful change increments `version` by one
 - relationship date change does not increment lifecycle `generation`
-- changing to the already-current date is an idempotent no-op: no version bump and no duplicate notification
+- changing to the already-current date is an idempotent no-op: no version bump and no duplicate notification; this equality check occurs before version-conflict rejection so a lost-response retry of a successful update can return the current metadata version
 - the other partner receives one durable notification after a real committed change
 
-`version` protects mutable partnership metadata from lost updates.
+`version` protects mutable partnership metadata from lost updates. For a real value change, `expectedMetadataVersion` must match. For a retry whose requested date already equals the authoritative current date, return success with the current `metadataVersion` even if the submitted expected version is now stale.
 
 `generation` remains reserved for lifecycle/deadline fencing used by P3 and deletion interactions.
 
@@ -596,20 +646,23 @@ Using one immutable namespace identifier avoids redundant security identifiers t
 
 ## Migration plan
 
-### P1 migration 0008 refinement
+### P1 migration 0008 substrate
 
-Because P1 runtime has not started, migration `0008_partner_discovery_requests_runtime.sql` should include the request field needed by P2:
+P1 migration `0008_partner_discovery_requests_runtime.sql` is now committed and under P1 validation.
 
-~~~text
-partner_requests.relationship_start_date date
-~~~
+It already provides:
 
-The column is nullable only for forward compatibility with any pre-P1 legacy rows. Every new P1 request write requires a non-null value at the application boundary and repository boundary. Active-list, accept, and reciprocal-formation paths fail closed on a legacy pending row whose date is null.
+- nullable legacy-compatible `relationship_start_date`
+- new pending-row relationship-date enforcement
+- persisted `expired_at`
+- terminal-shape hardening
+- request-attempt outcome/index hardening
+- append-only request-attempt behavior
+- request list/pair indexes
 
-Do not invent a relationship date for legacy rows. P2 accepted-shape constraints are added `NOT VALID` where necessary so they protect new and updated rows without fabricating history for pre-existing terminal data.
+P2 must treat migration 0008 as owned P1 substrate. Do not rewrite migration 0008 during P2 implementation merely to add P2 behavior. If P1 validation exposes a genuine 0008 defect, fix that defect through the P1 validation workflow first.
 
-P1 indexes and terminal-shape hardening remain otherwise unchanged.
-
+P2 accept and reciprocal-formation paths fail closed on any retained legacy pending row whose relationship date is absent.
 ### P2 migration 0009
 
 Reserve:
@@ -628,13 +681,22 @@ accepted_partnership_id uuid null references partnerships(id)
 
 Use the default restrictive foreign-key behavior for `accepted_partnership_id`; a partnership tombstone cannot be physically removed while retained accepted-request evidence still references it. A future bounded-retention purge must remove or archive dependent request evidence first rather than silently nulling the replay identity.
 
-Add accepted-shape protection so new accepted rows require:
+Migration 0008 already enforces the accepted timestamp shape. Migration 0009 adds linkage without fabricating history:
 
-- `accepted_at` non-null
-- `accepted_partnership_id` non-null
-- `relationship_start_date` non-null
+~~~text
+CHECK (status <> 'accepted' OR accepted_partnership_id IS NOT NULL) NOT VALID
+CHECK (status = 'accepted' OR accepted_partnership_id IS NULL) NOT VALID
+~~~
 
-Non-accepted request states require `accepted_partnership_id` null.
+These `NOT VALID` constraints protect every new or updated row while allowing any pre-P2 legacy accepted evidence to remain untouched until an explicit retention/migration policy handles it.
+
+New P2-accepted rows therefore require:
+
+- `accepted_at` non-null through the existing 0008 terminal-shape constraint
+- `accepted_partnership_id` non-null through 0009
+- `relationship_start_date` non-null through the P1/P2 formation boundary
+
+Non-accepted new or updated request states require `accepted_partnership_id` null.
 
 Create `account_notifications` with recipient/account scoping, unique deduplication key, read timestamp, and partnership/actor references.
 
@@ -643,6 +705,8 @@ Add indexes for:
 - accepted request partnership lookup
 - account notifications by recipient and creation order
 - unread account notifications
+
+No new index is required for expiry-job cancellation because P1's scheduled-action deduplication key is unique and the consumed request IDs are already known.
 
 Migration 0009 does not create cryptographic key material or an additional security namespace identifier.
 
@@ -718,6 +782,7 @@ loadFormationEligibilityForAccounts
 insertPartnership
 insertPartnershipMembers
 markRequestsAccepted
+cancelPendingRequestExpiryActions
 loadCurrentPartnershipForAccount
 lockPartnershipForMetadataUpdate
 updateRelationshipStartDateIfVersion
@@ -838,13 +903,17 @@ Cover:
 - occupied-slot unique index prevents a simultaneous second partnership
 - two competing accepts sharing one account produce one partnership
 - explicit accept versus reciprocal create produces one partnership
+- accept versus sender-cancel produces one terminal outcome
+- accept versus recipient-decline produces one terminal outcome
 - reciprocal opposite-direction race produces one partnership
-- accepted request replay resolves to the same partnership
+- accepted request replay resolves to the same partnership while retained
+- accepted requests cancel their still-pending expiry actions
+- a concurrently processing expiry action becomes a safe terminal no-op
 - all incompatible pending requests become invalidated
 - consumed reciprocal requests become accepted, not invalidated
 - notification rows are atomic with formation/date update
 - relationship-date expectedMetadataVersion race allows one winner
-- same-date update is a no-op
+- same-date update is a no-op, including lost-response retry with the previous expectedMetadataVersion
 
 ### API integration tests
 
@@ -921,13 +990,13 @@ Exit gate:
 
 ### P2-B Migration and repositories
 
-1. extend planned P1 migration 0008 with request relationship_start_date
+1. consume the committed P1 migration 0008 substrate without rewriting it
 2. add migration 0009
 3. add accepted_partnership_id linkage with restrictive FK semantics
-4. add accepted-shape constraints
+4. add legacy-safe `NOT VALID` linkage-shape constraints
 5. add account_notifications
 6. add formation and partnership repositories
-7. add notification repository
+7. add notification repository and expiry-action cancellation helper
 8. extend database invariants
 
 Exit gate:
@@ -944,10 +1013,11 @@ Exit gate:
 4. create partnership and two members
 5. use the newly generated partnershipId as the fresh namespace root
 6. mark accepted request with partnership link
-7. invalidate other pending requests
-8. append partnership_formed lifecycle event
-9. create the deterministic durable in-app formation notification for the non-acting partner
-10. implement stable replay
+7. cancel its still-pending P1 expiry action
+8. invalidate other pending requests
+9. append partnership_formed lifecycle event
+10. create the deterministic durable in-app formation notification for the non-acting partner
+11. implement retention-scoped stable replay
 
 Exit gate:
 
@@ -958,10 +1028,10 @@ Exit gate:
 1. inject coordinator into P1
 2. enable paired mode in non-production test first
 3. form partnership from reciprocal candidate before P1 commit
-4. accept both request rows
+4. accept both request rows and cancel their pending expiry actions
 5. persist P1 idempotency paired response
 6. verify opposite-direction races
-7. verify accept-versus-reciprocal race
+7. verify accept-versus-reciprocal and expiry-worker-versus-formation races
 8. enable production paired mode only after all coordinator tests pass
 
 Exit gate:
@@ -1037,11 +1107,14 @@ Reject a P2 implementation if it:
 16. permits future relationship dates because the client clock says they are valid
 17. increments lifecycle generation for a metadata-only relationship-date edit
 18. silently overwrites a concurrent relationship-date change without expectedMetadataVersion
-19. emits duplicate notifications for a no-op date update
-20. exposes private counterpart eligibility reasons in public errors
-21. allows guessed partnership or notification IDs to cross account boundaries
-22. stores relationship dates or private content in notification routing rows
-23. enables P1 production paired mode without the P2 coordinator
+19. rejects a lost-response retry solely because the successful prior update advanced metadataVersion while the requested date already matches
+20. emits duplicate notifications for a no-op date update
+21. exposes private counterpart eligibility reasons in public errors
+22. allows guessed partnership or notification IDs to cross account boundaries
+23. stores relationship dates or private content in notification routing rows
+24. leaves accepted-request expiry jobs pending without intentionally handling the race
+25. rewrites committed P1 migration 0008 for P2-only behavior
+26. enables P1 production paired mode without the P2 coordinator
 
 ## Completion rule
 
