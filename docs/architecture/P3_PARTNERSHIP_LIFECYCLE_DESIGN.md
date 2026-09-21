@@ -2,7 +2,7 @@
 
 ## Status
 
-HARDENED DESIGN, P3-A THROUGH P3-H SOURCE IMPLEMENTED, CLOSURE VERIFICATION PENDING
+IMPLEMENTED AND LOCALLY VERIFIED
 
 Design branch:
 
@@ -1402,6 +1402,8 @@ P3 closure also requires:
 npm run health
 npm audit --audit-level=high
 ~~~
+
+Executed closure evidence is green: lifecycle domain/contracts 28/28, P3 security 6/6, all ten migrations from zero, database invariants, and the disposable PostgreSQL/API/worker integration matrix 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. The high-severity dependency audit reports 0 vulnerabilities. All 22 canonical P3 acceptance gates are closed.
 
 Because P3 changes the A1 account-deletion integration and P2 eligibility cleanup, closure must rerun relevant A1, P1, and P2 integration surfaces rather than relying only on new P3 tests.
 

@@ -43,7 +43,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
              P2 Partnership Formation ✅
                         |
                         v
-             P3 Lifecycle + Deletion 🟡
+             P3 Lifecycle + Deletion ✅
                         |
                 +-------+--------+
                 |                |
@@ -92,7 +92,7 @@ flowchart TD
     A1 --> P2["P2 Partnership Formation ✅"]
     P1 --> P2
 
-    P2 --> P3["P3 Lifecycle + Deletion 🟡"]
+    P2 --> P3["P3 Lifecycle + Deletion ✅"]
 
     P3 --> M1["M1 Messaging Core ⚪"]
     P3 --> R1["R1 Relationship Space ⚪"]
@@ -126,33 +126,35 @@ P1 ✅
    ->
 P2 ✅
    ->
-P3 🟡 ACTIVE
+P3 ✅
 ~~~
 
-P3 has a previously validated pure-domain baseline and a hardened runtime design on `feat/p3-partnership-lifecycle`. The design review reopens domain closure for the exact restore-open boundary and lifecycle capability refinement; persistence, API, worker, canonical dissolution, account-deletion integration, blocking, race, notification, deletion, and security closure remain incomplete. P3 therefore remains IN_PROGRESS.
+P3 is locally closed at 22/22 gates on `feat/p3-partnership-lifecycle`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
 ## Most recently completed milestone
 
-### P2 Partnership Formation and Relationship Date
+### P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns
 
 Verified closure branch:
 
 ~~~text
-feat/p2-partnership-formation @ fa2301d0
+feat/p3-partnership-lifecycle
 ~~~
 
 Verified implementation state:
 
-1. P2-A domain and contracts are committed
-2. P2-B migration 0009 plus formation and notification repositories are committed
-3. P2-C explicit accept plus the shared formation coordinator are committed
-4. P2-D reciprocal integration into P1 `paired` mode is committed
-5. P2-E current partnership read model, relationship-date metadata mutation, durable notifications, and client flow are committed
-6. P2-F local PostgreSQL/API/race/security harnesses are committed, including a P2 closure rerun of the P1 integration surface in real `paired` mode while standalone `test:p1:local` remains request-only
+1. P3-A refined domain and contracts are committed
+2. P3-B migration 0010 and lifecycle repositories are committed
+3. P3-C breakup APIs and the expanded current read model are committed
+4. P3-D generation-fenced deadline workers and reminders are committed
+5. P3-E canonical dissolution and A1 account-deletion integration are committed
+6. P3-F cooldown hygiene and former-partner blocking are committed
+7. P3-G browser lifecycle flows are committed
+8. P3-H PostgreSQL/API/worker/race/security closure harness is committed
 
-P2 is locally closed at 11/11 gates. Its domain/contracts suite passes 14/14, security passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass. P3 is now the active runtime milestone.
+P3 is locally closed at 22/22 gates with the complete green evidence summarized above. M1 Messaging Core and R1 Relationship Space are the next dependent milestones after P3 is merged to `main`.
 
-P2 must not rewrite verified P1 migration `0008_partner_discovery_requests_runtime.sql`.
+P3 did not rewrite verified migrations 0001 through 0009.
 
 ## Milestone branch flow
 
@@ -181,7 +183,7 @@ main @ 04b5229 verified through P2
           +--> P3-F cooldowns and former-partner blocking
           +--> P3-G browser lifecycle UI
           +--> P3-H integration closure
-          +--> merge to main only after every P3 gate is green
+          +--> verified at every P3 gate and ready to merge to main
 ~~~
 
 From P2 onward:

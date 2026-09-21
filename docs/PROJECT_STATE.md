@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, P1 Discovery and Partner Requests, and P2 Partnership Formation and Relationship Date are complete with repeatable local evidence. All nine committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the database invariant suite passes, the P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, the disposable PostgreSQL/API/worker integration matrix passes 27/27, the full repository health baseline is green, and the high-severity dependency audit reports 0 vulnerabilities. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, P1 Discovery and Partner Requests, P2 Partnership Formation and Relationship Date, and P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns are complete with repeatable local evidence. All ten committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, database invariants pass, the P3 lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, and the disposable PostgreSQL/API/worker integration matrix passes 39/39. Full repository health and the high-severity dependency audit are green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -115,7 +115,7 @@ Current epic status:
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
 - V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
 - F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
-- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS on `feat/p3-partnership-lifecycle`. P3-A through P3-H source implementation is committed: refined lifecycle domain/contracts, migration 0010, lifecycle persistence, breakup/cancel/restore APIs, canonical dissolution, generation-fenced finalizer and reminders, A1 account-deletion and recovery integration, exact cooldown persistence, former-partner history/blocking, serious in-app/email notices, destructive cleanup targets, browser lifecycle controls, API/worker/race/security tests, and `test:p3:local`. A local pre-closure run on 2026-09-21 passed Domain 48/48 and Contracts 17/17, then exposed malformed P3 invariant dollar quoting plus API/web/worker type errors. Those observed failures and the serious-event email cleanup race were repaired in `4f832cc`; the full P3 verification harness was added in `5cf7f58`. Fresh execution of `npm run test:p3:local`, `npm run health`, and `npm audit --audit-level=high` is still required before any P3 acceptance gate closes.
+- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: DONE on `feat/p3-partnership-lifecycle`. All 22 acceptance gates are closed. The lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Executed evidence covers exact cancellation/restoration boundaries, generation fencing, canonical dissolution, account-deletion precedence and recovery, exact cooldowns, synchronous authorization revocation, deletion manifests, former-partner blocking and privacy, serious notices, race persistence, and A1/P1/P2 regressions. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities.
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
@@ -163,16 +163,12 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1, P1, and P2 are complete and P2 is merged to `main`. P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns is the active runtime epic on `feat/p3-partnership-lifecycle`.
+A1, P1, P2, and P3 are complete. P3 is ready to merge from `feat/p3-partnership-lifecycle` after review.
 
-1. implement P3-A refined domain and contracts, including the non-overlapping one-hour cancel/restore boundary
-2. implement migration 0010 and P3 lifecycle repositories without rewriting migrations 0001 through 0009
-3. implement breakup APIs, generation-fenced workers, the canonical dissolution kernel, and A1 account-deletion integration
-4. implement cooldown hygiene, former-partner blocking, serious notices, and the browser lifecycle surface
-5. execute the full P3 PostgreSQL/API/worker/race/security matrix plus A1/P1/P2 regressions
-6. run full repository health and the high-severity dependency audit
-7. close P3 gates only from green evidence, reconcile documentation, then merge P3 to `main`
-8. keep V1 hosted verification separate until GitHub Actions capacity returns
+1. merge the verified P3 milestone branch to `main`
+2. begin M1 Messaging Core and R1 Relationship Space from the updated verified mainline
+3. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, and cleanup boundaries
+4. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
@@ -195,6 +191,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1, P1, and P2 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, and P2 at 11/11 gates. P2 is merged to `main @ 04b5229`. P3 documentation now records a hardened architecture and implementation sequence, but P3 remains IN_PROGRESS and no new runtime acceptance gate is closed by design work alone.
+A1, P1, P2, and P3 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, P2 at 11/11 gates, and P3 at 22/22 gates. P3 closure is supported by the green lifecycle domain/contracts, security, ten-migration PostgreSQL, database-invariant, API/worker/race, full health, and dependency-audit runs recorded above.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

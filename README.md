@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository has completed its verified foundation milestones through P2 Partnership Formation and Relationship Date. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, and P2 are DONE locally. P2 is closed at all 11 acceptance gates: all nine migrations apply from zero, database invariants pass, the P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`, the full `npm run health` regression is green, and `npm audit --audit-level=high` reports 0 vulnerabilities. P2 is merged to `main @ 04b5229`. P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns is active on `feat/p3-partnership-lifecycle`. P3-A through P3-H source implementation and the disposable verification harness are committed, including migration 0010, lifecycle APIs, canonical dissolution, workers, A1 deletion integration, cooldowns, former-partner blocking, serious notices, browser flows, race coverage, and security guards. Runtime P3 gates remain open until the fresh P3 local matrix, full repository health, and dependency audit are green. Hosted GitHub Actions verification remains separate under V1.
+The repository has completed its verified foundation milestones through P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. P3 is closed at all 22 acceptance gates: all ten migrations apply from zero, database invariants pass, the lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 
@@ -44,6 +44,7 @@ Start with:
 - `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the completed A1 implementation design
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
 - `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the completed, locally verified P2 implementation design
+- `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` for the completed, locally verified P3 implementation design
 - `docs/api/P2_PARTNERSHIP_API.md` for the implemented and locally verified P2 HTTP contract and replay/privacy semantics
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements

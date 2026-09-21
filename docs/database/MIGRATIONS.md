@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented through P3 migration `0010_partnership_lifecycle_runtime.sql`. Migrations 0001 through 0009 remain locally verified from P2 closure. Migration 0010 was observed applying successfully from zero in the 2026-09-21 pre-closure P3 run, but that run then failed in P3 invariant SQL before full database verification; the invariant quoting defect was repaired in `4f832cc`, so a fresh complete P3 run is still required.
+The PostgreSQL migration set is implemented and locally verified through P3 migration `0010_partnership_lifecycle_runtime.sql`. All ten migrations apply from zero against disposable PostgreSQL 16, and database invariants pass.
 
 ## Current and next migration
 
@@ -39,7 +39,7 @@ P3 forward-only migration `0010_partnership_lifecycle_runtime.sql` is committed.
 - ensure one destructive partnership deletion manifest per partnership
 - preserve migrations 0001 through 0009 byte-for-byte
 
-P3 security verification now pins verified migration 0009 before P3-only migration work is accepted. Fresh execution of the committed P3 security and PostgreSQL suites remains required for closure.
+P3 security verification pins verified migration 0009 before P3-only migration work is accepted. The clean ten-migration P3 run and catalog invariants are green; migration 0010 has SHA-256 `f976bee5747938b1f0b9759bf601419d1296648b7d92421bdd45ee12ea445b1d`.
 
 ## Policy
 

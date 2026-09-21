@@ -301,7 +301,7 @@ P2 preserves the modular-monolith transaction boundary:
 
 ## P3 partnership lifecycle design
 
-The hardened P3 design is defined in `P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` on the dedicated `feat/p3-partnership-lifecycle` branch. P3-A through P3-H source implementation is committed; closure remains pending fresh PostgreSQL, health, and dependency-audit evidence.
+The hardened P3 design is defined in `P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` on the dedicated `feat/p3-partnership-lifecycle` branch. P3-A through P3-H are implemented and locally verified at all 22 acceptance gates. The verified matrix includes lifecycle domain/contracts 28/28, security 6/6, ten migrations with database invariants green, disposable integration 39/39 with `P3_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
 
 P3 preserves the existing authority boundaries:
 

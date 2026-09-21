@@ -775,7 +775,7 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 
 # P3: Partnership Lifecycle, Breakup, Deletion, and Cooldowns
 
-Status: IN_PROGRESS
+Status: DONE
 
 ## Design status
 
@@ -815,9 +815,7 @@ Implemented repository surface includes:
 - API, worker, race, security, migration, and regression verification suites
 - disposable `test:p3:local` PostgreSQL harness
 
-A local pre-closure run on 2026-09-21 passed Domain 48/48 and Contracts 17/17, then exposed malformed P3 invariant dollar quoting and API/web/worker type errors. Those executed failures plus a serious-event email cleanup race were repaired in `4f832cc`. The P3-H verification harness was committed in `5cf7f58`.
-
-No P3 acceptance gate is closed yet because the repaired branch and new P3-H harness still require a fresh complete local execution.
+Local closure is verified by lifecycle domain/contracts 28/28, P3 security 6/6, all ten migrations from zero, passing database invariants, and the disposable PostgreSQL/API/worker integration matrix 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. The high-severity dependency audit reports 0 vulnerabilities.
 
 ## Implemented sequence
 
@@ -851,7 +849,7 @@ Implemented.
 
 ### P3-H Integration closure harness
 
-Implemented. Closure evidence remains pending execution of the fresh local matrix, repository health, and dependency audit.
+Implemented and verified by the complete local matrix, repository health, and dependency audit.
 
 ## Scope
 
@@ -867,28 +865,28 @@ Implemented. Closure evidence remains pending execution of the fresh local matri
 
 ## Acceptance gates
 
-- [ ] refined pure domain state transitions are implemented
-- [ ] refined pure capability rules are implemented
-- [ ] refined domain boundary tests pass
-- [ ] breakup initiation persists atomically
-- [ ] one-hour cancellation persists and invalidates stale scheduled work
-- [ ] first restore intent extends the deadline exactly once
-- [ ] restoration intent cannot be withdrawn
-- [ ] second restore intent restores the same partnership
-- [ ] worker finalizes at day 7 when neither restores
-- [ ] worker finalizes at day 10 when only one restores
-- [ ] stale finalizer cannot dissolve a restored or newer state
-- [ ] account deletion during breakup preserves original breakup deadline
-- [ ] account recovery does not reset an existing breakup deadline
-- [ ] earlier breakup deadline wins over later account-deletion deadline
-- [ ] final breakup dissolution starts exact three-calendar-month cooldown
-- [ ] permanent account deletion from active partnership starts exact one-calendar-month cooldown for remaining partner
-- [ ] final dissolution revokes realtime and mutation authorization before cleanup completes
-- [ ] deletion manifest is created for destructive cleanup
-- [ ] former-partner blocking is available only after final dissolution
-- [ ] blocking prevents discovery, requests, and re-pairing
-- [ ] minimal serious-event email notifications are emitted
-- [ ] API, database, worker, race, and security tests pass
+- [x] refined pure domain state transitions are implemented
+- [x] refined pure capability rules are implemented
+- [x] refined domain boundary tests pass
+- [x] breakup initiation persists atomically
+- [x] one-hour cancellation persists and invalidates stale scheduled work
+- [x] first restore intent extends the deadline exactly once
+- [x] restoration intent cannot be withdrawn
+- [x] second restore intent restores the same partnership
+- [x] worker finalizes at day 7 when neither restores
+- [x] worker finalizes at day 10 when only one restores
+- [x] stale finalizer cannot dissolve a restored or newer state
+- [x] account deletion during breakup preserves original breakup deadline
+- [x] account recovery does not reset an existing breakup deadline
+- [x] earlier breakup deadline wins over later account-deletion deadline
+- [x] final breakup dissolution starts exact three-calendar-month cooldown
+- [x] permanent account deletion from active partnership starts exact one-calendar-month cooldown for remaining partner
+- [x] final dissolution revokes realtime and mutation authorization before cleanup completes
+- [x] deletion manifest is created for destructive cleanup
+- [x] former-partner blocking is available only after final dissolution
+- [x] blocking prevents discovery, requests, and re-pairing
+- [x] minimal serious-event email notifications are emitted
+- [x] API, database, worker, race, and security tests pass
 
 # M1: Messaging Core
 

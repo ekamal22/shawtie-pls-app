@@ -27,7 +27,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
 | P1 Discovery and Partner Requests | DONE | 14/14 gates; migration 0008; P1 local 16/16; full health and audit green |
 | P2 Partnership Formation | DONE | 11/11 gates; nine migrations; P2 domain/contracts 14/14; security 5/5; local integration 27/27; health and audit green |
-| P3 Partnership Lifecycle | IN_PROGRESS | P3-A through P3-H source and local verification harness committed; fresh PostgreSQL, health, and audit evidence pending |
+| P3 Partnership Lifecycle | DONE | 22/22 gates; ten migrations; lifecycle domain/contracts 28/28; security 6/6; local integration 39/39; health and audit green |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
 ## Milestone summary
@@ -38,7 +38,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
 | 2 P1 Discovery and Requests | DONE | 14/14 acceptance gates closed with local PostgreSQL/API/worker/security evidence |
 | 3 P2 Partnership Formation | DONE | 11/11 acceptance gates closed with local domain, PostgreSQL, API, worker, race, security, health, and audit evidence |
-| 4 P3 Partnership Lifecycle | IN_PROGRESS | P3-A through P3-H implementation committed on dedicated branch; closure waits on fresh local P3 matrix, health, and audit evidence |
+| 4 P3 Partnership Lifecycle | DONE | 22/22 acceptance gates closed with local domain, PostgreSQL, API, worker, race, security, health, and audit evidence |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
 | 7 M3 Media and Voice Messages | PLANNED | requires realtime/offline substrate |
@@ -52,13 +52,11 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. run the committed `npm run test:p3:local` PostgreSQL/API/worker/race/security matrix plus A1/P1/P2 regressions
-2. fix any failure from executed evidence without weakening assertions
-3. run `npm run health`
-4. run `npm audit --audit-level=high`
-5. close P3 acceptance gates only from the complete green evidence
-6. merge P3 to `main` only after closure evidence is recorded
-7. keep V1 separate until GitHub Actions capacity returns
+1. merge the verified P3 milestone branch to `main`
+2. begin M1 Messaging Core and R1 Relationship Space from the updated verified mainline
+3. preserve the verified P3 lifecycle and authorization boundaries in dependent work
+4. keep V1 separate until GitHub Actions capacity returns
+
 ## Execution graph
 
 ```text
@@ -405,7 +403,7 @@ Exit evidence:
 
 # Milestone 4: P3 Partnership Lifecycle, Deletion, and Cooldowns
 
-Status: IN_PROGRESS.
+Status: DONE.
 
 Dedicated branch:
 
@@ -415,7 +413,7 @@ Canonical design:
 
 `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
 
-The prior pure-domain baseline is locally validated, but the hardened design identified a required P3-A refinement: restoration intent opens at the exact one-hour cancellation boundary, and the centralized capability surface must gain explicit breakup initiation authority. Those refined domain gates must be rerun before they are considered closed.
+The refined domain boundary, runtime implementation, and closure harness are locally verified. Restoration intent opens exactly when the one-hour cancellation window closes, and lifecycle capability authority remains centralized.
 
 Key design decisions:
 
@@ -440,7 +438,7 @@ Implementation sequence:
 7. P3-G browser lifecycle UI
 8. P3-H PostgreSQL/API/worker/race/security closure
 
-Closure requires the complete local P3 matrix, relevant A1/P1/P2 regressions, full repository health, and the high-severity dependency audit.
+Closure evidence is green: lifecycle domain/contracts 28/28, P3 security 6/6, all ten migrations from zero, database invariants, and the disposable PostgreSQL/API/worker integration matrix 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. The high-severity dependency audit reports 0 vulnerabilities.
 
 **REDMI PHONE REQUIRED: NO.**
 

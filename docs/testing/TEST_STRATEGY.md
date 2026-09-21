@@ -238,7 +238,7 @@ P2 verification is complete at closure commit `fa2301d0`: the domain/contracts s
 
 P3 uses the hardened test architecture in `../architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`.
 
-The refined P3 domain/contracts surface and the P3-H API, worker, race, security, deletion, and disposable PostgreSQL harness are committed. A pre-closure run on 2026-09-21 passed Domain 48/48 and Contracts 17/17, then exposed invariant and type failures that were repaired in `4f832cc`. Full closure still requires a fresh run of the committed P3 matrix after those repairs.
+P3 verification is complete: the lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, typecheck, builds, lint, Prettier, and dependency checks green. `npm audit --audit-level=high` reports 0 vulnerabilities.
 
 Required evidence includes:
 
@@ -283,7 +283,7 @@ npm run health
 npm audit --audit-level=high
 ```
 
-The P3 local harness emits `P3_LOCAL_POSTGRES_PASS` only after migrations, invariants, API, worker, race, deletion, and cross-epic regression work is green. The commands are committed in `package.json`; successful fresh execution remains the closure requirement.
+The P3 local harness emitted `P3_LOCAL_POSTGRES_PASS` after migrations, invariants, API, worker, race, deletion, and cross-epic regression work completed successfully. Hosted GitHub Actions verification remains separate under V1.
 
 ### Integration
 
