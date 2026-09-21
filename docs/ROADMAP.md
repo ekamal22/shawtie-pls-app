@@ -6,7 +6,7 @@ Refreshed: 2026-09-21.
 
 This is the canonical high-level execution roadmap.
 
-Detailed epic acceptance gates remain in `docs/ROADMAP_EPICS.md`. Verified current implementation state remains in `docs/PROJECT_STATE.md`.
+Detailed epic acceptance gates remain in `docs/ROADMAP_EPICS.md`. Verified current implementation state remains in `docs/PROJECT_STATE.md`. The compact dependency and branch-flow reference is `docs/EXECUTION_GRAPH.md`.
 
 An epic is DONE only when its required gates are satisfied with committed evidence.
 

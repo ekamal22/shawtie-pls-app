@@ -94,10 +94,13 @@ Architecture work must preserve the defining invariant:
 - `PROJECT_STATE.md`
 - `ROADMAP.md`
 - `ROADMAP_EPICS.md`
+- `EXECUTION_GRAPH.md`
 
 These documents describe current planning state and execution order. They do not override accepted ADRs, the PRD, source code, or migrations.
 
 `ROADMAP_EPICS.md` is the canonical implementation epic and acceptance-gate catalog.
+
+`EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
 `ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` and `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` is now the active runtime design and fixes explicit and reciprocal formation, metadata-version concurrency, notification semantics, expiry-job races, and partnership-ID namespace isolation before implementation.
 
