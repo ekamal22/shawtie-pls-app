@@ -10,10 +10,11 @@ export async function apiRequest<T>(
   options: {
     method?: "GET" | "POST" | "PATCH" | "DELETE";
     body?: unknown;
+    headers?: HeadersInit;
   } = {},
 ): Promise<T> {
   const method = options.method ?? "GET";
-  const headers = new Headers();
+  const headers = new Headers(options.headers);
   if (method !== "GET") {
     headers.set("x-shawtie-csrf", "1");
   }
