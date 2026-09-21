@@ -866,7 +866,11 @@ test("A1 device API lists, renames, revokes, and refuses silent revival of a rev
     const revokeSecond = await app.inject({
       method: "DELETE",
       url: "/api/v1/me/devices/" + secondSession.deviceId,
-      headers: { ...headers, cookie: user.cookie },
+      headers: {
+        origin: config.appOrigin,
+        "x-shawtie-csrf": "1",
+        cookie: user.cookie,
+      },
     });
     assert.equal(revokeSecond.statusCode, 200, revokeSecond.body);
     const secondRevoked = await app.inject({
@@ -901,7 +905,11 @@ test("A1 device API lists, renames, revokes, and refuses silent revival of a rev
     const revokeCurrent = await app.inject({
       method: "DELETE",
       url: "/api/v1/me/devices/" + firstSession.deviceId,
-      headers: { ...headers, cookie: user.cookie },
+      headers: {
+        origin: config.appOrigin,
+        "x-shawtie-csrf": "1",
+        cookie: user.cookie,
+      },
     });
     assert.equal(revokeCurrent.statusCode, 200, revokeCurrent.body);
     const currentRevoked = await app.inject({
