@@ -53,6 +53,7 @@ export async function queueWorkerLifecycleNotice(
     readonly now: Date;
     readonly emailTemplate?: string;
     readonly emailParameters?: Readonly<Record<string, string | number | boolean | null>>;
+    readonly emailAccountId?: string | null;
   },
 ): Promise<void> {
   await insertAccountNotification(transaction, {
@@ -69,10 +70,13 @@ export async function queueWorkerLifecycleNotice(
   const profile = await getAccountProfile(transaction, input.recipientAccountId);
   if (!profile) return;
   await queueWorkerSecurityEmail(transaction, {
-    accountId: input.recipientAccountId,
+    accountId:
+      input.emailAccountId === undefined
+        ? input.recipientAccountId
+        : input.emailAccountId,
     destinationEmail: profile.email,
     template: input.emailTemplate,
-    parameters: input.emailParameters,
+    ...(input.emailParameters ? { parameters: input.emailParameters } : {}),
     deduplicationKey: "lifecycle-email:" + input.deduplicationKey,
     now: input.now,
   });

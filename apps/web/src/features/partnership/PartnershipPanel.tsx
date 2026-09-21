@@ -159,13 +159,15 @@ export function PartnershipPanel() {
   }
 
   async function cancelBreakup() {
-    if (!partnership?.breakup || !partnership.capabilities.cancelBreakup) return;
+    const current = partnership;
+    const breakup = current?.breakup;
+    if (!current || !breakup || !current.capabilities.cancelBreakup) return;
     await runMutation(async () => {
       await apiRequest(
         "/api/v1/partnerships/" +
-          partnership.partnershipId +
+          current.partnershipId +
           "/breakups/" +
-          partnership.breakup.breakupId +
+          breakup.breakupId +
           "/cancel",
         {
           method: "POST",
@@ -177,7 +179,9 @@ export function PartnershipPanel() {
   }
 
   async function restorePartnership() {
-    if (!partnership?.breakup || !partnership.capabilities.submitRestoreIntent) return;
+    const current = partnership;
+    const breakup = current?.breakup;
+    if (!current || !breakup || !current.capabilities.submitRestoreIntent) return;
     if (
       !window.confirm(
         "Submit your restore request? It cannot be withdrawn during this breakup process.",
@@ -188,9 +192,9 @@ export function PartnershipPanel() {
     await runMutation(async () => {
       const result = await apiRequest<{ restored: boolean }>(
         "/api/v1/partnerships/" +
-          partnership.partnershipId +
+          current.partnershipId +
           "/breakups/" +
-          partnership.breakup.breakupId +
+          breakup.breakupId +
           "/restore",
         {
           method: "POST",

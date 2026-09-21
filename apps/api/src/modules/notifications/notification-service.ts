@@ -10,6 +10,7 @@ import {
   parseAtBoundary,
   type NotificationCursor,
   type NotificationListQuery,
+  type NotificationListResponse,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
@@ -42,17 +43,7 @@ export class NotificationService {
   async list(
     auth: AuthContext,
     input: NotificationListQuery,
-  ): Promise<{
-    items: Array<{
-      notificationId: string;
-      eventType: "partnership_formed" | "relationship_start_date_changed";
-      actorAccountId: string | null;
-      partnershipId: string | null;
-      createdAt: string;
-      readAt: string | null;
-    }>;
-    nextCursor: string | null;
-  }> {
+  ): Promise<NotificationListResponse> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       let snapshotAt = now;

@@ -591,7 +591,7 @@ END;
 $$;
 
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO account_partner_eligibility (
@@ -609,9 +609,9 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO partnership_blocks (
@@ -628,7 +628,7 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO breakup_processes (
   id, partnership_id, initiated_by_account_id, initiated_at,
@@ -645,7 +645,7 @@ INSERT INTO breakup_processes (
   TIMESTAMPTZ '2026-02-01 00:30:00+00'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE breakup_processes
@@ -656,7 +656,7 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO account_notifications (
   id, recipient_account_id, actor_account_id, partnership_id,
@@ -671,7 +671,7 @@ INSERT INTO account_notifications (
   TIMESTAMPTZ '2026-02-01 00:00:00+00'
 );
 
-DO $
+DO $$
 DECLARE
   terminal_validated boolean;
   cooldown_validated boolean;
@@ -695,6 +695,6 @@ BEGIN
     RAISE EXCEPTION 'P3 legacy-safe lifecycle constraints must remain NOT VALID';
   END IF;
 END;
-$;
+$$;
 
 ROLLBACK;

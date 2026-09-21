@@ -171,6 +171,8 @@ export async function dissolvePartnership(
           reason: "breakup",
           deadline: input.effectiveAt.toISOString(),
         },
+        emailAccountId:
+          lifecycle.accountDeletion?.accountId === accountId ? null : accountId,
       });
     }
   } else {
