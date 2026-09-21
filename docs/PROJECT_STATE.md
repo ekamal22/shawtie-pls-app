@@ -135,9 +135,9 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `milestone/p1-discovery-requests` -> `69cb238`
 - `feat/p2-partnership-formation` -> `04b5229`
 - `feat/p3-partnership-lifecycle` -> completed P3 development and closure history
-- `main` -> `9820801`, verified through P3
+- `main` contains verified P3 code baseline `9820801`; later documentation-only commits may advance the branch without changing that runtime evidence
 
-P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. The new verified branching baseline for dependent work is `main @ 9820801`.
+P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
 The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
 
@@ -159,8 +159,8 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 A1, P1, P2, and P3 are complete and merged into the verified mainline.
 
-1. begin M1 Messaging Core from `main @ 9820801`
-2. begin R1 Relationship Space from the same verified mainline when R1 implementation starts
+1. begin M1 Messaging Core from the latest `main` containing verified P3
+2. begin R1 Relationship Space from that same verified mainline when R1 implementation starts
 3. allow M1 and R1 to progress in parallel only with explicitly coordinated schema and API changes
 4. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
 5. begin M2 only after verified M1 is merged to main

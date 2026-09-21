@@ -14,13 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified mainline is:
-
-~~~text
-main @ 9820801
-~~~
-
-It includes the completed and locally verified implementation through P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns.
+The verified P3 code baseline is commit `9820801`, now contained in `main`. Documentation-only roadmap reconciliation may advance the `main` branch beyond that code commit without changing the verified runtime baseline.
 
 Completed milestones:
 
@@ -78,7 +72,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The next verified-mainline work is:
 
 ~~~text
-main @ 9820801
+latest main containing verified P3
   |
   +--> feat/m1-messaging-core
   |
@@ -89,8 +83,8 @@ M1 and R1 may progress in parallel because both now depend on the verified P3 li
 
 Recommended execution order:
 
-1. create `feat/m1-messaging-core` from `main @ 9820801`
-2. create `feat/r1-relationship-space` from the same verified mainline when R1 implementation begins
+1. create `feat/m1-messaging-core` from the latest `main` containing verified P3
+2. create `feat/r1-relationship-space` from that same verified mainline when R1 implementation begins
 3. keep M1 and R1 schema/API changes explicitly coordinated
 4. close each epic only from its own acceptance evidence
 5. merge completed milestone branches back to main before dependent milestones branch

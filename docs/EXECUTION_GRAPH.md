@@ -129,7 +129,7 @@ P2 ✅
 P3 ✅
 ~~~
 
-P3 is locally closed at 22/22 gates and merged into `main @ 9820801`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
+P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
 ## Most recently completed milestone
 
@@ -152,7 +152,7 @@ Verified implementation state:
 7. P3-G browser lifecycle flows are committed
 8. P3-H PostgreSQL/API/worker/race/security closure harness is committed
 
-P3 is locally closed at 22/22 gates with the complete green evidence summarized above and is merged to `main @ 9820801`. M1 Messaging Core and R1 Relationship Space are now the next dependent milestones.
+P3 is locally closed at 22/22 gates with the complete green evidence summarized above and its verified code baseline is merged to `main`. M1 Messaging Core and R1 Relationship Space are now the next dependent milestones.
 
 P3 did not rewrite verified migrations 0001 through 0009.
 
@@ -171,7 +171,7 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 9820801 verified through P3
+latest main containing verified P3
   |
   +--> feat/m1-messaging-core
   |
