@@ -783,17 +783,17 @@ The hardened P3 runtime architecture and implementation sequence are defined in:
 
 `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
 
-P3 is isolated on:
+P3 was implemented and verified on:
 
 `feat/p3-partnership-lifecycle`
 
-created from verified `main @ 04b5229`. Executed closure evidence is recorded at `36bfb6b`; the branch is ready to merge after review.
+created from verified `main @ 04b5229`. Executed closure evidence was recorded at `36bfb6b`, final repo-wide closure documentation at `9820801`, and the verified branch was fast-forward merged to `main @ 9820801`.
 
 The pre-implementation refinement preserves the verified P2 boundaries and reuses F2 durable workers plus A1 account-deletion authority. It introduces one canonical partnership-dissolution kernel shared by normal breakup and permanent account-deletion paths, breakup-process generation fencing, synchronous authorization revocation before asynchronous cleanup, explicit cooldown hygiene, and server-derived former-partner blocking.
 
 ## Current implementation progress
 
-P3-A through P3-H source implementation is committed on the dedicated branch.
+P3-A through P3-H source implementation is committed, verified, and merged into main.
 
 Implemented repository surface includes:
 

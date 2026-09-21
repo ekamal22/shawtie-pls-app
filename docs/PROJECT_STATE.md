@@ -134,17 +134,10 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `milestone/a1-accounts-devices` -> `a876406`
 - `milestone/p1-discovery-requests` -> `69cb238`
 - `feat/p2-partnership-formation` -> `04b5229`
-- `feat/p3-partnership-lifecycle` -> verified closure evidence recorded at `36bfb6b`
+- `feat/p3-partnership-lifecycle` -> completed P3 development and closure history
+- `main` -> `9820801`, verified through P3
 
-`main` remains fast-forwarded through the verified P2 closure at `04b5229` until P3 is merged.
-
-The verified P3 closure branch is:
-
-```text
-feat/p3-partnership-lifecycle
-```
-
-P3 was created directly from verified `main @ 04b5229`, completed all 22 acceptance gates, recorded its executed closure evidence at `36bfb6b`, and is ready for merge after review.
+P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. The new verified branching baseline for dependent work is `main @ 9820801`.
 
 The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
 
@@ -164,12 +157,14 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1, P1, P2, and P3 are complete. P3 is ready to merge from `feat/p3-partnership-lifecycle` after review.
+A1, P1, P2, and P3 are complete and merged into the verified mainline.
 
-1. merge the verified P3 milestone branch to `main`
-2. begin M1 Messaging Core and R1 Relationship Space from the updated verified mainline
-3. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, and cleanup boundaries
-4. keep V1 hosted verification separate until GitHub Actions capacity returns
+1. begin M1 Messaging Core from `main @ 9820801`
+2. begin R1 Relationship Space from the same verified mainline when R1 implementation starts
+3. allow M1 and R1 to progress in parallel only with explicitly coordinated schema and API changes
+4. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
+5. begin M2 only after verified M1 is merged to main
+6. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 

@@ -129,7 +129,7 @@ P2 ✅
 P3 ✅
 ~~~
 
-P3 is locally closed at 22/22 gates on `feat/p3-partnership-lifecycle`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
+P3 is locally closed at 22/22 gates and merged into `main @ 9820801`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
 ## Most recently completed milestone
 
@@ -152,7 +152,7 @@ Verified implementation state:
 7. P3-G browser lifecycle flows are committed
 8. P3-H PostgreSQL/API/worker/race/security closure harness is committed
 
-P3 is locally closed at 22/22 gates with the complete green evidence summarized above. M1 Messaging Core and R1 Relationship Space are the next dependent milestones after P3 is merged to `main`.
+P3 is locally closed at 22/22 gates with the complete green evidence summarized above and is merged to `main @ 9820801`. M1 Messaging Core and R1 Relationship Space are now the next dependent milestones.
 
 P3 did not rewrite verified migrations 0001 through 0009.
 
@@ -171,16 +171,14 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 04b5229 verified through P2
+main @ 9820801 verified through P3
   |
-  +--> feat/p3-partnership-lifecycle
-          |
-          +--> P3-A through P3-H DONE
-          +--> 22/22 acceptance gates green
-          +--> closure evidence recorded at 36bfb6b
-          +--> ready to merge to main
-                    |
-                    +--> create M1 and R1 milestone branches from updated main
+  +--> feat/m1-messaging-core
+  |
+  +--> feat/r1-relationship-space
+
+M1 and R1 may progress in parallel.
+M2 waits for verified M1 to return to main.
 ~~~
 
 From P2 onward:
@@ -195,10 +193,11 @@ From P2 onward:
 
 The legacy `feat/m1-executable-foundation` branch is historical and is not the future M1 Messaging Core branch.
 
-The future messaging branch will be:
+The next milestone branches are:
 
 ~~~text
 feat/m1-messaging-core
+feat/r1-relationship-space
 ~~~
 
 ## Physical-device boundary
@@ -221,17 +220,18 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 
 ## Release path
 
-The shortest dependency path from the current active milestone to stable release is:
+The shortest dependency path from the current verified mainline to stable release is:
 
 ~~~text
-P3
- -> M1
+M1
  -> M2
  -> M3/C1
  -> S1
  -> R2
  -> Stable Release
 ~~~
+
+R1 progresses alongside M1 after the verified P3 merge and must be complete before R2.
 
 R1 can progress alongside M1 once P2 and the required P3 capability boundaries are stable.
 
