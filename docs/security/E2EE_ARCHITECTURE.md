@@ -56,6 +56,10 @@ Each partnership also has an explicit cryptographic epoch.
 
 The epoch supports reviewed key rotation, device revocation, and protocol migration within the same partnership.
 
+P2 may create a fresh opaque non-secret `security_context_id` as the namespace identifier for a partnership before S1 cryptography is implemented. That identifier is not a key, does not prove encryption exists, and must not be used as authentication authority. S1 later binds reviewed cryptographic state to that fresh namespace.
+
+P2 must not insert a fake cryptographic epoch merely to satisfy namespace creation. Real `partnership_crypto_epochs` begin only when the reviewed S1 protocol provisions actual cryptographic state.
+
 A new partnership always starts from a new cryptographic root and must never inherit:
 
 - old message keys

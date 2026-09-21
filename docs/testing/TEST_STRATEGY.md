@@ -206,7 +206,7 @@ Required evidence includes:
 - fresh partnership and security-context identifiers
 - current partnership read isolation
 - relationship-date expected-version conflict behavior
-- active-only relationship-date mutation capability
+- active and breakup-pending relationship-date mutation capability, with account-deletion and terminated-state denial
 - durable other-partner relationship-date notification
 - notification account isolation and private no-store responses
 - no fake E2EE key or epoch creation before S1

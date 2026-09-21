@@ -445,10 +445,10 @@ Add:
 ~~~text
 expired_at timestamptz
 invalidated_reason text
-relationship_start_date date NOT NULL
+relationship_start_date date
 ~~~
 
-`relationship_start_date` is the sender's manually entered proposed relationship date. P1 persists it because reciprocal requests may immediately auto-form through P2 without a separate accept screen. P1 validates it against trusted PostgreSQL UTC business date using the shared partnership-domain helper.
+`relationship_start_date` is the sender's manually entered proposed relationship date. The column remains nullable only for forward compatibility with any pre-P1 legacy rows, but every new P1 request write requires a non-null value. P1 persists it because reciprocal requests may immediately auto-form through P2 without a separate accept screen. P1 validates it against trusted PostgreSQL UTC business date using the shared partnership-domain helper. Any legacy pending row with a null value fails closed and cannot form a partnership.
 
 Add a terminal-shape constraint.
 

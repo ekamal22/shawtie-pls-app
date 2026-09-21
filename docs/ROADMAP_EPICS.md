@@ -564,15 +564,15 @@ P1 preserves Architecture Baseline 1.0 and builds on F2 plus the refined A1 acco
 
 The second-pass refinement adds create idempotency, separate abuse-rate-limit transactions, pair locking for cancel/decline, cursor pagination, cross-epic invalidation hooks, migration backfill rules, attempt retention, and fail-closed production gating until P2 formation is wired.
 
-P1 is designed now, but runtime implementation depends on A1 account contracts and sessions. No P1 acceptance gate is checked from design work alone.
+A1 dependencies are complete, so P1 runtime implementation may begin now. No P1 acceptance gate is checked from design work alone.
 
 ## Implementation sequence
 
 ### P1-A Domain, contracts, migration, repositories
 
 - request domain rules and exact time boundaries
-- discovery, cursor, and mutation contracts
-- migration 0008
+- discovery, cursor, and mutation contracts including required request `relationshipStartDate`
+- migration 0008 including legacy-compatible relationship-date persistence
 - forward-safe request terminal-shape backfill
 - discovery repository
 - partner-request repository
@@ -593,6 +593,7 @@ P1 is designed now, but runtime implementation depends on A1 account contracts a
 ### P1-C Request creation
 
 - stable account target plus expected username
+- required manually entered `relationshipStartDate`
 - required idempotency key
 - separate committed security-rate-limit preflight
 - deterministic two-account locking
@@ -602,7 +603,7 @@ P1 is designed now, but runtime implementation depends on A1 account contracts a
 - exact one-hour decline cooldown
 - rolling one-month limit
 - seven-day request insert
-- reciprocal-request detection
+- reciprocal-request detection with triggering request identity and relationship date
 - same-transaction P2 coordinator handoff
 - fail-closed production feature mode
 
@@ -618,7 +619,8 @@ P1 is designed now, but runtime implementation depends on A1 account contracts a
 ### P1-E Client and abuse closure
 
 - exact search UI
-- incoming/outgoing request UI
+- request send UI with required relationship date
+- incoming/outgoing request UI showing the proposed date to participants
 - cancel and decline controls
 - generic recipient-unavailable behavior
 - security and abuse regressions

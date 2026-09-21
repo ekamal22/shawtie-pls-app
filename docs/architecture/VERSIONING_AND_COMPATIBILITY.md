@@ -88,6 +88,17 @@ Before writing a new durable payload version, rollout planning must define:
 
 Durable payload versioning does not replace aggregate generation checks. Payload versions protect serialization compatibility, while aggregate generations protect lifecycle correctness.
 
+## Partnership version versus generation
+
+P2 formalizes two separate counters on partnership state:
+
+- `version` protects optimistic concurrency for mutable partnership metadata such as `relationship_start_date`
+- `generation` fences lifecycle and deadline-sensitive transitions such as breakup and account-deletion interactions
+
+A relationship-date update increments `version` only. It must not invalidate a scheduled lifecycle action by incrementing `generation`. Lifecycle transitions may change generation according to their own state-machine rules.
+
+Clients submit `expectedVersion` for relationship metadata updates and refetch on conflict.
+
 ## Realtime compatibility
 
 Realtime messages contain a schema or protocol version.

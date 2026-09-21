@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, and F2 Persistence and Worker Foundation are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all six PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2 durable runtime passes its complete local PostgreSQL integration matrix, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, and A1 Accounts and Devices are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all seven currently committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2 durable runtime and completed A1 acceptance matrix pass locally, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -101,7 +101,7 @@ Implemented and locally validated:
 - scheduled-action `FOR UPDATE SKIP LOCKED` claim concurrency
 - deterministic two-account lock ordering
 
-The current domain suite contains 27 tests and passes in local validation.
+The current domain suite contains 32 tests and passes in local validation.
 
 The threat model and data-classification baseline are complete and remain the active security foundation for implementation.
 

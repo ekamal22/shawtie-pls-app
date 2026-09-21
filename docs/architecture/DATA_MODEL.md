@@ -122,7 +122,7 @@ expires_at
 declined_at
 cancelled_at
 accepted_at
-relationship_start_date
+relationship_start_date nullable only for pre-P1 legacy compatibility; required on every new request
 accepted_partnership_id
 ```
 

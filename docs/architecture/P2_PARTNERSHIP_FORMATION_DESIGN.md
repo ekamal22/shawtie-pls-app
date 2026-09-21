@@ -439,8 +439,8 @@ Rules:
 - authenticate with A1
 - target partnership ID is explicit and immutable
 - verify current membership server-side
-- relationship metadata is editable only while lifecycle state is `active`
-- `breakup_pending`, account-deletion view-only state, and terminated state reject the mutation
+- relationship metadata is editable while lifecycle state is `active` or `breakup_pending`
+- account-deletion view-only state and terminated state reject the mutation
 - future dates are rejected using trusted PostgreSQL UTC date
 - `expectedVersion` must equal the current partnership `version`
 - a successful change increments `version` by one
@@ -463,8 +463,8 @@ change_relationship_start_date
 Decision:
 
 - active partnership member: allowed
-- breakup_pending: denied with `PARTNERSHIP_METADATA_LOCKED`
-- account-deletion view-only state: denied
+- breakup_pending partnership member: allowed
+- account-deletion view-only state: denied with `PARTNERSHIP_METADATA_LOCKED`
 - terminated or non-member: denied
 - inactive/deletion-pending actor account: denied
 
@@ -571,12 +571,12 @@ This satisfies isolation now without claiming E2EE before it exists.
 Because P1 runtime has not started, migration `0008_partner_discovery_requests_runtime.sql` should include the request field needed by P2:
 
 ~~~text
-partner_requests.relationship_start_date date NOT NULL
+partner_requests.relationship_start_date date
 ~~~
 
-Fresh request creation always supplies it.
+The column is nullable only for forward compatibility with any pre-P1 legacy rows. Every new P1 request write requires a non-null value at the application boundary and repository boundary. Active-list, accept, and reciprocal-formation paths fail closed on a legacy pending row whose date is null.
 
-Do not invent a relationship date for legacy accepted rows. If non-disposable pre-P2 data contains accepted requests without a trustworthy manually entered date, migration must fail clearly rather than silently fabricate product history.
+Do not invent a relationship date for legacy rows. P2 accepted-shape constraints are added `NOT VALID` where necessary so they protect new and updated rows without fabricating history for pre-existing terminal data.
 
 P1 indexes and terminal-shape hardening remain otherwise unchanged.
 
@@ -802,8 +802,8 @@ Cover:
 - tomorrow is rejected
 - client timezone does not affect trusted-date decision
 - reciprocal initial date selects the triggering request proposal
-- active partnership permits relationship-date edit
-- breakup-pending and terminated states deny relationship-date edit
+- active and breakup-pending partnerships permit relationship-date edit
+- account-deletion view-only and terminated states deny relationship-date edit
 - metadata version conflict is stable
 
 ### Database integration tests

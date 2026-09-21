@@ -38,6 +38,7 @@ canEditRelationshipObject
 canChangeNickname
 canChangeEmail
 canChangeUsername
+canChangeRelationshipStartDate
 canSubmitRestoreIntent
 canCancelBreakup
 canBlock
@@ -83,6 +84,8 @@ Examples:
 - device revocation is account-owned and does not depend on client-provided authorization state
 
 Authentication state, recent reauthentication, and device ownership are API security prerequisites. Partnership-dependent eligibility remains in the pure capability engine rather than being copied into route handlers.
+
+P2 adds the `change_relationship_start_date` capability. It is allowed for authenticated members while the partnership is `active` or `breakup_pending`, denied during account-deletion view-only state, and denied after termination or for non-members. Relationship-date validity still uses trusted server date in the P2 domain helper.
 
 ## UI use
 

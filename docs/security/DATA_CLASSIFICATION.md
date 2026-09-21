@@ -122,6 +122,7 @@ Examples:
 | Partnership ID | SENSITIVE | Yes | No | Opaque ID may appear in structured logs | Operational backup | Push or realtime systems may receive opaque ID where required | Final dissolution subject to bounded audit retention |
 | Partnership membership | SENSITIVE | Yes | No | Minimal audit only | Operational backup | No unnecessary provider exposure | Final dissolution subject to bounded lifecycle-event retention |
 | Relationship start date | SENSITIVE | Yes unless later encrypted by design | Optional | Never routine log | Partnership backup before deletion | No unnecessary provider exposure | Final dissolution |
+| Account notification event/routing metadata | SENSITIVE | Yes | No | Avoid routine log; event ID only where needed | Operational backup | Future push may receive only minimal opaque routing/event data | Product notification retention or partnership/account deletion policy |
 | Breakup initiator and timestamps | SENSITIVE | Yes | No | Security/lifecycle audit allowed | Bounded lifecycle backup | Minimal email/push event may reveal event occurrence | Final dissolution plus bounded audit retention |
 | Restore intent timestamps | SENSITIVE | Yes | No | Lifecycle audit allowed | Bounded lifecycle backup | Minimal notification event | Final dissolution plus bounded audit retention |
 | Cooldown timestamp | SENSITIVE | Yes | No | May log opaque state transition | Operational backup | No | Cooldown expiry plus bounded lifecycle retention |
