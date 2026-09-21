@@ -27,7 +27,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
 | P1 Discovery and Partner Requests | DONE | 14/14 gates; migration 0008; P1 local 16/16; full health and audit green |
 | P2 Partnership Formation | DONE | 11/11 gates; nine migrations; P2 domain/contracts 14/14; security 5/5; local integration 27/27; health and audit green |
-| P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
+| P3 Partnership Lifecycle | IN_PROGRESS | hardened design on dedicated branch; prior domain baseline validated; refined domain, persistence, API, worker, deletion, blocking, and race closure pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
 ## Milestone summary
@@ -38,7 +38,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
 | 2 P1 Discovery and Requests | DONE | 14/14 acceptance gates closed with local PostgreSQL/API/worker/security evidence |
 | 3 P2 Partnership Formation | DONE | 11/11 acceptance gates closed with local domain, PostgreSQL, API, worker, race, security, health, and audit evidence |
-| 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
+| 4 P3 Partnership Lifecycle | IN_PROGRESS | hardened P3-A through P3-H design committed on dedicated branch; implementation and verification remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
 | 7 M3 Media and Voice Messages | PLANNED | requires realtime/offline substrate |
@@ -52,10 +52,13 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. merge the verified P2 milestone branch to `main`
-2. continue P3 persistence/API/worker work according to the dependency graph
-3. preserve the verified P2 transaction, occupancy, metadata-version, and notification boundaries during P3 integration
-4. keep V1 separate until GitHub Actions capacity returns
+1. implement P3-A domain and contract refinement on `feat/p3-partnership-lifecycle`
+2. add migration 0010 and P3 repositories without rewriting verified history
+3. implement breakup APIs, generation-fenced workers, canonical dissolution, and A1 account-deletion integration
+4. implement cooldown hygiene, former-partner blocking, serious notices, and browser lifecycle controls
+5. run the complete P3 local PostgreSQL/API/worker/race/security matrix plus A1/P1/P2 regressions
+6. close gates only from green evidence, reconcile docs, and merge P3 to `main`
+7. keep V1 separate until GitHub Actions capacity returns
 ## Execution graph
 
 ```text
@@ -402,27 +405,42 @@ Exit evidence:
 
 # Milestone 4: P3 Partnership Lifecycle, Deletion, and Cooldowns
 
-Status: IN_PROGRESS at the pure-domain layer.
+Status: IN_PROGRESS.
 
-A1-E is allowed to advance the account-deletion-specific subset.
+Dedicated branch:
 
-Complete:
+`feat/p3-partnership-lifecycle`
 
-- persisted breakup initiation
-- one-hour cancellation
-- restore intent
-- day-10 extension
-- mutual restoration
-- worker finalization
-- stale generation rejection
-- breakup/deletion deadline precedence
-- final dissolution
-- deletion manifest creation
-- one-month and three-month cooldown persistence
-- former-partner blocking
-- serious lifecycle email notifications
+Canonical design:
 
-Closure requires API, database, worker, race, and security evidence.
+`docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
+
+The prior pure-domain baseline is locally validated, but the hardened design identified a required P3-A refinement: restoration intent opens at the exact one-hour cancellation boundary, and the centralized capability surface must gain explicit breakup initiation authority. Those refined domain gates must be rerun before they are considered closed.
+
+Key design decisions:
+
+- one canonical partnership-dissolution kernel is shared by normal breakup and permanent account-deletion paths
+- breakup deadline jobs are fenced by breakup-process generation, never partnership metadata version
+- lifecycle-only transitions increment partnership generation and leave metadata version unchanged
+- authorization is revoked synchronously before asynchronous partnership cleanup
+- migration 0010 adds correct cancellation and supersession terminal markers for breakup processes
+- cooldown rows are actively resolved after expiry so a later lifecycle can persist a new cooldown cleanly
+- former-partner block targets are derived from a terminated source partnership, never supplied arbitrarily by the client
+- A1 remains account-deletion authority; P1 remains discovery/request authority; P2 remains formation and partnership-metadata authority
+- no fake E2EE keys or epochs are introduced before S1
+
+Implementation sequence:
+
+1. P3-A domain and contracts
+2. P3-B migration 0010 and repositories
+3. P3-C breakup API and expanded current read model
+4. P3-D deadline finalizer and reminder workers
+5. P3-E canonical dissolution and A1 deletion integration
+6. P3-F cooldown hygiene and former-partner blocking
+7. P3-G browser lifecycle UI
+8. P3-H PostgreSQL/API/worker/race/security closure
+
+Closure requires the complete local P3 matrix, relevant A1/P1/P2 regressions, full repository health, and the high-severity dependency audit.
 
 **REDMI PHONE REQUIRED: NO.**
 

@@ -10,7 +10,7 @@ PostgreSQL is the authoritative transactional store.
 
 The first physical schema foundation is committed under `packages/db/migrations`.
 
-It includes identity, partnership lifecycle, durable operations, content metadata, relational-integrity hardening, the F2 durable-runtime reliability migration, A1 migration 0007, verified P1 migration 0008, and verified P2 migration 0009.
+It includes identity, partnership lifecycle, durable operations, content metadata, relational-integrity hardening, the F2 durable-runtime reliability migration, A1 migration 0007, verified P1 migration 0008, and verified P2 migration 0009. P3 designs forward-only migration `0010_partnership_lifecycle_runtime.sql`; it is not implemented or verified yet.
 
 The physical schema has passed local disposable-database validation against PostgreSQL 16 through migration 0009. All nine migrations apply from zero, the invariant suite passes, the F2 runtime suite passes 17/17, the completed A1 disposable PostgreSQL acceptance suite passes 27/27, the P1 PostgreSQL/API/worker suite passes 16/16, and the P2 disposable PostgreSQL/API/worker integration matrix passes 27/27.
 
@@ -18,7 +18,7 @@ This document remains the logical model. F2 repository integration, automated co
 
 A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally verified. It commits registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, versioned PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening.
 
-P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 migration `0009_partnership_formation_runtime.sql` is implemented and verified with accepted-request linkage, restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. Migration 0008 remains unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`. The fresh immutable partnership ID remains the namespace root.
+P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 migration `0009_partnership_formation_runtime.sql` is implemented and verified with accepted-request linkage, restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. Migration 0008 remains unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`. P3 migration 0010 is planned to add correct breakup cancellation/supersession terminal markers, lifecycle indexes and constraints, cooldown hardening, block-source hardening, and partnership deletion-manifest uniqueness without rewriting prior migrations. The fresh immutable partnership ID remains the namespace root.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
@@ -240,7 +240,7 @@ The metadata must not contain private message, media, or relationship content.
 
 ## Breakup process
 
-Representative fields:
+Representative breakup-process fields:
 
 ```text
 id
@@ -249,18 +249,19 @@ initiated_by_account_id
 initiated_at
 initiator_cancel_until
 base_deadline
-extended_deadline
-member_a_restore_at
-member_b_restore_at
 final_deadline
+generation
 restored_at
 dissolved_at
-version
+cancelled_at
+superseded_at
 ```
 
-Restoration timestamps are append-only. Once a restoration intent is recorded, normal product behavior must not clear it.
+Restoration intents remain separate immutable rows in `breakup_restore_intents`, keyed by breakup process and account. Once an intent is recorded, normal product behavior must not clear it.
 
-The persisted final deadline is authoritative.
+P3 migration 0010 adds `cancelled_at` for one-hour unilateral cancellation and `superseded_at` when another destructive lifecycle, currently permanent partner-account deletion, terminates the partnership before that breakup deadline. At most one breakup terminal marker may be present.
+
+The persisted final deadline is authoritative. The breakup-process generation fences deadline workers and is separate from partnership metadata version.
 
 ## Cooldowns
 
@@ -286,6 +287,10 @@ Policy:
 
 - breakup dissolution creates a three-calendar-month cooldown
 - permanent partner-account deletion from an active partnership creates a one-calendar-month cooldown for the remaining partner
+- logical eligibility returns at `eligible_at`; a worker is not required for correctness
+- expired open eligibility rows are resolved under account lock before a new cooldown is inserted
+- successful future partnership formation resolves expired prior cooldown rows for both accounts
+- an overlapping still-active cooldown where a new cooldown would be created is an invariant violation, not a silent conflict
 
 ## Blocking
 

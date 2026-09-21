@@ -115,7 +115,7 @@ Current epic status:
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
 - V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
 - F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
-- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
+- P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS on `feat/p3-partnership-lifecycle`. The prior pure-domain baseline is locally validated, and a hardened runtime architecture is now defined in `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`. The refinement identified required P3-A corrections for the restore-open boundary and lifecycle capability surface, so runtime closure remains open across domain revalidation, migration 0010, persistence, API, worker, canonical dissolution, account-deletion integration, blocking, notifications, deletion, races, security, health, and audit evidence
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
@@ -133,16 +133,17 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `milestone/f2-persistence-worker` -> `e3ce811`
 - `milestone/a1-accounts-devices` -> `a876406`
 - `milestone/p1-discovery-requests` -> `69cb238`
+- `feat/p2-partnership-formation` -> `04b5229`
 
-`main` is fast-forwarded through the verified P1 closure at `69cb238`.
+`main` is fast-forwarded through the verified P2 closure at `04b5229`.
 
-The most recently verified milestone branch is:
+The active implementation branch is:
 
 ```text
-feat/p2-partnership-formation @ fa2301d0
+feat/p3-partnership-lifecycle
 ```
 
-P2 is closed on that branch. The branch has not yet been merged into `main`; merging the verified closure is the next repository-state transition before a dependent P3 milestone branch is created.
+P3 was created directly from verified `main @ 04b5229`. The hardened P3 architecture and implementation sequence are maintained on that dedicated branch.
 
 The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
 
@@ -162,12 +163,16 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1, P1, and P2 are complete. P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns is the active runtime epic.
+A1, P1, and P2 are complete and P2 is merged to `main`. P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns is the active runtime epic on `feat/p3-partnership-lifecycle`.
 
-1. merge the verified P2 milestone branch to `main`
-2. continue P3 persistence, API, worker, notification, deletion, and race closure
-3. preserve the verified P2 transaction, occupancy, metadata-version, and notification boundaries while P3 integrates
-4. keep V1 hosted verification separate until GitHub Actions capacity returns
+1. implement P3-A refined domain and contracts, including the non-overlapping one-hour cancel/restore boundary
+2. implement migration 0010 and P3 lifecycle repositories without rewriting migrations 0001 through 0009
+3. implement breakup APIs, generation-fenced workers, the canonical dissolution kernel, and A1 account-deletion integration
+4. implement cooldown hygiene, former-partner blocking, serious notices, and the browser lifecycle surface
+5. execute the full P3 PostgreSQL/API/worker/race/security matrix plus A1/P1/P2 regressions
+6. run full repository health and the high-severity dependency audit
+7. close P3 gates only from green evidence, reconcile documentation, then merge P3 to `main`
+8. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
@@ -190,6 +195,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1, P1, and P2 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, and P2 at 11/11 gates. P2 closure is supported by the green domain/contracts, security, disposable PostgreSQL/API/worker, full health, and dependency-audit runs recorded above.
+A1, P1, and P2 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, and P2 at 11/11 gates. P2 is merged to `main @ 04b5229`. P3 documentation now records a hardened architecture and implementation sequence, but P3 remains IN_PROGRESS and no new runtime acceptance gate is closed by design work alone.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

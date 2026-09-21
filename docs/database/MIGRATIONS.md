@@ -27,6 +27,20 @@ P2 migration `0009_partnership_formation_runtime.sql` is committed and locally v
 
 Migration 0008 remains verified by the clean nine-migration P2 run and passing database invariants. P2 security coverage pins SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e` so later work cannot silently rewrite it. Migration 0009 participates in the same clean run, including catalog checks that its legacy-safe accepted-linkage constraints remain `NOT VALID`.
 
+P3 plans forward-only migration `0010_partnership_lifecycle_runtime.sql`. It is not yet implemented or verified. Its hardened design scope is:
+
+- add `cancelled_at` and `superseded_at` breakup terminal markers
+- rebuild the one-open-breakup index around all terminal markers
+- add legacy-safe breakup terminal-shape and exact-timing hardening
+- harden reason-specific three-month and one-month cooldown durations
+- require a source partnership for new former-partner block rows
+- add released-membership history lookup support
+- add pending scheduled-action aggregate lookup support
+- ensure one destructive partnership deletion manifest per partnership
+- preserve migrations 0001 through 0009 byte-for-byte
+
+P3 security verification must pin verified migration 0009 before P3-only migration work is accepted.
+
 ## Policy
 
 Production migrations are forward-first.

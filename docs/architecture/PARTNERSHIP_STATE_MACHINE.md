@@ -152,7 +152,16 @@ Existing relationship objects remain view-only.
 
 ## Restoration
 
-Each partner may submit restoration intent.
+Restoration intent opens only after the unilateral cancellation window closes.
+
+Exact trusted-server boundaries:
+
+- while `now < initiator_cancel_until`, only the breakup initiator may use unilateral cancellation and restore intent is not yet available
+- at `now = initiator_cancel_until`, unilateral cancellation is expired and restore intent becomes available
+- restore intent remains available only while `now < final_deadline`
+- at `now = final_deadline`, restoration is expired and the finalizer may proceed
+
+Each partner may submit restoration intent once during that restoration window.
 
 Properties:
 
@@ -161,6 +170,7 @@ Properties:
 - extension happens once
 - first intent alone does not restore
 - second intent before the applicable deadline restores the same partnership
+- the first extension advances breakup-process generation so the old day-seven finalizer is stale
 
 Restoration returns the lifecycle to active and preserves all partnership data.
 
@@ -173,7 +183,9 @@ Final dissolution occurs:
 
 Finalization is a durable worker action and must be idempotent.
 
-The scheduled finalization carries the expected breakup generation. If the current generation differs when the worker runs, the job is stale and must not dissolve the partnership.
+The scheduled finalization carries the expected breakup-process generation. If the current breakup generation differs when the worker runs, or the process is already cancelled, restored, dissolved, or superseded, the job is stale and must not dissolve the partnership.
+
+P3 uses one canonical dissolution kernel for both normal breakup finalization and permanent partner-account deletion. Lifecycle-only transitions increment partnership `generation` and do not increment partnership metadata `version`.
 
 Effects:
 

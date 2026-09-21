@@ -777,9 +777,23 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 
 Status: IN_PROGRESS
 
+## Design status
+
+The hardened P3 runtime architecture and implementation sequence are defined in:
+
+`docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
+
+P3 is isolated on:
+
+`feat/p3-partnership-lifecycle`
+
+created from verified `main @ 04b5229`.
+
+The pre-implementation refinement preserves the verified P2 boundaries and reuses F2 durable workers plus A1 account-deletion authority. It introduces one canonical partnership-dissolution kernel shared by normal breakup and permanent account-deletion paths, breakup-process generation fencing, synchronous authorization revocation before asynchronous cleanup, explicit cooldown hygiene, and server-derived former-partner blocking.
+
 ## Current verified progress
 
-Pure domain foundation is implemented and locally validated for:
+A prior pure-domain baseline is implemented and locally validated for:
 
 - breakup initiation
 - one-hour initiator cancellation
@@ -793,6 +807,88 @@ Pure domain foundation is implemented and locally validated for:
 - breakup deadline precedence
 - one-calendar-month cooldown after permanent partner-account deletion
 - relevant capability rules
+
+The hardened design found two P3-A refinements that reopen domain closure before runtime work proceeds:
+
+- restoration intent must be unavailable before the exact one-hour cancellation boundary
+- the centralized capability surface needs explicit breakup-initiation authority
+
+The previous domain evidence remains useful baseline evidence, but P3-A must implement and rerun the refined boundaries before the domain gates can close again.
+
+## Planned implementation sequence
+
+### P3-A Domain and contracts
+
+- exact non-overlapping cancellation and restoration windows
+- initiate-breakup capability
+- lifecycle denial vocabulary
+- breakup mutation contracts
+- expanded current-partnership projection
+- former-partnership and block contracts
+- lifecycle notification event types
+
+### P3-B Migration 0010 and repositories
+
+- cancellation and supersession terminal markers
+- breakup terminal-shape hardening
+- exact cooldown-duration hardening
+- block-source hardening
+- former-history and scheduled-work indexes
+- partnership deletion-manifest uniqueness
+- lifecycle, cooldown, block, history, and deletion repositories
+
+### P3-C Breakup API and lifecycle read model
+
+- breakup initiation
+- unilateral cancellation
+- restore intent
+- mutual restoration
+- idempotent lost-response replay
+- durable lifecycle notices
+- serious-event email orchestration
+
+### P3-D Deadline worker and reminders
+
+- generation-fenced breakup finalizer
+- deterministic deadline reminder
+- day-seven to day-ten rescheduling
+- stale-action safety
+
+### P3-E Canonical dissolution and A1 integration
+
+- one dissolution kernel
+- synchronous membership release
+- exact cooldown creation
+- partnership deletion manifest
+- partnership relational and crypto-state deletion handlers
+- A1 permanent account-deletion delegation
+- legacy precedence-handler compatibility
+
+### P3-F Cooldowns and former-partner blocking
+
+- expired cooldown resolution
+- P2 formation cleanup of expired cooldown records
+- former-partnership history
+- block and unblock
+- P1 discovery/request and P2 formation regressions
+
+### P3-G Browser lifecycle UI
+
+- breakup confirmation
+- initiator and deadline display
+- cancel and restore controls
+- waiting and extension states
+- account-deletion view-only state
+- former-partner block controls
+
+### P3-H Integration closure
+
+- migration 0010 and invariant evidence
+- API, worker, deletion, race, and security evidence
+- A1, P1, and P2 regression surfaces
+- full repository health
+- high-severity dependency audit
+- repo-wide documentation reconciliation
 
 ## Scope
 
@@ -808,9 +904,9 @@ Pure domain foundation is implemented and locally validated for:
 
 ## Acceptance gates
 
-- [x] pure domain state transitions are implemented
-- [x] pure capability rules are implemented
-- [x] domain boundary tests pass
+- [ ] refined pure domain state transitions are implemented
+- [ ] refined pure capability rules are implemented
+- [ ] refined domain boundary tests pass
 - [ ] breakup initiation persists atomically
 - [ ] one-hour cancellation persists and invalidates stale scheduled work
 - [ ] first restore intent extends the deadline exactly once

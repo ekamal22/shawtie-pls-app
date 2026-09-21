@@ -234,6 +234,57 @@ npm run test:p2:local
 
 P2 verification is complete at closure commit `fa2301d0`: the domain/contracts suite passes 14/14, the security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 45/45, Contracts 15/15, API unit/security 16/16, Worker 4/4, typecheck, builds, lint, Prettier, and dependency checks green. `npm audit --audit-level=high` reports 0 vulnerabilities. The final test-quality review found only missing persisted-state assertions, which were added before the full green rerun. Hosted GitHub Actions verification remains separate under V1.
 
+### P3 partnership lifecycle verification
+
+P3 uses the hardened test architecture in `../architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`.
+
+The prior pure-domain suite is baseline evidence only. P3-A must refine and rerun exact lifecycle boundaries before domain closure because the design review identified the missing restore-window-open rule and explicit initiate-breakup capability.
+
+Required evidence includes:
+
+- cancellation allowed strictly before the one-hour boundary and denied at equality
+- restoration intent denied before one hour, allowed at equality with the cancel boundary, and denied at the final deadline
+- first restoration intent extends exactly once from day seven to day ten
+- restoration intent is immutable
+- second intent restores the same partnership
+- lifecycle-only transitions change generation but not metadata version
+- breakup-process generation fences scheduled finalizers
+- stale day-seven work cannot dissolve an extended breakup
+- stale work cannot dissolve a restored or superseded partnership
+- canonical account lock order across breakup, restoration, account deletion, blocking, and P2 metadata mutation
+- exact three-calendar-month breakup cooldown
+- exact one-calendar-month permanent-partner-deletion cooldown
+- expired cooldown rows are resolved so later cooldown persistence cannot be blocked by stale provenance
+- earlier breakup deadline wins over a later account-deletion deadline
+- account recovery preserves an existing breakup deadline and restoration intent
+- recovery after completed breakup does not recreate the dissolved partnership
+- partnership authorization and occupied membership are revoked synchronously before deletion targets finish
+- one partnership deletion manifest is created per destructive dissolution
+- deletion targets are idempotent, reclaimable, and fenced
+- former-partner block targets are derived from a terminated source partnership
+- block creation invalidates pending requests and prevents discovery, requests, and future formation
+- unblock does not bypass cooldown or fresh-consent rules
+- blocked accounts receive no block notification
+- serious lifecycle email parameters contain no private shared content
+- account notifications and lifecycle events remain routing or transition metadata only
+- migration 0010 consumes verified migrations 0001 through 0009 unchanged
+- A1 account-deletion, P1 request/discovery, and P2 formation/metadata regression surfaces remain green
+- race tests assert persisted end state rather than HTTP status alone
+
+Planned P3 verification commands:
+
+```text
+npm run test:partnership-lifecycle
+npm run test:p3:security
+npm run test:p3:postgres
+npm run test:p3:api
+npm run test:p3:local
+npm run health
+npm audit --audit-level=high
+```
+
+The P3 local harness must emit `P3_LOCAL_POSTGRES_PASS` only after migrations, invariants, API, worker, race, deletion, and cross-epic regression work is green. These commands are design targets until their implementations are committed.
+
 ### Integration
 
 Exercise API plus PostgreSQL plus provider fakes.

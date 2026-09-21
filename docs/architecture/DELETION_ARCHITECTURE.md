@@ -99,6 +99,8 @@ Once a destructive lifecycle deadline becomes final, authorization must be revok
 
 A slow object-store deletion must not leave the object reachable through the application.
 
+P3 makes this concrete for partnership destruction: one canonical dissolution transaction sets the partnership to `terminated`, releases both occupied membership rows, advances lifecycle generation, creates the partnership deletion manifest, and only then commits. Deletion-target workers run after that authorization boundary is already closed. Partnership metadata `version` is not incremented by this lifecycle-only transition.
+
 ## Cryptographic deletion
 
 Where the E2EE design supports it, destroy or invalidate partnership decryption material as part of the access-revocation phase.
@@ -170,7 +172,9 @@ That path uses the accepted P3 domain rules for:
 
 This account-deletion-specific implementation may close individual P3 gates. It does not make the entire P3 epic complete.
 
-Account recovery restores authentication state only. It does not recreate cryptographic trust or historical E2EE keys.
+The hardened P3 design consolidates partnership destruction behind one canonical dissolution kernel shared by the normal breakup worker and A1 permanent account-deletion finalization. The P3 kernel creates a partnership-scoped deletion manifest in addition to A1's account-scoped authentication cleanup manifest. Legacy A1 breakup-precedence work remains compatible but must delegate to the same kernel so two termination implementations cannot drift.
+
+Account recovery restores authentication state only. It does not recreate a partnership already dissolved by an earlier breakup deadline, and it does not recreate cryptographic trust or historical E2EE keys.
 
 ## Failure behavior
 

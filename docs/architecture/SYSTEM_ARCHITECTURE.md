@@ -299,6 +299,22 @@ P2 preserves the modular-monolith transaction boundary:
 - an expiry action already processing when formation wins must observe the accepted terminal request and complete as a safe no-op
 - P2 provides durable in-app partnership notifications without requiring push transport
 
+## P3 partnership lifecycle design
+
+The hardened P3 design is defined in `P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` on the dedicated `feat/p3-partnership-lifecycle` branch. Runtime implementation and closure remain pending.
+
+P3 preserves the existing authority boundaries:
+
+- A1 owns account deletion and recovery
+- P1 owns discovery and partner-request behavior
+- P2 owns partnership formation and mutable relationship metadata
+- P3 owns breakup, restoration, final dissolution, lifecycle cooldowns, former-partner blocking, and partnership-scoped destructive cleanup
+- F2 provides scheduled actions, lifecycle events, outbox delivery, and deletion target processing
+
+P3 uses one canonical partnership-dissolution kernel for both normal breakup and permanent partner-account deletion. It revokes authorization synchronously by terminating the partnership and releasing occupied memberships before deletion workers process physical cleanup. Breakup finalizers are fenced by breakup-process generation. Lifecycle-only transitions advance `generation` and leave P2 metadata `version` unchanged.
+
+Migration 0010 is planned to add correct breakup cancellation and supersession terminal markers, harden cooldown and block persistence, and support former-history and cleanup queries without rewriting verified migrations 0001 through 0009.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

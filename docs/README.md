@@ -59,6 +59,7 @@ The selected architecture is:
 - `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`
 - `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 - `api/P2_PARTNERSHIP_API.md`
+- `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 - `architecture/DATA_MODEL.md`
 - `architecture/PARTNERSHIP_STATE_MACHINE.md`
@@ -103,7 +104,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, and `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates at closure commit `fa2301d0`, with domain/contracts 14/14, security 5/5, nine-migration PostgreSQL and database-invariant evidence, disposable integration 27/27 with `P2_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, and `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates and is merged to `main` at `04b5229`. `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` is the hardened P3 runtime design on `feat/p3-partnership-lifecycle`; P3 remains IN_PROGRESS until its refined domain, persistence, API, worker, deletion, notification, race, security, health, and audit gates are executed successfully.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

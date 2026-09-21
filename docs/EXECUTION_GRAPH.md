@@ -129,7 +129,7 @@ P2 ✅
 P3 🟡 ACTIVE
 ~~~
 
-P3 already has a verified pure-domain layer, but its persistence, API, worker, race, notification, and deletion closure remain incomplete. It therefore remains IN_PROGRESS rather than DONE.
+P3 has a previously validated pure-domain baseline and a hardened runtime design on `feat/p3-partnership-lifecycle`. The design review reopens domain closure for the exact restore-open boundary and lifecycle capability refinement; persistence, API, worker, canonical dissolution, account-deletion integration, blocking, race, notification, deletion, and security closure remain incomplete. P3 therefore remains IN_PROGRESS.
 
 ## Most recently completed milestone
 
@@ -169,16 +169,19 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ verified P1 closure
+main @ 04b5229 verified through P2
   |
-  +--> feat/p2-partnership-formation @ fa2301d0
+  +--> feat/p3-partnership-lifecycle
           |
-          +--> P2 implementation DONE
-          +--> P2 verification 11/11 DONE
-          +--> documentation reconciled
-          +--> merge to main
-                    |
-                    +--> create the P3 milestone branch from updated main
+          +--> P3-A domain and contract refinement
+          +--> P3-B migration 0010 and repositories
+          +--> P3-C breakup API and current read model
+          +--> P3-D deadline worker and reminders
+          +--> P3-E canonical dissolution and A1 deletion integration
+          +--> P3-F cooldowns and former-partner blocking
+          +--> P3-G browser lifecycle UI
+          +--> P3-H integration closure
+          +--> merge to main only after every P3 gate is green
 ~~~
 
 From P2 onward:

@@ -274,3 +274,21 @@ Accepted source requests retain the resulting partnership ID for bounded lost-re
 Relationship-date mutation locks both member accounts before the partnership row, uses optimistic partnership metadata versioning, treats a same-date lost-response retry as a no-op before version-conflict rejection, and creates a durable notification only for a real committed change.
 
 P2 account notifications contain routing metadata only. They do not store relationship dates, message or media content, email, date of birth, device data, secrets, or cryptographic material. The fresh partnership ID is an isolation namespace, not authentication authority or key material. Real E2EE epochs remain deferred to S1. This boundary is locally verified in the closed P2 security and integration suites at commit `fa2301d0`, including exact other-partner notification routing and the absence of fake cryptographic state.
+
+## P3 partnership-lifecycle security boundary
+
+The hardened P3 design is defined in `../architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`. This section describes the intended boundary; P3 runtime verification remains pending.
+
+P3 keeps lifecycle authority inside the modular-monolith PostgreSQL transaction. Pair-sensitive mutations lock member accounts in canonical order before the partnership and breakup process. Client requests never supply partner identity, deadlines, lifecycle generation, cooldown duration, or arbitrary block targets.
+
+Breakup deadline work is fenced by breakup-process generation. Partnership metadata version is not a lifecycle fencing token. A stale day-seven finalizer must become harmless after deadline extension, restoration, cancellation, supersession, or a newer lifecycle generation.
+
+Destructive partnership termination has one canonical kernel shared by normal breakup and permanent account-deletion paths. It terminates the partnership and releases occupied membership synchronously before asynchronous deletion targets run. Authorization failure after dissolution therefore does not depend on storage-provider cleanup completing successfully.
+
+P3 reuses A1 account-deletion authority rather than creating a second account-deletion state machine. It reuses F2 deletion manifests and the existing serious-email outbox so provider calls remain outside authoritative transactions.
+
+Former-partner blocking derives the target from a terminated historical partnership. The client cannot submit an arbitrary account ID. Block creation is private, sends no notification to the blocked account, and relies on P1/P2 enforcement to prevent discovery, requests, and future pairing.
+
+P3 notifications, lifecycle events, deletion manifests, and serious-email parameters may contain identifiers, event type, status, generation, and authoritative deadlines where required. They must never contain message content, media content, relationship-object content, relationship start date, email address as event metadata, date of birth, device secrets, or cryptographic key material.
+
+P3 does not provision E2EE epochs or keys. S1 remains the authority for reviewed cryptographic state.
