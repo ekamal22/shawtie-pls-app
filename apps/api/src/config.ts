@@ -3,12 +3,15 @@ export interface AuthKeyConfig {
   readonly keys: ReadonlyMap<number, Buffer>;
 }
 
+export type PartnerRequestMode = "disabled" | "request_only_test" | "paired";
+
 export interface ApiConfig {
   readonly environment: "development" | "test" | "production";
   readonly appOrigin: string;
   readonly allowInsecureLoopbackCookies: boolean;
   readonly trustedProxy: false | string[];
   readonly authKeys: AuthKeyConfig;
+  readonly partnerRequestMode?: PartnerRequestMode;
 }
 
 function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): AuthKeyConfig {
@@ -51,6 +54,20 @@ function parseTrustedProxy(raw: string | undefined): false | string[] {
   return values;
 }
 
+function parsePartnerRequestMode(
+  raw: string | undefined,
+  environment: ApiConfig["environment"],
+): PartnerRequestMode {
+  const mode = raw ?? "disabled";
+  if (mode !== "disabled" && mode !== "request_only_test" && mode !== "paired") {
+    throw new Error("PARTNER_REQUEST_MODE must be disabled, request_only_test, or paired");
+  }
+  if (environment === "production" && mode === "request_only_test") {
+    throw new Error("request_only_test partner-request mode is forbidden in production");
+  }
+  return mode;
+}
+
 export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const environment =
     env.NODE_ENV === "production" ? "production" : env.NODE_ENV === "test" ? "test" : "development";
@@ -64,5 +81,6 @@ export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfi
     allowInsecureLoopbackCookies,
     trustedProxy: parseTrustedProxy(env.TRUSTED_PROXY),
     authKeys: parseAuthKeys(env.AUTH_HMAC_KEYS, env.AUTH_HMAC_ACTIVE_VERSION),
+    partnerRequestMode: parsePartnerRequestMode(env.PARTNER_REQUEST_MODE, environment),
   };
 }

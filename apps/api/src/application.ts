@@ -4,6 +4,11 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { DatabasePool } from "@shawtie/db";
 import type { ApiConfig } from "./config.ts";
 import { AccountService } from "./modules/accounts/account-service.ts";
+import {
+  PartnerRequestService,
+  type PartnershipFormationCoordinator,
+} from "./modules/partner-requests/partner-request-service.ts";
+import { registerPartnerRequestRoutes } from "./modules/partner-requests/routes.ts";
 import { registerAccountRoutes } from "./modules/auth/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
 import { installMutationSecurity } from "./plugins/request-security.ts";
@@ -13,6 +18,7 @@ import { PasswordHasher } from "./security/password-hasher.ts";
 export interface ApiApplicationDependencies {
   readonly database: DatabasePool;
   readonly config: ApiConfig;
+  readonly partnershipFormationCoordinator?: PartnershipFormationCoordinator;
 }
 
 export function createApiApplication(
@@ -42,6 +48,25 @@ export function createApiApplication(
     config: dependencies.config,
     keys,
     service,
+  });
+
+  const partnerRequestMode = dependencies.config.partnerRequestMode ?? "disabled";
+  const partnerRequestService = new PartnerRequestService(
+    dependencies.database,
+    service,
+    {
+      mode: partnerRequestMode,
+      ...(dependencies.partnershipFormationCoordinator
+        ? { coordinator: dependencies.partnershipFormationCoordinator }
+        : {}),
+    },
+  );
+  registerPartnerRequestRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: partnerRequestService,
+    mode: partnerRequestMode,
   });
 
   return app;

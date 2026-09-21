@@ -27,6 +27,7 @@ import {
   insertRegistrationIntent,
   insertScheduledAction,
   insertSecurityEmailDelivery,
+  invalidatePendingRequestsForAccount,
   isUsernameAvailable,
   isVerifiedEmailAvailable,
   listDevices,
@@ -924,6 +925,12 @@ export class AccountService {
         recoverUntil,
         generation,
       });
+      await invalidatePendingRequestsForAccount(
+        transaction,
+        auth.session.accountId,
+        now,
+        "account_unavailable",
+      );
       await revokeAllSessionsForAccount(transaction, auth.session.accountId, now);
       const partnership = await getCurrentPartnershipForAccount(transaction, auth.session.accountId);
       if (partnership) {
