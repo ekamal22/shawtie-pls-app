@@ -118,7 +118,7 @@ Current epic status:
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
-- A1 Accounts and Devices: IN_PROGRESS at acceptance-evidence closure. Runtime implementation is committed, the disposable PostgreSQL A1 suite passes 9/9 with all seven migrations applied from zero, database invariants pass, and the full `npm run health` regression passes with all 44 current unit/contract/security/worker tests green. Nineteen of twenty acceptance gates are reconciled. Gate 20 remains open because the canonical A1 design requires additional dedicated database/API/security coverage beyond the current committed suite, including challenge expiry/attempt/rate-limit cases, ownership/race cases, logout/revoked-cookie rejection, session expiry/fencing, username API acceptance, device acceptance, and remaining browser-security negative paths. The final production SQL fix is commit `ceb3d93`
+- A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
 - P1 Discovery and Partner Requests: IN_PROGRESS at the refined architecture and implementation-design layer; runtime implementation has not started. The design now defines exact authenticated discovery, privacy-safe projection, exact request timing, create idempotency with lifetime-aware retention, separate abuse-rate-limit preflight, pair-wide lock ordering, cursor pagination, minimized attempt metadata, cross-epic invalidation, an explicit same-transaction P2 coordinator, F2 expiry scheduling, and typed fail-closed production gating
 - all other pre-release implementation epics except the separately listed P3: PLANNED
 
@@ -136,15 +136,14 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1 implementation and core local validation are green. Acceptance-evidence closure is now the active engineering task.
+A1 is complete. P1 Discovery and Partner Requests is now the active feature epic.
 
-1. add the missing canonical A1 database/API/security coverage identified by the acceptance reconciliation
-2. run `npm audit --audit-level=high` against the current committed lockfile
-3. rerun `npm run test:a1:local` and require 9/9 or better with `A1_LOCAL_POSTGRES_PASS`
-4. rerun `npm run health` and require the complete repository baseline to stay green
-5. mark gate 20 complete and A1 DONE only after the expanded evidence matrix is committed and passing
-6. begin P1-A runtime implementation after A1 closure; keep P1's already-complete design work intact
-7. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
+1. start P1-A domain, contracts, migration 0008, and repositories from the already-refined design
+2. reuse the now-verified A1 account identifiers, authenticated sessions, username normalization, trusted PostgreSQL time, and security-rate-limit primitive
+3. preserve P1's fail-closed production request-creation boundary until the P2 formation coordinator is wired
+4. keep P3 persistence/API/worker work coordinated with P1/P2 dependency boundaries
+5. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
+
 ## Deferred heavy feature policy
 
 Call recording is intentionally outside the first stable release and outside the initial post-stable maturity milestone. It is tracked under X2 Deferred Heavy Features and is not a required product milestone.
@@ -166,6 +165,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1 has now been reconciled against the canonical acceptance gates after successful core local validation. Nineteen of twenty gates are checked from committed behavior evidence. Gate 20 remains open because the canonical A1 verification matrix is broader than the currently committed integration/security suite. Current-state documents must preserve that distinction until the missing coverage is committed and rerun.
+A1 documentation is reconciled against the completed acceptance evidence. All 20 gates are closed from committed implementation plus passing local database, API, worker, security, repository-health, and dependency-audit evidence. Current-state documents should now treat A1 as DONE and P1 as the active feature epic.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

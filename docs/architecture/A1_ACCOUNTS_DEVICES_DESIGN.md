@@ -2,7 +2,7 @@
 
 ## Status
 
-IMPLEMENTED, CORE VALIDATION GREEN, ACCEPTANCE COVERAGE PENDING
+IMPLEMENTED AND VERIFIED COMPLETE
 
 Effective design date: 2026-09-21.
 
@@ -10,7 +10,7 @@ This document is the canonical implementation design for A1 Accounts and Devices
 
 It preserves Architecture Baseline 1.0 and uses the completed F2 persistence and worker substrate. It does not add a new persistent state system, trust boundary, lifecycle authority, or dependency direction, so no new ADR is required under the current architecture-governance rules.
 
-Source code, migrations, and tests remain authoritative for implemented behavior. The A1 runtime described here is now committed across domain, contracts, migration 0007, database repositories, API security and account flows, durable workers, verification tests, local PostgreSQL harness, runnable API, and the account/device web foundation. Core local validation is now green. Acceptance-gate closure remains pending because the complete canonical verification matrix is not yet represented by committed tests.
+Source code, migrations, and tests remain authoritative for implemented behavior. The A1 runtime described here is committed and verified across domain, contracts, migration 0007, database repositories, API security and account flows, durable workers, the expanded verification matrix, local PostgreSQL harness, runnable API, and the account/device web foundation. A1 is closed at 20/20 acceptance gates.
 
 ## Refinement review
 
@@ -56,21 +56,18 @@ Committed runtime evidence now includes:
 - runnable Fastify API entrypoint with graceful shutdown
 - mobile-first web account/device foundation
 
-Validated on the current branch:
+Validated on the completed A1 branch:
 
-- committed `package-lock.json` remains compatible with the current dependency set
+- committed `package-lock.json` is compatible with the current dependency set
 - complete workspace TypeScript/build/lint/format/dependency health regression passes
 - migration 0007 applies from zero as part of a seven-migration disposable run
 - database invariants pass
-- `npm run test:a1:local` passes 9/9 and reports `A1_LOCAL_POSTGRES_PASS`
-- `npm run health` passes with all 44 current unit/contract/security/worker tests green
+- `npm run test:a1:local` passes 27/27 and reports `A1_LOCAL_POSTGRES_PASS`
+- `npm run test:a1:security` passes 16/16
+- `npm run health` passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4
+- `npm audit --audit-level=high` reports 0 vulnerabilities
+- all 20 canonical A1 acceptance gates are closed
 
-Remaining closure evidence:
-
-- complete the dedicated database/API/security cases required by this document but not yet represented in the committed suites
-- run an explicit dependency audit against the current lockfile
-- rerun the complete A1 local and repository-health regressions after the coverage additions
-- close the twentieth acceptance gate only after the complete matrix is green
 ## Goals
 
 A1 must provide the complete account and authentication substrate required by later partnership, messaging, relationship-space, calling, and E2EE work.
@@ -1848,7 +1845,7 @@ npm run test:a1:security
 npm run test:a1:local
 ~~~
 
-The committed `npm run test:a1:local` command follows the F2 disposable-database pattern: it starts PostgreSQL 16 on a dynamic local port, runs the A1 migration/invariant/build/integration path, and cleans up automatically. On the reconciled A1 branch it now passes 9/9 with `A1_LOCAL_POSTGRES_PASS`. That green run does not by itself close A1 because this document's complete verification matrix still contains cases that are not yet committed as tests.
+The committed `npm run test:a1:local` command follows the F2 disposable-database pattern: it starts PostgreSQL 16 on a dynamic local port, runs the A1 migration/invariant/build/integration path, and cleans up automatically. On the completed A1 branch it passes 27/27 with `A1_LOCAL_POSTGRES_PASS`; the dedicated A1 security suite passes 16/16; the full repository health regression passes; and the dependency audit reports 0 vulnerabilities.
 
 ## Acceptance mapping
 
@@ -1930,8 +1927,8 @@ The architecture leaves room for these features without making A1 depend on them
 
 ## Completion rule
 
-A1 is DONE only when every A1 acceptance gate in docs/ROADMAP_EPICS.md is satisfied with committed source, migrations, repeatable local database/API/security evidence, a committed lockfile, and a green full repository health regression.
+A1 is DONE because every A1 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed source, migrations, repeatable local database/API/security evidence, a committed lockfile, a green full repository health regression, and a clean high-severity dependency audit.
 
-Design completion alone changes A1 from PLANNED to IN_PROGRESS, not DONE.
+Future changes to this surface must preserve the completed acceptance evidence.
 
 Hosted GitHub Actions verification remains separate under V1.

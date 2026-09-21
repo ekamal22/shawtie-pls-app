@@ -407,19 +407,20 @@ F2 local completion does not close V1 Hosted CI Verification. V1 remains a separ
 
 # A1: Accounts and Devices
 
-Status: IN_PROGRESS
+Status: DONE
 
 ## Implementation status
 
-Core implementation and current local validation are green at commit `ceb3d93`, but A1 remains open until the complete canonical A1 verification matrix is committed and rerun. Nineteen of twenty acceptance gates are reconciled below; gate 20 remains open.
+A1 is complete at 20/20 acceptance gates. The committed runtime builds on the verified F2 transaction, outbox, worker, scheduled-action, deletion, and PostgreSQL substrate and includes A1-A through A1-F, the account/device web foundation, and the runnable API entrypoint.
 
-The refined architecture remains defined in:
+Final local closure evidence:
 
-`docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
-
-The committed A1 runtime follows this design and builds directly on the verified F2 transaction, outbox, worker, scheduled-action, deletion, and PostgreSQL substrate. Runtime code now exists for A1-A through A1-E plus the A1-F verification commands and disposable PostgreSQL harness. The implementation includes the account/device web foundation and runnable API entrypoint.
-
-The current branch has passed the disposable PostgreSQL A1 run and the full repository health regression. Acceptance reconciliation still distinguishes implemented behavior from complete verification coverage.
+- seven migrations apply from zero and database invariants pass
+- expanded disposable PostgreSQL A1 acceptance suite: 27/27 PASS
+- A1 security suite: 16/16 PASS
+- full repository health: PASS
+- dependency audit at high severity: 0 vulnerabilities
+- final device-suite failure was confirmed as a test-harness defect and corrected without a production-code change
 
 ## Implementation sequence
 
@@ -526,28 +527,29 @@ The current branch has passed the disposable PostgreSQL A1 run and the full repo
 - [x] device records exist and sessions can be associated with devices where applicable
 - [x] device revocation revokes authentication access
 - [x] account recovery does not imply historical E2EE key recovery
-- [ ] integration and security tests pass against the complete canonical A1 verification matrix
+- [x] integration and security tests pass against the complete canonical A1 verification matrix
 
 
 ## Acceptance reconciliation evidence
 
 Reconciled: 2026-09-21.
 
-Current green evidence:
+Final A1 evidence:
 
+- acceptance gates: 20/20
 - migration plan: 7/7
 - disposable migration run: 7/7
 - database invariants: PASS
-- A1 local integration suite: 9/9 PASS with `A1_LOCAL_POSTGRES_PASS`
+- A1 local integration/acceptance suite: 27/27 PASS with `A1_LOCAL_POSTGRES_PASS`
+- A1 security suite: 16/16 PASS
 - full repository health: PASS
-- current unit/contract/security/worker total under `npm run health`: 44/44 PASS
-- final account-deletion/breakup precedence fix: `ceb3d93`
+- Domain 32/32, Contracts 4/4, API unit/security 8/8, Worker 4/4
+- `npm audit --audit-level=high`: 0 vulnerabilities
+- final account-deletion/breakup precedence production SQL fix: `ceb3d93`
+- final device acceptance test-harness correction: `4019db2`
 
-The first 19 gates are supported by committed source, migrations, domain rules, database constraints, and the currently passing regression/integration evidence.
+The expanded committed evidence now directly covers the previously open challenge expiry/attempt/rate-limit cases, ownership and registration races, logout/revoked-cookie rejection, absolute/idle session expiry and fencing, username API acceptance, device list/rename/revocation/current-device behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle exclusion.
 
-Gate 20 remains open because the committed suites do not yet implement the full verification matrix required by `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` and `docs/testing/TEST_STRATEGY.md`. Missing or incomplete dedicated evidence includes challenge expiry/attempt/rate-limit cases, ownership and registration races, logout/revoked-cookie rejection, absolute/idle session expiry and fencing, username API acceptance, device list/revocation/current-device acceptance, and remaining origin/Fetch Metadata/CSRF negative paths.
-
-A1 becomes DONE only after those evidence gaps are closed, an explicit dependency audit is green, and the complete local A1 plus repository-health regressions are rerun.
 # P1: Discovery and Partner Requests
 
 Status: IN_PROGRESS

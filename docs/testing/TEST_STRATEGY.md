@@ -149,7 +149,7 @@ npm run test:a1:security
 npm run test:a1:local
 ```
 
-The current A1 branch now has successful core local evidence: the disposable PostgreSQL A1 suite passes 9/9 and the full repository health regression passes. A1 still must not be marked DONE until the complete required A1 evidence matrix above is represented by committed tests and rerun successfully.
+The completed A1 branch has the required local evidence: the expanded disposable PostgreSQL A1 suite passes 27/27, the dedicated A1 security suite passes 16/16, the full repository health regression passes, and the high-severity dependency audit reports 0 vulnerabilities. All 20 A1 acceptance gates are closed.
 
 ### P1 discovery and request verification
 

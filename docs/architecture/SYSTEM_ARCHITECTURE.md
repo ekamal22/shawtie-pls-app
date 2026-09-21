@@ -246,7 +246,7 @@ F2 is implemented and locally verified. It provides the transaction kernel, dura
 
 ## A1 accounts and authentication design
 
-The account and authentication runtime is implemented from `A1_ACCOUNTS_DEVICES_DESIGN.md`; complete local validation is still pending.
+The account and authentication runtime is implemented and verified complete from `A1_ACCOUNTS_DEVICES_DESIGN.md`. A1 is DONE at 20/20 acceptance gates.
 
 A1 preserves this system architecture and implements:
 

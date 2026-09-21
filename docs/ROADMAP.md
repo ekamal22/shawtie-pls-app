@@ -24,7 +24,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | F1 Repository Foundation and Executable Guardrails | DONE | clean lockfile bootstrap and full local health |
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
-| A1 Accounts and Devices | IN_PROGRESS | implementation and core local validation are green at `ceb3d93`; 19/20 acceptance gates are reconciled; canonical A1 evidence-matrix completion remains |
+| A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
 | P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
@@ -34,8 +34,8 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | Milestone | Status | Current boundary |
 | --- | --- | --- |
 | 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
-| 1 A1 Accounts and Devices | IN_PROGRESS | implementation green; 19/20 acceptance gates reconciled; complete canonical test-matrix evidence still required |
-| 2 P1 Discovery and Requests | IN_PROGRESS | refined design complete; runtime implementation follows A1 closure |
+| 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
+| 2 P1 Discovery and Requests | IN_PROGRESS | refined design complete; A1 dependency is closed and P1-A runtime implementation is next |
 | 3 P2 Partnership Formation | PLANNED | depends on A1 plus P1 |
 | 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
@@ -51,12 +51,11 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. close the remaining A1 acceptance-evidence gap against the canonical test matrix
-2. run the explicit dependency audit on the current lockfile
-3. rerun `npm run test:a1:local` and `npm run health`
-4. mark A1 DONE only after gate 20 is supported by complete committed evidence
-5. begin P1-A runtime implementation
-6. keep V1 separate until GitHub Actions capacity returns
+1. begin P1-A domain, contracts, migration 0008, and repositories
+2. build P1 discovery and request creation on the verified A1 session, username, time, and rate-limit substrate
+3. preserve the P1/P2 same-transaction formation boundary and fail closed until the P2 coordinator exists
+4. continue P3 persistence/API/worker work according to the dependency graph
+5. keep V1 separate until GitHub Actions capacity returns
 
 ## Execution graph
 
@@ -141,13 +140,13 @@ No foundation work should be reopened without concrete implementation evidence t
 
 # Milestone 1: A1 Accounts and Devices
 
-Status: IN_PROGRESS. IMPLEMENTED AND CORE VALIDATION GREEN; ACCEPTANCE COVERAGE PENDING.
+Status: DONE.
 
 Canonical design:
 
 `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 
-A1-A through A1-E runtime work is committed. The current branch has a green full repository health run and a green disposable PostgreSQL A1 run. A1-F remains open because the canonical A1 test matrix is broader than the committed integration/security coverage.
+A1-A through A1-F are complete. The final branch closes all 20 acceptance gates with the expanded local database/API/security matrix, full repository health regression, and dependency audit.
 
 ## A1-A: Domain, contracts, migration, repositories
 
@@ -296,24 +295,20 @@ Exit evidence:
 
 ## A1-F: Integration closure
 
-Verified on the current A1 branch:
+Closure evidence on the completed A1 branch:
 
 - migration plan passes with seven migrations
 - all seven migrations apply from zero
 - database invariants pass
-- `npm run test:a1:local` passes 9/9 integration tests and reports `A1_LOCAL_POSTGRES_PASS`
-- `npm run health` passes repository health, typecheck, builds, lint, Prettier, dependency-direction checks, and all 44 current unit/contract/security/worker tests
-- the final account-deletion/breakup precedence PostgreSQL defect is fixed in `ceb3d93`
-- 19 of 20 A1 acceptance gates are reconciled against committed behavior evidence
+- `npm run test:a1:local` passes 27/27 and reports `A1_LOCAL_POSTGRES_PASS`
+- `npm run test:a1:security` passes 16/16
+- `npm run health` passes repository health, migration checks, typecheck, builds, lint, formatting, dependency checks, Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4
+- `npm audit --audit-level=high` reports 0 vulnerabilities
+- all 20 A1 acceptance gates in `ROADMAP_EPICS.md` are closed
+- no physical Redmi validation is required for A1 closure
 
-Remaining before A1 may be marked DONE:
+A1 is complete. New account/auth changes should be treated as regression-protected maintenance unless a later epic introduces an explicit dependency.
 
-- complete the canonical A1 verification matrix where current committed tests are still thinner than the design, including challenge expiry/attempt/rate-limit cases, ownership/race cases, logout and revoked-cookie rejection, session expiry/fencing, username API acceptance, device-list/revocation acceptance, and the remaining browser-security negative paths
-- run an explicit `npm audit --audit-level=high` against the current committed lockfile
-- rerun `npm run test:a1:local` and `npm run health` after the coverage additions
-- check the twentieth A1 gate only when the complete integration and security evidence is committed
-
-A1 is therefore not reopened at the implementation layer. The remaining work is acceptance-evidence closure.
 **REDMI PHONE REQUIRED: NO for A1 closure.**
 
 A1 may be completed with browser/API/PostgreSQL evidence. Device records in A1 are server security principals, not yet the physical-device cryptographic acceptance gate.

@@ -2,11 +2,11 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented in `packages/db/migrations` through A1 migration `0007_accounts_devices_runtime.sql`. Disposable-database validation is still verified only through `0006_durable_runtime_reliability.sql`; migration 0007 is committed but has not yet passed the complete A1 local PostgreSQL verification path.
+The PostgreSQL migration set is implemented and locally verified in `packages/db/migrations` through A1 migration `0007_accounts_devices_runtime.sql`. All seven migrations apply from zero in the completed A1 disposable PostgreSQL path, and database invariants pass.
 
 ## Current and next migration
 
-A1 migration `0007_accounts_devices_runtime.sql` is committed.
+A1 migration `0007_accounts_devices_runtime.sql` is committed and verified.
 
 Its implemented scope includes:
 
@@ -23,7 +23,7 @@ Its implemented scope includes:
 
 P1 reserves the next prefix after A1 as `0008_partner_discovery_requests_runtime.sql`. Its planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit query indexes, decline-cooldown query indexes, and append-only request-attempt evidence.
 
-P1 migration 0008 remains planned. Until migration 0007 passes the complete A1 disposable-PostgreSQL validation path, the verified migration count remains six even though seven migration files are committed.
+P1 migration 0008 remains planned. The verified migration count is seven; migration 0007 has passed the complete A1 disposable-PostgreSQL validation path.
 
 ## Policy
 

@@ -37,17 +37,17 @@ No accepted partnership or request product rule is changed.
 
 ## Dependency boundary
 
-P1 may be designed now and partially implemented in parallel with A1.
+A1 is complete. P1 may now proceed directly from the verified account/session/security substrate.
 
 Implementation dependencies are:
 
 - P1 domain rules and contracts may begin immediately
-- P1 migration 0008 follows planned A1 migration 0007
+- P1 migration 0008 follows verified A1 migration 0007
 - P1 reuses A1 authenticated sessions
 - P1 reuses A1 username normalization
 - P1 reuses A1 trusted PostgreSQL business time
 - P1 reuses A1 security_rate_limit_buckets
-- P1 full API integration waits for A1-C authenticated accounts and sessions
+- P1 full API integration may use the verified A1-C authenticated accounts and sessions
 - P2 consumes P1 reciprocal-request detection to perform actual partnership formation
 - production user-facing request creation remains disabled until the P2 partnership-formation coordinator is wired, because reciprocal pending requests must auto-pair as one transaction
 
@@ -430,7 +430,7 @@ P1 reserves:
 0008_partner_discovery_requests_runtime.sql
 ~~~
 
-It follows planned A1 migration 0007.
+It follows verified A1 migration 0007.
 
 Migrations 0001 through 0006 remain immutable.
 
@@ -549,7 +549,7 @@ Longer abuse-metadata retention remains governed by the security metadata policy
 
 ## A1 rate-limit primitive refinement
 
-Before A1 runtime implementation, the previously auth-specific draft name for the generic rate-limit table is replaced by:
+During A1 implementation, the previously auth-specific draft name for the generic rate-limit table was replaced by:
 
 ~~~text
 security_rate_limit_buckets
@@ -1386,7 +1386,7 @@ npm run test:p1:security
 npm run test:p1:local
 ~~~
 
-The top-level local command should reuse the disposable PostgreSQL harness pattern established by F2 and planned for A1.
+The top-level local command should reuse the disposable PostgreSQL harness pattern established by F2 and verified through A1.
 
 ## Implementation sequence
 

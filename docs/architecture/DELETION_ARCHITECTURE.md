@@ -156,6 +156,8 @@ A1 owns the account-level start and recovery mechanics:
 
 For a partnered account, A1 must not enable deletion until the account-deletion-specific partnership path is correct end to end.
 
+That A1 boundary is now verified complete: the account-deletion-specific partnership path, breakup/deletion precedence handling, recovery behavior, and durable worker flow are covered by the completed A1 acceptance evidence.
+
 That path uses the accepted P3 domain rules for:
 
 - active-partnership deletion overlay

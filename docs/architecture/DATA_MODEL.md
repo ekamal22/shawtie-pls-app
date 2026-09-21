@@ -12,11 +12,11 @@ The first physical schema foundation is committed under `packages/db/migrations`
 
 It includes identity, partnership lifecycle, durable operations, content metadata, relational-integrity hardening, the F2 durable-runtime reliability migration, and committed A1 migration 0007.
 
-The physical schema has passed local disposable-database validation against PostgreSQL 16 through migration 0006. Those six migrations apply from zero, the invariant suite passes, selected catalog objects were inspected, and the F2 runtime suite passes 17/17 across transaction behavior, worker claims, fencing, reclaim, outbox atomicity, lifecycle privacy, deletion recovery, and queue-plan checks. Migration 0007 is committed but awaits the complete A1 local validation path.
+The physical schema has passed local disposable-database validation against PostgreSQL 16 through migration 0007. All seven migrations apply from zero, the invariant suite passes, the F2 runtime suite passes 17/17, and the completed A1 disposable PostgreSQL acceptance suite passes 27/27.
 
 This document remains the logical model. F2 repository integration, automated concurrency regression coverage, worker infrastructure, outbox transaction infrastructure, deletion retry infrastructure, and query-plan validation are implemented and locally verified. Hosted PostgreSQL reproduction remains a separate V1 concern.
 
-A1 migration `0007_accounts_devices_runtime.sql` is implemented and commits registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, versioned PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening. It is not yet locally verified on the complete A1 branch.
+A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally verified. It commits registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, versioned PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening.
 
 P1 reserves the following planned migration `0008_partner_discovery_requests_runtime.sql` to add exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, and append-only attempt behavior. Migration 0008 is also design-only.
 

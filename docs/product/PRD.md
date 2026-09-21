@@ -2142,13 +2142,13 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The repository has completed the verified F0, F1, and F2 foundation milestones and now contains committed A1 Accounts and Devices runtime implementation.
+The repository has completed the verified F0, F1, F2, and A1 milestones. A1 Accounts and Devices is DONE at 20/20 acceptance gates.
 
 Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 
-The committed A1 surface includes migration 0007, account domain rules and contracts, password/session/device/challenge/rate-limit persistence, Fastify authentication and account APIs, account deletion/recovery workers, security-email workers, A1 verification suites, a Docker-backed A1 PostgreSQL harness, a runnable API server, and the mobile-first account/device web foundation.
+The verified A1 surface includes migration 0007, account domain rules and contracts, password/session/device/challenge/rate-limit persistence, Fastify authentication and account APIs, account deletion/recovery workers, security-email workers, the expanded A1 verification suites, a Docker-backed A1 PostgreSQL harness, a runnable API server, and the mobile-first account/device web foundation.
 
-A1 is not yet verified complete. The refreshed dependency lockfile, full TypeScript/build/health regression, migration 0007 from zero, and complete A1 PostgreSQL/API/worker/security suite still require passing local evidence before the A1 acceptance gates may close.
+A1 verification is complete: all seven migrations apply from zero, database invariants pass, the disposable PostgreSQL acceptance suite passes 27/27, the A1 security suite passes 16/16, the full repository health regression passes, the high-severity dependency audit reports 0 vulnerabilities, and all 20 A1 acceptance gates are closed.
 
 The pure partnership domain state machine and centralized capability engine remain locally verified. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending under V1.
 

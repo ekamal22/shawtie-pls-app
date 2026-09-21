@@ -225,7 +225,7 @@ P1 product rules and abuse rules are distinct:
 - discovery and request-creation security buckets are abuse controls
 - cancellation and decline remain available even when discovery/create abuse buckets are exhausted
 
-P1 reuses the PostgreSQL security-rate-limit primitive planned by A1.
+P1 reuses the PostgreSQL security-rate-limit primitive implemented and verified by A1.
 
 Request-creation abuse buckets are consumed in a separate short transaction before the pair mutation. This ensures rejected new logical attempts may still count toward abuse throttling, while only successful request creation contributes to the three-request product limit.
 
