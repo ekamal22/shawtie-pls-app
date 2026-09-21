@@ -20,7 +20,7 @@ import {
 import type { DatabasePool } from "@shawtie/db";
 import type { ApiConfig } from "../../config.ts";
 import { requireAuthentication, requireRecentReauthentication } from "../../plugins/authentication.ts";
-import { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import {
   clearDeviceCookie,
   clearSessionCookie,
@@ -29,7 +29,7 @@ import {
   setSessionCookie,
 } from "../../security/cookies.ts";
 import { networkPrefix } from "../../security/normalization.ts";
-import { AccountService } from "../accounts/account-service.ts";
+import type { AccountService } from "../accounts/account-service.ts";
 
 interface RouteDependencies {
   readonly database: DatabasePool;

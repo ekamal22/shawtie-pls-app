@@ -8,7 +8,7 @@ import {
 } from "@shawtie/db";
 import type { ApiConfig } from "../config.ts";
 import { ApiError } from "../lib/api-error.ts";
-import { AuthKeyRing } from "../security/auth-key-ring.ts";
+import type { AuthKeyRing } from "../security/auth-key-ring.ts";
 import { cookieNames } from "../security/cookies.ts";
 
 export interface AuthContext {

@@ -15,11 +15,13 @@ INSERT INTO account_emails (
   id,
   account_id,
   email_normalized,
+  email_display,
   verified_at,
   is_current
 ) VALUES (
   '10000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
+  'alpha@example.test',
   'alpha@example.test',
   now(),
   true
@@ -32,11 +34,13 @@ BEGIN
       id,
       account_id,
       email_normalized,
+      email_display,
       verified_at,
       is_current
     ) VALUES (
       '10000000-0000-0000-0000-000000000002',
       '00000000-0000-0000-0000-000000000002',
+      'alpha@example.test',
       'alpha@example.test',
       now(),
       true
@@ -223,13 +227,15 @@ BEGIN
       device_id,
       token_verifier,
       created_at,
-      expires_at
+      expires_at,
+      idle_expires_at
     ) VALUES (
       '71000000-0000-0000-0000-000000000001',
       '00000000-0000-0000-0000-000000000002',
       '70000000-0000-0000-0000-000000000001',
       decode('00', 'hex'),
       now(),
+      now() + interval '1 hour',
       now() + interval '1 hour'
     );
     RAISE EXCEPTION 'expected device ownership foreign key violation';

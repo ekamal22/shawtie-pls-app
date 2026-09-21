@@ -78,9 +78,10 @@ import type {
   UsernameChangeInput,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
-import { AuthKeyRing, randomNonce, randomOpaqueToken } from "../../security/auth-key-ring.ts";
+import { randomNonce, randomOpaqueToken } from "../../security/auth-key-ring.ts";
+import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import { normalizeEmail, normalizeLoginIdentifier } from "../../security/normalization.ts";
-import { PasswordHasher } from "../../security/password-hasher.ts";
+import type { PasswordHasher } from "../../security/password-hasher.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 
 const MINUTE = 60_000;

@@ -23,10 +23,7 @@ import {
   createDefaultDeletionHandlers,
   createDefaultScheduledHandlers,
 } from "../src/auth/default-account-handlers.ts";
-import {
-  createEmailChallengeOutboxHandler,
-  createSecurityEmailOutboxHandler,
-} from "../src/auth/auth-email-handlers.ts";
+import { createEmailChallengeOutboxHandler } from "../src/auth/auth-email-handlers.ts";
 import { WorkerAuthKeyRing } from "../src/auth/worker-auth-key-ring.ts";
 import type { EmailDeliveryPort, SecurityEmailMessage } from "../src/auth/email-delivery-port.ts";
 import { defaultRetryPolicy } from "../src/runtime/retry-policy.ts";
