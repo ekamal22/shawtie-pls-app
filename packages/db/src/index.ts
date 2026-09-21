@@ -20,6 +20,7 @@ export {
 } from "./repositories/lifecycle-events.ts";
 export {
   claimScheduledActions,
+  cancelPendingScheduledActionsByDeduplicationKey,
   completeScheduledAction,
   failScheduledAction,
   insertScheduledAction,
@@ -144,6 +145,8 @@ export {
   loadPartnerRequestParticipants,
   lockPairPendingRequests,
   lockPartnerRequest,
+  lockPartnerRequestsById,
+  markPartnerRequestsAccepted,
   reservePartnerRequestIdempotency,
   setPartnerRequestCancelled,
   setPartnerRequestDeclined,
@@ -155,3 +158,22 @@ export {
   type PartnerRequestRecord,
   type PartnerRequestStatus,
 } from "./repositories/partner-requests.ts";
+
+export {
+  insertPartnership,
+  insertPartnershipMembers,
+  loadPartnershipMemberIds,
+  loadPartnershipReadModelForAccount,
+  lockPartnershipForMetadataUpdate,
+  updateRelationshipStartDateIfVersion,
+  type LockedPartnershipMetadata,
+  type PartnershipReadModel,
+} from "./repositories/partnerships.ts";
+
+export {
+  insertAccountNotification,
+  listAccountNotifications,
+  markAccountNotificationRead,
+  type AccountNotification,
+  type AccountNotificationEventType,
+} from "./repositories/account-notifications.ts";

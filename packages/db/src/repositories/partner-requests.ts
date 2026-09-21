@@ -20,6 +20,7 @@ export interface PartnerRequestRecord {
   readonly expiredAt: Date | null;
   readonly invalidatedAt: Date | null;
   readonly invalidatedReason: PartnerRequestInvalidationReason | null;
+  readonly acceptedPartnershipId: string | null;
 }
 
 interface PartnerRequestDbRow {
@@ -36,6 +37,7 @@ interface PartnerRequestDbRow {
   expired_at: Date | null;
   invalidated_at: Date | null;
   invalidated_reason: PartnerRequestInvalidationReason | null;
+  accepted_partnership_id: string | null;
 }
 
 function mapRequest(row: PartnerRequestDbRow): PartnerRequestRecord {
@@ -53,13 +55,14 @@ function mapRequest(row: PartnerRequestDbRow): PartnerRequestRecord {
     expiredAt: row.expired_at,
     invalidatedAt: row.invalidated_at,
     invalidatedReason: row.invalidated_reason,
+    acceptedPartnershipId: row.accepted_partnership_id,
   };
 }
 
 const requestColumns = `
   id, sender_account_id, recipient_account_id, status, created_at, expires_at,
   relationship_start_date::text, declined_at, cancelled_at, accepted_at,
-  expired_at, invalidated_at, invalidated_reason
+  expired_at, invalidated_at, invalidated_reason, accepted_partnership_id
 `;
 
 export interface PartnerAccountEligibility {
@@ -181,6 +184,43 @@ export async function lockPairPendingRequests(
     [accountA, accountB],
   );
   return result.rows.map(mapRequest);
+}
+
+
+export async function lockPartnerRequestsById(
+  executor: QueryExecutor,
+  requestIds: readonly string[],
+): Promise<readonly PartnerRequestRecord[]> {
+  if (requestIds.length === 0) return [];
+  const sorted = [...new Set(requestIds)].sort();
+  const result = await executor.query<PartnerRequestDbRow>(
+    `SELECT ${requestColumns}
+     FROM partner_requests
+     WHERE id = ANY($1::uuid[])
+     ORDER BY id
+     FOR UPDATE`,
+    [sorted],
+  );
+  return result.rows.map(mapRequest);
+}
+
+export async function markPartnerRequestsAccepted(
+  executor: QueryExecutor,
+  requestIds: readonly string[],
+  partnershipId: string,
+  acceptedAt: Date,
+): Promise<number> {
+  if (requestIds.length === 0) return 0;
+  const result = await executor.query(
+    `UPDATE partner_requests
+     SET status = 'accepted',
+         accepted_at = $3,
+         accepted_partnership_id = $2
+     WHERE id = ANY($1::uuid[])
+       AND status = 'pending'`,
+    [[...requestIds], partnershipId, acceptedAt],
+  );
+  return result.rowCount ?? 0;
 }
 
 export async function expirePartnerRequestsById(

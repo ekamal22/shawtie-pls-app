@@ -276,3 +276,20 @@ export async function retryScheduledAction(
   );
   return result.rows[0]?.status ?? "lost";
 }
+
+export async function cancelPendingScheduledActionsByDeduplicationKey(
+  executor: QueryExecutor,
+  deduplicationKeys: readonly string[],
+  cancelledAt: Date,
+): Promise<number> {
+  if (deduplicationKeys.length === 0) return 0;
+  const result = await executor.query(
+    `UPDATE scheduled_actions
+     SET status = 'cancelled',
+         completed_at = $2
+     WHERE deduplication_key = ANY($1::text[])
+       AND status = 'pending'`,
+    [[...deduplicationKeys], cancelledAt],
+  );
+  return result.rowCount ?? 0;
+}
