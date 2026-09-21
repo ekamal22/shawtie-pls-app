@@ -118,7 +118,7 @@ Current epic status:
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: IN_PROGRESS because the pure domain layer is verified but persistence integration, API, worker, notification, deletion, and race gates remain
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
-- A1 Accounts and Devices: IN_PROGRESS with runtime implementation committed and validation pending. Committed work includes account domain rules and contracts, migration 0007, password/session/device/challenge/rate-limit/security-email persistence, Argon2id credentials, versioned HMAC verifiers, revocable cookies, CSRF/origin protection, registration/login/recovery/account-change routes, account deletion/recovery and breakup-deletion precedence handlers, device management, A1 worker email/deletion handlers, A1 unit/integration/security tests, the Docker-backed `test:a1:local` harness, a runnable API entrypoint, and the mobile-first A1 web foundation. No A1 acceptance gate is closed until the refreshed lockfile, TypeScript/build/health checks, migration 0007, and complete disposable-PostgreSQL A1 suite pass locally
+- A1 Accounts and Devices: IN_PROGRESS at acceptance-evidence closure. Runtime implementation is committed, the disposable PostgreSQL A1 suite passes 9/9 with all seven migrations applied from zero, database invariants pass, and the full `npm run health` regression passes with all 44 current unit/contract/security/worker tests green. Nineteen of twenty acceptance gates are reconciled. Gate 20 remains open because the canonical A1 design requires additional dedicated database/API/security coverage beyond the current committed suite, including challenge expiry/attempt/rate-limit cases, ownership/race cases, logout/revoked-cookie rejection, session expiry/fencing, username API acceptance, device acceptance, and remaining browser-security negative paths. The final production SQL fix is commit `ceb3d93`
 - P1 Discovery and Partner Requests: IN_PROGRESS at the refined architecture and implementation-design layer; runtime implementation has not started. The design now defines exact authenticated discovery, privacy-safe projection, exact request timing, create idempotency with lifetime-aware retention, separate abuse-rate-limit preflight, pair-wide lock ordering, cursor pagination, minimized attempt metadata, cross-epic invalidation, an explicit same-transaction P2 coordinator, F2 expiry scheduling, and typed fail-closed production gating
 - all other pre-release implementation epics except the separately listed P3: PLANNED
 
@@ -136,17 +136,15 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1 implementation is committed. Validation and closure are now the active engineering task.
+A1 implementation and core local validation are green. Acceptance-evidence closure is now the active engineering task.
 
-1. preserve the current local install/format changes safely, pull the latest A1 fixes, then refresh the dependency lockfile against the current branch
-2. run the complete workspace TypeScript check and fix any remaining compile errors
-3. run `npm run health` after formatting and lockfile reconciliation
-4. run `npm run test:a1:local` against disposable PostgreSQL 16 and capture migration, API, worker, race, and security evidence
-5. commit only the validated lockfile/format changes and any required implementation fixes with `[skip ci]`
-6. mark A1 acceptance gates complete only from passing evidence and then update A1 to DONE
-7. continue P1-A implementation only after the shared A1 account identifiers, sessions, username normalization, and security-rate-limit primitives are validated
-8. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
-
+1. add the missing canonical A1 database/API/security coverage identified by the acceptance reconciliation
+2. run `npm audit --audit-level=high` against the current committed lockfile
+3. rerun `npm run test:a1:local` and require 9/9 or better with `A1_LOCAL_POSTGRES_PASS`
+4. rerun `npm run health` and require the complete repository baseline to stay green
+5. mark gate 20 complete and A1 DONE only after the expanded evidence matrix is committed and passing
+6. begin P1-A runtime implementation after A1 closure; keep P1's already-complete design work intact
+7. keep V1 Hosted CI Verification separate and blocked until GitHub Actions capacity returns
 ## Deferred heavy feature policy
 
 Call recording is intentionally outside the first stable release and outside the initial post-stable maturity milestone. It is tracked under X2 Deferred Heavy Features and is not a required product milestone.
@@ -168,6 +166,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A repository-wide documentation audit has been completed against the F2-complete and A1-implemented-but-unvalidated state. The root README, project state, milestone roadmap, epic gates, A1 design, system architecture, data model, migration plan, database package README, testing strategy, CI guidance, and PRD now distinguish committed A1 runtime code from missing validation evidence. No A1 runtime acceptance gate is claimed complete.
+A1 has now been reconciled against the canonical acceptance gates after successful core local validation. Nineteen of twenty gates are checked from committed behavior evidence. Gate 20 remains open because the canonical A1 verification matrix is broader than the currently committed integration/security suite. Current-state documents must preserve that distinction until the missing coverage is committed and rerun.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.
