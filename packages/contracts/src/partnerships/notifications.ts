@@ -6,6 +6,15 @@ const cursor = z.string().min(1).max(2048);
 export const accountNotificationEventTypeSchema = z.enum([
   "partnership_formed",
   "relationship_start_date_changed",
+  "breakup_started",
+  "breakup_cancelled",
+  "restoration_requested",
+  "partnership_restored",
+  "breakup_deadline_reminder",
+  "partnership_dissolved",
+  "partner_account_deletion_started",
+  "partner_account_recovered",
+  "partner_account_deleted",
 ]);
 
 export const notificationListQuerySchema = z.object({

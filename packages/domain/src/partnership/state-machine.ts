@@ -81,6 +81,9 @@ export function submitRestoreIntent(
   if (state.lifecycle !== "breakup_pending" || !breakup || !memberExists(state, actorId)) {
     return { ok: false, reason: "BREAKUP_REQUIRED" };
   }
+  if (isBefore(now, breakup.initiatorCancelUntil)) {
+    return { ok: false, reason: "RESTORE_WINDOW_NOT_OPEN" };
+  }
   if (isAtOrAfter(now, breakup.finalDeadline)) {
     return { ok: false, reason: "BREAKUP_DEADLINE_EXPIRED" };
   }

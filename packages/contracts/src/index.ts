@@ -92,3 +92,25 @@ export {
   type NotificationListResponse,
   type NotificationReadResponse,
 } from "./partnerships/notifications.ts";
+
+export {
+  blockFormerPartnerResponseSchema,
+  breakupCancelResponseSchema,
+  breakupIdParamsSchema,
+  breakupInitiateResponseSchema,
+  formerPartnershipCursorSchema,
+  formerPartnershipListQuerySchema,
+  formerPartnershipListResponseSchema,
+  formerPartnershipSchema,
+  partnershipLifecycleMutationBodySchema,
+  restoreIntentResponseSchema,
+  type BlockFormerPartnerResponse,
+  type BreakupCancelResponse,
+  type BreakupIdParams,
+  type BreakupInitiateResponse,
+  type FormerPartnership,
+  type FormerPartnershipCursor,
+  type FormerPartnershipListQuery,
+  type FormerPartnershipListResponse,
+  type RestoreIntentResponse,
+} from "./partnerships/lifecycle.ts";

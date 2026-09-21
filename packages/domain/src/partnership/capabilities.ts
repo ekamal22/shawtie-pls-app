@@ -73,8 +73,9 @@ export function evaluateCapability(
   }
 
   if (capability === "change_username") {
-    if (partnership && partnership.lifecycle !== "terminated")
+    if (partnership && partnership.lifecycle !== "terminated") {
       return deny("USERNAME_CHANGE_BLOCKED");
+    }
     if (
       ctx.actor.nextUsernameChangeEligibleAt &&
       isBefore(ctx.now, ctx.actor.nextUsernameChangeEligibleAt)
@@ -105,22 +106,34 @@ export function evaluateCapability(
     return deny("ACCOUNT_LOCKED");
   }
 
+  if (capability === "initiate_breakup") {
+    return partnership.lifecycle === "active" ? ALLOW : deny("BREAKUP_REQUIRED");
+  }
+
   if (capability === "cancel_breakup") {
-    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup)
+    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup) {
       return deny("BREAKUP_REQUIRED");
+    }
     if (partnership.breakup.initiatedBy !== ctx.actor.id) return deny("NOT_BREAKUP_INITIATOR");
-    if (!isBefore(ctx.now, partnership.breakup.initiatorCancelUntil))
+    if (!isBefore(ctx.now, partnership.breakup.initiatorCancelUntil)) {
       return deny("BREAKUP_WINDOW_EXPIRED");
+    }
     return ALLOW;
   }
 
   if (capability === "submit_restore_intent") {
-    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup)
+    if (partnership.lifecycle !== "breakup_pending" || !partnership.breakup) {
       return deny("BREAKUP_REQUIRED");
-    if (isAtOrAfter(ctx.now, partnership.breakup.finalDeadline))
+    }
+    if (isBefore(ctx.now, partnership.breakup.initiatorCancelUntil)) {
+      return deny("RESTORE_WINDOW_NOT_OPEN");
+    }
+    if (isAtOrAfter(ctx.now, partnership.breakup.finalDeadline)) {
       return deny("BREAKUP_DEADLINE_EXPIRED");
-    if (partnership.breakup.restoreIntentAt[ctx.actor.id])
+    }
+    if (partnership.breakup.restoreIntentAt[ctx.actor.id]) {
       return deny("RESTORE_INTENT_ALREADY_SUBMITTED");
+    }
     return ALLOW;
   }
 
@@ -161,7 +174,9 @@ export function evaluateCapability(
     }
     if (capability === "edit_message") {
       const editDeadline = new Date(ctx.message.createdAt).getTime() + 30 * 60 * 1000;
-      if (new Date(ctx.now).getTime() >= editDeadline) return deny("MESSAGE_EDIT_WINDOW_EXPIRED");
+      if (new Date(ctx.now).getTime() >= editDeadline) {
+        return deny("MESSAGE_EDIT_WINDOW_EXPIRED");
+      }
     }
     return ALLOW;
   }

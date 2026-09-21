@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  blockFormerPartnerResponseSchema,
+  breakupCancelResponseSchema,
+  breakupIdParamsSchema,
+  breakupInitiateResponseSchema,
   currentPartnershipResponseSchema,
+  formerPartnershipListQuerySchema,
+  formerPartnershipListResponseSchema,
   notificationCursorSchema,
   notificationListQuerySchema,
   notificationListResponseSchema,
@@ -12,7 +18,9 @@ import {
   partnerRequestAcceptParamsSchema,
   partnerRequestAcceptResponseSchema,
   partnershipIdParamsSchema,
+  partnershipLifecycleMutationBodySchema,
   relationshipStartDateUpdateResponseSchema,
+  restoreIntentResponseSchema,
   relationshipStartDateUpdateSchema,
   safeParseAtBoundary,
 } from "../src/index.ts";
@@ -95,10 +103,20 @@ test("P2 current-partnership contract exposes only the documented safe projectio
       partnership: {
         partnershipId: PARTNERSHIP_ID,
         lifecycleState: "active",
+        interactionMode: "normal",
         activatedAt: "2026-09-21T12:00:00.000Z",
         relationshipStartDate: "2025-11-15",
         metadataVersion: 1,
-        capabilities: { changeRelationshipStartDate: true },
+        generation: 1,
+        breakup: null,
+        accountDeletion: null,
+        capabilities: {
+          changeRelationshipStartDate: true,
+          initiateBreakup: true,
+          cancelBreakup: false,
+          submitRestoreIntent: false,
+          viewSharedData: true,
+        },
         otherMember: {
           accountId: ACCOUNT_ID,
           username: "partner",
@@ -149,6 +167,94 @@ test("P2 notification response contracts expose routing metadata only", () => {
     safeParseAtBoundary(notificationReadResponseSchema, {
       notificationId: NOTIFICATION_ID,
       readAt: "2026-09-21T12:01:00.000Z",
+    }).success,
+    true,
+  );
+});
+
+
+test("P3 lifecycle mutation contracts keep actor, deadlines, and generation server-owned", () => {
+  const BREAKUP_ID = "50000000-0000-4000-8000-000000000001";
+  assert.equal(
+    safeParseAtBoundary(breakupIdParamsSchema, {
+      partnershipId: PARTNERSHIP_ID,
+      breakupId: BREAKUP_ID,
+    }).success,
+    true,
+  );
+  assert.equal(safeParseAtBoundary(partnershipLifecycleMutationBodySchema, undefined).success, true);
+  assert.equal(
+    safeParseAtBoundary(partnershipLifecycleMutationBodySchema, {
+      partnerAccountId: ACCOUNT_ID,
+      finalDeadline: "2026-10-01T00:00:00.000Z",
+      generation: 9,
+    }).success,
+    false,
+  );
+
+  assert.equal(
+    safeParseAtBoundary(breakupInitiateResponseSchema, {
+      partnershipId: PARTNERSHIP_ID,
+      breakupId: BREAKUP_ID,
+      lifecycleState: "breakup_pending",
+      initiatedAt: "2026-09-21T12:00:00.000Z",
+      initiatorCancelUntil: "2026-09-21T13:00:00.000Z",
+      baseDeadline: "2026-09-28T12:00:00.000Z",
+      finalDeadline: "2026-09-28T12:00:00.000Z",
+      generation: 2,
+    }).success,
+    true,
+  );
+  assert.equal(
+    safeParseAtBoundary(breakupCancelResponseSchema, {
+      partnershipId: PARTNERSHIP_ID,
+      breakupId: BREAKUP_ID,
+      lifecycleState: "active",
+      generation: 3,
+    }).success,
+    true,
+  );
+  assert.equal(
+    safeParseAtBoundary(restoreIntentResponseSchema, {
+      partnershipId: PARTNERSHIP_ID,
+      breakupId: BREAKUP_ID,
+      lifecycleState: "breakup_pending",
+      finalDeadline: "2026-10-01T12:00:00.000Z",
+      generation: 3,
+      restored: false,
+    }).success,
+    true,
+  );
+});
+
+test("P3 former-partnership contracts are private-history projections", () => {
+  const query = safeParseAtBoundary(formerPartnershipListQuerySchema, {});
+  assert.equal(query.success, true);
+  if (query.success) assert.equal(query.data.limit, 25);
+
+  assert.equal(
+    safeParseAtBoundary(formerPartnershipListResponseSchema, {
+      items: [
+        {
+          partnershipId: PARTNERSHIP_ID,
+          terminatedAt: "2026-09-21T12:00:00.000Z",
+          terminationReason: "breakup",
+          formerPartner: {
+            accountId: ACCOUNT_ID,
+            username: "former",
+            displayName: "Former",
+          },
+          blockedByMe: false,
+        },
+      ],
+      nextCursor: null,
+    }).success,
+    true,
+  );
+  assert.equal(
+    safeParseAtBoundary(blockFormerPartnerResponseSchema, {
+      partnershipId: PARTNERSHIP_ID,
+      blocked: true,
     }).success,
     true,
   );
