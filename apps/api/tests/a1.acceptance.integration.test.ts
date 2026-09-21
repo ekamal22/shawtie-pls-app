@@ -931,8 +931,8 @@ test("A1 account recovery rejects the exact seven-day deadline", async () => {
 
     await database.pool.query(
       "UPDATE account_deletion_requests SET " +
-        "requested_at = clock_timestamp() - interval '7 days', " +
-        "recover_until = clock_timestamp() " +
+        "requested_at = transaction_timestamp() - interval '7 days', " +
+        "recover_until = transaction_timestamp() " +
         "WHERE account_id = $1 AND status = 'pending'",
       [user.accountId],
     );
