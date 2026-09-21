@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
 
+type NotificationEventType =
+  | "partnership_formed"
+  | "relationship_start_date_changed"
+  | "breakup_started"
+  | "breakup_cancelled"
+  | "restoration_requested"
+  | "partnership_restored"
+  | "breakup_deadline_reminder"
+  | "partnership_dissolved"
+  | "partner_account_deletion_started"
+  | "partner_account_recovered"
+  | "partner_account_deleted";
+
 interface NotificationItem {
   notificationId: string;
-  eventType: "partnership_formed" | "relationship_start_date_changed";
+  eventType: NotificationEventType;
   actorAccountId: string | null;
   partnershipId: string | null;
   createdAt: string;
@@ -11,10 +24,20 @@ interface NotificationItem {
 }
 
 function label(item: NotificationItem): string {
-  if (item.eventType === "partnership_formed") {
-    return "Your partnership is active.";
-  }
-  return "Your relationship start date was updated.";
+  const labels: Record<NotificationEventType, string> = {
+    partnership_formed: "Your partnership is active.",
+    relationship_start_date_changed: "Your relationship start date was updated.",
+    breakup_started: "The breakup process has started.",
+    breakup_cancelled: "The breakup process was cancelled.",
+    restoration_requested: "Your partner requested restoration.",
+    partnership_restored: "Your partnership was restored.",
+    breakup_deadline_reminder: "Your breakup deadline is approaching.",
+    partnership_dissolved: "Your partnership reached final dissolution.",
+    partner_account_deletion_started: "Your partner requested account deletion.",
+    partner_account_recovered: "Your partner recovered their account.",
+    partner_account_deleted: "Your partner account was permanently deleted.",
+  };
+  return labels[item.eventType];
 }
 
 export function NotificationsPanel() {
@@ -48,7 +71,7 @@ export function NotificationsPanel() {
     setBusyId(notificationId);
     setError("");
     try {
-      await apiRequest(`/api/v1/notifications/${notificationId}/read`, {
+      await apiRequest("/api/v1/notifications/" + notificationId + "/read", {
         method: "POST",
       });
       await load();

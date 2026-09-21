@@ -62,6 +62,7 @@ export function PartnerRequestsPanel() {
   const [outgoing, setOutgoing] = useState<RequestItem[]>([]);
   const [incomingCursor, setIncomingCursor] = useState<string | null>(null);
   const [outgoingCursor, setOutgoingCursor] = useState<string | null>(null);
+  const [partnershipOccupied, setPartnershipOccupied] = useState<boolean | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -81,12 +82,47 @@ export function PartnerRequestsPanel() {
   }
 
   useEffect(() => {
-    void refreshLists().catch(() => undefined);
+    async function refreshAvailability() {
+      const current = await apiRequest<{ partnership: unknown | null }>(
+        "/api/v1/partnerships/current",
+      );
+      setPartnershipOccupied(Boolean(current.partnership));
+      if (!current.partnership) {
+        await refreshLists();
+      } else {
+        setIncoming([]);
+        setOutgoing([]);
+        setIncomingCursor(null);
+        setOutgoingCursor(null);
+        setResult(null);
+      }
+    }
+
+    void refreshAvailability().catch(() => undefined);
     const onFocus = () => {
-      void refreshLists().catch(() => undefined);
+      void refreshAvailability().catch(() => undefined);
+    };
+    const onMode = (event: Event) => {
+      const custom = event as CustomEvent<{ occupied?: boolean }>;
+      if (typeof custom.detail?.occupied === "boolean") {
+        setPartnershipOccupied(custom.detail.occupied);
+        if (custom.detail.occupied) {
+          setResult(null);
+          setIncoming([]);
+          setOutgoing([]);
+        } else {
+          void refreshLists().catch(() => undefined);
+        }
+      }
     };
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("shawtie:partnership-changed", onFocus);
+    window.addEventListener("shawtie:partnership-mode", onMode);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("shawtie:partnership-changed", onFocus);
+      window.removeEventListener("shawtie:partnership-mode", onMode);
+    };
   }, []);
 
   async function run(task: () => Promise<void>) {
@@ -190,6 +226,27 @@ export function PartnerRequestsPanel() {
         setOutgoingCursor(next.nextCursor);
       }
     });
+  }
+
+  if (partnershipOccupied === undefined) {
+    return (
+      <section className="panel">
+        <h2>Find your partner</h2>
+        <p className="muted">Checking partnership availability...</p>
+      </section>
+    );
+  }
+
+  if (partnershipOccupied) {
+    return (
+      <section className="panel">
+        <h2>Partner requests</h2>
+        <p className="hint">
+          New discovery, requests, and acceptance are unavailable while this partnership occupies
+          your partner slot.
+        </p>
+      </section>
+    );
   }
 
   return (

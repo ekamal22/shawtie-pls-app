@@ -295,3 +295,23 @@ button:disabled {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+.lifecycle-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d8c9dd;
+  border-radius: 14px;
+  padding: 14px;
+  background: #faf7fb;
+}
+
+.lifecycle-card p {
+  margin: 0;
+}
+
+.danger-zone-inline {
+  border-top: 1px solid #efc8cd;
+  padding-top: 14px;
+  margin-top: 4px;
+}
