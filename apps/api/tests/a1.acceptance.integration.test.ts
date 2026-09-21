@@ -960,3 +960,168 @@ test("A1 account recovery rejects the exact seven-day deadline", async () => {
     await closeDatabasePool(database);
   }
 });
+
+
+test("A1 concurrent fifth challenge attempt cannot exceed max attempts", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const started = await startRegistration(app, database, {
+      username: "challenge_race",
+      email: "challenge-race@example.test",
+      suffix: "challenge-race",
+    });
+    await database.pool.query(
+      "UPDATE email_verifications SET attempt_count = 4 WHERE id = $1",
+      [started.challengeId],
+    );
+    const wrongCode = started.code === "00000000" ? "00000001" : "00000000";
+    const responses = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/registration/verify",
+        headers,
+        payload: {
+          registrationIntentId: started.registrationIntentId,
+          code: wrongCode,
+        },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/registration/verify",
+        headers,
+        payload: {
+          registrationIntentId: started.registrationIntentId,
+          code: wrongCode,
+        },
+      }),
+    ]);
+    assert.deepEqual(
+      responses.map((response) => response.statusCode).sort((a, b) => a - b),
+      [409, 409],
+    );
+    const challenge = await database.pool.query<{ attempt_count: number; max_attempts: number }>(
+      "SELECT attempt_count, max_attempts FROM email_verifications WHERE id = $1",
+      [started.challengeId],
+    );
+    assert.equal(challenge.rows[0]?.attempt_count, 5);
+    assert.equal(challenge.rows[0]?.max_attempts, 5);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("A1 concurrent email changes cannot claim the same verified email", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const first = await register(app, database, "email_owner_one");
+    const second = await register(app, database, "email_owner_two");
+    const target = "shared-email-change@example.test";
+
+    const firstStart = await app.inject({
+      method: "POST",
+      url: "/api/v1/me/email-change/start",
+      headers: { ...headers, cookie: first.cookie },
+      payload: { email: target },
+    });
+    const secondStart = await app.inject({
+      method: "POST",
+      url: "/api/v1/me/email-change/start",
+      headers: { ...headers, cookie: second.cookie },
+      payload: { email: target },
+    });
+    assert.equal(firstStart.statusCode, 200, firstStart.body);
+    assert.equal(secondStart.statusCode, 200, secondStart.body);
+
+    const firstChallenge = await latestChallenge(database, {
+      accountId: first.accountId,
+      purpose: "email_change",
+    });
+    const secondChallenge = await latestChallenge(database, {
+      accountId: second.accountId,
+      purpose: "email_change",
+    });
+    const responses = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/me/email-change/complete",
+        headers: { ...headers, cookie: first.cookie },
+        payload: { code: firstChallenge.code },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/me/email-change/complete",
+        headers: { ...headers, cookie: second.cookie },
+        payload: { code: secondChallenge.code },
+      }),
+    ]);
+    assert.deepEqual(
+      responses.map((response) => response.statusCode).sort((a, b) => a - b),
+      [200, 409],
+    );
+
+    const owners = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM account_emails " +
+        "WHERE email_normalized = $1 AND is_current AND verified_at IS NOT NULL AND released_at IS NULL",
+      [target],
+    );
+    assert.equal(owners.rows[0]?.count, "1");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("A1 failed login and recovery start keep generic response shapes", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const user = await register(app, database, "generic_auth");
+
+    const wrongPassword = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      headers,
+      payload: {
+        identifier: user.email,
+        password: "a wrong but sufficiently long password",
+      },
+    });
+    const missingAccount = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      headers,
+      payload: {
+        identifier: "missing-account@example.test",
+        password: "a wrong but sufficiently long password",
+      },
+    });
+    assert.equal(wrongPassword.statusCode, 401);
+    assert.equal(missingAccount.statusCode, 401);
+    assert.deepEqual(wrongPassword.json(), missingAccount.json());
+
+    const existingRecovery = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password-recovery/start",
+      headers,
+      payload: { identifier: user.email },
+    });
+    const missingRecovery = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password-recovery/start",
+      headers,
+      payload: { identifier: "missing-recovery@example.test" },
+    });
+    assert.equal(existingRecovery.statusCode, 202);
+    assert.equal(missingRecovery.statusCode, 202);
+    assert.deepEqual(existingRecovery.json(), missingRecovery.json());
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
