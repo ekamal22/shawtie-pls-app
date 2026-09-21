@@ -411,13 +411,15 @@ Status: IN_PROGRESS
 
 ## Implementation status
 
+Core implementation and current local validation are green at commit `ceb3d93`, but A1 remains open until the complete canonical A1 verification matrix is committed and rerun. Nineteen of twenty acceptance gates are reconciled below; gate 20 remains open.
+
 The refined architecture remains defined in:
 
 `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 
 The committed A1 runtime follows this design and builds directly on the verified F2 transaction, outbox, worker, scheduled-action, deletion, and PostgreSQL substrate. Runtime code now exists for A1-A through A1-E plus the A1-F verification commands and disposable PostgreSQL harness. The implementation includes the account/device web foundation and runnable API entrypoint.
 
-Validation is still pending on the complete branch. No A1 runtime gate is checked merely because source code or tests exist.
+The current branch has passed the disposable PostgreSQL A1 run and the full repository health regression. Acceptance reconciliation still distinguishes implemented behavior from complete verification coverage.
 
 ## Implementation sequence
 
@@ -505,27 +507,47 @@ Validation is still pending on the complete branch. No A1 runtime gate is checke
 
 ## Acceptance gates
 
-- [ ] under-18 registration is rejected by server time
-- [ ] client clock changes cannot bypass age eligibility
-- [ ] email verification codes expire, rate-limit, and reject replay
-- [ ] one verified email cannot own two active accounts
-- [ ] login and logout work with revocable server sessions
-- [ ] password recovery works through verified email
-- [ ] email change requires reauthentication and new-email verification
-- [ ] old email is notified after successful email change
-- [ ] other sessions are revoked after successful email change
-- [ ] one-year username change rule is server-enforced
-- [ ] username change is blocked while active or breakup_pending
-- [ ] old username is released after a successful change
-- [ ] one-time DOB correction is server-enforced
-- [ ] rejected under-18 DOB correction does not consume the correction allowance
-- [ ] account deletion immediately removes account access
-- [ ] account recovery works before the seven-day deadline
-- [ ] device records exist and sessions can be associated with devices where applicable
-- [ ] device revocation revokes authentication access
-- [ ] account recovery does not imply historical E2EE key recovery
-- [ ] integration and security tests pass
+- [x] under-18 registration is rejected by server time
+- [x] client clock changes cannot bypass age eligibility
+- [x] email verification codes expire, rate-limit, and reject replay
+- [x] one verified email cannot own two active accounts
+- [x] login and logout work with revocable server sessions
+- [x] password recovery works through verified email
+- [x] email change requires reauthentication and new-email verification
+- [x] old email is notified after successful email change
+- [x] other sessions are revoked after successful email change
+- [x] one-year username change rule is server-enforced
+- [x] username change is blocked while active or breakup_pending
+- [x] old username is released after a successful change
+- [x] one-time DOB correction is server-enforced
+- [x] rejected under-18 DOB correction does not consume the correction allowance
+- [x] account deletion immediately removes account access
+- [x] account recovery works before the seven-day deadline
+- [x] device records exist and sessions can be associated with devices where applicable
+- [x] device revocation revokes authentication access
+- [x] account recovery does not imply historical E2EE key recovery
+- [ ] integration and security tests pass against the complete canonical A1 verification matrix
 
+
+## Acceptance reconciliation evidence
+
+Reconciled: 2026-09-21.
+
+Current green evidence:
+
+- migration plan: 7/7
+- disposable migration run: 7/7
+- database invariants: PASS
+- A1 local integration suite: 9/9 PASS with `A1_LOCAL_POSTGRES_PASS`
+- full repository health: PASS
+- current unit/contract/security/worker total under `npm run health`: 44/44 PASS
+- final account-deletion/breakup precedence fix: `ceb3d93`
+
+The first 19 gates are supported by committed source, migrations, domain rules, database constraints, and the currently passing regression/integration evidence.
+
+Gate 20 remains open because the committed suites do not yet implement the full verification matrix required by `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` and `docs/testing/TEST_STRATEGY.md`. Missing or incomplete dedicated evidence includes challenge expiry/attempt/rate-limit cases, ownership and registration races, logout/revoked-cookie rejection, absolute/idle session expiry and fencing, username API acceptance, device list/revocation/current-device acceptance, and remaining origin/Fetch Metadata/CSRF negative paths.
+
+A1 becomes DONE only after those evidence gaps are closed, an explicit dependency audit is green, and the complete local A1 plus repository-health regressions are rerun.
 # P1: Discovery and Partner Requests
 
 Status: IN_PROGRESS
