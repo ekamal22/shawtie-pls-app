@@ -146,7 +146,7 @@ Source implementation state:
 3. P2-C explicit accept plus the shared formation coordinator are committed
 4. P2-D reciprocal integration into P1 `paired` mode is committed
 5. P2-E current partnership read model, relationship-date metadata mutation, durable notifications, and client flow are committed
-6. P2-F local PostgreSQL/API/race/security and full-P1 paired regression harnesses are committed
+6. P2-F local PostgreSQL/API/race/security harnesses are committed, including a P2 closure rerun of the P1 integration surface in real `paired` mode while standalone `test:p1:local` remains request-only
 
 Remaining closure work is to execute the P2 local suite, full health, and dependency audit, then record verified acceptance evidence.
 

@@ -44,6 +44,7 @@ Start with:
 - `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the completed A1 implementation design
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
 - `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the implemented P2 design and pending verification boundary
+- `docs/api/P2_PARTNERSHIP_API.md` for the implemented P2 HTTP contract and replay/privacy semantics
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements
 - `docs/architecture/ARCHITECTURE_BASELINE.md` for the frozen architecture baseline

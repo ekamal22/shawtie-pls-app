@@ -18,7 +18,7 @@ This document remains the logical model. F2 repository integration, automated co
 
 A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally verified. It commits registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, versioned PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening.
 
-P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 reserves planned migration `0009_partnership_formation_runtime.sql` for accepted-request linkage and durable account notifications; the fresh immutable partnership ID remains the namespace root.
+P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 migration `0009_partnership_formation_runtime.sql` is now committed with accepted-request linkage, legacy-safe `NOT VALID` linkage constraints, and durable account notifications; its clean nine-migration PostgreSQL verification remains pending. The fresh immutable partnership ID remains the namespace root.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 

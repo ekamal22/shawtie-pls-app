@@ -330,7 +330,7 @@ Verified implementation:
 - the disposable P1 PostgreSQL/API/worker suite passes 16/16
 - request creation preserves explicit idempotency, pair-wide deterministic locks, snapshot-bound cursor pagination, UTC calendar arithmetic, and cross-epic invalidation hooks
 - reciprocal detection is verified while P2 retains authority for same-transaction partnership formation
-- production request creation remains fail-closed until the P2 coordinator is registered
+- the P1 service remains fail-closed if `paired` mode is configured without a P2 coordinator; the P2 milestone application now registers that coordinator
 - full repository health and high-severity dependency audit are green
 
 Implement:
@@ -383,7 +383,7 @@ Implemented source sequence:
 3. P2-C explicit accept and shared transactional formation coordinator
 4. P2-D reciprocal integration into real P1 paired mode
 5. P2-E relationship-date update, notification read model, and browser client flows
-6. P2-F disposable PostgreSQL/API/race/security harness and full-P1 paired regression wiring
+6. P2-F disposable PostgreSQL/API/race/security harness plus a rerun of the P1 integration surface in real `paired` mode; the standalone historical `test:p1:local` harness remains request-only
 
 The remaining step is execution evidence, not missing P2 feature source.
 

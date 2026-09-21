@@ -666,7 +666,7 @@ P1 runtime implementation and local verification are complete. Migration 0008 ap
 - [x] request race tests pass
 - [x] abuse-rate-limit tests pass
 
-P1 detects reciprocal requests but does not create partnerships. P2 owns explicit acceptance and transactional partnership formation.
+P1 owns reciprocal-request detection but not partnership persistence. In `paired` mode it synchronously invokes the P2 coordinator inside the same request-creation transaction; P2 owns explicit acceptance and all authoritative partnership formation writes.
 
 # P2: Partnership Formation and Relationship Date
 
@@ -742,9 +742,9 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 
 - disposable PostgreSQL 16 harness is committed as `npm run test:p2:local`
 - API and reciprocal/explicit formation integration coverage is committed
-- competing-accept, accept-versus-reciprocal, metadata-version, and account-deletion race coverage is committed
+- competing-accept, accept-versus-reciprocal, accept-versus-cancel/decline, already-processing-expiry, metadata-version, and account-deletion race coverage is committed
 - P2 security regressions are committed
-- P1 local verification is wired to real `paired` mode
+- the P2 closure suite reruns the P1 integration surface with the real coordinator in `paired` mode, while the standalone verified `test:p1:local` harness remains request-only
 - full repository health and dependency-audit execution remain pending
 - repo-wide documentation now distinguishes implemented source from verified closure
 

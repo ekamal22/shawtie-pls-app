@@ -50,17 +50,17 @@ Verified dependency usage:
 - P1 reuses A1 security_rate_limit_buckets
 - P1 API integration uses the verified A1 authenticated accounts and sessions
 - P2 consumes P1 reciprocal-request detection to perform actual partnership formation
-- production user-facing request creation remains disabled until the P2 partnership-formation coordinator is wired, because reciprocal pending requests must auto-pair as one transaction
+- the P1 service is designed to keep production user-facing request creation disabled unless a P2 partnership-formation coordinator is wired; the current P2 milestone application now registers the built-in coordinator
 
-P1 does not create partnerships.
+P1 does not own partnership persistence. In `paired` mode, P1 synchronously hands the locked reciprocal candidate to P2 before the request transaction commits.
 
 P2 owns explicit acceptance and transactional partnership formation.
 
 ## Production feature-enable boundary
 
-P1 may reach DONE from local domain, PostgreSQL, API, race, security, and browser evidence before P2 is complete.
+P1 reached DONE from local domain, PostgreSQL, API, race, security, and browser evidence before P2 runtime source was implemented.
 
-However, a production-capable application must not expose partner-request creation to end users unless the P2 partnership-formation coordinator is registered.
+A production-capable application must not expose partner-request creation to end users unless the P2 partnership-formation coordinator is registered. The current P2 milestone application satisfies that wiring requirement; the guard remains part of the P1 service contract.
 
 Reason:
 
@@ -83,7 +83,7 @@ Rules:
 - request_only_test is rejected by production configuration validation
 - paired requires a registered P2 PartnershipFormationCoordinator
 - disabled does not register the create route
-- request_only_test exists only for P1 integration tests before P2 is implemented
+- request_only_test remains a non-production P1 regression mode used by the standalone historical P1 local harness; P2 closure separately reruns the P1 integration surface in real paired mode
 
 Production startup or route registration fails closed if paired mode is selected without the P2 coordinator.
 

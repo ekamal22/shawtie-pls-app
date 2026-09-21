@@ -25,7 +25,7 @@ P1 migration `0008_partner_discovery_requests_runtime.sql` is committed and loca
 
 P2 migration `0009_partnership_formation_runtime.sql` is committed. It adds accepted-request partnership linkage with restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. It consumes migration 0008 unchanged as verified P1 substrate. The existing fresh partnership ID remains the namespace root; migration 0009 adds no redundant security-context identifier or cryptographic key material.
 
-Migration 0008 remains verified by the clean eight-migration P1 run and passing database invariants. Migration 0009 is committed and included in the P2 invariant plan, but its clean nine-migration disposable PostgreSQL verification is pending.
+Migration 0008 remains verified by the clean eight-migration P1 run and passing database invariants. P2 security coverage pins its verified SHA-256 so later P2 work cannot silently rewrite it. Migration 0009 is committed and included in the P2 invariant plan, including catalog checks that its legacy-safe accepted-linkage constraints remain `NOT VALID`, but its clean nine-migration disposable PostgreSQL verification is pending.
 
 ## Policy
 

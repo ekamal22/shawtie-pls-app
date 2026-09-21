@@ -173,11 +173,11 @@ Required evidence includes:
 - idempotency fingerprint changes when only `relationshipStartDate` changes
 - snapshot-bound request pagination remains stable while new requests arrive
 - cursor pagination without active-request omission or duplication
-- production request creation disabled without the P2 formation coordinator
+- P1 service rejects production `request_only_test` mode and requires a coordinator for `paired` mode; the P2 application wiring supplies the real coordinator
 - A1 deletion, P2 formation, and P3 block invalidation hooks
 - cancel and decline availability despite exhausted discovery/create abuse buckets
 - scheduled expiry through F2
-- reciprocal pair detection for P2 without P1 creating a partnership
+- standalone P1 request-only regression proves reciprocal candidate detection without P1 owning partnership persistence
 
 Committed P1 verification commands are:
 
@@ -207,6 +207,7 @@ Required evidence includes:
 - accept versus sender-cancel and recipient-decline races
 - accepted-request expiry-action cancellation
 - already-processing expiry worker safely observing accepted terminal state
+- database-side accepted-request update guards for pending, unexpired, relationship-date-bearing, unlinked source rows
 - incompatible request invalidation
 - fresh partnership-ID namespace with no reuse of prior local or cryptographic state
 - current partnership read isolation
@@ -214,10 +215,10 @@ Required evidence includes:
 - lost-response retry of an already-applied relationship date returning a no-op with current metadataVersion
 - active and breakup-pending relationship-date mutation capability, with account-deletion and terminated-state denial
 - durable other-partner relationship-date notification
-- notification account isolation and private no-store responses
+- notification account isolation, private no-store responses, snapshot-bound pagination, and a persistence-column allowlist that excludes private content
 - no fake E2EE key or epoch creation before S1
-- complete P1 local suite rerun with the real P2 coordinator registered in `paired` mode
-- migration 0009 verification that committed migration 0008 is consumed unchanged
+- P2 closure reruns the P1 integration surface with the real P2 coordinator in `paired` mode; standalone `npm run test:p1:local` remains the original request-only P1 evidence
+- migration 0009 verification that committed migration 0008 is consumed unchanged, including a pinned SHA-256 regression check
 
 Committed P2 verification commands:
 

@@ -972,100 +972,69 @@ npm run test:p2:local
 
 `test:p2:local` follows the F2/A1/P1 disposable PostgreSQL pattern and also reruns the P1 integration surface with the real coordinator in `paired` mode.
 
-## Implementation sequence
+## Implemented source sequence and pending exit evidence
 
-### P2-A Domain, contracts, and cross-epic contract refinement
+### P2-A Domain and contracts
 
-1. add relationship-date pure validation
-2. add partnership-formation types and stable denial codes
-3. add `change_relationship_start_date` capability
-4. refine P1 create/list contracts with relationshipStartDate
-5. refine P1 reciprocal candidate with triggeringRequestId and relationshipStartDate
-6. add P2 accept/current/date/notification contracts
+Committed source includes relationship-date validation, formation types, stable denial codes, the centralized `change_relationship_start_date` capability, the existing P1 relationship-date/reciprocal handoff contract, and P2 accept/current/date/notification contracts.
 
-Exit gate:
+Pending exit evidence:
 
-- domain and contract tests pass
-- P1 and P2 contract boundary is unambiguous
+- execute the committed domain and contract tests successfully
+- retain the verified P1/P2 contract boundary without reopening P1
 
 ### P2-B Migration and repositories
 
-1. consume the committed P1 migration 0008 substrate without rewriting it
-2. add migration 0009
-3. add accepted_partnership_id linkage with restrictive FK semantics
-4. add legacy-safe `NOT VALID` linkage-shape constraints
-5. add account_notifications
-6. add formation and partnership repositories
-7. add notification repository and expiry-action cancellation helper
-8. extend database invariants
+Committed source consumes migration 0008 unchanged, adds migration 0009, accepted-request partnership linkage, legacy-safe `NOT VALID` linkage-shape constraints, `account_notifications`, formation/partnership/notification repositories, expiry-action cancellation, and database invariants.
 
-Exit gate:
+Pending exit evidence:
 
 - migrations 0001 through 0009 apply from zero
 - invariant suite passes
 - new indexes and constraints are inspected
+- the pinned migration-0008 checksum remains unchanged
 
 ### P2-C Formation coordinator and explicit acceptance
 
-1. implement transaction-scoped coordinator
-2. implement explicit accept route
-3. recheck P1 eligibility under pair locks
-4. create partnership and two members
-5. use the newly generated partnershipId as the fresh namespace root
-6. mark accepted request with partnership link
-7. cancel its still-pending P1 expiry action
-8. invalidate other pending requests
-9. append partnership_formed lifecycle event
-10. create the deterministic durable in-app formation notification for the non-acting partner
-11. implement retention-scoped stable replay
+Committed source includes the transaction-scoped coordinator, recipient accept route, pair-locked eligibility rechecks, partnership and two-member creation, fresh partnership-ID namespace creation, accepted-request linkage, pending-expiry cancellation, incompatible-request invalidation, lifecycle evidence, deterministic formation notification, and retention-scoped stable replay.
 
-Exit gate:
+Pending exit evidence:
 
-- explicit acceptance, replay, invalidation, occupancy, and rollback tests pass
+- explicit acceptance, replay, invalidation, occupancy, rollback, accept-versus-cancel, and accept-versus-decline tests pass
 
 ### P2-D Reciprocal integration
 
-1. inject coordinator into P1
-2. enable paired mode in non-production test first
-3. form partnership from reciprocal candidate before P1 commit
-4. accept both request rows and cancel their pending expiry actions
-5. persist P1 idempotency paired response
-6. verify opposite-direction races
-7. verify accept-versus-reciprocal and expiry-worker-versus-formation races
-8. enable production paired mode only after all coordinator tests pass
+Committed source registers the P2 coordinator in the application, forms from reciprocal candidates before the P1 transaction commits, accepts both source requests, cancels still-pending expiry actions, persists the P1 paired idempotency response, and retains fail-closed configuration checks when paired mode lacks a coordinator.
 
-Exit gate:
+The standalone historical `test:p1:local` harness remains request-only. P2 closure separately reruns the P1 integration surface with the real coordinator in `paired` mode.
+
+Pending exit evidence:
 
 - reciprocal formation races produce exactly one partnership
+- explicit-accept versus reciprocal-create race converges on one partnership
+- already-processing expiry work observes accepted request state and becomes a safe no-op
 - production fail-closed configuration tests pass
 
 ### P2-E Relationship metadata, notification read model, and client
 
-1. current partnership read
-2. expectedMetadataVersion relationship-date mutation with canonical account-then-partnership locking
-3. same-date no-op
-4. durable other-partner notification
-5. notification list/read endpoints
-6. P1 send-request relationship-date UI
-7. incoming request date display
-8. accept action
-9. current partnership state UI
-10. relationship date settings UI
+Committed source includes current-partnership reads, `expectedMetadataVersion` relationship-date mutation with canonical account-then-partnership locking, same-date lost-response no-op behavior, durable other-partner notification, notification list/read endpoints, request/accept/current-partnership browser flows, and relationship-date editing UI.
 
-Exit gate:
+Pending exit evidence:
 
 - relationship-date and notification acceptance tests pass
-- browser integration proves canonical refresh and no stale-request UI authority
+- notification pagination remains snapshot-bound
+- browser/API integration proves canonical refresh and no stale-request UI authority
 
 ### P2-F Integration closure
 
-1. run complete P2 domain/contract suite
-2. run disposable PostgreSQL/API/race/security suite
-3. rerun the complete P1 local suite with the real P2 coordinator registered in `paired` mode
-4. run dependency audit if dependencies changed
-5. run full npm run health
-6. reconcile docs repo-wide
-7. mark only verified P2 gates complete
+The local verification harness is committed. Remaining work is evidence execution, not missing feature source:
+
+1. run the complete P2 domain/contract suite
+2. run the disposable PostgreSQL/API/race/security suite
+3. rerun the P1 integration surface with the real P2 coordinator in `paired` mode through the P2 closure suite
+4. run the dependency audit
+5. run full `npm run health`
+6. record only green evidence in acceptance gates and current-state docs
 
 ## Acceptance mapping
 
