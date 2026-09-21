@@ -27,7 +27,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
 | P1 Discovery and Partner Requests | DONE | 14/14 gates; migration 0008; P1 local 16/16; full health and audit green |
 | P2 Partnership Formation | DONE | 11/11 gates; nine migrations; P2 domain/contracts 14/14; security 5/5; local integration 27/27; health and audit green |
-| P3 Partnership Lifecycle | IN_PROGRESS | hardened design on dedicated branch; prior domain baseline validated; refined domain, persistence, API, worker, deletion, blocking, and race closure pending |
+| P3 Partnership Lifecycle | IN_PROGRESS | P3-A through P3-H source and local verification harness committed; fresh PostgreSQL, health, and audit evidence pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
 ## Milestone summary
@@ -38,7 +38,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
 | 2 P1 Discovery and Requests | DONE | 14/14 acceptance gates closed with local PostgreSQL/API/worker/security evidence |
 | 3 P2 Partnership Formation | DONE | 11/11 acceptance gates closed with local domain, PostgreSQL, API, worker, race, security, health, and audit evidence |
-| 4 P3 Partnership Lifecycle | IN_PROGRESS | hardened P3-A through P3-H design committed on dedicated branch; implementation and verification remain |
+| 4 P3 Partnership Lifecycle | IN_PROGRESS | P3-A through P3-H implementation committed on dedicated branch; closure waits on fresh local P3 matrix, health, and audit evidence |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
 | 7 M3 Media and Voice Messages | PLANNED | requires realtime/offline substrate |
@@ -52,12 +52,12 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. implement P3-A domain and contract refinement on `feat/p3-partnership-lifecycle`
-2. add migration 0010 and P3 repositories without rewriting verified history
-3. implement breakup APIs, generation-fenced workers, canonical dissolution, and A1 account-deletion integration
-4. implement cooldown hygiene, former-partner blocking, serious notices, and browser lifecycle controls
-5. run the complete P3 local PostgreSQL/API/worker/race/security matrix plus A1/P1/P2 regressions
-6. close gates only from green evidence, reconcile docs, and merge P3 to `main`
+1. run the committed `npm run test:p3:local` PostgreSQL/API/worker/race/security matrix plus A1/P1/P2 regressions
+2. fix any failure from executed evidence without weakening assertions
+3. run `npm run health`
+4. run `npm audit --audit-level=high`
+5. close P3 acceptance gates only from the complete green evidence
+6. merge P3 to `main` only after closure evidence is recorded
 7. keep V1 separate until GitHub Actions capacity returns
 ## Execution graph
 

@@ -791,104 +791,67 @@ created from verified `main @ 04b5229`.
 
 The pre-implementation refinement preserves the verified P2 boundaries and reuses F2 durable workers plus A1 account-deletion authority. It introduces one canonical partnership-dissolution kernel shared by normal breakup and permanent account-deletion paths, breakup-process generation fencing, synchronous authorization revocation before asynchronous cleanup, explicit cooldown hygiene, and server-derived former-partner blocking.
 
-## Current verified progress
+## Current implementation progress
 
-A prior pure-domain baseline is implemented and locally validated for:
+P3-A through P3-H source implementation is committed on the dedicated branch.
 
-- breakup initiation
-- one-hour initiator cancellation
-- restoration intent
-- day-ten extension
-- mutual restoration
-- stale-generation breakup finalization
-- three-calendar-month breakup cooldown
-- account-deletion recovery overlay
-- recovery without resetting existing breakup
-- breakup deadline precedence
-- one-calendar-month cooldown after permanent partner-account deletion
-- relevant capability rules
+Implemented repository surface includes:
 
-The hardened design found two P3-A refinements that reopen domain closure before runtime work proceeds:
+- refined one-hour cancellation and restoration boundary rules
+- explicit breakup-initiation capability and lifecycle denial vocabulary
+- lifecycle contracts and expanded current-partnership projection
+- migration 0010 with cancellation/supersession markers, cooldown/block hardening, indexes, and one-partnership-manifest uniqueness
+- lifecycle repositories, idempotency, former history, cooldown hygiene, and block persistence
+- breakup initiation, unilateral cancellation, restore intent, one-time day-ten extension, mutual restoration, and replay-safe lifecycle mutations
+- generation-fenced breakup finalizer and deadline reminder
+- one canonical dissolution kernel shared by breakup and permanent account deletion
+- synchronous membership release before asynchronous destructive cleanup
+- exact three-calendar-month breakup cooldown and one-calendar-month permanent-partner-deletion cooldown
+- A1 account-deletion/recovery lifecycle integration
+- former-partner history, block/unblock, discovery/request invalidation, and re-pair prevention
+- durable lifecycle notifications and serious-event email orchestration
+- partnership relational and crypto-state deletion targets
+- browser breakup, restore, view-only deletion, lifecycle-notification, and former-block flows
+- API, worker, race, security, migration, and regression verification suites
+- disposable `test:p3:local` PostgreSQL harness
 
-- restoration intent must be unavailable before the exact one-hour cancellation boundary
-- the centralized capability surface needs explicit breakup-initiation authority
+A local pre-closure run on 2026-09-21 passed Domain 48/48 and Contracts 17/17, then exposed malformed P3 invariant dollar quoting and API/web/worker type errors. Those executed failures plus a serious-event email cleanup race were repaired in `4f832cc`. The P3-H verification harness was committed in `5cf7f58`.
 
-The previous domain evidence remains useful baseline evidence, but P3-A must implement and rerun the refined boundaries before the domain gates can close again.
+No P3 acceptance gate is closed yet because the repaired branch and new P3-H harness still require a fresh complete local execution.
 
-## Planned implementation sequence
+## Implemented sequence
 
 ### P3-A Domain and contracts
 
-- exact non-overlapping cancellation and restoration windows
-- initiate-breakup capability
-- lifecycle denial vocabulary
-- breakup mutation contracts
-- expanded current-partnership projection
-- former-partnership and block contracts
-- lifecycle notification event types
+Implemented.
 
 ### P3-B Migration 0010 and repositories
 
-- cancellation and supersession terminal markers
-- breakup terminal-shape hardening
-- exact cooldown-duration hardening
-- block-source hardening
-- former-history and scheduled-work indexes
-- partnership deletion-manifest uniqueness
-- lifecycle, cooldown, block, history, and deletion repositories
+Implemented.
 
 ### P3-C Breakup API and lifecycle read model
 
-- breakup initiation
-- unilateral cancellation
-- restore intent
-- mutual restoration
-- idempotent lost-response replay
-- durable lifecycle notices
-- serious-event email orchestration
+Implemented.
 
 ### P3-D Deadline worker and reminders
 
-- generation-fenced breakup finalizer
-- deterministic deadline reminder
-- day-seven to day-ten rescheduling
-- stale-action safety
+Implemented.
 
 ### P3-E Canonical dissolution and A1 integration
 
-- one dissolution kernel
-- synchronous membership release
-- exact cooldown creation
-- partnership deletion manifest
-- partnership relational and crypto-state deletion handlers
-- A1 permanent account-deletion delegation
-- legacy precedence-handler compatibility
+Implemented.
 
 ### P3-F Cooldowns and former-partner blocking
 
-- expired cooldown resolution
-- P2 formation cleanup of expired cooldown records
-- former-partnership history
-- block and unblock
-- P1 discovery/request and P2 formation regressions
+Implemented.
 
 ### P3-G Browser lifecycle UI
 
-- breakup confirmation
-- initiator and deadline display
-- cancel and restore controls
-- waiting and extension states
-- account-deletion view-only state
-- former-partner block controls
+Implemented.
 
-### P3-H Integration closure
+### P3-H Integration closure harness
 
-- migration 0010 and invariant evidence
-- API, worker, deletion, race, and security evidence
-- A1, P1, and P2 regression surfaces
-- full repository health
-- high-severity dependency audit
-- repo-wide documentation reconciliation
+Implemented. Closure evidence remains pending execution of the fresh local matrix, repository health, and dependency audit.
 
 ## Scope
 

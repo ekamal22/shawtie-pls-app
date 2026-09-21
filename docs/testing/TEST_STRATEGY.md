@@ -238,7 +238,7 @@ P2 verification is complete at closure commit `fa2301d0`: the domain/contracts s
 
 P3 uses the hardened test architecture in `../architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`.
 
-The prior pure-domain suite is baseline evidence only. P3-A must refine and rerun exact lifecycle boundaries before domain closure because the design review identified the missing restore-window-open rule and explicit initiate-breakup capability.
+The refined P3 domain/contracts surface and the P3-H API, worker, race, security, deletion, and disposable PostgreSQL harness are committed. A pre-closure run on 2026-09-21 passed Domain 48/48 and Contracts 17/17, then exposed invariant and type failures that were repaired in `4f832cc`. Full closure still requires a fresh run of the committed P3 matrix after those repairs.
 
 Required evidence includes:
 
@@ -271,7 +271,7 @@ Required evidence includes:
 - A1 account-deletion, P1 request/discovery, and P2 formation/metadata regression surfaces remain green
 - race tests assert persisted end state rather than HTTP status alone
 
-Planned P3 verification commands:
+Committed P3 verification commands:
 
 ```text
 npm run test:partnership-lifecycle
@@ -283,7 +283,7 @@ npm run health
 npm audit --audit-level=high
 ```
 
-The P3 local harness must emit `P3_LOCAL_POSTGRES_PASS` only after migrations, invariants, API, worker, race, deletion, and cross-epic regression work is green. These commands are design targets until their implementations are committed.
+The P3 local harness emits `P3_LOCAL_POSTGRES_PASS` only after migrations, invariants, API, worker, race, deletion, and cross-epic regression work is green. The commands are committed in `package.json`; successful fresh execution remains the closure requirement.
 
 ### Integration
 

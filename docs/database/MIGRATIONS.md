@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented and locally verified through P2 migration `0009_partnership_formation_runtime.sql`. All nine migrations apply from zero in the completed P2 disposable PostgreSQL path at closure commit `fa2301d0`, and database invariants pass.
+The PostgreSQL migration set is implemented through P3 migration `0010_partnership_lifecycle_runtime.sql`. Migrations 0001 through 0009 remain locally verified from P2 closure. Migration 0010 was observed applying successfully from zero in the 2026-09-21 pre-closure P3 run, but that run then failed in P3 invariant SQL before full database verification; the invariant quoting defect was repaired in `4f832cc`, so a fresh complete P3 run is still required.
 
 ## Current and next migration
 
@@ -27,7 +27,7 @@ P2 migration `0009_partnership_formation_runtime.sql` is committed and locally v
 
 Migration 0008 remains verified by the clean nine-migration P2 run and passing database invariants. P2 security coverage pins SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e` so later work cannot silently rewrite it. Migration 0009 participates in the same clean run, including catalog checks that its legacy-safe accepted-linkage constraints remain `NOT VALID`.
 
-P3 plans forward-only migration `0010_partnership_lifecycle_runtime.sql`. It is not yet implemented or verified. Its hardened design scope is:
+P3 forward-only migration `0010_partnership_lifecycle_runtime.sql` is committed. Its implemented scope is:
 
 - add `cancelled_at` and `superseded_at` breakup terminal markers
 - rebuild the one-open-breakup index around all terminal markers
@@ -39,7 +39,7 @@ P3 plans forward-only migration `0010_partnership_lifecycle_runtime.sql`. It is 
 - ensure one destructive partnership deletion manifest per partnership
 - preserve migrations 0001 through 0009 byte-for-byte
 
-P3 security verification must pin verified migration 0009 before P3-only migration work is accepted.
+P3 security verification now pins verified migration 0009 before P3-only migration work is accepted. Fresh execution of the committed P3 security and PostgreSQL suites remains required for closure.
 
 ## Policy
 

@@ -301,7 +301,7 @@ P2 preserves the modular-monolith transaction boundary:
 
 ## P3 partnership lifecycle design
 
-The hardened P3 design is defined in `P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` on the dedicated `feat/p3-partnership-lifecycle` branch. Runtime implementation and closure remain pending.
+The hardened P3 design is defined in `P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` on the dedicated `feat/p3-partnership-lifecycle` branch. P3-A through P3-H source implementation is committed; closure remains pending fresh PostgreSQL, health, and dependency-audit evidence.
 
 P3 preserves the existing authority boundaries:
 
@@ -313,7 +313,7 @@ P3 preserves the existing authority boundaries:
 
 P3 uses one canonical partnership-dissolution kernel for both normal breakup and permanent partner-account deletion. It revokes authorization synchronously by terminating the partnership and releasing occupied memberships before deletion workers process physical cleanup. Breakup finalizers are fenced by breakup-process generation. Lifecycle-only transitions advance `generation` and leave P2 metadata `version` unchanged.
 
-Migration 0010 is planned to add correct breakup cancellation and supersession terminal markers, harden cooldown and block persistence, and support former-history and cleanup queries without rewriting verified migrations 0001 through 0009.
+Migration 0010 implements breakup cancellation and supersession terminal markers, cooldown and block hardening, former-history and cleanup indexes, and one-partnership deletion-manifest uniqueness without rewriting verified migrations 0001 through 0009.
 
 ## Durable deadlines
 
