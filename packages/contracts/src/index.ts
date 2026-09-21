@@ -37,3 +37,16 @@ export {
   type RegistrationVerifyInput,
   type UsernameChangeInput,
 } from "./accounts/account-contracts.ts";
+
+export {
+  discoveryUsernameSchema,
+  idempotencyKeySchema,
+  partnerRequestCreateSchema,
+  partnerRequestCursorSchema,
+  partnerRequestIdParamsSchema,
+  partnerRequestListQuerySchema,
+  type DiscoveryUsernameInput,
+  type PartnerRequestCreateInput,
+  type PartnerRequestCursor,
+  type PartnerRequestListQuery,
+} from "./partner-requests/requests.ts";

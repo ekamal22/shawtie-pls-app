@@ -130,14 +130,16 @@ BEGIN
       recipient_account_id,
       status,
       created_at,
-      expires_at
+      expires_at,
+      relationship_start_date
     ) VALUES (
       '40000000-0000-0000-0000-000000000001',
       '00000000-0000-0000-0000-000000000001',
       '00000000-0000-0000-0000-000000000001',
       'pending',
       TIMESTAMPTZ '2026-01-01 00:00:00+00',
-      TIMESTAMPTZ '2026-01-08 00:00:00+00'
+      TIMESTAMPTZ '2026-01-08 00:00:00+00',
+      DATE '2025-01-01'
     );
     RAISE EXCEPTION 'expected self partner request check violation';
   EXCEPTION
@@ -414,6 +416,54 @@ BEGIN
   EXCEPTION
     WHEN raise_exception THEN
       IF SQLERRM <> 'security_events rows are append-only while retained' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO partner_requests (
+      id, sender_account_id, recipient_account_id, status, created_at, expires_at
+    ) VALUES (
+      '74000000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000003',
+      'pending',
+      TIMESTAMPTZ '2026-01-01 00:00:00+00',
+      TIMESTAMPTZ '2026-01-08 00:00:00+00'
+    );
+    RAISE EXCEPTION 'expected P1 relationship start date check violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$$;
+
+INSERT INTO partner_request_attempts (
+  id, sender_account_id, recipient_account_id, outcome, created_at
+) VALUES (
+  '74100000-0000-4000-8000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000003',
+  'created',
+  TIMESTAMPTZ '2026-01-01 00:00:00+00'
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE partner_request_attempts
+    SET outcome = 'duplicate'
+    WHERE id = '74100000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected partner request attempt append-only rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'partner_request_attempts rows are append-only while retained' THEN
         RAISE;
       END IF;
   END;

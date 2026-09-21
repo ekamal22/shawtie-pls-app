@@ -2,6 +2,10 @@ export * from "./partnership/types.ts";
 export * from "./partnership/time.ts";
 export * from "./partnership/state-machine.ts";
 export * from "./partnership/capabilities.ts";
+export * from "./partner-request/types.ts";
+export * from "./partner-request/time.ts";
+export * from "./partner-request/eligibility.ts";
+export * from "./partner-request/transitions.ts";
 
 export { ageOnDate, isAdultOnDate } from "./account/age.ts";
 export { evaluateDateOfBirthCorrection, evaluateUsernameChange } from "./account/account-rules.ts";

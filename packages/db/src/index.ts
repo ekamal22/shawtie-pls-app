@@ -123,3 +123,36 @@ export {
   type RateLimitDecision,
   type RegistrationIntentRow,
 } from "./repositories/account-auth.ts";
+
+
+export {
+  findDiscoverableAccountByUsername,
+  type DiscoverableAccount,
+} from "./repositories/partner-discovery.ts";
+export {
+  activeBlockExistsForPair,
+  appendPartnerRequestAttempt,
+  completePartnerRequestIdempotency,
+  countCreatedPartnerRequestAttemptsSince,
+  expirePartnerRequestsById,
+  findCompletedPartnerRequestIdempotency,
+  insertPartnerRequest,
+  invalidatePendingRequestsForAccount,
+  invalidatePendingRequestsForPair,
+  latestDeclinedPartnerRequestAt,
+  listActivePartnerRequests,
+  loadPartnerAccountEligibility,
+  loadPartnerRequestParticipants,
+  lockPairPendingRequests,
+  lockPartnerRequest,
+  reservePartnerRequestIdempotency,
+  setPartnerRequestCancelled,
+  setPartnerRequestDeclined,
+  setPartnerRequestExpired,
+  type PartnerAccountEligibility,
+  type PartnerRequestIdempotencyRecord,
+  type PartnerRequestInvalidationReason,
+  type PartnerRequestListRow,
+  type PartnerRequestRecord,
+  type PartnerRequestStatus,
+} from "./repositories/partner-requests.ts";
