@@ -88,7 +88,7 @@ Authentication state, recent reauthentication, and device ownership are API secu
 
 P2 adds the `change_relationship_start_date` capability. It is allowed for authenticated members while the partnership is `active` or `breakup_pending`, denied during account-deletion view-only state, and denied after termination or for non-members. Relationship-date validity still uses trusted server date in the P2 domain helper.
 
-P3 refines the lifecycle capability surface with `initiate_breakup` and exact non-overlapping time windows. Breakup initiation is allowed only for an active member with no account-deletion overlay. Unilateral cancellation is allowed only to the initiator while trusted `now < initiator_cancel_until`. Restore intent is denied before that boundary, opens at exact equality with the cancellation deadline, and remains available only while trusted `now < final_deadline`. These refinements are design targets until P3-A source and tests are committed.
+P3 refines the lifecycle capability surface with `initiate_breakup` and exact non-overlapping time windows. Breakup initiation is allowed only for an active member with no account-deletion overlay. Unilateral cancellation is allowed only to the initiator while trusted `now < initiator_cancel_until`. Restore intent is denied before that boundary, opens at exact equality with the cancellation deadline, and remains available only while trusted `now < final_deadline`. These rules are implemented and locally verified as part of the closed P3 lifecycle domain, API, worker, race, and security matrix.
 
 Former-partner blocking is allowed only from a terminated source partnership and must derive the target from that historical partnership rather than trusting a client-provided account ID.
 

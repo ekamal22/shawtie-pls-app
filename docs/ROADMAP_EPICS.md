@@ -787,7 +787,7 @@ P3 is isolated on:
 
 `feat/p3-partnership-lifecycle`
 
-created from verified `main @ 04b5229`.
+created from verified `main @ 04b5229`. Executed closure evidence is recorded at `36bfb6b`; the branch is ready to merge after review.
 
 The pre-implementation refinement preserves the verified P2 boundaries and reuses F2 durable workers plus A1 account-deletion authority. It introduces one canonical partnership-dissolution kernel shared by normal breakup and permanent account-deletion paths, breakup-process generation fencing, synchronous authorization revocation before asynchronous cleanup, explicit cooldown hygiene, and server-derived former-partner blocking.
 

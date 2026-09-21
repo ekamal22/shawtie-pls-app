@@ -134,16 +134,17 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `milestone/a1-accounts-devices` -> `a876406`
 - `milestone/p1-discovery-requests` -> `69cb238`
 - `feat/p2-partnership-formation` -> `04b5229`
+- `feat/p3-partnership-lifecycle` -> verified closure evidence recorded at `36bfb6b`
 
-`main` is fast-forwarded through the verified P2 closure at `04b5229`.
+`main` remains fast-forwarded through the verified P2 closure at `04b5229` until P3 is merged.
 
-The active implementation branch is:
+The verified P3 closure branch is:
 
 ```text
 feat/p3-partnership-lifecycle
 ```
 
-P3 was created directly from verified `main @ 04b5229`. The hardened P3 architecture and implementation sequence are maintained on that dedicated branch.
+P3 was created directly from verified `main @ 04b5229`, completed all 22 acceptance gates, recorded its executed closure evidence at `36bfb6b`, and is ready for merge after review.
 
 The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
 

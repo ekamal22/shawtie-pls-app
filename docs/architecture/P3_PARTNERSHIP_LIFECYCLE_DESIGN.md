@@ -16,6 +16,12 @@ Branch base:
 main @ 04b5229
 ~~~
 
+Verified closure evidence:
+
+~~~text
+36bfb6b
+~~~
+
 Effective design date: 2026-09-21.
 
 This document is the canonical implementation design for P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns.

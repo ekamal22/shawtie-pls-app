@@ -1286,7 +1286,7 @@ After commit:
 
 A1 owns the account-level deletion request, immediate authorization revocation, recovery flow, and scheduling substrate.
 
-The existing partnership state-machine rules remain authoritative for partnership-specific deletion effects. Implementing the minimum persistence adapter needed for this A1 flow may advance P3 evidence, but it does not make P3 complete.
+The existing partnership state-machine rules remain authoritative for partnership-specific deletion effects. At A1 closure, implementing the minimum persistence adapter advanced only P3 deletion evidence and did not complete the broader lifecycle epic. P3 is now independently DONE and verified end to end.
 
 ### Devices
 
@@ -1490,7 +1490,7 @@ A1 must also implement the complete partnership interaction required by the acco
 
 These behaviors use the already accepted P3 domain state machine and F2 persistence primitives.
 
-Completing these account-deletion-specific P3 behaviors may close individual P3 gates, but it does not make the entire P3 epic complete. Other breakup, restoration, and lifecycle API work remains independently measured.
+At A1 closure, these account-deletion-specific behaviors could close only individual P3 gates while breakup, restoration, and lifecycle API work remained independently measured. That sequencing is now complete: P3 is DONE at 22/22 gates with the full lifecycle surface locally verified.
 
 No duplicated alternate account-deletion rule is allowed.
 

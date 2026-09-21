@@ -170,7 +170,7 @@ That path uses the accepted P3 domain rules for:
 - one-calendar-month cooldown for the remaining partner
 - shared partnership deletion manifest creation and serious-event notices
 
-This account-deletion-specific implementation may close individual P3 gates. It does not make the entire P3 epic complete.
+At A1 closure, this account-deletion-specific implementation advanced only the P3 deletion subset and did not by itself complete P3. P3 is now independently DONE at all 22 acceptance gates with the canonical dissolution, breakup, restoration, cooldown, blocking, notification, deletion-manifest, worker, race, and security paths locally verified.
 
 The hardened P3 design consolidates partnership destruction behind one canonical dissolution kernel shared by the normal breakup worker and A1 permanent account-deletion finalization. The P3 kernel creates a partnership-scoped deletion manifest in addition to A1's account-scoped authentication cleanup manifest. Legacy A1 breakup-precedence work remains compatible but must delegate to the same kernel so two termination implementations cannot drift.
 

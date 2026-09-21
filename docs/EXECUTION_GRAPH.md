@@ -175,15 +175,12 @@ main @ 04b5229 verified through P2
   |
   +--> feat/p3-partnership-lifecycle
           |
-          +--> P3-A domain and contract refinement
-          +--> P3-B migration 0010 and repositories
-          +--> P3-C breakup API and current read model
-          +--> P3-D deadline worker and reminders
-          +--> P3-E canonical dissolution and A1 deletion integration
-          +--> P3-F cooldowns and former-partner blocking
-          +--> P3-G browser lifecycle UI
-          +--> P3-H integration closure
-          +--> verified at every P3 gate and ready to merge to main
+          +--> P3-A through P3-H DONE
+          +--> 22/22 acceptance gates green
+          +--> closure evidence recorded at 36bfb6b
+          +--> ready to merge to main
+                    |
+                    +--> create M1 and R1 milestone branches from updated main
 ~~~
 
 From P2 onward:

@@ -277,7 +277,7 @@ P2 account notifications contain routing metadata only. They do not store relati
 
 ## P3 partnership-lifecycle security boundary
 
-The hardened P3 design is defined in `../architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`. This section describes the intended boundary; P3 runtime verification remains pending.
+The hardened P3 design is defined in `../architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`. The runtime boundary described here is implemented and locally verified at all 22 P3 acceptance gates. Closure evidence includes lifecycle domain/contracts 28/28, P3 security 6/6, ten migrations from zero with database invariants green, disposable PostgreSQL/API/worker integration 39/39 with `P3_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
 
 P3 keeps lifecycle authority inside the modular-monolith PostgreSQL transaction. Pair-sensitive mutations lock member accounts in canonical order before the partnership and breakup process. Client requests never supply partner identity, deadlines, lifecycle generation, cooldown duration, or arbitrary block targets.
 
