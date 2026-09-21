@@ -39,6 +39,12 @@ function requireDisposableDatabase(): DatabasePool {
   });
 }
 
+async function resetWorkerIntegrationState(database: DatabasePool): Promise<void> {
+  await database.pool.query(
+    "TRUNCATE TABLE accounts, registration_intents, outbox_events, scheduled_actions, deletion_manifests CASCADE",
+  );
+}
+
 const key = Buffer.alloc(32, 7);
 
 class FakeEmail implements EmailDeliveryPort {
@@ -51,7 +57,7 @@ class FakeEmail implements EmailDeliveryPort {
 test("A1 auth email outbox derives code without storing raw code", async () => {
   const database = requireDisposableDatabase();
   try {
-    await database.pool.query("TRUNCATE TABLE accounts, registration_intents CASCADE");
+    await resetWorkerIntegrationState(database);
     const accountId = randomUUID();
     const challengeId = randomUUID();
     const nonce = Buffer.alloc(32, 9);
@@ -111,7 +117,7 @@ test("A1 auth email outbox derives code without storing raw code", async () => {
 test("A1 deletion finalizer revokes account permanently and deletion worker scrubs auth data", async () => {
   const database = requireDisposableDatabase();
   try {
-    await database.pool.query("TRUNCATE TABLE accounts, registration_intents CASCADE");
+    await resetWorkerIntegrationState(database);
     const accountId = randomUUID();
     const now = new Date();
     const requestedAt = new Date(now.getTime() - 8 * 24 * 60 * 60_000);
@@ -191,7 +197,7 @@ test("A1 deletion finalizer revokes account permanently and deletion worker scru
 test("A1 breakup deadline wins when it precedes account deletion recovery deadline", async () => {
   const database = requireDisposableDatabase();
   try {
-    await database.pool.query("TRUNCATE TABLE accounts, registration_intents CASCADE");
+    await resetWorkerIntegrationState(database);
     const deletingAccountId = randomUUID();
     const remainingAccountId = randomUUID();
     const partnershipId = randomUUID();
@@ -231,7 +237,12 @@ test("A1 breakup deadline wins when it precedes account deletion recovery deadli
       `INSERT INTO breakup_processes (
          id, partnership_id, initiated_by_account_id, initiated_at,
          initiator_cancel_until, base_deadline, final_deadline, generation
-       ) VALUES ($1,$2,$3,$4,$4 + interval '1 hour',$4 + interval '7 days',$5,3)`,
+       ) VALUES (
+         $1,$2,$3,$4::timestamptz,
+         $4::timestamptz + interval '1 hour',
+         $4::timestamptz + interval '7 days',
+         $5,3
+       )`,
       [breakupId, partnershipId, deletingAccountId, breakupInitiatedAt, breakupDeadline],
     );
     await requestAccountDeletion(database.pool, {
