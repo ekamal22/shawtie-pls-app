@@ -6,6 +6,8 @@ import { AuthKeyRing } from "../src/security/auth-key-ring.ts";
 import { apiConfigFromEnv, type ApiConfig } from "../src/config.ts";
 import { cookieNames, setSessionCookie } from "../src/security/cookies.ts";
 import { normalizeEmail, networkPrefix } from "../src/security/normalization.ts";
+import { installMutationSecurity } from "../src/plugins/request-security.ts";
+import { installErrorHandler } from "../src/plugins/errors.ts";
 
 function key(byte: number): Buffer {
   return Buffer.alloc(32, byte);
@@ -72,4 +74,149 @@ test("normalization avoids provider-specific rewriting and network key uses pref
     normalized: "user.name+tag@example.com",
   });
   assert.equal(networkPrefix("192.168.10.44"), "192.168.10.0/24");
+});
+
+
+test("local development session cookie uses a separate insecure loopback name", async () => {
+  const config: ApiConfig = {
+    environment: "test",
+    appOrigin: "http://127.0.0.1:4173",
+    allowInsecureLoopbackCookies: true,
+    trustedProxy: false,
+    authKeys: { activeVersion: 1, keys: new Map([[1, key(1)]]) },
+  };
+  assert.equal(cookieNames(config).session, "shawtie-session-dev");
+
+  const app = Fastify();
+  app.register(cookie);
+  app.get("/", async (_request, reply) => {
+    setSessionCookie(reply, config, "token");
+    return { ok: true };
+  });
+  const response = await app.inject({ method: "GET", url: "/" });
+  const header = String(response.headers["set-cookie"]);
+  assert.match(header, /shawtie-session-dev=token/);
+  assert.match(header, /HttpOnly/i);
+  assert.match(header, /SameSite=Strict/i);
+  assert.doesNotMatch(header, /;\s*Secure/i);
+  await app.close();
+});
+
+test("authentication key ring fails closed for unknown key versions", () => {
+  const ring = new AuthKeyRing({
+    activeVersion: 1,
+    keys: new Map([[1, key(1)]]),
+  });
+  assert.throws(
+    () => ring.verifier("session-verifier", "token", 99),
+    /Unknown authentication key version/,
+  );
+  assert.throws(
+    () => ring.deriveEmailCode("challenge", "registration", Buffer.alloc(32), 99),
+    /Unknown authentication key version/,
+  );
+});
+
+test("mutation security rejects cross-site, wrong-origin, missing-CSRF, and non-JSON mutations", async () => {
+  const config: ApiConfig = {
+    environment: "test",
+    appOrigin: "http://127.0.0.1:4173",
+    allowInsecureLoopbackCookies: true,
+    trustedProxy: false,
+    authKeys: { activeVersion: 1, keys: new Map([[1, key(1)]]) },
+  };
+  const app = Fastify();
+  installErrorHandler(app);
+  installMutationSecurity(app, config);
+  app.post("/mutation", async () => ({ ok: true }));
+  app.get("/read-only", async () => ({ ok: true }));
+
+  const crossSite = await app.inject({
+    method: "POST",
+    url: "/mutation",
+    headers: {
+      origin: config.appOrigin,
+      "sec-fetch-site": "cross-site",
+      "x-shawtie-csrf": "1",
+      "content-type": "application/json",
+    },
+    payload: {},
+  });
+  assert.equal(crossSite.statusCode, 403);
+  assert.equal((crossSite.json() as { error: { code: string } }).error.code, "CSRF_REJECTED");
+
+  const wrongOrigin = await app.inject({
+    method: "POST",
+    url: "/mutation",
+    headers: {
+      origin: "http://evil.example",
+      "x-shawtie-csrf": "1",
+      "content-type": "application/json",
+    },
+    payload: {},
+  });
+  assert.equal(wrongOrigin.statusCode, 403);
+
+  const missingCsrf = await app.inject({
+    method: "POST",
+    url: "/mutation",
+    headers: {
+      origin: config.appOrigin,
+      "content-type": "application/json",
+    },
+    payload: {},
+  });
+  assert.equal(missingCsrf.statusCode, 403);
+
+  const nonJson = await app.inject({
+    method: "POST",
+    url: "/mutation",
+    headers: {
+      origin: config.appOrigin,
+      "x-shawtie-csrf": "1",
+      "content-type": "text/plain",
+    },
+    payload: "plain",
+  });
+  assert.equal(nonJson.statusCode, 415);
+
+  const accepted = await app.inject({
+    method: "POST",
+    url: "/mutation",
+    headers: {
+      origin: config.appOrigin,
+      "x-shawtie-csrf": "1",
+      "content-type": "application/json",
+    },
+    payload: {},
+  });
+  assert.equal(accepted.statusCode, 200);
+
+  const readOnly = await app.inject({ method: "GET", url: "/read-only" });
+  assert.equal(readOnly.statusCode, 200);
+  await app.close();
+});
+
+test("untrusted forwarded-for cannot choose request IP while an explicit trusted proxy can", async () => {
+  const forwarded = "203.0.113.44";
+
+  const untrusted = Fastify({ trustProxy: false });
+  untrusted.get("/", async (request) => ({ ip: request.ip }));
+  const untrustedResponse = await untrusted.inject({
+    method: "GET",
+    url: "/",
+    headers: { "x-forwarded-for": forwarded },
+  });
+  assert.notEqual((untrustedResponse.json() as { ip: string }).ip, forwarded);
+  await untrusted.close();
+
+  const trusted = Fastify({ trustProxy: ["127.0.0.1"] });
+  trusted.get("/", async (request) => ({ ip: request.ip }));
+  const trustedResponse = await trusted.inject({
+    method: "GET",
+    url: "/",
+    headers: { "x-forwarded-for": forwarded },
+  });
+  assert.equal((trustedResponse.json() as { ip: string }).ip, forwarded);
+  await trusted.close();
 });
