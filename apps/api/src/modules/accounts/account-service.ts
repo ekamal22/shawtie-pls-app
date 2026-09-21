@@ -114,11 +114,15 @@ function addMilliseconds(now: Date, milliseconds: number): Date {
 }
 
 export class AccountService {
-  constructor(
-    readonly database: DatabasePool,
-    readonly keys: AuthKeyRing,
-    readonly passwords: PasswordHasher,
-  ) {}
+  readonly database: DatabasePool;
+  readonly keys: AuthKeyRing;
+  readonly passwords: PasswordHasher;
+
+  constructor(database: DatabasePool, keys: AuthKeyRing, passwords: PasswordHasher) {
+    this.database = database;
+    this.keys = keys;
+    this.passwords = passwords;
+  }
 
   async #assertSession(transaction: QueryExecutor, auth: AuthContext): Promise<void> {
     const valid = await lockAuthenticatedSession(transaction, {

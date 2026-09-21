@@ -10,7 +10,11 @@ function deriveSubkey(root: Buffer, label: string): Buffer {
 }
 
 export class WorkerAuthKeyRing {
-  constructor(readonly config: WorkerAuthKeyConfig) {}
+  readonly config: WorkerAuthKeyConfig;
+
+  constructor(config: WorkerAuthKeyConfig) {
+    this.config = config;
+  }
 
   deriveEmailCode(challengeId: string, purpose: string, nonce: Buffer, version: number): string {
     const root = this.config.keys.get(version);
