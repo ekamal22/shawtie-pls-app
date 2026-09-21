@@ -157,6 +157,17 @@ test("mutation security rejects cross-site, wrong-origin, missing-CSRF, and non-
   });
   assert.equal(wrongOrigin.statusCode, 403);
 
+  const missingOrigin = await app.inject({
+    method: "POST",
+    url: "/mutation",
+    headers: {
+      "x-shawtie-csrf": "1",
+      "content-type": "application/json",
+    },
+    payload: {},
+  });
+  assert.equal(missingOrigin.statusCode, 403);
+
   const missingCsrf = await app.inject({
     method: "POST",
     url: "/mutation",
