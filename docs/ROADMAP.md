@@ -26,7 +26,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
 | P1 Discovery and Partner Requests | DONE | 14/14 gates; migration 0008; P1 local 16/16; full health and audit green |
-| P2 Partnership Formation | IN_PROGRESS | active runtime milestone; hardened design complete against verified P1 seam |
+| P2 Partnership Formation | IN_PROGRESS | full source implementation committed; disposable PostgreSQL/race/security closure pending |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -37,7 +37,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
 | 2 P1 Discovery and Requests | DONE | 14/14 acceptance gates closed with local PostgreSQL/API/worker/security evidence |
-| 3 P2 Partnership Formation | IN_PROGRESS | active runtime milestone; implementation begins on verified P1 substrate |
+| 3 P2 Partnership Formation | IN_PROGRESS | P2-A through P2-F source and local harness are implemented; verification evidence pending |
 | 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
@@ -52,11 +52,11 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. implement P2-A domain/contracts against the verified P1 coordinator seam
-2. implement migration 0009 and formation/notification repositories without rewriting migration 0008
-3. implement explicit accept and the shared formation coordinator
-4. wire reciprocal formation into P1 `paired` mode and rerun P1 with the real coordinator
-5. implement P2 relationship metadata, notification read model, and client closure
+1. run the complete disposable `npm run test:p2:local` verification matrix
+2. fix any P2 migration/API/race/security failure while preserving the hardened invariants
+3. rerun full repository health and the high-severity dependency audit
+4. close P2 acceptance gates only from verified green evidence
+5. merge the verified P2 milestone branch to `main`
 6. continue P3 persistence/API/worker work according to the dependency graph
 7. keep V1 separate until GitHub Actions capacity returns
 ## Execution graph
@@ -354,13 +354,13 @@ Exit evidence is defined by the P1 gates in `ROADMAP_EPICS.md`.
 
 # Milestone 3: P2 Partnership Formation
 
-Status: IN_PROGRESS at the hardened design layer, revalidated against the committed P1 runtime seam.
+Status: IN_PROGRESS. The hardened design and full P2 runtime source are implemented on the milestone branch; local closure verification is pending.
 
 Canonical design:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P1 is complete and locally verified. P2 has been revalidated against the exact verified coordinator seam, so P2 implementation does not need to reopen the P1 public interface.
+P1 is complete and locally verified. P2 now implements the exact verified coordinator seam without reopening the P1 public interface. Migration 0009, explicit acceptance, reciprocal formation, relationship metadata, durable notifications, client flows, and the P2 local test harness are committed.
 
 Key design decisions:
 
@@ -376,14 +376,16 @@ Key design decisions:
 - the fresh `partnershipId` itself is the local namespace root and future S1 cryptographic namespace; P2 creates no redundant security identifier or fake E2EE keys
 - durable in-app notifications use deterministic recipients and deduplication keys; push transport remains later
 
-Implementation sequence:
+Implemented source sequence:
 
-1. P2-A domain/contracts plus thin adapter over the committed P1 reciprocal coordinator seam
-2. P2-B migration 0009 and repositories without rewriting committed migration 0008
-3. P2-C explicit accept and formation coordinator
-4. P2-D reciprocal integration into P1 paired mode
-5. P2-E relationship-date update, notifications, and client read model
-6. P2-F PostgreSQL/API/race/security closure
+1. P2-A domain/contracts plus the committed P1 reciprocal coordinator boundary
+2. P2-B migration 0009 and formation/notification repositories without rewriting migration 0008
+3. P2-C explicit accept and shared transactional formation coordinator
+4. P2-D reciprocal integration into real P1 paired mode
+5. P2-E relationship-date update, notification read model, and browser client flows
+6. P2-F disposable PostgreSQL/API/race/security harness and full-P1 paired regression wiring
+
+The remaining step is execution evidence, not missing P2 feature source.
 
 Exit evidence:
 

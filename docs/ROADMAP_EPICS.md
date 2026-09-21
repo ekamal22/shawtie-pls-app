@@ -678,13 +678,13 @@ The refined architecture and implementation sequence are defined in:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P2 hardened design is complete and has been revalidated against the verified P1 runtime seam. P2 is now the active runtime milestone.
+P2 hardened design is complete and the full milestone source is implemented on `feat/p2-partnership-formation`. P2 remains IN_PROGRESS only because local closure verification has not yet been recorded.
 
 The design now consumes the committed P1 relationship-date request substrate and exact `handleReciprocalCandidate(executor, candidate, now)` seam. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
 
 P2 uses the fresh immutable partnership ID itself as the local and future cryptographic namespace root, adds no redundant security-context identifier, and deliberately does not invent cryptographic keys or epochs before S1 protocol review.
 
-## Implementation sequence
+## Implemented source sequence
 
 ### P2-A Domain, contracts, and P1 handoff refinement
 
@@ -740,12 +740,13 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 
 ### P2-F Integration closure
 
-- PostgreSQL suite
-- API suite
-- race suite
-- security suite
-- full repository health
-- repo-wide documentation closure
+- disposable PostgreSQL 16 harness is committed as `npm run test:p2:local`
+- API and reciprocal/explicit formation integration coverage is committed
+- competing-accept, accept-versus-reciprocal, metadata-version, and account-deletion race coverage is committed
+- P2 security regressions are committed
+- P1 local verification is wired to real `paired` mode
+- full repository health and dependency-audit execution remain pending
+- repo-wide documentation now distinguishes implemented source from verified closure
 
 ## Scope
 

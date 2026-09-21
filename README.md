@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository has completed its verified foundation milestones plus P1 Discovery and Partner Requests. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, and P1 are DONE locally. P1 is closed at all 14 acceptance gates: all eight migrations apply from zero, database invariants pass, the disposable P1 PostgreSQL/API/worker suite passes 16/16, the full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4, and `npm audit --audit-level=high` reports 0 vulnerabilities. P2 Partnership Formation and Relationship Date is now the active runtime milestone with a hardened design revalidated against the verified P1 coordinator seam.
+The repository has completed its verified foundation milestones plus P1 Discovery and Partner Requests. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, and P1 are DONE locally. P1 is closed at all 14 acceptance gates: all eight migrations apply from zero, database invariants pass, the disposable P1 PostgreSQL/API/worker suite passes 16/16, the full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4, and `npm audit --audit-level=high` reports 0 vulnerabilities. P2 Partnership Formation and Relationship Date is the active milestone. Its full runtime source and local PostgreSQL/API/race/security harness are committed on `feat/p2-partnership-formation`; closure verification is still pending, so P2 remains IN_PROGRESS.
 
 ## Product direction
 
@@ -43,7 +43,7 @@ Start with:
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
 - `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the completed A1 implementation design
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
-- `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the active hardened P2 formation design
+- `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the implemented P2 design and pending verification boundary
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements
 - `docs/architecture/ARCHITECTURE_BASELINE.md` for the frozen architecture baseline

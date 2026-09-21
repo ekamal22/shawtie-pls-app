@@ -263,3 +263,14 @@ Required controls before public stable release:
 - review of production environment variables
 - no secrets committed to the repository
 - synthetic public fixtures only
+
+
+## P2 partnership-formation security boundary
+
+P2 formation remains inside the modular-monolith PostgreSQL transaction. Explicit acceptance and reciprocal pairing derive both members from authoritative request rows, lock account rows in canonical order, recheck account status, occupancy, cooldown, block state, request state, and trusted server date, and rely on the occupied-slot unique index as the final double-partnership defense.
+
+Accepted source requests retain the resulting partnership ID for bounded lost-response replay. Consumed pending expiry jobs are cancelled in the same transaction; an already-processing expiry worker re-reads the accepted terminal request and becomes a safe no-op.
+
+Relationship-date mutation locks both member accounts before the partnership row, uses optimistic partnership metadata versioning, treats a same-date lost-response retry as a no-op before version-conflict rejection, and creates a durable notification only for a real committed change.
+
+P2 account notifications contain routing metadata only. They do not store relationship dates, message or media content, email, date of birth, device data, secrets, or cryptographic material. The fresh partnership ID is an isolation namespace, not authentication authority or key material. Real E2EE epochs remain deferred to S1.

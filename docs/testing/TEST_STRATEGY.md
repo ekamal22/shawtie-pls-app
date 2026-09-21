@@ -219,7 +219,7 @@ Required evidence includes:
 - complete P1 local suite rerun with the real P2 coordinator registered in `paired` mode
 - migration 0009 verification that committed migration 0008 is consumed unchanged
 
-Planned commands:
+Committed P2 verification commands:
 
 ```text
 npm run test:partnership-formation
@@ -229,7 +229,7 @@ npm run test:p2:security
 npm run test:p2:local
 ```
 
-These remain planned until implementation exists.
+The command surface and disposable PostgreSQL harness are committed. P2 remains IN_PROGRESS until the full matrix is executed successfully and the final health and dependency-audit evidence is recorded.
 
 ### Integration
 

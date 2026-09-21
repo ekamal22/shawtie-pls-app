@@ -2,7 +2,7 @@
 
 ## Status
 
-HARDENED DESIGN, IMPLEMENTATION PENDING
+HARDENED DESIGN, RUNTIME SOURCE IMPLEMENTED, VERIFICATION PENDING
 
 Effective design date: 2026-09-21.
 
@@ -294,7 +294,7 @@ ReciprocalPairCandidate {
 }
 ~~~
 
-P2 implements that exact interface as a thin adapter. P1 does not need a contract change merely to implement P2.
+P2 implements that exact interface through the committed transaction-scoped coordinator. P1 did not require a contract change.
 
 Internally, P2 uses one common primitive:
 
@@ -665,7 +665,7 @@ P2 must treat migration 0008 as verified P1-owned substrate. Do not rewrite migr
 P2 accept and reciprocal-formation paths fail closed on any retained legacy pending row whose relationship date is absent.
 ### P2 migration 0009
 
-Reserve:
+Committed migration:
 
 ~~~text
 0009_partnership_formation_runtime.sql
@@ -958,9 +958,9 @@ Cover:
 - no redundant security namespace ID and no raw cryptographic key material are created or stored by P2
 - P1 production paired mode fails closed without coordinator registration
 
-## Proposed local commands
+## Local verification commands
 
-Expected additions:
+Committed commands:
 
 ~~~text
 npm run test:partnership-formation
@@ -970,7 +970,7 @@ npm run test:p2:security
 npm run test:p2:local
 ~~~
 
-`test:p2:local` follows the F2/A1 disposable PostgreSQL pattern.
+`test:p2:local` follows the F2/A1/P1 disposable PostgreSQL pattern and also reruns the P1 integration surface with the real coordinator in `paired` mode.
 
 ## Implementation sequence
 
@@ -1118,7 +1118,7 @@ Reject a P2 implementation if it:
 
 ## Completion rule
 
-P2 is DONE only when every P2 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed source, migrations 0008 and 0009, repeatable local PostgreSQL/API/race/security evidence, a committed lockfile, and a green full repository health regression.
+P2 is DONE only when every P2 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed source, migrations 0008 and 0009, repeatable local PostgreSQL/API/race/security evidence, a committed lockfile, and a green full repository health regression. The source and harness are now committed; the evidence run is still required before DONE.
 
 Design completion changes P2 from PLANNED to IN_PROGRESS at the design layer. It does not check runtime acceptance gates.
 

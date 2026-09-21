@@ -139,14 +139,16 @@ Active branch:
 feat/p2-partnership-formation
 ~~~
 
-Implementation sequence:
+Source implementation state:
 
-1. P2-A domain and contracts against the verified P1 coordinator seam
-2. P2-B migration 0009 plus formation and notification repositories
-3. P2-C explicit accept plus the shared formation coordinator
-4. P2-D reciprocal integration into P1 `paired` mode
-5. P2-E current partnership read model, relationship-date metadata mutation, durable notifications, and client flow
-6. P2-F PostgreSQL, API, race, security, full-P1-regression, health, and audit closure
+1. P2-A domain and contracts are committed
+2. P2-B migration 0009 plus formation and notification repositories are committed
+3. P2-C explicit accept plus the shared formation coordinator are committed
+4. P2-D reciprocal integration into P1 `paired` mode is committed
+5. P2-E current partnership read model, relationship-date metadata mutation, durable notifications, and client flow are committed
+6. P2-F local PostgreSQL/API/race/security and full-P1 paired regression harnesses are committed
+
+Remaining closure work is to execute the P2 local suite, full health, and dependency audit, then record verified acceptance evidence.
 
 P2 must not rewrite verified P1 migration `0008_partner_discovery_requests_runtime.sql`.
 

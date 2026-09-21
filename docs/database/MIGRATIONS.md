@@ -23,9 +23,9 @@ Its implemented scope includes:
 
 P1 migration `0008_partner_discovery_requests_runtime.sql` is committed and locally verified. It adds request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and the manually entered `relationship_start_date` used by P2 formation. Its legacy-compatible checks protect new/updated rows without fabricating old request history.
 
-P2 reserves `0009_partnership_formation_runtime.sql`. Its planned scope is accepted-request partnership linkage with restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. It consumes migration 0008 as committed P1 substrate and must not rewrite 0008 for P2-only behavior. The existing fresh partnership ID is the namespace root; migration 0009 does not add a redundant security-context identifier.
+P2 migration `0009_partnership_formation_runtime.sql` is committed. It adds accepted-request partnership linkage with restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. It consumes migration 0008 unchanged as verified P1 substrate. The existing fresh partnership ID remains the namespace root; migration 0009 adds no redundant security-context identifier or cryptographic key material.
 
-Migration 0008 is verified by the clean eight-migration P1 run and passing database invariants. Migration 0009 remains planned for P2.
+Migration 0008 remains verified by the clean eight-migration P1 run and passing database invariants. Migration 0009 is committed and included in the P2 invariant plan, but its clean nine-migration disposable PostgreSQL verification is pending.
 
 ## Policy
 

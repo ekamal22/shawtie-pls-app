@@ -284,7 +284,7 @@ P1 is locally verified and exposes the reciprocal-candidate seam while intention
 
 ## P2 partnership formation design
 
-The hardened P2 implementation design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md` and has been revalidated against the committed P1 runtime interface.
+The hardened P2 design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md`. Its runtime source is now implemented against the committed P1 interface; local closure verification remains pending.
 
 P2 preserves the modular-monolith transaction boundary:
 
