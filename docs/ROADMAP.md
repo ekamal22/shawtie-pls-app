@@ -26,7 +26,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
 | P1 Discovery and Partner Requests | DONE | 14/14 gates; migration 0008; P1 local 16/16; full health and audit green |
-| P2 Partnership Formation | IN_PROGRESS | full source implementation committed; disposable PostgreSQL/race/security closure pending |
+| P2 Partnership Formation | DONE | 11/11 gates; nine migrations; P2 domain/contracts 14/14; security 5/5; local integration 27/27; health and audit green |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -37,7 +37,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
 | 2 P1 Discovery and Requests | DONE | 14/14 acceptance gates closed with local PostgreSQL/API/worker/security evidence |
-| 3 P2 Partnership Formation | IN_PROGRESS | P2-A through P2-F source and local harness are implemented; verification evidence pending |
+| 3 P2 Partnership Formation | DONE | 11/11 acceptance gates closed with local domain, PostgreSQL, API, worker, race, security, health, and audit evidence |
 | 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
@@ -52,13 +52,10 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. run the complete disposable `npm run test:p2:local` verification matrix
-2. fix any P2 migration/API/race/security failure while preserving the hardened invariants
-3. rerun full repository health and the high-severity dependency audit
-4. close P2 acceptance gates only from verified green evidence
-5. merge the verified P2 milestone branch to `main`
-6. continue P3 persistence/API/worker work according to the dependency graph
-7. keep V1 separate until GitHub Actions capacity returns
+1. merge the verified P2 milestone branch to `main`
+2. continue P3 persistence/API/worker work according to the dependency graph
+3. preserve the verified P2 transaction, occupancy, metadata-version, and notification boundaries during P3 integration
+4. keep V1 separate until GitHub Actions capacity returns
 ## Execution graph
 
 ```text
@@ -354,7 +351,7 @@ Exit evidence is defined by the P1 gates in `ROADMAP_EPICS.md`.
 
 # Milestone 3: P2 Partnership Formation
 
-Status: IN_PROGRESS. The hardened design and full P2 runtime source are implemented on the milestone branch; local closure verification is pending.
+Status: DONE. The hardened design and full P2 runtime are implemented and locally verified on the milestone branch.
 
 Canonical design:
 
@@ -385,7 +382,7 @@ Implemented source sequence:
 5. P2-E relationship-date update, notification read model, and browser client flows
 6. P2-F disposable PostgreSQL/API/race/security harness plus a rerun of the P1 integration surface in real `paired` mode; the standalone historical `test:p1:local` harness remains request-only
 
-The remaining step is execution evidence, not missing P2 feature source.
+Closure evidence is green: P2 domain/contracts 14/14, P2 security 5/5, nine migrations from zero, database invariants, and the disposable PostgreSQL/API/worker integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit also pass.
 
 Exit evidence:
 

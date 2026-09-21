@@ -670,7 +670,7 @@ P1 owns reciprocal-request detection but not partnership persistence. In `paired
 
 # P2: Partnership Formation and Relationship Date
 
-Status: IN_PROGRESS
+Status: DONE
 
 ## Design status
 
@@ -678,7 +678,7 @@ The refined architecture and implementation sequence are defined in:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P2 hardened design is complete and the full milestone source is implemented on `feat/p2-partnership-formation`. P2 remains IN_PROGRESS only because local closure verification has not yet been recorded.
+P2 hardened design and runtime implementation are complete on `feat/p2-partnership-formation`. Local closure is verified by P2 domain/contracts 14/14, P2 security 5/5, all nine migrations from zero, passing database invariants, the disposable PostgreSQL/API/worker integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`, full repository health, and a zero-high-severity dependency audit.
 
 The design now consumes the committed P1 relationship-date request substrate and exact `handleReciprocalCandidate(executor, candidate, now)` seam. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
 
@@ -745,8 +745,8 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 - competing-accept, accept-versus-reciprocal, accept-versus-cancel/decline, already-processing-expiry, metadata-version, and account-deletion race coverage is committed
 - P2 security regressions are committed
 - the P2 closure suite reruns the P1 integration surface with the real coordinator in `paired` mode, while the standalone verified `test:p1:local` harness remains request-only
-- full repository health and dependency-audit execution remain pending
-- repo-wide documentation now distinguishes implemented source from verified closure
+- full repository health and the high-severity dependency audit pass
+- repo-wide documentation records verified local closure while keeping hosted CI separate under V1
 
 ## Scope
 
@@ -761,17 +761,17 @@ P2 uses the fresh immutable partnership ID itself as the local and future crypto
 
 ## Acceptance gates
 
-- [ ] normal one-way request requires recipient acceptance
-- [ ] reciprocal pending requests create a partnership automatically
-- [ ] partnership formation is transactional
-- [ ] database invariant prevents simultaneous second partnership
-- [ ] incompatible pending incoming and outgoing requests are invalidated
-- [ ] relationship start date is manually entered
-- [ ] future relationship start date is rejected
-- [ ] either partner can update allowed relationship date
-- [ ] partner receives relationship-date change notification
-- [ ] new partnership creates a fresh local and cryptographic namespace
-- [ ] concurrency tests prove one-partner occupancy
+- [x] normal one-way request requires recipient acceptance
+- [x] reciprocal pending requests create a partnership automatically
+- [x] partnership formation is transactional
+- [x] database invariant prevents simultaneous second partnership
+- [x] incompatible pending incoming and outgoing requests are invalidated
+- [x] relationship start date is manually entered
+- [x] future relationship start date is rejected
+- [x] either partner can update allowed relationship date
+- [x] partner receives relationship-date change notification
+- [x] new partnership creates a fresh local and future cryptographic namespace
+- [x] concurrency tests prove one-partner occupancy
 
 # P3: Partnership Lifecycle, Breakup, Deletion, and Cooldowns
 

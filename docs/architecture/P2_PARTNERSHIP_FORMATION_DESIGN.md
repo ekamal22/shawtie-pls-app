@@ -1087,9 +1087,7 @@ Reject a P2 implementation if it:
 
 ## Completion rule
 
-P2 is DONE only when every P2 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed source, migrations 0008 and 0009, repeatable local PostgreSQL/API/race/security evidence, a committed lockfile, and a green full repository health regression. The source and harness are now committed; the evidence run is still required before DONE.
-
-Design completion changes P2 from PLANNED to IN_PROGRESS at the design layer. It does not check runtime acceptance gates.
+P2 is DONE. Every P2 acceptance gate in `docs/ROADMAP_EPICS.md` is satisfied with committed source, migrations 0008 and 0009, repeatable local PostgreSQL/API/worker/race/security evidence, a committed lockfile, a green full repository health regression, and a zero-high-severity dependency audit. Closure evidence includes P2 domain/contracts 14/14, security 5/5, nine migrations from zero with database invariants green, and the disposable integration matrix 27/27 with `P2_LOCAL_POSTGRES_PASS`.
 
 Hosted GitHub Actions verification remains separate under V1.
 

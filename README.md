@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository has completed its verified foundation milestones plus P1 Discovery and Partner Requests. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, and P1 are DONE locally. P1 is closed at all 14 acceptance gates: all eight migrations apply from zero, database invariants pass, the disposable P1 PostgreSQL/API/worker suite passes 16/16, the full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4, and `npm audit --audit-level=high` reports 0 vulnerabilities. P2 Partnership Formation and Relationship Date is the active milestone. Its full runtime source and local PostgreSQL/API/race/security harness are committed on `feat/p2-partnership-formation`; closure verification is still pending, so P2 remains IN_PROGRESS.
+The repository has completed its verified foundation milestones through P2 Partnership Formation and Relationship Date. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, and P2 are DONE locally. P2 is closed at all 11 acceptance gates: all nine migrations apply from zero, database invariants pass, the P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`, the full `npm run health` regression is green, and `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 
@@ -43,7 +43,7 @@ Start with:
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
 - `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the completed A1 implementation design
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
-- `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the implemented P2 design and pending verification boundary
+- `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the completed, locally verified P2 implementation design
 - `docs/api/P2_PARTNERSHIP_API.md` for the implemented P2 HTTP contract and replay/privacy semantics
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements

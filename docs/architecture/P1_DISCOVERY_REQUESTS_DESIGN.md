@@ -984,7 +984,7 @@ The relationship date comes from the triggering second request, whose fresh cons
 
 No pairing event is placed on an asynchronous queue as the authority for partnership creation.
 
-When P2 is implemented, the request-creation transaction will pass the reciprocal pair candidate to the P2 partnership-formation coordinator before commit while the same deterministic account locks are still held.
+The verified P2 implementation passes the reciprocal pair candidate to the partnership-formation coordinator before the request-creation transaction commits while the same deterministic account locks are still held.
 
 P2 then:
 
@@ -998,7 +998,7 @@ P2 then:
 
 This prevents a second partnership or asynchronous pairing race.
 
-Until P2 is wired, P1 may be locally verified as a request subsystem, but public product enablement of reciprocal requests must not claim complete product behavior.
+P2 is now wired in production `paired` mode and the closure suite reruns the P1 integration surface through that real coordinator. The standalone historical P1 local suite remains request-only regression evidence.
 
 ## Simultaneous opposite-direction requests
 
@@ -1013,7 +1013,7 @@ Therefore:
 - it creates the opposite direction if all rules still pass
 - exactly the second committed request observes reciprocal-pair readiness
 
-When P2 exists, the second transaction performs the auto-pair operation before commit.
+With the verified P2 coordinator registered, the second transaction performs the auto-pair operation before commit.
 
 ## Same-direction duplicate race
 
@@ -1524,14 +1524,14 @@ P1 hands P2:
 
 P2 must not reimplement P1 request limits.
 
-P2 acceptance will add:
+P2 acceptance adds:
 
 - explicit acceptance endpoint using the accepted request's relationshipStartDate
 - reciprocal automatic formation inside the same transaction using the triggering request's relationshipStartDate
 - occupied-slot recheck
 - incompatible request invalidation
 - relationship date
-- new partnership namespace and security context
+- fresh partnership-ID namespace root without a redundant security-context identifier
 
 ## Physical-device requirement
 

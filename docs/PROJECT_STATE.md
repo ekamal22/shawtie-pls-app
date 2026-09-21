@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, and P1 Discovery and Partner Requests are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all eight currently committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2, A1, and P1 validation matrices pass locally, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, P1 Discovery and Partner Requests, and P2 Partnership Formation and Relationship Date are complete with repeatable local evidence. All nine committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the database invariant suite passes, the P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, the disposable PostgreSQL/API/worker integration matrix passes 27/27, the full repository health baseline is green, and the high-severity dependency audit reports 0 vulnerabilities. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -120,7 +120,7 @@ Current epic status:
 - X2 Deferred Heavy Features: DEFERRED and optional; consensual call recording is moved here and requires post-stable demand, cost, privacy, legal, deletion, retention, and E2EE evidence before implementation
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
 - P1 Discovery and Partner Requests: DONE. All 14 acceptance gates are closed. Migration 0008 applies as part of an eight-migration clean run with database invariants green; `npm run test:p1:local` passes the disposable PostgreSQL/API/worker matrix 16/16 with `P1_LOCAL_POSTGRES_PASS`; the final full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4; Prettier, ESLint, dependency checks, typecheck, and production builds are green; and `npm audit --audit-level=high` reports 0 vulnerabilities.
-- P2 Partnership Formation and Relationship Date: IN_PROGRESS with the full milestone source now implemented on `feat/p2-partnership-formation`. Domain/contracts, migration 0009, accepted-request linkage, durable account notifications, explicit acceptance, same-transaction reciprocal formation, expiry-action cancellation, incompatible-request invalidation, current-partnership reads, versioned relationship-date mutation, notification list/read APIs, client flows, a P2 closure rerun of the P1 integration surface in real `paired` mode, and disposable PostgreSQL/API/race/security harnesses are committed. The standalone historical `test:p1:local` harness remains request-only. A pre-run hardening review also fixed the P2 SQL invariant harness, restored standalone P1 request-only verification, added accept-versus-cancel/decline and already-processing-expiry race coverage, strengthened serialized-outcome assertions, added notification snapshot/schema checks, pinned migration 0008 by SHA-256, and added database-side acceptance guards for expired or malformed request rows. Local P2 closure verification and the final full health/audit pass are still pending, so P2 is not yet DONE.
+- P2 Partnership Formation and Relationship Date: DONE. All 11 acceptance gates are closed. The P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. The matrix proves explicit and reciprocal formation, accepted-request replay linkage, deterministic locking, incompatible-request invalidation, expiry-action handling, one-partner occupancy races, relationship-date version and generation separation, other-partner notification isolation, notification snapshot pagination, and P1 behavior in real `paired` mode. The standalone historical `test:p1:local` harness remains request-only. Full repository health and `npm audit --audit-level=high` are green. Migration 0008 remains byte-for-byte unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -160,15 +160,12 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1 and P1 are complete. P2 Partnership Formation and Relationship Date remains the active runtime epic.
+A1, P1, and P2 are complete. P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns is the active runtime epic.
 
-1. run `npm run test:p2:local` against disposable PostgreSQL 16
-2. fix any migration, API, race, security, or paired P1 regression failure without weakening invariants
-3. run the full `npm run health` regression from the committed lockfile
-4. run `npm audit --audit-level=high`
-5. reconcile the verification counts and P2 acceptance gates only from green evidence
-6. merge P2 to `main` only after every required gate is closed
-7. keep P3 runtime work and V1 hosted verification separate until P2 closure is proven
+1. merge the verified P2 milestone branch to `main`
+2. continue P3 persistence, API, worker, notification, deletion, and race closure
+3. preserve the verified P2 transaction, occupancy, metadata-version, and notification boundaries while P3 integrates
+4. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
@@ -191,6 +188,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1 and P1 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates and P1 at 14/14 gates. P2 source implementation is now repo-wide, but current-state documents keep P2 IN_PROGRESS until the new disposable PostgreSQL/API/race/security suite, full health regression, and dependency audit are green.
+A1, P1, and P2 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, and P2 at 11/11 gates. P2 closure is supported by the green domain/contracts, security, disposable PostgreSQL/API/worker, full health, and dependency-audit runs recorded above.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

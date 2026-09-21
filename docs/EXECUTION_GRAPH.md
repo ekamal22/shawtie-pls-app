@@ -40,7 +40,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
           +-------------+-------------+
                         |
                         v
-             P2 Partnership Formation 🟡
+             P2 Partnership Formation ✅
                         |
                         v
              P3 Lifecycle + Deletion 🟡
@@ -89,7 +89,7 @@ flowchart TD
     F2 --> A1["A1 Accounts + Devices ✅"]
     F2 --> P1["P1 Discovery + Requests ✅"]
 
-    A1 --> P2["P2 Partnership Formation 🟡"]
+    A1 --> P2["P2 Partnership Formation ✅"]
     P1 --> P2
 
     P2 --> P3["P3 Lifecycle + Deletion 🟡"]
@@ -124,12 +124,14 @@ A1 ✅
    ->
 P1 ✅
    ->
-P2 🟡 ACTIVE
+P2 ✅
+   ->
+P3 🟡 ACTIVE
 ~~~
 
 P3 already has a verified pure-domain layer, but its persistence, API, worker, race, notification, and deletion closure remain incomplete. It therefore remains IN_PROGRESS rather than DONE.
 
-## Current active milestone
+## Most recently completed milestone
 
 ### P2 Partnership Formation and Relationship Date
 
@@ -139,7 +141,7 @@ Active branch:
 feat/p2-partnership-formation
 ~~~
 
-Source implementation state:
+Verified implementation state:
 
 1. P2-A domain and contracts are committed
 2. P2-B migration 0009 plus formation and notification repositories are committed
@@ -148,7 +150,7 @@ Source implementation state:
 5. P2-E current partnership read model, relationship-date metadata mutation, durable notifications, and client flow are committed
 6. P2-F local PostgreSQL/API/race/security harnesses are committed, including a P2 closure rerun of the P1 integration surface in real `paired` mode while standalone `test:p1:local` remains request-only
 
-Remaining closure work is to execute the P2 local suite, full health, and dependency audit, then record verified acceptance evidence.
+P2 is locally closed at 11/11 gates. Its domain/contracts suite passes 14/14, security passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass. P3 is now the active runtime milestone.
 
 P2 must not rewrite verified P1 migration `0008_partner_discovery_requests_runtime.sql`.
 

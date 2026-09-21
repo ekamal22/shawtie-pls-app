@@ -230,7 +230,7 @@ npm run test:p2:security
 npm run test:p2:local
 ```
 
-The command surface and disposable PostgreSQL harness are committed. P2 remains IN_PROGRESS until the full matrix is executed successfully and the final health and dependency-audit evidence is recorded.
+P2 verification is complete: the domain/contracts suite passes 14/14, the security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. Full repository health passes, and `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
 
 ### Integration
 

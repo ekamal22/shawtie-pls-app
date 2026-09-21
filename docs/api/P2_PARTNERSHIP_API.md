@@ -2,11 +2,11 @@
 
 ## Status
 
-IMPLEMENTED, LOCAL CLOSURE VERIFICATION PENDING
+IMPLEMENTED AND LOCALLY VERIFIED
 
 This document describes the authenticated HTTP surface implemented by P2 Partnership Formation and Relationship Date.
 
-Runtime source is committed on `feat/p2-partnership-formation`. P2 remains IN_PROGRESS until `npm run test:p2:local`, full repository health, and the high-severity dependency audit are green.
+Runtime source is committed on `feat/p2-partnership-formation`. P2 is DONE at all 11 acceptance gates with green local domain/contracts, security, disposable PostgreSQL/API/worker/race, full health, and high-severity dependency-audit evidence.
 
 All P2 responses that expose partnership, request, or notification state use:
 
@@ -238,4 +238,4 @@ P2's committed implementation is designed around these boundaries:
 - relationship metadata mutation locks member accounts before the partnership row
 - the occupied-slot unique index on current partnership membership is the database backstop against double partnership
 
-These guarantees are implemented in source and covered by the committed P2 test harness. They are not considered verified closure evidence until the local P2 matrix has run green.
+These guarantees are implemented in source and verified by the green local P2 matrix. Hosted GitHub Actions verification remains separate under V1.

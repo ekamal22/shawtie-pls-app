@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented and locally verified through P1 migration `0008_partner_discovery_requests_runtime.sql`. All eight migrations apply from zero in the completed P1 disposable PostgreSQL path, and database invariants pass.
+The PostgreSQL migration set is implemented and locally verified through P2 migration `0009_partnership_formation_runtime.sql`. All nine migrations apply from zero in the completed P2 disposable PostgreSQL path, and database invariants pass.
 
 ## Current and next migration
 
@@ -23,9 +23,9 @@ Its implemented scope includes:
 
 P1 migration `0008_partner_discovery_requests_runtime.sql` is committed and locally verified. It adds request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and the manually entered `relationship_start_date` used by P2 formation. Its legacy-compatible checks protect new/updated rows without fabricating old request history.
 
-P2 migration `0009_partnership_formation_runtime.sql` is committed. It adds accepted-request partnership linkage with restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. It consumes migration 0008 unchanged as verified P1 substrate. The existing fresh partnership ID remains the namespace root; migration 0009 adds no redundant security-context identifier or cryptographic key material.
+P2 migration `0009_partnership_formation_runtime.sql` is committed and locally verified. It adds accepted-request partnership linkage with restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. It consumes migration 0008 unchanged as verified P1 substrate. The existing fresh partnership ID remains the namespace root; migration 0009 adds no redundant security-context identifier or cryptographic key material.
 
-Migration 0008 remains verified by the clean eight-migration P1 run and passing database invariants. P2 security coverage pins its verified SHA-256 so later P2 work cannot silently rewrite it. Migration 0009 is committed and included in the P2 invariant plan, including catalog checks that its legacy-safe accepted-linkage constraints remain `NOT VALID`, but its clean nine-migration disposable PostgreSQL verification is pending.
+Migration 0008 remains verified by the clean nine-migration P2 run and passing database invariants. P2 security coverage pins SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e` so later work cannot silently rewrite it. Migration 0009 participates in the same clean run, including catalog checks that its legacy-safe accepted-linkage constraints remain `NOT VALID`.
 
 ## Policy
 
