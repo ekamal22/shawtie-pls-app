@@ -1330,7 +1330,14 @@ export async function finalizePartnershipForAccountDeletion(
       await executor.query(
         `INSERT INTO account_partner_eligibility (
            id, account_id, source_partnership_id, reason, created_at, eligible_at
-         ) VALUES (md5($1::text || $2::text || $3::text || 'breakup_dissolution')::uuid, $1, $2, 'breakup_dissolution', $3, $3 + interval '3 months')
+         ) VALUES (
+           md5($1::text || $2::text || $3::timestamptz::text || 'breakup_dissolution')::uuid,
+           $1,
+           $2,
+           'breakup_dissolution',
+           $3::timestamptz,
+           $3::timestamptz + interval '3 months'
+         )
          ON CONFLICT (account_id) WHERE resolved_at IS NULL DO NOTHING`,
         [accountId, input.partnershipId, input.at],
       );
@@ -1339,7 +1346,14 @@ export async function finalizePartnershipForAccountDeletion(
     await executor.query(
       `INSERT INTO account_partner_eligibility (
          id, account_id, source_partnership_id, reason, created_at, eligible_at
-       ) VALUES (md5($1::text || $2::text || $3::text || 'partner_account_deleted')::uuid, $1, $2, 'partner_account_deleted', $3, $3 + interval '1 month')
+       ) VALUES (
+         md5($1::text || $2::text || $3::timestamptz::text || 'partner_account_deleted')::uuid,
+         $1,
+         $2,
+         'partner_account_deleted',
+         $3::timestamptz,
+         $3::timestamptz + interval '1 month'
+       )
        ON CONFLICT (account_id) WHERE resolved_at IS NULL DO NOTHING`,
       [input.remainingAccountId, input.partnershipId, input.at],
     );
