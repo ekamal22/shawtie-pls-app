@@ -1138,3 +1138,85 @@ test("A1 failed login and recovery start keep generic response shapes", async ()
     await closeDatabasePool(database);
   }
 });
+
+
+test("A1 concurrent registration resend preserves one active challenge", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const started = await startRegistration(app, database, {
+      username: "resend_race",
+      email: "resend-race@example.test",
+      suffix: "resend-race",
+    });
+    await database.pool.query(
+      "UPDATE email_verifications SET created_at = created_at - interval '2 minutes' WHERE id = $1",
+      [started.challengeId],
+    );
+
+    const responses = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/registration/resend",
+        headers,
+        payload: { registrationIntentId: started.registrationIntentId },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/auth/registration/resend",
+        headers,
+        payload: { registrationIntentId: started.registrationIntentId },
+      }),
+    ]);
+    assert.deepEqual(
+      responses.map((response) => response.statusCode).sort((a, b) => a - b),
+      [200, 429],
+    );
+
+    const active = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM email_verifications " +
+        "WHERE registration_intent_id = $1 AND consumed_at IS NULL AND superseded_at IS NULL",
+      [started.registrationIntentId],
+    );
+    assert.equal(active.rows[0]?.count, "1");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("A1 registration start enforces the durable per-email rate limit", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const statuses: number[] = [];
+    for (let index = 1; index <= 4; index += 1) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/registration/start",
+        headers,
+        payload: {
+          username: "rate_user_" + index,
+          displayName: "Rate User " + index,
+          dateOfBirth: "2000-01-01",
+          email: "rate-limited-registration@example.test",
+          password: "a sufficiently long rate limit password " + index,
+        },
+      });
+      statuses.push(response.statusCode);
+      if (index === 4) {
+        assert.equal(
+          (response.json() as { error: { code: string } }).error.code,
+          "RATE_LIMITED",
+        );
+        assert.ok(Number(response.headers["retry-after"]) >= 1);
+      }
+    }
+    assert.deepEqual(statuses, [200, 200, 200, 429]);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
