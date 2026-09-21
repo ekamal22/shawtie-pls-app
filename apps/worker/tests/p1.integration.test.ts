@@ -104,3 +104,61 @@ test("P1 scheduled expiry persists the exact request deadline", async () => {
     await closeDatabasePool(database);
   }
 });
+
+
+test("P1 scheduled expiry is a no-op after the request became terminal", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const now = new Date();
+    const createdAt = new Date(now.getTime() - 8 * 24 * 60 * 60_000);
+    const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60_000);
+    const sender = await account(database, "p1-worker-terminal-a", createdAt);
+    const recipient = await account(database, "p1-worker-terminal-b", createdAt);
+    const requestId = randomUUID();
+
+    await insertPartnerRequest(database.pool, {
+      id: requestId,
+      senderAccountId: sender,
+      recipientAccountId: recipient,
+      relationshipStartDate: "2025-01-01",
+      createdAt,
+      expiresAt,
+    });
+    await database.pool.query(
+      "UPDATE partner_requests " +
+        "SET status = 'cancelled', cancelled_at = transaction_timestamp() " +
+        "WHERE id = $1",
+      [requestId],
+    );
+    await insertScheduledAction(database.pool, {
+      id: randomUUID(),
+      actionType: "partner_request_expire",
+      aggregateType: "partner_request",
+      aggregateId: requestId,
+      executeAt: expiresAt,
+      deduplicationKey: "partner-request-expire:" + requestId,
+      payload: {},
+      payloadVersion: 1,
+    });
+
+    await runScheduledBatch(
+      database,
+      "p1-terminal-worker",
+      createDefaultScheduledHandlers(),
+      { batchSize: 10, concurrency: 1, leaseMs: 60_000, retryPolicy: defaultRetryPolicy },
+    );
+
+    const request = await database.pool.query<{
+      status: string;
+      expired_at: Date | null;
+    }>(
+      "SELECT status, expired_at FROM partner_requests WHERE id = $1",
+      [requestId],
+    );
+    assert.equal(request.rows[0]?.status, "cancelled");
+    assert.equal(request.rows[0]?.expired_at, null);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});

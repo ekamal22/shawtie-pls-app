@@ -138,6 +138,7 @@ CREATE INDEX partner_requests_pair_declined
   WHERE status = 'declined' AND declined_at IS NOT NULL;
 
 ALTER TABLE partner_request_attempts
+  DROP CONSTRAINT partner_request_attempts_not_self,
   DROP CONSTRAINT partner_request_attempts_outcome_valid,
   ADD CONSTRAINT partner_request_attempts_outcome_valid
     CHECK (

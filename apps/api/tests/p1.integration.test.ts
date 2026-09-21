@@ -592,3 +592,150 @@ test("P1 create abuse limit is durable and returns 429 after thirty attempts", a
     await closeDatabasePool(database);
   }
 });
+
+
+test("P1 self request is rejected and retained as explicit attempt evidence", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "self_alice");
+
+    const response = await createRequest(
+      app,
+      alice,
+      { accountId: alice.accountId, username: alice.username },
+      "p1-self-key-000001",
+    );
+    assert.equal(response.statusCode, 409, response.body);
+    assert.equal(
+      (response.json() as { error: { code: string } }).error.code,
+      "REQUEST_SELF",
+    );
+
+    const attempts = await database.pool.query<{ outcome: string }>(
+      "SELECT outcome FROM partner_request_attempts " +
+        "WHERE sender_account_id = $1 AND recipient_account_id = $1",
+      [alice.accountId],
+    );
+    assert.equal(attempts.rowCount, 1);
+    assert.equal(attempts.rows[0]?.outcome, "self_request");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("P1 expected denial is replayed from idempotency even after hidden target state changes", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "denial_alice");
+    const bob = await register(app, database, "denial_bob");
+    const blockId = randomUUID();
+    await database.pool.query(
+      "INSERT INTO partnership_blocks (" +
+        "id, blocker_account_id, blocked_account_id, created_at" +
+        ") VALUES ($1,$2,$3,clock_timestamp())",
+      [blockId, bob.accountId, alice.accountId],
+    );
+
+    const key = "p1-denial-replay-001";
+    const denied = await createRequest(app, alice, bob, key);
+    assert.equal(denied.statusCode, 409, denied.body);
+    assert.equal(
+      (denied.json() as { error: { code: string } }).error.code,
+      "TARGET_UNAVAILABLE",
+    );
+
+    await database.pool.query(
+      "UPDATE partnership_blocks SET removed_at = clock_timestamp() WHERE id = $1",
+      [blockId],
+    );
+
+    const replay = await createRequest(app, alice, bob, key);
+    assert.equal(replay.statusCode, 409, replay.body);
+    assert.deepEqual(replay.json(), denied.json());
+
+    const requests = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM partner_requests",
+    );
+    assert.equal(requests.rows[0]?.count, "0");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("P1 concurrent same-idempotency retries create one logical request", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "idem_race_alice");
+    const bob = await register(app, database, "idem_race_bob");
+    const key = "p1-idem-race-000001";
+
+    const [first, second] = await Promise.all([
+      createRequest(app, alice, bob, key),
+      createRequest(app, alice, bob, key),
+    ]);
+    assert.equal(first.statusCode, 201, first.body);
+    assert.equal(second.statusCode, 201, second.body);
+    assert.deepEqual(first.json(), second.json());
+
+    const requests = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM partner_requests WHERE status = 'pending'",
+    );
+    const attempts = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM partner_request_attempts WHERE outcome = 'created'",
+    );
+    assert.equal(requests.rows[0]?.count, "1");
+    assert.equal(attempts.rows[0]?.count, "1");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("P1 direct create API cannot bypass recipient partnership occupancy", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "occupied_alice");
+    const bob = await register(app, database, "occupied_bob");
+    const charlie = await register(app, database, "occupied_charlie");
+    const partnershipId = randomUUID();
+
+    await database.pool.query(
+      "INSERT INTO partnerships (" +
+        "id, relationship_start_date, lifecycle_state, generation, version, " +
+        "activated_at, created_at, updated_at" +
+        ") VALUES ($1,DATE '2025-01-01','active',1,1," +
+        "clock_timestamp(),clock_timestamp(),clock_timestamp())",
+      [partnershipId],
+    );
+    await database.pool.query(
+      "INSERT INTO partnership_members (partnership_id, account_id, joined_at) " +
+        "VALUES ($1,$2,clock_timestamp()),($1,$3,clock_timestamp())",
+      [partnershipId, bob.accountId, charlie.accountId],
+    );
+
+    const response = await createRequest(
+      app,
+      alice,
+      bob,
+      "p1-occupied-key-001",
+    );
+    assert.equal(response.statusCode, 409, response.body);
+    assert.equal(
+      (response.json() as { error: { code: string } }).error.code,
+      "TARGET_UNAVAILABLE",
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});

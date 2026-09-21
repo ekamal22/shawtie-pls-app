@@ -346,10 +346,6 @@ export class PartnerRequestService {
 
     const decision = await withTransaction(this.database, async (transaction): Promise<CreateDecision> => {
       const now = await getTransactionTimestamp(transaction);
-      if (!relationshipStartDateAllowed(input.relationshipStartDate, trustedUtcDate(now))) {
-        return { ok: false, statusCode: 409, code: "RELATIONSHIP_DATE_FUTURE" };
-      }
-
       const accountIds = await lockAccounts(transaction, [
         auth.session.accountId,
         input.recipientAccountId,
@@ -358,28 +354,59 @@ export class PartnerRequestService {
       const recipient = await loadPartnerAccountEligibility(transaction, input.recipientAccountId);
 
       if (!sender) return { ok: false, statusCode: 401, code: "AUTH_REQUIRED" };
+
+      const reservation = await reservePartnerRequestIdempotency(transaction, {
+        id: randomUUID(),
+        accountId: auth.session.accountId,
+        idempotencyKey,
+        fingerprint,
+        createdAt: now,
+      });
+      if (!sameFingerprint(reservation.record.fingerprint, fingerprint)) {
+        return { ok: false, statusCode: 409, code: "IDEMPOTENCY_KEY_REUSED" };
+      }
+      if (reservation.record.responseStatus !== null) {
+        return {
+          ok: true,
+          statusCode: reservation.record.responseStatus,
+          body: reservation.record.responseBody,
+        };
+      }
+
+      const deny = async (
+        code: string,
+        recordAttempt: boolean,
+      ): Promise<CreateError> => {
+        if (recordAttempt) {
+          await this.recordAttempt(
+            transaction,
+            auth.session.accountId,
+            input.recipientAccountId,
+            code,
+            now,
+          );
+        }
+        await completePartnerRequestIdempotency(transaction, {
+          id: reservation.record.id,
+          fingerprint,
+          responseStatus: 409,
+          responseBody: { error: { code } },
+          expiresAt: new Date(now.getTime() + IDEMPOTENCY_DENIAL_RETENTION),
+        });
+        return { ok: false, statusCode: 409, code };
+      };
+
+      if (!relationshipStartDateAllowed(input.relationshipStartDate, trustedUtcDate(now))) {
+        return deny("RELATIONSHIP_DATE_FUTURE", false);
+      }
       if (auth.session.accountId === input.recipientAccountId) {
-        await this.recordAttempt(
-          transaction,
-          auth.session.accountId,
-          input.recipientAccountId,
-          "REQUEST_SELF",
-          now,
-        );
-        return { ok: false, statusCode: 409, code: "REQUEST_SELF" };
+        return deny("REQUEST_SELF", true);
       }
       if (accountIds.length !== 2 || !recipient) {
-        return { ok: false, statusCode: 409, code: "TARGET_UNAVAILABLE" };
+        return deny("TARGET_UNAVAILABLE", false);
       }
       if (recipient.usernameNormalized !== normalizedUsername) {
-        await this.recordAttempt(
-          transaction,
-          auth.session.accountId,
-          input.recipientAccountId,
-          "TARGET_CHANGED",
-          now,
-        );
-        return { ok: false, statusCode: 409, code: "TARGET_CHANGED" };
+        return deny("TARGET_CHANGED", true);
       }
 
       const lockedPair = await lockPairPendingRequests(
@@ -450,32 +477,7 @@ export class PartnerRequestService {
           else if (sender.occupied) code = "PARTNERSHIP_OCCUPIED";
           else code = "COOLDOWN_ACTIVE";
         }
-        await this.recordAttempt(
-          transaction,
-          auth.session.accountId,
-          input.recipientAccountId,
-          code,
-          now,
-        );
-        return { ok: false, statusCode: 409, code };
-      }
-
-      const reservation = await reservePartnerRequestIdempotency(transaction, {
-        id: randomUUID(),
-        accountId: auth.session.accountId,
-        idempotencyKey,
-        fingerprint,
-        createdAt: now,
-      });
-      if (!sameFingerprint(reservation.record.fingerprint, fingerprint)) {
-        return { ok: false, statusCode: 409, code: "IDEMPOTENCY_KEY_REUSED" };
-      }
-      if (reservation.record.responseStatus !== null) {
-        return {
-          ok: true,
-          statusCode: reservation.record.responseStatus,
-          body: reservation.record.responseBody,
-        };
+        return deny(code, true);
       }
 
       const requestId = randomUUID();

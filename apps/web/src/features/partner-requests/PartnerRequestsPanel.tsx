@@ -35,6 +35,9 @@ function errorMessage(error: unknown): string {
     IDEMPOTENCY_KEY_REUSED: "This send attempt changed. Please try again.",
     RATE_LIMITED: "Too many attempts. Try again later.",
     RELATIONSHIP_DATE_FUTURE: "The relationship start date cannot be in the future.",
+    PARTNERSHIP_OCCUPIED: "You already have an active partnership.",
+    COOLDOWN_ACTIVE: "You are not eligible to form another partnership yet.",
+    REQUEST_SELF: "You cannot send a partner request to yourself.",
     REQUEST_ALREADY_PENDING: "You already have a pending request to this person.",
     REQUEST_DECLINE_COOLDOWN: "You need to wait before sending this person another request.",
     REQUEST_MONTHLY_LIMIT: "You reached the monthly request limit for this person.",
@@ -52,6 +55,7 @@ export function PartnerRequestsPanel() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<DiscoveryResult | null>(null);
   const [relationshipStartDate, setRelationshipStartDate] = useState("");
+  const [sendAttemptKey, setSendAttemptKey] = useState<string | null>(null);
   const [incoming, setIncoming] = useState<RequestItem[]>([]);
   const [outgoing, setOutgoing] = useState<RequestItem[]>([]);
   const [incomingCursor, setIncomingCursor] = useState<string | null>(null);
@@ -110,6 +114,7 @@ export function PartnerRequestsPanel() {
         { method: "POST", body: { username: query } },
       );
       setResult(response.result);
+      setSendAttemptKey(null);
       if (!response.result) setNotice("No matching available profile.");
     });
   }
@@ -117,27 +122,37 @@ export function PartnerRequestsPanel() {
   async function sendRequest() {
     if (!result || !relationshipStartDate) return;
     await run(async () => {
-      const response = await apiRequest<{ outcome: string }>(
-        "/api/v1/partner-requests",
-        {
-          method: "POST",
-          headers: { "idempotency-key": crypto.randomUUID() },
-          body: {
-            recipientAccountId: result.accountId,
-            expectedUsername: result.username,
-            relationshipStartDate,
+      const idempotencyKey = sendAttemptKey ?? crypto.randomUUID();
+      if (!sendAttemptKey) setSendAttemptKey(idempotencyKey);
+      try {
+        const response = await apiRequest<{ outcome: string }>(
+          "/api/v1/partner-requests",
+          {
+            method: "POST",
+            headers: { "idempotency-key": idempotencyKey },
+            body: {
+              recipientAccountId: result.accountId,
+              expectedUsername: result.username,
+              relationshipStartDate,
+            },
           },
-        },
-      );
-      setNotice(
-        response.outcome === "reciprocal_pair_ready"
-          ? "Both requests are ready to pair once partnership formation is enabled."
-          : "Partner request sent.",
-      );
-      setResult(null);
-      setQuery("");
-      setRelationshipStartDate("");
-      await refreshLists();
+        );
+        setSendAttemptKey(null);
+        setNotice(
+          response.outcome === "reciprocal_pair_ready"
+            ? "Both requests are ready to pair once partnership formation is enabled."
+            : "Partner request sent.",
+        );
+        setResult(null);
+        setQuery("");
+        setRelationshipStartDate("");
+        await refreshLists();
+      } catch (caught) {
+        if (caught instanceof ApiClientError) {
+          setSendAttemptKey(null);
+        }
+        throw caught;
+      }
     });
   }
 
@@ -199,7 +214,10 @@ export function PartnerRequestsPanel() {
               type="date"
               value={relationshipStartDate}
               max={new Date().toISOString().slice(0, 10)}
-              onChange={(event) => setRelationshipStartDate(event.target.value)}
+              onChange={(event) => {
+                setRelationshipStartDate(event.target.value);
+                setSendAttemptKey(null);
+              }}
               required
             />
           </label>
