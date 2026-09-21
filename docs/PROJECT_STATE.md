@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, and A1 Accounts and Devices are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all seven currently committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2 durable runtime and completed A1 acceptance matrix pass locally, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, and P1 Discovery and Partner Requests are complete with repeatable local evidence. The pure partnership domain state machine and centralized capability engine are implemented, all eight currently committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, the F2, A1, and P1 validation matrices pass locally, and the full repository health baseline remains green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -101,7 +101,7 @@ Implemented and locally validated:
 - scheduled-action `FOR UPDATE SKIP LOCKED` claim concurrency
 - deterministic two-account lock ordering
 
-The current domain suite contains 32 tests and passes in local validation.
+The current domain suite contains 38 tests and passes in local validation.
 
 The threat model and data-classification baseline are complete and remain the active security foundation for implementation.
 
@@ -122,6 +122,29 @@ Current epic status:
 - P1 Discovery and Partner Requests: DONE. All 14 acceptance gates are closed. Migration 0008 applies as part of an eight-migration clean run with database invariants green; `npm run test:p1:local` passes the disposable PostgreSQL/API/worker matrix 16/16 with `P1_LOCAL_POSTGRES_PASS`; the final full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4; Prettier, ESLint, dependency checks, typecheck, and production builds are green; and `npm audit --audit-level=high` reports 0 vulnerabilities.
 - P2 Partnership Formation and Relationship Date: IN_PROGRESS and now the active runtime milestone. Its hardened design is revalidated against the verified P1 `handleReciprocalCandidate` seam and fixes accepted-request expiry-action cancellation, processing-worker no-op races, accept/cancel/decline terminal races, legacy-safe migration 0009 linkage constraints, retention-scoped replay, and lost-response relationship-date retry semantics. Runtime implementation has not yet started.
 - all other pre-release implementation epics not listed above: PLANNED
+
+
+## Repository branch state
+
+Milestone history is preserved with durable branch refs at genuine closure commits:
+
+- `milestone/f0-governance-security` -> `34682c2`
+- `milestone/f1-repository-foundation` -> `ddf368d`
+- `milestone/f2-persistence-worker` -> `e3ce811`
+- `milestone/a1-accounts-devices` -> `a876406`
+- `milestone/p1-discovery-requests` -> `69cb238`
+
+`main` is fast-forwarded through the verified P1 closure at `69cb238`.
+
+The active implementation branch is:
+
+```text
+feat/p2-partnership-formation
+```
+
+The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
+
+From P2 onward, each milestone uses its own branch created from the latest verified `main`, closes its acceptance gates and documentation on that branch, then merges to `main` before the next dependent milestone branch is created.
 
 The persistence schema foundation has repeatable disposable PostgreSQL evidence. Earlier schema verification covered migration rerun idempotency, checksum drift, catalog inspection, occupied-slot contention, scheduled-action claim contention, and deterministic account-lock ordering. F2 then applied all six migrations from zero and passed 17/17 runtime integration tests covering transaction policy, retries, PostgreSQL clocks, stale generations, durable payload versions, rollback, outbox atomicity and duplicate safety, claim fencing and reclaim, lifecycle privacy, deletion recovery, queue plans, and graceful worker shutdown. Product-specific API and lifecycle integration remain work for later epics.
 
