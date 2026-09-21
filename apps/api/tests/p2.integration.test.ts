@@ -7,6 +7,7 @@ import {
   createDatabasePool,
   databaseConfigFromEnv,
   setPartnerRequestExpired,
+  withTransaction,
   type DatabasePool,
 } from "@shawtie/db";
 import type { ApiConfig } from "../src/config.ts";
@@ -187,7 +188,60 @@ async function reauthenticate(app: App, account: TestAccount): Promise<string> {
   return cookieHeader(response);
 }
 
-test("P2 explicit acceptance forms atomically, invalidates incompatible requests, and replays", async () => {
+test("P2 migration keeps notification storage minimal and legacy-safe", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+
+    const columns = await database.pool.query<{ column_name: string }>(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'account_notifications'
+       ORDER BY ordinal_position`,
+    );
+    assert.deepEqual(
+      columns.rows.map((row) => row.column_name),
+      [
+        "id",
+        "recipient_account_id",
+        "actor_account_id",
+        "partnership_id",
+        "event_type",
+        "deduplication_key",
+        "created_at",
+        "read_at",
+      ],
+    );
+
+    const constraints = await database.pool.query<{
+      conname: string;
+      convalidated: boolean;
+    }>(
+      `SELECT conname, convalidated
+       FROM pg_constraint
+       WHERE conname IN (
+         'partner_requests_accepted_link_required',
+         'partner_requests_accepted_link_terminal_only'
+       )
+       ORDER BY conname`,
+    );
+    assert.deepEqual(constraints.rows, [
+      {
+        conname: "partner_requests_accepted_link_required",
+        convalidated: false,
+      },
+      {
+        conname: "partner_requests_accepted_link_terminal_only",
+        convalidated: false,
+      },
+    ]);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+test("P2 explicit accept forms, invalidates, and replays", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -200,6 +254,11 @@ test("P2 explicit acceptance forms atomically, invalidates incompatible requests
     const primary = await createRequest(app, alice, bob, "p2-explicit-primary");
     assert.equal(primary.statusCode, 201, primary.body);
     const requestId = (primary.json() as { requestId: string }).requestId;
+
+    const beforeAccept = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM partnerships",
+    );
+    assert.equal(beforeAccept.rows[0]?.count, "0");
 
     assert.equal((await createRequest(app, charlie, bob, "p2-explicit-incoming")).statusCode, 201);
     assert.equal((await createRequest(app, bob, dave, "p2-explicit-outgoing")).statusCode, 201);
@@ -304,7 +363,128 @@ test("P2 explicit acceptance forms atomically, invalidates incompatible requests
   }
 });
 
-test("P2 reciprocal request forms in the P1 transaction using the triggering date and stable replay", async () => {
+test("P2 accept races with cancel and decline without split-brain state", async () => {
+  for (const action of ["cancel", "decline"] as const) {
+    const database = requireDisposableDatabase();
+    const app = createApiApplication({ database, config });
+    try {
+      await reset(database);
+      const alice = await register(app, database, "terminal_" + action + "_alice");
+      const bob = await register(app, database, "terminal_" + action + "_bob");
+
+      const created = await createRequest(
+        app,
+        alice,
+        bob,
+        "p2-terminal-race-" + action,
+      );
+      assert.equal(created.statusCode, 201, created.body);
+      const requestId = (created.json() as { requestId: string }).requestId;
+
+      const transitionActor = action === "cancel" ? alice : bob;
+      const [accepted, terminal] = await Promise.all([
+        acceptRequest(app, bob, requestId),
+        app.inject({
+          method: "POST",
+          url: "/api/v1/partner-requests/" + requestId + "/" + action,
+          headers: mutationHeaders(transitionActor.cookie),
+        }),
+      ]);
+
+      assert.equal(terminal.statusCode, 200, terminal.body);
+      assert.ok(accepted.statusCode === 200 || accepted.statusCode === 409);
+
+      const row = await database.pool.query<{
+        status: string;
+        accepted_partnership_id: string | null;
+      }>(
+        "SELECT status, accepted_partnership_id FROM partner_requests WHERE id = $1",
+        [requestId],
+      );
+      const request = row.rows[0];
+      assert.ok(request);
+
+      const partnerships = await database.pool.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM partnerships",
+      );
+
+      if (request.status === "accepted") {
+        assert.equal(accepted.statusCode, 200);
+        assert.ok(request.accepted_partnership_id);
+        assert.equal(partnerships.rows[0]?.count, "1");
+        assert.equal(
+          (terminal.json() as { status: string }).status,
+          "accepted",
+        );
+      } else {
+        assert.equal(request.status, action === "cancel" ? "cancelled" : "declined");
+        assert.equal(request.accepted_partnership_id, null);
+        assert.equal(accepted.statusCode, 409);
+        assert.equal(partnerships.rows[0]?.count, "0");
+      }
+    } finally {
+      await app.close();
+      await closeDatabasePool(database);
+    }
+  }
+});
+
+test("P2 formation fences an already-processing expiry claim", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "expiry_alice");
+    const bob = await register(app, database, "expiry_bob");
+
+    const created = await createRequest(app, alice, bob, "p2-expiry-processing");
+    assert.equal(created.statusCode, 201, created.body);
+    const requestId = (created.json() as { requestId: string }).requestId;
+
+    await database.pool.query(
+      `UPDATE scheduled_actions
+       SET status = 'processing',
+           claimed_at = clock_timestamp(),
+           claimed_by = 'p2-test-worker',
+           lease_expires_at = clock_timestamp() + interval '1 hour',
+           claim_version = claim_version + 1
+       WHERE deduplication_key = $1
+         AND status = 'pending'`,
+      ["partner-request-expire:" + requestId],
+    );
+
+    const accepted = await acceptRequest(app, bob, requestId);
+    assert.equal(accepted.statusCode, 200, accepted.body);
+
+    const action = await database.pool.query<{
+      status: string;
+      claimed_by: string | null;
+    }>(
+      `SELECT status, claimed_by
+       FROM scheduled_actions
+       WHERE deduplication_key = $1`,
+      ["partner-request-expire:" + requestId],
+    );
+    assert.deepEqual(action.rows[0], {
+      status: "processing",
+      claimed_by: "p2-test-worker",
+    });
+
+    const terminal = await withTransaction(database, (transaction) =>
+      setPartnerRequestExpired(
+        transaction,
+        requestId,
+        new Date("2999-01-01T00:00:00.000Z"),
+      ),
+    );
+    assert.equal(terminal, "terminal");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("P2 reciprocal request uses the triggering date and stable replay", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -398,7 +578,7 @@ test("P2 reciprocal request forms in the P1 transaction using the triggering dat
   }
 });
 
-test("P2 relationship date updates use metadata versions, notify only on changes, and isolate reads", async () => {
+test("P2 relationship date updates version, notify once, and isolate reads", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -541,7 +721,82 @@ test("P2 relationship date updates use metadata versions, notify only on changes
   }
 });
 
-test("P2 competing accepts serialize on the shared account and create exactly one partnership", async () => {
+test("P2 notification pagination is snapshot-bound", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "notification_page_alice");
+    const bob = await register(app, database, "notification_page_bob");
+
+    const created = await createRequest(app, alice, bob, "p2-notification-page-request");
+    const requestId = (created.json() as { requestId: string }).requestId;
+    const accepted = await acceptRequest(app, bob, requestId);
+    const partnershipId = (accepted.json() as { partnershipId: string }).partnershipId;
+
+    const firstChange = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/partnerships/" + partnershipId + "/relationship-start-date",
+      headers: jsonHeaders(bob.cookie),
+      payload: {
+        relationshipStartDate: "2019-01-01",
+        expectedMetadataVersion: 1,
+      },
+    });
+    assert.equal(firstChange.statusCode, 200, firstChange.body);
+
+    const pageOne = await app.inject({
+      method: "GET",
+      url: "/api/v1/notifications?limit=1",
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(pageOne.statusCode, 200, pageOne.body);
+    const firstPage = pageOne.json() as {
+      items: Array<{ eventType: string; notificationId: string }>;
+      nextCursor: string | null;
+    };
+    assert.equal(firstPage.items.length, 1);
+    assert.equal(firstPage.items[0]?.eventType, "relationship_start_date_changed");
+    assert.ok(firstPage.nextCursor);
+
+    const secondChange = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/partnerships/" + partnershipId + "/relationship-start-date",
+      headers: jsonHeaders(bob.cookie),
+      payload: {
+        relationshipStartDate: "2018-01-01",
+        expectedMetadataVersion: 2,
+      },
+    });
+    assert.equal(secondChange.statusCode, 200, secondChange.body);
+
+    const pageTwo = await app.inject({
+      method: "GET",
+      url: "/api/v1/notifications?limit=25&cursor=" +
+        encodeURIComponent(firstPage.nextCursor ?? ""),
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(pageTwo.statusCode, 200, pageTwo.body);
+    const secondPage = pageTwo.json() as {
+      items: Array<{ eventType: string; notificationId: string }>;
+    };
+    assert.deepEqual(
+      secondPage.items.map((item) => item.eventType),
+      ["partnership_formed"],
+    );
+    assert.equal(
+      secondPage.items.some(
+        (item) => item.notificationId === firstPage.items[0]?.notificationId,
+      ),
+      false,
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("P2 competing accepts create exactly one partnership", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -573,6 +828,26 @@ test("P2 competing accepts serialize on the shared account and create exactly on
       "SELECT count(*)::text AS count FROM partnership_members WHERE released_at IS NULL",
     );
     assert.equal(currentMemberships.rows[0]?.count, "2");
+
+    const requestStates = await database.pool.query<{
+      status: string;
+      accepted_partnership_id: string | null;
+      invalidated_reason: string | null;
+    }>(
+      `SELECT status, accepted_partnership_id, invalidated_reason
+       FROM partner_requests
+       WHERE id = ANY($1::uuid[])
+       ORDER BY id`,
+      [[requestB, requestC]],
+    );
+    assert.deepEqual(
+      requestStates.rows.map((row) => row.status).sort(),
+      ["accepted", "invalidated"],
+    );
+    const acceptedRequest = requestStates.rows.find((row) => row.status === "accepted");
+    const invalidatedRequest = requestStates.rows.find((row) => row.status === "invalidated");
+    assert.ok(acceptedRequest?.accepted_partnership_id);
+    assert.equal(invalidatedRequest?.invalidated_reason, "partnership_formed");
   } finally {
     await app.close();
     await closeDatabasePool(database);
@@ -610,13 +885,39 @@ test("P2 explicit accept versus reciprocal create converges on one partnership",
       [alice.accountId],
     );
     assert.equal(occupied.rows[0]?.count, "1");
+
+    const requests = await database.pool.query<{
+      status: string;
+      accepted_partnership_id: string | null;
+    }>(
+      `SELECT status, accepted_partnership_id
+       FROM partner_requests
+       WHERE sender_account_id IN ($1,$2)
+         AND recipient_account_id IN ($1,$2)
+       ORDER BY created_at, id`,
+      [alice.accountId, bob.accountId],
+    );
+
+    if (reciprocal.statusCode === 201) {
+      assert.equal((reciprocal.json() as { outcome: string }).outcome, "paired");
+      assert.equal(requests.rows.length, 2);
+      assert.ok(requests.rows.every((row) => row.status === "accepted"));
+      assert.equal(
+        new Set(requests.rows.map((row) => row.accepted_partnership_id)).size,
+        1,
+      );
+    } else {
+      assert.equal(requests.rows.length, 1);
+      assert.equal(requests.rows[0]?.status, "accepted");
+      assert.ok(requests.rows[0]?.accepted_partnership_id);
+    }
   } finally {
     await app.close();
     await closeDatabasePool(database);
   }
 });
 
-test("P2 concurrent relationship-date writes allow one winner for one metadata version", async () => {
+test("P2 concurrent relationship-date writes allow one version winner", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -703,7 +1004,22 @@ test("P2 formation and account deletion serialize without bypassing view-only st
       rows.rows[0]?.partnership_count === "0" || rows.rows[0]?.partnership_count === "1",
     );
 
-    if (rows.rows[0]?.partnership_count === "1") {
+    const requestState = await database.pool.query<{
+      status: string;
+      invalidated_reason: string | null;
+      accepted_partnership_id: string | null;
+    }>(
+      `SELECT status, invalidated_reason, accepted_partnership_id
+       FROM partner_requests
+       WHERE id = $1`,
+      [requestId],
+    );
+
+    if (accept.statusCode === 200) {
+      assert.equal(rows.rows[0]?.partnership_count, "1");
+      assert.equal(requestState.rows[0]?.status, "accepted");
+      assert.ok(requestState.rows[0]?.accepted_partnership_id);
+
       const current = await currentPartnership(app, bob);
       assert.equal(current.statusCode, 200, current.body);
       const capability = (current.json() as {
@@ -712,6 +1028,11 @@ test("P2 formation and account deletion serialize without bypassing view-only st
         };
       }).partnership.capabilities.changeRelationshipStartDate;
       assert.equal(capability, false);
+    } else {
+      assert.equal(rows.rows[0]?.partnership_count, "0");
+      assert.equal(requestState.rows[0]?.status, "invalidated");
+      assert.equal(requestState.rows[0]?.invalidated_reason, "account_unavailable");
+      assert.equal(requestState.rows[0]?.accepted_partnership_id, null);
     }
   } finally {
     await app.close();

@@ -4,12 +4,15 @@ import {
   currentPartnershipResponseSchema,
   notificationCursorSchema,
   notificationListQuerySchema,
+  notificationListResponseSchema,
   notificationReadBodySchema,
+  notificationReadResponseSchema,
   p2ErrorCodeSchema,
   partnerRequestAcceptBodySchema,
   partnerRequestAcceptParamsSchema,
   partnerRequestAcceptResponseSchema,
   partnershipIdParamsSchema,
+  relationshipStartDateUpdateResponseSchema,
   relationshipStartDateUpdateSchema,
   safeParseAtBoundary,
 } from "../src/index.ts";
@@ -49,7 +52,7 @@ test("P2 public denial-code contract is limited to the hardened stable vocabular
   assert.equal(safeParseAtBoundary(p2ErrorCodeSchema, "TARGET_OCCUPIED").success, false);
 });
 
-test("P2 relationship-date mutation requires partnership identity, date, and metadata version", () => {
+test("P2 relationship-date mutation requires id, date, and metadata version", () => {
   assert.equal(
     safeParseAtBoundary(partnershipIdParamsSchema, { partnershipId: PARTNERSHIP_ID }).success,
     true,
@@ -67,6 +70,19 @@ test("P2 relationship-date mutation requires partnership identity, date, and met
       expectedMetadataVersion: 0,
     }).success,
     false,
+  );
+});
+
+
+test("P2 relationship-date response exposes the new metadata version and change flag", () => {
+  assert.equal(
+    safeParseAtBoundary(relationshipStartDateUpdateResponseSchema, {
+      partnershipId: PARTNERSHIP_ID,
+      relationshipStartDate: "2025-11-15",
+      metadataVersion: 2,
+      changed: true,
+    }).success,
+    true,
   );
 });
 
@@ -95,7 +111,7 @@ test("P2 current-partnership contract exposes only the documented safe projectio
   );
 });
 
-test("P2 notification contracts reuse bounded snapshot cursor semantics and bodyless mark-read", () => {
+test("P2 notification contracts use bounded cursor and bodyless mark-read", () => {
   const query = safeParseAtBoundary(notificationListQuerySchema, {});
   assert.equal(query.success, true);
   if (query.success) assert.equal(query.data.limit, 25);
@@ -111,4 +127,30 @@ test("P2 notification contracts reuse bounded snapshot cursor semantics and body
   );
   assert.equal(safeParseAtBoundary(notificationReadBodySchema, undefined).success, true);
   assert.equal(safeParseAtBoundary(notificationReadBodySchema, {}).success, false);
+});
+
+test("P2 notification response contracts expose routing metadata only", () => {
+  assert.equal(
+    safeParseAtBoundary(notificationListResponseSchema, {
+      items: [
+        {
+          notificationId: NOTIFICATION_ID,
+          eventType: "partnership_formed",
+          actorAccountId: ACCOUNT_ID,
+          partnershipId: PARTNERSHIP_ID,
+          createdAt: "2026-09-21T12:00:00.000Z",
+          readAt: null,
+        },
+      ],
+      nextCursor: null,
+    }).success,
+    true,
+  );
+  assert.equal(
+    safeParseAtBoundary(notificationReadResponseSchema, {
+      notificationId: NOTIFICATION_ID,
+      readAt: "2026-09-21T12:01:00.000Z",
+    }).success,
+    true,
+  );
 });

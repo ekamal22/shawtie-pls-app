@@ -164,7 +164,7 @@ try {
         ALLOW_INSECURE_LOOPBACK_COOKIES: "1",
         AUTH_HMAC_KEYS: "1:" + Buffer.alloc(32, 7).toString("base64"),
         AUTH_HMAC_ACTIVE_VERSION: "1",
-        PARTNER_REQUEST_MODE: "paired",
+        PARTNER_REQUEST_MODE: "request_only_test",
       },
     },
   );

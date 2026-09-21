@@ -94,7 +94,7 @@ test("P2 reciprocal consent fails closed when requests are not opposite directio
   );
 });
 
-test("P2 trusted relationship date accepts today and rejects future or invalid calendar dates", () => {
+test("P2 trusted relationship date rejects future and invalid dates", () => {
   assert.equal(relationshipStartDateAllowedForPartnership("2026-09-21", "2026-09-21"), true);
   assert.equal(relationshipStartDateAllowedForPartnership("2026-09-22", "2026-09-21"), false);
   assert.equal(relationshipStartDateAllowedForPartnership("2026-02-31", "2026-09-21"), false);
@@ -113,7 +113,7 @@ test("P2 relationship-date retry is a no-op before stale-version rejection", () 
   );
 });
 
-test("P2 relationship-date real change enforces metadata version and increments only that version", () => {
+test("P2 relationship-date change enforces metadata version", () => {
   const base = {
     currentRelationshipStartDate: "2025-11-15",
     requestedRelationshipStartDate: "2025-12-01",

@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { apiConfigFromEnv } from "../src/config.ts";
-import { createP2PartnershipFormationCoordinator } from "../src/modules/partnerships/partnership-formation-coordinator.ts";
+import {
+  createP2PartnershipFormationCoordinator,
+} from "../src/modules/partnerships/partnership-formation-coordinator.ts";
 
 const key = Buffer.alloc(32, 7).toString("base64");
 
@@ -29,7 +32,7 @@ test("P2 coordinator is transaction-scoped and does not create a nested transact
   assert.ok(createP2PartnershipFormationCoordinator());
 });
 
-test("P2 notification persistence contains routing metadata but no relationship date or content", async () => {
+test("P2 notification repository does not persist private relationship content", async () => {
   const source = await readFile(
     new URL("../../../packages/db/src/repositories/account-notifications.ts", import.meta.url),
     "utf8",
@@ -41,13 +44,29 @@ test("P2 notification persistence contains routing metadata but no relationship 
   assert.equal(source.includes("crypto"), false);
 });
 
-test("P2 migration uses the partnership id as the namespace and does not add fake crypto state", async () => {
+test("P2 migration uses partnership id without fake crypto state", async () => {
   const migration = await readFile(
-    new URL("../../../packages/db/migrations/0009_partnership_formation_runtime.sql", import.meta.url),
+    new URL(
+      "../../../packages/db/migrations/0009_partnership_formation_runtime.sql",
+      import.meta.url,
+    ),
     "utf8",
   );
   assert.equal(migration.includes("security_context"), false);
   assert.equal(migration.includes("partnership_crypto_epochs"), false);
   assert.equal(migration.includes("accepted_partnership_id"), true);
   assert.equal(migration.includes("account_notifications"), true);
+});
+
+test("P2 preserves the verified P1 migration 0008 byte-for-byte", async () => {
+  const migration = await readFile(
+    new URL(
+      "../../../packages/db/migrations/0008_partner_discovery_requests_runtime.sql",
+      import.meta.url,
+    ),
+  );
+  assert.equal(
+    createHash("sha256").update(migration).digest("hex"),
+    "94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e",
+  );
 });

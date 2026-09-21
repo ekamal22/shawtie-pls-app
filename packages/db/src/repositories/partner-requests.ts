@@ -217,7 +217,10 @@ export async function markPartnerRequestsAccepted(
          accepted_at = $3,
          accepted_partnership_id = $2
      WHERE id = ANY($1::uuid[])
-       AND status = 'pending'`,
+       AND status = 'pending'
+       AND expires_at > $3
+       AND relationship_start_date IS NOT NULL
+       AND accepted_partnership_id IS NULL`,
     [[...requestIds], partnershipId, acceptedAt],
   );
   return result.rowCount ?? 0;

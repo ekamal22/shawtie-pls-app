@@ -471,7 +471,7 @@ END;
 $$;
 
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO partner_requests (
@@ -492,7 +492,7 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO partner_requests (
   id, sender_account_id, recipient_account_id, status, created_at, expires_at,
@@ -509,7 +509,7 @@ INSERT INTO partner_requests (
   '20000000-0000-0000-0000-000000000001'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO partner_requests (
@@ -531,7 +531,7 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO account_notifications (
   id, recipient_account_id, actor_account_id, partnership_id,
@@ -546,7 +546,7 @@ INSERT INTO account_notifications (
   TIMESTAMPTZ '2026-01-02 00:00:00+00'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO account_notifications (
@@ -566,6 +566,28 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$;
+$$;
+
+DO $$
+DECLARE
+  accepted_required_validated boolean;
+  accepted_terminal_validated boolean;
+BEGIN
+  SELECT convalidated
+  INTO accepted_required_validated
+  FROM pg_constraint
+  WHERE conname = 'partner_requests_accepted_link_required';
+
+  SELECT convalidated
+  INTO accepted_terminal_validated
+  FROM pg_constraint
+  WHERE conname = 'partner_requests_accepted_link_terminal_only';
+
+  IF accepted_required_validated IS DISTINCT FROM false
+     OR accepted_terminal_validated IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'P2 legacy-safe request-linkage constraints must remain NOT VALID';
+  END IF;
+END;
+$$;
 
 ROLLBACK;
