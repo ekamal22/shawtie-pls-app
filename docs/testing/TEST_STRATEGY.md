@@ -149,7 +149,7 @@ npm run test:a1:security
 npm run test:a1:local
 ```
 
-These commands are implemented in the repository but must not be described as passing until the current branch, refreshed lockfile, and disposable PostgreSQL path execute successfully.
+The current A1 branch now has successful core local evidence: the disposable PostgreSQL A1 suite passes 9/9 and the full repository health regression passes. A1 still must not be marked DONE until the complete required A1 evidence matrix above is represented by committed tests and rerun successfully.
 
 ### P1 discovery and request verification
 
