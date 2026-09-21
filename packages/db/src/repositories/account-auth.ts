@@ -1331,9 +1331,9 @@ export async function finalizePartnershipForAccountDeletion(
         `INSERT INTO account_partner_eligibility (
            id, account_id, source_partnership_id, reason, created_at, eligible_at
          ) VALUES (
-           md5($1::text || $2::text || $3::timestamptz::text || 'breakup_dissolution')::uuid,
-           $1,
-           $2,
+           md5($1::uuid::text || $2::uuid::text || $3::timestamptz::text || 'breakup_dissolution')::uuid,
+           $1::uuid,
+           $2::uuid,
            'breakup_dissolution',
            $3::timestamptz,
            $3::timestamptz + interval '3 months'
@@ -1347,9 +1347,9 @@ export async function finalizePartnershipForAccountDeletion(
       `INSERT INTO account_partner_eligibility (
          id, account_id, source_partnership_id, reason, created_at, eligible_at
        ) VALUES (
-         md5($1::text || $2::text || $3::timestamptz::text || 'partner_account_deleted')::uuid,
-         $1,
-         $2,
+         md5($1::uuid::text || $2::uuid::text || $3::timestamptz::text || 'partner_account_deleted')::uuid,
+         $1::uuid,
+         $2::uuid,
          'partner_account_deleted',
          $3::timestamptz,
          $3::timestamptz + interval '1 month'
