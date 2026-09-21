@@ -21,9 +21,9 @@ Its implemented scope includes:
 - durable security-email deliveries
 - append-only security-event hardening
 
-P1 reserves `0008_partner_discovery_requests_runtime.sql`. Its refined planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and a manually entered `relationship_start_date` column used by P2 formation. The column is legacy-compatible at schema level, while every new P1 request write requires a non-null value and formation fails closed on missing legacy data.
+P1 reserves `0008_partner_discovery_requests_runtime.sql`. Its refined planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and a manually entered `relationship_start_date` column used by P2 formation. The column is legacy-compatible at schema level, while a `CHECK (relationship_start_date IS NOT NULL) NOT VALID` constraint makes PostgreSQL enforce the value for every new or updated request row without inventing legacy data. Formation fails closed on missing legacy data.
 
-P2 reserves `0009_partnership_formation_runtime.sql`. Its planned scope is accepted-request partnership linkage, fresh `partnerships.security_context_id`, accepted-state hardening, minimal durable account notifications, and formation/query indexes.
+P2 reserves `0009_partnership_formation_runtime.sql`. Its planned scope is accepted-request partnership linkage with restrictive foreign-key semantics, accepted-state hardening, minimal durable account notifications, and formation/query indexes. The existing fresh partnership ID is the namespace root; migration 0009 does not add a redundant security-context identifier.
 
 Migrations 0008 and 0009 remain planned. The verified migration count is seven; migration 0007 has passed the complete A1 disposable-PostgreSQL validation path.
 

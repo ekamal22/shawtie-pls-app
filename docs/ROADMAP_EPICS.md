@@ -699,7 +699,7 @@ P2 creates a fresh opaque security namespace for every partnership but deliberat
 
 - P1 migration 0008 request relationship-date field
 - migration 0009 partnership-formation runtime
-- fresh `security_context_id` on partnerships
+- fresh partnership-ID namespace with no redundant security-context column
 - accepted request to partnership linkage
 - accepted-shape constraints
 - minimal durable account notifications

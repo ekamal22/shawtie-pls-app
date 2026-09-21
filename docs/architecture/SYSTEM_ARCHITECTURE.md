@@ -295,7 +295,7 @@ P2 preserves the modular-monolith transaction boundary:
 - PostgreSQL occupied-slot uniqueness is the final double-partnership defense
 - every request carries a manually entered relationship start date so reciprocal formation never invents one from activation time
 - metadata edits use partnership `version`; lifecycle deadlines use `generation`
-- every partnership receives a fresh opaque security-context namespace while actual cryptographic keys and epochs remain deferred to S1
+- the fresh immutable partnership ID is the local and future cryptographic namespace root; actual cryptographic keys and epochs remain deferred to S1
 - P2 provides durable in-app partnership notifications without requiring push transport
 
 ## Durable deadlines

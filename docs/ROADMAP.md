@@ -371,7 +371,7 @@ Key design decisions:
 - accepted requests link to the resulting partnership for stable lost-response replay
 - every other incompatible pending request is invalidated in the same transaction
 - relationship-date edits use optimistic `version`, not lifecycle `generation`
-- each partnership gets a fresh opaque `security_context_id` without creating fake E2EE keys before S1
+- the fresh `partnershipId` itself is the local namespace root and future S1 cryptographic namespace; P2 creates no redundant security identifier or fake E2EE keys
 - durable in-app notification satisfies P2 relationship-date notification while push transport remains later
 
 Implementation sequence:
@@ -393,7 +393,7 @@ Exit evidence:
 - future relationship date is rejected by trusted server date
 - concurrent date edits produce one version winner
 - the other partner receives a durable date-change notification
-- a new partnership never reuses an old partnership or security-context namespace
+- a new partnership always gets a new partnership ID and never reuses an old local or cryptographic namespace
 
 **REDMI PHONE REQUIRED: NO.**
 

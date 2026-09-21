@@ -97,7 +97,7 @@ P2 formalizes two separate counters on partnership state:
 
 A relationship-date update increments `version` only. It must not invalidate a scheduled lifecycle action by incrementing `generation`. Lifecycle transitions may change generation according to their own state-machine rules.
 
-Clients submit `expectedVersion` for relationship metadata updates and refetch on conflict.
+P2 clients submit `expectedMetadataVersion` for relationship metadata updates and refetch on conflict.
 
 ## Realtime compatibility
 

@@ -170,6 +170,8 @@ Required evidence includes:
 - discovery and create abuse-rate limits
 - generic target-unavailable mapping for private recipient state
 - lost-response create replay through Idempotency-Key
+- idempotency fingerprint changes when only `relationshipStartDate` changes
+- snapshot-bound request pagination remains stable while new requests arrive
 - cursor pagination without active-request omission or duplication
 - production request creation disabled without the P2 formation coordinator
 - A1 deletion, P2 formation, and P3 block invalidation hooks
@@ -203,13 +205,14 @@ Required evidence includes:
 - occupied-slot database protection under competing formation
 - explicit-accept versus reciprocal-request race
 - incompatible request invalidation
-- fresh partnership and security-context identifiers
+- fresh partnership-ID namespace with no reuse of prior local or cryptographic state
 - current partnership read isolation
 - relationship-date expected-version conflict behavior
 - active and breakup-pending relationship-date mutation capability, with account-deletion and terminated-state denial
 - durable other-partner relationship-date notification
 - notification account isolation and private no-store responses
 - no fake E2EE key or epoch creation before S1
+- complete P1 local suite rerun with the real P2 coordinator registered in `paired` mode
 
 Planned commands:
 

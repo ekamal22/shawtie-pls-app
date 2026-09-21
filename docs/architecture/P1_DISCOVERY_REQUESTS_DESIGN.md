@@ -118,7 +118,7 @@ P1 does not implement:
 
 - request acceptance
 - partnership creation
-- relationship start date
+- ownership of partnership relationship-date state after formation; P1 only captures the manually entered request proposal required by P2
 - incompatible request invalidation after partnership formation
 - push or realtime request delivery
 - fuzzy discovery
@@ -196,9 +196,11 @@ Only successfully created requests count toward the product limit.
 For a proposed request at transaction time now, count prior created attempts where:
 
 ~~~text
-created_at > now - interval '1 month'
+created_at > rollingMonthCutoff
 AND created_at <= now
 ~~~
+
+`rollingMonthCutoff` is computed from PostgreSQL transaction time by the shared UTC calendar-month helper, not by database-session timezone arithmetic. This avoids DST or connection-timezone drift.
 
 At the exact one-calendar-month boundary, the older request no longer counts.
 
@@ -448,7 +450,7 @@ invalidated_reason text
 relationship_start_date date
 ~~~
 
-`relationship_start_date` is the sender's manually entered proposed relationship date. The column remains nullable only for forward compatibility with any pre-P1 legacy rows, but every new P1 request write requires a non-null value. P1 persists it because reciprocal requests may immediately auto-form through P2 without a separate accept screen. P1 validates it against trusted PostgreSQL UTC business date using the shared partnership-domain helper. Any legacy pending row with a null value fails closed and cannot form a partnership.
+`relationship_start_date` is the sender's manually entered proposed relationship date. The column remains nullable only for forward compatibility with any pre-P1 legacy rows, but every new P1 request write requires a non-null value. Migration 0008 adds a `CHECK (relationship_start_date IS NOT NULL) NOT VALID` constraint so PostgreSQL enforces the rule for new and updated rows without inventing values for legacy rows. P1 persists it because reciprocal requests may immediately auto-form through P2 without a separate accept screen. P1 validates it against trusted PostgreSQL UTC business date using the shared partnership-domain helper. Any legacy pending row with a null value fails closed and cannot form a partnership.
 
 Add a terminal-shape constraint.
 
@@ -681,11 +683,13 @@ Order:
 created_at DESC, id DESC
 ~~~
 
-The cursor carries the last visible createdAt, requestId, and direction in a versioned base64url envelope.
+The first page captures a PostgreSQL transaction-time `snapshotAt`. Every page in that traversal applies `created_at <= snapshotAt`, so requests created after the traversal begins appear only after a canonical refresh and cannot shift later pages.
+
+The cursor carries `snapshotAt`, the last visible createdAt, requestId, and direction in a versioned base64url envelope.
 
 Cursor version 1 is a canonical JSON payload encoded with base64url. It is not signed because it contains no authority or secret; all fields are schema-validated and re-applied only as query bounds.
 
-The cursor is not a secret, but it is schema-validated and direction-bound. Invalid or mismatched cursors fail with VALIDATION_FAILED.
+The cursor is not a secret, but it is schema-validated, direction-bound, and snapshot-bound. `snapshotAt` must not be later than the current PostgreSQL transaction time. Invalid, mismatched, or future-snapshot cursors fail with VALIDATION_FAILED.
 
 Response:
 
@@ -709,7 +713,7 @@ It never exposes counterpart email, exact DOB, partnership history, cooldown, or
 
 The list operation does not require a database write merely to clean overdue rows.
 
-P1 does not silently cap a direction at 100 entries. Cursor pagination guarantees that all still-active requests remain retrievable.
+P1 does not silently cap a direction at 100 entries. Cursor pagination gives a stable traversal of requests that existed at `snapshotAt`; requests created afterward are intentionally visible on the next canonical refresh. Rows that become terminal during traversal may disappear, which is correct because the list is an active-request view.
 
 ### Create partner request
 
@@ -725,7 +729,7 @@ expectedUsername
 relationshipStartDate
 ~~~
 
-`relationshipStartDate` is required. It is private request/partnership metadata and is never part of public discovery.
+`relationshipStartDate` is required and uses the exact `YYYY-MM-DD` calendar-date format with no timezone component. It is private request/partnership metadata and is never part of public discovery.
 
 Response may represent:
 
@@ -768,9 +772,9 @@ Policy:
 - stored scope: partner_request_create
 - successful create or paired responses are retained at least until the original request expires
 - denied create responses are retained for at least 24 hours
-- request fingerprint includes recipientAccountId and normalized expectedUsername
+- request fingerprint includes recipientAccountId, normalized expectedUsername, and canonical relationshipStartDate
 - the authenticated account ID is already part of the idempotency-record scope
-- same key plus same fingerprint replays the stored HTTP status and response
+- same key plus same fingerprint replays the stored HTTP status and response; changing only relationshipStartDate is a different fingerprint
 - same key plus different fingerprint fails with IDEMPOTENCY_KEY_REUSED
 - idempotency responses never store private recipient-state reasons
 
@@ -1166,7 +1170,8 @@ ORDER BY created_at DESC, id DESC
 A next page uses:
 
 ~~~text
-(created_at, id) < (cursor_created_at, cursor_id)
+created_at <= snapshot_at
+AND (created_at, id) < (cursor_created_at, cursor_id)
 ~~~
 
 with the same direction and logical-active predicate.
@@ -1365,7 +1370,7 @@ Cover:
 - target-unavailable generic mapping
 - multiple incoming requests
 - request list hides overdue logical requests
-- cursor pagination returns every active request without duplication or omission
+- snapshot-bound cursor pagination has no duplication or omission within its initial request set; newly created rows wait for canonical refresh
 - scheduled expiry persists expired state
 - reciprocal pair signal emitted exactly once in the serialized opposite-direction race
 

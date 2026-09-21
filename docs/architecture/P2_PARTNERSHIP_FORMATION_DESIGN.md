@@ -30,7 +30,7 @@ The refinement closes ambiguity in:
 - separation of partnership metadata versioning from lifecycle generation fencing
 - relationship-date concurrent edits and no-op behavior
 - relationship-date notification durability without requiring push infrastructure yet
-- creation of a fresh partnership security namespace without pretending S1 E2EE is already implemented
+- use of the fresh partnership ID itself as the local and future cryptographic namespace without pretending S1 E2EE is already implemented
 - privacy-safe public error mapping
 - P1 production enablement once the formation coordinator exists
 
@@ -74,7 +74,7 @@ P2 owns:
 - reciprocal auto-pair execution
 - accepted-request to partnership linkage
 - one-slot recheck at formation time
-- fresh partnership security namespace creation
+- fresh partnership-ID namespace creation without a redundant security identifier
 - relationship start-date authority
 - relationship date updates
 - durable in-app partnership notifications required by P2
@@ -99,7 +99,7 @@ P1 create input becomes conceptually:
 }
 ~~~
 
-`relationshipStartDate` is a calendar date string. P1 validates it against trusted PostgreSQL UTC business date and persists it with the request.
+`relationshipStartDate` is an exact `YYYY-MM-DD` calendar date with no timezone component. P1 validates it against trusted PostgreSQL UTC business date and persists it with the request.
 
 Reason: the second reciprocal request may immediately trigger P2 formation. There is no later accept screen from which P2 could obtain a manually entered date.
 
@@ -126,7 +126,7 @@ P2 must provide:
 - trusted relationship start-date validation
 - version-checked relationship date updates
 - durable notification to the other partner after a committed date change
-- fresh partnership and security-context identifiers
+- a fresh partnership identifier that is the local namespace root and future S1 cryptographic namespace
 - stable replay for already accepted requests
 - privacy-safe failure behavior
 - complete PostgreSQL, API, race, and security evidence
@@ -232,7 +232,7 @@ For formation:
 
 P2 never acquires security-rate-limit bucket locks while account locks are held. P1 performs its abuse-rate-limit preflight before the business transaction.
 
-Relationship-date update locks only the target partnership row after authentication and membership lookup. It never acquires unrelated account-pair locks.
+Relationship-date update first loads the immutable member IDs, locks both member account rows in canonical UUID order, then locks the partnership row. This reuses the A1 lock rank and serializes the mutation with account deletion or other account-state transitions that can make the partnership view-only. After locking, it re-reads account status, account-deletion overlay state, lifecycle state, membership, and metadata version before changing the date.
 
 ## One-partner occupancy
 
@@ -310,7 +310,7 @@ POST /api/v1/partner-requests/:requestId/accept
 
 No account ID or relationship date is accepted in the request body.
 
-The member pair and initial date come from the authoritative request row.
+The member pair and initial date come from the authoritative request row. Accepting the request is consent to form the partnership; the proposed relationship date is mutable partnership metadata rather than a separate bilateral-consent gate, because the PRD allows either partner to update it later without approval.
 
 Transaction:
 
@@ -333,6 +333,17 @@ Wrong-recipient and unknown-request cases use the same not-found shape.
 
 Accept is not product-rate-limited. Consent and safety actions must not become unavailable because discovery or request-create abuse buckets were exhausted.
 
+Successful explicit accept uses HTTP 200:
+
+~~~text
+{
+  outcome: "formed" | "already_accepted",
+  partnershipId
+}
+~~~
+
+A lost-response replay returns the same partnership ID. The client never treats the replay body as current lifecycle authority.
+
 ## Accept replay and lost responses
 
 `partner_requests` stores `accepted_partnership_id` when accepted.
@@ -341,7 +352,7 @@ If the first accept commits but the HTTP response is lost, retrying the same acc
 
 This makes explicit acceptance naturally idempotent without requiring a separate Idempotency-Key.
 
-An accepted request never creates a second partnership on replay.
+An accepted request never creates a second partnership on replay. Replay returns the original formation identity, not a claim that the partnership is still active; the client refreshes `GET /api/v1/partnerships/current` for current lifecycle state.
 
 ## Reciprocal request transaction
 
@@ -361,6 +372,18 @@ Before that transaction commits:
 10. P2 returns the pairing outcome to P1
 11. P1 stores the final paired response in its existing create idempotency record
 12. the single transaction commits
+
+P1's paired create response remains HTTP 201 and includes:
+
+~~~text
+{
+  outcome: "paired",
+  requestId,
+  partnershipId
+}
+~~~
+
+The response is persisted in the existing P1 idempotency record before commit.
 
 Exactly one opposite-direction transaction can be the formation transaction because both directions serialize on the same sorted account locks.
 
@@ -430,7 +453,7 @@ Input:
 ~~~text
 {
   relationshipStartDate,
-  expectedVersion
+  expectedMetadataVersion
 }
 ~~~
 
@@ -442,7 +465,7 @@ Rules:
 - relationship metadata is editable while lifecycle state is `active` or `breakup_pending`
 - account-deletion view-only state and terminated state reject the mutation
 - future dates are rejected using trusted PostgreSQL UTC date
-- `expectedVersion` must equal the current partnership `version`
+- `expectedMetadataVersion` must equal the current partnership `version`
 - a successful change increments `version` by one
 - relationship date change does not increment lifecycle `generation`
 - changing to the already-current date is an idempotent no-op: no version bump and no duplicate notification
@@ -487,15 +510,18 @@ Response:
     lifecycleState,
     activatedAt,
     relationshipStartDate,
-    version,
+    metadataVersion,
+    capabilities: { changeRelationshipStartDate: boolean },
     otherMember: { accountId, username, displayName }
   }
 }
 ~~~
 
+`capabilities.changeRelationshipStartDate` is an advisory server-derived presentation hint from the central capability model. The mutation endpoint always re-evaluates authoritative state.
+
 The response is `Cache-Control: private, no-store`.
 
-It does not expose the internal security-context identifier, cooldown internals, email, DOB, sessions, devices, or cryptographic state.
+It does not expose cooldown internals, email, DOB, sessions, devices, or cryptographic state.
 
 ## Durable in-app notifications
 
@@ -523,6 +549,19 @@ partnership_formed
 relationship_start_date_changed
 ~~~
 
+Recipient semantics are exact:
+
+- explicit accept: the accepting recipient receives the HTTP result; the original sender receives one `partnership_formed` notification
+- reciprocal auto-pair: the triggering requester receives the paired HTTP result; the account that sent the earlier opposite request receives one `partnership_formed` notification
+- relationship-date change: only the non-acting partner receives `relationship_start_date_changed`
+
+Deterministic deduplication keys are:
+
+~~~text
+partnership-formed:<partnershipId>:<recipientAccountId>
+relationship-start-date-changed:<partnershipId>:<metadataVersion>:<recipientAccountId>
+~~~
+
 The row stores routing identity and event type only. It does not duplicate relationship dates, private profile content, message content, or crypto material.
 
 Minimal authenticated API:
@@ -530,39 +569,30 @@ Minimal authenticated API:
 ~~~text
 GET  /api/v1/notifications?limit=25&cursor=...
 POST /api/v1/notifications/:notificationId/read
+
+Notification list pagination reuses P1's versioned snapshot-bound keyset cursor pattern: the first page captures `snapshotAt`, later pages are bound to that snapshot, future-snapshot cursor values are rejected, and newly created notifications appear after canonical refresh rather than shifting an in-progress traversal.
 ~~~
 
-Only the recipient account may read or mark a notification.
+Only the recipient account may read or mark a notification. Mark-read is idempotent: the first successful mutation sets `read_at`; later retries leave the original read timestamp unchanged.
 
 Push transport remains a later notification milestone. P2 closure requires durable in-app delivery, not web-push provider integration.
 
 ## Fresh partnership security namespace
 
-Every partnership receives a new opaque non-secret:
+P2 does not create a second namespace identifier.
 
-~~~text
-security_context_id uuid
-~~~
+The fresh immutable `partnershipId` already is the namespace root for:
 
-Rules:
+- server partnership-scoped authorization
+- IndexedDB partitioning
+- future conversation and relationship-space ownership
+- future S1 cryptographic context binding
 
-- unique across partnerships
-- generated server-side for every new partnership
-- never copied from an earlier partnership
-- never derived from either username
-- not authentication authority
-- not cryptographic key material
-- not exposed in ordinary partnership API responses
+A later partnership between the same two accounts receives a different partnership ID and therefore a different namespace.
 
-The partnership ID is the local persistence namespace root.
+The partnership ID is an identifier, not key material and not authentication authority. P2 does not create fake keys, fake ratchets, or a fake `partnership_crypto_epochs` row. Real cryptographic roots and epochs begin only when S1 provisions the reviewed protocol.
 
-`security_context_id` is the future cryptographic namespace root identifier that S1 will bind to reviewed cryptographic state.
-
-P2 does not create fake keys, fake ratchets, or a fake `partnership_crypto_epochs` row.
-
-`partnership_crypto_epochs` remains unpopulated until S1 provisions real reviewed cryptographic state.
-
-This satisfies isolation now without claiming E2EE before it exists.
+Using one immutable namespace identifier avoids redundant security identifiers that could drift out of sync while still satisfying fresh local and future cryptographic isolation.
 
 ## Migration plan
 
@@ -588,26 +618,15 @@ Reserve:
 0009_partnership_formation_runtime.sql
 ~~~
 
-Add to `partnerships`:
-
-~~~text
-security_context_id uuid
-~~~
-
-Migration sequence:
-
-1. add nullable column
-2. deterministically backfill pre-P2 development rows from immutable partnership ID using a domain-separated non-secret UUID derivation
-3. add unique constraint/index
-4. set NOT NULL
-
-New runtime rows use cryptographically random UUIDs rather than deterministic derivation.
+Migration 0009 does not add a second partnership namespace column. The existing random immutable partnership ID is the namespace root.
 
 Add to `partner_requests`:
 
 ~~~text
-accepted_partnership_id uuid null references partnerships(id) on delete set null
+accepted_partnership_id uuid null references partnerships(id)
 ~~~
+
+Use the default restrictive foreign-key behavior for `accepted_partnership_id`; a partnership tombstone cannot be physically removed while retained accepted-request evidence still references it. A future bounded-retention purge must remove or archive dependent request evidence first rather than silently nulling the replay identity.
 
 Add accepted-shape protection so new accepted rows require:
 
@@ -625,7 +644,7 @@ Add indexes for:
 - account notifications by recipient and creation order
 - unread account notifications
 
-Migration 0009 does not create cryptographic key material.
+Migration 0009 does not create cryptographic key material or an additional security namespace identifier.
 
 ## Package structure
 
@@ -813,7 +832,7 @@ Use disposable PostgreSQL 16.
 Cover:
 
 - migration 0009 from zero after 0008
-- security-context uniqueness
+- fresh partnership-ID namespace isolation
 - accepted request requires accepted partnership linkage
 - two membership rows commit atomically
 - occupied-slot unique index prevents a simultaneous second partnership
@@ -854,7 +873,7 @@ Mandatory races:
 - A sends to B while B accepts A's earlier request
 - A and B create reciprocal requests concurrently
 - same accept request retried after lost response
-- two relationship-date updates use the same expectedVersion
+- two relationship-date updates use the same expectedMetadataVersion
 - formation races account deletion or block creation through shared account-lock order
 
 ### Security regressions
@@ -866,8 +885,8 @@ Cover:
 - partnership ID guessing cannot read or mutate another partnership
 - relationship date never appears in URL query strings or generic logs
 - notification rows contain no relationship date, message content, email, DOB, device data, or cryptographic material
-- security_context_id is not authentication authority
-- no raw cryptographic key material is created or stored by P2
+- partnershipId is not authentication authority or key material
+- no redundant security namespace ID and no raw cryptographic key material are created or stored by P2
 - P1 production paired mode fails closed without coordinator registration
 
 ## Proposed local commands
@@ -904,13 +923,12 @@ Exit gate:
 
 1. extend planned P1 migration 0008 with request relationship_start_date
 2. add migration 0009
-3. add partnership security_context_id
-4. add accepted_partnership_id linkage
-5. add accepted-shape constraints
-6. add account_notifications
-7. add formation and partnership repositories
-8. add notification repository
-9. extend database invariants
+3. add accepted_partnership_id linkage with restrictive FK semantics
+4. add accepted-shape constraints
+5. add account_notifications
+6. add formation and partnership repositories
+7. add notification repository
+8. extend database invariants
 
 Exit gate:
 
@@ -924,11 +942,11 @@ Exit gate:
 2. implement explicit accept route
 3. recheck P1 eligibility under pair locks
 4. create partnership and two members
-5. create fresh security_context_id
+5. use the newly generated partnershipId as the fresh namespace root
 6. mark accepted request with partnership link
 7. invalidate other pending requests
 8. append partnership_formed lifecycle event
-9. create durable in-app formation notifications
+9. create the deterministic durable in-app formation notification for the non-acting partner
 10. implement stable replay
 
 Exit gate:
@@ -973,10 +991,11 @@ Exit gate:
 
 1. run complete P2 domain/contract suite
 2. run disposable PostgreSQL/API/race/security suite
-3. run dependency audit if dependencies changed
-4. run full npm run health
-5. reconcile docs repo-wide
-6. mark only verified P2 gates complete
+3. rerun the complete P1 local suite with the real P2 coordinator registered in `paired` mode
+4. run dependency audit if dependencies changed
+5. run full npm run health
+6. reconcile docs repo-wide
+7. mark only verified P2 gates complete
 
 ## Acceptance mapping
 
@@ -993,7 +1012,7 @@ Implementation evidence must specifically prove:
 - future relationship dates are rejected by trusted server date
 - either active partner can update the date
 - the other partner receives durable in-app notification
-- every formation creates new partnership and security-context identifiers
+- every formation creates a fresh partnership identifier and never reuses an old local or cryptographic namespace
 - concurrency tests prove one-partner occupancy
 
 ## Review invariants
@@ -1013,11 +1032,11 @@ Reject a P2 implementation if it:
 11. relies only on application checks for one-partner occupancy
 12. starts provider calls inside the formation transaction
 13. creates an E2EE epoch or key schedule before S1 protocol review
-14. reuses an old partnership or security-context identifier
+14. reuses an old partnership identifier or any old local/cryptographic namespace
 15. uses relationship activation timestamp as the relationship start date
 16. permits future relationship dates because the client clock says they are valid
 17. increments lifecycle generation for a metadata-only relationship-date edit
-18. silently overwrites a concurrent relationship-date change without expectedVersion
+18. silently overwrites a concurrent relationship-date change without expectedMetadataVersion
 19. emits duplicate notifications for a no-op date update
 20. exposes private counterpart eligibility reasons in public errors
 21. allows guessed partnership or notification IDs to cross account boundaries

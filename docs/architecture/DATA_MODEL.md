@@ -92,7 +92,6 @@ last_seen_at
 revoked_at
 crypto_identity_public_key
 crypto_protocol_version
-security_context_id
 ```
 
 Device revocation affects both authentication and cryptographic authorization.
@@ -126,7 +125,7 @@ relationship_start_date nullable only for pre-P1 legacy compatibility; required 
 accepted_partnership_id
 ```
 
-`relationship_start_date` is entered by the request sender and is private to request participants. `accepted_partnership_id` is populated only when P2 accepts the request into a partnership.
+`relationship_start_date` is entered by the request sender and is private to request participants. Migration 0008 uses a `NOT VALID` non-null check so new and updated request rows must carry it without fabricating legacy values. `accepted_partnership_id` is populated only when P2 accepts the request into a partnership and uses restrictive foreign-key semantics so retained acceptance evidence cannot silently lose its replay identity.
 
 The attempt ledger supports:
 
@@ -163,7 +162,7 @@ termination_reason
 version
 ```
 
-`security_context_id` is a unique non-secret namespace identifier created fresh for every partnership. It is not key material and does not imply that S1 E2EE has been provisioned.
+The immutable random partnership ID is the namespace root for partnership-scoped server state, local storage, and later S1 cryptographic context. No second namespace identifier is required.
 
 ### partnership_members
 
@@ -506,7 +505,7 @@ The manifest is operational metadata and must not duplicate deleted private cont
 
 Shared mutable records should contain a version.
 
-Clients send `expectedVersion`.
+Clients send a feature-specific expected version, such as P2 `expectedMetadataVersion` for relationship metadata.
 
 A mutation succeeds only when the stored version still matches. Conflicts return a deterministic conflict response instead of silently overwriting the partner's newer update.
 
