@@ -890,23 +890,141 @@ Implemented and verified by the complete local matrix, repository health, and de
 
 # M1: Messaging Core
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+Branch:
+
+`feat/m1-messaging-core`
+
+Design:
+
+`docs/architecture/M1_MESSAGING_CORE_DESIGN.md`
+
+API contract:
+
+`docs/api/M1_MESSAGING_API.md`
+
+Migration ownership:
+
+- `0011_messaging_core_runtime.sql`
+- `0012_messaging_interaction_runtime.sql`
+
+R1 reserves migrations 0013 and 0014.
 
 ## Scope
 
-- conversation creation
+- one primary conversation per current partnership
 - text messaging
 - replies
 - stable IDs
-- server sequence
-- idempotency
-- edits
+- deterministic server sequence
+- idempotent sends
+- 30-minute edits
 - deletion tombstones
 - reactions
-- read receipts
+- delivery and read receipts
 - typing indicators
-- presence
+- online and last-seen state
 - shared nicknames
+- exact P3 breakup and account-deletion integration
+- cross-partnership isolation
+
+M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, IndexedDB offline queues, reconnect gap repair, and physical-device lifecycle acceptance belong to M2.
+
+## Refined architecture decisions
+
+- a primary conversation is created transactionally with future partnership formation and backfilled for current partnerships
+- message ordering uses the existing monotonic per-conversation server sequence
+- send idempotency uses the existing sender/conversation idempotency uniqueness plus a request fingerprint
+- breakup initiation snapshots the last committed message sequence as `message_freeze_sequence`
+- pre-breakup freeze uses sequence cutoff first and timestamp fallback only for legacy breakup rows
+- pre-S1 development plaintext is stored only in explicitly named plaintext fields and is never mislabeled as ciphertext
+- edit history is purged when a message is deleted
+- read and delivery state use monotonic conversation-member high-water marks
+- typing is short-lived transient state
+- presence stores only the current snapshot, not history
+- nickname metadata is partnership-scoped and versioned
+- final dissolution synchronously removes authorization and destructive cleanup removes conversation and nickname content
+- no M1 operational metadata may duplicate private message content
+
+## Implementation sequence
+
+### M1-A Domain refinement and contracts
+
+- sequence-based breakup message freeze
+- legacy timestamp fallback
+- message/reaction/nickname contracts
+- pagination, receipt, presence, and typing contracts
+
+### M1-B Migrations and repositories
+
+- migration 0011 messaging core runtime
+- migration 0012 messaging interaction runtime
+- primary conversation provisioning
+- message sequencing/idempotency repositories
+- edit versions and tombstones
+- reactions
+- receipts
+- nicknames
+- presence
+- typing
+- deletion integration
+
+### M1-C Core read and send API
+
+- current conversation projection
+- bounded sequence pagination
+- send and reply
+- retry replay
+- receipt acknowledgement
+
+### M1-D Message mutation API
+
+- edit
+- delete
+- reactions
+- exact 30-minute boundary
+- breakup sequence freeze
+
+### M1-E Shared chat interaction
+
+- nicknames
+- presence
+- typing
+- compact interaction state
+
+### M1-F Browser core
+
+- chat history
+- composer
+- replies
+- edit/delete
+- reactions
+- delivery/read state
+- typing/presence
+- nickname UI
+- lifecycle-aware controls
+
+### M1-G Lifecycle, deletion, race, and security hardening
+
+- send versus breakup
+- send versus account deletion
+- mutation versus breakup
+- final dissolution races
+- deterministic concurrent ordering
+- deletion proof
+- cross-partnership denial
+- private-content non-duplication guards
+
+### M1-H Closure harness and documentation
+
+- `test:messaging-core`
+- `test:m1:security`
+- `test:m1:postgres`
+- `test:m1:local`
+- full health
+- dependency audit
+- repo-wide documentation closure from executed evidence
 
 ## Acceptance gates
 
@@ -928,6 +1046,8 @@ Status: PLANNED
 - [ ] nickname changes remain allowed during breakup_pending
 - [ ] cross-partnership message access tests fail closed
 - [ ] API and security regression tests pass
+
+M1 remains IN_PROGRESS until every gate above is supported by executed evidence.
 
 # M2: Realtime and Offline Reliability
 

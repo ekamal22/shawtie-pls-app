@@ -121,6 +121,8 @@ Current epic status:
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
 - P1 Discovery and Partner Requests: DONE. All 14 acceptance gates are closed. Migration 0008 applies as part of an eight-migration clean run with database invariants green; `npm run test:p1:local` passes the disposable PostgreSQL/API/worker matrix 16/16 with `P1_LOCAL_POSTGRES_PASS`; the final full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4; Prettier, ESLint, dependency checks, typecheck, and production builds are green; and `npm audit --audit-level=high` reports 0 vulnerabilities.
 - P2 Partnership Formation and Relationship Date: DONE. All 11 acceptance gates are closed. The P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. The matrix proves explicit and reciprocal formation, accepted-request replay linkage, deterministic locking, incompatible-request invalidation, expiry-action handling, one-partner occupancy races, relationship-date version and generation separation, other-partner notification isolation, notification snapshot pagination, and P1 behavior in real `paired` mode. The standalone historical `test:p1:local` harness remains request-only. Full repository health and `npm audit --audit-level=high` are green. Migration 0008 remains byte-for-byte unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`.
+- M1 Messaging Core: IN_PROGRESS on `feat/m1-messaging-core`. The refined architecture and API contract are committed on the branch; runtime implementation and acceptance evidence remain pending. M1 owns migrations 0011 and 0012 and preserves the verified P3 lifecycle/capability boundary.
+- R1 Relationship Space: parallel branch reserved from the same verified baseline; M1 does not consume R1 migrations 0013 or 0014.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -159,12 +161,17 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 A1, P1, P2, and P3 are complete and merged into the verified mainline.
 
-1. begin M1 Messaging Core from the latest `main` containing verified P3
-2. begin R1 Relationship Space from that same verified mainline when R1 implementation starts
-3. allow M1 and R1 to progress in parallel only with explicitly coordinated schema and API changes
-4. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
-5. begin M2 only after verified M1 is merged to main
-6. keep V1 hosted verification separate until GitHub Actions capacity returns
+M1 Messaging Core design is complete on `feat/m1-messaging-core`; implementation is next. R1 may continue in parallel on its separate branch.
+
+1. implement M1-A domain refinement and contracts
+2. implement migrations 0011 and 0012 plus messaging repositories
+3. implement send/read, mutation, interaction, and browser slices
+4. run the complete M1 lifecycle/race/security/deletion matrix
+5. close M1 only from `test:m1:local`, full health, and dependency-audit evidence
+6. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
+7. keep M1 changes out of R1-owned migrations 0013 and 0014
+8. begin M2 only after verified M1 is merged to main
+9. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 

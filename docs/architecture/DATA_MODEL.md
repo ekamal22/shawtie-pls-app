@@ -22,6 +22,8 @@ P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and ve
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
+M1 reserves forward-only migrations 0011 and 0012 on `feat/m1-messaging-core`. The design refines the existing `conversations`, `messages`, `message_versions`, `message_reactions`, and breakup-process substrate, and adds compact receipt/nickname/presence/typing state. These M1 migrations are design targets until their source and disposable-PostgreSQL evidence are committed. R1 separately reserves migrations 0013 and 0014.
+
 ## Identifier policy
 
 Use immutable random identifiers for externally referenced records.

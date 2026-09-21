@@ -494,3 +494,48 @@ Stable-release evidence must combine:
 - security regression
 - browser E2E
 - physical-device checks for mobile-critical flows
+
+## M1 Messaging Core verification
+
+M1 uses a dedicated disposable PostgreSQL closure harness.
+
+Planned commands:
+
+~~~text
+npm run test:messaging-core
+npm run test:m1:security
+npm run test:m1:postgres
+npm run test:m1:local
+npm run health
+npm audit --audit-level=high
+~~~
+
+The M1 PostgreSQL matrix must include:
+
+- migrations 0001 through 0012 from zero
+- database invariants
+- P1/P2/P3 regression suites
+- primary-conversation provisioning
+- send idempotency and request-fingerprint mismatch
+- deterministic concurrent server sequencing
+- same-conversation reply enforcement
+- exact 30-minute edit boundary
+- tombstone deletion and historical-version content removal
+- reaction add/change/remove
+- default and add-emoji paths
+- monotonic delivered/read high-water marks
+- typing expiry
+- presence privacy
+- nickname version conflicts
+- breakup sequence-freeze behavior
+- send versus breakup initiation
+- send versus account deletion
+- final dissolution versus message mutation
+- account recovery preserving authorized conversation state
+- cross-partnership conversation/message guessing denial
+- final-dissolution cleanup
+- permanent account-deletion presence cleanup
+- security guards proving private message content is absent from logs, lifecycle events, notifications, durable work, and idempotency metadata
+
+M1 does not require physical Redmi acceptance. Physical Android validation begins at M2.
+

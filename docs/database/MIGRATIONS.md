@@ -213,3 +213,24 @@ The repository now includes:
 - `packages/db/sql/claim-scheduled-actions.sql`
 
 These artifacts define the repeatable PostgreSQL verification path. Automated runtime and concurrency tests under `packages/testkit/tests` and `apps/worker/tests` pass locally through `npm run test:f2:local`.
+
+## M1 migration reservation
+
+The parallel M1 and R1 milestone branches use non-overlapping forward-only migration ranges.
+
+M1 owns:
+
+- `0011_messaging_core_runtime.sql`
+- `0012_messaging_interaction_runtime.sql`
+
+R1 reserves:
+
+- `0013`
+- `0014`
+
+M1 migration 0011 is designed to refine the existing conversation/message substrate without rewriting migrations 0001 through 0010. Its planned responsibilities include primary-conversation backfill/provisioning, exact breakup message-freeze sequence capture, explicit pre-S1 development message/reaction payload fields, message content-versioning support, idempotency fingerprints, and reaction uniqueness/content-removal constraints.
+
+M1 migration 0012 is designed for compact interaction state: conversation-member delivery/read high-water marks, partnership chat nicknames, current presence snapshots, and short-lived typing state.
+
+Neither migration is implemented or verified yet. M1 closure requires migrations 0001 through 0012 to apply from zero against disposable PostgreSQL 16 with database invariants green.
+
