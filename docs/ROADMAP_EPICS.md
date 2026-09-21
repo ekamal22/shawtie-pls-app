@@ -562,7 +562,7 @@ The refined architecture and implementation sequence are defined in:
 
 P1 preserves Architecture Baseline 1.0 and builds on F2 plus the refined A1 account/session/security substrate.
 
-The second-pass refinement adds create idempotency, separate abuse-rate-limit transactions, pair locking for cancel/decline, cursor pagination, cross-epic invalidation hooks, migration backfill rules, attempt retention, and fail-closed production gating until P2 formation is wired.
+The second-pass refinement adds create idempotency, separate abuse-rate-limit transactions, pair locking for cancel/decline, cursor pagination, cross-epic invalidation hooks, migration backfill rules, attempt retention, fail-closed production gating until P2 formation is wired, and the manually entered relationship-date handoff required for reciprocal formation.
 
 A1 dependencies are complete, so P1 runtime implementation may begin now. No P1 acceptance gate is checked from design work alone.
 
@@ -646,6 +646,7 @@ A1 dependencies are complete, so P1 runtime implementation may begin now. No P1 
 - one-hour post-decline cooldown
 - multiple incoming requests
 - reciprocal request auto-pair trigger
+- manually entered request relationship date for P2 formation
 - abuse controls
 
 ## Acceptance gates

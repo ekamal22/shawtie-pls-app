@@ -342,6 +342,7 @@ Implement:
 - three requests per recipient per rolling month
 - one-hour post-decline cooldown
 - multiple incoming requests
+- manually entered relationship date on every request
 - reciprocal request detection
 - active-block enforcement
 - abuse controls
