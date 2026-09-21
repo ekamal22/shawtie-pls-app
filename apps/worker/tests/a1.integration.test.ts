@@ -104,6 +104,13 @@ test("A1 auth email outbox derives code without storing raw code", async () => {
     assert.equal(fake.messages.length, 1);
     assert.equal(fake.messages[0]?.parameters.code, code);
 
+    const outboxPayload = await database.pool.query<{ payload: unknown }>(
+      "SELECT payload FROM outbox_events WHERE aggregate_id = $1 AND event_type = 'auth.email_challenge' LIMIT 1",
+      [challengeId],
+    );
+    assert.equal(JSON.stringify(outboxPayload.rows[0]?.payload).includes(code), false);
+    assert.deepEqual(outboxPayload.rows[0]?.payload, { challengeId });
+
     const columns = await database.pool.query<{ column_name: string }>(
       `SELECT column_name FROM information_schema.columns
        WHERE table_name = 'email_verifications' AND column_name LIKE '%code%'`,
