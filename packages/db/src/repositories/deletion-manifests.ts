@@ -87,6 +87,30 @@ export async function createDeletionManifest(
   }
 }
 
+
+export async function createPartnershipDeletionManifestIfAbsent(
+  executor: QueryExecutor,
+  input: CreateDeletionManifest,
+): Promise<string | null> {
+  if (input.subjectType !== "partnership") {
+    throw new Error("Partnership deletion manifest requires partnership subject");
+  }
+  const created = await executor.query<{ id: string }>(
+    "INSERT INTO deletion_manifests (id, subject_type, subject_id, reason, status, access_revoked_at) VALUES ($1,$2,$3,$4,'pending',$5) ON CONFLICT (subject_type, subject_id) WHERE subject_type = 'partnership' DO NOTHING RETURNING id",
+    [input.id, input.subjectType, input.subjectId, input.reason, input.accessRevokedAt],
+  );
+  const manifestId = created.rows[0]?.id ?? null;
+  if (!manifestId) return null;
+
+  for (const target of input.targets) {
+    await executor.query(
+      "INSERT INTO deletion_targets (id, manifest_id, target_type, target_key) VALUES ($1,$2,$3,$4)",
+      [target.id, manifestId, target.targetType, target.targetKey],
+    );
+  }
+  return manifestId;
+}
+
 export async function claimDeletionTargets(
   executor: QueryExecutor,
   batchSize: number,

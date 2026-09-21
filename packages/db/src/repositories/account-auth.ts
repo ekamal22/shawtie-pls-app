@@ -1251,6 +1251,8 @@ export async function getCurrentPartnershipForAccount(
        ON bp.partnership_id = p.id
       AND bp.restored_at IS NULL
       AND bp.dissolved_at IS NULL
+      AND bp.cancelled_at IS NULL
+      AND bp.superseded_at IS NULL
      WHERE self.account_id = $1
        AND self.released_at IS NULL
        AND p.lifecycle_state IN ('active', 'breakup_pending')
@@ -1267,84 +1269,6 @@ export async function getCurrentPartnershipForAccount(
         otherAccountId: row.other_account_id,
       }
     : null;
-}
-
-export async function finalizePartnershipForAccountDeletion(
-  executor: QueryExecutor,
-  input: {
-    partnershipId: string;
-    deletingAccountId: string;
-    remainingAccountId: string;
-    at: Date;
-    breakupDeadline: Date | null;
-  },
-): Promise<"breakup" | "partner_account_deleted"> {
-  const breakupWins =
-    input.breakupDeadline !== null && input.breakupDeadline.getTime() <= input.at.getTime();
-  const reason = breakupWins ? "breakup" : "partner_account_deleted";
-
-  await executor.query(
-    `UPDATE partnerships
-     SET lifecycle_state = 'terminated',
-         terminated_at = $2,
-         termination_reason = $3,
-         version = version + 1,
-         generation = generation + 1,
-         updated_at = $2
-     WHERE id = $1 AND lifecycle_state <> 'terminated'`,
-    [input.partnershipId, input.at, reason],
-  );
-
-  await executor.query(
-    `UPDATE partnership_members
-     SET released_at = COALESCE(released_at, $2)
-     WHERE partnership_id = $1 AND released_at IS NULL`,
-    [input.partnershipId, input.at],
-  );
-
-  if (breakupWins) {
-    await executor.query(
-      `UPDATE breakup_processes
-       SET dissolved_at = COALESCE(dissolved_at, $2)
-       WHERE partnership_id = $1
-         AND restored_at IS NULL
-         AND dissolved_at IS NULL`,
-      [input.partnershipId, input.at],
-    );
-    for (const accountId of [input.deletingAccountId, input.remainingAccountId]) {
-      await executor.query(
-        `INSERT INTO account_partner_eligibility (
-           id, account_id, source_partnership_id, reason, created_at, eligible_at
-         ) VALUES (
-           md5($1::uuid::text || $2::uuid::text || $3::timestamptz::text || 'breakup_dissolution')::uuid,
-           $1::uuid,
-           $2::uuid,
-           'breakup_dissolution',
-           $3::timestamptz,
-           $3::timestamptz + interval '3 months'
-         )
-         ON CONFLICT (account_id) WHERE resolved_at IS NULL DO NOTHING`,
-        [accountId, input.partnershipId, input.at],
-      );
-    }
-  } else {
-    await executor.query(
-      `INSERT INTO account_partner_eligibility (
-         id, account_id, source_partnership_id, reason, created_at, eligible_at
-       ) VALUES (
-         md5($1::uuid::text || $2::uuid::text || $3::timestamptz::text || 'partner_account_deleted')::uuid,
-         $1::uuid,
-         $2::uuid,
-         'partner_account_deleted',
-         $3::timestamptz,
-         $3::timestamptz + interval '1 month'
-       )
-       ON CONFLICT (account_id) WHERE resolved_at IS NULL DO NOTHING`,
-      [input.remainingAccountId, input.partnershipId, input.at],
-    );
-  }
-
-  return reason;
 }
 
 export async function getAccountDeletionGeneration(

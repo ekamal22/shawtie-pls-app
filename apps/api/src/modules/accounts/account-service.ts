@@ -19,6 +19,7 @@ import {
   getCurrentPartnershipForAccount,
   getPasswordHash,
   insertAccount,
+  insertAccountNotification,
   insertAccountProfile,
   insertCurrentEmail,
   insertEmailChallenge,
@@ -1000,11 +1001,40 @@ export class AccountService {
   }
 
   async requestDeletion(auth: AuthContext): Promise<void> {
+    const initialPartnership = await getCurrentPartnershipForAccount(
+      this.database.pool,
+      auth.session.accountId,
+    );
+
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
+      const lockIds = initialPartnership
+        ? [auth.session.accountId, initialPartnership.otherAccountId]
+        : [auth.session.accountId];
+      const lockedAccounts = await lockAccounts(transaction, lockIds);
+      if (lockedAccounts.length !== lockIds.length) {
+        throw new ApiError(409, "ACCOUNT_LOCKED");
+      }
+
       const locked = await lockAccountForProfileMutation(transaction, auth.session.accountId);
       await this.#assertSession(transaction, auth);
       if (!locked || locked.status !== "active") throw new ApiError(409, "ACCOUNT_LOCKED");
+
+      const currentPartnership = await getCurrentPartnershipForAccount(
+        transaction,
+        auth.session.accountId,
+      );
+      if (
+        initialPartnership &&
+        currentPartnership &&
+        (
+          currentPartnership.partnershipId !== initialPartnership.partnershipId ||
+          currentPartnership.otherAccountId !== initialPartnership.otherAccountId
+        )
+      ) {
+        throw new ApiError(409, "ACCOUNT_LOCKED");
+      }
+
       const currentGeneration = await getAccountDeletionGeneration(
         transaction,
         auth.session.accountId,
@@ -1025,36 +1055,47 @@ export class AccountService {
         "account_unavailable",
       );
       await revokeAllSessionsForAccount(transaction, auth.session.accountId, now);
-      const partnership = await getCurrentPartnershipForAccount(
-        transaction,
-        auth.session.accountId,
-      );
-      if (partnership) {
+
+      if (currentPartnership) {
         await appendLifecycleEvent(transaction, {
           id: randomUUID(),
-          partnershipId: partnership.partnershipId,
+          partnershipId: currentPartnership.partnershipId,
           actorAccountId: auth.session.accountId,
           eventType: "account_deletion_started",
-          aggregateVersion: partnership.generation,
+          aggregateVersion: currentPartnership.generation,
           metadata: { generation: Number(generation), status: "deletion_pending" },
         });
-      }
-      if (
-        partnership?.lifecycleState === "breakup_pending" &&
-        partnership.breakupFinalDeadline &&
-        partnership.breakupFinalDeadline.getTime() < recoverUntil.getTime()
-      ) {
-        await insertScheduledAction(transaction, {
+
+        await insertAccountNotification(transaction, {
           id: randomUUID(),
-          actionType: "account_deletion_breakup_precedence_finalize",
-          aggregateType: "account",
-          aggregateId: auth.session.accountId,
-          executeAt: partnership.breakupFinalDeadline,
-          expectedGeneration: generation,
-          deduplicationKey: `account-deletion-breakup-precedence:${auth.session.accountId}:${partnership.partnershipId}:${generation}`,
-          payload: { partnershipId: partnership.partnershipId },
-          payloadVersion: 1,
+          recipientAccountId: currentPartnership.otherAccountId,
+          actorAccountId: auth.session.accountId,
+          partnershipId: currentPartnership.partnershipId,
+          eventType: "partner_account_deletion_started",
+          deduplicationKey:
+            "partner-account-deletion-started:" +
+            currentPartnership.partnershipId +
+            ":" +
+            generation +
+            ":" +
+            currentPartnership.otherAccountId,
+          createdAt: now,
         });
+
+        const partnerProfile = await getAccountProfile(
+          transaction,
+          currentPartnership.otherAccountId,
+        );
+        if (partnerProfile) {
+          await this.#queueSecurityEmail(
+            transaction,
+            currentPartnership.otherAccountId,
+            partnerProfile.email,
+            "partner_account_deletion_started",
+            now,
+            { deadline: recoverUntil.toISOString() },
+          );
+        }
       }
 
       await insertScheduledAction(transaction, {
@@ -1064,7 +1105,7 @@ export class AccountService {
         aggregateId: auth.session.accountId,
         executeAt: recoverUntil,
         expectedGeneration: generation,
-        deduplicationKey: `account-deletion-finalize:${auth.session.accountId}:${generation}`,
+        deduplicationKey: "account-deletion-finalize:" + auth.session.accountId + ":" + generation,
         payload: {},
         payloadVersion: 1,
       });
@@ -1151,9 +1192,16 @@ export class AccountService {
     if (!account || account.status !== "deletion_pending") {
       throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
     }
+    const initialPartnership = await getCurrentPartnershipForAccount(
+      this.database.pool,
+      account.accountId,
+    );
     const decision = await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      await lockAccounts(transaction, [account.accountId]);
+      const lockIds = initialPartnership
+        ? [account.accountId, initialPartnership.otherAccountId]
+        : [account.accountId];
+      await lockAccounts(transaction, lockIds);
       const challenge = await lockActiveChallengeForAccount(
         transaction,
         account.accountId,
@@ -1162,8 +1210,9 @@ export class AccountService {
       if (!challenge) return { ok: false as const, code: "EMAIL_CHALLENGE_INVALID" };
       const verification = this.#verifyChallenge(challenge, input.code, now);
       if (verification !== "ok") {
-        if (verification === "invalid")
+        if (verification === "invalid") {
           await recordChallengeFailure(transaction, challenge.id, now);
+        }
         return {
           ok: false as const,
           code: verification === "expired" ? "EMAIL_CHALLENGE_EXPIRED" : "EMAIL_CHALLENGE_INVALID",
@@ -1178,6 +1227,34 @@ export class AccountService {
         eventType: "account_recovered",
         at: now,
       });
+
+      const currentPartnership = await getCurrentPartnershipForAccount(
+        transaction,
+        account.accountId,
+      );
+      if (currentPartnership) {
+        await appendLifecycleEvent(transaction, {
+          id: randomUUID(),
+          partnershipId: currentPartnership.partnershipId,
+          actorAccountId: account.accountId,
+          eventType: "account_recovered",
+          aggregateVersion: currentPartnership.generation,
+          metadata: { status: currentPartnership.lifecycleState },
+        });
+        await insertAccountNotification(transaction, {
+          id: randomUUID(),
+          recipientAccountId: currentPartnership.otherAccountId,
+          actorAccountId: account.accountId,
+          partnershipId: currentPartnership.partnershipId,
+          eventType: "partner_account_recovered",
+          deduplicationKey:
+            "partner-account-recovered:" +
+            currentPartnership.partnershipId +
+            ":" +
+            account.accountId,
+          createdAt: now,
+        });
+      }
       return { ok: true as const };
     });
     if (!decision.ok) throw new ApiError(409, decision.code);
@@ -1226,6 +1303,7 @@ export class AccountService {
     destination: string,
     template: string,
     now: Date,
+    parameters: Readonly<Record<string, string | number | boolean | null>> = {},
   ): Promise<void> {
     const deliveryId = randomUUID();
     await insertSecurityEmailDelivery(transaction, {
@@ -1233,6 +1311,7 @@ export class AccountService {
       accountId,
       destinationEmail: destination,
       template,
+      parameters,
       expiresAt: addMilliseconds(now, 7 * DAY),
       at: now,
     });
