@@ -60,7 +60,7 @@ export const accountDeletionFinalizeHandler: ScheduledActionHandler = {
       }
       const breakupWins = Boolean(
         lifecycle.breakup &&
-          lifecycle.breakup.finalDeadline.getTime() <= deletion.recoverUntil.getTime(),
+        lifecycle.breakup.finalDeadline.getTime() <= deletion.recoverUntil.getTime(),
       );
       await dissolvePartnership({
         transaction,

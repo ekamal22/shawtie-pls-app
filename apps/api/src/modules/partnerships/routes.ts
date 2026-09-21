@@ -103,11 +103,7 @@ export function registerPartnershipRoutes(
     const params = parseAtBoundary(partnershipIdParamsSchema, request.params);
     parseAtBoundary(partnershipLifecycleMutationBodySchema, request.body);
     privateNoStore(reply);
-    return service.blockFormerPartner(
-      auth,
-      params.partnershipId,
-      idempotencyKey(request.headers),
-    );
+    return service.blockFormerPartner(auth, params.partnershipId, idempotencyKey(request.headers));
   });
 
   app.delete("/api/v1/partnerships/:partnershipId/block", async (request, reply) => {

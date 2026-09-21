@@ -200,12 +200,7 @@ export async function markBreakupCancelled(
 ): Promise<bigint | null> {
   const breakup = await executor.query(
     "UPDATE breakup_processes SET cancelled_at = $3 WHERE id = $1 AND partnership_id = $2 AND generation = $4 AND restored_at IS NULL AND dissolved_at IS NULL AND cancelled_at IS NULL AND superseded_at IS NULL",
-    [
-      input.breakupId,
-      input.partnershipId,
-      input.cancelledAt,
-      input.expectedGeneration.toString(),
-    ],
+    [input.breakupId, input.partnershipId, input.cancelledAt, input.expectedGeneration.toString()],
   );
   if (breakup.rowCount !== 1) return null;
   const result = await executor.query<{ generation: string | number | bigint }>(
@@ -276,12 +271,7 @@ export async function restorePartnership(
 ): Promise<bigint | null> {
   const breakup = await executor.query(
     "UPDATE breakup_processes SET restored_at = $3 WHERE id = $1 AND partnership_id = $2 AND generation = $4 AND restored_at IS NULL AND dissolved_at IS NULL AND cancelled_at IS NULL AND superseded_at IS NULL",
-    [
-      input.breakupId,
-      input.partnershipId,
-      input.restoredAt,
-      input.expectedGeneration.toString(),
-    ],
+    [input.breakupId, input.partnershipId, input.restoredAt, input.expectedGeneration.toString()],
   );
   if (breakup.rowCount !== 1) return null;
   const result = await executor.query<{ generation: string | number | bigint }>(
@@ -353,14 +343,7 @@ export async function insertPartnerCooldown(
   const interval = input.reason === "breakup_dissolution" ? "3 months" : "1 month";
   const result = await executor.query<{ eligible_at: Date }>(
     "INSERT INTO account_partner_eligibility (id, account_id, source_partnership_id, reason, created_at, eligible_at) VALUES ($1,$2,$3,$4,$5,$5::timestamptz + $6::interval) RETURNING eligible_at",
-    [
-      input.id,
-      input.accountId,
-      input.sourcePartnershipId,
-      input.reason,
-      input.createdAt,
-      interval,
-    ],
+    [input.id, input.accountId, input.sourcePartnershipId, input.reason, input.createdAt, interval],
   );
   const eligibleAt = result.rows[0]?.eligible_at;
   if (!eligibleAt) throw new Error("Partner cooldown was not created");
@@ -573,7 +556,9 @@ export async function deletePartnershipRelationalContent(
   executor: QueryExecutor,
   partnershipId: string,
 ): Promise<void> {
-  await executor.query("DELETE FROM relationship_events WHERE partnership_id = $1", [partnershipId]);
+  await executor.query("DELETE FROM relationship_events WHERE partnership_id = $1", [
+    partnershipId,
+  ]);
   await executor.query("DELETE FROM relationship_items WHERE partnership_id = $1", [partnershipId]);
   await executor.query("DELETE FROM media_objects WHERE partnership_id = $1", [partnershipId]);
   await executor.query("DELETE FROM call_sessions WHERE partnership_id = $1", [partnershipId]);

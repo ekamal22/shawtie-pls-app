@@ -236,12 +236,10 @@ export function PartnershipPanel() {
           <div className="lifecycle-card">
             <strong>Breakup in progress</strong>
             <p>
-              {breakup.initiatedBy === "self" ? "You started" : "Your partner started"} this
-              process on {deadlineLabel(breakup.initiatedAt)}.
+              {breakup.initiatedBy === "self" ? "You started" : "Your partner started"} this process
+              on {deadlineLabel(breakup.initiatedAt)}.
             </p>
-            <p className="hint">
-              Current final deadline: {deadlineLabel(breakup.finalDeadline)}
-            </p>
+            <p className="hint">Current final deadline: {deadlineLabel(breakup.finalDeadline)}</p>
             {partnership.capabilities.cancelBreakup ? (
               <button
                 className="secondary"
@@ -267,8 +265,8 @@ export function PartnershipPanel() {
               </button>
             ) : (
               <p className="hint">
-                Restore becomes available after the one-hour cancellation window if the breakup
-                is still pending.
+                Restore becomes available after the one-hour cancellation window if the breakup is
+                still pending.
               </p>
             )}
             {breakup.partnerRestoreIntentAt ? (
@@ -294,9 +292,7 @@ export function PartnershipPanel() {
           className="primary"
           type="button"
           disabled={
-            busy ||
-            !partnership.capabilities.changeRelationshipStartDate ||
-            !relationshipStartDate
+            busy || !partnership.capabilities.changeRelationshipStartDate || !relationshipStartDate
           }
           onClick={() => void updateRelationshipDate()}
         >

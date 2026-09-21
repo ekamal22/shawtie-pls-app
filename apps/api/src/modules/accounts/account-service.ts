@@ -1027,10 +1027,8 @@ export class AccountService {
       if (
         initialPartnership &&
         currentPartnership &&
-        (
-          currentPartnership.partnershipId !== initialPartnership.partnershipId ||
-          currentPartnership.otherAccountId !== initialPartnership.otherAccountId
-        )
+        (currentPartnership.partnershipId !== initialPartnership.partnershipId ||
+          currentPartnership.otherAccountId !== initialPartnership.otherAccountId)
       ) {
         throw new ApiError(409, "ACCOUNT_LOCKED");
       }

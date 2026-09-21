@@ -87,7 +87,6 @@ export async function createDeletionManifest(
   }
 }
 
-
 export async function createPartnershipDeletionManifestIfAbsent(
   executor: QueryExecutor,
   input: CreateDeletionManifest,

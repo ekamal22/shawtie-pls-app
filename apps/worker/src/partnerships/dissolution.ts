@@ -27,9 +27,7 @@ export interface DissolutionResult {
   readonly generation: bigint;
 }
 
-export async function dissolvePartnership(
-  input: DissolutionInput,
-): Promise<DissolutionResult> {
+export async function dissolvePartnership(input: DissolutionInput): Promise<DissolutionResult> {
   const { transaction, lifecycle } = input;
   if (lifecycle.memberIds.length !== 2) {
     throw new Error("Partnership dissolution requires exactly two historical members");
@@ -48,25 +46,13 @@ export async function dissolvePartnership(
     if (!lifecycle.breakup) {
       throw new Error("Breakup dissolution requires an open breakup process");
     }
-    const marked = await markBreakupDissolved(
-      transaction,
-      lifecycle.breakup.id,
-      input.effectiveAt,
-    );
+    const marked = await markBreakupDissolved(transaction, lifecycle.breakup.id, input.effectiveAt);
     if (!marked) throw new Error("Open breakup could not be marked dissolved");
   } else {
-    await markOpenBreakupSuperseded(
-      transaction,
-      lifecycle.partnershipId,
-      input.effectiveAt,
-    );
+    await markOpenBreakupSuperseded(transaction, lifecycle.partnershipId, input.effectiveAt);
   }
 
-  await resolveExpiredPartnerEligibility(
-    transaction,
-    lifecycle.memberIds,
-    input.effectiveAt,
-  );
+  await resolveExpiredPartnerEligibility(transaction, lifecycle.memberIds, input.effectiveAt);
 
   if (input.reason === "breakup") {
     for (const accountId of lifecycle.memberIds) {
@@ -116,10 +102,7 @@ export async function dissolvePartnership(
     id: randomUUID(),
     subjectType: "partnership",
     subjectId: lifecycle.partnershipId,
-    reason:
-      input.reason === "breakup"
-        ? "breakup_dissolution"
-        : "partner_account_deleted",
+    reason: input.reason === "breakup" ? "breakup_dissolution" : "partner_account_deleted",
     accessRevokedAt: input.effectiveAt,
     targets: [
       {
@@ -139,9 +122,7 @@ export async function dissolvePartnership(
     id: randomUUID(),
     partnershipId: lifecycle.partnershipId,
     actorAccountId:
-      input.reason === "partner_account_deleted"
-        ? input.deletingAccountId ?? null
-        : null,
+      input.reason === "partner_account_deleted" ? (input.deletingAccountId ?? null) : null,
     eventType: "partnership_dissolved",
     aggregateVersion: generation,
     metadata: {
@@ -159,20 +140,14 @@ export async function dissolvePartnership(
         partnershipId: lifecycle.partnershipId,
         eventType: "partnership_dissolved",
         deduplicationKey:
-          "partnership-dissolved:" +
-          lifecycle.partnershipId +
-          ":" +
-          generation +
-          ":" +
-          accountId,
+          "partnership-dissolved:" + lifecycle.partnershipId + ":" + generation + ":" + accountId,
         now: input.observedAt,
         emailTemplate: "partnership_dissolved",
         emailParameters: {
           reason: "breakup",
           deadline: input.effectiveAt.toISOString(),
         },
-        emailAccountId:
-          lifecycle.accountDeletion?.accountId === accountId ? null : accountId,
+        emailAccountId: lifecycle.accountDeletion?.accountId === accountId ? null : accountId,
       });
     }
   } else {

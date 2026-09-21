@@ -172,7 +172,6 @@ test("P2 notification response contracts expose routing metadata only", () => {
   );
 });
 
-
 test("P3 lifecycle mutation contracts keep actor, deadlines, and generation server-owned", () => {
   const BREAKUP_ID = "50000000-0000-4000-8000-000000000001";
   assert.equal(
@@ -182,7 +181,10 @@ test("P3 lifecycle mutation contracts keep actor, deadlines, and generation serv
     }).success,
     true,
   );
-  assert.equal(safeParseAtBoundary(partnershipLifecycleMutationBodySchema, undefined).success, true);
+  assert.equal(
+    safeParseAtBoundary(partnershipLifecycleMutationBodySchema, undefined).success,
+    true,
+  );
   assert.equal(
     safeParseAtBoundary(partnershipLifecycleMutationBodySchema, {
       partnerAccountId: ACCOUNT_ID,

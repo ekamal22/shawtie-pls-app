@@ -67,8 +67,8 @@ export function FormerPartnershipsPanel() {
     <section className="panel">
       <h2>Former partnerships</h2>
       <p className="hint">
-        Blocking is private. It prevents discovery, partner requests, and future pairing until
-        you remove it.
+        Blocking is private. It prevents discovery, partner requests, and future pairing until you
+        remove it.
       </p>
       {error ? <p className="banner error">{error}</p> : null}
       <div className="request-list">

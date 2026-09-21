@@ -70,10 +70,7 @@ export async function queueWorkerLifecycleNotice(
   const profile = await getAccountProfile(transaction, input.recipientAccountId);
   if (!profile) return;
   await queueWorkerSecurityEmail(transaction, {
-    accountId:
-      input.emailAccountId === undefined
-        ? input.recipientAccountId
-        : input.emailAccountId,
+    accountId: input.emailAccountId === undefined ? input.recipientAccountId : input.emailAccountId,
     destinationEmail: profile.email,
     template: input.emailTemplate,
     ...(input.emailParameters ? { parameters: input.emailParameters } : {}),

@@ -216,10 +216,7 @@ export class PartnershipService {
       readonly actorAccountId: string | null;
       readonly partnershipId: string;
       readonly eventType:
-        | "breakup_started"
-        | "breakup_cancelled"
-        | "restoration_requested"
-        | "partnership_restored";
+        "breakup_started" | "breakup_cancelled" | "restoration_requested" | "partnership_restored";
       readonly deduplicationKey: string;
       readonly now: Date;
       readonly email: boolean;
@@ -967,12 +964,7 @@ export class PartnershipService {
       });
       if (reservation.responseStatus !== null) return reservation.responseBody;
 
-      await removeFormerPartnerBlock(
-        transaction,
-        auth.session.accountId,
-        partnershipId,
-        now,
-      );
+      await removeFormerPartnerBlock(transaction, auth.session.accountId, partnershipId, now);
       await appendLifecycleEvent(transaction, {
         id: randomUUID(),
         partnershipId,

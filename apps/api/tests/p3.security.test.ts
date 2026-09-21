@@ -5,10 +5,7 @@ import test from "node:test";
 
 test("P3 lifecycle mutation boundary keeps deadlines and generations server-owned", async () => {
   const contracts = await readFile(
-    new URL(
-      "../../../packages/contracts/src/partnerships/lifecycle.ts",
-      import.meta.url,
-    ),
+    new URL("../../../packages/contracts/src/partnerships/lifecycle.ts", import.meta.url),
     "utf8",
   );
   const routes = await readFile(
@@ -25,17 +22,11 @@ test("P3 lifecycle mutation boundary keeps deadlines and generations server-owne
 
 test("P3 uses one canonical dissolution kernel across breakup and account deletion", async () => {
   const breakup = await readFile(
-    new URL(
-      "../../worker/src/partnerships/breakup-finalize-handler.ts",
-      import.meta.url,
-    ),
+    new URL("../../worker/src/partnerships/breakup-finalize-handler.ts", import.meta.url),
     "utf8",
   );
   const deletion = await readFile(
-    new URL(
-      "../../worker/src/auth/account-deletion-finalize-handler.ts",
-      import.meta.url,
-    ),
+    new URL("../../worker/src/auth/account-deletion-finalize-handler.ts", import.meta.url),
     "utf8",
   );
   const precedence = await readFile(
@@ -46,10 +37,7 @@ test("P3 uses one canonical dissolution kernel across breakup and account deleti
     "utf8",
   );
   const accountRepository = await readFile(
-    new URL(
-      "../../../packages/db/src/repositories/account-auth.ts",
-      import.meta.url,
-    ),
+    new URL("../../../packages/db/src/repositories/account-auth.ts", import.meta.url),
     "utf8",
   );
 
@@ -61,30 +49,24 @@ test("P3 uses one canonical dissolution kernel across breakup and account deleti
 
 test("P3 worker serious-event email survives deleting-account auth scrub", async () => {
   const notices = await readFile(
-    new URL(
-      "../../worker/src/partnerships/lifecycle-notices.ts",
-      import.meta.url,
-    ),
+    new URL("../../worker/src/partnerships/lifecycle-notices.ts", import.meta.url),
     "utf8",
   );
   const dissolution = await readFile(
-    new URL(
-      "../../worker/src/partnerships/dissolution.ts",
-      import.meta.url,
-    ),
+    new URL("../../worker/src/partnerships/dissolution.ts", import.meta.url),
     "utf8",
   );
 
   assert.equal(notices.includes("emailAccountId?: string | null"), true);
-  assert.equal(dissolution.includes("lifecycle.accountDeletion?.accountId === accountId ? null"), true);
+  assert.equal(
+    dissolution.includes("lifecycle.accountDeletion?.accountId === accountId ? null"),
+    true,
+  );
 });
 
 test("P3 notification storage remains routing metadata only", async () => {
   const repository = await readFile(
-    new URL(
-      "../../../packages/db/src/repositories/account-notifications.ts",
-      import.meta.url,
-    ),
+    new URL("../../../packages/db/src/repositories/account-notifications.ts", import.meta.url),
     "utf8",
   );
 

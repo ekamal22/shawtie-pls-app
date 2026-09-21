@@ -33,12 +33,7 @@ export const partnershipBreakupDeadlineReminderHandler: ScheduledActionHandler =
         partnershipId,
         eventType: "breakup_deadline_reminder",
         deduplicationKey:
-          "breakup-deadline-reminder:" +
-          breakup.id +
-          ":" +
-          breakup.generation +
-          ":" +
-          accountId,
+          "breakup-deadline-reminder:" + breakup.id + ":" + breakup.generation + ":" + accountId,
         now,
         emailTemplate: "breakup_deadline_reminder",
         emailParameters: { deadline: breakup.finalDeadline.toISOString() },

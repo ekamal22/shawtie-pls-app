@@ -40,10 +40,7 @@ export class NotificationService {
     this.database = database;
   }
 
-  async list(
-    auth: AuthContext,
-    input: NotificationListQuery,
-  ): Promise<NotificationListResponse> {
+  async list(auth: AuthContext, input: NotificationListQuery): Promise<NotificationListResponse> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       let snapshotAt = now;

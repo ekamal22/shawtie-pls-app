@@ -33,10 +33,7 @@ export const partnershipBreakupFinalizeHandler: ScheduledActionHandler = {
     }
 
     const deletion = lifecycle.accountDeletion;
-    if (
-      deletion &&
-      deletion.recoverUntil.getTime() < breakup.finalDeadline.getTime()
-    ) {
+    if (deletion && deletion.recoverUntil.getTime() < breakup.finalDeadline.getTime()) {
       return;
     }
 
