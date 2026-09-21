@@ -2,10 +2,10 @@ import { spawnSync } from "node:child_process";
 
 const image = process.env.SHAWTIE_TEST_POSTGRES_IMAGE ?? "postgres:16-alpine";
 const requestedPort = process.env.SHAWTIE_TEST_POSTGRES_PORT;
-const containerName = `shawtie-p1-postgres-${process.pid}`;
+const containerName = `shawtie-p2-postgres-${process.pid}`;
 const user = "shawtie_test";
 const password = "shawtie_test";
-const database = "shawtie_p1_test";
+const database = "shawtie_p2_test";
 
 function run(command, args, options = {}) {
   return spawnSync(command, args, {
@@ -60,7 +60,7 @@ let started = false;
 
 try {
   console.log(
-    "P1_LOCAL_POSTGRES_START image="
+    "P2_LOCAL_POSTGRES_START image="
       + image
       + (requestedPort ? " port=" + requestedPort : " port=dynamic"),
   );
@@ -78,7 +78,7 @@ try {
       "--name",
       containerName,
       "--label",
-      "com.shawtie.role=p1-disposable-postgres",
+      "com.shawtie.role=p2-disposable-postgres",
       "-e",
       "POSTGRES_USER=" + user,
       "-e",
@@ -141,18 +141,18 @@ try {
   const databaseUrl =
     `postgresql://${user}:${password}@127.0.0.1:${port}/${database}`;
 
-  console.log("P1_LOCAL_POSTGRES_READY port=" + port);
+  console.log("P2_LOCAL_POSTGRES_READY port=" + port);
 
   const npmCli = process.env.npm_execpath;
   if (!npmCli) {
     throw new Error(
-      "npm_execpath is unavailable. Run this command through npm: npm run test:p1:local",
+      "npm_execpath is unavailable. Run this command through npm: npm run test:p2:local",
     );
   }
 
   const testResult = run(
     process.execPath,
-    [npmCli, "run", "test:p1:postgres"],
+    [npmCli, "run", "test:p2:postgres"],
     {
       stdio: "inherit",
       env: {
@@ -172,11 +172,11 @@ try {
   if (testResult.error) throw testResult.error;
   if (testResult.status !== 0) {
     throw new Error(
-      "P1 PostgreSQL suite exited with status " + testResult.status,
+      "P2 PostgreSQL suite exited with status " + testResult.status,
     );
   }
 
-  console.log("P1_LOCAL_POSTGRES_PASS");
+  console.log("P2_LOCAL_POSTGRES_PASS");
 } finally {
   if (started) {
     const cleanup = run(docker, ["stop", "--time", "2", containerName], {
@@ -184,7 +184,7 @@ try {
     });
 
     if (cleanup.error || cleanup.status !== 0) {
-      console.error("P1_LOCAL_POSTGRES_CLEANUP_WARNING", {
+      console.error("P2_LOCAL_POSTGRES_CLEANUP_WARNING", {
         containerName,
       });
     }

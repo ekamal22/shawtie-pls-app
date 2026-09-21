@@ -131,7 +131,7 @@ test("P2 relationship-date real change enforces metadata version and increments 
   );
 });
 
-test("P2 relationship-date capability follows active, breakup, deletion, and termination state", () => {
+test("P2 relationship-date capability follows lifecycle state", () => {
   const active: CapabilityContext = {
     actor: activeAccount(A),
     partnership: activePartnership(),

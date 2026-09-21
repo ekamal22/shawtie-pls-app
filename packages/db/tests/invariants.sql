@@ -470,4 +470,102 @@ BEGIN
 END;
 $$;
 
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO partner_requests (
+      id, sender_account_id, recipient_account_id, status, created_at, expires_at,
+      accepted_at, relationship_start_date
+    ) VALUES (
+      '75000000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000003',
+      'accepted',
+      TIMESTAMPTZ '2026-01-01 00:00:00+00',
+      TIMESTAMPTZ '2026-01-08 00:00:00+00',
+      TIMESTAMPTZ '2026-01-02 00:00:00+00',
+      DATE '2025-01-01'
+    );
+    RAISE EXCEPTION 'expected accepted request partnership linkage violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO partner_requests (
+  id, sender_account_id, recipient_account_id, status, created_at, expires_at,
+  accepted_at, relationship_start_date, accepted_partnership_id
+) VALUES (
+  '75000000-0000-4000-8000-000000000002',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000003',
+  'accepted',
+  TIMESTAMPTZ '2026-01-01 00:00:00+00',
+  TIMESTAMPTZ '2026-01-08 00:00:00+00',
+  TIMESTAMPTZ '2026-01-02 00:00:00+00',
+  DATE '2025-01-01',
+  '20000000-0000-0000-0000-000000000001'
+);
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO partner_requests (
+      id, sender_account_id, recipient_account_id, status, created_at, expires_at,
+      cancelled_at, relationship_start_date, accepted_partnership_id
+    ) VALUES (
+      '75000000-0000-4000-8000-000000000003',
+      '00000000-0000-0000-0000-000000000003',
+      '00000000-0000-0000-0000-000000000002',
+      'cancelled',
+      TIMESTAMPTZ '2026-01-01 00:00:00+00',
+      TIMESTAMPTZ '2026-01-08 00:00:00+00',
+      TIMESTAMPTZ '2026-01-02 00:00:00+00',
+      DATE '2025-01-01',
+      '20000000-0000-0000-0000-000000000001'
+    );
+    RAISE EXCEPTION 'expected non-accepted request partnership linkage violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO account_notifications (
+  id, recipient_account_id, actor_account_id, partnership_id,
+  event_type, deduplication_key, created_at
+) VALUES (
+  '76000000-0000-4000-8000-000000000001',
+  '00000000-0000-0000-0000-000000000003',
+  '00000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  'partnership_formed',
+  'p2-invariant-dedup',
+  TIMESTAMPTZ '2026-01-02 00:00:00+00'
+);
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO account_notifications (
+      id, recipient_account_id, actor_account_id, partnership_id,
+      event_type, deduplication_key, created_at
+    ) VALUES (
+      '76000000-0000-4000-8000-000000000002',
+      '00000000-0000-0000-0000-000000000003',
+      '00000000-0000-0000-0000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      'partnership_formed',
+      'p2-invariant-dedup',
+      TIMESTAMPTZ '2026-01-02 00:01:00+00'
+    );
+    RAISE EXCEPTION 'expected account notification deduplication violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$;
+
 ROLLBACK;

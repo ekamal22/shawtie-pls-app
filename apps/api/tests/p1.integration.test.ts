@@ -23,13 +23,14 @@ function requireDisposableDatabase(): DatabasePool {
 }
 
 const rootKey = Buffer.alloc(32, 7);
+const pairedMode = process.env.PARTNER_REQUEST_MODE === "paired";
 const config: ApiConfig = {
   environment: "test",
   appOrigin: "http://127.0.0.1:4173",
   allowInsecureLoopbackCookies: true,
   trustedProxy: false,
   authKeys: { activeVersion: 1, keys: new Map([[1, rootKey]]) },
-  partnerRequestMode: "request_only_test",
+  partnerRequestMode: pairedMode ? "paired" : "request_only_test",
 };
 
 type App = ReturnType<typeof createApiApplication>;
@@ -362,7 +363,7 @@ test("P1 rolling monthly limit counts successful sends even after cancellation",
   }
 });
 
-test("P1 opposite-direction race emits one reciprocal-ready outcome and no duplicate direction", async () => {
+test("P1 opposite-direction race respects the configured reciprocal formation boundary", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -380,12 +381,22 @@ test("P1 opposite-direction race emits one reciprocal-ready outcome and no dupli
       (aToB.json() as { outcome: string }).outcome,
       (bToA.json() as { outcome: string }).outcome,
     ].sort();
-    assert.deepEqual(outcomes, ["created", "reciprocal_pair_ready"]);
+    assert.deepEqual(
+      outcomes,
+      pairedMode ? ["created", "paired"] : ["created", "reciprocal_pair_ready"],
+    );
 
     const pending = await database.pool.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM partner_requests WHERE status = 'pending'",
     );
-    assert.equal(pending.rows[0]?.count, "2");
+    assert.equal(pending.rows[0]?.count, pairedMode ? "0" : "2");
+
+    if (pairedMode) {
+      const partnerships = await database.pool.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM partnerships",
+      );
+      assert.equal(partnerships.rows[0]?.count, "1");
+    }
   } finally {
     await app.close();
     await closeDatabasePool(database);
