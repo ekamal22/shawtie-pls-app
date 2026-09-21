@@ -35,6 +35,7 @@
     "test:a1:security": "npm run test:accounts",
     "test:a1:local": "node scripts/db/test-a1-local.mjs",
     "test:partner-requests": "node --test packages/domain/tests/partner-requests.test.ts packages/contracts/tests/partner-requests.test.ts",
+    "test:partnership-formation": "node --test packages/domain/tests/partnership-formation.test.ts packages/contracts/tests/partnerships.test.ts",
     "test:p1:postgres": "npm run test:p1:security && npm run db:test:invariants && npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && npm run build --workspace @shawtie/web && node --test --test-concurrency=1 apps/api/tests/p1.integration.test.ts apps/worker/tests/p1.integration.test.ts",
     "test:p1:api": "npm run test:p1:postgres",
     "test:p1:security": "npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run test:partner-requests && node --test apps/api/tests/p1.security.test.ts",

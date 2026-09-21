@@ -55,6 +55,14 @@ export function evaluateCapability(
     return deny("ACCOUNT_LOCKED");
   }
 
+  if (capability === "change_relationship_start_date") {
+    if (ctx.actor.status !== "active") return deny("ACCOUNT_LOCKED");
+    if (!partnership || !isMember(ctx)) return deny("NO_PARTNERSHIP");
+    if (partnership.lifecycle === "terminated") return deny("PARTNERSHIP_TERMINATED");
+    if (partnershipDeletionViewOnly(ctx)) return deny("PARTNERSHIP_METADATA_LOCKED");
+    return ALLOW;
+  }
+
   if (accountLocked(ctx)) return deny("ACCOUNT_LOCKED");
 
   if (capability === "form_partnership") {

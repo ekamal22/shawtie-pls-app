@@ -2,6 +2,8 @@ export * from "./partnership/types.ts";
 export * from "./partnership/time.ts";
 export * from "./partnership/state-machine.ts";
 export * from "./partnership/capabilities.ts";
+export * from "./partnership/formation.ts";
+export * from "./partnership/relationship-date.ts";
 export * from "./partner-request/types.ts";
 export * from "./partner-request/time.ts";
 export * from "./partner-request/eligibility.ts";
