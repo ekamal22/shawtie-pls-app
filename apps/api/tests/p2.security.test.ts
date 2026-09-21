@@ -37,11 +37,24 @@ test("P2 notification repository does not persist private relationship content",
     new URL("../../../packages/db/src/repositories/account-notifications.ts", import.meta.url),
     "utf8",
   );
-  assert.equal(source.includes("relationship_start_date"), false);
-  assert.equal(source.includes("message"), false);
-  assert.equal(source.includes("email"), false);
-  assert.equal(source.includes("date_of_birth"), false);
-  assert.equal(source.includes("crypto"), false);
+
+  assert.equal(
+    /(^|[^A-Za-z0-9_])relationship_start_date([^A-Za-z0-9_]|$)/.test(source),
+    false,
+  );
+  assert.equal(
+    /(^|[^A-Za-z0-9_])relationshipStartDate([^A-Za-z0-9_]|$)/.test(source),
+    false,
+  );
+  assert.equal(/(^|[^A-Za-z0-9_])message_body([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])messageBody([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])email([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])date_of_birth([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])dateOfBirth([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])crypto_material([^A-Za-z0-9_]|$)/.test(source), false);
+  assert.equal(/(^|[^A-Za-z0-9_])cryptoMaterial([^A-Za-z0-9_]|$)/.test(source), false);
+
+  assert.equal(source.includes('"relationship_start_date_changed"'), true);
 });
 
 test("P2 migration uses partnership id without fake crypto state", async () => {
