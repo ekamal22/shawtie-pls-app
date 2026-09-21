@@ -1210,7 +1210,7 @@ Security-rate-limit bucket locks are not part of this rank because they are cons
 
 A1 authentication lookup happens before the P1 business transaction and is not held as a row lock through the business mutation.
 
-Future P2 partnership formation and P3 block creation must lock the same account pair in the same deterministic order.
+The refined P2 partnership-formation path and P3 block creation must lock the same account pair in the same deterministic order.
 
 ## Security and privacy
 
@@ -1339,7 +1339,7 @@ Cover:
 - create at exact one-hour decline cutoff
 - cancel racing expiry
 - decline racing expiry
-- request create racing future P2 partnership formation
+- request create racing P2 partnership formation
 - request create racing future P3 block creation
 - request create racing account deletion
 - cancel or decline racing P2 acceptance
