@@ -590,4 +590,111 @@ BEGIN
 END;
 $$;
 
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO account_partner_eligibility (
+      id, account_id, source_partnership_id, reason, created_at, eligible_at
+    ) VALUES (
+      '77000000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000003',
+      '20000000-0000-0000-0000-000000000001',
+      'breakup_dissolution',
+      TIMESTAMPTZ '2026-01-01 12:00:00+00',
+      TIMESTAMPTZ '2026-03-31 12:00:00+00'
+    );
+    RAISE EXCEPTION 'expected exact breakup cooldown duration violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO partnership_blocks (
+      id, blocker_account_id, blocked_account_id, source_partnership_id, created_at
+    ) VALUES (
+      '77100000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000003',
+      NULL,
+      now()
+    );
+    RAISE EXCEPTION 'expected former-partner block source requirement';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO breakup_processes (
+  id, partnership_id, initiated_by_account_id, initiated_at,
+  initiator_cancel_until, base_deadline, final_deadline, generation, cancelled_at
+) VALUES (
+  '77200000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  TIMESTAMPTZ '2026-02-01 00:00:00+00',
+  TIMESTAMPTZ '2026-02-01 01:00:00+00',
+  TIMESTAMPTZ '2026-02-08 00:00:00+00',
+  TIMESTAMPTZ '2026-02-08 00:00:00+00',
+  2,
+  TIMESTAMPTZ '2026-02-01 00:30:00+00'
+);
+
+DO $
+BEGIN
+  BEGIN
+    UPDATE breakup_processes
+    SET restored_at = TIMESTAMPTZ '2026-02-01 01:30:00+00'
+    WHERE id = '77200000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected breakup terminal exclusivity violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO account_notifications (
+  id, recipient_account_id, actor_account_id, partnership_id,
+  event_type, deduplication_key, created_at
+) VALUES (
+  '77300000-0000-4000-8000-000000000001',
+  '00000000-0000-0000-0000-000000000003',
+  '00000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  'breakup_started',
+  'p3-invariant-event-type',
+  TIMESTAMPTZ '2026-02-01 00:00:00+00'
+);
+
+DO $
+DECLARE
+  terminal_validated boolean;
+  cooldown_validated boolean;
+  block_source_validated boolean;
+BEGIN
+  SELECT convalidated INTO terminal_validated
+  FROM pg_constraint
+  WHERE conname = 'breakup_processes_terminal_exclusive';
+
+  SELECT convalidated INTO cooldown_validated
+  FROM pg_constraint
+  WHERE conname = 'account_partner_eligibility_exact_duration';
+
+  SELECT convalidated INTO block_source_validated
+  FROM pg_constraint
+  WHERE conname = 'partnership_blocks_source_required';
+
+  IF terminal_validated IS DISTINCT FROM false
+     OR cooldown_validated IS DISTINCT FROM false
+     OR block_source_validated IS DISTINCT FROM false THEN
+    RAISE EXCEPTION 'P3 legacy-safe lifecycle constraints must remain NOT VALID';
+  END IF;
+END;
+$;
+
 ROLLBACK;

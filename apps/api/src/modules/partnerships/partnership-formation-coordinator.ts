@@ -12,6 +12,7 @@ import {
   lockPartnerRequestsById,
   markPartnerRequestsAccepted,
   postgresSqlState,
+  resolveExpiredPartnerEligibility,
   type PartnerRequestRecord,
   type QueryExecutor,
 } from "@shawtie/db";
@@ -50,6 +51,7 @@ async function assertFormationEligibility(
   accountIds: readonly [string, string],
   now: Date,
 ): Promise<void> {
+  await resolveExpiredPartnerEligibility(executor, accountIds, now);
   const first = await loadPartnerAccountEligibility(executor, accountIds[0]);
   const second = await loadPartnerAccountEligibility(executor, accountIds[1]);
   if (!first || !second) throw new ApiError(409, "PARTNERSHIP_UNAVAILABLE");
