@@ -189,6 +189,40 @@ npm run test:p1:local
 
 These remain planned until implementation exists.
 
+### P2 partnership formation verification
+
+P2 uses the test architecture in `../architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`.
+
+Required evidence includes:
+
+- manually entered request relationship date and trusted-server future-date rejection
+- explicit acceptance only by the request recipient
+- reciprocal automatic formation in the same P1 transaction
+- accepted-request linkage and lost-response replay
+- deterministic two-account locking
+- occupied-slot database protection under competing formation
+- explicit-accept versus reciprocal-request race
+- incompatible request invalidation
+- fresh partnership and security-context identifiers
+- current partnership read isolation
+- relationship-date expected-version conflict behavior
+- active-only relationship-date mutation capability
+- durable other-partner relationship-date notification
+- notification account isolation and private no-store responses
+- no fake E2EE key or epoch creation before S1
+
+Planned commands:
+
+```text
+npm run test:partnership-formation
+npm run test:p2:postgres
+npm run test:p2:api
+npm run test:p2:security
+npm run test:p2:local
+```
+
+These remain planned until implementation exists.
+
 ### Integration
 
 Exercise API plus PostgreSQL plus provider fakes.

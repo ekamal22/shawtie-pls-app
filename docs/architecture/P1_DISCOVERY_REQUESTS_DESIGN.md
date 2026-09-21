@@ -26,6 +26,7 @@ The refinement closes ambiguity in:
 - production enablement before P2 exists
 - cross-epic request invalidation hooks
 - exact rolling-month boundary counting
+- P2 relationship-start-date handoff for both explicit and reciprocal formation
 - cursor pagination and response caps
 - migration backfill and terminal-shape compatibility
 - invalidation reasons for A1, P2, and P3 integration
@@ -111,6 +112,7 @@ P1 must provide:
 - deterministic race behavior
 - no broad account enumeration
 - repeatable PostgreSQL, API, race, and security verification
+- capture of the manually entered relationship start date required by P2 formation
 
 P1 does not implement:
 
@@ -443,7 +445,10 @@ Add:
 ~~~text
 expired_at timestamptz
 invalidated_reason text
+relationship_start_date date NOT NULL
 ~~~
+
+`relationship_start_date` is the sender's manually entered proposed relationship date. P1 persists it because reciprocal requests may immediately auto-form through P2 without a separate accept screen. P1 validates it against trusted PostgreSQL UTC business date using the shared partnership-domain helper.
 
 Add a terminal-shape constraint.
 
@@ -696,6 +701,7 @@ Each item exposes:
 - requestId
 - direction
 - counterpart safe profile projection
+- relationshipStartDate
 - createdAt
 - expiresAt
 
@@ -716,7 +722,10 @@ Input:
 ~~~text
 recipientAccountId
 expectedUsername
+relationshipStartDate
 ~~~
+
+`relationshipStartDate` is required. It is private request/partnership metadata and is never part of public discovery.
 
 Response may represent:
 
@@ -961,8 +970,12 @@ The internal transaction result may include:
 ReciprocalPairCandidate {
   accountIds sorted
   requestIds sorted
+  triggeringRequestId
+  relationshipStartDate
   observedAt
 }
+
+The relationship date comes from the triggering second request, whose fresh consent completes the reciprocal pair. P2 revalidates it against trusted server date before formation.
 ~~~
 
 No pairing event is placed on an asynchronous queue as the authority for partnership creation.
@@ -972,7 +985,7 @@ When P2 is implemented, the request-creation transaction will pass the reciproca
 P2 then:
 
 - rechecks pair eligibility
-- creates the partnership transactionally
+- creates the partnership transactionally using the triggering request's manually entered relationship start date
 - marks the reciprocal requests accepted
 - invalidates incompatible pending requests
 - creates fresh partnership namespace state
@@ -1394,7 +1407,7 @@ The top-level local command should reuse the disposable PostgreSQL harness patte
 
 1. add partner-request domain types and denial codes
 2. add exact time-boundary helpers
-3. add discovery, cursor, and request contracts
+3. add discovery, cursor, and request contracts, including required relationshipStartDate on request creation
 4. keep the shared security_rate_limit_buckets design aligned with A1
 5. add migration 0008 after 0007 is present
 6. add expired_at and invalidated_reason with forward-safe backfill
@@ -1429,21 +1442,22 @@ Exit gate:
 
 1. stable target accountId plus expectedUsername contract
 2. required create-request idempotency key
-3. separate committed security-rate-limit preflight
-4. deterministic two-account locking
-5. logical pair-request expiry cleanup
-6. sender/recipient eligibility
-7. either-direction block check
-8. duplicate check
-9. decline cooldown
-10. rolling one-month limit
-11. created-attempt append
-12. seven-day request insert
-13. scheduled expiry insert
-14. reciprocal-pair detection
-15. P2 coordinator integration point
-16. generic target-unavailable mapping
-17. persisted idempotency response
+3. validate relationshipStartDate against trusted PostgreSQL UTC date
+4. separate committed security-rate-limit preflight
+5. deterministic two-account locking
+6. logical pair-request expiry cleanup
+7. sender/recipient eligibility
+8. either-direction block check
+9. duplicate check
+10. decline cooldown
+11. rolling one-month limit
+12. created-attempt append
+13. seven-day request insert with relationshipStartDate
+14. scheduled expiry insert
+15. reciprocal-pair detection
+16. P2 coordinator integration point with triggeringRequestId and relationshipStartDate
+17. generic target-unavailable mapping
+18. persisted idempotency response
 
 Exit gate:
 
@@ -1467,8 +1481,8 @@ Exit gate:
 
 1. exact-search UI
 2. safe result card
-3. send action with one idempotency key per logical attempt
-4. cursor-paginated incoming/outgoing request lists
+3. send action with one idempotency key per logical attempt and a required relationship start date
+4. cursor-paginated incoming/outgoing request lists showing the proposed relationship date to the participants
 5. cancel and decline controls
 6. canonical refresh after mutations
 7. no-store response verification
@@ -1500,13 +1514,15 @@ P1 hands P2:
 - recipient safe identity
 - reciprocal pair candidate
 - exact request expiration semantics
+- manually entered request relationshipStartDate
+- triggering request identity for reciprocal formation
 
 P2 must not reimplement P1 request limits.
 
 P2 acceptance will add:
 
-- explicit acceptance endpoint
-- reciprocal automatic formation inside the same transaction
+- explicit acceptance endpoint using the accepted request's relationshipStartDate
+- reciprocal automatic formation inside the same transaction using the triggering request's relationshipStartDate
 - occupied-slot recheck
 - incompatible request invalidation
 - relationship date

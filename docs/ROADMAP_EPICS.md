@@ -667,7 +667,80 @@ P1 detects reciprocal requests but does not create partnerships. P2 owns explici
 
 # P2: Partnership Formation and Relationship Date
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+## Design status
+
+The refined architecture and implementation sequence are defined in:
+
+`docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
+
+P2 design is complete. Runtime implementation remains pending and follows the P1 request substrate.
+
+The refined design resolves the reciprocal-formation relationship-date problem by requiring every P1 request to carry a manually entered `relationshipStartDate`. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
+
+P2 creates a fresh opaque security namespace for every partnership but deliberately does not invent cryptographic keys or epochs before S1 protocol review.
+
+## Implementation sequence
+
+### P2-A Domain, contracts, and P1 handoff refinement
+
+- relationship-date trusted-server validation
+- formation types and stable denial codes
+- `change_relationship_start_date` capability
+- P1 create/list contract refinement with `relationshipStartDate`
+- reciprocal candidate refinement with triggering request identity
+- P2 accept/current/date/notification contracts
+
+### P2-B Migration and repositories
+
+- P1 migration 0008 request relationship-date field
+- migration 0009 partnership-formation runtime
+- fresh `security_context_id` on partnerships
+- accepted request to partnership linkage
+- accepted-shape constraints
+- minimal durable account notifications
+- formation, partnership, and notification repositories
+- invariant and index coverage
+
+### P2-C Explicit formation
+
+- recipient accept endpoint
+- deterministic pair locking and full eligibility recheck
+- partnership and two-member creation
+- request acceptance linkage
+- incompatible request invalidation
+- formation lifecycle evidence
+- durable formation notifications
+- lost-response replay
+
+### P2-D Reciprocal integration
+
+- transaction-scoped P2 coordinator injected into P1
+- reciprocal auto-pair before the P1 create transaction commits
+- both reciprocal requests accepted to one partnership
+- paired response persisted in P1 idempotency record
+- explicit-accept versus reciprocal race coverage
+- production `paired` mode enabled only with coordinator registered
+
+### P2-E Relationship metadata and notification closure
+
+- current partnership read model
+- version-checked relationship date update
+- future-date rejection
+- same-date no-op
+- durable other-partner notification
+- minimal notification list/read API
+- request/accept/current-partnership client flows
+
+### P2-F Integration closure
+
+- PostgreSQL suite
+- API suite
+- race suite
+- security suite
+- full repository health
+- repo-wide documentation closure
 
 ## Scope
 
@@ -675,8 +748,10 @@ Status: PLANNED
 - reciprocal request auto-pairing
 - one-partner occupancy
 - incompatible request invalidation
-- relationship start date
-- partnership security context creation
+- manually entered relationship start date
+- relationship date updates
+- durable relationship-date notification
+- fresh partnership security namespace
 
 ## Acceptance gates
 

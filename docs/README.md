@@ -57,6 +57,7 @@ The selected architecture is:
 - `architecture/SYSTEM_ARCHITECTURE.md`
 - `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 - `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`
+- `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 - `architecture/DATA_MODEL.md`
 - `architecture/PARTNERSHIP_STATE_MACHINE.md`
@@ -98,7 +99,7 @@ These documents describe current planning state and execution order. They do not
 
 `ROADMAP_EPICS.md` is the canonical implementation epic and acceptance-gate catalog.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` is the completed, verified implementation design for A1 Accounts and Devices; P1 is the active feature epic.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` is the completed, verified implementation design for A1 Accounts and Devices. P1 is the active runtime feature epic, and `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` is the refined P2 design that fixes the P1/P2 transaction contract before implementation.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

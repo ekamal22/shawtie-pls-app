@@ -18,7 +18,7 @@ This document remains the logical model. F2 repository integration, automated co
 
 A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally verified. It commits registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, versioned PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening.
 
-P1 reserves the following planned migration `0008_partner_discovery_requests_runtime.sql` to add exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, and append-only attempt behavior. Migration 0008 is also design-only.
+P1 reserves the planned migration `0008_partner_discovery_requests_runtime.sql` to add exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 reserves `0009_partnership_formation_runtime.sql` for accepted-request linkage, fresh partnership security namespaces, and durable account notifications. Both migrations remain design-only.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
@@ -92,6 +92,7 @@ last_seen_at
 revoked_at
 crypto_identity_public_key
 crypto_protocol_version
+security_context_id
 ```
 
 Device revocation affects both authentication and cryptographic authorization.
@@ -121,7 +122,11 @@ expires_at
 declined_at
 cancelled_at
 accepted_at
+relationship_start_date
+accepted_partnership_id
 ```
+
+`relationship_start_date` is entered by the request sender and is private to request participants. `accepted_partnership_id` is populated only when P2 accepts the request into a partnership.
 
 The attempt ledger supports:
 
@@ -158,6 +163,8 @@ termination_reason
 version
 ```
 
+`security_context_id` is a unique non-secret namespace identifier created fresh for every partnership. It is not key material and does not imply that S1 E2EE has been provisioned.
+
 ### partnership_members
 
 Representative fields:
@@ -179,6 +186,23 @@ WHERE released_at IS NULL
 ```
 
 The exact migration syntax may vary with the final table design, but the invariant must exist in the database, not only in application code.
+
+### account_notifications
+
+P2 adds a minimal durable in-app notification store:
+
+```text
+id
+recipient_account_id
+actor_account_id
+partnership_id
+event_type
+deduplication_key
+created_at
+read_at
+```
+
+P2 initially uses it for partnership formation and relationship-start-date change events. Notification rows carry routing/event identity only and do not duplicate relationship dates, private content, email, DOB, device state, or cryptographic material. Push transport is added later without changing formation authority.
 
 ### partnership_crypto_epochs
 

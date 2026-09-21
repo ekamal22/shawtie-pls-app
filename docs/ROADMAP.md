@@ -25,7 +25,8 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
-| P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; domain/contracts may overlap after A1 account contracts stabilize |
+| P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; runtime implementation is next and now includes the P2 relationship-date handoff |
+| P2 Partnership Formation | IN_PROGRESS | refined design complete; runtime waits on P1 request substrate |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -36,7 +37,7 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
 | 2 P1 Discovery and Requests | IN_PROGRESS | refined design complete; A1 dependency is closed and P1-A runtime implementation is next |
-| 3 P2 Partnership Formation | PLANNED | depends on A1 plus P1 |
+| 3 P2 Partnership Formation | IN_PROGRESS | refined design complete; runtime follows the P1 request substrate |
 | 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
@@ -51,12 +52,12 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. begin P1-A domain, contracts, migration 0008, and repositories
-2. build P1 discovery and request creation on the verified A1 session, username, time, and rate-limit substrate
-3. preserve the P1/P2 same-transaction formation boundary and fail closed until the P2 coordinator exists
-4. continue P3 persistence/API/worker work according to the dependency graph
-5. keep V1 separate until GitHub Actions capacity returns
-
+1. implement P1-A domain, contracts, migration 0008, and repositories with required `relationshipStartDate`
+2. implement P1 discovery/request behavior while preserving the P2 same-transaction coordinator handoff
+3. begin P2-A domain/contracts alongside the stabilized P1 request contracts
+4. wire P2 formation before production `paired` request mode is enabled
+5. continue P3 persistence/API/worker work according to the dependency graph
+6. keep V1 separate until GitHub Actions capacity returns
 ## Execution graph
 
 ```text
@@ -324,8 +325,8 @@ Canonical design:
 Safe parallelization:
 
 - P1 domain rules and contracts may begin alongside A1-A once shared account identifiers and username normalization are stable.
-- P1 migration 0008 follows A1 migration 0007.
-- P1 full API integration waits until A1-C provides real authenticated accounts and sessions.
+- P1 migration 0008 follows A1 migration 0007 and carries the manually entered relationship start date required by P2.
+- P1 full API integration uses the verified A1 authenticated accounts and sessions.
 - P1 reuses the generalized A1 PostgreSQL-backed security-rate-limit primitive rather than inventing an independent limiter.
 - P1 detects reciprocal active requests; P2 owns the same-transaction partnership formation coordinator.
 - Production request creation remains fail-closed until that P2 coordinator is registered.
@@ -351,28 +352,47 @@ Exit evidence is defined by the P1 gates in `ROADMAP_EPICS.md`.
 
 # Milestone 3: P2 Partnership Formation
 
-Status: PLANNED.
+Status: IN_PROGRESS at the refined design layer.
 
-Depends on A1 plus P1.
+Canonical design:
 
-Implement:
+`docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-- explicit acceptance
-- reciprocal-request automatic formation
-- deterministic two-account locking
-- transactional one-slot enforcement
-- incompatible request invalidation
-- relationship start date
-- fresh partnership namespace
-- notification outbox
+Runtime depends on the P1 request substrate, but the cross-epic contract is fixed before P1 implementation.
+
+Key design decisions:
+
+- every P1 request carries a manually entered `relationshipStartDate`
+- explicit acceptance uses the accepted request's date
+- reciprocal auto-pair uses the triggering second request's date
+- formation executes in one PostgreSQL transaction under deterministic pair locks
+- the occupied-slot database invariant remains final defense against double partnership
+- accepted requests link to the resulting partnership for stable lost-response replay
+- every other incompatible pending request is invalidated in the same transaction
+- relationship-date edits use optimistic `version`, not lifecycle `generation`
+- each partnership gets a fresh opaque `security_context_id` without creating fake E2EE keys before S1
+- durable in-app notification satisfies P2 relationship-date notification while push transport remains later
+
+Implementation sequence:
+
+1. P2-A domain/contracts plus P1 relationship-date handoff refinement
+2. P2-B migration 0009 and repositories
+3. P2-C explicit accept and formation coordinator
+4. P2-D reciprocal integration into P1 paired mode
+5. P2-E relationship-date update, notifications, and client read model
+6. P2-F PostgreSQL/API/race/security closure
 
 Exit evidence:
 
-- one-way acceptance works
+- one-way request cannot form until recipient accepts
 - reciprocal request race produces exactly one partnership
-- database occupancy invariant survives concurrent formation
-- future relationship date is rejected
-- fresh partnership creates fresh local and crypto namespace identifiers
+- explicit accept versus reciprocal create produces one partnership
+- database occupancy invariant survives competing formations
+- incompatible requests are invalidated atomically
+- future relationship date is rejected by trusted server date
+- concurrent date edits produce one version winner
+- the other partner receives a durable date-change notification
+- a new partnership never reuses an old partnership or security-context namespace
 
 **REDMI PHONE REQUIRED: NO.**
 

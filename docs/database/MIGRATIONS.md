@@ -21,9 +21,11 @@ Its implemented scope includes:
 - durable security-email deliveries
 - append-only security-event hardening
 
-P1 reserves the next prefix after A1 as `0008_partner_discovery_requests_runtime.sql`. Its planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit query indexes, decline-cooldown query indexes, and append-only request-attempt evidence.
+P1 reserves `0008_partner_discovery_requests_runtime.sql`. Its refined planned scope is request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and a required manually entered `relationship_start_date` used by P2 formation.
 
-P1 migration 0008 remains planned. The verified migration count is seven; migration 0007 has passed the complete A1 disposable-PostgreSQL validation path.
+P2 reserves `0009_partnership_formation_runtime.sql`. Its planned scope is accepted-request partnership linkage, fresh `partnerships.security_context_id`, accepted-state hardening, minimal durable account notifications, and formation/query indexes.
+
+Migrations 0008 and 0009 remain planned. The verified migration count is seven; migration 0007 has passed the complete A1 disposable-PostgreSQL validation path.
 
 ## Policy
 

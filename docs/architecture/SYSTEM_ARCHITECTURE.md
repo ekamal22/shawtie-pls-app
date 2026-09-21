@@ -282,6 +282,22 @@ P1 uses:
 
 P1 detects reciprocal requests but does not create partnerships. P2 performs explicit acceptance and transactional partnership formation while holding the same deterministic account locks.
 
+## P2 partnership formation design
+
+The refined P2 implementation design is defined in `P2_PARTNERSHIP_FORMATION_DESIGN.md`.
+
+P2 preserves the modular-monolith transaction boundary:
+
+- P1 owns request creation, request timing, limits, and reciprocal detection
+- P2 owns explicit acceptance and formation
+- reciprocal formation executes before the P1 create transaction commits
+- both accounts are locked in deterministic order
+- PostgreSQL occupied-slot uniqueness is the final double-partnership defense
+- every request carries a manually entered relationship start date so reciprocal formation never invents one from activation time
+- metadata edits use partnership `version`; lifecycle deadlines use `generation`
+- every partnership receives a fresh opaque security-context namespace while actual cryptographic keys and epochs remain deferred to S1
+- P2 provides durable in-app partnership notifications without requiring push transport
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.
