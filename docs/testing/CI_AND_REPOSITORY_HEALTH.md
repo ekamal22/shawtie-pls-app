@@ -64,7 +64,7 @@ npm ci
 
 The clean-install path from the committed lockfile has been validated successfully.
 
-A1 will add new runtime dependencies and local verification commands. When A1 dependencies are committed, the lockfile must be regenerated, `npm ci` must remain valid, and the full local health baseline must remain green. Planned A1 PostgreSQL/API/security suites are tracked separately from `npm run health` until they are implemented and intentionally integrated into the closure path.
+A1 has added its runtime dependencies and local verification commands. The committed lockfile is current, and the full local health baseline is green. The disposable PostgreSQL A1 path also passes 9/9. A1 remains open only because its canonical verification matrix requires additional dedicated database/API/security cases beyond the currently committed suites.
 
 ## Repository-health policy
 
@@ -189,7 +189,7 @@ A1 now commits:
 - `test:a1:local` disposable PostgreSQL orchestration
 - new API/runtime dependencies that require a refreshed committed lockfile
 
-These A1 paths are not yet recorded as passing on the complete branch. A1 remains IN_PROGRESS until the lockfile is reconciled, `npm run health` is green, migration 0007 applies from zero, and `npm run test:a1:local` passes.
+These A1 paths are now recorded as passing for the current core suite: migration 0007 applies from zero in the seven-migration disposable run, `npm run test:a1:local` passes 9/9, and `npm run health` is green. A1 remains IN_PROGRESS because the canonical test matrix still has uncommitted acceptance cases, and gate 20 cannot close until that expanded evidence is green.
 
 Later epics add:
 
