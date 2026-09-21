@@ -2142,7 +2142,7 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The repository has completed the verified F0, F1, F2, and A1 milestones. A1 Accounts and Devices is DONE at 20/20 acceptance gates.
+The repository has completed the verified F0, F1, F2, A1, and P1 milestones. A1 Accounts and Devices is DONE at 20/20 acceptance gates and P1 Discovery and Partner Requests is DONE at 14/14 acceptance gates.
 
 Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 
@@ -2150,7 +2150,7 @@ The verified A1 surface includes migration 0007, account domain rules and contra
 
 A1 verification is complete: all seven migrations apply from zero, database invariants pass, the disposable PostgreSQL acceptance suite passes 27/27, the A1 security suite passes 16/16, the full repository health regression passes, the high-severity dependency audit reports 0 vulnerabilities, and all 20 A1 acceptance gates are closed.
 
-The pure partnership domain state machine and centralized capability engine remain locally verified. P1 Discovery and Partner Requests is IN_PROGRESS at the implementation-design layer, with runtime implementation next. P2 Partnership Formation and Relationship Date is IN_PROGRESS at the refined design layer; its same-transaction formation contract, request relationship-date handoff, optimistic metadata versioning, notification semantics, and fresh partnership-ID namespace are defined but not yet implemented. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending under V1.
+The pure partnership domain state machine and centralized capability engine remain locally verified. P1 Discovery and Partner Requests is implemented and locally verified, including migration 0008, exact discovery, request lifecycle, idempotency, abuse controls, expiry worker, client flow, races, and the transaction-scoped P2 handoff. P2 Partnership Formation and Relationship Date is the active runtime milestone; its hardened same-transaction formation contract, request relationship-date handoff, optimistic metadata versioning, notification semantics, expiry-worker race handling, and partnership-ID namespace are defined but not yet implemented. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending under V1.
 
 This PRD defines intended product behavior. It is not the implementation-progress source of truth.
 

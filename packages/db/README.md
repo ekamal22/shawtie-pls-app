@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL schema is locally verified through A1 migration 0007. The F2 database runtime remains verified, and the A1 account/auth repositories plus migration 0007 are implemented and validated by the completed 27/27 disposable PostgreSQL A1 suite.
+The PostgreSQL schema is locally verified through P1 migration 0008. The F2 database runtime remains verified, A1 migration 0007 remains validated by the completed 27/27 disposable PostgreSQL A1 suite, and migration 0008 is validated by the passing P1 disposable PostgreSQL/API/worker suite.
 
 Earlier database validation established migration rerun idempotency, checksum-drift rejection, invariant coverage, critical catalog objects, occupied-slot contention safety, scheduled-action claim contention safety, and deterministic account-lock ordering. The completed F2 run applies all six migrations from a blank disposable PostgreSQL 16 database and passes 17/17 PostgreSQL integration tests.
 
@@ -21,14 +21,16 @@ Current implemented migrations:
 5. `0005_relational_integrity.sql`
 6. `0006_durable_runtime_reliability.sql`
 7. `0007_accounts_devices_runtime.sql`
+8. `0008_partner_discovery_requests_runtime.sql`
 
 Migration 0006 implements recoverable durable-work leases, direct expired-claim reclaim, claim-version fencing, retry availability, and scheduled-action/outbox payload versions. It is locally verified from a blank database as part of the passing F2 suite.
 
 Migration 0007 implements the A1 account/auth runtime schema. It is verified: `npm run test:a1:local` applies all seven migrations from zero, database invariants pass, and the expanded A1 integration/acceptance matrix passes 27/27.
 
-Planned next migrations:
+Migration 0008 implements P1 request terminal hardening, request attempts/indexes, exact expiry evidence, and legacy-compatible relationship-date persistence with new-write enforcement. It is verified as part of the passing eight-migration P1 local suite.
 
-8. `0008_partner_discovery_requests_runtime.sql` for P1 request terminal hardening, request attempts/indexes, and legacy-compatible relationship-date persistence with new-write enforcement
+Planned next migration:
+
 9. `0009_partnership_formation_runtime.sql` for P2 accepted-request partnership linkage, accepted-state hardening, durable account notifications, and formation/query indexes
 
 Migration 0009 intentionally does not add a second security-context identifier. The fresh immutable partnership ID is the namespace root. Accepted-request linkage uses restrictive foreign-key semantics so retained acceptance evidence cannot silently lose its replay identity.

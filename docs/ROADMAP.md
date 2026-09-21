@@ -25,8 +25,8 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
-| P1 Discovery and Partner Requests | IN_PROGRESS | hardened design complete; runtime next; relationship-date idempotency, UTC cutoffs, and snapshot pagination fixed |
-| P2 Partnership Formation | IN_PROGRESS | hardened design complete; same-transaction formation and metadata race boundaries fixed |
+| P1 Discovery and Partner Requests | DONE | 14/14 gates; migration 0008; P1 local 16/16; full health and audit green |
+| P2 Partnership Formation | IN_PROGRESS | active runtime milestone; hardened design complete against verified P1 seam |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -36,8 +36,8 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | --- | --- | --- |
 | 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
-| 2 P1 Discovery and Requests | IN_PROGRESS | hardened design complete; A1 dependency is closed and P1-A runtime implementation is next |
-| 3 P2 Partnership Formation | IN_PROGRESS | hardened design complete; runtime follows the P1 request substrate |
+| 2 P1 Discovery and Requests | DONE | 14/14 acceptance gates closed with local PostgreSQL/API/worker/security evidence |
+| 3 P2 Partnership Formation | IN_PROGRESS | active runtime milestone; implementation begins on verified P1 substrate |
 | 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
@@ -52,12 +52,13 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 
 ## Immediate execution sequence
 
-1. implement P1-A domain, contracts, migration 0008, and repositories with required `relationshipStartDate`
-2. implement P1 discovery/request behavior while preserving the P2 same-transaction coordinator handoff
-3. begin P2-A domain/contracts alongside the stabilized P1 request contracts
-4. wire P2 formation before production `paired` request mode is enabled
-5. continue P3 persistence/API/worker work according to the dependency graph
-6. keep V1 separate until GitHub Actions capacity returns
+1. implement P2-A domain/contracts against the verified P1 coordinator seam
+2. implement migration 0009 and formation/notification repositories without rewriting migration 0008
+3. implement explicit accept and the shared formation coordinator
+4. wire reciprocal formation into P1 `paired` mode and rerun P1 with the real coordinator
+5. implement P2 relationship metadata, notification read model, and client closure
+6. continue P3 persistence/API/worker work according to the dependency graph
+7. keep V1 separate until GitHub Actions capacity returns
 ## Execution graph
 
 ```text
@@ -316,21 +317,21 @@ A1 may be completed with browser/API/PostgreSQL evidence. Device records in A1 a
 
 # Milestone 2: P1 Discovery and Requests
 
-Status: IN_PROGRESS at the design layer.
+Status: DONE with all 14 acceptance gates locally verified.
 
 Canonical design:
 
 `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`
 
-Safe parallelization:
+Verified implementation:
 
-- P1 domain rules and contracts may begin alongside A1-A once shared account identifiers and username normalization are stable.
-- P1 migration 0008 follows A1 migration 0007 and carries the manually entered relationship start date required by P2.
-- P1 full API integration uses the verified A1 authenticated accounts and sessions.
-- P1 reuses the generalized A1 PostgreSQL-backed security-rate-limit primitive rather than inventing an independent limiter.
-- P1 detects reciprocal active requests; P2 owns the same-transaction partnership formation coordinator.
-- Production request creation remains fail-closed until that P2 coordinator is registered.
-- P1 create uses explicit idempotency bound to recipient plus relationship date, pair-wide deterministic locks, snapshot-bound cursor pagination, UTC calendar arithmetic, and cross-epic invalidation hooks.
+- domain rules, contracts, migration 0008, repositories, Fastify API, expiry worker, client UI, and invalidation hooks are committed
+- all eight migrations apply from zero and database invariants pass
+- the disposable P1 PostgreSQL/API/worker suite passes 16/16
+- request creation preserves explicit idempotency, pair-wide deterministic locks, snapshot-bound cursor pagination, UTC calendar arithmetic, and cross-epic invalidation hooks
+- reciprocal detection is verified while P2 retains authority for same-transaction partnership formation
+- production request creation remains fail-closed until the P2 coordinator is registered
+- full repository health and high-severity dependency audit are green
 
 Implement:
 
@@ -359,7 +360,7 @@ Canonical design:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P1 runtime substrate is now committed and under validation. P2 has been revalidated against the exact committed coordinator seam so P2 implementation does not need to reopen the P1 public interface.
+P1 is complete and locally verified. P2 has been revalidated against the exact verified coordinator seam, so P2 implementation does not need to reopen the P1 public interface.
 
 Key design decisions:
 

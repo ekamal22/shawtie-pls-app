@@ -280,7 +280,7 @@ P1 uses:
 - F2 scheduled actions for request expiry
 - logical expiry checks so worker timing cannot extend product deadlines
 
-P1 now has a committed reciprocal-candidate seam but does not create partnerships in test-only request mode. P2 implements that exact seam for transactional reciprocal formation and also owns explicit acceptance while preserving the same deterministic account locks.
+P1 is locally verified and exposes the reciprocal-candidate seam while intentionally not creating partnerships in test-only request mode. P2 implements that exact verified seam for transactional reciprocal formation and also owns explicit acceptance while preserving the same deterministic account locks.
 
 ## P2 partnership formation design
 

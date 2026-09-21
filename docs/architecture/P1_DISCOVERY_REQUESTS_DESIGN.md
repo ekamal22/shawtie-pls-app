@@ -2,7 +2,7 @@
 
 ## Status
 
-REFINED DESIGN, IMPLEMENTATION PENDING
+IMPLEMENTED AND LOCALLY VERIFIED
 
 Effective design date: 2026-09-21.
 
@@ -16,7 +16,7 @@ Source code, migrations, and tests remain authoritative for behavior that is act
 
 ## Refinement review
 
-The initial P1 design was reviewed again before runtime implementation.
+The initial P1 design was reviewed before runtime implementation and the resulting implementation is now locally verified.
 
 The refinement closes ambiguity in:
 
@@ -38,17 +38,17 @@ No accepted partnership or request product rule is changed.
 
 ## Dependency boundary
 
-A1 is complete. P1 may now proceed directly from the verified account/session/security substrate.
+A1 and P1 are complete. P1 is now the verified request substrate consumed by P2.
 
-Implementation dependencies are:
+Verified dependency usage:
 
-- P1 domain rules and contracts may begin immediately
-- P1 migration 0008 follows verified A1 migration 0007
+- P1 domain rules and contracts are implemented
+- P1 migration 0008 follows verified A1 migration 0007 and is itself verified
 - P1 reuses A1 authenticated sessions
 - P1 reuses A1 username normalization
 - P1 reuses A1 trusted PostgreSQL business time
 - P1 reuses A1 security_rate_limit_buckets
-- P1 full API integration may use the verified A1-C authenticated accounts and sessions
+- P1 API integration uses the verified A1 authenticated accounts and sessions
 - P2 consumes P1 reciprocal-request detection to perform actual partnership formation
 - production user-facing request creation remains disabled until the P2 partnership-formation coordinator is wired, because reciprocal pending requests must auto-pair as one transaction
 
@@ -1576,8 +1576,8 @@ Reject a P1 implementation change if it:
 
 ## Completion rule
 
-P1 is DONE only when every P1 acceptance gate in docs/ROADMAP_EPICS.md is satisfied with committed source, migration 0008, repeatable local database/API/race/security evidence, a committed lockfile, and a green full repository health regression.
+P1 is DONE. All 14 P1 acceptance gates in `docs/ROADMAP_EPICS.md` are satisfied with committed source, verified migration 0008, repeatable local database/API/race/security evidence, a committed lockfile, a green full repository health regression, and a zero-high-severity dependency audit.
 
-Design completion changes P1 from PLANNED to IN_PROGRESS. It does not check any runtime acceptance gate.
+Closure evidence: eight migrations apply from zero with database invariants green; `npm run test:p1:local` passes 16/16 and emits `P1_LOCAL_POSTGRES_PASS`; final `npm run health` passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4.
 
 Hosted GitHub Actions verification remains separate under V1.

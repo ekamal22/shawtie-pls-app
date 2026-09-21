@@ -189,7 +189,7 @@ npm run test:p1:security
 npm run test:p1:local
 ```
 
-P1 implementation now exists; these commands are under active local validation. Do not infer P1 completion until their results plus full repository health are green.
+P1 verification is complete: the disposable PostgreSQL/API/worker suite passes 16/16 with `P1_LOCAL_POSTGRES_PASS`, migration 0008 participates in the clean eight-migration run with database invariants green, full repository health passes, and the high-severity dependency audit reports 0 vulnerabilities.
 
 ### P2 partnership formation verification
 

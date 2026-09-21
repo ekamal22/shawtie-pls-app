@@ -552,11 +552,11 @@ The expanded committed evidence now directly covers the previously open challeng
 
 # P1: Discovery and Partner Requests
 
-Status: IN_PROGRESS
+Status: DONE
 
-## Design status
+## Verified implementation
 
-The hardened architecture and implementation sequence are defined in:
+The hardened architecture, implementation, and closure record are defined in:
 
 \`docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md\`
 
@@ -564,7 +564,7 @@ P1 preserves Architecture Baseline 1.0 and builds on F2 plus the refined A1 acco
 
 The hardened refinement adds create idempotency bound to recipient identity plus canonical relationshipStartDate, separate abuse-rate-limit transactions, pair locking for cancel/decline, snapshot-bound cursor pagination, UTC calendar cutoffs, cross-epic invalidation hooks, migration backfill/new-write enforcement rules, attempt retention, fail-closed production gating until P2 formation is wired, and the manually entered relationship-date handoff required for reciprocal formation.
 
-A1 dependencies are complete, so P1 runtime implementation may begin now. No P1 acceptance gate is checked from design work alone.
+P1 runtime implementation and local verification are complete. Migration 0008 applies in the clean eight-migration run, the disposable P1 PostgreSQL/API/worker suite passes 16/16, full repository health is green, and the high-severity dependency audit reports 0 vulnerabilities.
 
 ## Implementation sequence
 
@@ -651,20 +651,20 @@ A1 dependencies are complete, so P1 runtime implementation may begin now. No P1 
 
 ## Acceptance gates
 
-- [ ] username search exposes only allowed public fields
-- [ ] exact DOB and email are never returned
-- [ ] pending requests expire exactly seven days after creation
-- [ ] sender can cancel before acceptance
-- [ ] decline does not create a block
-- [ ] same sender cannot exceed three requests to one recipient in a rolling month
-- [ ] one-hour post-decline cooldown is enforced
-- [ ] multiple incoming requests may coexist
-- [ ] self-request is rejected
-- [ ] duplicate same-direction pending request is rejected
-- [ ] active block prevents discovery and requests as defined by product rules
-- [ ] direct API calls cannot bypass request eligibility
-- [ ] request race tests pass
-- [ ] abuse-rate-limit tests pass
+- [x] username search exposes only allowed public fields
+- [x] exact DOB and email are never returned
+- [x] pending requests expire exactly seven days after creation
+- [x] sender can cancel before acceptance
+- [x] decline does not create a block
+- [x] same sender cannot exceed three requests to one recipient in a rolling month
+- [x] one-hour post-decline cooldown is enforced
+- [x] multiple incoming requests may coexist
+- [x] self-request is rejected
+- [x] duplicate same-direction pending request is rejected
+- [x] active block prevents discovery and requests as defined by product rules
+- [x] direct API calls cannot bypass request eligibility
+- [x] request race tests pass
+- [x] abuse-rate-limit tests pass
 
 P1 detects reciprocal requests but does not create partnerships. P2 owns explicit acceptance and transactional partnership formation.
 
@@ -678,7 +678,7 @@ The refined architecture and implementation sequence are defined in:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P2 hardened design is complete and has been revalidated against the committed P1 runtime seam at `355037d`. Runtime implementation remains pending while P1 validation completes.
+P2 hardened design is complete and has been revalidated against the verified P1 runtime seam. P2 is now the active runtime milestone.
 
 The design now consumes the committed P1 relationship-date request substrate and exact `handleReciprocalCandidate(executor, candidate, now)` seam. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
 

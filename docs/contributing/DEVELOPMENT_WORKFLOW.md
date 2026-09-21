@@ -33,6 +33,38 @@ Proceed without a new ADR when the work follows accepted architecture.
 
 Update documentation when implementation details become concrete.
 
+## Milestone branch discipline
+
+Every implementation epic or milestone gets its own durable Git branch.
+
+Branch rules:
+
+1. branch from the current verified `main` after the preceding milestone has been merged
+2. use a milestone-specific name such as `feat/p2-partnership-formation`
+3. keep implementation, tests, and milestone-specific design/docs on that branch
+4. do not implement a later milestone on an earlier milestone's branch
+5. close all required acceptance gates and reconcile documentation before milestone merge
+6. merge the completed milestone branch into `main`
+7. retain the completed milestone branch as an audit/history ref unless there is an explicit cleanup decision
+8. create the next milestone branch from the newly updated `main`
+
+Historical reconstruction must never rewrite commits merely to manufacture old merge commits. When earlier work was developed linearly, preserve genuine milestone closure commits with branch refs and fast-forward `main` to the latest verified closure where ancestry permits.
+
+The legacy branch `feat/m1-executable-foundation` refers to an earlier executable-foundation naming scheme. It is not the future M1 Messaging Core branch and must not be reused for M1 Messaging work.
+
+Future branch examples:
+
+```text
+feat/p2-partnership-formation
+feat/p3-partnership-lifecycle
+feat/m1-messaging-core
+feat/r1-relationship-space
+feat/m2-realtime-offline
+feat/m3-media-voice
+feat/c1-calling
+feat/s1-e2ee
+```
+
 ## Epic acceptance gates
 
 Before starting implementation work, identify the roadmap epic in `../ROADMAP_EPICS.md`.

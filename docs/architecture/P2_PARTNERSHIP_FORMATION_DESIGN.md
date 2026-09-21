@@ -16,7 +16,7 @@ Source code, migrations, and tests remain authoritative for behavior that is act
 
 ## Refinement review
 
-The P2 design was originally refined before P1 runtime implementation and is now revalidated against the committed P1 runtime seam at `355037d`. P1 validation is still in progress; P2 does not require changing that P1 seam during the validation run.
+The P2 design was originally refined before P1 runtime implementation and is now revalidated against the locally verified P1 runtime seam. P1 is DONE; P2 does not require changing that seam to begin implementation.
 
 The refinement closes ambiguity in:
 
@@ -61,7 +61,7 @@ P2 preserves the PRD rules that:
 
 A1 is complete.
 
-P1 runtime implementation is committed and under validation. P2 runtime integration uses the committed P1 substrate supplying:
+P1 runtime implementation is locally verified and DONE. P2 runtime integration uses that verified substrate supplying:
 
 - authenticated partner requests
 - deterministic sorted account locks
@@ -648,7 +648,7 @@ Using one immutable namespace identifier avoids redundant security identifiers t
 
 ### P1 migration 0008 substrate
 
-P1 migration `0008_partner_discovery_requests_runtime.sql` is now committed and under P1 validation.
+P1 migration `0008_partner_discovery_requests_runtime.sql` is committed and locally verified.
 
 It already provides:
 
@@ -660,7 +660,7 @@ It already provides:
 - append-only request-attempt behavior
 - request list/pair indexes
 
-P2 must treat migration 0008 as owned P1 substrate. Do not rewrite migration 0008 during P2 implementation merely to add P2 behavior. If P1 validation exposes a genuine 0008 defect, fix that defect through the P1 validation workflow first.
+P2 must treat migration 0008 as verified P1-owned substrate. Do not rewrite migration 0008 during P2 implementation merely to add P2 behavior; any future schema correction must be forward-only under the migration policy.
 
 P2 accept and reciprocal-formation paths fail closed on any retained legacy pending row whose relationship date is absent.
 ### P2 migration 0009

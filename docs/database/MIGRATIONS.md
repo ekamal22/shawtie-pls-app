@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented and locally verified in `packages/db/migrations` through A1 migration `0007_accounts_devices_runtime.sql`. All seven migrations apply from zero in the completed A1 disposable PostgreSQL path, and database invariants pass.
+The PostgreSQL migration set is implemented and locally verified through P1 migration `0008_partner_discovery_requests_runtime.sql`. All eight migrations apply from zero in the completed P1 disposable PostgreSQL path, and database invariants pass.
 
 ## Current and next migration
 
@@ -21,11 +21,11 @@ Its implemented scope includes:
 - durable security-email deliveries
 - append-only security-event hardening
 
-P1 migration `0008_partner_discovery_requests_runtime.sql` is now committed and under P1 validation. It adds request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and the manually entered `relationship_start_date` used by P2 formation. Its legacy-compatible checks protect new/updated rows without fabricating old request history.
+P1 migration `0008_partner_discovery_requests_runtime.sql` is committed and locally verified. It adds request terminal-shape hardening, persisted expired timestamps, pair-limit and decline-cooldown indexes, append-only request-attempt evidence, and the manually entered `relationship_start_date` used by P2 formation. Its legacy-compatible checks protect new/updated rows without fabricating old request history.
 
 P2 reserves `0009_partnership_formation_runtime.sql`. Its planned scope is accepted-request partnership linkage with restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. It consumes migration 0008 as committed P1 substrate and must not rewrite 0008 for P2-only behavior. The existing fresh partnership ID is the namespace root; migration 0009 does not add a redundant security-context identifier.
 
-Migration 0008 is committed but not yet counted as verified until the active P1 disposable-PostgreSQL validation passes. Migration 0009 remains planned. The last fully verified migration count remains seven through migration 0007.
+Migration 0008 is verified by the clean eight-migration P1 run and passing database invariants. Migration 0009 remains planned for P2.
 
 ## Policy
 

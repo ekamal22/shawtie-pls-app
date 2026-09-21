@@ -10,15 +10,15 @@ PostgreSQL is the authoritative transactional store.
 
 The first physical schema foundation is committed under `packages/db/migrations`.
 
-It includes identity, partnership lifecycle, durable operations, content metadata, relational-integrity hardening, the F2 durable-runtime reliability migration, and committed A1 migration 0007.
+It includes identity, partnership lifecycle, durable operations, content metadata, relational-integrity hardening, the F2 durable-runtime reliability migration, A1 migration 0007, and verified P1 migration 0008.
 
-The physical schema has passed local disposable-database validation against PostgreSQL 16 through migration 0007. All seven migrations apply from zero, the invariant suite passes, the F2 runtime suite passes 17/17, and the completed A1 disposable PostgreSQL acceptance suite passes 27/27.
+The physical schema has passed local disposable-database validation against PostgreSQL 16 through migration 0008. All eight migrations apply from zero, the invariant suite passes, the F2 runtime suite passes 17/17, the completed A1 disposable PostgreSQL acceptance suite passes 27/27, and the P1 PostgreSQL/API/worker suite passes 16/16.
 
 This document remains the logical model. F2 repository integration, automated concurrency regression coverage, worker infrastructure, outbox transaction infrastructure, deletion retry infrastructure, and query-plan validation are implemented and locally verified. Hosted PostgreSQL reproduction remains a separate V1 concern.
 
 A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally verified. It commits registration intents, password credentials, account-email display preservation, hardened email challenges, session token-generation fencing, device-handle verifiers, versioned PostgreSQL security-rate-limit buckets, durable security-email deliveries, and append-only security-event hardening.
 
-P1 reserves the planned migration `0008_partner_discovery_requests_runtime.sql` to add exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 reserves `0009_partnership_formation_runtime.sql` for accepted-request linkage, fresh partnership security namespaces, and durable account notifications. Both migrations remain design-only.
+P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 reserves planned migration `0009_partnership_formation_runtime.sql` for accepted-request linkage and durable account notifications; the fresh immutable partnership ID remains the namespace root.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
