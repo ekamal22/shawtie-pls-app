@@ -28,7 +28,7 @@
     "db:migrations:check": "node scripts/db/check-migrations.mjs",
     "db:migrate": "node scripts/db/migrate.mjs",
     "db:test:invariants": "node scripts/db/test-invariants.mjs",
-    "test:api-unit": "node --test apps/api/tests/a1.security.test.ts apps/api/tests/p1.security.test.ts apps/api/tests/p2.security.test.ts",
+    "test:api-unit": "node --test apps/api/tests/a1.security.test.ts apps/api/tests/p1.security.test.ts apps/api/tests/p2.security.test.ts apps/api/tests/p3.security.test.ts",
     "test:accounts": "node --test packages/domain/tests/accounts.test.ts packages/contracts/tests/accounts.test.ts apps/api/tests/a1.security.test.ts apps/worker/tests/a1.worker.test.ts",
     "test:a1:postgres": "npm run db:test:invariants && npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && node --test --test-concurrency=1 apps/api/tests/a1.integration.test.ts apps/api/tests/a1.acceptance.integration.test.ts apps/worker/tests/a1.integration.test.ts",
     "test:a1:api": "npm run test:a1:postgres",
@@ -43,7 +43,12 @@
     "test:p2:security": "npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run test:partnership-formation && node --test apps/api/tests/p2.security.test.ts",
     "test:p2:postgres": "npm run test:p2:security && npm run db:test:invariants && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && npm run build --workspace @shawtie/web && node --test --test-concurrency=1 apps/api/tests/p1.integration.test.ts apps/api/tests/p2.integration.test.ts apps/worker/tests/p1.integration.test.ts",
     "test:p2:api": "npm run test:p2:postgres",
-    "test:p2:local": "node scripts/db/test-p2-local.mjs"
+    "test:p2:local": "node scripts/db/test-p2-local.mjs",
+    "test:partnership-lifecycle": "node --test packages/domain/tests/partnership-lifecycle.test.ts packages/domain/tests/partnership-state-machine.test.ts packages/contracts/tests/partnerships.test.ts",
+    "test:p3:security": "npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run test:partnership-lifecycle && node --test apps/api/tests/p3.security.test.ts",
+    "test:p3:postgres": "npm run test:p3:security && npm run db:test:invariants && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && npm run build --workspace @shawtie/web && node --test --test-concurrency=1 apps/api/tests/p1.integration.test.ts apps/api/tests/p2.integration.test.ts apps/api/tests/p3.integration.test.ts apps/worker/tests/p1.integration.test.ts apps/worker/tests/a1.integration.test.ts apps/worker/tests/p3.integration.test.ts",
+    "test:p3:api": "npm run test:p3:postgres",
+    "test:p3:local": "node scripts/db/test-p3-local.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
