@@ -562,7 +562,7 @@ The refined architecture and implementation sequence are defined in:
 
 P1 preserves Architecture Baseline 1.0 and builds on F2 plus the refined A1 account/session/security substrate.
 
-The second-pass refinement adds create idempotency, separate abuse-rate-limit transactions, pair locking for cancel/decline, cursor pagination, cross-epic invalidation hooks, migration backfill rules, attempt retention, fail-closed production gating until P2 formation is wired, and the manually entered relationship-date handoff required for reciprocal formation.
+The hardened refinement adds create idempotency bound to recipient identity plus canonical relationshipStartDate, separate abuse-rate-limit transactions, pair locking for cancel/decline, snapshot-bound cursor pagination, UTC calendar cutoffs, cross-epic invalidation hooks, migration backfill/new-write enforcement rules, attempt retention, fail-closed production gating until P2 formation is wired, and the manually entered relationship-date handoff required for reciprocal formation.
 
 A1 dependencies are complete, so P1 runtime implementation may begin now. No P1 acceptance gate is checked from design work alone.
 
@@ -678,11 +678,11 @@ The refined architecture and implementation sequence are defined in:
 
 `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 
-P2 design is complete. Runtime implementation remains pending and follows the P1 request substrate.
+P2 hardened design is complete. Runtime implementation remains pending and follows the P1 request substrate.
 
 The refined design resolves the reciprocal-formation relationship-date problem by requiring every P1 request to carry a manually entered `relationshipStartDate`. Explicit acceptance uses the accepted request's date; reciprocal auto-pairing uses the triggering second request's date. Formation stays inside one PostgreSQL transaction under the same deterministic pair locks held by P1.
 
-P2 creates a fresh opaque security namespace for every partnership but deliberately does not invent cryptographic keys or epochs before S1 protocol review.
+P2 uses the fresh immutable partnership ID itself as the local and future cryptographic namespace root, adds no redundant security-context identifier, and deliberately does not invent cryptographic keys or epochs before S1 protocol review.
 
 ## Implementation sequence
 
@@ -729,7 +729,7 @@ P2 creates a fresh opaque security namespace for every partnership but deliberat
 ### P2-E Relationship metadata and notification closure
 
 - current partnership read model
-- version-checked relationship date update
+- account-lock-serialized relationship date update using `expectedMetadataVersion`
 - future-date rejection
 - same-date no-op
 - durable other-partner notification

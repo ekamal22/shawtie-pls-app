@@ -229,9 +229,9 @@ P1 reuses the PostgreSQL security-rate-limit primitive implemented and verified 
 
 Request-creation abuse buckets are consumed in a separate short transaction before the pair mutation. This ensures rejected new logical attempts may still count toward abuse throttling, while only successful request creation contributes to the three-request product limit.
 
-Create requests use an idempotency key so a lost HTTP response can be replayed safely instead of generating a second logical send.
+Create requests use an idempotency key so a lost HTTP response can be replayed safely instead of generating a second logical send. The fingerprint binds recipient ID, normalized expected username, and canonical relationship date, so changing only the proposed date is a different logical request.
 
-Pair-sensitive create, cancel, decline, future accept, block, and invalidation paths lock both account rows in the same deterministic order.
+Active request pagination is snapshot-bound so concurrent new requests cannot shift an in-progress traversal. Pair-sensitive create, cancel, decline, P2 accept/formation, block, and invalidation paths lock both account rows in the same deterministic order. P2 relationship-date mutation also takes member-account locks before the partnership lock so account deletion cannot race a metadata edit into a view-only state.
 
 ## Abuse controls
 

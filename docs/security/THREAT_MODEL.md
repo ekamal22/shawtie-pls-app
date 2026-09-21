@@ -514,12 +514,13 @@ Controls:
 - exact one-hour cooldown after decline
 - sender and network abuse buckets
 - deterministic two-account locking for create, cancel, decline, future accept, and block-sensitive paths
-- request-create idempotency for lost-response retries
+- request-create idempotency for lost-response retries, with relationship date included in the fingerprint
 - database same-direction pending uniqueness
 - exact logical expiry independent of worker timing
 - F2 durable expiry scheduling
 - either-direction block enforcement
 - direct API re-evaluation of both accounts
+- snapshot-bound active-request pagination with future-snapshot rejection
 
 Verification:
 
@@ -537,13 +538,17 @@ Controls:
 
 - database-enforced one-slot invariant
 - deterministic two-account locking
-- transactional partnership creation
+- transactional partnership creation in the same authoritative request transaction for reciprocal pairing
+- accepted-request linkage for lost-response replay
+- restrictive accepted-request partnership foreign key
 - re-check state after locks are acquired
 
 Verification:
 
 - PostgreSQL race tests
 - concurrent acceptance tests
+- explicit-accept versus reciprocal-create race
+- complete P1 suite rerun with the real P2 coordinator in paired mode
 
 ### T10: Cooldown bypass through direct API calls
 

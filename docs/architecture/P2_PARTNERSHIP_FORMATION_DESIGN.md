@@ -569,9 +569,9 @@ Minimal authenticated API:
 ~~~text
 GET  /api/v1/notifications?limit=25&cursor=...
 POST /api/v1/notifications/:notificationId/read
+~~~
 
 Notification list pagination reuses P1's versioned snapshot-bound keyset cursor pattern: the first page captures `snapshotAt`, later pages are bound to that snapshot, future-snapshot cursor values are rejected, and newly created notifications appear after canonical refresh rather than shifting an in-progress traversal.
-~~~
 
 Only the recipient account may read or mark a notification. Mark-read is idempotent: the first successful mutation sets `read_at`; later retries leave the original read timestamp unchanged.
 
@@ -843,7 +843,7 @@ Cover:
 - all incompatible pending requests become invalidated
 - consumed reciprocal requests become accepted, not invalidated
 - notification rows are atomic with formation/date update
-- relationship-date expected-version race allows one winner
+- relationship-date expectedMetadataVersion race allows one winner
 - same-date update is a no-op
 
 ### API integration tests
@@ -972,7 +972,7 @@ Exit gate:
 ### P2-E Relationship metadata, notification read model, and client
 
 1. current partnership read
-2. version-checked relationship-date mutation
+2. expectedMetadataVersion relationship-date mutation with canonical account-then-partnership locking
 3. same-date no-op
 4. durable other-partner notification
 5. notification list/read endpoints

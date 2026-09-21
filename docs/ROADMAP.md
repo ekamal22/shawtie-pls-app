@@ -25,8 +25,8 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | V1 Hosted CI Verification | BLOCKED | intentionally deferred until GitHub Actions capacity returns |
 | F2 Persistence and Worker Foundation | DONE | six migrations from zero, 17/17 PostgreSQL integration tests, final full health pass |
 | A1 Accounts and Devices | DONE | 20/20 gates; 27/27 disposable PostgreSQL acceptance; 16/16 A1 security; full health and dependency audit green |
-| P1 Discovery and Partner Requests | IN_PROGRESS | refined architecture complete; runtime implementation is next and now includes the P2 relationship-date handoff |
-| P2 Partnership Formation | IN_PROGRESS | refined design complete; runtime waits on P1 request substrate |
+| P1 Discovery and Partner Requests | IN_PROGRESS | hardened design complete; runtime next; relationship-date idempotency, UTC cutoffs, and snapshot pagination fixed |
+| P2 Partnership Formation | IN_PROGRESS | hardened design complete; same-transaction formation and metadata race boundaries fixed |
 | P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified, persistence and API work pending |
 | Remaining pre-release epics | PLANNED | follow dependency order below |
 
@@ -36,8 +36,8 @@ Do not treat design completion, source-code presence, unit tests, or UI behavior
 | --- | --- | --- |
 | 0 Verified Foundation | DONE | F0, F1, and F2 are locally verified |
 | 1 A1 Accounts and Devices | DONE | 20/20 acceptance gates closed with expanded local database/API/security evidence |
-| 2 P1 Discovery and Requests | IN_PROGRESS | refined design complete; A1 dependency is closed and P1-A runtime implementation is next |
-| 3 P2 Partnership Formation | IN_PROGRESS | refined design complete; runtime follows the P1 request substrate |
+| 2 P1 Discovery and Requests | IN_PROGRESS | hardened design complete; A1 dependency is closed and P1-A runtime implementation is next |
+| 3 P2 Partnership Formation | IN_PROGRESS | hardened design complete; runtime follows the P1 request substrate |
 | 4 P3 Partnership Lifecycle | IN_PROGRESS | pure domain layer verified; persistence, API, worker, race, and notification closure remain |
 | 5 M1 Messaging Core and R1 Relationship Space | PLANNED | begins after partnership formation and lifecycle capability boundaries stabilize |
 | 6 M2 Realtime and Offline Reliability | PLANNED | requires messaging core; physical Android validation begins here |
@@ -330,7 +330,7 @@ Safe parallelization:
 - P1 reuses the generalized A1 PostgreSQL-backed security-rate-limit primitive rather than inventing an independent limiter.
 - P1 detects reciprocal active requests; P2 owns the same-transaction partnership formation coordinator.
 - Production request creation remains fail-closed until that P2 coordinator is registered.
-- P1 create uses explicit idempotency, pair-wide deterministic locks, cursor-paginated request lists, and cross-epic invalidation hooks.
+- P1 create uses explicit idempotency bound to recipient plus relationship date, pair-wide deterministic locks, snapshot-bound cursor pagination, UTC calendar arithmetic, and cross-epic invalidation hooks.
 
 Implement:
 
@@ -370,9 +370,9 @@ Key design decisions:
 - the occupied-slot database invariant remains final defense against double partnership
 - accepted requests link to the resulting partnership for stable lost-response replay
 - every other incompatible pending request is invalidated in the same transaction
-- relationship-date edits use optimistic `version`, not lifecycle `generation`
+- relationship-date edits use `expectedMetadataVersion` against optimistic partnership `version`, not lifecycle `generation`, and serialize with account-deletion state through the canonical account-then-partnership lock order
 - the fresh `partnershipId` itself is the local namespace root and future S1 cryptographic namespace; P2 creates no redundant security identifier or fake E2EE keys
-- durable in-app notification satisfies P2 relationship-date notification while push transport remains later
+- durable in-app notifications use deterministic recipients and deduplication keys; push transport remains later
 
 Implementation sequence:
 

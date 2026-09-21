@@ -74,8 +74,8 @@ After creation:
 
 - incompatible pending requests are invalidated
 - one current membership row exists per member
-- a new cryptographic partnership context is created
-- the relationship start date is manually entered and may differ from activation date
+- a fresh immutable partnership ID creates the new server/local namespace; S1 later binds reviewed cryptographic state to that namespace
+- the relationship start date is manually entered through the request consent flow and may differ from activation date
 
 ## Active partnership
 
@@ -137,13 +137,14 @@ Allowed:
 - scheduled For You releases
 - scheduled Future Us releases
 - email changes for accessible accounts
+- relationship start-date changes with partner notification
 
 Restricted:
 
 - edits to messages that existed before breakup
 - deletes of messages that existed before breakup
 - reactions to messages that existed before breakup
-- relationship-object creation and editing, except scheduled releases that were already configured
+- relationship-object creation and editing, except scheduled releases that were already configured; this does not prohibit the separate partnership metadata field `relationship_start_date`
 - blocking
 - new partnership formation
 

@@ -26,6 +26,13 @@ Migration 0006 implements recoverable durable-work leases, direct expired-claim 
 
 Migration 0007 implements the A1 account/auth runtime schema. It is verified: `npm run test:a1:local` applies all seven migrations from zero, database invariants pass, and the expanded A1 integration/acceptance matrix passes 27/27.
 
+Planned next migrations:
+
+8. `0008_partner_discovery_requests_runtime.sql` for P1 request terminal hardening, request attempts/indexes, and legacy-compatible relationship-date persistence with new-write enforcement
+9. `0009_partnership_formation_runtime.sql` for P2 accepted-request partnership linkage, accepted-state hardening, durable account notifications, and formation/query indexes
+
+Migration 0009 intentionally does not add a second security-context identifier. The fresh immutable partnership ID is the namespace root. Accepted-request linkage uses restrictive foreign-key semantics so retained acceptance evidence cannot silently lose its replay identity.
+
 ## Commands
 
 Static migration-plan check:

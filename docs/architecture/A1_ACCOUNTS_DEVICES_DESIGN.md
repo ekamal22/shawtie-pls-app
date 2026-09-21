@@ -1460,7 +1460,7 @@ Username change remains prohibited while the account occupies an active or break
 
 The API uses the central capability engine and database lock order rather than duplicating this rule in route code.
 
-Future P2 partnership formation must lock accounts in the same deterministic account-row order, so username-change and partnership-formation races cannot bypass the restriction.
+The refined P2 partnership-formation design locks accounts in the same deterministic account-row order, so username-change and partnership-formation races cannot bypass the restriction.
 
 ## Account deletion and P3 boundary
 

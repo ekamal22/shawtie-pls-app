@@ -827,7 +827,7 @@ P1 uses stable HTTP behavior:
 - invalid contract or cursor: 400
 - discovery success including no result: 200
 - request list: 200
-- request create success: 201 unless P2 defines a paired response status in the same contract revision
+- request create success: 201 for both ordinary created and P2 `paired` outcomes; the response body discriminates the outcome
 - completed idempotency replay: original stored status
 - product-state conflict such as monthly limit, decline cooldown, duplicate, target changed, or target unavailable: 409
 - abuse-rate limit: 429 with Retry-After where a safe bounded retry value exists
@@ -978,9 +978,9 @@ ReciprocalPairCandidate {
   relationshipStartDate
   observedAt
 }
+~~~
 
 The relationship date comes from the triggering second request, whose fresh consent completes the reciprocal pair. P2 revalidates it against trusted server date before formation.
-~~~
 
 No pairing event is placed on an asynchronous queue as the authority for partnership creation.
 
@@ -992,8 +992,8 @@ P2 then:
 - creates the partnership transactionally using the triggering request's manually entered relationship start date
 - marks the reciprocal requests accepted
 - invalidates incompatible pending requests
-- creates fresh partnership namespace state
-- writes required outbox/lifecycle records
+- uses the fresh partnership ID as the new local/future cryptographic namespace root
+- writes required lifecycle and durable notification records
 - commits once
 
 This prevents a second partnership or asynchronous pairing race.
