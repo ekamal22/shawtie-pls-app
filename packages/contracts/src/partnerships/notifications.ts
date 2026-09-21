@@ -30,3 +30,26 @@ export type AccountNotificationEventType = z.infer<typeof accountNotificationEve
 export type NotificationListQuery = z.infer<typeof notificationListQuerySchema>;
 export type NotificationCursor = z.infer<typeof notificationCursorSchema>;
 export type NotificationIdParams = z.infer<typeof notificationIdParamsSchema>;
+
+export const accountNotificationSchema = z.object({
+  notificationId: uuid,
+  eventType: accountNotificationEventTypeSchema,
+  actorAccountId: uuid.nullable(),
+  partnershipId: uuid.nullable(),
+  createdAt: z.string().min(20).max(40),
+  readAt: z.string().min(20).max(40).nullable(),
+});
+
+export const notificationListResponseSchema = z.object({
+  items: z.array(accountNotificationSchema),
+  nextCursor: cursor.nullable(),
+});
+
+export const notificationReadResponseSchema = z.object({
+  notificationId: uuid,
+  readAt: z.string().min(20).max(40),
+});
+
+export type AccountNotification = z.infer<typeof accountNotificationSchema>;
+export type NotificationListResponse = z.infer<typeof notificationListResponseSchema>;
+export type NotificationReadResponse = z.infer<typeof notificationReadResponseSchema>;

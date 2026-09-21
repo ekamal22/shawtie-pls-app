@@ -13,5 +13,15 @@ export const relationshipStartDateUpdateSchema = z.object({
   expectedMetadataVersion: metadataVersion,
 });
 
+export const relationshipStartDateUpdateResponseSchema = z.object({
+  partnershipId: uuid,
+  relationshipStartDate: isoDate,
+  metadataVersion,
+  changed: z.boolean(),
+});
+
 export type PartnershipIdParams = z.infer<typeof partnershipIdParamsSchema>;
 export type RelationshipStartDateUpdateInput = z.infer<typeof relationshipStartDateUpdateSchema>;
+export type RelationshipStartDateUpdateResponse = z.infer<
+  typeof relationshipStartDateUpdateResponseSchema
+>;

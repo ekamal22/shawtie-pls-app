@@ -10,6 +10,11 @@ import {
 } from "./modules/partner-requests/partner-request-service.ts";
 import { registerPartnerRequestRoutes } from "./modules/partner-requests/routes.ts";
 import { registerAccountRoutes } from "./modules/auth/routes.ts";
+import { NotificationService } from "./modules/notifications/notification-service.ts";
+import { registerNotificationRoutes } from "./modules/notifications/routes.ts";
+import { createP2PartnershipFormationCoordinator } from "./modules/partnerships/partnership-formation-coordinator.ts";
+import { PartnershipService } from "./modules/partnerships/partnership-service.ts";
+import { registerPartnershipRoutes } from "./modules/partnerships/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
 import { installMutationSecurity } from "./plugins/request-security.ts";
 import { AuthKeyRing } from "./security/auth-key-ring.ts";
@@ -45,11 +50,10 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
   });
 
   const partnerRequestMode = dependencies.config.partnerRequestMode ?? "disabled";
+  const builtInFormationCoordinator = createP2PartnershipFormationCoordinator();
   const partnerRequestService = new PartnerRequestService(dependencies.database, service, {
     mode: partnerRequestMode,
-    ...(dependencies.partnershipFormationCoordinator
-      ? { coordinator: dependencies.partnershipFormationCoordinator }
-      : {}),
+    coordinator: dependencies.partnershipFormationCoordinator ?? builtInFormationCoordinator,
   });
   registerPartnerRequestRoutes(app, {
     database: dependencies.database,
@@ -57,6 +61,22 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     keys,
     service: partnerRequestService,
     mode: partnerRequestMode,
+  });
+
+  const partnershipService = new PartnershipService(dependencies.database);
+  registerPartnershipRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: partnershipService,
+  });
+
+  const notificationService = new NotificationService(dependencies.database);
+  registerNotificationRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: notificationService,
   });
 
   return app;

@@ -6,7 +6,9 @@ export interface PartnershipReadModel {
   readonly activatedAt: Date;
   readonly relationshipStartDate: string;
   readonly metadataVersion: bigint;
+  readonly generation: bigint;
   readonly accountDeletionViewOnly: boolean;
+  readonly viewOnlyAccountId: string | null;
   readonly otherMember: {
     readonly accountId: string;
     readonly username: string;
@@ -24,7 +26,9 @@ export async function loadPartnershipReadModelForAccount(
     activated_at: Date;
     relationship_start_date: string;
     version: string | number | bigint;
+    generation: string | number | bigint;
     account_deletion_view_only: boolean;
+    view_only_account_id: string | null;
     other_account_id: string;
     other_username: string;
     other_display_name: string;
@@ -34,6 +38,7 @@ export async function loadPartnershipReadModelForAccount(
             p.activated_at,
             p.relationship_start_date::text,
             p.version,
+            p.generation,
             EXISTS (
               SELECT 1
               FROM partnership_members member
@@ -42,6 +47,16 @@ export async function loadPartnershipReadModelForAccount(
                 AND member.released_at IS NULL
                 AND account.status <> 'active'
             ) AS account_deletion_view_only,
+            (
+              SELECT member.account_id
+              FROM partnership_members member
+              JOIN accounts account ON account.id = member.account_id
+              WHERE member.partnership_id = p.id
+                AND member.released_at IS NULL
+                AND account.status <> 'active'
+              ORDER BY member.account_id
+              LIMIT 1
+            ) AS view_only_account_id,
             other_member.account_id AS other_account_id,
             other_account.username_display AS other_username,
             other_profile.display_name AS other_display_name
@@ -67,7 +82,9 @@ export async function loadPartnershipReadModelForAccount(
         activatedAt: row.activated_at,
         relationshipStartDate: row.relationship_start_date,
         metadataVersion: BigInt(row.version),
+        generation: BigInt(row.generation),
         accountDeletionViewOnly: row.account_deletion_view_only,
+        viewOnlyAccountId: row.view_only_account_id,
         otherMember: {
           accountId: row.other_account_id,
           username: row.other_username,
@@ -99,6 +116,7 @@ export interface LockedPartnershipMetadata {
   readonly metadataVersion: bigint;
   readonly generation: bigint;
   readonly accountDeletionViewOnly: boolean;
+  readonly viewOnlyAccountId: string | null;
   readonly memberIds: readonly string[];
 }
 
@@ -113,6 +131,7 @@ export async function lockPartnershipForMetadataUpdate(
     version: string | number | bigint;
     generation: string | number | bigint;
     account_deletion_view_only: boolean;
+    view_only_account_id: string | null;
   }>(
     `SELECT p.id AS partnership_id,
             p.lifecycle_state,
@@ -126,7 +145,17 @@ export async function lockPartnershipForMetadataUpdate(
               WHERE member.partnership_id = p.id
                 AND member.released_at IS NULL
                 AND account.status <> 'active'
-            ) AS account_deletion_view_only
+            ) AS account_deletion_view_only,
+            (
+              SELECT member.account_id
+              FROM partnership_members member
+              JOIN accounts account ON account.id = member.account_id
+              WHERE member.partnership_id = p.id
+                AND member.released_at IS NULL
+                AND account.status <> 'active'
+              ORDER BY member.account_id
+              LIMIT 1
+            ) AS view_only_account_id
      FROM partnerships p
      WHERE p.id = $1
      FOR UPDATE`,
@@ -142,6 +171,7 @@ export async function lockPartnershipForMetadataUpdate(
     metadataVersion: BigInt(row.version),
     generation: BigInt(row.generation),
     accountDeletionViewOnly: row.account_deletion_view_only,
+    viewOnlyAccountId: row.view_only_account_id,
     memberIds,
   };
 }

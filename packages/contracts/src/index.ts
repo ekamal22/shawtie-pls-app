@@ -63,9 +63,11 @@ export {
 
 export {
   partnershipIdParamsSchema,
+  relationshipStartDateUpdateResponseSchema,
   relationshipStartDateUpdateSchema,
   type PartnershipIdParams,
   type RelationshipStartDateUpdateInput,
+  type RelationshipStartDateUpdateResponse,
 } from "./partnerships/relationship-date.ts";
 
 export {
@@ -75,12 +77,18 @@ export {
 
 export {
   accountNotificationEventTypeSchema,
+  accountNotificationSchema,
   notificationCursorSchema,
   notificationIdParamsSchema,
   notificationListQuerySchema,
+  notificationListResponseSchema,
   notificationReadBodySchema,
+  notificationReadResponseSchema,
+  type AccountNotification,
   type AccountNotificationEventType,
   type NotificationCursor,
   type NotificationIdParams,
   type NotificationListQuery,
+  type NotificationListResponse,
+  type NotificationReadResponse,
 } from "./partnerships/notifications.ts";

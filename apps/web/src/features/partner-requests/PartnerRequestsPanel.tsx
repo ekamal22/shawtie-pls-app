@@ -43,6 +43,8 @@ function errorMessage(error: unknown): string {
     REQUEST_MONTHLY_LIMIT: "You reached the monthly request limit for this person.",
     TARGET_CHANGED: "That username changed. Search again before sending.",
     TARGET_UNAVAILABLE: "That person is not available for a partner request.",
+    REQUEST_NOT_AVAILABLE: "That request is no longer available.",
+    PARTNERSHIP_UNAVAILABLE: "A partnership could not be formed.",
   };
   return known[error.code] ?? error.code.replaceAll("_", " ").toLowerCase();
 }
@@ -130,10 +132,16 @@ export function PartnerRequestsPanel() {
         });
         setSendAttemptKey(null);
         setNotice(
-          response.outcome === "reciprocal_pair_ready"
-            ? "Both requests are ready to pair once partnership formation is enabled."
-            : "Partner request sent.",
+          response.outcome === "paired"
+            ? "Your partnership is active."
+            : response.outcome === "reciprocal_pair_ready"
+              ? "Both requests are ready to pair."
+              : "Partner request sent.",
         );
+        if (response.outcome === "paired") {
+          window.dispatchEvent(new Event("shawtie:partnership-changed"));
+          window.dispatchEvent(new Event("shawtie:notifications-changed"));
+        }
         setResult(null);
         setQuery("");
         setRelationshipStartDate("");
@@ -144,6 +152,18 @@ export function PartnerRequestsPanel() {
         }
         throw caught;
       }
+    });
+  }
+
+  async function acceptRequest(requestId: string) {
+    await run(async () => {
+      await apiRequest("/api/v1/partner-requests/" + requestId + "/accept", {
+        method: "POST",
+      });
+      setNotice("Your partnership is active.");
+      await refreshLists();
+      window.dispatchEvent(new Event("shawtie:partnership-changed"));
+      window.dispatchEvent(new Event("shawtie:notifications-changed"));
     });
   }
 
@@ -240,13 +260,22 @@ export function PartnerRequestsPanel() {
                   {item.relationshipStartDate}
                 </p>
                 <p className="hint">Expires {new Date(item.expiresAt).toLocaleString()}</p>
-                <button
-                  className="secondary compact"
-                  disabled={busy}
-                  onClick={() => void mutate(item.requestId, "decline")}
-                >
-                  Decline
-                </button>
+                <div className="button-row">
+                  <button
+                    className="primary compact"
+                    disabled={busy}
+                    onClick={() => void acceptRequest(item.requestId)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    className="secondary compact"
+                    disabled={busy}
+                    onClick={() => void mutate(item.requestId, "decline")}
+                  >
+                    Decline
+                  </button>
+                </div>
               </article>
             ))}
           </div>
