@@ -206,9 +206,19 @@ async function moveBreakupPastRestoreBoundary(
   database: DatabasePool,
   breakupId: string,
 ): Promise<void> {
+  const stamp = await database.pool.query<{ now: Date }>(
+    "SELECT date_trunc('milliseconds', clock_timestamp()) AS now",
+  );
+  const now = stamp.rows[0]?.now;
+  if (!now) throw new Error("PostgreSQL test clock unavailable");
+
+  const initiatedAt = new Date(now.getTime() - 2 * 60 * 60_000);
+  const initiatorCancelUntil = new Date(initiatedAt.getTime() + 60 * 60_000);
+  const baseDeadline = new Date(initiatedAt.getTime() + 7 * 24 * 60 * 60_000);
+
   await database.pool.query(
-    "WITH stamp AS (SELECT clock_timestamp() AS value) UPDATE breakup_processes SET initiated_at = stamp.value - interval '2 hours', initiator_cancel_until = stamp.value - interval '1 hour', base_deadline = stamp.value - interval '2 hours' + interval '7 days', final_deadline = stamp.value - interval '2 hours' + interval '7 days' FROM stamp WHERE id = $1",
-    [breakupId],
+    "UPDATE breakup_processes SET initiated_at = $2, initiator_cancel_until = $3, base_deadline = $4, final_deadline = $4 WHERE id = $1",
+    [breakupId, initiatedAt, initiatorCancelUntil, baseDeadline],
   );
 }
 
@@ -219,7 +229,7 @@ test("P3 breakup cancellation is replay-safe and preserves metadata version", as
     await reset(database);
     const alice = await register(app, database, "cancel_alice");
     const bob = await register(app, database, "cancel_bob");
-    const partnershipId = await formPartnership(app, alice, bob, "p3-cancel-form");
+    const partnershipId = await formPartnership(app, alice, bob, "p3-cancel-form-0001");
 
     const key = "p3-breakup-cancel-start";
     const started = await app.inject({
@@ -296,7 +306,7 @@ test("P3 first restore extends once to day ten and mutual intent restores withou
     await reset(database);
     const alice = await register(app, database, "restore_alice");
     const bob = await register(app, database, "restore_bob");
-    const partnershipId = await formPartnership(app, alice, bob, "p3-restore-form");
+    const partnershipId = await formPartnership(app, alice, bob, "p3-restore-form-0001");
 
     const started = await app.inject({
       method: "POST",
@@ -418,6 +428,7 @@ test("P3 concurrent restore intents serialize to one restored partnership", asyn
     assert.deepEqual(
       responses.map((response) => response.statusCode).sort((a, b) => a - b),
       [200, 200],
+      responses.map((response) => response.body).join("\n"),
     );
     assert.equal(
       responses.filter((response) => (response.json() as { restored: boolean }).restored).length,
@@ -448,7 +459,7 @@ test("P3 account deletion overlay is view-only and recovery preserves the same p
     await reset(database);
     const alice = await register(app, database, "overlay_alice");
     const bob = await register(app, database, "overlay_bob");
-    const partnershipId = await formPartnership(app, alice, bob, "p3-overlay-form");
+    const partnershipId = await formPartnership(app, alice, bob, "p3-overlay-form-0001");
     const reauthedCookie = await reauthenticate(app, alice);
 
     const deletion = await app.inject({
@@ -547,7 +558,7 @@ test("P3 former-partner block is private and a request race cannot leave an unsa
     await reset(database);
     const alice = await register(app, database, "block_alice");
     const bob = await register(app, database, "block_bob");
-    const partnershipId = await formPartnership(app, alice, bob, "p3-block-form");
+    const partnershipId = await formPartnership(app, alice, bob, "p3-block-form-0001");
     const endedAt = new Date();
 
     await database.pool.query(

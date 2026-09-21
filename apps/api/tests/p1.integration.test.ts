@@ -154,6 +154,40 @@ async function createRequest(
   });
 }
 
+async function insertFormerPartnerBlockFixture(
+  database: DatabasePool,
+  blockerAccountId: string,
+  blockedAccountId: string,
+): Promise<string> {
+  const partnershipId = randomUUID();
+  const blockId = randomUUID();
+  const at = new Date();
+
+  await database.pool.query(
+    `INSERT INTO partnerships (
+       id, relationship_start_date, lifecycle_state, version, generation,
+       created_at, activated_at, terminated_at, termination_reason, updated_at
+     ) VALUES (
+       $1, DATE '2025-01-01', 'terminated', 1, 2,
+       $4, $4, $4, 'breakup', $4
+     )`,
+    [partnershipId, blockerAccountId, blockedAccountId, at],
+  );
+  await database.pool.query(
+    `INSERT INTO partnership_members (
+       partnership_id, account_id, joined_at, released_at
+     ) VALUES ($1,$2,$4,$4), ($1,$3,$4,$4)`,
+    [partnershipId, blockerAccountId, blockedAccountId, at],
+  );
+  await database.pool.query(
+    `INSERT INTO partnership_blocks (
+       id, blocker_account_id, blocked_account_id, source_partnership_id, created_at
+     ) VALUES ($1,$2,$3,$4,$5)`,
+    [blockId, blockerAccountId, blockedAccountId, partnershipId, at],
+  );
+  return blockId;
+}
+
 test("P1 exact discovery is authenticated, normalized, minimized, and hides a blocking target", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -194,12 +228,7 @@ test("P1 exact discovery is authenticated, normalized, minimized, and hides a bl
     });
     assert.deepEqual(self.json(), { result: null });
 
-    await database.pool.query(
-      `INSERT INTO partnership_blocks (
-         id, blocker_account_id, blocked_account_id, created_at
-       ) VALUES ($1,$2,$3,clock_timestamp())`,
-      [randomUUID(), bob.accountId, alice.accountId],
-    );
+    await insertFormerPartnerBlockFixture(database, bob.accountId, alice.accountId);
     const hidden = await app.inject({
       method: "POST",
       url: "/api/v1/discovery/username",
@@ -491,12 +520,7 @@ test("P1 future relationship date and recipient-side block map to safe denials",
       "RELATIONSHIP_DATE_FUTURE",
     );
 
-    await database.pool.query(
-      `INSERT INTO partnership_blocks (
-         id, blocker_account_id, blocked_account_id, created_at
-       ) VALUES ($1,$2,$3,clock_timestamp())`,
-      [randomUUID(), bob.accountId, alice.accountId],
-    );
+    await insertFormerPartnerBlockFixture(database, bob.accountId, alice.accountId);
     const unavailable = await createRequest(app, alice, bob, "p1-block-key-000001");
     assert.equal(unavailable.statusCode, 409);
     assert.equal(
@@ -623,12 +647,10 @@ test("P1 expected denial is replayed from idempotency even after hidden target s
     await reset(database);
     const alice = await register(app, database, "denial_alice");
     const bob = await register(app, database, "denial_bob");
-    const blockId = randomUUID();
-    await database.pool.query(
-      "INSERT INTO partnership_blocks (" +
-        "id, blocker_account_id, blocked_account_id, created_at" +
-        ") VALUES ($1,$2,$3,clock_timestamp())",
-      [blockId, bob.accountId, alice.accountId],
+    const blockId = await insertFormerPartnerBlockFixture(
+      database,
+      bob.accountId,
+      alice.accountId,
     );
 
     const key = "p1-denial-replay-001";
