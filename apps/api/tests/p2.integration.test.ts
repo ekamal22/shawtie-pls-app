@@ -587,7 +587,7 @@ test("P2 relationship date updates version, notify once, and isolate reads", asy
     const bob = await register(app, database, "date_bob");
     const charlie = await register(app, database, "date_charlie");
 
-    const created = await createRequest(app, alice, bob, "p2-date-request");
+    const created = await createRequest(app, alice, bob, "p2-date-request-key");
     assert.equal(created.statusCode, 201, created.body);
     const requestId = (created.json() as { requestId: string }).requestId;
 
