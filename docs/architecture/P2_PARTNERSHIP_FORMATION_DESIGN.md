@@ -331,7 +331,7 @@ Requirements:
 - explicit acceptance must still identify the authenticated recipient
 - the coordinator returns only the resulting partnership identity to P1
 
-This adapter design lets P2 integrate with the P1 code currently under validation without reopening the P1 public interface.
+This adapter design lets P2 integrate with the verified P1 code without reopening the P1 public interface.
 ## Explicit acceptance API
 
 ~~~text
