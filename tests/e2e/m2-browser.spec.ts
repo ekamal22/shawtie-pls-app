@@ -234,6 +234,14 @@ test("M2 runtime reconnects and replays one offline message after canonical sync
       }),
     });
   });
+  await page.route("**/api/v1/relationship-space", async (route) => {
+    requestOrder.push("relationship-authority");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ space: null }),
+    });
+  });
   await page.route(
     "**/api/v1/conversations/" + CONVERSATION + "/messages",
     async (route) => {
