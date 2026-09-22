@@ -146,3 +146,46 @@ test("M1 relationship-space ownership remains untouched by messaging cleanup", a
   assert.equal(deletion.includes("deletePartnershipMessagingContent"), true);
   assert.equal(deletion.includes("deletePartnershipRelationalContent"), true);
 });
+
+
+test("M1 browser exposes the required chat affordances and advances receipts only after reconciliation", async () => {
+  const panel = await readFile(
+    new URL("../../web/src/features/messaging/MessagingPanel.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(
+    panel.includes('const defaultReactions = ["❤️", "😂", "😭", "😮", "😡", "👍"]'),
+    true,
+  );
+  assert.equal(panel.includes('window.prompt("Emoji reaction")'), true);
+  assert.equal(panel.includes("message.editedAt"), true);
+  assert.equal(panel.includes('body: { type: "delivered", throughSequence }'), true);
+  assert.equal(panel.includes('body: { type: "read", throughSequence }'), true);
+  assert.equal(panel.includes('"/typing"'), true);
+  assert.equal(panel.includes('"/nicknames/"'), true);
+  assert.equal(panel.includes("M1_VISIBLE_CHANGE_POLL_MS"), true);
+  assert.equal(panel.includes("M1_PRESENCE_HEARTBEAT_MIN_MS"), true);
+
+  const refreshIndex = panel.indexOf(
+    "const message = await refreshMessage(summary.conversationId, change.messageId)",
+  );
+  const cursorIndex = panel.indexOf("changeCursorRef.current = cursor", refreshIndex);
+  assert.ok(refreshIndex >= 0 && cursorIndex > refreshIndex);
+  assert.equal(panel.includes("refreshed.latestServerSequence"), false);
+});
+
+test("M1 messaging request handlers do not log private request content", async () => {
+  const service = await readFile(
+    new URL("../src/modules/messages/messaging-service.ts", import.meta.url),
+    "utf8",
+  );
+  const routes = await readFile(
+    new URL("../src/modules/messages/routes.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(service.includes("console."), false);
+  assert.equal(routes.includes("console."), false);
+  assert.equal(routes.includes("request.log"), false);
+});
