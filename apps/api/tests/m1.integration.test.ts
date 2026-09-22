@@ -1102,6 +1102,78 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
   }
 });
 
+test("M1 typing writes coalesce and the endpoint enforces its server rate limit", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "typing_alice");
+    const bob = await register(app, database, "typing_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "typing");
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + conversationId + "/typing",
+      headers: jsonHeaders(alice.cookie),
+      payload: { typing: true },
+    });
+    assert.equal(first.statusCode, 200, first.body);
+
+    const firstStored = await database.pool.query<{
+      updated_at: Date;
+      expires_at: Date;
+    }>(
+      "SELECT updated_at, expires_at FROM conversation_typing_state WHERE conversation_id = $1 AND account_id = $2",
+      [conversationId, alice.accountId],
+    );
+    assert.ok(firstStored.rows[0]);
+
+    const immediateRefresh = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + conversationId + "/typing",
+      headers: jsonHeaders(alice.cookie),
+      payload: { typing: true },
+    });
+    assert.equal(immediateRefresh.statusCode, 200, immediateRefresh.body);
+
+    const secondStored = await database.pool.query<{
+      updated_at: Date;
+      expires_at: Date;
+    }>(
+      "SELECT updated_at, expires_at FROM conversation_typing_state WHERE conversation_id = $1 AND account_id = $2",
+      [conversationId, alice.accountId],
+    );
+    assert.equal(
+      secondStored.rows[0]?.updated_at.getTime(),
+      firstStored.rows[0]?.updated_at.getTime(),
+    );
+    assert.equal(
+      secondStored.rows[0]?.expires_at.getTime(),
+      firstStored.rows[0]?.expires_at.getTime(),
+    );
+
+    await database.pool.query(
+      "UPDATE security_rate_limit_buckets SET attempt_count = 60, blocked_until = NULL WHERE scope = 'm1.typing'",
+    );
+
+    const limited = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + conversationId + "/typing",
+      headers: jsonHeaders(alice.cookie),
+      payload: { typing: true },
+    });
+    assert.equal(limited.statusCode, 429, limited.body);
+    assert.equal(
+      (limited.json() as { error: { code: string } }).error.code,
+      "RATE_LIMITED",
+    );
+    assert.ok(Number(limited.headers["retry-after"]) >= 1);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M1 account-deletion overlay is view-only and recovery preserves the same conversation", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
