@@ -84,6 +84,30 @@ ALTER TABLE messages
       )
     ) NOT VALID;
 
+CREATE FUNCTION reject_message_creation_identity_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF NEW.id IS DISTINCT FROM OLD.id
+     OR NEW.conversation_id IS DISTINCT FROM OLD.conversation_id
+     OR NEW.partnership_id IS DISTINCT FROM OLD.partnership_id
+     OR NEW.sender_account_id IS DISTINCT FROM OLD.sender_account_id
+     OR NEW.client_idempotency_key IS DISTINCT FROM OLD.client_idempotency_key
+     OR NEW.server_sequence IS DISTINCT FROM OLD.server_sequence
+     OR NEW.created_change_sequence IS DISTINCT FROM OLD.created_change_sequence
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'message creation identity and order are immutable';
+  END IF;
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER messages_creation_identity_immutable
+BEFORE UPDATE ON messages
+FOR EACH ROW
+EXECUTE FUNCTION reject_message_creation_identity_update();
+
 CREATE TABLE conversation_changes (
   conversation_id uuid NOT NULL,
   change_sequence bigint NOT NULL,
