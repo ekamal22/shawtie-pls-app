@@ -46,10 +46,11 @@ Build the private two-person product in dependency order:
 1. identity and lifecycle authority
 2. messaging and relationship content
 3. realtime and offline reliability
-4. media and calling
-5. reviewed end-to-end encryption and cryptographic recovery
-6. public-readiness verification
-7. stable release
+4. media and voice calling
+5. video calling
+6. reviewed end-to-end encryption and cryptographic recovery
+7. public-readiness verification
+8. stable release
 
 Do not reopen verified foundation or lifecycle boundaries without concrete regression evidence or an approved architecture change.
 
@@ -61,9 +62,10 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | IN_PROGRESS, source implementation complete; validation and device closure pending | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED, design complete; implementation blocked on M2 closure | M2 | Yes |
-| 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
-| 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
-| 10 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
+| 8 C1 Voice Calling | PLANNED | M2 | Yes, mandatory |
+| 9 C2 Video Calling | PLANNED | C1 | Yes, mandatory |
+| 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3 + C1 + C2 | Yes, mandatory |
+| 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
@@ -434,7 +436,7 @@ Detailed design-time physical-device acceptance is defined in `testing/M3_ANDROI
 
 M3 implementation must start from the verified mainline after M2 closure. The current `design/m3-media-voice` branch is documentation only.
 
-# Milestone 8: C1 Voice and Video Calling
+# Milestone 8: C1 Voice Calling
 
 Status: PLANNED.
 
@@ -442,32 +444,68 @@ Depends on verified M2 and may progress alongside M3.
 
 ## Goal
 
-Add authorized private realtime calling with explicit privacy and lifecycle rules.
+Establish the shared private calling substrate and close audio-only calling end to end before adding camera/video complexity.
 
 ## Core scope
 
-- call signaling
+- call signaling and shared call lifecycle
 - voice calls
-- video calls
+- microphone permission and audio capture
 - accept, reject, cancel
 - missed-call state
-- call history
+- call history with call type = voice
 - short-lived TURN credentials
 - relay-first privacy
 - TURN/TCP or TURN/TLS fallback where supported
 - breakup-pending explicit acceptance for every call
+- interruption, reconnect, and background/foreground behavior for voice calls
+
+## Explicit C1 boundary
+
+C1 does not enable camera capture or video media. It establishes the signaling, authorization, TURN, lifecycle, history, and reconnect substrate that C2 reuses.
 
 ## Closure boundary
 
-C1 must prove authorization, no auto-answer, TURN credential expiry, relay behavior, lifecycle restrictions, call-history isolation/deletion, reconnect safety, and real physical-device calls.
+C1 must prove authorization, no auto-answer, microphone permission behavior, audio-only WebRTC media, TURN credential expiry, relay behavior, lifecycle restrictions, voice call-history isolation/deletion, reconnect safety, and real physical-device voice calls.
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
-# Milestone 9: S1 E2EE and Cryptographic Recovery
+# Milestone 9: C2 Video Calling
 
 Status: PLANNED.
 
-Depends on verified messaging/media/calling semantics and requires protocol review before implementation.
+Depends on verified C1 Voice Calling.
+
+## Goal
+
+Extend the verified C1 call core with private camera/video media without duplicating signaling, TURN, lifecycle, or call-history authority.
+
+## Core scope
+
+- video calls using the C1 signaling and call lifecycle
+- camera permission and video capture
+- video media negotiation over WebRTC
+- call history with call type = video
+- relay-first privacy inherited from C1
+- TURN credentials and restrictive-network fallback inherited from C1
+- breakup-pending explicit acceptance inherited from C1
+- video-specific interruption, reconnect, background/foreground, and device behavior
+
+## Explicit C2 boundary
+
+C2 must reuse C1 authorization, signaling state, TURN issuance, call-state persistence, deletion, and lifecycle rules. It must not create a parallel video-call authority or a second call-state model.
+
+## Closure boundary
+
+C2 must prove camera permission behavior, video media negotiation, relay/privacy behavior, lifecycle restrictions, call-history isolation/deletion, reconnect safety, and real physical-device video calls while the complete C1 voice regression remains green.
+
+**REDMI PHONE REQUIRED: YES, MANDATORY.**
+
+# Milestone 10: S1 E2EE and Cryptographic Recovery
+
+Status: PLANNED.
+
+Depends on verified messaging, M3 media, C1 voice-calling, and C2 video-calling semantics and requires protocol review before implementation.
 
 ## Goal
 
@@ -500,7 +538,7 @@ S1 requires protocol review, test vectors where available, ciphertext-at-rest ev
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
-# Milestone 10: R2 Public Readiness
+# Milestone 11: R2 Public Readiness
 
 Status: PLANNED.
 
