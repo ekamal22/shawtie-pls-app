@@ -4,6 +4,8 @@
 
 Accepted as an architecture boundary. Exact protocol and library selection remains subject to dedicated security review.
 
+ADR-012 amends only the pre-S1 M3 development path: it permits ciphertext-only object storage with server-recoverable wrapped development media keys while M3 precedes S1. That bridge is explicitly not E2EE and does not weaken this ADR's stable-release gate. S1 must replace it through fresh client re-encryption or wipe before stable release.
+
 ## Context
 
 Shawtie pls handles private messages, media, letters, memories, relationship objects, and calls.
