@@ -549,6 +549,10 @@ The M1 PostgreSQL matrix must include:
 - final-dissolution cleanup of messages, reactions, receipt/member state, typing, nickname state, and durable change rows
 - permanent account-deletion presence cleanup
 - content-free outbox invalidations for durable message mutations
+- pre-M2 M1 outbox sink delivers valid message invalidations without transport
+- M1 outbox claiming is restricted to M1-owned message event types and leaves unrelated event families pending
+- malformed or private-content M1 invalidation payloads fail closed
+- unknown payload versions for recognized M1 event types fail closed
 - security guards proving private message content is absent from logs, lifecycle events, notifications, durable work, change rows, outbox payloads, and idempotency metadata
 - centralized interaction-limit contract coverage so message, page, typing, presence, and idempotency ceilings do not drift between layers
 
