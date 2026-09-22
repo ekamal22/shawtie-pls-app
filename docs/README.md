@@ -60,6 +60,8 @@ The selected architecture is:
 - `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`
 - `api/P2_PARTNERSHIP_API.md`
 - `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
+- `architecture/M1_MESSAGING_CORE_DESIGN.md`
+- `api/M1_MESSAGING_API.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 - `architecture/DATA_MODEL.md`
 - `architecture/PARTNERSHIP_STATE_MACHINE.md`
@@ -104,7 +106,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`, and `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates and is merged to `main` at `04b5229`. P3 is DONE at all 22 acceptance gates with green lifecycle domain/contracts, security, ten-migration PostgreSQL, database-invariant, API/worker/race, full health, and dependency-audit evidence.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`, and `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates and is merged to `main` at `04b5229`. P3 is DONE at all 22 acceptance gates with green lifecycle domain/contracts, security, ten-migration PostgreSQL, database-invariant, API/worker/race, full health, and dependency-audit evidence. M1 Messaging Core is IN_PROGRESS on `feat/m1-messaging-core`: its refined architecture and API contract are documented, while runtime implementation and acceptance evidence remain pending.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 
