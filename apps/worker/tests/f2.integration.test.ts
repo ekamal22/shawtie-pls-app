@@ -528,7 +528,10 @@ test("expired deletion claim is reclaimed with fencing and current owner can ren
   const manifestId = "f2440000-0000-4000-8000-000000000003";
   const targetId = "f2440000-0000-4000-8000-000000000031";
 
-  await database.pool.query("DELETE FROM deletion_manifests WHERE id = $1", [manifestId]);
+  await database.pool.query(
+    "DELETE FROM deletion_manifests WHERE subject_type = 'partnership' AND subject_id = $1",
+    [partnershipId],
+  );
   await createDeletionManifest(database.pool, {
     id: manifestId,
     subjectType: "partnership",
@@ -587,7 +590,10 @@ test("deletion manifest resumes after partial failure while access stays revoked
   const targetA = "f2440000-0000-4000-8000-000000000011";
   const targetB = "f2440000-0000-4000-8000-000000000012";
 
-  await database.pool.query("DELETE FROM deletion_manifests WHERE id = $1", [manifestId]);
+  await database.pool.query(
+    "DELETE FROM deletion_manifests WHERE subject_type = 'partnership' AND subject_id = $1",
+    [partnershipId],
+  );
   await createDeletionManifest(database.pool, {
     id: manifestId,
     subjectType: "partnership",
@@ -652,7 +658,10 @@ test("permanently failed deletion target can be repaired and resumed without res
   const manifestId = "f2440000-0000-4000-8000-000000000002";
   const targetId = "f2440000-0000-4000-8000-000000000021";
 
-  await database.pool.query("DELETE FROM deletion_manifests WHERE id = $1", [manifestId]);
+  await database.pool.query(
+    "DELETE FROM deletion_manifests WHERE subject_type = 'partnership' AND subject_id = $1",
+    [partnershipId],
+  );
   await createDeletionManifest(database.pool, {
     id: manifestId,
     subjectType: "partnership",
