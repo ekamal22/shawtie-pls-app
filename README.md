@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline at commit `9820801`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. P3 is closed at all 22 acceptance gates: all ten migrations apply from zero, database invariants pass, the lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
+The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. M1 Messaging Core is IN_PROGRESS on `feat/m1-messaging-core`: the refined messaging architecture and API contract are documented, while runtime implementation and acceptance evidence remain pending. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 
@@ -45,6 +45,8 @@ Start with:
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
 - `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the completed, locally verified P2 implementation design
 - `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` for the completed, locally verified P3 implementation design
+- `docs/architecture/M1_MESSAGING_CORE_DESIGN.md` for the refined M1 Messaging Core architecture and implementation plan
+- `docs/api/M1_MESSAGING_API.md` for the refined M1 HTTP and synchronization contract
 - `docs/api/P2_PARTNERSHIP_API.md` for the implemented and locally verified P2 HTTP contract and replay/privacy semantics
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements
