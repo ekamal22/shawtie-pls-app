@@ -127,36 +127,44 @@ P1 ✅
 P2 ✅
    ->
 P3 ✅
+   ->
+M1 ✅ (local closure, merge pending)
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
-M1 is locally closed at 18/18 gates on `feat/m1-messaging-core`. Migrations 0001 through 0012 apply from zero with database invariants green, the disposable PostgreSQL/API/worker matrix passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, M1 security passes 17/17, full repository health passes, and the high-severity dependency audit reports 0 vulnerabilities. Merge to `main` is pending and out of scope for branch closure.
+M1 is locally closed at 18/18 gates on `feat/m1-messaging-core` at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. Migrations 0001 through 0012 apply from zero with database invariants green, the disposable PostgreSQL/API/worker matrix passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, M1 security passes 17/17, full repository health passes, and the high-severity dependency audit reports 0 vulnerabilities. Merge to `main` is pending and out of scope for branch closure.
 
 ## Most recently completed milestone
 
-### P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns
+### M1 Messaging Core
 
 Verified closure branch:
 
 ~~~text
-feat/p3-partnership-lifecycle
+feat/m1-messaging-core
+~~~
+
+Verified closure commit:
+
+~~~text
+aa40a2cc74e8efb08bcefdbe3ae40e306cabe288
 ~~~
 
 Verified implementation state:
 
-1. P3-A refined domain and contracts are committed
-2. P3-B migration 0010 and lifecycle repositories are committed
-3. P3-C breakup APIs and the expanded current read model are committed
-4. P3-D generation-fenced deadline workers and reminders are committed
-5. P3-E canonical dissolution and A1 account-deletion integration are committed
-6. P3-F cooldown hygiene and former-partner blocking are committed
-7. P3-G browser lifecycle flows are committed
-8. P3-H PostgreSQL/API/worker/race/security closure harness is committed
+1. M1-A through M1-H are implemented and locally verified
+2. migrations 0001 through 0012 apply from zero
+3. database invariants pass
+4. M1 security passes 17/17
+5. the disposable PostgreSQL/API/worker matrix passes 64/64 with `M1_LOCAL_POSTGRES_PASS`
+6. P1, P2, P3, and A1 regression surfaces remain green
+7. full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4
+8. `npm audit --audit-level=high` reports 0 vulnerabilities and `git diff --check` passes
 
-P3 is locally closed at 22/22 gates with the complete green evidence summarized above and its verified code baseline is merged to `main`. M1 Messaging Core and R1 Relationship Space are now the next dependent milestones.
+M1 is locally closed at 18/18 gates. Merge to `main` remains pending, so M2 must not branch from the shared mainline until verified M1 is reintegrated.
 
-P3 did not rewrite verified migrations 0001 through 0009.
+M1 preserves verified migrations 0001 through 0010 and owns only migrations 0011 and 0012.
 
 ## Milestone branch flow
 

@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified P3 code baseline is commit `9820801`, now contained in `main`. Documentation-only roadmap reconciliation may advance the `main` branch beyond that code commit without changing the verified runtime baseline.
+The verified P3 code baseline is commit `9820801`, now contained in `main`. Documentation-only roadmap reconciliation may advance the `main` branch beyond that code commit without changing the verified runtime baseline. M1 Messaging Core is independently verified and locally closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` on `feat/m1-messaging-core`; it has not yet been merged to `main`.
 
 Completed milestones:
 
@@ -25,6 +25,7 @@ Completed milestones:
 | 2 P1 Discovery and Partner Requests | DONE | 14/14 gates |
 | 3 P2 Partnership Formation | DONE | 11/11 gates |
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
+| 5A M1 Messaging Core | DONE locally, merge pending | 18/18 gates at `aa40a2c` |
 | V1 Hosted CI Verification | BLOCKED | separate track until GitHub Actions capacity returns |
 
 P3 closure evidence remains:
@@ -88,7 +89,7 @@ Recommended execution order:
 3. keep M1 and R1 schema/API changes explicitly coordinated
 4. close each epic only from its own acceptance evidence
 5. merge completed milestone branches back to main before dependent milestones branch
-6. begin M2 only from main containing verified M1
+6. reintegrate verified M1 closure `aa40a2c` into the shared mainline before M2 begins
 7. keep V1 separate until hosted Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -147,7 +148,7 @@ M1 must not use message creation sequence as the only reconnect/poll cursor.
 
 The M1 branch contains the locally verified runtime implementation for migrations, repositories, lifecycle integration, messaging API, browser chat, content-free pre-M2 outbox invalidation handling, domain/contracts, database invariants, race/security tests, and the disposable-PostgreSQL closure harness.
 
-On 2026-09-22, `test:m1:local` passed 64/64 after applying migrations 0001 through 0012 from zero with database invariants green. Full repository health passed, and the high-severity dependency audit reported 0 vulnerabilities. All 18 M1 acceptance gates are closed. M1 has not yet been merged to `main`.
+On 2026-09-22, `test:m1:local` passed 64/64 after applying migrations 0001 through 0012 from zero with database invariants green. Full repository health passed, and the high-severity dependency audit reported 0 vulnerabilities. All 18 M1 acceptance gates are closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. M1 has not yet been merged to `main`.
 
 ## Closure boundary
 

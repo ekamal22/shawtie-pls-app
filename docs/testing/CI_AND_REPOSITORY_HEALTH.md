@@ -66,7 +66,7 @@ The clean-install path from the committed lockfile has been validated successful
 
 A1 has added its runtime dependencies and local verification commands. The committed lockfile is current, the full local health baseline is green, the expanded disposable PostgreSQL A1 path passes 27/27, the A1 security suite passes 16/16, and the high-severity dependency audit reports 0 vulnerabilities. A1 is DONE at 20/20 acceptance gates.
 
-M1 Messaging Core is locally closed on `feat/m1-messaging-core`. On 2026-09-22, `npm run test:m1:local` applied migrations 0001 through 0012 from zero, passed database invariants, and completed the PostgreSQL/API/worker matrix 64/64. `npm run health` passed repository health across 346 scanned files, all workspace typechecks and production builds, lint, formatting, dependency checks, and 108/108 unit/security tests. `npm audit --audit-level=high` reported 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1 and was not claimed or triggered for this closure.
+M1 Messaging Core is locally closed on `feat/m1-messaging-core` at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. On 2026-09-22, `npm run test:m1:local` applied migrations 0001 through 0012 from zero, passed database invariants, and completed the PostgreSQL/API/worker matrix 64/64. `npm run health` passed repository health across 346 scanned files, all workspace typechecks and production builds, lint, formatting, dependency checks, and 108/108 unit/security tests. `npm audit --audit-level=high` reported 0 vulnerabilities and `git diff --check` passed. Hosted GitHub Actions verification remains separate under V1 and was not claimed or triggered for this closure.
 
 ## Repository-health policy
 

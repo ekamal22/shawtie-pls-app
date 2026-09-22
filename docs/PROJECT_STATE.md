@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, P1 Discovery and Partner Requests, P2 Partnership Formation and Relationship Date, and P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns are complete with repeatable local evidence. All ten committed PostgreSQL migrations apply from zero against disposable PostgreSQL 16, database invariants pass, the P3 lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, and the disposable PostgreSQL/API/worker integration matrix passes 39/39. Full repository health and the high-severity dependency audit are green. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, P1 Discovery and Partner Requests, P2 Partnership Formation and Relationship Date, and P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns are complete on the verified mainline. M1 Messaging Core is also locally complete at 18/18 acceptance gates on `feat/m1-messaging-core` at closure commit `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; merge to `main` remains pending. On the verified M1 branch, migrations 0001 through 0012 apply from zero against disposable PostgreSQL 16 with database invariants green, `npm run test:m1:local` passes 64/64, `npm run test:m1:security` passes 17/17, full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4, and `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
 
 ## Product definition
 
@@ -56,7 +56,7 @@ Accepted architecture decisions include:
 
 ## Implementation state
 
-M1 repository foundation implemented and locally validated:
+Repository foundation implemented and locally validated:
 
 - npm workspace layout for `apps/*` and `packages/*`
 - strict shared TypeScript configuration and package path aliases
@@ -101,7 +101,7 @@ Implemented and locally validated:
 - scheduled-action `FOR UPDATE SKIP LOCKED` claim concurrency
 - deterministic two-account lock ordering
 
-The current domain suite contains 38 tests and passes in local validation.
+This earlier partnership-domain validation stage contained 38 tests and passed locally. Current suite totals are recorded in the epic closure evidence below.
 
 The threat model and data-classification baseline are complete and remain the active security foundation for implementation.
 
@@ -137,6 +137,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `milestone/p1-discovery-requests` -> `69cb238`
 - `feat/p2-partnership-formation` -> `04b5229`
 - `feat/p3-partnership-lifecycle` -> completed P3 development and closure history
+- `feat/m1-messaging-core` -> locally closed M1 at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; merge to `main` pending
 - `main` contains verified P3 code baseline `9820801`; later documentation-only commits may advance the branch without changing that runtime evidence
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
@@ -161,7 +162,7 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 A1, P1, P2, and P3 are complete and merged into the verified mainline.
 
-M1 Messaging Core is locally closed on `feat/m1-messaging-core`; reintegration to `main` is a separate task. R1 may continue in parallel on its separate branch.
+M1 Messaging Core is locally closed on `feat/m1-messaging-core` at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; reintegration to `main` is a separate task. R1 may continue in parallel on its separate branch.
 
 1. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
 2. keep M1 changes out of R1-owned migrations 0013 and 0014
@@ -190,6 +191,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1, P1, P2, and P3 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, P2 at 11/11 gates, and P3 at 22/22 gates. P3 closure is supported by the green lifecycle domain/contracts, security, ten-migration PostgreSQL, database-invariant, API/worker/race, full health, and dependency-audit runs recorded above.
+A1, P1, P2, P3, and M1 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, P2 at 11/11 gates, P3 at 22/22 gates, and M1 at 18/18 gates on `feat/m1-messaging-core`. M1 closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` and is supported by the green 12-migration PostgreSQL path, database invariants, 64/64 API/worker integration matrix, 17/17 M1 security suite, full repository health, dependency audit, and `git diff --check`. M1 is not yet merged to `main`.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

@@ -8,6 +8,10 @@ Branch:
 
 `feat/m1-messaging-core`
 
+Verified closure commit:
+
+`aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`
+
 Branch base:
 
 `main @ ac7423d`

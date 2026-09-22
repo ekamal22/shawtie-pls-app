@@ -2,7 +2,7 @@
 
 ## Status
 
-The PostgreSQL migration set is implemented and locally verified through P3 migration `0010_partnership_lifecycle_runtime.sql`. All ten migrations apply from zero against disposable PostgreSQL 16, and database invariants pass.
+The verified `main` substrate is implemented through P3 migration `0010_partnership_lifecycle_runtime.sql`. On `feat/m1-messaging-core`, M1 migrations `0011_messaging_core_runtime.sql` and `0012_messaging_interaction_runtime.sql` are also locally verified: migrations 0001 through 0012 apply from zero against disposable PostgreSQL 16, database invariants pass, and M1 closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. M1 has not yet been merged to `main`.
 
 ## Current and next migration
 
@@ -254,7 +254,7 @@ M1 migration 0012 implements compact interaction state:
 
 M1 does not add durable per-heartbeat history.
 
-Both migrations are locally verified. On 2026-09-22 the M1 disposable PostgreSQL 16 harness applied migrations 0001 through 0012 from zero, passed database invariants, and completed the 64-test PostgreSQL/API/worker matrix with `M1_LOCAL_POSTGRES_PASS`.
+Both migrations are locally verified. On 2026-09-22 the M1 disposable PostgreSQL 16 harness applied migrations 0001 through 0012 from zero, passed database invariants, and completed the 64-test PostgreSQL/API/worker matrix with `M1_LOCAL_POSTGRES_PASS`. The verified M1 closure commit is `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; canonical 0013/0014 validation remains a later M1 plus R1 integration concern.
 
 The M1 migration/integration tests must additionally prove:
 

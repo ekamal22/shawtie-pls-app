@@ -892,6 +892,10 @@ Implemented and verified by the complete local matrix, repository health, and de
 
 Status: DONE locally on `feat/m1-messaging-core`; merge to `main` pending
 
+Verified closure commit:
+
+`aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`
+
 Branch:
 
 `feat/m1-messaging-core`
@@ -960,7 +964,7 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 
 M1-A through M1-H are implemented and locally verified on `feat/m1-messaging-core`, including migrations 0011/0012, repositories, lifecycle integration, HTTP APIs, browser chat, content-free pre-M2 outbox invalidation handling, and the local PostgreSQL closure harness.
 
-On 2026-09-22, the closure harness applied migrations 0001 through 0012 from zero, passed database invariants, and passed 64/64 PostgreSQL/API/worker tests. M1 security passed 17/17, full repository health passed, and the high-severity dependency audit reported 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
+On 2026-09-22, the closure harness applied migrations 0001 through 0012 from zero, passed database invariants, and passed 64/64 PostgreSQL/API/worker tests. M1 security passed 17/17, full repository health passed with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4, `git diff --check` passed, and the high-severity dependency audit reported 0 vulnerabilities. This executed evidence closes all 18 M1 gates at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. Hosted GitHub Actions verification remains separate under V1.
 
 ## Implementation sequence
 
