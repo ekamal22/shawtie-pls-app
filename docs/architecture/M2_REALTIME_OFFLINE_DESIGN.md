@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE, SECOND-PASS HARDENED. SOURCE IMPLEMENTATION COMPLETE; EXECUTED VALIDATION AND PHYSICAL DEVICE CLOSURE PENDING.
+DESIGN COMPLETE, SECOND-PASS HARDENED. SOURCE IMPLEMENTATION COMPLETE THROUGH 6e3c019371edd96a081c71ff178b6ee82f406566; EXECUTED LOCAL VALIDATION AND PHYSICAL DEVICE CLOSURE PENDING.
 
 Branch:
 
@@ -24,6 +24,12 @@ Inherited verified runtime baseline:
 - exhaustive pre-M2 repository validation: 40/40 gates
 
 M2 is the first milestone that requires physical Android acceptance.
+
+## Current implementation snapshot
+
+All M2-A through M2-I source slices and the automated closure surface are implemented at the pre-documentation source head `6e3c019371edd96a081c71ff178b6ee82f406566`. The latest source audit also closed revoked-session IndexedDB purge ordering, immediate account-routed partnership scope refresh for sockets connected before partnership formation, and accidental reconciliation/replay startup while the browser is offline. Real Chromium acceptance now exercises actual M2 runtime reconnect/replay with stable idempotency after simulated response loss, account isolation, final-partnership purge, protected cold-start locking, cross-tab claim fencing, and private-API cache exclusion. `npm run test:m2:closure` is implemented as the canonical automated local closure command.
+
+No known feature or architecture slice remains to be implemented. Any further M2 source change should be driven by failed local/device evidence or a newly discovered correctness issue. The milestone remains IN_PROGRESS until that evidence is executed and recorded.
 
 ## Purpose
 
@@ -1791,7 +1797,7 @@ M2's contentContextKey exists only to make that migration explicit without inven
 
 ## Completion statement
 
-M2 architecture and implementation sequencing are defined, and the source implementation is complete through `feat/m2-realtime-offline @ 4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`.
+M2 architecture and implementation sequencing are defined, and the source implementation is complete through `feat/m2-realtime-offline @ 6e3c019371edd96a081c71ff178b6ee82f406566`.
 
 The milestone remains IN_PROGRESS until the final source head passes `test:m2:local` (including real Chromium acceptance), full repository health, high-severity audit, and the mandatory physical Android matrix in `docs/testing/M2_ANDROID_ACCEPTANCE.md`.
 

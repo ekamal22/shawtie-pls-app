@@ -70,6 +70,20 @@ M1 Messaging Core is closed at runtime anchor `aa40a2cc74e8efb08bcefdbe3ae40e306
 
 The exhaustive sweep passed 40/40 gates on one exact local/remote SHA. It included clean bootstrap, repository scanner, migration-plan validation, typecheck, production builds, lint, formatting, dependency-direction checks, root and feature-specific unit/security suites, and every disposable PostgreSQL harness: F2 39/39, A1 27/27, P1 16/16, P2 27/27, P3 39/39, M1 64/64, and R1 69/69. This is the current local integration-validation source of truth until a later code change requires rerunning the matrix.
 
+## M2 automated closure status
+
+M2 source implementation and automated acceptance tooling are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`, but the current head has not yet been executed through the full closure path.
+
+The canonical automated M2 command is:
+
+```text
+npm run test:m2:closure
+```
+
+That wrapper requires the exact `feat/m2-realtime-offline` branch and remote SHA, an initially clean worktree, `[skip ci]` on every M2 branch commit while hosted Actions capacity is intentionally conserved, no newly introduced Unicode em dash, the full `test:m2:local` Docker/PostgreSQL/API/worker/Chromium matrix, `npm run health`, `npm audit --audit-level=high`, `git diff --check`, and a clean final worktree. Passing that command closes the automated local gate only. Mandatory physical Android acceptance remains separate and is required before M2 can be marked DONE.
+
+Do not describe M2 as locally validated until this command has executed successfully on the current branch head.
+
 ## Repository-health policy
 
 `scripts/ci/repository-health.mjs` checks the current repository for:

@@ -527,7 +527,7 @@ Stable-release evidence must combine:
 
 M2 has a dedicated closure matrix because WebSocket delivery, browser local persistence, service-worker lifecycle, and physical-device suspension cannot be proven by unit tests alone.
 
-Planned commands:
+Implemented M2 command surface:
 
 ```text
 npm run test:m2:install-browser
@@ -537,6 +537,7 @@ npm run test:m2:postgres
 npm run test:m2:browser
 npm run test:m2:browser:e2e
 npm run test:m2:local
+npm run test:m2:closure
 npm run health
 npm audit --audit-level=high
 npm run test:m2:device:prepare
@@ -589,6 +590,8 @@ Required PostgreSQL/API/worker integration evidence includes:
 
 The browser closure has two layers: fast Node/static synchronization checks in `test:m2:browser` and real Chromium acceptance in `test:m2:browser:e2e`. The composite `test:m2:local` runs the PostgreSQL/API/worker closure first and then the real Chromium suite.
 
+`test:m2:closure` is the canonical automated M2 closure wrapper. It additionally requires the exact M2 branch and remote SHA, a clean worktree, `[skip ci]` on M2 commits while Actions capacity is being conserved, no newly introduced Unicode em dash, full repository health, a high-severity dependency audit, `git diff --check`, and final worktree cleanliness. Physical Android acceptance remains a separate mandatory gate.
+
 Required browser automation includes:
 
 - IndexedDB persistence across reload
@@ -616,7 +619,7 @@ Physical Android acceptance is mandatory for M2. Use `docs/testing/M2_ANDROID_AC
 
 M2 does not close from simulated socket delivery alone. The authoritative acceptance catalog is in `../ROADMAP_EPICS.md`, and the detailed architecture is in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md`.
 
-The source command surface and disposable M2 PostgreSQL harness are implemented. This document does not treat those commands as passed until execution evidence from the current M2 source head is recorded.
+The M2 source implementation and command surface are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`, including the disposable PostgreSQL/API/worker path, real Chromium runtime acceptance, and `test:m2:closure`. The latest browser suite covers reconnect/replay with a stable idempotency key after simulated response loss, account-local IndexedDB isolation, final-partnership purge, stronger protected cold-start locking, cross-tab claim fencing, and private-API Cache API exclusion. This document does not treat any of those gates as passed until execution evidence from the current M2 branch head is recorded.
 
 ## M1 Messaging Core verification
 
