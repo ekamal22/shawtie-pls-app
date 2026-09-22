@@ -636,6 +636,120 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
   }
 });
 
+test("M1 private message content never leaks into durable operational metadata", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "privacy_alice");
+    const bob = await register(app, database, "privacy_bob");
+    const { partnershipId, conversationId } = await formPartnership(
+      app,
+      alice,
+      bob,
+      "privacy",
+    );
+
+    const originalSentinel = "M1_PRIVATE_ORIGINAL_9c4e4d7a";
+    const currentSentinel = "M1_PRIVATE_CURRENT_2d8f6a1b";
+    const sent = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      originalSentinel,
+      "m1-privacy-send-idempotency-key",
+    );
+    assert.equal(sent.statusCode, 201, sent.body);
+    const messageId = (sent.json() as { messageId: string }).messageId;
+
+    const edit = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
+      headers: jsonHeaders(alice.cookie, "m1-privacy-edit-idempotency-key"),
+      payload: { body: currentSentinel, expectedContentVersion: 1 },
+    });
+    assert.equal(edit.statusCode, 200, edit.body);
+
+    const reaction = await app.inject({
+      method: "PUT",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + messageId
+        + "/reaction",
+      headers: jsonHeaders(bob.cookie, "m1-privacy-reaction-key"),
+      payload: { emoji: "🥹" },
+    });
+    assert.equal(reaction.statusCode, 200, reaction.body);
+
+    const nickname = await app.inject({
+      method: "PATCH",
+      url:
+        "/api/v1/partnerships/"
+        + partnershipId
+        + "/nicknames/"
+        + bob.accountId,
+      headers: jsonHeaders(alice.cookie, "m1-privacy-nickname-key"),
+      payload: { nickname: "Private Bee", expectedVersion: 1 },
+    });
+    assert.equal(nickname.statusCode, 200, nickname.body);
+
+    const currentMessage = await database.pool.query<{ body_text: string | null }>(
+      "SELECT body_text FROM messages WHERE id = $1",
+      [messageId],
+    );
+    assert.equal(currentMessage.rows[0]?.body_text, currentSentinel);
+
+    const oldBody = await database.pool.query(
+      "SELECT 1 FROM messages WHERE body_text = $1 UNION ALL SELECT 1 FROM message_versions WHERE convert_from(ciphertext, 'UTF8') = $1",
+      [originalSentinel],
+    );
+    assert.equal(oldBody.rowCount, 0);
+
+    const leaked = await database.pool.query<{
+      outbox: string;
+      idempotency: string;
+      lifecycle: string;
+      notifications: string;
+      scheduled: string;
+      security: string;
+      email_delivery: string;
+    }>(
+      `SELECT
+         (SELECT count(*)::text FROM outbox_events WHERE payload::text LIKE '%' || $1 || '%') AS outbox,
+         (SELECT count(*)::text FROM idempotency_records WHERE COALESCE(response_body::text, '') LIKE '%' || $1 || '%') AS idempotency,
+         (SELECT count(*)::text FROM partnership_lifecycle_events WHERE COALESCE(metadata_json::text, '') LIKE '%' || $1 || '%') AS lifecycle,
+         (SELECT count(*)::text FROM account_notifications WHERE event_type LIKE '%' || $1 || '%' OR deduplication_key LIKE '%' || $1 || '%') AS notifications,
+         (SELECT count(*)::text FROM scheduled_actions WHERE payload::text LIKE '%' || $1 || '%') AS scheduled,
+         (SELECT count(*)::text FROM security_events WHERE metadata_json::text LIKE '%' || $1 || '%') AS security,
+         (SELECT count(*)::text FROM security_email_deliveries WHERE parameters_json::text LIKE '%' || $1 || '%') AS email_delivery`,
+      [currentSentinel],
+    );
+    assert.deepEqual(leaked.rows[0], {
+      outbox: "0",
+      idempotency: "0",
+      lifecycle: "0",
+      notifications: "0",
+      scheduled: "0",
+      security: "0",
+      email_delivery: "0",
+    });
+
+    const changeColumns = await database.pool.query<{ column_name: string }>(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'conversation_changes'
+         AND column_name IN ('body', 'body_text', 'emoji', 'emoji_text', 'nickname', 'reply_body')`,
+    );
+    assert.equal(changeColumns.rowCount, 0);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M1 reply context survives pagination and deleted reply targets stay tombstone-safe", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
