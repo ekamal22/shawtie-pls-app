@@ -166,11 +166,12 @@ export function MessagingPanel() {
   }, []);
 
   const refreshMessage = useCallback(
-    async (conversationId: string, messageId: string) => {
+    async (conversationId: string, messageId: string): Promise<Message> => {
       const message = await apiRequest<Message>(
         "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
       );
       setMessages((current) => mergeMessages(current, [message]));
+      return message;
     },
     [],
   );
@@ -222,6 +223,7 @@ export function MessagingPanel() {
     if (!summary || document.visibilityState !== "visible") return;
 
     let cursor = changeCursorRef.current;
+    let highestLoadedSequence = messages.at(-1)?.serverSequence ?? 0;
     for (let pageIndex = 0; pageIndex < 4; pageIndex += 1) {
       const result = await apiRequest<{
         items: ConversationChange[];
@@ -236,26 +238,18 @@ export function MessagingPanel() {
       );
 
       for (const change of result.items) {
-        await refreshMessage(summary.conversationId, change.messageId);
+        const message = await refreshMessage(summary.conversationId, change.messageId);
+        highestLoadedSequence = Math.max(highestLoadedSequence, message.serverSequence);
         cursor = change.changeSequence;
         changeCursorRef.current = cursor;
       }
 
-      if (!result.hasMore) {
-        if (result.items.length === 0) {
-          changeCursorRef.current = Math.max(
-            changeCursorRef.current,
-            Math.min(result.latestChangeSequence, cursor),
-          );
-        }
-        break;
-      }
+      if (!result.hasMore) break;
     }
 
     const refreshed = await refreshConversation();
     if (refreshed) {
-      const newest = messages.at(-1)?.serverSequence ?? refreshed.latestServerSequence;
-      await acknowledge(refreshed, newest);
+      await acknowledge(refreshed, highestLoadedSequence);
     }
   }, [acknowledge, conversation, messages, refreshConversation, refreshMessage]);
 
