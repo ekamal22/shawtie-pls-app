@@ -4,7 +4,7 @@ import {
   createDefaultDeletionHandlers,
   createDefaultScheduledHandlers,
 } from "./auth/default-account-handlers.ts";
-import { OutboxHandlerRegistry } from "./outbox/outbox-handler-registry.ts";
+import { createDefaultOutboxHandlers } from "./outbox/default-outbox-handlers.ts";
 import { WorkerApplication } from "./runtime/worker-application.ts";
 import { createWorkerIdentity } from "./runtime/worker-identity.ts";
 
@@ -15,7 +15,7 @@ const application = new WorkerApplication({
   workerId: createWorkerIdentity("shawtie-worker"),
   config: workerConfigFromEnv(),
   scheduledHandlers: createDefaultScheduledHandlers(),
-  outboxHandlers: new OutboxHandlerRegistry(),
+  outboxHandlers: createDefaultOutboxHandlers(),
   deletionHandlers: createDefaultDeletionHandlers(database),
 });
 
