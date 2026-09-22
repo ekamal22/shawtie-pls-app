@@ -400,7 +400,7 @@ actorAccountId
 referenceId = mediaId
 ```
 
-The resolver returns true only when the actor can currently reference that ready media in the same partnership.
+The resolver returns true only when the actor can currently reference that ready media in the same partnership. Reference permission requires the actor to be the uploader or already have a current visible parent path to the media; partnership membership by itself is insufficient.
 
 For `role = voice_letter`, R1 and database validation require `mediaClass = voice`.
 

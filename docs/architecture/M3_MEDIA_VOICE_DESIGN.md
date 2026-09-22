@@ -573,6 +573,8 @@ M3 registers the real media resolver that R1 intentionally left unavailable.
 
 R1 create/patch can bind only media authorized for the actor and in ready state.
 
+Reference authorization is deliberately stricter than same-partnership membership. The actor may create a new parent reference only when the actor is the original uploader of the ready asset or already has a current visible parent path to that asset. This permits intentional reuse of an already-shared photo or recording while preventing a guessed unreleased R1 media ID from being rebound into a visible object.
+
 R1 projection rules remain unchanged:
 
 - unreleased recipient projections do not expose full references

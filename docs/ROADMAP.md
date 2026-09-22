@@ -60,7 +60,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | IN_PROGRESS, source implementation complete; validation and device closure pending | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
+| 7 M3 Media and Voice Messages | PLANNED, design complete; implementation blocked on M2 closure | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
 | 10 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
