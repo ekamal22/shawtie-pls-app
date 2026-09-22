@@ -525,7 +525,7 @@ A future compatible extension may add optional server frame types only when old 
 
 A required new semantic must use a new protocol version.
 
-C1 call signaling must not be inserted into v1 unless compatibility review proves old M2 clients remain safe.
+C1 Voice Calling signaling must not be inserted into v1 unless compatibility review proves old M2 clients remain safe. C2 Video Calling should reuse the reviewed C1 signaling model; any incompatible video-signaling semantics require an explicit protocol-version review rather than silent mutation.
 
 ## Security requirements
 
