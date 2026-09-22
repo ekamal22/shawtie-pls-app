@@ -84,6 +84,12 @@ That wrapper requires the exact `feat/m2-realtime-offline` branch and remote SHA
 
 Do not describe M2 as locally validated until this command has executed successfully on the current branch head.
 
+## M3 documentation-only design status
+
+M3 architecture is design-complete on `design/m3-media-voice`, but no M3 runtime implementation, migration, command surface, or executed acceptance evidence exists yet. Documentation-only M3 commits still follow repository hygiene, `[skip ci]`, and no-Unicode-em-dash policy while hosted Actions capacity is being conserved.
+
+The future M3 implementation branch must be created from verified `main` after M2 closure. M3 closure commands named in the design documents are planned interfaces until implementation creates them; they must not be reported as runnable or passing before that happens.
+
 ## Repository-health policy
 
 `scripts/ci/repository-health.mjs` checks the current repository for:
