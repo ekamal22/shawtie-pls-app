@@ -9,6 +9,7 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
-    "@shawtie/db": "0.0.0"
+    "@shawtie/db": "0.0.0",
+    "@shawtie/domain": "0.0.0"
   }
 }

@@ -277,6 +277,29 @@ export async function retryScheduledAction(
   return result.rows[0]?.status ?? "lost";
 }
 
+export async function rescheduleScheduledActionClaim(
+  executor: QueryExecutor,
+  claim: DurableClaim,
+  availableAt: Date,
+): Promise<boolean> {
+  const result = await executor.query(
+    `UPDATE scheduled_actions
+     SET status = 'pending',
+         available_at = $4,
+         completed_at = NULL,
+         last_error_code = NULL,
+         claimed_at = NULL,
+         claimed_by = NULL,
+         lease_expires_at = NULL
+     WHERE id = $1
+       AND status = 'processing'
+       AND claimed_by = $2
+       AND claim_version = $3`,
+    [claim.id, claim.claimedBy, claim.claimVersion.toString(), availableAt],
+  );
+  return result.rowCount === 1;
+}
+
 export async function cancelPendingScheduledActionsByDeduplicationKey(
   executor: QueryExecutor,
   deduplicationKeys: readonly string[],

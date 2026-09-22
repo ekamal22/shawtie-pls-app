@@ -1049,9 +1049,11 @@ A private collection of meaningful places with optional dates, notes, photos, an
 
 Private letters or messages intended for the partner, including immediate, date-based, or condition-labelled opening experiences.
 
+A condition-labelled item is opened explicitly by the intended partner. The app does not infer that an emotional or behavioral condition has become true.
+
 ### Voice Letters
 
-Preserved voice experiences attached to For You, Future Us, or other intentional relationship objects rather than ordinary chat voice notes.
+Preserved voice experiences attached to For You, Future Us, Surprise, Proposal, Love, or other intentional relationship objects rather than ordinary chat voice notes. Voice Letter visibility follows the containing relationship object's visibility and release state.
 
 ### Future Us
 
@@ -1083,7 +1085,7 @@ A special private experience built from curated memories, photos, saved messages
 
 ### Surprise Mode
 
-A private multi-step reveal that can combine letters, photos, memories, voice recordings, and a final reveal.
+A creator-prepared private multi-step reveal that can combine letters, photos, memories, voice recordings, and a final reveal. Its sealed sequence must not become visible to the partner before the creator reveals it.
 
 ### Until We're Together Again
 
@@ -1091,7 +1093,7 @@ An optional manually set reunion date with calm language and prepared content. I
 
 ### Proposal Mode
 
-A private experience that can prepare an emotional sequence leading into an in-person proposal. The app must not replace the real-life proposal with a gamified yes-or-no mechanic.
+A creator-prepared private experience that can prepare an emotional sequence leading into an in-person proposal. Its sealed sequence must not become visible before the creator reveals it. The app must not replace the real-life proposal with a gamified yes-or-no mechanic.
 
 ### Relationship Signals
 
@@ -1111,7 +1113,11 @@ These must be explicit user actions and must not be inferred from behavioral sig
 
 The relationship home may contain a deterministic chronological private feed of relationship events and objects. It must not use public-social engagement mechanics, follower graphs, popularity scores, algorithmic ranking, streak pressure, or advertising incentives.
 
-While a partnership is `breakup_pending`, existing relationship objects and shared-space content are view-only. Scheduled For You letters and Future Us items still unlock or arrive at their scheduled time. If the partnership is restored, normal write access returns. If the partnership reaches final dissolution, all relationship-space content, including scheduled content that unlocked during `breakup_pending`, is permanently deleted.
+While a partnership is `breakup_pending`, existing relationship objects and shared-space content are view-only. Scheduled For You letters and Future Us items still unlock or arrive only while trusted server time is strictly before the effective final-dissolution deadline. Exact deadline equality belongs to dissolution. Condition-labelled recipient-open items and creator-reveal experiences do not receive this exception.
+
+During active-partnership account-deletion recovery, unreleased relationship-space delivery is paused while the remaining partner has view-only access. If the deleting account is recovered before partnership dissolution, the same original schedule remains; an already-due scheduled item may then release if no controlling breakup or deletion deadline has arrived. Permanent deletion or earlier breakup dissolution cancels the pending content.
+
+If the partnership is restored, normal write access returns. If the partnership reaches final dissolution, all relationship-space content, including scheduled content that unlocked during `breakup_pending`, is permanently deleted.
 
 Relationship-duration experiences must use the manually entered relationship start date rather than the in-app partnership activation date.
 
@@ -1654,6 +1660,7 @@ Mandatory tests should include:
 - active-partnership account deletion gives the remaining partner view-only access for the recovery period
 - the remaining partner cannot form or accept another partnership during account-deletion recovery
 - no new shared data can be created during active-partnership account-deletion recovery
+- unreleased For You, Future Us, Surprise, and Proposal content remains paused during active-partnership account-deletion recovery
 - cancelling account deletion restores the exact previous account and partnership state when no earlier breakup deadline already dissolved it
 - if the account is recovered during breakup_pending, the original breakup deadline remains unchanged
 - if a breakup deadline occurs before account-deletion recovery ends, final dissolution and shared-data deletion happen at the breakup deadline
@@ -1811,7 +1818,8 @@ The first stable release should not ship until the project has:
 - breakup-period call consent enforcement
 - breakup-period message mutation restrictions
 - breakup-period nickname changes even after restoration intent
-- scheduled relationship-content release during breakup_pending
+- scheduled relationship-content release during breakup_pending strictly before the effective destructive deadline
+- account-deletion recovery pause for unreleased relationship content, with safe recovery wake behavior
 - tested final-dissolution deletion semantics
 - breakup deadline precedence over a later account-deletion recovery deadline
 - original breakup deadline preservation after account recovery

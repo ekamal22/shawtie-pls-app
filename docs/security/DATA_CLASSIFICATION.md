@@ -88,11 +88,12 @@ Examples:
 2. prefer derived values over exposing source data
 3. E2EE protected plaintext exists only on authorized clients
 4. application logs use an allowlist approach
-5. providers receive the minimum data needed for their function
-6. deletion behavior is defined per data category
-7. backups do not override product deletion semantics
-8. synthetic data only in the public repository
-9. secret material never enters source control
+5. raw unkeyed hashes of HIGHLY_SENSITIVE relationship request bodies are not persisted; equality fingerprints use a server-keyed domain-separated construction
+6. providers receive the minimum data needed for their function
+7. deletion behavior is defined per data category
+8. backups do not override product deletion semantics
+9. synthetic data only in the public repository
+10. secret material never enters source control
 10. cryptographic recovery secrets remain client-held
 
 ## Data matrix
@@ -149,11 +150,15 @@ Examples:
 | TURN username/credential | SECRET | Issued transiently | No | Never log credential | No backup | TURN receives credential | Short expiry |
 | Push token | SENSITIVE | Yes | No | Never log full token | Restricted operational backup | Push provider receives token | Token invalidation, device revocation, account deletion |
 | Push payload | SENSITIVE | Yes during send | No content plaintext | Log event type only | No payload backup | Push provider receives payload | Delivery completion |
+| R1 development preview plaintext | HIGHLY_SENSITIVE | Yes before S1 only | Yes, preview envelope after S1 | Never | Development-only restricted backup policy | Never provider plaintext | Item deletion, final dissolution, or S1 migration/wipe |
+| R1 development main plaintext | HIGHLY_SENSITIVE | Yes before S1 only | Yes, sealed envelope after S1 | Never | Development-only restricted backup policy | Never provider plaintext | Item deletion, final dissolution, or S1 migration/wipe |
 | Memory plaintext | HIGHLY_SENSITIVE | No after E2EE | Yes | Never | Never server plaintext backup | Never provider plaintext | Item deletion or final dissolution |
 | For You plaintext | HIGHLY_SENSITIVE | No after E2EE | Yes | Never | Never server plaintext backup | Never provider plaintext | Final dissolution |
 | Future Us plaintext | HIGHLY_SENSITIVE | No after E2EE | Yes | Never | Never server plaintext backup | Never provider plaintext | Final dissolution |
-| Relationship-object ciphertext | HIGHLY_SENSITIVE | Yes as ciphertext | Yes | Never log payload | Encrypted application backup until deletion | Database provider may hold ciphertext | Item deletion or final dissolution |
-| Scheduled unlock timestamp | SENSITIVE | Yes where worker requires it | No or split design | Minimal operational log | Operational backup | No unnecessary exposure | Item or partnership deletion |
+| Relationship preview ciphertext | HIGHLY_SENSITIVE | Yes as ciphertext | Yes | Never log payload | Encrypted application backup until deletion | Database provider may hold ciphertext | Item deletion or final dissolution |
+| Relationship sealed-content ciphertext | HIGHLY_SENSITIVE | Yes as ciphertext but withheld from intended recipient until release | Yes | Never log payload | Encrypted application backup until deletion | Database provider may hold ciphertext | Item deletion or final dissolution |
+| Scheduled unlock timestamp | SENSITIVE | Yes where worker requires it | No | Minimal operational log | Operational backup | No unnecessary exposure | Item or partnership deletion |
+| R1 idempotency keyed fingerprint | SENSITIVE | Yes | No | Never log value | Bounded operational backup | No | Receipt expiry or final dissolution |
 | Location memory coordinates | HIGHLY_SENSITIVE | Prefer encrypted | Yes | Never log | Encrypted backup only | Map provider exposure must be separately reviewed if introduced | Item deletion or final dissolution |
 | Lifecycle event record | SENSITIVE | Yes | No | It is itself bounded audit metadata | Bounded backup | No unnecessary provider exposure | Retention schedule after event no longer operationally required |
 | Outbox event | INTERNAL or SENSITIVE | Yes | No | Event type and status only | Short operational backup | Provider receives only its intended minimal projection | Successful delivery plus bounded retention |

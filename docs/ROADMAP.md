@@ -58,7 +58,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
 | 5A M1 Messaging Core | DONE locally, merge pending | P3 | No for core closure |
-| 5B R1 Relationship Space | NEXT, may run in parallel | P3 | No for core closure |
+| 5B R1 Relationship Space | IN_PROGRESS, source integrated; combined validation pending | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
@@ -80,21 +80,21 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 ~~~
 
-M1 and R1 may progress in parallel because both now depend on the verified P3 lifecycle/capability boundary rather than on each other.
+M1 and R1 progressed in parallel from the verified P3 boundary. M1 is locally DONE with runtime closure anchored at `aa40a2c`; its documentation-reconciled branch head is `b29b095`. R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`, including the formatting gate. The reserved-gap PostgreSQL matrix passes 68/68, but final integrated closure still requires combining the real M1 migrations 0011 and 0012 with R1 migrations 0013 and 0014.
 
 Recommended execution order:
 
-1. create `feat/m1-messaging-core` from the latest `main` containing verified P3
-2. create `feat/r1-relationship-space` from that same verified mainline when R1 implementation begins
-3. keep M1 and R1 schema/API changes explicitly coordinated
-4. close each epic only from its own acceptance evidence
-5. merge completed milestone branches back to main before dependent milestones branch
-6. reintegrate verified M1 closure `aa40a2c` into the shared mainline before M2 begins
+1. preserve M1 runtime closure at `aa40a2c` and integrated source head `b29b095`
+2. preserve R1 isolated-green evidence at source head `9bc9ba4`
+3. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
+4. validate the combined source on `integration/m1-r1` in the dedicated follow-up task
+5. close R1 only after canonical migration and full-health evidence passes without reservations
+6. begin M2 only from main containing verified M1
 7. keep V1 separate until hosted Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
-Status: DONE locally on `feat/m1-messaging-core`; merge to `main` pending.
+Status: DONE locally on the separate M1 branch. Runtime acceptance closed at `aa40a2c`; the documentation-reconciled branch head is `b29b095`; merge to `main` is pending.
 
 Canonical detailed gates:
 
@@ -158,7 +158,15 @@ M1 is DONE only after its API, persistence, ordering, durable synchronization, i
 
 # Milestone 5B: R1 Relationship Space
 
-Status: NEXT. May run in parallel with M1.
+Status: IN_PROGRESS and `R1 ISOLATED GREEN`. Architecture/API design and R1 source implementation are verified on `feat/r1-relationship-space`. The isolated PostgreSQL/API/worker matrix passes 68/68 with explicit reservations for M1-owned migrations 0011/0012, security and earlier-milestone regressions are green, format/typecheck/build/lint/dependency checks pass, and the dependency audit reports 0 vulnerabilities. Verified M1 migrations are anchored at the M1 runtime closure point `aa40a2c`; the current documentation-reconciled M1 branch head is `b29b095`. Final canonical migrations and full repository health remain integration-pending. R1 is not DONE.
+
+Canonical architecture:
+
+`docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
+
+Canonical API:
+
+`docs/api/R1_RELATIONSHIP_SPACE_API.md`
 
 Canonical detailed gates:
 
@@ -191,9 +199,12 @@ Implement the private shared relationship space without introducing public-socia
 ## P3 lifecycle obligations
 
 - relationship objects are partnership-scoped
-- breakup_pending makes mutable relationship objects view-only
-- scheduled For You and Future Us releases continue according to product rules
-- restoration returns permitted objects to writable state
+- breakup_pending makes user-driven relationship-object mutations view-only
+- preconfigured For You/Future Us scheduled release may continue during breakup only strictly before the effective destructive deadline
+- account-deletion recovery pauses unreleased relationship-space delivery
+- recovery preserves original unlock time and safely wakes due work
+- destructive deadline wins over release at exact equality and when finalization is late
+- restoration returns permitted objects to writable state without recreating schedules
 - final dissolution removes relationship-space authorization before cleanup
 - location memories require explicit user-created location data
 - no passive background location tracking

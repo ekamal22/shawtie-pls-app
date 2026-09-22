@@ -199,6 +199,20 @@ No M1 cleanup handler may take ownership of unrelated relationship-space tables.
 
 Deletion evidence must prove that no plaintext message body, historical body, reaction content, nickname content, or durable messaging change row survives final partnership cleanup, while authorization remains revoked throughout retries.
 
+## R1 relationship-space deletion integration
+
+R1 does not create a second partnership deletion workflow.
+
+R1 child state remains under `relationship_items` with same-partnership foreign keys. The P3 `partnership_relational_content` target remains the destructive relational cleanup authority.
+
+Before deleting an individual R1 target item, incoming curation/prepared-content links owned by surviving items are removed explicitly and each surviving owner version is incremented once. Target-side foreign keys do not silently cascade a surviving curation mutation behind its optimistic version.
+
+Pending relationship-item release actions are cancelled before relational item cleanup. Already-processing workers re-check lifecycle and destructive deadlines and cannot reveal content after eligibility ends.
+
+User item deletion hard-deletes preview, main content, child state, references, story membership, and item events rather than retaining a content-bearing tombstone.
+
+If R1 introduces storage outside the relationship-item relational tree, the deletion manifest and retry-safe handlers must be extended before R1 can close.
+
 ## Failure behavior
 
 If a deletion target fails:

@@ -48,7 +48,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
                 +-------+--------+
                 |                |
                 v                v
-          M1 Messaging ✅    R1 Relationship Space ⚪
+          M1 Messaging ✅    R1 Relationship Space 🟡
                 |
                 v
           M2 Realtime + Offline ⚪
@@ -95,7 +95,7 @@ flowchart TD
     P2 --> P3["P3 Lifecycle + Deletion ✅"]
 
     P3 --> M1["M1 Messaging Core ✅"]
-    P3 --> R1["R1 Relationship Space ⚪"]
+    P3 --> R1["R1 Relationship Space 🟡"]
 
     M1 --> M2["M2 Realtime + Offline ⚪"]
 
@@ -133,7 +133,7 @@ M1 ✅ (local closure, merge pending)
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
-M1 is locally closed at 18/18 gates on `feat/m1-messaging-core` at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. Migrations 0001 through 0012 apply from zero with database invariants green, the disposable PostgreSQL/API/worker matrix passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, M1 security passes 17/17, full repository health passes, and the high-severity dependency audit reports 0 vulnerabilities. Merge to `main` is pending and out of scope for branch closure.
+M1 is locally DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and the integrated source head at `b29b095`. R1 source implementation from `9bc9ba4` is isolated-green. Both source trees are combined on `integration/m1-r1`; canonical combined validation and full repository-health closure are still pending, so R1 stays yellow.
 
 ## Most recently completed milestone
 
@@ -162,7 +162,7 @@ Verified implementation state:
 7. full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4
 8. `npm audit --audit-level=high` reports 0 vulnerabilities and `git diff --check` passes
 
-M1 is locally closed at 18/18 gates. Merge to `main` remains pending, so M2 must not branch from the shared mainline until verified M1 is reintegrated.
+M1 is locally closed at 18/18 gates. M1 and R1 source integration is assembled on `integration/m1-r1`, with combined validation pending. Merge to `main` remains pending, so M2 must not branch from the shared mainline yet.
 
 M1 preserves verified migrations 0001 through 0010 and owns only migrations 0011 and 0012.
 
@@ -187,10 +187,12 @@ latest main containing verified P3
   |
   +--> feat/r1-relationship-space
 
-M1 and R1 may progress in parallel.
-M1 is DONE locally on `feat/m1-messaging-core`; merge to `main` is pending.
+M1 and R1 were developed in parallel from the verified P3 boundary.
+M1 is locally DONE; runtime closure is anchored at `aa40a2c`, and source head `b29b095` is integrated here.
+R1 architecture/API design and source implementation are isolated-green at source head `9bc9ba4` and integrated here; final combined validation and full-health closure are pending.
 M1 owns migrations 0011 and 0012.
-R1 reserves migrations 0013 and 0014.
+R1 owns migrations 0013 and 0014.
+Neither source module consumes the other's migration ownership.
 M2 waits for verified M1 to return to main.
 ~~~
 
@@ -204,7 +206,7 @@ From P2 onward:
 6. preserve the completed milestone branch
 7. create the next dependent milestone branch from the newly updated `main`
 
-The legacy `feat/m1-executable-foundation` branch is historical and is not the future M1 Messaging Core branch.
+The legacy `feat/m1-executable-foundation` branch is historical and is not the M1 Messaging Core branch.
 
 The next milestone branches are:
 

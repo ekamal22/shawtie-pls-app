@@ -15,3 +15,6 @@ export { evaluateDateOfBirthCorrection, evaluateUsernameChange } from "./account
 export { normalizePassword, validatePasswordPolicy } from "./account/password-policy.ts";
 export { isReservedUsername, normalizeUsername, validateUsername } from "./account/username.ts";
 export type { AccountRuleDenialCode, RuleDecision, UsernameValue } from "./account/types.ts";
+
+export * from "./relationship-space/types.ts";
+export * from "./relationship-space/rules.ts";

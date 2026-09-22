@@ -16,6 +16,19 @@ if (entries.length === 0) {
   throw new Error("No database migrations found");
 }
 
+const reservedVersions = new Set(
+  (process.env.SHAWTIE_MIGRATION_RESERVATIONS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => {
+      if (!/^[0-9]{4}$/.test(value)) {
+        throw new Error("Invalid migration reservation: " + value);
+      }
+      return Number(value);
+    }),
+);
+
 let expectedVersion = 1;
 
 for (const filename of entries) {
@@ -26,6 +39,15 @@ for (const filename of entries) {
   }
 
   const version = Number(match[1]);
+
+  while (expectedVersion < version && reservedVersions.has(expectedVersion)) {
+    console.log(
+      "RESERVED "
+        + String(expectedVersion).padStart(4, "0")
+        + " via SHAWTIE_MIGRATION_RESERVATIONS",
+    );
+    expectedVersion += 1;
+  }
 
   if (version !== expectedVersion) {
     throw new Error(
@@ -68,4 +90,9 @@ for (const filename of entries) {
   expectedVersion += 1;
 }
 
-console.log("MIGRATION_PLAN_PASS count=" + entries.length);
+console.log(
+  "MIGRATION_PLAN_PASS count="
+    + entries.length
+    + " reserved="
+    + reservedVersions.size,
+);

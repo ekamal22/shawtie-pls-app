@@ -285,6 +285,32 @@ npm audit --audit-level=high
 
 The P3 local harness emitted `P3_LOCAL_POSTGRES_PASS` after migrations, invariants, API, worker, race, deletion, and cross-epic regression work completed successfully. Hosted GitHub Actions verification remains separate under V1.
 
+### R1 relationship-space verification
+
+Canonical design:
+
+- `../architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
+- `../api/R1_RELATIONSHIP_SPACE_API.md`
+
+R1 runtime tests do not exist yet.
+
+Required closure evidence includes canonical migrations 0001 through 0014, same-partnership/immutable-root invariants, all-mutation idempotency and keyed fingerprints, creator/shared-state permission checks, preview versus sealed-content denial, recipient-open/creator-reveal authorization, breakup scheduled-release exception, account-deletion pause/recovery wake, destructive-deadline precedence, release-generation and claim fencing, linked-target deletion/version behavior, final-dissolution cleanup, future-partnership isolation, M1/M3 resolver gates, Voice Letter container visibility, coordinate/log non-leakage, date precision/future rejection, February 29 anniversary behavior, deterministic unranked derived experiences, explicit signals, browser lifecycle modes, full health, and dependency audit.
+
+Planned command surface:
+
+```text
+npm run test:relationship-space
+npm run test:r1:security
+npm run test:r1:postgres
+npm run test:r1:local
+npm run health
+npm audit --audit-level=high
+```
+
+These names are design targets until implemented and executed.
+
+R1 core closure does not require physical Redmi acceptance. M2 owns offline/reconnect device acceptance, M3 owns media transport acceptance, and S1 owns E2EE acceptance.
+
 ### Integration
 
 Exercise API plus PostgreSQL plus provider fakes.

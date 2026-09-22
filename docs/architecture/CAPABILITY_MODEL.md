@@ -35,6 +35,10 @@ canStartCall
 callRequiresExplicitAcceptance
 canCreateRelationshipObject
 canEditRelationshipObject
+canDeleteRelationshipObject
+canCurateRelationshipSpace
+canReleaseRelationshipObject
+canCreateRelationshipSignal
 canChangeNickname
 canChangeEmail
 canChangeUsername
@@ -59,6 +63,29 @@ The capability engine must:
 - accept trusted server time when time affects a rule
 - return stable denial codes
 - be exhaustively unit-tested across lifecycle states
+
+## R1 relationship-space refinement
+
+Planned user-driven R1 capabilities:
+
+- `create_relationship_object`
+- `edit_relationship_object_content`
+- `delete_relationship_object`
+- `mutate_relationship_shared_state`
+- `curate_relationship_space`
+- `recipient_open_relationship_object`
+- `creator_reveal_relationship_object`
+- `create_relationship_signal`
+
+Normal user actions require active current partnership and no account-deletion overlay.
+
+Feature policy narrows actor rights: authored content is creator-owned by default; Someday, reunion, and saved curation contain explicitly pair-mutable state; recipient-open belongs to the non-creator recipient for For You/Future Us; creator-reveal belongs to the creator for Surprise/Proposal; released delivery content is immutable.
+
+During `breakup_pending`, user-driven R1 mutation capabilities are denied.
+
+Scheduled release is evaluated by a separate pure predicate. A preconfigured For You/Future Us schedule may release during breakup only while trusted time is strictly before the effective destructive deadline. Account-deletion overlay pauses unreleased delivery. Exact deadline equality denies release, and a late finalizer does not extend eligibility.
+
+These remain design commitments until R1-A implementation and tests exist.
 
 ## API enforcement
 

@@ -1,7 +1,11 @@
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import Fastify, { type FastifyInstance } from "fastify";
-import type { DatabasePool } from "@shawtie/db";
+import {
+  loadCurrentConversationReadModel,
+  messageExistsInConversation,
+  type DatabasePool,
+} from "@shawtie/db";
 import type { ApiConfig } from "./config.ts";
 import { AccountService } from "./modules/accounts/account-service.ts";
 import {
@@ -17,6 +21,8 @@ import { registerNotificationRoutes } from "./modules/notifications/routes.ts";
 import { createP2PartnershipFormationCoordinator } from "./modules/partnerships/partnership-formation-coordinator.ts";
 import { PartnershipService } from "./modules/partnerships/partnership-service.ts";
 import { registerPartnershipRoutes } from "./modules/partnerships/routes.ts";
+import { RelationshipSpaceService } from "./modules/relationship-space/relationship-space-service.ts";
+import { registerRelationshipSpaceRoutes } from "./modules/relationship-space/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
 import { installMutationSecurity } from "./plugins/request-security.ts";
 import { AuthKeyRing } from "./security/auth-key-ring.ts";
@@ -87,6 +93,26 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     config: dependencies.config,
     keys,
     service: messagingService,
+  });
+
+  const relationshipSpaceService = new RelationshipSpaceService(dependencies.database, keys, {
+    messageReferenceResolver: {
+      async authorize(executor, input) {
+        const conversation = await loadCurrentConversationReadModel(
+          executor,
+          input.actorAccountId,
+          new Date(),
+        );
+        if (!conversation || conversation.partnershipId !== input.partnershipId) return false;
+        return messageExistsInConversation(executor, conversation.conversationId, input.referenceId);
+      },
+    },
+  });
+  registerRelationshipSpaceRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: relationshipSpaceService,
   });
 
   return app;

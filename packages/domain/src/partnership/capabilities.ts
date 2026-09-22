@@ -138,7 +138,17 @@ export function evaluateCapability(
     return ALLOW;
   }
 
-  if (capability === "create_relationship_object" || capability === "edit_relationship_object") {
+  if (
+    capability === "create_relationship_object" ||
+    capability === "edit_relationship_object" ||
+    capability === "edit_relationship_object_content" ||
+    capability === "delete_relationship_object" ||
+    capability === "mutate_relationship_shared_state" ||
+    capability === "curate_relationship_space" ||
+    capability === "recipient_open_relationship_object" ||
+    capability === "creator_reveal_relationship_object" ||
+    capability === "create_relationship_signal"
+  ) {
     if (partnership.lifecycle === "breakup_pending") return deny("RELATIONSHIP_OBJECTS_VIEW_ONLY");
     return ALLOW;
   }

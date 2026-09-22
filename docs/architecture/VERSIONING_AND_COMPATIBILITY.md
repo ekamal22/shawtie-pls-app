@@ -99,6 +99,20 @@ A relationship-date update increments `version` only. It must not invalidate a s
 
 P2 clients submit `expectedMetadataVersion` for relationship metadata updates and refetch on conflict.
 
+## R1 relationship-content compatibility
+
+R1 adds `contentSchemaVersion` per relationship item and interprets it together with item kind.
+
+Unknown kind or content schema version fails closed.
+
+Pre-S1 server plaintext validation uses the registered kind/version schema. S1 keeps outer kind/version metadata while plaintext validation moves to the authorized client before encryption.
+
+Preview and main envelopes use the same content schema version but distinct authenticated payload roles. The reviewed encryption design must prevent preview/main substitution.
+
+Release durable payload version is independent of content schema version. Release generation is also independent and fences schedule identity, not serialization.
+
+A client that cannot render a supported server item version must show an update-required state rather than guessing.
+
 ## Realtime compatibility
 
 Realtime messages contain a schema or protocol version.
@@ -119,3 +133,5 @@ Compatibility testing must include:
 - new worker processing a supported older durable payload version
 - unknown scheduled-action payload version fails closed
 - unknown outbox payload version fails closed
+- unknown R1 content schema version fails closed
+- preview/main payload-role mismatch fails closed after S1
