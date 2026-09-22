@@ -56,12 +56,14 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             +---+---+
             |       |
             v       v
-       M3 Media ⚪  C1 Calling ⚪
-       design ready
-            |       |
-            +---+---+
-                |
-                v
+       M3 Media ⚪  C1 Voice Calling ⚪
+       design ready       |
+                          v
+                    C2 Video Calling ⚪
+            |             |
+            +------+------+
+                   |
+                   v
         S1 E2EE + Crypto Recovery ⚪
                 |
                 v
@@ -101,10 +103,12 @@ flowchart TD
     M1 --> M2["M2 Realtime + Offline 🟡"]
 
     M2 --> M3["M3 Media + Voice Messages ⚪\ndesign complete"]
-    M2 --> C1["C1 Voice + Video Calling ⚪"]
+    M2 --> C1["C1 Voice Calling ⚪"]
+    C1 --> C2["C2 Video Calling ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
     C1 --> S1
+    C2 --> S1
 
     S1 --> R2["R2 Public Readiness ⚪"]
     V1["V1 Hosted CI Verification 🔒"] -. required before close .-> R2
@@ -236,7 +240,8 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 | R1 Relationship Space | No for core closure |
 | M2 Realtime + Offline | Yes |
 | M3 Media + Voice Messages | Yes |
-| C1 Voice + Video Calling | Yes, mandatory |
+| C1 Voice Calling | Yes, mandatory |
+| C2 Video Calling | Yes, mandatory |
 | S1 E2EE + Crypto Recovery | Yes, mandatory |
 | R2 Public Readiness | Yes, final acceptance |
 
@@ -247,8 +252,9 @@ The shortest dependency path from the current verified mainline to stable releas
 ~~~text
 M1
  -> M2
- -> M3/C1
- -> S1
+ -> M3 + C1 Voice in parallel
+ -> C2 Video after C1
+ -> S1 after M3 + C1 + C2
  -> R2
  -> Stable Release
 ~~~
