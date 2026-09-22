@@ -85,6 +85,7 @@ export async function runOutboxBatch(
     options.batchSize,
     workerId,
     options.leaseMs,
+    registry.eventTypes,
   );
 
   await mapWithConcurrency(events, options.concurrency, (event) =>
