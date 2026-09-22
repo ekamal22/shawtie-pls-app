@@ -381,6 +381,34 @@ export class ShawtieLocalDatabase {
     return true;
   }
 
+  async retryChatOperation(operationId: string): Promise<boolean> {
+    const tx = this.#database.transaction(["chatOutbox"], "readwrite");
+    const store = tx.objectStore("chatOutbox");
+    const current = (await requestResult(store.get(operationId))) as
+      | ChatQueueOperation
+      | undefined;
+    if (!current) {
+      tx.abort();
+      return false;
+    }
+    store.put({
+      ...current,
+      status: "queued",
+      lastErrorCode: null,
+      nextAttemptAt: Date.now(),
+      claimOwner: null,
+      claimExpiresAt: null,
+    } satisfies ChatQueueOperation);
+    await transactionDone(tx);
+    return true;
+  }
+
+  async discardChatOperation(operationId: string): Promise<void> {
+    const tx = this.#database.transaction(["chatOutbox"], "readwrite");
+    tx.objectStore("chatOutbox").delete(operationId);
+    await transactionDone(tx);
+  }
+
   async completeChatWithMessage(
     operation: ChatQueueOperation,
     owner: string,
@@ -536,6 +564,34 @@ export class ShawtieLocalDatabase {
     store.put(operation);
     await transactionDone(tx);
     return true;
+  }
+
+  async retryRelationshipOperation(operationId: string): Promise<boolean> {
+    const tx = this.#database.transaction(["relationshipOutbox"], "readwrite");
+    const store = tx.objectStore("relationshipOutbox");
+    const current = (await requestResult(store.get(operationId))) as
+      | RelationshipQueueOperation
+      | undefined;
+    if (!current) {
+      tx.abort();
+      return false;
+    }
+    store.put({
+      ...current,
+      status: "queued",
+      lastErrorCode: null,
+      nextAttemptAt: Date.now(),
+      claimOwner: null,
+      claimExpiresAt: null,
+    } satisfies RelationshipQueueOperation);
+    await transactionDone(tx);
+    return true;
+  }
+
+  async discardRelationshipOperation(operationId: string): Promise<void> {
+    const tx = this.#database.transaction(["relationshipOutbox"], "readwrite");
+    tx.objectStore("relationshipOutbox").delete(operationId);
+    await transactionDone(tx);
   }
 
   async completeRelationship(

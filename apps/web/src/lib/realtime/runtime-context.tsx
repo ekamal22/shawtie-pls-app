@@ -136,6 +136,39 @@ export class M2Runtime {
     return operation;
   }
 
+  async retryQueuedOperation(
+    kind: "chat" | "relationship",
+    operationId: string,
+  ): Promise<void> {
+    const database = await this.database();
+    const retried =
+      kind === "chat"
+        ? await database.retryChatOperation(operationId)
+        : await database.retryRelationshipOperation(operationId);
+    if (!retried) return;
+    dispatch(
+      kind === "chat"
+        ? "shawtie:chat-queue-changed"
+        : "shawtie:relationship-queue-changed",
+    );
+    this.coordinator.markDirty();
+    void this.coordinator.requestSync();
+  }
+
+  async discardQueuedOperation(
+    kind: "chat" | "relationship",
+    operationId: string,
+  ): Promise<void> {
+    const database = await this.database();
+    if (kind === "chat") {
+      await database.discardChatOperation(operationId);
+      dispatch("shawtie:chat-queue-changed");
+    } else {
+      await database.discardRelationshipOperation(operationId);
+      dispatch("shawtie:relationship-queue-changed");
+    }
+  }
+
   async queueRelationshipDelete(
     itemId: string,
     expectedVersion: number,
@@ -274,6 +307,129 @@ export function useM2SyncStatus(): SyncStatus {
   return status;
 }
 
+
+function attemptedText(value: unknown): string | null {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "body" in value &&
+    typeof value.body === "string"
+  ) {
+    return value.body;
+  }
+  return null;
+}
+
+export function M2QueueStatus() {
+  const runtime = useM2Runtime();
+  const syncStatus = useM2SyncStatus();
+  const [chat, setChat] = useState<ChatQueueOperation[]>([]);
+  const [relationship, setRelationship] = useState<RelationshipQueueOperation[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const partnershipId = runtime.realtime.scope.partnershipId;
+      if (!partnershipId) {
+        if (!cancelled) {
+          setChat([]);
+          setRelationship([]);
+        }
+        return;
+      }
+      const database = await runtime.database();
+      const [chatQueue, relationshipQueue] = await Promise.all([
+        database.listChatQueue(partnershipId),
+        database.listRelationshipQueue(partnershipId),
+      ]);
+      if (!cancelled) {
+        setChat(chatQueue);
+        setRelationship(relationshipQueue);
+      }
+    };
+
+    void load();
+    const refresh = () => void load();
+    window.addEventListener("shawtie:chat-queue-changed", refresh);
+    window.addEventListener("shawtie:relationship-queue-changed", refresh);
+    window.addEventListener("shawtie:partnership-changed", refresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("shawtie:chat-queue-changed", refresh);
+      window.removeEventListener("shawtie:relationship-queue-changed", refresh);
+      window.removeEventListener("shawtie:partnership-changed", refresh);
+    };
+  }, [runtime, syncStatus]);
+
+  const blockedChat = chat.filter((operation) => operation.status === "blocked");
+  const blockedRelationship = relationship.filter(
+    (operation) => operation.status === "blocked",
+  );
+  const pendingCount =
+    chat.filter((operation) => operation.status !== "blocked").length +
+    relationship.filter((operation) => operation.status !== "blocked").length;
+
+  if (
+    blockedChat.length === 0 &&
+    blockedRelationship.length === 0 &&
+    pendingCount === 0
+  ) {
+    return null;
+  }
+
+  return (
+    <section className="panel">
+      <h2>Offline changes</h2>
+      {pendingCount > 0 ? (
+        <p className="hint">
+          {pendingCount} change{pendingCount === 1 ? "" : "s"} waiting to sync.
+        </p>
+      ) : null}
+
+      {[...blockedChat.map((operation) => ({ kind: "chat" as const, operation })),
+        ...blockedRelationship.map((operation) => ({
+          kind: "relationship" as const,
+          operation,
+        }))].map(({ kind, operation }) => {
+        const text =
+          kind === "chat" ? attemptedText(operation.requestBody) : null;
+        return (
+          <article className="device" key={kind + ":" + operation.operationId}>
+            <div className="stack">
+              <strong>{operation.operationType}</strong>
+              <span className="hint">
+                {operation.lastErrorCode ?? "Server authority changed."}
+              </span>
+              {text ? (
+                <p className="muted">
+                  Attempted text is still stored locally: {text}
+                </p>
+              ) : null}
+            </div>
+            <div className="row">
+              <button
+                className="secondary compact"
+                onClick={() =>
+                  void runtime.retryQueuedOperation(kind, operation.operationId)
+                }
+              >
+                Retry
+              </button>
+              <button
+                className="danger compact"
+                onClick={() =>
+                  void runtime.discardQueuedOperation(kind, operation.operationId)
+                }
+              >
+                Discard
+              </button>
+            </div>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
 
 export function M2UpdateBanner() {
   const runtime = useM2Runtime();

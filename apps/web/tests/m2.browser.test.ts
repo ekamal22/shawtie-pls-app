@@ -134,3 +134,20 @@ test("M2 replay distinguishes network loss from invariant failures and wakes del
   assert.equal(replay.includes("this.requestSync()"), true);
   assert.equal(replay.includes("dispose(): void"), true);
 });
+
+
+test("M2 blocked queues expose retry and discard conflict recovery", async () => {
+  const local = await source("../src/lib/offline/local-db.ts");
+  const runtime = await source("../src/lib/realtime/runtime-context.tsx");
+  const app = await source("../src/app/App.tsx");
+
+  assert.equal(local.includes("retryChatOperation"), true);
+  assert.equal(local.includes("discardChatOperation"), true);
+  assert.equal(local.includes("retryRelationshipOperation"), true);
+  assert.equal(local.includes("discardRelationshipOperation"), true);
+  assert.equal(runtime.includes("export function M2QueueStatus"), true);
+  assert.equal(runtime.includes("Attempted text is still stored locally"), true);
+  assert.equal(runtime.includes("retryQueuedOperation"), true);
+  assert.equal(runtime.includes("discardQueuedOperation"), true);
+  assert.equal(app.includes("<M2QueueStatus />"), true);
+});

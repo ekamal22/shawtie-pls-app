@@ -9,6 +9,7 @@ import {
 } from "../lib/offline/local-db.ts";
 import {
   closeActiveM2Runtime,
+  M2QueueStatus,
   M2RuntimeProvider,
   M2UpdateBanner,
 } from "../lib/realtime/runtime-context.tsx";
@@ -531,6 +532,7 @@ function AccountScreen({
       {notice ? <p className="banner success">{notice}</p> : null}
 
       <M2UpdateBanner />
+      <M2QueueStatus />
       <PartnershipPanel />
       <MessagingPanel />
       <RelationshipSpacePanel accountId={session.accountId} />
