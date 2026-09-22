@@ -39,6 +39,10 @@ The server may store encrypted recovery material.
 
 The server must not possess the recovery secret required to decrypt it.
 
+## M3 pre-S1 media limitation
+
+ADR-012's M3 development media bridge is not cryptographic-history recovery and does not weaken this stable-release requirement by redefining it. Before S1, the server may recover a wrapped per-media development key after application authorization, so pre-S1 M3 media is explicitly not E2EE. S1 must client-reencrypt retained media under fresh key material never disclosed to the server, or wipe it, before stable release. Email account recovery must never be presented as recovery of final S1-protected media history.
+
 ## Device model
 
 Each authorized client device has a durable device record.
