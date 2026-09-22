@@ -1295,6 +1295,116 @@ test("M1 account-deletion overlay is view-only and recovery preserves the same c
   }
 });
 
+test("M1 edit-delete and reaction-delete races converge on content-free tombstones", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "mutation_race_alice");
+    const bob = await register(app, database, "mutation_race_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "mutation_race");
+
+    const editable = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "edit delete race",
+      "m1-edit-delete-race-send-key",
+    );
+    assert.equal(editable.statusCode, 201, editable.body);
+    const editableId = (editable.json() as { messageId: string }).messageId;
+
+    const [edit, deletion] = await Promise.all([
+      app.inject({
+        method: "PATCH",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + editableId,
+        headers: jsonHeaders(alice.cookie, "m1-edit-delete-race-edit-key"),
+        payload: { body: "edited before delete maybe", expectedContentVersion: 1 },
+      }),
+      app.inject({
+        method: "DELETE",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + editableId,
+        headers: mutationHeaders(alice.cookie, "m1-edit-delete-race-delete-key"),
+      }),
+    ]);
+    assert.equal(deletion.statusCode, 200, deletion.body);
+    assert.ok(edit.statusCode === 200 || edit.statusCode === 409, edit.body);
+    if (edit.statusCode === 409) {
+      assert.equal(
+        (edit.json() as { error: { code: string } }).error.code,
+        "MESSAGE_DELETED",
+      );
+    }
+
+    const editDeleteFinal = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + editableId,
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(editDeleteFinal.statusCode, 200, editDeleteFinal.body);
+    assert.equal((editDeleteFinal.json() as { body: string | null }).body, null);
+    assert.ok((editDeleteFinal.json() as { deletedAt: string | null }).deletedAt);
+
+    const reactable = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "reaction delete race",
+      "m1-react-delete-race-send-key",
+    );
+    assert.equal(reactable.statusCode, 201, reactable.body);
+    const reactableId = (reactable.json() as { messageId: string }).messageId;
+
+    const [reaction, reactionDeletion] = await Promise.all([
+      app.inject({
+        method: "PUT",
+        url:
+          "/api/v1/conversations/"
+          + conversationId
+          + "/messages/"
+          + reactableId
+          + "/reaction",
+        headers: jsonHeaders(alice.cookie, "m1-react-delete-race-react-key"),
+        payload: { emoji: "😮" },
+      }),
+      app.inject({
+        method: "DELETE",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + reactableId,
+        headers: mutationHeaders(bob.cookie, "m1-react-delete-race-delete-key"),
+      }),
+    ]);
+    assert.equal(reactionDeletion.statusCode, 200, reactionDeletion.body);
+    assert.ok(reaction.statusCode === 200 || reaction.statusCode === 409, reaction.body);
+    if (reaction.statusCode === 409) {
+      assert.equal(
+        (reaction.json() as { error: { code: string } }).error.code,
+        "MESSAGE_DELETED",
+      );
+    }
+
+    const reactionDeleteFinal = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + reactableId,
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(reactionDeleteFinal.statusCode, 200, reactionDeleteFinal.body);
+    assert.equal((reactionDeleteFinal.json() as { body: string | null }).body, null);
+    assert.deepEqual(
+      (reactionDeleteFinal.json() as { reactions: unknown[] }).reactions,
+      [],
+    );
+
+    const persistedReactions = await database.pool.query(
+      "SELECT 1 FROM message_reactions WHERE message_id = ANY($1::uuid[])",
+      [[editableId, reactableId]],
+    );
+    assert.equal(persistedReactions.rowCount, 0);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M1 send and breakup initiation serialize around the immutable freeze sequence", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
