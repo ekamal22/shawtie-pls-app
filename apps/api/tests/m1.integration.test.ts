@@ -1180,10 +1180,57 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
       url: "/api/v1/conversations/current",
       headers: { cookie: bob.cookie },
     });
-    assert.ok(
-      (visiblePresence.json() as {
+    const visibleLastSeen = (
+      visiblePresence.json() as {
         conversation: { partner: { presence: { lastSeenAt: string | null } } };
-      }).conversation.partner.presence.lastSeenAt,
+      }
+    ).conversation.partner.presence.lastSeenAt;
+    assert.ok(visibleLastSeen);
+
+    const firstPresenceRow = await database.pool.query<{
+      last_seen_at: Date;
+      updated_at: Date;
+    }>(
+      "SELECT last_seen_at, updated_at FROM account_presence WHERE account_id = $1",
+      [alice.accountId],
+    );
+    const firstPresence = firstPresenceRow.rows[0];
+    assert.ok(firstPresence);
+    assert.ok(firstPresence.last_seen_at.getTime() >= new Date(visibleLastSeen).getTime());
+
+    const coalescedPresence = await app.inject({
+      method: "POST",
+      url: "/api/v1/presence/heartbeat",
+      headers: jsonHeaders(alice.cookie),
+      payload: {},
+    });
+    assert.equal(coalescedPresence.statusCode, 200, coalescedPresence.body);
+
+    const secondPresenceRow = await database.pool.query<{
+      last_seen_at: Date;
+      updated_at: Date;
+    }>(
+      "SELECT last_seen_at, updated_at FROM account_presence WHERE account_id = $1",
+      [alice.accountId],
+    );
+    assert.equal(
+      secondPresenceRow.rows[0]?.updated_at.getTime(),
+      firstPresence.updated_at.getTime(),
+    );
+
+    await database.pool.query(
+      "UPDATE security_rate_limit_buckets SET attempt_count = 30, blocked_until = NULL WHERE scope = 'm1.presence'",
+    );
+    const limitedPresence = await app.inject({
+      method: "POST",
+      url: "/api/v1/presence/heartbeat",
+      headers: jsonHeaders(alice.cookie),
+      payload: {},
+    });
+    assert.equal(limitedPresence.statusCode, 429, limitedPresence.body);
+    assert.equal(
+      (limitedPresence.json() as { error: { code: string } }).error.code,
+      "RATE_LIMITED",
     );
 
     const nickname = await app.inject({
