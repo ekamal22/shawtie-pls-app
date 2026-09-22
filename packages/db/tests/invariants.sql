@@ -777,6 +777,22 @@ BEGIN
 END;
 $$;
 
+DO $
+BEGIN
+  BEGIN
+    UPDATE messages
+    SET server_sequence = 2
+    WHERE id = '78100000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected M1 immutable message sequence rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'message creation identity and order are immutable' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
 INSERT INTO conversation_changes (
   conversation_id, change_sequence, change_type, message_id, content_version, created_at
 ) VALUES (
