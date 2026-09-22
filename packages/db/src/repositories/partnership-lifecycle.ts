@@ -404,6 +404,7 @@ export async function markOpenBreakupSuperseded(
 export interface LifecycleIdempotencyRecord {
   readonly id: string;
   readonly fingerprint: Buffer | null;
+  readonly fingerprintVersion: number | null;
   readonly responseStatus: number | null;
   readonly responseBody: unknown;
 }
@@ -416,27 +417,30 @@ export async function reserveLifecycleIdempotency(
     readonly scope: string;
     readonly idempotencyKey: string;
     readonly fingerprint: Buffer;
+    readonly fingerprintVersion?: number;
     readonly createdAt: Date;
   },
 ): Promise<LifecycleIdempotencyRecord> {
   await executor.query(
-    "INSERT INTO idempotency_records (id, account_id, scope, idempotency_key, request_fingerprint, created_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (account_id, scope, idempotency_key) DO NOTHING",
+    "INSERT INTO idempotency_records (id, account_id, scope, idempotency_key, request_fingerprint, request_fingerprint_version, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (account_id, scope, idempotency_key) DO NOTHING",
     [
       input.id,
       input.accountId,
       input.scope,
       input.idempotencyKey,
       input.fingerprint,
+      input.fingerprintVersion ?? null,
       input.createdAt,
     ],
   );
   const result = await executor.query<{
     id: string;
     request_fingerprint: Buffer | null;
+    request_fingerprint_version: number | null;
     response_status: number | null;
     response_body: unknown;
   }>(
-    "SELECT id, request_fingerprint, response_status, response_body FROM idempotency_records WHERE account_id = $1 AND scope = $2 AND idempotency_key = $3 FOR UPDATE",
+    "SELECT id, request_fingerprint, request_fingerprint_version, response_status, response_body FROM idempotency_records WHERE account_id = $1 AND scope = $2 AND idempotency_key = $3 FOR UPDATE",
     [input.accountId, input.scope, input.idempotencyKey],
   );
   const row = result.rows[0];
@@ -444,6 +448,7 @@ export async function reserveLifecycleIdempotency(
   return {
     id: row.id,
     fingerprint: row.request_fingerprint,
+    fingerprintVersion: row.request_fingerprint_version,
     responseStatus: row.response_status,
     responseBody: row.response_body,
   };
