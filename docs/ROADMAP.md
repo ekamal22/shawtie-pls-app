@@ -143,6 +143,12 @@ M1 must not use message creation sequence as the only reconnect/poll cursor.
 - durable change rows and outbox invalidations carry no private content
 - browser polling remains canonical-API reconciliation; M2 may later deliver the same invalidations over WebSockets
 
+## Current implementation state
+
+The M1 branch now contains the runtime implementation for migrations, repositories, lifecycle integration, messaging API, browser chat, content-free pre-M2 outbox invalidation handling, domain/contracts, database invariants, race/security tests, and the disposable-PostgreSQL closure harness.
+
+This source state does not close M1. Executed `test:m1:local`, full health, and dependency-audit evidence are still required.
+
 ## Closure boundary
 
 M1 is DONE only after its API, persistence, ordering, durable synchronization, idempotency, optimistic-concurrency, lifecycle, race, deletion, privacy, security, and browser core gates pass.
