@@ -1,14 +1,4 @@
 export const MESSAGE_EDIT_WINDOW_MS = 30 * 60_000;
-export const MESSAGE_MAX_UTF8_BYTES = 8_192;
-export const NICKNAME_MAX_UTF8_BYTES = 256;
-export const MESSAGE_HISTORY_DEFAULT_LIMIT = 50;
-export const MESSAGE_HISTORY_MAX_LIMIT = 100;
-export const MESSAGE_CHANGE_DEFAULT_LIMIT = 100;
-export const MESSAGE_CHANGE_MAX_LIMIT = 200;
-export const TYPING_TTL_MS = 5_000;
-export const TYPING_MIN_REFRESH_MS = 2_000;
-export const PRESENCE_HEARTBEAT_MIN_MS = 30_000;
-export const PRESENCE_ONLINE_TTL_MS = 60_000;
 
 export interface MessageFreezeInput {
   readonly createdAt: string;
