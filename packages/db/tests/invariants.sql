@@ -697,4 +697,260 @@ BEGIN
 END;
 $$;
 
+
+INSERT INTO accounts (
+  id, username_normalized, username_display, date_of_birth, status
+) VALUES
+  ('00000000-0000-0000-0000-000000000004', 'delta', 'Delta', DATE '2000-01-01', 'active'),
+  ('00000000-0000-0000-0000-000000000005', 'epsilon', 'Epsilon', DATE '2000-01-01', 'active');
+
+INSERT INTO account_profiles (
+  account_id, display_name
+) VALUES
+  ('00000000-0000-0000-0000-000000000004', 'Delta'),
+  ('00000000-0000-0000-0000-000000000005', 'Epsilon');
+
+INSERT INTO partnerships (
+  id, relationship_start_date, lifecycle_state, activated_at
+) VALUES (
+  '20000000-0000-0000-0000-000000000003',
+  DATE '2024-02-29',
+  'active',
+  now()
+);
+
+INSERT INTO partnership_members (
+  partnership_id, account_id, joined_at
+) VALUES
+  ('20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004', now()),
+  ('20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000005', now());
+
+INSERT INTO relationship_items (
+  id,
+  partnership_id,
+  creator_account_id,
+  kind,
+  development_plaintext_payload,
+  occurred_precision,
+  occurred_year,
+  occurred_month,
+  occurred_day,
+  created_at,
+  updated_at
+) VALUES
+  (
+    '80000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    'memory',
+    '{"title":"Invariant memory"}'::jsonb,
+    'day',
+    2026,
+    9,
+    22,
+    now(),
+    now()
+  ),
+  (
+    '80000000-0000-4000-8000-000000000002',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    'memory',
+    '{"title":"Second invariant memory"}'::jsonb,
+    'year',
+    2025,
+    NULL,
+    NULL,
+    now(),
+    now()
+  ),
+  (
+    '80000000-0000-4000-8000-000000000003',
+    '20000000-0000-0000-0000-000000000003',
+    '00000000-0000-0000-0000-000000000004',
+    'memory',
+    '{"title":"Other partnership memory"}'::jsonb,
+    'unknown',
+    NULL,
+    NULL,
+    NULL,
+    now(),
+    now()
+  );
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO relationship_items (
+      id, partnership_id, creator_account_id, kind,
+      development_plaintext_payload, encrypted_payload, ciphertext_version,
+      created_at, updated_at
+    ) VALUES (
+      '80100000-0000-4000-8000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      'memory',
+      '{"title":"plaintext"}'::jsonb,
+      decode('aa', 'hex'),
+      'test-v1',
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected relationship content storage mode violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO relationship_items (
+      id, partnership_id, creator_account_id, kind,
+      release_mode, release_generation, created_at, updated_at
+    ) VALUES (
+      '80100000-0000-4000-8000-000000000002',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      'for_you',
+      'scheduled',
+      1,
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected scheduled release shape violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    UPDATE relationship_items
+    SET kind = 'first'
+    WHERE id = '80000000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected relationship item immutable identity rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'relationship_items immutable identity fields cannot change' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO relationship_someday_state (
+      item_id, partnership_id, state
+    ) VALUES (
+      '80000000-0000-4000-8000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      'someday'
+    );
+    RAISE EXCEPTION 'expected relationship feature state kind rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'relationship_someday_state requires someday item' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO relationship_item_references (
+      id, partnership_id, item_id, reference_type, reference_id, role, position
+    ) VALUES (
+      '80200000-0000-4000-8000-000000000001',
+      '20000000-0000-0000-0000-000000000003',
+      '80000000-0000-4000-8000-000000000001',
+      'media',
+      '80300000-0000-4000-8000-000000000001',
+      'attachment',
+      0
+    );
+    RAISE EXCEPTION 'expected relationship reference partnership mismatch rejection';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO relationship_item_links (
+      partnership_id, owner_item_id, target_item_id, link_type, position
+    ) VALUES (
+      '20000000-0000-0000-0000-000000000001',
+      '80000000-0000-4000-8000-000000000001',
+      '80000000-0000-4000-8000-000000000002',
+      'curation',
+      0
+    );
+    RAISE EXCEPTION 'expected relationship link owner kind rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'curation link owner kind is invalid' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO relationship_story_members (
+      partnership_id, item_id, added_by_account_id
+    ) VALUES (
+      '20000000-0000-0000-0000-000000000001',
+      '80000000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000003'
+    );
+    RAISE EXCEPTION 'expected relationship story actor membership rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'relationship story actor must be a current partnership member' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
+INSERT INTO relationship_events (
+  id, partnership_id, item_id, event_type, actor_account_id, item_version
+) VALUES (
+  '80400000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '80000000-0000-4000-8000-000000000001',
+  'item_created',
+  '00000000-0000-0000-0000-000000000001',
+  1
+);
+
+DO $
+BEGIN
+  BEGIN
+    UPDATE relationship_events
+    SET event_type = 'mutated'
+    WHERE id = '80400000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected relationship event append-only rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'relationship_events rows are append-only while retained' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
+
 ROLLBACK;

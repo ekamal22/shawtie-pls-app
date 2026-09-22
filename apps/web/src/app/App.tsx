@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
 import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
+import { RelationshipSpacePanel } from "../features/relationship-space/RelationshipSpacePanel.tsx";
 
 interface Session {
   authenticated: true;
@@ -517,6 +518,7 @@ function AccountScreen({
       {notice ? <p className="banner success">{notice}</p> : null}
 
       <PartnershipPanel />
+      <RelationshipSpacePanel accountId={session.accountId} />
       <PartnerRequestsPanel />
 
       <section className="panel">
