@@ -18,7 +18,7 @@ test("M1 private request fingerprints are keyed and versioned", async () => {
 
   assert.equal(ring.includes('"message-request-fingerprint"'), true);
   assert.equal(service.includes('activeVerifier("message-request-fingerprint"'), true);
-  assert.equal(service.includes('verifier(\n        "message-request-fingerprint"'), true);
+  assert.equal(/verifier\(\s*"message-request-fingerprint"/.test(service), true);
   assert.equal(service.includes('createHash('), false);
   assert.equal(migration.includes("request_fingerprint_version"), true);
 });
