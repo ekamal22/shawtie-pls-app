@@ -33,6 +33,8 @@ The API LISTEN connection has an in-memory generation. LISTEN loss marks local s
 
 M2 uses no Redis and is expected to require no new PostgreSQL migration.
 
+M3 is design-complete but not implemented. M3 deliberately does not add binary media frames to this realtime transport. A newly created M1 message with attachments still uses the existing content-free message invalidation, and an R1 item with media still uses the existing relationship invalidation. Media bytes, media keys, signed URLs, filenames, exact MIME descriptors, and provider object details remain outside WebSocket and PostgreSQL NOTIFY payloads.
+
 ## Transport
 
 Use one authenticated WebSocket connection per active device where practical. Application frames are small text JSON only; binary application frames are rejected and per-message compression is disabled.
