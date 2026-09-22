@@ -109,12 +109,14 @@ export async function claimOutboxEvents(
   batchSize: number,
   workerId: string,
   leaseMs: number,
+  eventTypes?: readonly string[],
 ): Promise<readonly OutboxEvent[]> {
   const result = await executor.query<OutboxRow>(
     `WITH candidates AS (
        SELECT id
        FROM outbox_events
        WHERE attempt_count < max_attempts
+         AND ($4::text[] IS NULL OR event_type = ANY($4::text[]))
          AND (
            (status = 'pending' AND available_at <= clock_timestamp())
            OR
@@ -137,7 +139,7 @@ export async function claimOutboxEvents(
      FROM candidates
      WHERE event.id = candidates.id
      RETURNING ${returningColumns}`,
-    [batchSize, workerId, leaseMs],
+    [batchSize, workerId, leaseMs, eventTypes ? [...eventTypes] : null],
   );
   return result.rows.map(mapRow);
 }
