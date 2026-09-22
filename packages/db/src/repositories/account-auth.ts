@@ -1368,6 +1368,7 @@ export async function scrubAccountAuthenticationData(
   executor: QueryExecutor,
   accountId: string,
 ): Promise<void> {
+  await executor.query("DELETE FROM account_presence WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM email_verifications WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_sessions WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_recovery_material WHERE account_id = $1", [accountId]);
