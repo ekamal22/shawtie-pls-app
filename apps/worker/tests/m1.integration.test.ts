@@ -177,13 +177,12 @@ test("M1 partnership cleanup is idempotent and removes all messaging-private rel
          (SELECT count(*)::text FROM conversations WHERE partnership_id = $1) AS conversations,
          (SELECT count(*)::text FROM messages WHERE partnership_id = $1) AS messages,
          (SELECT count(*)::text
-            FROM conversation_changes change
-            JOIN messages message ON message.id = change.message_id
-           WHERE message.partnership_id = $1) AS changes,
+            FROM conversation_changes
+           WHERE conversation_id = $4) AS changes,
          (SELECT count(*)::text FROM partnership_chat_nicknames WHERE partnership_id = $1) AS nicknames,
          (SELECT count(*)::text FROM account_presence WHERE account_id = $2) AS presence,
          (SELECT status FROM deletion_manifests WHERE id = $3) AS manifest_status`,
-      [fixture.partnershipId, fixture.aliceId, manifestId],
+      [fixture.partnershipId, fixture.aliceId, manifestId, fixture.conversationId],
     );
 
     assert.equal(counts.rows[0]?.conversations, "0");
