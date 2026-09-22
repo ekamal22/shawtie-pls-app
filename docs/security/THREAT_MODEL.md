@@ -701,6 +701,25 @@ Verification:
 - realtime dissolution tests
 - revoked-channel tests
 
+### T16A: Client misses an edit, deletion, or reaction to an old message
+
+Impact: High
+
+Controls:
+
+- immutable server sequence is used only for message creation order
+- separate durable per-conversation change sequence covers send/edit/delete/reaction mutations
+- append-only content-free change rows
+- WebSocket delivery remains an invalidation hint rather than the source of truth
+- reconnect and polling repair from the canonical HTTP change cursor
+
+Verification:
+
+- edit-old-message after-cursor tests
+- delete-old-message after-cursor tests
+- reaction-change after-cursor tests
+- duplicate delivery and cursor-resume tests
+
 ### T17: Local cache leaks old partnership data into a future partnership
 
 Impact: Critical
@@ -716,6 +735,22 @@ Verification:
 
 - offline namespace isolation tests
 - future-partnership local-cache tests
+
+### T17A: New partner learns presence activity from before the current partnership
+
+Impact: Medium to High
+
+Controls:
+
+- presence disclosure requires current partnership authorization
+- current-conversation projection suppresses `last_seen_at` older than the partnership `activated_at`
+- no presence history table
+- final account deletion removes the current presence snapshot
+
+Verification:
+
+- new-partnership pre-activation presence suppression test
+- former-partner presence denial test
 
 ### T18: Stolen device continues receiving new encrypted content after revocation
 
@@ -751,6 +786,23 @@ Verification:
 - data classification review
 - database fixture inspection
 - E2EE integration tests
+
+### T19A: Durable private-content fingerprint becomes an offline guessing oracle
+
+Impact: High
+
+Controls:
+
+- private message/reaction/nickname mismatch fingerprints use a server-held keyed construction
+- domain-separated/versioned keys
+- no ordinary unkeyed digest of private message content
+- fingerprints are never logged or returned to clients
+- bounded idempotency retention
+
+Verification:
+
+- fingerprint construction tests
+- persistence/log scans proving raw content and ordinary message digests are absent
 
 ### T20: Object-storage compromise reveals media plaintext
 
@@ -1069,6 +1121,9 @@ Before stable release, the project must have evidence for:
 - backup deletion behavior
 - physical-device call privacy checks
 - security regression suite
+- durable messaging mutation-cursor recovery
+- private mutation keyed-fingerprint verification
+- current-partnership presence privacy
 
 ## Review triggers
 
