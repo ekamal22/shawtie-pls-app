@@ -99,9 +99,35 @@ test("M2 cross-tab claim generation fences stale completion", async ({ context, 
   await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT);
 });
 
-test("M2 pre-S1 cold start remains locked when session verification has no network", async ({
+test("M2 pre-S1 cold start hides existing private cache when session verification has no network", async ({
   page,
 }) => {
+  const PRIVATE_SENTINEL = "cold-start-private-cache-sentinel";
+  const MESSAGE = "50000000-0000-4000-8000-000000000030";
+
+  await page.goto("/m2-e2e.html");
+  await expect(page.locator("#status")).toHaveText("ready");
+  await page.evaluate(
+    async ({ accountId, partnershipId, conversationId, messageId, body }) => {
+      await window.m2Harness.open(accountId);
+      await window.m2Harness.rememberNamespace(partnershipId, conversationId);
+      await window.m2Harness.seedMessage({
+        partnershipId,
+        conversationId,
+        messageId,
+        body,
+      });
+      window.m2Harness.close();
+    },
+    {
+      accountId: ACCOUNT,
+      partnershipId: PARTNERSHIP,
+      conversationId: CONVERSATION,
+      messageId: MESSAGE,
+      body: PRIVATE_SENTINEL,
+    },
+  );
+
   await page.route("**/api/v1/auth/session", async (route) => {
     await route.abort("internetdisconnected");
   });
@@ -109,6 +135,10 @@ test("M2 pre-S1 cold start remains locked when session verification has no netwo
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Offline" })).toBeVisible();
   await expect(page.getByText(/verify this private session/i)).toBeVisible();
+  await expect(page.getByText(PRIVATE_SENTINEL)).toHaveCount(0);
+
+  await page.goto("/m2-e2e.html");
+  await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT);
 });
 
 test("M2 service worker never caches private API responses", async ({ page }) => {
