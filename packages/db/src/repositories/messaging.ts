@@ -81,6 +81,8 @@ export interface CurrentConversationReadModel {
   readonly viewOnlyAccountId: string | null;
   readonly latestServerSequence: bigint;
   readonly latestChangeSequence: bigint;
+  readonly breakupInitiatedAt: Date | null;
+  readonly messageFreezeSequence: bigint | null;
   readonly self: {
     readonly accountId: string;
     readonly username: string;
@@ -926,6 +928,8 @@ export async function loadCurrentConversationReadModel(
     view_only_account_id: string | null;
     latest_server_sequence: string | number | bigint;
     latest_change_sequence: string | number | bigint;
+    breakup_initiated_at: Date | null;
+    message_freeze_sequence: string | number | bigint | null;
     self_account_id: string;
     self_username: string;
     self_display_name: string;
@@ -970,6 +974,8 @@ export async function loadCurrentConversationReadModel(
             ) AS view_only_account_id,
             conversation.next_server_sequence - 1 AS latest_server_sequence,
             conversation.next_change_sequence - 1 AS latest_change_sequence,
+            breakup.initiated_at AS breakup_initiated_at,
+            breakup.message_freeze_sequence,
             self_member.account_id AS self_account_id,
             self_account.username_display AS self_username,
             self_profile.display_name AS self_display_name,
@@ -1018,6 +1024,12 @@ export async function loadCurrentConversationReadModel(
        ON partner_account.id = partner_member.account_id
      JOIN account_profiles AS partner_profile
        ON partner_profile.account_id = partner_member.account_id
+     LEFT JOIN breakup_processes AS breakup
+       ON breakup.partnership_id = partnership.id
+      AND breakup.restored_at IS NULL
+      AND breakup.dissolved_at IS NULL
+      AND breakup.cancelled_at IS NULL
+      AND breakup.superseded_at IS NULL
      LEFT JOIN partnership_chat_nicknames AS self_nickname
        ON self_nickname.partnership_id = partnership.id
       AND self_nickname.subject_account_id = self_member.account_id
@@ -1053,6 +1065,9 @@ export async function loadCurrentConversationReadModel(
         viewOnlyAccountId: row.view_only_account_id,
         latestServerSequence: BigInt(row.latest_server_sequence),
         latestChangeSequence: BigInt(row.latest_change_sequence),
+        breakupInitiatedAt: row.breakup_initiated_at,
+        messageFreezeSequence:
+          row.message_freeze_sequence === null ? null : BigInt(row.message_freeze_sequence),
         self: {
           accountId: row.self_account_id,
           username: row.self_username,
