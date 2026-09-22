@@ -73,7 +73,10 @@ M2 Realtime and Offline
     +---+---+
     |       |
     v       v
-M3 Media  C1 Calling
+M3 Media  C1 Voice Calling
+            |
+            v
+       C2 Video Calling
     |       |
     +---+---+
         v
@@ -1552,39 +1555,93 @@ Canonical scenario definitions and evidence requirements live in `testing/M3_AND
 
 M3 remains PLANNED until M2 is verified and the implementation branch is created. Design completion is not implementation completion.
 
-# C1: Voice and Video Calling
+# C1: Voice Calling
 
 Status: PLANNED
 
+Depends on verified M2. C1 may progress alongside M3 after M2 closes.
+
+## Purpose
+
+Establish one shared authorized call core with audio-only media before camera/video complexity is introduced.
+
 ## Scope
 
-- call signaling
+- call signaling and shared call lifecycle
 - voice calls
-- video calls
+- microphone permission and audio capture
 - accept
 - reject
 - cancel
 - missed state
-- call history
+- call history with call type = voice
 - TURN credential issuance
 - relay-first privacy
 - breakup call consent
+- interruption and reconnect safety
+- physical-device voice calling
 
 ## Acceptance gates
 
-- [ ] calls require authenticated partnership authorization
-- [ ] calls never auto-answer
-- [ ] breakup_pending calls require explicit acceptance for every call
+- [ ] voice calls require authenticated partnership authorization
+- [ ] voice calls never auto-answer
+- [ ] breakup_pending voice calls require explicit acceptance for every call
+- [ ] account-deletion view-only state disables voice calling
+- [ ] microphone permission is requested only from an explicit call action
+- [ ] denied microphone permission fails safely and does not create an active media session
+- [ ] audio-only WebRTC negotiation succeeds without requesting camera permission
 - [ ] short-lived TURN credentials are issued only after authorization
 - [ ] permanent TURN credentials are not embedded in the client
 - [ ] expired TURN credentials fail
 - [ ] relay-first behavior is verified where supported
 - [ ] TURN/TCP or TURN/TLS fallback is tested where supported
-- [ ] call history is partnership-scoped
-- [ ] call history is deleted at final dissolution
-- [ ] account-deletion view-only state disables calling
-- [ ] call interruption and reconnect behavior is safe
-- [ ] physical-device voice and video tests pass
+- [ ] voice call history is partnership-scoped
+- [ ] voice call history is deleted at final dissolution
+- [ ] interruption and reconnect behavior is safe
+- [ ] foreground/background behavior is verified on the supported physical device
+- [ ] physical-device voice call tests pass
+- [ ] no video or camera path is required for C1 closure
+
+# C2: Video Calling
+
+Status: PLANNED
+
+Depends on verified C1 Voice Calling.
+
+## Purpose
+
+Extend the verified C1 call core with camera/video media while reusing the same authorization, signaling, TURN, lifecycle, history, reconnect, and deletion model.
+
+## Scope
+
+- video calls
+- camera permission and video capture
+- video media negotiation over the C1 WebRTC call core
+- call history with call type = video
+- C1 signaling and call-state reuse
+- C1 TURN issuance and relay-first privacy
+- C1 breakup consent and account-deletion restrictions
+- video-specific interruption and reconnect behavior
+- physical-device video calling
+
+## Acceptance gates
+
+- [ ] C1 Voice Calling remains green as a regression dependency
+- [ ] video calls require the same authenticated partnership authorization as C1
+- [ ] video calls never auto-answer
+- [ ] breakup_pending video calls require explicit acceptance for every call
+- [ ] account-deletion view-only state disables video calling
+- [ ] camera permission is requested only from an explicit video-call action
+- [ ] denied camera permission fails safely without creating unintended camera capture
+- [ ] video media negotiation reuses the C1 signaling and call-state model
+- [ ] C2 does not create a parallel video-call authority or second call-state machine
+- [ ] short-lived TURN credentials and relay-first policy remain inherited from C1
+- [ ] TURN/TCP or TURN/TLS fallback remains green where supported
+- [ ] video call history is partnership-scoped
+- [ ] video call history is deleted at final dissolution
+- [ ] video interruption and reconnect behavior is safe
+- [ ] Android camera/video foreground/background behavior is verified
+- [ ] physical-device video call tests pass
 
 # R1: Relationship Space
 
@@ -1893,6 +1950,8 @@ Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3
 # S1: E2EE and Cryptographic Recovery
 
 Status: PLANNED
+
+Dependencies: verified M3 Media and Voice Messages, C1 Voice Calling, and C2 Video Calling. C2 transitively preserves the C1 call core, but both calling milestones remain explicit S1 prerequisites.
 
 ## Scope
 
