@@ -1118,7 +1118,7 @@ Realtime protocol:
 
 Design state:
 
-Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. A second-pass hardening review closes reconnect-race, LISTEN-reset, cold-start plaintext, multi-tab claim, storage-quota, and socket-scope gaps. Source implementation for M2-A through M2-H plus the M2-I automated closure harness is complete through `79044bcbe0a94d56d8067b7a0d62a68a17e6513e`. Final local execution, full health/audit, real-browser/device acceptance, and documentation closure remain pending.
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. A second-pass hardening review closes reconnect-race, LISTEN-reset, cold-start plaintext, multi-tab claim, storage-quota, and socket-scope gaps. Source implementation for M2-A through M2-H plus the M2-I automated closure harness is complete through `4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`. The M2-I harness now includes pinned Playwright 1.63.0 real-Chromium acceptance and a non-destructive Android preparation/evidence command. Final local execution, full health/audit, and mandatory physical Android scenario evidence remain pending.
 
 ## Scope
 
@@ -1156,7 +1156,10 @@ Implemented source currently includes:
 - typed chat and R1 offline queues with stable idempotency, lifecycle preflight, claim-generation fencing, delayed retry wakeups, blocked-operation recovery UI, and exact release-sensitive R1 exclusions
 - pre-S1 offline cold-start locking, explicit logout/account-switch local-database purge ordering, and cross-tab logout coordination
 - service-worker shell/static caching with private API exclusion and controlled activation
-- M2 contract/security/worker/browser/PostgreSQL integration tests and disposable `test:m2:local` harness
+- M2 contract/security/worker/browser/PostgreSQL integration tests
+- pinned Playwright 1.63.0 real-Chromium acceptance for IndexedDB persistence, cross-tab fencing, cold-start lock, and private-API Cache API exclusion
+- disposable `test:m2:local` harness composing PostgreSQL/API/worker and real Chromium layers
+- Android preflight/evidence harness plus `docs/testing/M2_ANDROID_ACCEPTANCE.md`
 
 None of the acceptance gates below are considered passed until executed evidence is recorded. Physical Android acceptance remains mandatory.
 

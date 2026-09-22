@@ -188,8 +188,8 @@ main @ 9f4237e
   +--> feat/m2-realtime-offline
 
 M1 and R1 are merged and verified.
-M2 architecture, protocol, runtime source, browser/offline integration, and closure harness are implemented through source anchor `79044bc`.
-M2 executable validation and physical-device closure are the active work.
+M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented through source anchor `4a2c98a`.
+M2 executed local validation and mandatory physical-device scenario closure are the active work.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 M2 is expected to require no PostgreSQL migration and does not reserve 0015.

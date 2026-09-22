@@ -1557,7 +1557,11 @@ Add root commands:
 - test:m2:security
 - test:m2:postgres
 - test:m2:browser
+- test:m2:browser:e2e
+- test:m2:install-browser
 - test:m2:local
+- test:m2:device:prepare
+- test:m2:device:cleanup
 
 Expected layers:
 
@@ -1643,7 +1647,7 @@ Browser:
 - avoid a large client state/database framework unless implementation evidence shows the native wrapper is insufficient
 - keep the trusted-origin dependency surface small
 
-Browser automation may add a maintained Playwright test dependency during implementation.
+Browser automation uses pinned dev-only `@playwright/test` 1.63.0. Browser binaries are installed explicitly through `npm run test:m2:install-browser`; product runtime has no Playwright dependency.
 
 ## Observability
 
@@ -1787,9 +1791,9 @@ M2's contentContextKey exists only to make that migration explicit without inven
 
 ## Completion statement
 
-M2 architecture and implementation sequencing are defined, and the source implementation is complete through `feat/m2-realtime-offline @ 79044bcbe0a94d56d8067b7a0d62a68a17e6513e`.
+M2 architecture and implementation sequencing are defined, and the source implementation is complete through `feat/m2-realtime-offline @ 4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`.
 
-The milestone remains IN_PROGRESS until the final source head passes `test:m2:local`, full repository health, high-severity audit, real-browser acceptance, and the mandatory physical Android matrix.
+The milestone remains IN_PROGRESS until the final source head passes `test:m2:local` (including real Chromium acceptance), full repository health, high-severity audit, and the mandatory physical Android matrix in `docs/testing/M2_ANDROID_ACCEPTANCE.md`.
 
 Any implementation change that would:
 

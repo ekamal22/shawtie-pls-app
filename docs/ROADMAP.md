@@ -216,7 +216,7 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: IN_PROGRESS. Refined architecture and protocol design are complete and second-pass hardened. Source implementation is complete through `79044bcbe0a94d56d8067b7a0d62a68a17e6513e`; executable validation, full health/audit, and physical Android closure are pending.
+Status: IN_PROGRESS. Refined architecture and protocol design are complete and second-pass hardened. Source implementation and automated closure harnesses are complete through `4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`; `test:m2:local` now includes PostgreSQL/API/worker validation plus real Chromium acceptance. Executed validation, full health/audit, and physical Android scenario closure are pending.
 
 Architecture:
 
@@ -331,10 +331,12 @@ Make the verified M1 and R1 experience resilient across realtime delivery, mobil
 
 - realtime security suite
 - PostgreSQL/API/worker integration
-- browser offline/reconnect suite
+- static/unit browser synchronization suite
+- real Chromium IndexedDB/service-worker/cold-start acceptance
 - service-worker tests
 - multi-tab duplicate safety
-- Redmi physical-device acceptance
+- non-destructive Android preparation/evidence harness
+- Redmi physical-device scenario acceptance
 - full health and audit
 
 ## Closure boundary

@@ -83,6 +83,7 @@ The selected architecture is:
 - `security/DEVICE_AND_RECOVERY.md`
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
+- `testing/M2_ANDROID_ACCEPTANCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 
@@ -110,7 +111,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined, exhaustively validated, and merged to `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. The technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`: canonical migrations 0001 through 0014 run with `reserved=0`, database invariants pass, M1 passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, R1 passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, full health passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4, and the high-severity audit reports 0 vulnerabilities. M2 Realtime and Offline Reliability is IN_PROGRESS on `feat/m2-realtime-offline`. Its architecture and protocol are defined in `architecture/M2_REALTIME_OFFLINE_DESIGN.md` and `api/M2_REALTIME_PROTOCOL.md`. Source implementation is complete through `79044bcbe0a94d56d8067b7a0d62a68a17e6513e`; executable closure evidence and physical Android acceptance remain pending. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined, exhaustively validated, and merged to `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. The technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`: canonical migrations 0001 through 0014 run with `reserved=0`, database invariants pass, M1 passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, R1 passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, full health passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4, and the high-severity audit reports 0 vulnerabilities. M2 Realtime and Offline Reliability is IN_PROGRESS on `feat/m2-realtime-offline`. Its architecture and protocol are defined in `architecture/M2_REALTIME_OFFLINE_DESIGN.md` and `api/M2_REALTIME_PROTOCOL.md`. Source implementation and automated closure harnesses are complete through `4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`. This includes pinned Playwright 1.63.0 real-Chromium acceptance and the non-destructive Android preflight/evidence harness. Executed local closure evidence, full health/audit evidence, and the mandatory physical Android scenarios remain pending. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

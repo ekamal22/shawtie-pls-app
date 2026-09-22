@@ -530,13 +530,17 @@ M2 has a dedicated closure matrix because WebSocket delivery, browser local pers
 Planned commands:
 
 ```text
+npm run test:m2:install-browser
 npm run test:realtime-offline
 npm run test:m2:security
 npm run test:m2:postgres
 npm run test:m2:browser
+npm run test:m2:browser:e2e
 npm run test:m2:local
 npm run health
 npm audit --audit-level=high
+npm run test:m2:device:prepare
+npm run test:m2:device:cleanup
 ```
 
 Required contract/unit evidence includes:
@@ -583,6 +587,8 @@ Required PostgreSQL/API/worker integration evidence includes:
 - content-free partnership/R1/security invalidations
 - all earlier milestone regression surfaces
 
+The browser closure has two layers: fast Node/static synchronization checks in `test:m2:browser` and real Chromium acceptance in `test:m2:browser:e2e`. The composite `test:m2:local` runs the PostgreSQL/API/worker closure first and then the real Chromium suite.
+
 Required browser automation includes:
 
 - IndexedDB persistence across reload
@@ -606,7 +612,7 @@ Required browser automation includes:
 - private API responses absent from Cache API
 - future partnership isolation
 
-Physical Android acceptance is mandatory for M2. It must prove foreground/background socket suspension recovery, offline queue/replay, lifecycle change while offline, final-dissolution purge before replay, session/device revocation behavior, service-worker update safety, future-partnership local isolation, pre-S1 cold-start locking, LISTEN-reset resynchronization, storage-failure handling, and multi-tab stale-claim fencing on the supported physical device where practical.
+Physical Android acceptance is mandatory for M2. Use `docs/testing/M2_ANDROID_ACCEPTANCE.md` and `npm run test:m2:device:prepare` for the non-destructive device/CDP preflight; that preflight is not scenario acceptance evidence. It must prove foreground/background socket suspension recovery, offline queue/replay, lifecycle change while offline, final-dissolution purge before replay, session/device revocation behavior, service-worker update safety, future-partnership local isolation, pre-S1 cold-start locking, LISTEN-reset resynchronization, storage-failure handling, and multi-tab stale-claim fencing on the supported physical device where practical.
 
 M2 does not close from simulated socket delivery alone. The authoritative acceptance catalog is in `../ROADMAP_EPICS.md`, and the detailed architecture is in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md`.
 
