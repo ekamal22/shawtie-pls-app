@@ -146,7 +146,7 @@ try {
   const npmCli = process.env.npm_execpath;
   if (!npmCli) {
     throw new Error(
-      "npm_execpath is unavailable. Run this command through npm: npm run test:p3:local",
+      "npm_execpath is unavailable. Run this command through npm: npm run test:m1:local",
     );
   }
 
