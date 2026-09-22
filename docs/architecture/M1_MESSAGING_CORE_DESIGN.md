@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE, IMPLEMENTATION PENDING.
+DESIGN REFINED, IMPLEMENTATION PENDING.
 
 Branch:
 
@@ -29,20 +29,22 @@ It must provide:
 
 - one primary conversation per current partnership
 - text messages
-- replies
-- deterministic server ordering
-- retry-safe sends
-- 30-minute editing
+- replies with stable reply context
+- deterministic server message ordering
+- a separate durable mutation synchronization cursor for sends, edits, deletes, and reactions
+- retry-safe sends and mutations
+- 30-minute editing with optimistic content-version checks
 - deletion tombstones
 - reactions
 - delivery and read state
 - typing state
 - online and last-seen state
 - shared partnership-scoped chat nicknames
+- content-free invalidation events that M2 can later deliver over WebSockets
 - exact P3 lifecycle behavior
 - strict cross-partnership isolation
 
-M1 is deliberately transport-conservative. PostgreSQL and HTTP remain canonical. WebSocket delivery, offline IndexedDB queues, reconnect repair, and physical-device lifecycle acceptance belong to M2.
+M1 is deliberately transport-conservative. PostgreSQL and HTTP remain canonical. M1 may poll the durable change cursor so edits, deletes, and reactions to older messages cannot be missed. WebSocket delivery, offline IndexedDB queues, reconnect orchestration, and physical-device lifecycle acceptance belong to M2.
 
 ## Non-goals
 
@@ -68,17 +70,21 @@ Stable release requires reviewed E2EE, but S1 has not been implemented yet.
 
 M1 must not fake encryption.
 
-For pre-S1 development only, M1 may store message and reaction content in explicitly named development plaintext columns. It must never place plaintext into a field named or documented as ciphertext.
+For pre-S1 development only, M1 may store current message bodies and current reactions in explicitly named development plaintext columns. It must never place plaintext into a field named or documented as ciphertext.
 
 Rules:
 
 - pre-S1 message content is development-only and must not be treated as suitable for sensitive real-world use
-- message and reaction plaintext must never be written to application logs, lifecycle events, account notifications, outbox payloads, scheduled actions, idempotency response bodies, analytics, or error traces
-- S1 must stop plaintext writes
+- M1 does not create plaintext edit-history rows; editing replaces the current development body and increments content metadata only
+- message, reaction, and nickname plaintext must never be written to application logs, lifecycle events, account notifications, outbox payloads, scheduled actions, analytics, error traces, durable change rows, or idempotency response bodies
+- request fingerprints over private mutation content must use a versioned keyed server HMAC or an equivalently reviewed keyed construction; an ordinary unkeyed hash of private message text is not sufficient
+- partnership chat nicknames are protected partnership content even though they remain server-readable during pre-S1 development
+- S1 must stop plaintext writes for protected messaging content
 - S1 must either wipe pre-S1 development plaintext or migrate it through a reviewed client-side re-encryption flow
-- stable release is blocked until verification proves protected content is no longer stored server-readable
+- the S1 design must explicitly decide the encrypted representation for partnership chat nicknames; they must not silently remain a permanent plaintext exception
+- stable release is blocked until verification proves protected content is no longer stored server-readable except for any explicitly reviewed metadata exception
 
-This is intentionally explicit so the repository never makes a false encryption claim.
+This is intentionally explicit so the repository never makes a false encryption claim and does not accumulate avoidable plaintext history before S1.
 
 ## Architectural invariants
 
@@ -108,21 +114,62 @@ A guessed conversation ID or message ID never grants access.
 
 ### Server sequence is message order
 
-Each primary conversation already owns:
+Each primary conversation owns:
 
 `next_server_sequence`
 
-Every successful send atomically allocates exactly one monotonically increasing positive sequence.
+Every successful send atomically allocates exactly one monotonically increasing positive server sequence.
 
-The sequence is:
+The server sequence is:
 
-- authoritative ordering
+- authoritative message creation order
 - independent of client clock
 - independent of network arrival order
 - stable across retries
-- the basis for later M2 gap repair
+- never reused
+- the basis for message-history pagination
 
-Failed or rolled-back sends must not consume a committed sequence.
+Failed or rolled-back sends must not consume a committed server sequence.
+
+Server sequence alone is not sufficient for synchronization because editing, deleting, or reacting to an older message does not create a new message sequence.
+
+### Durable change sequence is synchronization order
+
+Each primary conversation also owns:
+
+`next_change_sequence`
+
+Every committed message-state mutation allocates exactly one monotonically increasing positive change sequence:
+
+- message created
+- message edited
+- message deleted
+- reaction set, changed, or removed
+
+M1 persists a content-free `conversation_changes` row for each committed change.
+
+The change row contains only synchronization metadata such as:
+
+- conversation ID
+- change sequence
+- change type
+- message ID
+- current content version where applicable
+- trusted server timestamp
+
+It never contains:
+
+- message body
+- historical body
+- nickname text
+- reaction emoji
+- reply body
+
+The message row stores its latest applied change sequence.
+
+The browser uses the change cursor for polling and reconciliation. M2 may deliver the same change identities over WebSockets, but correctness remains recoverable from PostgreSQL and HTTP.
+
+No committed mutation may advance a client-visible cursor without the corresponding canonical state being committed in the same transaction.
 
 ### Canonical lock order
 
@@ -202,7 +249,16 @@ Retain:
 - kind
 - next server sequence
 
-Add only indexes or constraints that executed evidence proves are necessary.
+Add:
+
+- `next_change_sequence bigint NOT NULL DEFAULT 1`
+
+Rules:
+
+- `next_server_sequence` orders message creation
+- `next_change_sequence` orders durable messaging mutations
+- both counters are positive and advance only inside the mutation transaction
+- failed or rolled-back mutations do not consume a committed counter value
 
 Backfill one primary conversation for each partnership whose lifecycle is `active` or `breakup_pending`.
 
@@ -215,42 +271,72 @@ Add:
 - `body_text text` for explicit pre-S1 development plaintext
 - `content_version bigint NOT NULL DEFAULT 1`
 - `request_fingerprint bytea`
+- `last_change_sequence bigint`
 
 The existing encrypted fields remain reserved for S1.
 
 Payload invariant for new rows:
 
-- non-deleted pre-S1 row: exactly one content representation
+- non-deleted pre-S1 row: exactly one current content representation
 - encrypted future row: ciphertext must carry a crypto version
 - deleted row: no message content remains
 
-M1 writes only the explicit development plaintext representation.
+M1 writes only the explicit current development plaintext representation.
 
 Safety ceilings are implementation limits, not product semantics:
 
 - request contract rejects empty or whitespace-only text
 - message text is bounded to prevent unbounded request and database payloads
 - database checks provide a second defensive bound
+- reply targets must belong to the same conversation
+- `last_change_sequence` must identify the most recent committed durable change affecting the message
+
+### conversation_changes
+
+Add a compact, content-free synchronization ledger.
+
+Representative fields:
+
+- conversation_id
+- change_sequence
+- change_type
+- message_id
+- content_version nullable
+- created_at
+
+Invariants:
+
+- `UNIQUE (conversation_id, change_sequence)`
+- positive change sequence
+- referenced message belongs to the same conversation
+- no private body, nickname, reaction emoji, or other protected content
+- rows are append-only while retained
+
+M1 history pagination continues to use server sequence. Polling and later M2 reconnect repair use change sequence.
 
 ### message_versions
 
-Add a development plaintext representation and allow the existing ciphertext column to be nullable.
+M1 does not store plaintext edit history.
+
+The existing table remains compatibility and future encrypted-history substrate. The pre-S1 M1 write path does not insert current or previous plaintext bodies into `message_versions`.
 
 On edit:
 
 1. lock the current message
-2. persist the previous content as its previous content version
-3. update the current body
+2. require the caller's expected content version to match
+3. replace the current development body
 4. increment `content_version`
-5. set `edited_at`
+5. allocate and store the new change sequence
+6. set `edited_at`
 
 On delete:
 
-- all historical message-version content is physically removed
 - current content is removed
+- any legacy or future historical content associated with the message must be physically removed
 - the message row remains as a tombstone
+- deletion gets a durable change sequence
 
-A deleted message must never retain an old plaintext version that can be read through another repository path.
+A deleted message must never retain readable content through another repository path.
 
 ### message_reactions
 
@@ -374,10 +460,13 @@ PostgreSQL is used as the M1 cross-process coordination store. M2 may replace po
 A send request carries:
 
 - authenticated account identity
+- authenticated session device identity where available
 - conversation ID
 - client idempotency key
 - body
 - optional reply-to message ID
+
+The sender device ID is derived from the authenticated session. It is never accepted as caller-controlled message input.
 
 Transaction:
 
@@ -388,13 +477,16 @@ Transaction:
 5. evaluate `send_message` or `reply_message`
 6. lock the primary conversation
 7. resolve any existing row for the same sender and idempotency key
-8. compare the stored request fingerprint
+8. compare the stored keyed request fingerprint
 9. replay the original message identity on exact retry
 10. reject key reuse with a different fingerprint
 11. validate reply target belongs to the same conversation
 12. allocate the next server sequence
-13. insert message with trusted server timestamp
-14. commit
+13. allocate the next durable change sequence
+14. insert the message with trusted server timestamp and `last_change_sequence`
+15. insert the corresponding content-free `conversation_changes` row
+16. insert a content-free, versioned outbox invalidation event for the committed change
+17. commit
 
 Replying to a deleted tombstone may remain allowed if the referenced message still belongs to the same conversation. The reply never recovers deleted content.
 
@@ -408,13 +500,23 @@ The existing unique key:
 
 is the primary send deduplication invariant.
 
-M1 stores a content-independent request fingerprint so the same key cannot be reused for a different body or reply target.
+M1 stores a content-independent, keyed request fingerprint so the same key cannot be reused for a different body or reply target without persisting private request content.
+
+The fingerprint construction must:
+
+- be versioned
+- use a server-held HMAC key or equivalent reviewed keyed primitive
+- canonicalize the mutation type and relevant request fields
+- never use an ordinary unkeyed hash of the private message body as the durable verifier
+- support key rotation according to the repository's existing server-key pattern
 
 ### Other mutations
 
 Edit, delete, reaction, and nickname mutation reuse the existing generic `idempotency_records` infrastructure through M1-specific repository wrappers.
 
-Idempotency records must store only minimal mutation identity and version metadata.
+Private mutation inputs that participate in mismatch detection use the same keyed-fingerprint rule.
+
+Idempotency records must store only minimal mutation identity, expected version, and result metadata.
 
 They must not duplicate:
 
@@ -423,9 +525,11 @@ They must not duplicate:
 - reaction emoji
 - private reply content
 
+Idempotency response bodies must never contain private content.
+
 ## Message listing and pagination
 
-Canonical endpoint pagination uses server sequence, never client timestamp.
+Canonical message-history pagination uses server sequence, never client timestamp.
 
 Initial history:
 
@@ -433,10 +537,7 @@ Initial history:
 - database reads by descending server sequence
 - response is returned in ascending display order
 
-Forward synchronization:
-
-- request messages after the last committed server sequence
-- response is ascending
+Message-creation catch-up may request messages after the last known server sequence.
 
 Limits:
 
@@ -447,6 +548,23 @@ Limits:
 Message projections include only current content plus tombstone state.
 
 Historical edit versions are never returned through the normal read API.
+
+Every reply projection includes enough tombstone-safe reply context to render a reply even when the referenced message is outside the loaded history page. The context is derived from the referenced message under the same conversation authorization and must never resurrect deleted content.
+
+### Durable mutation synchronization
+
+M1 adds a bounded change feed keyed by `change_sequence`.
+
+The client records its latest committed change sequence and asks for changes after that cursor.
+
+For every returned change, the client either:
+
+- applies the included content-free invalidation to already-loaded state, then refetches the authoritative message projection as required; or
+- reloads the affected bounded message range/current conversation projection
+
+The client advances its durable local change cursor only after it has reconciled all earlier returned changes.
+
+This closes the correctness gap where an edit, deletion, or reaction to an old message would otherwise be invisible to forward polling based only on new-message server sequence.
 
 ## Edit semantics
 
@@ -466,14 +584,20 @@ Edit requires:
 - non-deleted message
 - ownership
 - active edit window
+- caller-supplied `expectedContentVersion` matching the locked row
 - if breakup is pending, message sequence above the breakup freeze sequence
 
 Every successful edit:
 
+- replaces only the current content representation
 - increments content version
-- preserves the previous version internally
+- allocates a durable change sequence
+- updates `last_change_sequence`
+- emits a content-free change/outbox invalidation
 - sets edited timestamp
 - renders an edited indicator
+
+Concurrent edits from different devices do not silently overwrite one another. A stale expected content version returns `VERSION_CONFLICT`.
 
 ## Delete semantics
 
@@ -523,7 +647,9 @@ M1 defines:
 
 Read acknowledgement also advances delivered state to at least the same sequence.
 
-The browser must never label a locally queued or failed request as delivered.
+Acknowledgements are monotonic and cannot exceed the latest committed server sequence.
+
+The browser must not advance a forward-sync receipt across a known message gap. It must never label a locally queued or failed request as delivered.
 
 M2 later transports these updates over realtime channels but does not redefine their meaning.
 
@@ -539,6 +665,10 @@ Initial M1 semantics:
 - no client-provided last-seen timestamp is trusted
 - presence is visible only to the current partner
 - former partners cannot query it through old partnership identifiers
+- a newly formed partnership must not expose presence activity from before that partnership's `activated_at`
+- the read projection treats pre-partnership `last_seen_at` as unavailable for that partnership
+
+The persistence row may remain account-scoped, but disclosure is partnership-scoped and activation-bounded.
 
 ## Typing
 
@@ -546,14 +676,33 @@ Typing is always enabled by product rule while message sending is permitted.
 
 Initial M1 semantics:
 
-- browser sends a debounced typing=true heartbeat
+- browser sends a debounced `typing=true` heartbeat
 - server assigns a short expiry
-- typing=false may clear early
+- client does not choose the expiry
+- `typing=false` may clear early
 - partner view polls the compact conversation state
 - expired rows are treated as false
 - no typing history is persisted
+- redundant refreshes are coalesced so a visible typing indicator cannot create an unbounded PostgreSQL write rate
+- endpoint rate limits apply independently from ordinary message-send limits
 
 M2 replaces polling delivery with WebSocket events.
+
+### Server-owned interaction limits
+
+Before runtime implementation, M1 freezes one centralized configuration surface for:
+
+- maximum UTF-8 message size
+- maximum nickname size
+- idempotency-key length
+- history default and maximum page size
+- change-feed default and maximum page size
+- visible-browser message/change polling cadence
+- typing TTL and minimum refresh cadence
+- presence heartbeat cadence and online TTL
+- typing and presence endpoint rate limits
+
+These values may later change through reviewed server policy, but they must not be duplicated as unrelated magic numbers across contracts, API routes, repositories, tests, and browser code.
 
 ## Shared nicknames
 
@@ -579,11 +728,12 @@ M1 adds a canonical current conversation projection containing:
 - partnership ID
 - lifecycle state
 - interaction mode
-- latest committed message sequence
+- latest committed message server sequence
+- latest committed durable change sequence
 - self identity
 - partner identity
 - shared nickname projections
-- partner presence
+- partner presence, activation-bounded to the current partnership
 - partner typing state
 - self delivered/read high-water state
 - partner delivered/read high-water state
@@ -605,6 +755,7 @@ High-level routes:
 
 - `GET /api/v1/conversations/current`
 - `GET /api/v1/conversations/:conversationId/messages`
+- `GET /api/v1/conversations/:conversationId/changes`
 - `POST /api/v1/conversations/:conversationId/messages`
 - `PATCH /api/v1/conversations/:conversationId/messages/:messageId`
 - `DELETE /api/v1/conversations/:conversationId/messages/:messageId`
@@ -651,18 +802,21 @@ M1 browser behavior:
 
 - load canonical current conversation
 - load latest bounded history
-- poll forward for new messages while visible
-- periodically refresh compact interaction state for edits, reactions, presence, typing, and receipts
+- poll the durable change feed while visible
+- use server-sequence pagination for message history and message-creation catch-up
+- periodically refresh compact interaction state for presence and typing
 - optimistic local send only after assigning a stable client idempotency key
 - reconcile every send against server response
 - show explicit sending, sent, delivered, and read states
-- expose reply context
+- never advance a synchronization cursor past an unreconciled change
+- expose reply context even when the referenced message is outside the current page
 - expose edit only within the locally estimated window, while server remains authoritative
+- send `expectedContentVersion` on edit and surface deterministic version conflicts
 - show tombstone instead of deleted body
 - show edited indicator
 - show default reaction tray plus add-emoji path
 - show partner typing
-- show online or last seen
+- show online or last seen only within the current-partnership privacy boundary
 - show shared nicknames
 
 No IndexedDB outbox is introduced in M1. That belongs to M2.
@@ -702,6 +856,10 @@ M1 must not modify `relationship_items` semantics for R1.
 
 R1 must not take ownership of conversation/message schema.
 
+M1 must keep messaging cleanup module-owned rather than expanding R1-owned relationship semantics. The P3 dissolution path composes module cleanup without requiring either parallel feature branch to own the other's private tables.
+
+The existing migration reservation remains unchanged. Because repository health enforces a contiguous migration sequence, reservation does not permit a branch containing 0013 or 0014 to pass migration-plan validation unless 0011 and 0012 are present in its ancestry. M1 does not change R1's reserved numbers or scope.
+
 ## Implementation sequence
 
 ### M1-A Domain refinement and contracts
@@ -710,10 +868,13 @@ Implement:
 
 - sequence-based pre-breakup freeze context
 - legacy timestamp fallback
+- messaging-specific capability helpers that reuse P3 lifecycle guards without changing relationship-object semantics
 - message/reaction/nickname validation contracts
-- pagination contracts
+- pagination and durable change-feed contracts
 - receipt contracts
 - presence and typing contracts
+- keyed private-request fingerprint contract
+- centralized server-owned interaction limits
 - denial-code contract tests
 
 Exit evidence:
@@ -721,6 +882,7 @@ Exit evidence:
 - existing P3 capability tests remain green
 - new exact freeze-sequence tests pass
 - contracts reject malformed and oversized requests
+- private mutation fingerprinting does not persist or use an unkeyed digest of message content
 
 ### M1-B Migrations and repositories
 
@@ -729,9 +891,11 @@ Implement migrations 0011 and 0012.
 Add repositories for:
 
 - primary conversation provisioning
-- sequence allocation
+- server-sequence allocation
+- durable change-sequence allocation
+- append-only content-free conversation changes
 - message insert/replay/list/lock
-- edit versions
+- current-content edit with optimistic version checks
 - tombstone delete
 - reactions
 - receipt high-water state
@@ -739,11 +903,13 @@ Add repositories for:
 - presence
 - typing
 - M1 idempotency wrappers
+- module-owned messaging relational cleanup
 
 Update:
 
 - partnership formation to create the primary conversation
-- partnership relational cleanup to delete nickname state
+- partnership breakup initiation to capture the message freeze sequence
+- the P3 deletion composition point to invoke messaging cleanup without taking ownership of relationship-space tables
 - permanent account cleanup to delete presence state
 
 Exit evidence:
@@ -751,47 +917,57 @@ Exit evidence:
 - migrations 0001 through 0012 apply from zero
 - invariant suite passes
 - P1/P2/P3 migration checks remain green
+- conversation/message creation and every durable message mutation produce gap-free committed change sequences
+- no M1 migration changes R1-reserved numbering or relationship-item semantics
 
 ### M1-C Core read and send API
 
 Implement:
 
 - current conversation projection
-- sequence pagination
+- sequence-based history pagination
+- bounded durable change-feed polling
 - send
-- reply
+- reply with stable tombstone-safe reply context
 - send replay
-- request-fingerprint mismatch denial
+- keyed request-fingerprint mismatch denial
 - receipt acknowledgement
+- content-free versioned outbox invalidation events
 
 Exit evidence:
 
 - one primary conversation per current partnership
-- deterministic sequence under concurrency
+- deterministic server sequence under concurrency
+- deterministic change sequence under concurrency
 - reply isolation
 - send idempotency
+- old-message mutation reconciliation through the change cursor
 - cross-partnership denial
 
 ### M1-D Message mutation API
 
 Implement:
 
-- edit
+- edit with `expectedContentVersion`
 - delete
 - reaction set/change/remove
 - 30-minute exact boundary
 - sequence freeze enforcement
 - tombstone projection
-- version-history cleanup on delete
+- no plaintext edit-history writes
+- durable change/outbox invalidation for every committed mutation
 
 Exit evidence:
 
 - ownership rules
 - exact edit window
+- stale edit version conflicts
+- concurrent edit determinism
 - edited indicator
 - tombstone content destruction
 - reaction rules
 - breakup freeze behavior
+- edit/delete/reaction changes to old messages are recoverable through the change cursor
 
 ### M1-E Shared chat interaction
 
@@ -801,6 +977,7 @@ Implement:
 - presence heartbeat
 - typing TTL
 - compact interaction projection
+- centralized interaction limits and rate controls
 
 Exit evidence:
 
@@ -809,7 +986,9 @@ Exit evidence:
 - breakup nickname exception
 - account-deletion denial
 - presence privacy
+- a new partnership does not inherit pre-partnership last-seen disclosure
 - typing expiry and lifecycle denial
+- high-frequency typing and presence requests are bounded and coalesced
 
 ### M1-F Browser core
 
@@ -818,9 +997,12 @@ Implement the functional PWA chat surface using HTTP canonical APIs and bounded 
 Exit evidence:
 
 - send/reply/edit/delete/reaction flows
+- server-sequence history plus change-sequence mutation synchronization
 - receipt state
 - typing/presence
 - nickname UI
+- reply context outside the currently loaded page
+- deterministic stale-edit conflict handling
 - breakup-restricted UI
 - account-deletion view-only behavior
 - no physical Android requirement for M1 closure
@@ -831,11 +1013,14 @@ Required races:
 
 - concurrent sends
 - duplicate send retries
+- concurrent change-sequence allocation across different mutation types
 - send versus breakup initiation
 - send versus account deletion request
 - edit versus breakup initiation
 - edit at exact 30-minute boundary
+- edit versus edit with the same expected content version
 - edit versus delete
+- reaction versus delete
 - reaction versus breakup initiation
 - nickname concurrent writes
 - receipt monotonic concurrent updates
@@ -844,13 +1029,23 @@ Required races:
 - account deletion recovery preserving conversation
 - cross-partnership guessed conversation/message access
 
+Required synchronization proof:
+
+- editing an old message is discovered from a later change cursor
+- deleting an old message is discovered from a later change cursor
+- changing/removing a reaction on an old message is discovered from a later change cursor
+- duplicate polling does not duplicate canonical state
+- a client can resume from any retained change cursor without relying on wall-clock ordering
+- content-free outbox events are sufficient for M2 invalidation without becoming the source of truth
+
 Required deletion proof:
 
 - conversation authorization ends synchronously at final dissolution
-- conversation deletion cascades messages, versions, reactions, receipts, member state, and typing
+- module-owned messaging cleanup is idempotent and composable with the P3 deletion kernel
+- conversation deletion cascades messages, reactions, receipts, member state, typing, and change rows
 - nickname state is removed
 - permanent account deletion removes presence
-- no deleted message body survives in version history
+- no deleted message body survives in current state or historical storage
 
 Required security proof:
 
@@ -858,7 +1053,10 @@ Required security proof:
 - message body never enters account notifications
 - message body never enters lifecycle events
 - message body never enters durable job payloads
+- message body and reaction content never enter change/outbox invalidations
 - idempotency metadata does not duplicate private content
+- private request fingerprints use a keyed construction
+- pre-partnership presence is not disclosed to a newly formed partner
 - no custom or fake cryptographic construction is added
 
 ### M1-H Closure harness and documentation
@@ -912,7 +1110,7 @@ Implementation evidence must prove every one of them:
 15. pre-breakup messages freeze for edit/delete/reaction
 16. nickname changes remain allowed during breakup_pending
 17. cross-partnership access fails closed
-18. API and security regression tests pass
+18. API and security regression tests pass, including durable mutation synchronization, stale-edit conflict, keyed-fingerprint, presence-privacy, bounded-interaction, deletion-composition, and content-free invalidation evidence
 
 ## Closure standard
 
