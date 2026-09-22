@@ -56,7 +56,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
-| 5A M1 Messaging Core | IN_PROGRESS, design complete | P3 | No for core closure |
+| 5A M1 Messaging Core | DONE locally, merge pending | P3 | No for core closure |
 | 5B R1 Relationship Space | IN_PROGRESS, isolated green; M1 integration pending | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
@@ -79,22 +79,21 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 ~~~
 
-M1 and R1 may progress in parallel because both depend on the verified P3 lifecycle/capability boundary rather than on each other. M1 architecture/API design is complete while its runtime work proceeds independently. R1 architecture/API design and source implementation are isolated-green at `0b863c5` on its separate branch. The reserved-gap PostgreSQL matrix passes 68/68, but final integrated closure still requires the real M1 migrations 0011 and 0012. M1 owns migrations 0011 and 0012; R1 owns 0013 and 0014.
+M1 and R1 progressed in parallel from the verified P3 boundary. M1 is locally DONE at `aa40a2c` on its separate branch. R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`, including the formatting gate. The reserved-gap PostgreSQL matrix passes 68/68, but final integrated closure still requires combining the real M1 migrations 0011 and 0012 with R1 migrations 0013 and 0014.
 
 Recommended execution order:
 
-1. continue M1 runtime work only on `feat/m1-messaging-core`
-2. run R1 validation on `feat/r1-relationship-space` and change runtime code only to fix failures found by those gates
+1. preserve M1 at verified branch head `aa40a2c`
+2. preserve R1 isolated-green evidence on `feat/r1-relationship-space`
 3. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
-4. keep M1 and R1 shared-file changes explicitly coordinated
-5. close each epic only from its own acceptance evidence
-6. merge completed milestone branches back to main before dependent milestones branch
-7. begin M2 only from main containing verified M1
-8. keep V1 separate until hosted Actions capacity returns
+4. perform M1/R1 integration only in the later dedicated task
+5. close R1 only after canonical migration and full-health evidence passes without reservations
+6. begin M2 only from main containing verified M1
+7. keep V1 separate until hosted Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
-Status: IN_PROGRESS. Architecture/API design is complete on the parallel M1 branch; runtime implementation remains pending.
+Status: DONE locally on the separate M1 branch at `aa40a2c`; merge to `main` pending.
 
 Canonical detailed gates:
 
@@ -139,7 +138,7 @@ M1 is DONE only after its API, persistence, ordering, idempotency, lifecycle, ra
 
 # Milestone 5B: R1 Relationship Space
 
-Status: IN_PROGRESS and `R1 ISOLATED GREEN`. Architecture/API design and R1 source implementation are verified through checkpoint `0b863c5` on `feat/r1-relationship-space`. The isolated PostgreSQL/API/worker matrix passes 68/68 with explicit reservations for M1-owned migrations 0011/0012, security and earlier-milestone regressions are green, and the dependency audit reports 0 vulnerabilities. Final canonical migrations and full repository health remain integration-pending on the real M1 migrations. The recorded R1 formatting drift also remains open. R1 continues independently from M1 and is not DONE.
+Status: IN_PROGRESS and `R1 ISOLATED GREEN`. Architecture/API design and R1 source implementation are verified on `feat/r1-relationship-space`. The isolated PostgreSQL/API/worker matrix passes 68/68 with explicit reservations for M1-owned migrations 0011/0012, security and earlier-milestone regressions are green, format/typecheck/build/lint/dependency checks pass, and the dependency audit reports 0 vulnerabilities. Verified M1 migrations now exist separately at `aa40a2c`, but final canonical migrations and full repository health remain integration-pending. R1 is not DONE.
 
 Canonical architecture:
 

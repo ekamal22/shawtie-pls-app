@@ -4,7 +4,7 @@
 
 This is the canonical R1 HTTP API design and current implementation contract.
 
-R1 architecture and runtime API source implementation are isolated-green at checkpoint `0b863c5` on `feat/r1-relationship-space`. The R1 security suite passes 13/13 and the isolated PostgreSQL/API/worker matrix passes 68/68. Final integrated closure remains pending on the real M1 migrations 0011/0012.
+R1 architecture and runtime API source implementation are isolated-green on `feat/r1-relationship-space`. The R1 security suite passes 13/13, the isolated PostgreSQL/API/worker matrix passes 68/68, and formatting plus static/build gates pass. Verified M1 migrations 0011/0012 exist separately at `aa40a2c`; final integrated closure remains pending.
 
 Base path:
 
@@ -12,7 +12,7 @@ Base path:
 
 ## Current implementation snapshot
 
-Runtime source implementation is isolated-green at checkpoint `0b863c5`.
+Runtime source implementation is isolated-green on `feat/r1-relationship-space`.
 
 Implemented HTTP/runtime behavior includes:
 
@@ -31,7 +31,7 @@ Implemented HTTP/runtime behavior includes:
 - breakup view-only behavior and final-dissolution cancellation
 - fail-closed external message/media references until verified M1/M3 resolvers exist
 
-Isolated verification is green. R1 remains `IN_PROGRESS` because the strict canonical migration chain and full repository-health closure require the real M1 migrations 0011/0012. The recorded R1 formatting drift also remains open.
+Isolated verification is green. R1 remains `IN_PROGRESS` because the strict canonical migration chain and full repository-health closure require later M1/R1 integration without reservations.
 
 Every successful or error response that can reveal private relationship-space state must include:
 
@@ -1381,4 +1381,4 @@ R1 API closure must execute tests proving:
 
 This document defines the R1 API surface only.
 
-The R1 runtime slices and isolated executable acceptance evidence exist at checkpoint `0b863c5`. Final integrated closure still requires the real M1 migrations 0011/0012 and the strict full-health gate.
+The R1 runtime slices and isolated executable acceptance evidence are green on `feat/r1-relationship-space`. Final integrated closure still requires canonical migrations 0001 through 0014 and the strict full-health gate without reservations.

@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline at commit `9820801`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. P3 is closed at all 22 acceptance gates: all ten migrations apply from zero, database invariants pass, the lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
+The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline at commit `9820801`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. M1 Messaging Core is DONE locally on its separate branch at `aa40a2c`. R1 Relationship Space is source-complete and isolated-green on `feat/r1-relationship-space`, including formatting, typecheck, build, lint, dependency checks, domain/contracts 16/16, security 13/13, the reserved-gap PostgreSQL/API/worker matrix 68/68, database invariants, P1/P2/P3 regressions, and a 0-vulnerability audit. R1 remains IN_PROGRESS because canonical 0001 through 0014 migration validation and full health require later M1/R1 integration. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 

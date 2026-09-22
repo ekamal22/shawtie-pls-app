@@ -48,7 +48,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
                 +-------+--------+
                 |                |
                 v                v
-          M1 Messaging 🟡    R1 Relationship Space 🟡
+          M1 Messaging ✅    R1 Relationship Space 🟡
                 |
                 v
           M2 Realtime + Offline ⚪
@@ -94,7 +94,7 @@ flowchart TD
 
     P2 --> P3["P3 Lifecycle + Deletion ✅"]
 
-    P3 --> M1["M1 Messaging Core 🟡"]
+    P3 --> M1["M1 Messaging Core ✅"]
     P3 --> R1["R1 Relationship Space 🟡"]
 
     M1 --> M2["M2 Realtime + Offline ⚪"]
@@ -131,7 +131,7 @@ P3 ✅
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
-R1 source implementation is isolated-green on its parallel branch at `0b863c5`. The reserved-gap PostgreSQL/API/worker matrix passes 68/68, R1 security passes 13/13, P1/P2/P3 security regressions are green, and the dependency audit reports 0 vulnerabilities. R1 stays yellow because strict canonical migration and full repository-health closure still require the real M1 migrations 0011/0012. Recorded R1 formatting drift also remains open. R1 has not consumed M1 runtime or migrations.
+M1 is locally DONE at 18/18 gates on its separate branch at `aa40a2c`. R1 source implementation is isolated-green on `feat/r1-relationship-space`. The reserved-gap PostgreSQL/API/worker matrix passes 68/68, R1 security passes 13/13, P1/P2/P3 security regressions pass, formatting and static/build gates pass, and the dependency audit reports 0 vulnerabilities. R1 stays yellow because strict canonical migration and full repository-health closure still require later integration with the real M1 migrations 0011/0012. R1 has not consumed M1 runtime or migrations.
 
 ## Most recently completed milestone
 
@@ -180,8 +180,8 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 
 M1 and R1 may progress in parallel.
-M1 architecture/API design is complete on `feat/m1-messaging-core`; runtime implementation is pending.
-R1 architecture/API design and source implementation are isolated-green at `0b863c5` on `feat/r1-relationship-space`; M1 integration and final full-health closure are pending.
+M1 is locally DONE at `aa40a2c` on `feat/m1-messaging-core`; merge to main is pending.
+R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`; M1 integration and final full-health closure are pending.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 Neither branch may consume the other branch's migration ownership.
