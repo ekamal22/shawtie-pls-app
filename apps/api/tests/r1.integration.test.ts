@@ -1616,6 +1616,100 @@ test("R1 Remember This works as an independent snapshot without an M1 source ref
   }
 });
 
+test("R1 Remember This references a real same-partnership M1 message without copying its body", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "message_ref_alice");
+    const bob = await register(app, database, "message_ref_bob");
+    const partnershipId = await formPartnership(
+      app,
+      alice,
+      bob,
+      "r1-message-ref-form-0001",
+    );
+
+    const current = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/current",
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(current.statusCode, 200, current.body);
+    const conversation = (
+      current.json() as {
+        conversation: { conversationId: string; partnershipId: string } | null;
+      }
+    ).conversation;
+    assert.ok(conversation);
+    assert.equal(conversation.partnershipId, partnershipId);
+
+    const m1Body = "M1 source body must not be copied into R1";
+    const sent = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + conversation.conversationId + "/messages",
+      headers: headers(alice.cookie, "r1-message-ref-send-0001"),
+      payload: { body: m1Body, replyToMessageId: null },
+    });
+    assert.equal(sent.statusCode, 201, sent.body);
+    const messageId = (sent.json() as { messageId: string }).messageId;
+
+    const snapshot = {
+      title: "Saved from chat",
+      snapshotText: "An independently supplied R1 snapshot.",
+      note: "Reference identity only.",
+    };
+    const created = await createItem(app, alice, "r1-message-ref-create-0001", {
+      kind: "remember_this",
+      contentSchemaVersion: 1,
+      preview: null,
+      content: snapshot,
+      occurrence: null,
+      storyIncluded: true,
+      release: null,
+      featureState: null,
+      references: [
+        {
+          referenceType: "message",
+          referenceId: messageId,
+          role: "source",
+          position: 0,
+        },
+      ],
+      links: [],
+    });
+
+    const read = await app.inject({
+      method: "GET",
+      url: "/api/v1/relationship-space/items/" + created.itemId,
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(read.statusCode, 200, read.body);
+    const body = read.json() as {
+      content: Record<string, unknown> | null;
+      references: Array<{
+        referenceType: string;
+        referenceId: string;
+        role: string;
+        position: number;
+      }>;
+    };
+    assert.deepEqual(body.content, snapshot);
+    assert.deepEqual(body.references, [
+      {
+        referenceType: "message",
+        referenceId: messageId,
+        role: "source",
+        position: 0,
+      },
+    ]);
+    assert.equal(JSON.stringify(body).includes(m1Body), false);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("R1 PATCH validates schedule and reunion dates only when those fields change", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
