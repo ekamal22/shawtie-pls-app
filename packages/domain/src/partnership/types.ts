@@ -35,6 +35,7 @@ export interface BreakupProcess {
   finalDeadline: string;
   restoreIntentAt: Readonly<Record<MemberId, string | undefined>>;
   generation: number;
+  messageFreezeSequence?: number | null;
 }
 
 export interface AccountDeletionProcess {
@@ -67,6 +68,7 @@ export interface MessageState {
   senderId: MemberId;
   createdAt: string;
   deletedAt: string | null;
+  serverSequence?: number;
 }
 
 export type CapabilityName =
