@@ -165,3 +165,186 @@ test("M2 service worker never caches private API responses", async ({ page }) =>
   expect(cacheUrls.some((url) => url.includes("/api/"))).toBe(false);
   expect(cacheUrls.some((url) => url.includes("/icon.svg"))).toBe(true);
 });
+
+
+test("M2 runtime reconnects and replays one offline message after canonical sync with stable idempotency", async ({
+  context,
+  page,
+}) => {
+  const MESSAGE = "50000000-0000-4000-8000-000000000001";
+  const IDEMPOTENCY = "m2-e2e-lost-response-0001";
+  const requestOrder: string[] = [];
+  const idempotencyKeys: string[] = [];
+  const logicalMessages = new Map<string, string>();
+  let postAttempts = 0;
+  let socketConnections = 0;
+  let activeSocket: import("@playwright/test").WebSocketRoute | null = null;
+
+  await page.routeWebSocket("/api/v1/realtime", async (socket) => {
+    socketConnections += 1;
+    activeSocket = socket;
+    expect(socket.protocols()).toContain("shawtie.realtime.v1");
+    socket.send(
+      JSON.stringify({
+        v: 1,
+        type: "control.ready",
+        payload: {
+          connectionId:
+            "60000000-0000-4000-8000-" +
+            String(socketConnections).padStart(12, "0"),
+          serverTime: "2026-09-22T18:00:00.000Z",
+          accountId: ACCOUNT,
+          partnershipId: PARTNERSHIP,
+          conversationId: CONVERSATION,
+          partnershipGeneration: 1,
+          latestServerSequence: 0,
+          latestChangeSequence: 0,
+        },
+      }),
+    );
+  });
+
+  await page.route("**/api/v1/m2-e2e-reconcile", async (route) => {
+    requestOrder.push("reconcile");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ latestChangeSequence: 0 }),
+    });
+  });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    requestOrder.push("session");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ authenticated: true }),
+    });
+  });
+  await page.route("**/api/v1/conversations/current", async (route) => {
+    requestOrder.push("authority");
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        conversation: {
+          conversationId: CONVERSATION,
+          partnershipId: PARTNERSHIP,
+          capabilities: { sendMessage: true },
+        },
+      }),
+    });
+  });
+  await page.route(
+    "**/api/v1/conversations/" + CONVERSATION + "/messages",
+    async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.fallback();
+        return;
+      }
+      requestOrder.push("post");
+      postAttempts += 1;
+      const key = route.request().headers()["idempotency-key"];
+      expect(key).toBeTruthy();
+      idempotencyKeys.push(key!);
+      if (!logicalMessages.has(key!)) logicalMessages.set(key!, MESSAGE);
+
+      if (postAttempts === 1) {
+        await route.abort("connectionreset");
+        return;
+      }
+
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ messageId: logicalMessages.get(key!) }),
+      });
+    },
+  );
+  await page.route(
+    "**/api/v1/conversations/" + CONVERSATION + "/messages/" + MESSAGE,
+    async (route) => {
+      requestOrder.push("projection");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          messageId: MESSAGE,
+          conversationId: CONVERSATION,
+          senderAccountId: ACCOUNT,
+          senderDeviceId: null,
+          serverSequence: 1,
+          contentVersion: 1,
+          lastChangeSequence: 1,
+          replyToMessageId: null,
+          replyContext: null,
+          body: "offline browser probe",
+          createdAt: "2026-09-22T18:00:01.000Z",
+          editedAt: null,
+          deletedAt: null,
+          reactions: [],
+        }),
+      });
+    },
+  );
+
+  await page.goto("/m2-e2e.html");
+  await expect(page.locator("#status")).toHaveText("ready");
+  await page.evaluate((accountId) => window.m2Harness.startRuntime(accountId), ACCOUNT);
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.m2Harness.runtimeState().partnershipId),
+    )
+    .toBe(PARTNERSHIP);
+  await expect
+    .poll(() => page.evaluate(() => window.m2Harness.runtimeState().status))
+    .toBe("live");
+
+  requestOrder.length = 0;
+  await page.evaluate(() => window.m2Harness.clearRuntimeLog());
+  await context.setOffline(true);
+  await expect
+    .poll(() => page.evaluate(() => navigator.onLine))
+    .toBe(false);
+  if (activeSocket) {
+    await activeSocket.close({ code: 1001, reason: "offline acceptance" });
+  }
+
+  await page.evaluate(
+    ({ body, key }) => window.m2Harness.queueRuntimeMessage(body, key),
+    { body: "offline browser probe", key: IDEMPOTENCY },
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.m2Harness.runtimeQueue().then((q) => q.length)))
+    .toBe(1);
+  await expect
+    .poll(() => page.evaluate(() => window.m2Harness.runtimeState().status))
+    .toBe("offline");
+  expect(requestOrder).toEqual([]);
+
+  await context.setOffline(false);
+  await expect
+    .poll(() => postAttempts, { timeout: 15_000 })
+    .toBe(2);
+  await expect
+    .poll(() => page.evaluate(() => window.m2Harness.runtimeQueue().then((q) => q.length)))
+    .toBe(0);
+  await expect
+    .poll(() => socketConnections)
+    .toBeGreaterThanOrEqual(2);
+
+  expect(idempotencyKeys).toEqual([IDEMPOTENCY, IDEMPOTENCY]);
+  expect(logicalMessages.size).toBe(1);
+
+  const firstPost = requestOrder.indexOf("post");
+  const secondPost = requestOrder.lastIndexOf("post");
+  expect(firstPost).toBeGreaterThan(0);
+  expect(secondPost).toBeGreaterThan(firstPost);
+  expect(requestOrder.slice(0, firstPost)).toContain("reconcile");
+  expect(requestOrder.slice(0, firstPost)).toContain("authority");
+  expect(requestOrder.slice(firstPost + 1, secondPost)).toContain("reconcile");
+  expect(requestOrder.slice(firstPost + 1, secondPost)).toContain("authority");
+
+  await page.evaluate(() => window.m2Harness.stopRuntime());
+  await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT);
+});

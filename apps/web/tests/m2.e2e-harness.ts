@@ -3,9 +3,14 @@ import {
   purgeAccountLocalData,
   type ChatQueueOperation,
 } from "../src/lib/offline/local-db.ts";
+import { apiRequest } from "../src/lib/api-client.ts";
+import { M2Runtime } from "../src/lib/realtime/runtime-context.tsx";
 
 const PARTNERSHIP_ID = "20000000-0000-4000-8000-000000000001";
 let database: ShawtieLocalDatabase | null = null;
+let runtime: M2Runtime | null = null;
+let unregisterRuntimeProbe: (() => void) | null = null;
+const runtimeReconcileLog: string[] = [];
 
 function requireDatabase(): ShawtieLocalDatabase {
   if (!database) throw new Error("Harness database is not open");
@@ -87,6 +92,65 @@ const api = {
       owner,
       generation,
     );
+  },
+  async startRuntime(accountId: string) {
+    if (runtime) {
+      unregisterRuntimeProbe?.();
+      unregisterRuntimeProbe = null;
+      await runtime.stop();
+    }
+    runtimeReconcileLog.length = 0;
+    runtime = new M2Runtime(accountId);
+    unregisterRuntimeProbe = runtime.registerSynchronizer(
+      "m2-e2e-canonical-probe",
+      async () => {
+        runtimeReconcileLog.push("reconcile");
+        return apiRequest<{ latestChangeSequence: number }>(
+          "/api/v1/m2-e2e-reconcile",
+        );
+      },
+    );
+    await runtime.start();
+  },
+  async stopRuntime() {
+    unregisterRuntimeProbe?.();
+    unregisterRuntimeProbe = null;
+    const active = runtime;
+    runtime = null;
+    if (active) await active.stop();
+  },
+  runtimeState() {
+    if (!runtime) {
+      return {
+        status: "stopped",
+        partnershipId: null,
+        conversationId: null,
+        reconcileLog: [...runtimeReconcileLog],
+      };
+    }
+    return {
+      status: runtime.coordinator.status,
+      partnershipId: runtime.realtime.scope.partnershipId,
+      conversationId: runtime.realtime.scope.conversationId,
+      reconcileLog: [...runtimeReconcileLog],
+    };
+  },
+  clearRuntimeLog() {
+    runtimeReconcileLog.length = 0;
+  },
+  async queueRuntimeMessage(body: string, idempotencyKey: string) {
+    if (!runtime) throw new Error("Harness runtime is not started");
+    return runtime.queueChat({
+      operationType: "message.send",
+      requestBody: { body, replyToMessageId: null },
+      idempotencyKey,
+    });
+  },
+  async runtimeQueue() {
+    if (!runtime) throw new Error("Harness runtime is not started");
+    const partnershipId = runtime.realtime.scope.partnershipId;
+    if (!partnershipId) return [];
+    return (await runtime.database()).listChatQueue(partnershipId);
   },
 };
 
