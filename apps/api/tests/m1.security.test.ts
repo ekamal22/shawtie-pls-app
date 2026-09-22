@@ -166,6 +166,22 @@ test("M1 browser exposes the required chat affordances and advances receipts onl
   assert.equal(panel.includes('"/nicknames/"'), true);
   assert.equal(panel.includes("M1_VISIBLE_CHANGE_POLL_MS"), true);
   assert.equal(panel.includes("M1_PRESENCE_HEARTBEAT_MIN_MS"), true);
+  assert.equal(panel.includes("M1_NICKNAME_MAX_CHARACTERS"), true);
+  assert.equal(panel.includes("pendingSendRef.current = pending"), true);
+  assert.equal(panel.includes('"idempotency-key": pending.key'), true);
+  assert.equal(panel.includes("messageEditable(message, conversation)"), true);
+  assert.equal(panel.includes("M1_MESSAGE_EDIT_WINDOW_MS"), true);
+
+  const sendStart = panel.indexOf("async function send(event: FormEvent)");
+  const sendRefresh = panel.indexOf(
+    "await refreshMessage(conversation.conversationId, created.messageId)",
+    sendStart,
+  );
+  const sendCursor = panel.indexOf(
+    "changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence)",
+    sendStart,
+  );
+  assert.ok(sendStart >= 0 && sendRefresh > sendStart && sendCursor > sendRefresh);
 
   const refreshIndex = panel.indexOf(
     "const message = await refreshMessage(summary.conversationId, change.messageId)",
