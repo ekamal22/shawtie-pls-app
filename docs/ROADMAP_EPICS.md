@@ -70,16 +70,16 @@ M1 Messaging Core      R1 Relationship Space
         v
 M2 Realtime and Offline
         |
-    +---+---+
-    |       |
-    v       v
-M3 Media  C1 Voice Calling
-            |
-            v
-       C2 Video Calling
-    |       |
-    +---+---+
-        v
+    +---+-------+
+    |           |
+    v           v
+M3 Media   C1 Voice Calling
+    |           |
+    |           v
+    |      C2 Video Calling
+    |           |
+    +-----+-----+
+          v
 S1 E2EE and Crypto Recovery
         |
         v
