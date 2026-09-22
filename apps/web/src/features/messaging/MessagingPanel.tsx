@@ -1,4 +1,6 @@
 import {
+  M1_CHANGE_DEFAULT_LIMIT,
+  M1_HISTORY_DEFAULT_LIMIT,
   M1_MESSAGE_MAX_CHARACTERS,
   M1_PRESENCE_HEARTBEAT_MIN_MS,
   M1_TYPING_MIN_REFRESH_MS,
@@ -215,7 +217,10 @@ export function MessagingPanel() {
     }
 
     const page = await apiRequest<MessagePage>(
-      "/api/v1/conversations/" + summary.conversationId + "/messages?limit=50",
+      "/api/v1/conversations/"
+        + summary.conversationId
+        + "/messages?limit="
+        + M1_HISTORY_DEFAULT_LIMIT,
     );
     setMessages(page.items);
     setHasOlder(page.hasMore);
@@ -240,7 +245,8 @@ export function MessagingPanel() {
           + summary.conversationId
           + "/changes?afterChangeSequence="
           + cursor
-          + "&limit=100",
+          + "&limit="
+          + M1_CHANGE_DEFAULT_LIMIT,
       );
 
       for (const change of result.items) {
@@ -311,7 +317,9 @@ export function MessagingPanel() {
       const page = await apiRequest<MessagePage>(
         "/api/v1/conversations/"
           + conversation.conversationId
-          + "/messages?limit=50&beforeSequence="
+          + "/messages?limit="
+          + M1_HISTORY_DEFAULT_LIMIT
+          + "&beforeSequence="
           + messages[0]!.serverSequence,
       );
       setMessages((current) => mergeMessages(current, page.items));
