@@ -4,7 +4,7 @@
 
 R1 Relationship Space is `IN_PROGRESS`.
 
-Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source implementation is complete at runtime checkpoint `acf1752` across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, and the dedicated local closure harness. Executed closure evidence is still pending, so no R1 acceptance gate is closed from source presence alone.
+Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source implementation is isolated-green at verification checkpoint `0b863c5` across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, and the dedicated local closure harness. Final integrated closure evidence remains pending on the real M1 migrations 0011/0012, so R1 is not DONE.
 
 Branch:
 
@@ -16,11 +16,11 @@ Verified starting point:
 
 ### Current implementation state
 
-Runtime source implementation is complete at checkpoint `acf1752`.
+Runtime source implementation is isolated-green at checkpoint `0b863c5`.
 
 The current branch contains the R1 domain/contracts, migrations 0013/0014, database repositories and invariants, private API, durable release worker, lifecycle integration, responsive browser implementation, security tests, API/worker integration tests, and the dedicated local R1 harness.
 
-This does **not** mean R1 is closed. The full PostgreSQL regression matrix, repository health gate, formatting/lint/typecheck/build checks, dependency-direction checks, and high-severity dependency audit still need executed evidence. Final integrated closure also requires the real M1-owned migrations 0011/0012 to be present; R1 does not copy them.
+This does **not** mean R1 is closed. Executed isolated evidence includes domain/contracts 16/16, R1 security 13/13, disposable PostgreSQL migrations and invariants PASS, API/worker integration 68/68 with `R1_LOCAL_POSTGRES_PASS`, P1/P2/P3 security regressions green, typecheck/build/lint/dependency checks green, and the high-severity dependency audit at 0 vulnerabilities. `format:check` still reports style drift in 15 R1 files. Final integrated closure also requires the real M1-owned migrations 0011/0012 and a strict full-health run; R1 does not copy them.
 
 Migration ownership:
 
@@ -1326,7 +1326,7 @@ Required matrix includes:
 
 ### R1-I Closure harness and docs
 
-Implemented closure commands. Execution evidence is still pending:
+Implemented closure commands:
 
 ```text
 npm run test:relationship-space
@@ -1412,11 +1412,11 @@ This rule must stay synchronized across the PRD, worker design, API contract, te
 
 ## Completion statement
 
-R1 architecture, implementation design, and runtime source surfaces are implemented on `feat/r1-relationship-space`.
+R1 architecture, implementation design, and runtime source surfaces are implemented and isolated-green on `feat/r1-relationship-space`.
 
 Current source checkpoint:
 
-`acf1752`
+`0b863c5`
 
 Implemented source includes:
 
@@ -1431,4 +1431,4 @@ Implemented source includes:
 - responsive Relationship Space browser flows including curations, reunion planning, partial occurrence precision, and rescheduling
 - R1 security, API integration, worker integration, and local PostgreSQL harnesses
 
-R1 remains `IN_PROGRESS` until the implemented closure commands are executed successfully and the acceptance evidence is recorded. Source implementation alone is not verification.
+R1 remains `IN_PROGRESS`. Isolated executable evidence is green, but final closure requires the real M1 migrations 0011/0012, the strict canonical 0001 through 0014 run, a green full repository-health gate, and resolution of the recorded formatting drift.

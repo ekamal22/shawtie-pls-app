@@ -1051,7 +1051,7 @@ Parallel reservation:
 - M1 owns 0011 and 0012
 - R1 must not create, rename, or modify M1 migration numbers
 
-Architecture/design and R1 source implementation are complete through runtime checkpoint `acf1752`. Executable acceptance evidence is still pending, so the epic remains IN_PROGRESS.
+Architecture/design and R1 source implementation are complete and isolated-green through verification checkpoint `0b863c5`. Final integrated acceptance remains pending, so the epic remains IN_PROGRESS.
 
 ## Current implemented progress
 
@@ -1073,7 +1073,7 @@ Completed source implementation includes:
 
 The isolated `test:r1:local` harness opts into migration reservations 0011/0012 only so R1 can be exercised without copying M1. Final integrated closure must run without that reservation and with the real M1 migrations present.
 
-The source implementation above is complete but not yet accepted as green. The checkboxes below remain open until the closure commands are executed and evidence is recorded. Any further R1 runtime changes should be driven by validation failures, not by unimplemented planned scope.
+The source implementation above is complete and the isolated R1 evidence is green. Executed results are domain/contracts 16/16, R1 security 13/13, disposable PostgreSQL migrations and invariants PASS, API/worker integration 68/68 with `R1_LOCAL_POSTGRES_PASS`, P1/P2/P3 security regressions green, typecheck/build/lint/dependency checks green, and the high-severity audit at 0 vulnerabilities. `format:check` still reports style drift in 15 R1 files. The final integrated migration and full-health gates remain open until the real M1 migrations 0011/0012 are present. Any further R1 runtime changes should be driven by validation failures, not by unimplemented planned scope.
 
 ## Scope
 
@@ -1269,7 +1269,7 @@ npm run health
 npm audit --audit-level=high
 ```
 
-These commands are implemented on the branch. They must not be reported as passing until executed evidence exists.
+The isolated command surface has executed successfully through `test:r1:local`. Strict `test:r1:postgres` and `health` remain integration commands because they require the real M1 migration chain. They must not use reservations.
 
 ## Acceptance gates
 
