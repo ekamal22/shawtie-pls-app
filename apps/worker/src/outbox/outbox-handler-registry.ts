@@ -11,6 +11,10 @@ export class OutboxHandlerRegistry {
     return this.#handlers.size;
   }
 
+  get eventTypes(): readonly string[] {
+    return [...new Set([...this.#handlers.values()].map((handler) => handler.eventType))].sort();
+  }
+
   register(handler: OutboxHandler): void {
     const handlerKey = key(handler.eventType, handler.payloadVersion);
     if (this.#handlers.has(handlerKey)) {
