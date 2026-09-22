@@ -2020,3 +2020,385 @@ test("M1 concurrent sends stay gap-free and guessed cross-partnership identifier
     await closeDatabasePool(database);
   }
 });
+
+
+test("M1 concurrent edit and reaction allocate a gap-free durable change sequence and polling is replay-safe", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "cross_type_alice");
+    const bob = await register(app, database, "cross_type_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "cross_type");
+
+    const first = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "edit target",
+      "m1-cross-type-send-1",
+    );
+    const second = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "reaction target",
+      "m1-cross-type-send-2",
+    );
+    assert.equal(first.statusCode, 201, first.body);
+    assert.equal(second.statusCode, 201, second.body);
+
+    const firstId = (first.json() as { messageId: string }).messageId;
+    const secondId = (second.json() as { messageId: string }).messageId;
+
+    const [edit, reaction] = await Promise.all([
+      app.inject({
+        method: "PATCH",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + firstId,
+        headers: jsonHeaders(alice.cookie, "m1-cross-type-edit"),
+        payload: { body: "edited target", expectedContentVersion: 1 },
+      }),
+      app.inject({
+        method: "PUT",
+        url:
+          "/api/v1/conversations/"
+          + conversationId
+          + "/messages/"
+          + secondId
+          + "/reaction",
+        headers: jsonHeaders(alice.cookie, "m1-cross-type-reaction"),
+        payload: { emoji: "❤️" },
+      }),
+    ]);
+    assert.equal(edit.statusCode, 200, edit.body);
+    assert.equal(reaction.statusCode, 200, reaction.body);
+
+    const mutationSequences = [
+      (edit.json() as { changeSequence: number }).changeSequence,
+      (reaction.json() as { changeSequence: number }).changeSequence,
+    ].sort((left, right) => left - right);
+    assert.deepEqual(mutationSequences, [3, 4]);
+
+    const firstPoll = await app.inject({
+      method: "GET",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/changes?afterChangeSequence=2&limit=100",
+      headers: { cookie: bob.cookie },
+    });
+    const duplicatePoll = await app.inject({
+      method: "GET",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/changes?afterChangeSequence=2&limit=100",
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(firstPoll.statusCode, 200, firstPoll.body);
+    assert.equal(duplicatePoll.statusCode, 200, duplicatePoll.body);
+    assert.deepEqual(duplicatePoll.json(), firstPoll.json());
+
+    const polled = firstPoll.json() as {
+      items: Array<{ changeSequence: number; type: string; messageId: string }>;
+      latestChangeSequence: number;
+      hasMore: boolean;
+    };
+    assert.deepEqual(
+      polled.items.map((item) => item.changeSequence),
+      [3, 4],
+    );
+    assert.deepEqual(
+      [...polled.items.map((item) => item.type)].sort(),
+      ["message.reaction_changed", "message.updated"],
+    );
+    assert.equal(polled.latestChangeSequence, 4);
+    assert.equal(polled.hasMore, false);
+
+    const resume = await app.inject({
+      method: "GET",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/changes?afterChangeSequence="
+        + polled.items[0]!.changeSequence
+        + "&limit=100",
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(resume.statusCode, 200, resume.body);
+    assert.deepEqual(
+      (resume.json() as { items: Array<{ changeSequence: number }> }).items.map(
+        (item) => item.changeSequence,
+      ),
+      [4],
+    );
+
+    const firstProjection = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstId,
+      headers: { cookie: bob.cookie },
+    });
+    const secondProjection = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + secondId,
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(firstProjection.statusCode, 200, firstProjection.body);
+    assert.equal(secondProjection.statusCode, 200, secondProjection.body);
+    assert.equal(
+      (firstProjection.json() as { lastChangeSequence: number }).lastChangeSequence,
+      (edit.json() as { changeSequence: number }).changeSequence,
+    );
+    assert.equal(
+      (secondProjection.json() as { lastChangeSequence: number }).lastChangeSequence,
+      (reaction.json() as { changeSequence: number }).changeSequence,
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 edit and reaction races with breakup initiation serialize around the frozen message cutoff", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "mutation_breakup_alice");
+    const bob = await register(app, database, "mutation_breakup_bob");
+    const { partnershipId, conversationId } = await formPartnership(
+      app,
+      alice,
+      bob,
+      "mutation_breakup",
+    );
+
+    const editTarget = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "edit before breakup race",
+      "m1-mutation-breakup-send-1",
+    );
+    const reactionTarget = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "reaction before breakup race",
+      "m1-mutation-breakup-send-2",
+    );
+    assert.equal(editTarget.statusCode, 201, editTarget.body);
+    assert.equal(reactionTarget.statusCode, 201, reactionTarget.body);
+    const editId = (editTarget.json() as { messageId: string }).messageId;
+    const reactionId = (reactionTarget.json() as { messageId: string }).messageId;
+
+    const [edit, reaction, breakup] = await Promise.all([
+      app.inject({
+        method: "PATCH",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + editId,
+        headers: jsonHeaders(alice.cookie, "m1-mutation-breakup-edit"),
+        payload: { body: "possibly edited before freeze", expectedContentVersion: 1 },
+      }),
+      app.inject({
+        method: "PUT",
+        url:
+          "/api/v1/conversations/"
+          + conversationId
+          + "/messages/"
+          + reactionId
+          + "/reaction",
+        headers: jsonHeaders(alice.cookie, "m1-mutation-breakup-reaction"),
+        payload: { emoji: "😮" },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/partnerships/" + partnershipId + "/breakup",
+        headers: mutationHeaders(alice.cookie, "m1-mutation-breakup-start"),
+      }),
+    ]);
+
+    assert.equal(breakup.statusCode, 200, breakup.body);
+    for (const response of [edit, reaction]) {
+      assert.ok(response.statusCode === 200 || response.statusCode === 409, response.body);
+      if (response.statusCode === 409) {
+        assert.equal(
+          (response.json() as { error: { code: string } }).error.code,
+          "PRE_BREAKUP_MESSAGE_LOCKED",
+        );
+      }
+    }
+
+    const persisted = await database.pool.query<{
+      message_freeze_sequence: string | number | bigint | null;
+    }>(
+      "SELECT message_freeze_sequence FROM breakup_processes WHERE partnership_id = $1 AND restored_at IS NULL AND dissolved_at IS NULL AND cancelled_at IS NULL AND superseded_at IS NULL",
+      [partnershipId],
+    );
+    assert.equal(Number(persisted.rows[0]?.message_freeze_sequence), 2);
+
+    const editAfterFreeze = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + editId,
+      headers: jsonHeaders(alice.cookie, "m1-mutation-breakup-edit-after"),
+      payload: {
+        body: "must remain frozen",
+        expectedContentVersion: edit.statusCode === 200 ? 2 : 1,
+      },
+    });
+    assert.equal(editAfterFreeze.statusCode, 409, editAfterFreeze.body);
+    assert.equal(
+      (editAfterFreeze.json() as { error: { code: string } }).error.code,
+      "PRE_BREAKUP_MESSAGE_LOCKED",
+    );
+
+    const reactionAfterFreeze = await app.inject({
+      method: "PUT",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + reactionId
+        + "/reaction",
+      headers: jsonHeaders(bob.cookie, "m1-mutation-breakup-reaction-after"),
+      payload: { emoji: "😂" },
+    });
+    assert.equal(reactionAfterFreeze.statusCode, 409, reactionAfterFreeze.body);
+    assert.equal(
+      (reactionAfterFreeze.json() as { error: { code: string } }).error.code,
+      "PRE_BREAKUP_MESSAGE_LOCKED",
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 nickname optimistic concurrency permits exactly one winner", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "nickname_race_alice");
+    const bob = await register(app, database, "nickname_race_bob");
+    const { partnershipId } = await formPartnership(app, alice, bob, "nickname_race");
+
+    const [first, second] = await Promise.all([
+      app.inject({
+        method: "PATCH",
+        url:
+          "/api/v1/partnerships/"
+          + partnershipId
+          + "/nicknames/"
+          + bob.accountId,
+        headers: jsonHeaders(alice.cookie, "m1-nickname-race-first"),
+        payload: { nickname: "Bee One", expectedVersion: 1 },
+      }),
+      app.inject({
+        method: "PATCH",
+        url:
+          "/api/v1/partnerships/"
+          + partnershipId
+          + "/nicknames/"
+          + bob.accountId,
+        headers: jsonHeaders(bob.cookie, "m1-nickname-race-second"),
+        payload: { nickname: "Bee Two", expectedVersion: 1 },
+      }),
+    ]);
+
+    assert.deepEqual(
+      [first.statusCode, second.statusCode].sort((left, right) => left - right),
+      [200, 409],
+    );
+    const loser = first.statusCode === 409 ? first : second;
+    assert.equal(
+      (loser.json() as { error: { code: string } }).error.code,
+      "VERSION_CONFLICT",
+    );
+
+    const winnerNickname =
+      first.statusCode === 200
+        ? (first.json() as { nickname: string | null }).nickname
+        : (second.json() as { nickname: string | null }).nickname;
+
+    const persisted = await database.pool.query<{
+      nickname: string | null;
+      version: string | number | bigint;
+    }>(
+      "SELECT nickname, version FROM partnership_chat_nicknames WHERE partnership_id = $1 AND subject_account_id = $2",
+      [partnershipId, bob.accountId],
+    );
+    assert.equal(persisted.rows[0]?.nickname, winnerNickname);
+    assert.equal(Number(persisted.rows[0]?.version), 2);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 concurrent receipt updates remain monotonic and read implies delivered", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "receipt_race_alice");
+    const bob = await register(app, database, "receipt_race_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "receipt_race");
+
+    for (let index = 1; index <= 3; index += 1) {
+      const sent = await sendMessage(
+        app,
+        alice,
+        conversationId,
+        "receipt message " + index,
+        "m1-receipt-race-send-" + index,
+      );
+      assert.equal(sent.statusCode, 201, sent.body);
+    }
+
+    const responses = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/conversations/" + conversationId + "/receipt",
+        headers: jsonHeaders(bob.cookie),
+        payload: { type: "delivered", throughSequence: 1 },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/conversations/" + conversationId + "/receipt",
+        headers: jsonHeaders(bob.cookie),
+        payload: { type: "read", throughSequence: 3 },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/conversations/" + conversationId + "/receipt",
+        headers: jsonHeaders(bob.cookie),
+        payload: { type: "delivered", throughSequence: 2 },
+      }),
+    ]);
+    assert.equal(responses.every((response) => response.statusCode === 200), true);
+
+    const current = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/current",
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(current.statusCode, 200, current.body);
+    const receipts = (
+      current.json() as {
+        conversation: {
+          receipts: {
+            partnerDeliveredThrough: number;
+            partnerReadThrough: number;
+          };
+        };
+      }
+    ).conversation.receipts;
+    assert.deepEqual(receipts, {
+      partnerDeliveredThrough: 3,
+      partnerReadThrough: 3,
+    });
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
