@@ -60,6 +60,52 @@ const api = {
   async rememberNamespace(partnershipId: string, conversationId: string) {
     await requireDatabase().rememberNamespace(partnershipId, conversationId);
   },
+  async seedMessage(input: {
+    partnershipId: string;
+    conversationId: string;
+    messageId: string;
+    body: string;
+  }) {
+    await requireDatabase().commitMessagesAndSync({
+      partnershipId: input.partnershipId,
+      conversationId: input.conversationId,
+      messages: [
+        {
+          messageId: input.messageId,
+          conversationId: input.conversationId,
+          senderAccountId: "10000000-0000-4000-8000-000000000001",
+          senderDeviceId: null,
+          serverSequence: 1,
+          contentVersion: 1,
+          lastChangeSequence: 1,
+          replyToMessageId: null,
+          replyContext: null,
+          body: input.body,
+          createdAt: "2026-09-22T18:00:00.000Z",
+          editedAt: null,
+          deletedAt: null,
+          reactions: [],
+        },
+      ],
+      sync: {
+        partnershipId: input.partnershipId,
+        conversationId: input.conversationId,
+        latestChangeSequence: 1,
+        latestServerSequence: 1,
+        retainedHistoryStartSequence: 1,
+        retainedHistoryEndSequence: 1,
+        pendingDeliveredThrough: 0,
+        pendingReadThrough: 0,
+        lastSyncedAt: "2026-09-22T18:00:00.000Z",
+      },
+    });
+  },
+  async messages(partnershipId: string, conversationId: string) {
+    return requireDatabase().loadMessages(partnershipId, conversationId);
+  },
+  async purgePartnership(partnershipId: string) {
+    await requireDatabase().purgePartnership(partnershipId);
+  },
   async enqueue(input: {
     operationId: string;
     partnershipId: string;

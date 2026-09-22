@@ -356,3 +356,154 @@ test("M2 runtime reconnects and replays one offline message after canonical sync
   await page.evaluate(() => window.m2Harness.stopRuntime());
   await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT);
 });
+
+
+test("M2 account databases never expose another account private cache or queue", async ({ page }) => {
+  const ACCOUNT_B = "10000000-0000-4000-8000-000000000002";
+  const MESSAGE_A = "50000000-0000-4000-8000-000000000010";
+  const OPERATION_A = "40000000-0000-4000-8000-000000000010";
+
+  await page.goto("/m2-e2e.html");
+  await expect(page.locator("#status")).toHaveText("ready");
+
+  await page.evaluate(
+    async ({ accountId, partnershipId, conversationId, messageId, operationId }) => {
+      await window.m2Harness.open(accountId);
+      await window.m2Harness.rememberNamespace(partnershipId, conversationId);
+      await window.m2Harness.seedMessage({
+        partnershipId,
+        conversationId,
+        messageId,
+        body: "account-a-private-cache",
+      });
+      await window.m2Harness.enqueue({
+        partnershipId,
+        conversationId,
+        operationId,
+      });
+      window.m2Harness.close();
+    },
+    {
+      accountId: ACCOUNT,
+      partnershipId: PARTNERSHIP,
+      conversationId: CONVERSATION,
+      messageId: MESSAGE_A,
+      operationId: OPERATION_A,
+    },
+  );
+
+  await page.evaluate((accountId) => window.m2Harness.open(accountId), ACCOUNT_B);
+  expect(
+    await page.evaluate(
+      ({ partnershipId, conversationId }) =>
+        window.m2Harness.messages(partnershipId, conversationId),
+      { partnershipId: PARTNERSHIP, conversationId: CONVERSATION },
+    ),
+  ).toEqual([]);
+  expect(
+    await page.evaluate(
+      (partnershipId) => window.m2Harness.list(partnershipId),
+      PARTNERSHIP,
+    ),
+  ).toEqual([]);
+  await page.evaluate(() => window.m2Harness.close());
+
+  await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT);
+  await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT_B);
+});
+
+test("M2 final partnership purge prevents a future partnership inheriting old cache or queue", async ({
+  page,
+}) => {
+  const OLD_MESSAGE = "50000000-0000-4000-8000-000000000020";
+  const OLD_OPERATION = "40000000-0000-4000-8000-000000000020";
+  const NEW_PARTNERSHIP = "20000000-0000-4000-8000-000000000002";
+  const NEW_CONVERSATION = "30000000-0000-4000-8000-000000000002";
+  const NEW_MESSAGE = "50000000-0000-4000-8000-000000000021";
+  const NEW_OPERATION = "40000000-0000-4000-8000-000000000021";
+
+  await openHarness(page);
+  await page.evaluate(
+    async ({ partnershipId, conversationId, messageId, operationId }) => {
+      await window.m2Harness.rememberNamespace(partnershipId, conversationId);
+      await window.m2Harness.seedMessage({
+        partnershipId,
+        conversationId,
+        messageId,
+        body: "old-partnership-private-cache",
+      });
+      await window.m2Harness.enqueue({
+        partnershipId,
+        conversationId,
+        operationId,
+      });
+      await window.m2Harness.purgePartnership(partnershipId);
+    },
+    {
+      partnershipId: PARTNERSHIP,
+      conversationId: CONVERSATION,
+      messageId: OLD_MESSAGE,
+      operationId: OLD_OPERATION,
+    },
+  );
+
+  expect(
+    await page.evaluate(
+      ({ partnershipId, conversationId }) =>
+        window.m2Harness.messages(partnershipId, conversationId),
+      { partnershipId: PARTNERSHIP, conversationId: CONVERSATION },
+    ),
+  ).toEqual([]);
+  expect(
+    await page.evaluate(
+      (partnershipId) => window.m2Harness.list(partnershipId),
+      PARTNERSHIP,
+    ),
+  ).toEqual([]);
+
+  await page.evaluate(
+    async ({ partnershipId, conversationId, messageId, operationId }) => {
+      await window.m2Harness.rememberNamespace(partnershipId, conversationId);
+      await window.m2Harness.seedMessage({
+        partnershipId,
+        conversationId,
+        messageId,
+        body: "new-partnership-cache",
+      });
+      await window.m2Harness.enqueue({
+        partnershipId,
+        conversationId,
+        operationId,
+      });
+    },
+    {
+      partnershipId: NEW_PARTNERSHIP,
+      conversationId: NEW_CONVERSATION,
+      messageId: NEW_MESSAGE,
+      operationId: NEW_OPERATION,
+    },
+  );
+
+  const newMessages = await page.evaluate(
+    ({ partnershipId, conversationId }) =>
+      window.m2Harness.messages(partnershipId, conversationId),
+    { partnershipId: NEW_PARTNERSHIP, conversationId: NEW_CONVERSATION },
+  );
+  expect(newMessages).toHaveLength(1);
+  expect(newMessages[0]?.body).toBe("new-partnership-cache");
+
+  const newQueue = await page.evaluate(
+    (partnershipId) => window.m2Harness.list(partnershipId),
+    NEW_PARTNERSHIP,
+  );
+  expect(newQueue).toHaveLength(1);
+  expect(newQueue[0]?.operationId).toBe(NEW_OPERATION);
+  expect(
+    await page.evaluate(
+      (partnershipId) => window.m2Harness.list(partnershipId),
+      PARTNERSHIP,
+    ),
+  ).toEqual([]);
+
+  await page.evaluate((accountId) => window.m2Harness.purge(accountId), ACCOUNT);
+});
