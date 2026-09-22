@@ -1059,7 +1059,7 @@ As soon as the client learns the partnership is no longer authorized:
 5. delete R1 cache from IndexedDB
 6. delete partnership queue entries
 7. delete partnership sync metadata
-8. delete future M3 local media metadata
+8. delete M3-design local media drafts, metadata, upload jobs, and pending parent bundles once that subsystem exists
 9. delete future S1 local key namespace
 10. ensure a future partnership cannot query the old namespace
 
