@@ -347,33 +347,90 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: PLANNED.
+Status: PLANNED, DESIGN COMPLETE. Implementation is blocked until M2 closes and is merged to `main`.
 
-Depends on verified M2.
+Design:
+
+`docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
+
+API:
+
+`docs/api/M3_MEDIA_API.md`
+
+Pre-S1 media security bridge:
+
+`docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`
 
 ## Goal
 
-Add private media and recorded voice while preserving partnership authorization, deletion, and future E2EE compatibility.
+Add private partnership-scoped images, short video, selected files, ordinary voice messages, and R1 media/Voice Letters without weakening lifecycle isolation, offline reliability, deletion guarantees, or the future S1 E2EE boundary.
 
-## Core scope
+## Refined architecture
 
-- images
-- short video
-- selected files
-- voice messages
-- client-side media preparation
-- private object storage
-- opaque object keys
-- short-lived signed access
-- attachment authorization
-- deletion-manifest integration
-- E2EE-compatible media path
+M3 treats media as a first-class partnership asset.
+
+M1 messages and R1 items store references to ready media IDs. The media module owns:
+
+- upload state
+- opaque provider object key
+- ciphertext size and media class
+- signed transfer grants
+- reference-aware access authorization
+- upload expiry
+- orphan cleanup
+- provider deletion
+- pre-S1 development key envelope
+
+Private object storage receives ciphertext only.
+
+A generic same-partnership read rule is forbidden because an unreleased R1 Voice Letter must remain inaccessible to the recipient even when the recipient knows or guesses its media ID.
+
+## Planned implementation slices
+
+1. M3-A contracts, policy, encrypted-container and storage boundaries
+2. M3-B media persistence and migration 0015
+3. M3-C private object-storage port and provider adapter
+4. M3-D media HTTP API
+5. M3-E M1 message attachments and migration 0016
+6. M3-F R1 attachments and Voice Letters
+7. M3-G browser image/video/file/voice UX
+8. M3-H offline media drafts/upload coordinator and local-schema upgrade
+9. M3-I upload expiry, orphan cleanup, and deletion-manifest integration
+10. M3-J security, PostgreSQL, browser, repository-health, and Android closure
+
+## Security boundary
+
+M3 does not implement stable E2EE.
+
+ADR-012 allows a development-only server-recoverable media-key escrow while keeping object storage ciphertext-only. This is architecture debt with an explicit removal condition.
+
+S1 must client-reencrypt retained pre-S1 assets with fresh keys never disclosed to the server, or wipe them. Rewrapping an old server-known media key is not sufficient to claim E2EE.
+
+## Lifecycle boundary
+
+- active: normal media send/reference/read
+- breakup_pending: ordinary chat media remains allowed; R1 user mutations remain view-only
+- account-deletion pending: existing authorized shared media is view-only; no new media mutation
+- terminated: no new grants or mutations; durable provider cleanup proceeds
 
 ## Closure boundary
 
-M3 must prove size limits, private storage, authorization, signed-access expiry, cross-partnership denial, deletion behavior, cleanup retry, and physical Android media flows.
+M3 is DONE only after its detailed gates in `ROADMAP_EPICS.md` pass, including:
+
+- migrations 0015/0016
+- private ciphertext-only provider storage
+- signed transfer authorization
+- M1/R1 reference isolation
+- offline upload recovery
+- generation-fenced orphan cleanup
+- deletion-manifest provider cleanup
+- browser acceptance
+- physical Android image/video/file/voice flows
+- full health and dependency audit
 
 **REDMI PHONE REQUIRED: YES.**
+
+M3 implementation must start from the verified mainline after M2 closure. The current `design/m3-media-voice` branch is documentation only.
 
 # Milestone 8: C1 Voice and Video Calling
 

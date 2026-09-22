@@ -1306,34 +1306,249 @@ Implementation is complete, but none of the acceptance gates below are considere
 
 # M3: Media and Voice Messages
 
-Status: PLANNED
+Status: PLANNED, DESIGN COMPLETE; IMPLEMENTATION BLOCKED ON VERIFIED M2
+
+Design branch:
+
+`design/m3-media-voice`
+
+Implementation branch after M2 closes:
+
+`feat/m3-media-voice`
+
+Architecture:
+
+`docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
+
+API and integration contract:
+
+`docs/api/M3_MEDIA_API.md`
+
+Pre-S1 encrypted-media bridge:
+
+`docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`
+
+## Design state
+
+M3 is implementation-ready at the architecture level, but implementation must not begin from this design branch. The actual M3 feature branch must be created from the verified `main` after M2 closes and merges.
+
+The design makes media a first-class partnership asset shared by M1 and R1. It defines ciphertext-only private object storage, direct signed ciphertext upload, reference-aware read authorization, message attachments, R1 Voice Letters, browser media processing, voice recording, offline media draft/upload orchestration, generation-fenced orphan cleanup, order-independent deletion-manifest integration, and mandatory Android closure.
+
+ADR-012 defines a temporary pre-S1 development key escrow so object storage receives ciphertext without pretending M3 has implemented stable E2EE. Stable release remains blocked until S1 client-reencrypts or wipes pre-S1 media and removes server-recoverable development keys.
 
 ## Scope
 
-- image upload
-- video upload
-- general file upload
-- voice-message recording
-- client-side media processing
+- partnership-scoped first-class media assets
+- image attachments
+- short video attachments
+- selected general files
+- ordinary chat voice messages
+- R1 media attachments
+- R1 Voice Letters
+- client-side image resize/compression and metadata stripping
+- client-side video/duration validation
+- MediaRecorder voice recording, preview, cancellation, and playback
+- versioned encrypted media container
 - private object storage
-- signed access
-- attachment authorization
-- encrypted-media boundary
+- opaque object keys with no filenames or user identifiers
+- direct short-lived signed ciphertext upload
+- short-lived authorized ciphertext read grants
+- provider-neutral `packages/media-storage` boundary
+- M1 message attachment references
+- R1 media-reference resolver and release-aware visibility
+- offline media drafts and pending message bundles
+- upload expiry and orphan cleanup
+- durable provider deletion
+- final-dissolution media cleanup
+- browser and physical Android acceptance
 
-## Acceptance gates
+Out of scope:
 
-- [ ] configured attachment limits are enforced
-- [ ] client-side image processing follows product limits
-- [ ] object keys are opaque and do not contain private filenames
-- [ ] storage objects are private
-- [ ] signed access is short-lived and partnership-authorized
-- [ ] attachment IDs cannot cross partnership boundaries
-- [ ] unauthorized object retrieval fails
-- [ ] encrypted-media path is compatible with stable-release E2EE
-- [ ] media is included in deletion manifests
-- [ ] final dissolution removes media access immediately
-- [ ] storage cleanup retries safely
-- [ ] physical Android media and voice-message flows pass
+- voice/video calling
+- call recording
+- avatars
+- public media
+- server-side thumbnails
+- server-side transcoding
+- server plaintext malware scanning
+- multipart upload
+- production E2EE key distribution
+- S1 device enrollment/recovery
+
+## Planned migration ownership
+
+After M2 is verified and M3 implementation begins:
+
+- `0015_media_runtime.sql`
+- `0016_media_references_runtime.sql`
+
+No placeholder reservation file is allowed.
+
+M3 preserves migrations 0001 through 0014 byte-for-byte.
+
+## Core architecture gates
+
+- [ ] M3 implementation starts only from verified post-M2 `main`
+- [ ] existing M2 acceptance evidence remains green after M3 changes
+- [ ] media is a first-class partnership asset rather than binary message/R1 payload
+- [ ] media IDs and object keys are opaque and never grant authority by themselves
+- [ ] object keys contain no filename, account ID, partnership ID, username, MIME extension, or relationship meaning
+- [ ] object-storage provider receives ciphertext only
+- [ ] API does not proxy or persist media plaintext
+- [ ] pre-S1 development mode is never described as E2EE
+- [ ] stable-release guard fails while development media escrow remains active
+- [ ] unknown media object-format versions fail closed
+- [ ] media bytes and keys never enter realtime/NOTIFY/outbox payloads
+
+## Policy and client-processing gates
+
+- [ ] server-delivered policy enforces the PRD media classes and limits
+- [ ] source image above 10 MB is rejected
+- [ ] processed image longest side is at most 4096 px
+- [ ] image processing targets about 2 MB or less when practical
+- [ ] image re-encoding strips EXIF/location metadata by default
+- [ ] video above 50 MB is rejected
+- [ ] video above 2 minutes is rejected
+- [ ] general file above 25 MB is rejected
+- [ ] voice message above 15 MB is rejected
+- [ ] voice recording stops at 10 minutes
+- [ ] message attachment count never exceeds 10
+- [ ] exact filename and MIME descriptor remain encrypted
+- [ ] general files are never auto-executed or rendered as active HTML/SVG/script content
+
+## Storage and upload gates
+
+- [ ] storage container/bucket is private and public access is disabled
+- [ ] provider credentials never reach the browser
+- [ ] provider CORS is restricted to the trusted application origin
+- [ ] upload grant is short-lived and restricted to one opaque object key
+- [ ] upload-grant expiry is persisted for deletion-race safety
+- [ ] provider HEAD/stat verifies exact ciphertext size before ready state
+- [ ] upload completion rechecks current lifecycle authority
+- [ ] network loss after object PUT but before completion resumes without duplicate media
+- [ ] expired pending uploads are cleaned durably
+- [ ] provider deletion is idempotent
+- [ ] provider failure retries through existing durable worker fencing
+
+## Authorization and reference gates
+
+- [ ] unreferenced draft media is uploader-only
+- [ ] a ready message attachment is readable only through current M1 message visibility
+- [ ] an R1 attachment is readable only through current R1 item visibility
+- [ ] unreleased R1 Voice Letter cannot be fetched by the recipient
+- [ ] released R1 Voice Letter becomes readable without changing media ownership
+- [ ] foreign-partnership media IDs fail with non-enumerating private errors
+- [ ] message attachment IDs cannot cross partnership boundaries
+- [ ] R1 media references cannot cross partnership boundaries
+- [ ] `voice_letter` reference requires voice media
+- [ ] a parent can reference only ready media
+- [ ] signed URLs are never embedded in message or R1 projections
+- [ ] exact media key is returned only after the same reference-aware authorization decision
+
+## M1 integration gates
+
+- [ ] message may contain text only, media only, or text plus media
+- [ ] empty text plus zero attachments is rejected
+- [ ] message creation and attachment rows commit atomically
+- [ ] send idempotency covers ordered attachment IDs
+- [ ] attachments are immutable after message creation
+- [ ] message edit changes text only
+- [ ] message deletion removes attachment references and preserves normal tombstone semantics
+- [ ] media-only reply context renders a content-free attachment summary
+- [ ] M1 server_sequence remains immutable message order
+- [ ] M1 change_sequence remains mutation synchronization order
+- [ ] no new media-specific realtime ordering authority is introduced
+
+## R1 integration gates
+
+- [ ] existing R1 media resolver is wired to real M3 authorization
+- [ ] R1 release and view-only rules remain authoritative
+- [ ] R1 recipient projection does not reveal unreleased media references
+- [ ] R1 create/patch cannot bind pending/delete-pending media
+- [ ] R1 reference removal participates in media orphan reconciliation
+- [ ] scheduled R1 release during breakup_pending may expose already-bound media without creating new media
+
+## Offline and local-storage gates
+
+- [ ] M3 local schema upgrade preserves account/partnership isolation
+- [ ] binary media is not placed in the M2 JSON chat outbox
+- [ ] media draft/blob/job persistence is atomic before UI claims queued
+- [ ] pending message bundle keeps one stable message idempotency key
+- [ ] upload/finalize resumes after browser reload
+- [ ] ready orphan media survives long enough for an interrupted message send to resume
+- [ ] lifecycle rejection leaves unreferenced media for generation-fenced cleanup
+- [ ] quota/transaction failure never claims an unpersisted media draft is queued
+- [ ] account switch/logout purges prior-account M3 local drafts and jobs
+- [ ] final dissolution purges old-partnership local media state
+- [ ] future partnership cannot render or replay prior-partnership media jobs
+- [ ] service worker caches no media API/object response
+
+## Lifecycle and deletion gates
+
+- [ ] active partnership allows supported media
+- [ ] breakup_pending allows ordinary chat media
+- [ ] breakup_pending keeps R1 user mutations view-only
+- [ ] account-deletion pending denies all new media mutation
+- [ ] terminated partnership denies new media access grants and mutation
+- [ ] final dissolution revokes application media authorization before provider cleanup
+- [ ] deletion manifest contains dedicated `partnership_media_storage` target
+- [ ] relational and provider-storage deletion targets are safe in either execution order
+- [ ] provider cleanup waits for previously issued upload grants to expire before final sweep
+- [ ] a stale upload URL cannot resurrect durable media after the deletion target completes
+- [ ] orphan cleanup is generation-fenced against re-reference
+- [ ] deleting one parent does not delete media still referenced by another valid parent
+- [ ] storage cleanup remains retryable after process restart
+
+## Security and privacy gates
+
+- [ ] object ciphertext mutation or truncation fails authenticated decryption
+- [ ] wrong media key fails
+- [ ] wrong media/partnership authenticated context fails
+- [ ] raw development media key is never stored in PostgreSQL
+- [ ] raw development media key, wrapped key, signed URL, object key, filename, and ciphertext are excluded from logs
+- [ ] service worker never caches signed media capabilities
+- [ ] read grants have a bounded short TTL
+- [ ] API stops issuing new grants immediately after lifecycle revocation
+- [ ] documentation states that already-issued signed URLs are bounded bearer capabilities until expiry
+- [ ] documentation does not claim downloaded bytes can be revoked
+- [ ] encrypted attachment malware-scanning limitation is documented honestly
+
+## Automated acceptance gates
+
+- [ ] migrations 0001 through 0016 apply from zero
+- [ ] database invariants pass with M3 constraints/triggers
+- [ ] M3 contract/unit suite passes
+- [ ] M3 security suite passes
+- [ ] PostgreSQL/API/worker/object-store integration suite passes
+- [ ] M1 and R1 regression suites remain green
+- [ ] M2 realtime/offline regressions remain green
+- [ ] real Chromium image/video/file/voice flows pass
+- [ ] direct upload and completion retry flows pass
+- [ ] offline media draft/reload flow passes
+- [ ] unreleased R1 media isolation passes in real browser acceptance
+- [ ] deletion target ordering and provider retry cases pass
+- [ ] full `npm run health` passes
+- [ ] `npm audit --audit-level=high` passes
+- [ ] git hygiene and exact branch/SHA closure pass
+
+## Physical Android acceptance gates
+
+- [ ] image choose/process/send/view passes
+- [ ] video choose/send/view and limit rejection passes
+- [ ] permitted file send/download passes
+- [ ] microphone permission, record, preview, cancel, send, and playback pass
+- [ ] upload interruption/retry passes on device
+- [ ] offline draft reload passes when local persistence succeeds
+- [ ] quota/storage failure does not produce false queued state
+- [ ] breakup_pending media send passes
+- [ ] account-deletion no-new-media rule passes
+- [ ] unreleased and released R1 Voice Letter visibility passes
+- [ ] final dissolution deny/cleanup behavior passes
+- [ ] later-partnership isolation passes
+- [ ] logout/account-switch local purge passes
+- [ ] service-worker compatibility behavior passes
+
+M3 remains PLANNED until M2 is verified and the implementation branch is created. Design completion is not implementation completion.
 
 # C1: Voice and Video Calling
 

@@ -57,6 +57,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             |       |
             v       v
        M3 Media ⚪  C1 Calling ⚪
+       design ready
             |       |
             +---+---+
                 |
@@ -99,7 +100,7 @@ flowchart TD
 
     M1 --> M2["M2 Realtime + Offline 🟡"]
 
-    M2 --> M3["M3 Media + Voice Messages ⚪"]
+    M2 --> M3["M3 Media + Voice Messages ⚪\ndesign complete"]
     M2 --> C1["C1 Voice + Video Calling ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
@@ -193,6 +194,7 @@ M2 feature implementation is complete. Executed automated closure and mandatory 
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 M2 is expected to require no PostgreSQL migration and does not reserve 0015.
+M3 architecture is design-complete on `design/m3-media-voice`, but runtime implementation must wait for M2 closure and merge. Planned M3 ownership is 0015/0016 once real migrations are created; no reservation files exist.
 ~~~
 
 From P2 onward:

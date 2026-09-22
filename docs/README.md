@@ -27,11 +27,14 @@ M2 Realtime and Offline Reliability is the active milestone on `feat/m2-realtime
 
 This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
 
+M3 Media and Voice Messages is still PLANNED. Its architecture, API contract, and pre-S1 encrypted-media bridge are design-complete on `design/m3-media-voice`, but no M3 runtime implementation or migration exists yet. The future implementation branch must be created from verified `main` only after M2 closes.
+
 Governance:
 
 - `architecture/ARCHITECTURE_BASELINE.md`
 - `architecture/ARCHITECTURE_GOVERNANCE.md`
 - `adr/ADR-011-architecture-freeze-and-change-control.md`
+- `adr/ADR-012-pre-s1-media-encryption-bridge.md`
 - `contributing/DEVELOPMENT_WORKFLOW.md`
 
 The selected architecture is:
@@ -70,6 +73,8 @@ The selected architecture is:
 - `api/M1_MESSAGING_API.md`
 - `architecture/M2_REALTIME_OFFLINE_DESIGN.md`
 - `api/M2_REALTIME_PROTOCOL.md`
+- `architecture/M3_MEDIA_VOICE_DESIGN.md`
+- `api/M3_MEDIA_API.md`
 - `architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
 - `api/R1_RELATIONSHIP_SPACE_API.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`

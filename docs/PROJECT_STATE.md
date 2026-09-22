@@ -8,6 +8,8 @@ Foundation implementation and the first two parallel product-substrate milestone
 
 M2 Realtime and Offline Reliability is the active milestone. Its source implementation and automated closure surface are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; only executed local acceptance, physical Android acceptance, evidence reconciliation, and merge closure remain. No known M2 feature or architecture slice is currently unimplemented.
 
+M3 Media and Voice Messages remains PLANNED, but its refined architecture is now complete on the documentation-only `design/m3-media-voice` branch. M3 implementation has not started and must wait for verified M2 closure and merge. The design defines first-class partnership media assets, ciphertext-only object storage, M1/R1 media references, offline upload orchestration, durable provider deletion, and the accepted development-only pre-S1 key-escrow bridge in ADR-012.
+
 ## Product definition
 
 The product rules are defined in:
@@ -126,6 +128,7 @@ Current epic status:
 - M1 Messaging Core: DONE at 18/18 acceptance gates. Runtime closure is anchored at `aa40a2c`; source head `b29b095` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. M1 owns verified migrations 0011 and 0012.
 - R1 Relationship Space: DONE. Source head `9bc9ba4` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. R1 owns migrations 0013 and 0014. Canonical 0001 through 0014 migrations run without reservations, `test:r1:local` passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the real same-partnership M1 message-reference seam is positively verified without copying message plaintext, and full repository health plus audit are green.
 - M2 Realtime and Offline Reliability: IN_PROGRESS, IMPLEMENTATION COMPLETE. Source implementation and automated acceptance tooling are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`. Implemented behavior includes protocol/contracts, authenticated WebSocket transport, server-derived immutable scope, durable cross-feature invalidations, account-routed immediate partnership scope refresh on formation and dissolution, LISTEN-reset recovery, visible anti-entropy, account/partnership-scoped IndexedDB, lifecycle-aware chat/R1 replay, claim-generation fencing, conflict recovery UI, service-worker update safety, revocation-safe account purge ordering, offline sync suppression, realtime rate limits, PostgreSQL/browser/security closure tests, expanded pinned Playwright 1.63.0 real-Chromium reconnect/replay/idempotency/account-isolation/final-purge/cold-start acceptance, the composite `test:m2:local` harness, the stricter `test:m2:closure` gate, and the non-destructive Android preparation/evidence harness. M2 is not DONE because the current implementation head has not yet produced executed local closure evidence or physical Android acceptance.
+- M3 Media and Voice Messages: PLANNED, DESIGN COMPLETE. Architecture and API contracts are defined on `design/m3-media-voice`; implementation is blocked until M2 is verified and merged. No M3 runtime source or migrations are implemented yet.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -145,6 +148,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
 - `main` -> contains the completed M1/R1 integrated baseline plus merge-state documentation at `9f4237e90c4d289f8b316e5d8dd2bba41609c95d`
 - `feat/m2-realtime-offline` -> M2 source implementation and closure-harness branch; source implementation anchor `6e3c019`, executable local and physical-device validation pending
+- `design/m3-media-voice` -> documentation-only M3 architecture branch based on the current M2 design/runtime state; it is not the future M3 implementation branch
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -174,7 +178,8 @@ M2 Realtime and Offline Reliability is IN_PROGRESS on `feat/m2-realtime-offline`
 2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
 3. preserve M1 `server_sequence` as immutable message-history order and `change_sequence` as durable mutation-synchronization order
 4. execute the M2 local closure matrix without making WebSocket delivery or IndexedDB state authoritative
-5. keep V1 hosted verification separate until GitHub Actions capacity returns
+5. keep M3 runtime implementation blocked until M2 closure and merge, while using `design/m3-media-voice` only for architecture review
+6. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
