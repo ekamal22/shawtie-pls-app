@@ -350,3 +350,75 @@ test("M1 invalidation sink fails closed if private content appears in the outbox
     await closeDatabasePool(database);
   }
 });
+
+
+test("M1 outbox consumer leaves unrelated event families pending and fails unknown M1 versions", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const fixture = await createMessagingFixture(database);
+    const unrelatedId = randomUUID();
+    const unknownVersionId = randomUUID();
+
+    await insertOutboxEvent(database.pool, {
+      id: unrelatedId,
+      eventType: "auth.security_email",
+      aggregateType: "security_email_delivery",
+      aggregateId: randomUUID(),
+      deduplicationKey: "m1-worker-unrelated-auth-event",
+      payload: { securityEmailDeliveryId: randomUUID() },
+      payloadVersion: 1,
+    });
+    await insertOutboxEvent(database.pool, {
+      id: unknownVersionId,
+      eventType: "message.updated",
+      aggregateType: "conversation",
+      aggregateId: fixture.conversationId,
+      deduplicationKey: "m1-worker-unknown-message-version",
+      payload: {
+        conversationId: fixture.conversationId,
+        messageId: fixture.messageId,
+        changeSequence: 2,
+        contentVersion: 2,
+      },
+      payloadVersion: 99,
+    });
+
+    const processed = await runOutboxBatch(
+      database,
+      "m1-selective-outbox-worker",
+      createDefaultOutboxHandlers(),
+      new AbortController().signal,
+      {
+        batchSize: 10,
+        concurrency: 1,
+        leaseMs: 60_000,
+        retryPolicy: defaultRetryPolicy,
+      },
+    );
+    assert.equal(processed, 1);
+
+    const rows = await database.pool.query<{
+      id: string;
+      status: string;
+      last_error_code: string | null;
+    }>(
+      "SELECT id, status, last_error_code FROM outbox_events WHERE id = ANY($1::uuid[]) ORDER BY id",
+      [[unrelatedId, unknownVersionId]],
+    );
+    const byId = new Map(rows.rows.map((row) => [row.id, row]));
+
+    assert.deepEqual(byId.get(unrelatedId), {
+      id: unrelatedId,
+      status: "pending",
+      last_error_code: null,
+    });
+    assert.deepEqual(byId.get(unknownVersionId), {
+      id: unknownVersionId,
+      status: "failed",
+      last_error_code: "UNSUPPORTED_EVENT_OR_PAYLOAD_VERSION",
+    });
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
