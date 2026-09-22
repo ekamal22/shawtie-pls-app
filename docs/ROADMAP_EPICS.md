@@ -890,7 +890,7 @@ Implemented and verified by the complete local matrix, repository health, and de
 
 # M1: Messaging Core
 
-Status: DONE locally on the separate M1 branch at `aa40a2c`; merge pending
+Status: DONE locally on the separate M1 branch. Runtime closure is anchored at `aa40a2c`; documentation-reconciled branch head `b29b095`; merge pending
 
 ## Scope
 
@@ -1051,7 +1051,7 @@ Parallel reservation:
 - M1 owns 0011 and 0012
 - R1 must not create, rename, or modify M1 migration numbers
 
-Architecture/design and R1 source implementation are complete and isolated-green on `feat/r1-relationship-space`. M1 is locally complete and pushed separately at `aa40a2c`. Final integrated acceptance remains pending, so R1 remains IN_PROGRESS.
+Architecture/design and R1 source implementation are complete and isolated-green on `feat/r1-relationship-space`. M1 is locally complete with runtime closure anchored at `aa40a2c`, and its pushed documentation-reconciled branch head is `b29b095`. Final integrated acceptance remains pending, so R1 remains IN_PROGRESS.
 
 ## Current implemented progress
 

@@ -4,7 +4,7 @@
 
 R1 Relationship Space is `IN_PROGRESS`.
 
-Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source implementation is isolated-green on `feat/r1-relationship-space` across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, formatting, static/build gates, and the dedicated local closure harness. Verified M1 migrations 0011/0012 now exist separately at `aa40a2c`. Final integrated closure evidence remains pending, so R1 is not DONE.
+Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source implementation is isolated-green on `feat/r1-relationship-space` across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, formatting, static/build gates, and the dedicated local closure harness. Verified M1 migrations 0011/0012 are anchored at the M1 runtime closure point `aa40a2c`; the documentation-reconciled M1 branch head is `b29b095`. Final integrated closure evidence remains pending, so R1 is not DONE.
 
 Branch:
 
@@ -104,7 +104,7 @@ The refinement is deliberately split:
 - feature semantics that the server must query or enforce are normalized into supporting tables
 - protected prose, private notes, coordinates, captions, and similar content remain in a protected main payload owned by the item; release-gated items may also have a separate protected preview payload that is safe to expose before release
 - relationships between R1 objects are represented explicitly
-- references to future M1 or M3 resources remain loose and do not require schema changes in those milestones
+- references to separately integrated M1 resources or future M3 resources remain loose and do not require R1 schema ownership of those milestones
 
 ## Authoritative versus derived model
 

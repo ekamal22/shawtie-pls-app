@@ -131,7 +131,7 @@ P3 ✅
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
-M1 is locally DONE at 18/18 gates on its separate branch at `aa40a2c`. R1 source implementation is isolated-green on `feat/r1-relationship-space`. The reserved-gap PostgreSQL/API/worker matrix passes 68/68, R1 security passes 13/13, P1/P2/P3 security regressions pass, formatting and static/build gates pass, and the dependency audit reports 0 vulnerabilities. R1 stays yellow because strict canonical migration and full repository-health closure still require later integration with the real M1 migrations 0011/0012. R1 has not consumed M1 runtime or migrations.
+M1 is locally DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and the documentation-reconciled `feat/m1-messaging-core` branch head at `b29b095`. R1 source implementation is isolated-green on `feat/r1-relationship-space`. The reserved-gap PostgreSQL/API/worker matrix passes 68/68, R1 security passes 13/13, P1/P2/P3 security regressions pass, formatting and static/build gates pass, and the dependency audit reports 0 vulnerabilities. R1 stays yellow because strict canonical migration and full repository-health closure still require later integration with the real M1 migrations 0011/0012. R1 has not consumed M1 runtime or migrations.
 
 ## Most recently completed milestone
 
@@ -154,7 +154,7 @@ Verified implementation state:
 7. P3-G browser lifecycle flows are committed
 8. P3-H PostgreSQL/API/worker/race/security closure harness is committed
 
-P3 is locally closed at 22/22 gates with the complete green evidence summarized above and its verified code baseline is merged to `main`. M1 Messaging Core and R1 Relationship Space are now the next dependent milestones.
+P3 is locally closed at 22/22 gates with the complete green evidence summarized above and its verified code baseline is merged to `main`. M1 Messaging Core is locally closed and documentation-reconciled on its separate branch, while R1 Relationship Space is isolated-green and awaiting dedicated M1/R1 integration.
 
 P3 did not rewrite verified migrations 0001 through 0009.
 
@@ -179,8 +179,8 @@ latest main containing verified P3
   |
   +--> feat/r1-relationship-space
 
-M1 and R1 may progress in parallel.
-M1 is locally DONE at `aa40a2c` on `feat/m1-messaging-core`; merge to main is pending.
+M1 and R1 were developed in parallel from the verified P3 boundary.
+M1 is locally DONE on `feat/m1-messaging-core`; runtime closure is anchored at `aa40a2c`, the documentation-reconciled branch head is `b29b095`, and merge to main is pending.
 R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`; M1 integration and final full-health closure are pending.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.

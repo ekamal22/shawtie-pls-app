@@ -79,11 +79,11 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 ~~~
 
-M1 and R1 progressed in parallel from the verified P3 boundary. M1 is locally DONE at `aa40a2c` on its separate branch. R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`, including the formatting gate. The reserved-gap PostgreSQL matrix passes 68/68, but final integrated closure still requires combining the real M1 migrations 0011 and 0012 with R1 migrations 0013 and 0014.
+M1 and R1 progressed in parallel from the verified P3 boundary. M1 is locally DONE with runtime closure anchored at `aa40a2c`; its documentation-reconciled branch head is `b29b095`. R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`, including the formatting gate. The reserved-gap PostgreSQL matrix passes 68/68, but final integrated closure still requires combining the real M1 migrations 0011 and 0012 with R1 migrations 0013 and 0014.
 
 Recommended execution order:
 
-1. preserve M1 at verified branch head `aa40a2c`
+1. preserve M1 runtime closure at `aa40a2c` and the documentation-reconciled branch head at `b29b095`
 2. preserve R1 isolated-green evidence on `feat/r1-relationship-space`
 3. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 4. perform M1/R1 integration only in the later dedicated task
@@ -93,7 +93,7 @@ Recommended execution order:
 
 # Milestone 5A: M1 Messaging Core
 
-Status: DONE locally on the separate M1 branch at `aa40a2c`; merge to `main` pending.
+Status: DONE locally on the separate M1 branch. Runtime acceptance closed at `aa40a2c`; the documentation-reconciled branch head is `b29b095`; merge to `main` is pending.
 
 Canonical detailed gates:
 
@@ -138,7 +138,7 @@ M1 is DONE only after its API, persistence, ordering, idempotency, lifecycle, ra
 
 # Milestone 5B: R1 Relationship Space
 
-Status: IN_PROGRESS and `R1 ISOLATED GREEN`. Architecture/API design and R1 source implementation are verified on `feat/r1-relationship-space`. The isolated PostgreSQL/API/worker matrix passes 68/68 with explicit reservations for M1-owned migrations 0011/0012, security and earlier-milestone regressions are green, format/typecheck/build/lint/dependency checks pass, and the dependency audit reports 0 vulnerabilities. Verified M1 migrations now exist separately at `aa40a2c`, but final canonical migrations and full repository health remain integration-pending. R1 is not DONE.
+Status: IN_PROGRESS and `R1 ISOLATED GREEN`. Architecture/API design and R1 source implementation are verified on `feat/r1-relationship-space`. The isolated PostgreSQL/API/worker matrix passes 68/68 with explicit reservations for M1-owned migrations 0011/0012, security and earlier-milestone regressions are green, format/typecheck/build/lint/dependency checks pass, and the dependency audit reports 0 vulnerabilities. Verified M1 migrations are anchored at the M1 runtime closure point `aa40a2c`; the current documentation-reconciled M1 branch head is `b29b095`. Final canonical migrations and full repository health remain integration-pending. R1 is not DONE.
 
 Canonical architecture:
 

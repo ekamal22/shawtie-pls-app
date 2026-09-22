@@ -4,7 +4,7 @@
 
 This is the canonical R1 HTTP API design and current implementation contract.
 
-R1 architecture and runtime API source implementation are isolated-green on `feat/r1-relationship-space`. The R1 security suite passes 13/13, the isolated PostgreSQL/API/worker matrix passes 68/68, and formatting plus static/build gates pass. Verified M1 migrations 0011/0012 exist separately at `aa40a2c`; final integrated closure remains pending.
+R1 architecture and runtime API source implementation are isolated-green on `feat/r1-relationship-space`. The R1 security suite passes 13/13, the isolated PostgreSQL/API/worker matrix passes 68/68, and formatting plus static/build gates pass. Verified M1 migrations 0011/0012 are anchored at the M1 runtime closure point `aa40a2c`; the documentation-reconciled M1 branch head is `b29b095`. Final integrated closure remains pending.
 
 Base path:
 
