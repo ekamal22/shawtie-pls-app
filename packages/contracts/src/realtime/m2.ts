@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const M2_REALTIME_PROTOCOL_VERSION = 1 as const;
 export const M2_REALTIME_SUBPROTOCOL = "shawtie.realtime.v1" as const;
+export const M2_REALTIME_NOTIFY_CHANNEL = "shawtie_realtime_v1" as const;
 export const M2_REALTIME_MAX_FRAME_BYTES = 4 * 1024;
 export const M2_INTERNAL_NOTIFY_MAX_BYTES = 2 * 1024;
 export const M2_LOCAL_SCHEMA_VERSION = 1 as const;
@@ -102,6 +103,24 @@ const relationshipPayloadSchema = z
 
 const accountSecurityPayloadSchema = z.object({ eventId: uuidSchema }).strict();
 
+const internalPresencePayloadSchema = z
+  .object({
+    eventId: uuidSchema,
+    actorAccountId: uuidSchema,
+    online: z.boolean(),
+  })
+  .strict();
+
+const internalTypingPayloadSchema = z
+  .object({
+    eventId: uuidSchema,
+    actorAccountId: uuidSchema,
+    conversationId: uuidSchema,
+    typing: z.boolean(),
+    expiresAt: timestampSchema.nullable(),
+  })
+  .strict();
+
 const presencePayloadSchema = z.object({ online: z.boolean() }).strict();
 
 const typingPayloadSchema = z
@@ -197,6 +216,22 @@ export const m2InternalRealtimeNotificationSchema = z.discriminatedUnion("kind",
       kind: z.literal("account.security_changed"),
       scope: z.object({ accountId: uuidSchema }).strict(),
       data: accountSecurityPayloadSchema,
+    })
+    .strict(),
+  z
+    .object({
+      v: z.literal(M2_REALTIME_PROTOCOL_VERSION),
+      kind: z.literal("presence.changed"),
+      scope: z.object({ partnershipId: uuidSchema }).strict(),
+      data: internalPresencePayloadSchema,
+    })
+    .strict(),
+  z
+    .object({
+      v: z.literal(M2_REALTIME_PROTOCOL_VERSION),
+      kind: z.literal("typing.changed"),
+      scope: z.object({ conversationId: uuidSchema }).strict(),
+      data: internalTypingPayloadSchema,
     })
     .strict(),
 ]);

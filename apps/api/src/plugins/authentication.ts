@@ -16,15 +16,11 @@ export interface AuthContext {
   readonly rawToken: string;
 }
 
-export async function requireAuthentication(
-  request: FastifyRequest,
+export async function authenticateSessionToken(
+  rawToken: string,
   database: DatabasePool,
-  config: ApiConfig,
   keys: AuthKeyRing,
-): Promise<AuthContext> {
-  const rawToken = request.cookies[cookieNames(config).session];
-  if (!rawToken) throw new ApiError(401, "AUTH_REQUIRED");
-
+): Promise<AuthenticatedSession> {
   let session: AuthenticatedSession | null = null;
   for (const version of keys.versions) {
     session = await findSessionByVerifier(
@@ -55,6 +51,19 @@ export async function requireAuthentication(
     );
   }
 
+  return session;
+}
+
+export async function requireAuthentication(
+  request: FastifyRequest,
+  database: DatabasePool,
+  config: ApiConfig,
+  keys: AuthKeyRing,
+): Promise<AuthContext> {
+  const rawToken = request.cookies[cookieNames(config).session];
+  if (!rawToken) throw new ApiError(401, "AUTH_REQUIRED");
+
+  const session = await authenticateSessionToken(rawToken, database, keys);
   return { session, rawToken };
 }
 

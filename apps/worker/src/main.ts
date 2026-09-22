@@ -15,7 +15,7 @@ const application = new WorkerApplication({
   workerId: createWorkerIdentity("shawtie-worker"),
   config: workerConfigFromEnv(),
   scheduledHandlers: createDefaultScheduledHandlers(),
-  outboxHandlers: createDefaultOutboxHandlers(),
+  outboxHandlers: createDefaultOutboxHandlers(database),
   deletionHandlers: createDefaultDeletionHandlers(database),
 });
 
