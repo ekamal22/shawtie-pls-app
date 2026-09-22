@@ -2,7 +2,11 @@ import type {
   MessageProjection,
   RelationshipItemProjection,
 } from "@shawtie/contracts";
-import { ApiClientError, apiRequest } from "../api-client.ts";
+import {
+  ApiClientError,
+  ApiNetworkError,
+  apiRequest,
+} from "../api-client.ts";
 import type {
   ChatQueueOperation,
   RelationshipQueueOperation,
@@ -43,7 +47,8 @@ function retryDelay(operation: { retryCount: number }, error: ApiClientError | n
 }
 
 function retryable(error: unknown): boolean {
-  if (!(error instanceof ApiClientError)) return true;
+  if (error instanceof ApiNetworkError) return true;
+  if (!(error instanceof ApiClientError)) return false;
   return error.status === 408 || error.status === 429 || error.status >= 500;
 }
 
@@ -84,12 +89,37 @@ function safeRelationshipPatch(body: unknown): body is Record<string, unknown> {
 
 export class M2ReplayEngine {
   readonly #owner = crypto.randomUUID();
+  #retryTimer: number | null = null;
+  #retryAt: number | null = null;
 
   constructor(
     private readonly database: () => Promise<ShawtieLocalDatabase>,
     private readonly scope: () => RealtimeScope,
     private readonly markDirty: (changeSequence?: number) => void,
+    private readonly requestSync: () => void,
   ) {}
+
+  dispose(): void {
+    if (this.#retryTimer !== null) {
+      window.clearTimeout(this.#retryTimer);
+      this.#retryTimer = null;
+      this.#retryAt = null;
+    }
+  }
+
+  #scheduleRetry(delayMs: number): void {
+    const delay = Math.max(250, delayMs);
+    const at = Date.now() + delay;
+    if (this.#retryAt !== null && this.#retryAt <= at) return;
+    if (this.#retryTimer !== null) window.clearTimeout(this.#retryTimer);
+    this.#retryAt = at;
+    this.#retryTimer = window.setTimeout(() => {
+      this.#retryTimer = null;
+      this.#retryAt = null;
+      this.markDirty();
+      this.requestSync();
+    }, delay);
+  }
 
   async enqueueChat(input: {
     operationType: ChatQueueOperation["operationType"];
@@ -238,7 +268,11 @@ export class M2ReplayEngine {
     const database = await this.database();
     const queue = await database.listChatQueue(scope.partnershipId);
     for (const queued of queue) {
-      if (queued.status === "blocked" || queued.nextAttemptAt > Date.now()) continue;
+      if (queued.status === "blocked") continue;
+      if (queued.nextAttemptAt > Date.now()) {
+        this.#scheduleRetry(queued.nextAttemptAt - Date.now());
+        continue;
+      }
       if (
         queued.conversationId !== scope.conversationId ||
         (queued.operationType === "message.send" &&
@@ -343,7 +377,11 @@ export class M2ReplayEngine {
     const database = await this.database();
     const queue = await database.listRelationshipQueue(scope.partnershipId);
     for (const queued of queue) {
-      if (queued.status === "blocked" || queued.nextAttemptAt > Date.now()) continue;
+      if (queued.status === "blocked") continue;
+      if (queued.nextAttemptAt > Date.now()) {
+        this.#scheduleRetry(queued.nextAttemptAt - Date.now());
+        continue;
+      }
 
       const allowed =
         (queued.operationType === "item.create" && authority.space.capabilities.create) ||
@@ -445,11 +483,12 @@ export class M2ReplayEngine {
     error: unknown,
   ): Promise<void> {
     const apiError = error instanceof ApiClientError ? error : null;
+    const delay = retryDelay(operation, apiError);
     await database.updateChat(
       {
         ...operation,
         retryCount: operation.retryCount + 1,
-        nextAttemptAt: Date.now() + retryDelay(operation, apiError),
+        nextAttemptAt: Date.now() + delay,
         status: "retrying",
         lastErrorCode: apiError?.code ?? "NETWORK_ERROR",
         claimOwner: null,
@@ -458,6 +497,7 @@ export class M2ReplayEngine {
       this.#owner,
       operation.claimGeneration,
     );
+    this.#scheduleRetry(delay);
   }
 
   async #blockChat(
@@ -495,11 +535,12 @@ export class M2ReplayEngine {
     error: unknown,
   ): Promise<void> {
     const apiError = error instanceof ApiClientError ? error : null;
+    const delay = retryDelay(operation, apiError);
     await database.updateRelationship(
       {
         ...operation,
         retryCount: operation.retryCount + 1,
-        nextAttemptAt: Date.now() + retryDelay(operation, apiError),
+        nextAttemptAt: Date.now() + delay,
         status: "retrying",
         lastErrorCode: apiError?.code ?? "NETWORK_ERROR",
         claimOwner: null,
@@ -508,6 +549,7 @@ export class M2ReplayEngine {
       this.#owner,
       operation.claimGeneration,
     );
+    this.#scheduleRetry(delay);
   }
 
   async #blockRelationship(

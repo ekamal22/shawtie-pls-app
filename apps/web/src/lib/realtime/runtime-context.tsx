@@ -53,6 +53,9 @@ export class M2Runtime {
       () => this.database(),
       () => this.realtime.scope,
       (changeSequence) => this.coordinator.markDirty(changeSequence),
+      () => {
+        void this.coordinator.requestSync();
+      },
     );
     this.coordinator.register(
       "offline-replay",
@@ -75,6 +78,7 @@ export class M2Runtime {
 
   async stop(): Promise<void> {
     this.realtime.stop();
+    this.replay.dispose();
     const database = await this.#databasePromise?.catch(() => null);
     database?.close();
   }
@@ -210,6 +214,13 @@ export class M2Runtime {
 
 export function getActiveM2Runtime(): M2Runtime | null {
   return activeRuntime;
+}
+
+export async function closeActiveM2Runtime(accountId: string): Promise<void> {
+  const runtime = activeRuntime;
+  if (!runtime || runtime.accountId !== accountId) return;
+  activeRuntime = null;
+  await runtime.stop();
 }
 
 export function M2RuntimeProvider({

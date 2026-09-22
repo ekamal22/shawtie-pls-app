@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
+import { broadcastLocalLogout } from "../lib/offline/account-control.ts";
 import {
   purgeAccountLocalData,
   purgeRememberedAccountLocalData,
@@ -7,6 +8,7 @@ import {
   rememberedLocalAccount,
 } from "../lib/offline/local-db.ts";
 import {
+  closeActiveM2Runtime,
   M2RuntimeProvider,
   M2UpdateBanner,
 } from "../lib/realtime/runtime-context.tsx";
@@ -428,7 +430,7 @@ function AccountScreen({
   refreshSession,
 }: {
   session: Session;
-  onSignedOut: () => void;
+  onSignedOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }) {
   const [me, setMe] = useState<Me | null>(null);
@@ -499,7 +501,7 @@ function AccountScreen({
   async function logout() {
     await run(async () => {
       await mutate("/api/v1/auth/logout");
-      onSignedOut();
+      await onSignedOut();
     });
   }
 
@@ -747,7 +749,8 @@ export function App() {
       const previousAccountId = rememberedLocalAccount();
       if (previousAccountId && previousAccountId !== current.accountId) {
         broadcastLocalLogout(previousAccountId);
-        void purgeAccountLocalData(previousAccountId).catch(() => undefined);
+        await closeActiveM2Runtime(previousAccountId);
+        await purgeAccountLocalData(previousAccountId);
       }
       rememberLocalAccount(current.accountId);
       setSession(current);
@@ -824,12 +827,11 @@ export function App() {
     <M2RuntimeProvider accountId={session.accountId}>
       <AccountScreen
         session={session}
-        onSignedOut={() => {
+        onSignedOut={async () => {
           broadcastLocalLogout(signedOutAccountId);
+          await closeActiveM2Runtime(signedOutAccountId);
+          await purgeAccountLocalData(signedOutAccountId);
           setSession(null);
-          void purgeAccountLocalData(signedOutAccountId).catch(
-            () => undefined,
-          );
         }}
         refreshSession={refreshSession}
       />

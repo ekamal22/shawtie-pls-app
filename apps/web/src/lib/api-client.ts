@@ -1,3 +1,10 @@
+export class ApiNetworkError extends Error {
+  constructor(readonly originalError: unknown) {
+    super("NETWORK_ERROR");
+    this.name = "ApiNetworkError";
+  }
+}
+
 export class ApiClientError extends Error {
   constructor(
     readonly code: string,
@@ -26,13 +33,18 @@ export async function apiRequest<T>(
     headers.set("content-type", "application/json");
   }
 
-  const response = await fetch(path, {
-    method,
-    headers,
-    credentials: "include",
-    cache: "no-store",
-    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
-  });
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method,
+      headers,
+      credentials: "include",
+      cache: "no-store",
+      ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+    });
+  } catch (error) {
+    throw new ApiNetworkError(error);
+  }
 
   const payload = (await response.json().catch(() => null)) as
     { error?: { code?: string } } | T | null;

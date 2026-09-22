@@ -102,3 +102,35 @@ test("M2 PWA manifest is installable without granting private Cache API access",
   assert.equal(manifest.icons?.some((entry) => entry.purpose?.includes("maskable")), true);
   assert.equal(icon.includes("<svg"), true);
 });
+
+
+test("M2 account switch closes active IndexedDB before deleting old account data", async () => {
+  const app = await source("../src/app/App.tsx");
+  const runtime = await source("../src/lib/realtime/runtime-context.tsx");
+
+  assert.equal(app.includes("broadcastLocalLogout"), true);
+  assert.equal(app.includes("closeActiveM2Runtime"), true);
+  assert.ok(
+    app.indexOf("await closeActiveM2Runtime(previousAccountId)") <
+      app.indexOf("await purgeAccountLocalData(previousAccountId)"),
+  );
+  assert.ok(
+    app.indexOf("await closeActiveM2Runtime(signedOutAccountId)") <
+      app.indexOf("await purgeAccountLocalData(signedOutAccountId)"),
+  );
+  assert.equal(runtime.includes("export async function closeActiveM2Runtime"), true);
+});
+
+test("M2 replay distinguishes network loss from invariant failures and wakes delayed retries", async () => {
+  const client = await source("../src/lib/api-client.ts");
+  const replay = await source("../src/lib/offline/replay-engine.ts");
+
+  assert.equal(client.includes("export class ApiNetworkError"), true);
+  assert.equal(client.includes("throw new ApiNetworkError(error)"), true);
+  assert.equal(replay.includes("error instanceof ApiNetworkError"), true);
+  assert.equal(replay.includes("if (!(error instanceof ApiClientError)) return false"), true);
+  assert.equal(replay.includes("#scheduleRetry"), true);
+  assert.equal(replay.includes("window.setTimeout"), true);
+  assert.equal(replay.includes("this.requestSync()"), true);
+  assert.equal(replay.includes("dispose(): void"), true);
+});
