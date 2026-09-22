@@ -1118,7 +1118,7 @@ Realtime protocol:
 
 Design state:
 
-Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. A second-pass hardening review also closes reconnect-race, LISTEN-reset, cold-start plaintext, multi-tab claim, storage-quota, and socket-scope gaps. Runtime implementation has not started.
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. A second-pass hardening review closes reconnect-race, LISTEN-reset, cold-start plaintext, multi-tab claim, storage-quota, and socket-scope gaps. Source implementation for M2-A through M2-H plus the M2-I automated closure harness is complete through `79044bcbe0a94d56d8067b7a0d62a68a17e6513e`. Final local execution, full health/audit, real-browser/device acceptance, and documentation closure remain pending.
 
 ## Scope
 
@@ -1142,6 +1142,23 @@ Refined architecture, protocol, failure behavior, local schema, offline queue po
 M2 does not own media transport, call signaling, E2EE, or cryptographic recovery.
 
 M2 is expected to require no PostgreSQL migration. Migration 0015 is not reserved merely for M2.
+
+## Implementation state
+
+Implemented source currently includes:
+
+- strict realtime protocol v1 contracts and payload ceilings
+- Fastify WebSocket transport with exact Origin, session auth, subprotocol enforcement, binary/compression rejection, durable connection throttles, per-socket frame throttles, liveness, backpressure, and periodic session/scope revalidation
+- F2 outbox to PostgreSQL NOTIFY publication for M1 message plus receipt, nickname, partnership, R1, and account-security invalidations
+- reconnecting API LISTEN fanout with listener-reset resynchronization
+- browser connection-generation fencing, dirty-counter/high-water live barrier, visible anti-entropy, and M1 change/history repair
+- account-bound IndexedDB namespaces with atomic message projection/cursor persistence
+- typed chat and R1 offline queues with stable idempotency, lifecycle preflight, claim-generation fencing, delayed retry wakeups, blocked-operation recovery UI, and exact release-sensitive R1 exclusions
+- pre-S1 offline cold-start locking, explicit logout/account-switch local-database purge ordering, and cross-tab logout coordination
+- service-worker shell/static caching with private API exclusion and controlled activation
+- M2 contract/security/worker/browser/PostgreSQL integration tests and disposable `test:m2:local` harness
+
+None of the acceptance gates below are considered passed until executed evidence is recorded. Physical Android acceptance remains mandatory.
 
 ## Implementation sequence
 

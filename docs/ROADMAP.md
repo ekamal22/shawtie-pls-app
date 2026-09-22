@@ -59,7 +59,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | --- | --- | --- | --- |
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
-| 6 M2 Realtime and Offline Reliability | IN_PROGRESS, design complete; implementation pending | M1 + R1 merged mainline | Yes |
+| 6 M2 Realtime and Offline Reliability | IN_PROGRESS, source implementation complete; validation and device closure pending | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
@@ -216,7 +216,7 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: IN_PROGRESS. Refined architecture and protocol design are complete and second-pass hardened on `feat/m2-realtime-offline`; runtime implementation has not started.
+Status: IN_PROGRESS. Refined architecture and protocol design are complete and second-pass hardened. Source implementation is complete through `79044bcbe0a94d56d8067b7a0d62a68a17e6513e`; executable validation, full health/audit, and physical Android closure are pending.
 
 Architecture:
 

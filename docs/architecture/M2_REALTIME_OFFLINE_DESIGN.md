@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE, SECOND-PASS HARDENED. IMPLEMENTATION NOT STARTED.
+DESIGN COMPLETE, SECOND-PASS HARDENED. SOURCE IMPLEMENTATION COMPLETE; EXECUTED VALIDATION AND PHYSICAL DEVICE CLOSURE PENDING.
 
 Branch:
 
@@ -1787,9 +1787,9 @@ M2's contentContextKey exists only to make that migration explicit without inven
 
 ## Completion statement
 
-M2 architecture and implementation sequencing are now defined.
+M2 architecture and implementation sequencing are defined, and the source implementation is complete through `feat/m2-realtime-offline @ 79044bcbe0a94d56d8067b7a0d62a68a17e6513e`.
 
-Implementation must begin from main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d on feat/m2-realtime-offline.
+The milestone remains IN_PROGRESS until the final source head passes `test:m2:local`, full repository health, high-severity audit, real-browser acceptance, and the mandatory physical Android matrix.
 
 Any implementation change that would:
 

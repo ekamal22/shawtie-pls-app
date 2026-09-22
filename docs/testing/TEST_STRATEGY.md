@@ -610,6 +610,8 @@ Physical Android acceptance is mandatory for M2. It must prove foreground/backgr
 
 M2 does not close from simulated socket delivery alone. The authoritative acceptance catalog is in `../ROADMAP_EPICS.md`, and the detailed architecture is in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md`.
 
+The source command surface and disposable M2 PostgreSQL harness are implemented. This document does not treat those commands as passed until execution evidence from the current M2 source head is recorded.
+
 ## M1 Messaging Core verification
 
 M1 uses a dedicated disposable PostgreSQL closure harness.
