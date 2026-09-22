@@ -97,14 +97,17 @@ Either partner may initiate breakup.
 Transactionally:
 
 1. validate current state
-2. record initiator and server timestamp
-3. set lifecycle to `breakup_pending`
-4. set one-hour initiator cancellation deadline
-5. set seven-day base deadline
-6. create scheduled actions
-7. increment or establish the breakup process generation
-8. append lifecycle event
-9. create outbox events
+2. record initiator and trusted server timestamp
+3. when the M1 primary conversation exists, capture its last committed message `server_sequence` as the breakup process `message_freeze_sequence`
+4. set lifecycle to `breakup_pending`
+5. set one-hour initiator cancellation deadline
+6. set seven-day base deadline
+7. create scheduled actions
+8. increment or establish the breakup process generation
+9. append lifecycle event
+10. create outbox events
+
+The M1 freeze cutoff is part of the same canonical account-lock/partnership-lock transaction. It does not create a second breakup authority. Legacy breakup rows without a cutoff retain trusted timestamp fallback for compatibility.
 
 The interface must identify the initiator.
 
