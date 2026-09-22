@@ -430,6 +430,8 @@ M3 is DONE only after its detailed gates in `ROADMAP_EPICS.md` pass, including:
 
 **REDMI PHONE REQUIRED: YES.**
 
+Detailed design-time physical-device acceptance is defined in `testing/M3_ANDROID_ACCEPTANCE.md`. The named M3 device commands remain planned until implementation creates them.
+
 M3 implementation must start from the verified mainline after M2 closure. The current `design/m3-media-voice` branch is documentation only.
 
 # Milestone 8: C1 Voice and Video Calling
