@@ -178,7 +178,7 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 
 M1 and R1 may progress in parallel.
-M1 refined architecture/API design is complete on `feat/m1-messaging-core`; implementation is pending.
+M1 refined architecture/API design and runtime implementation are present on `feat/m1-messaging-core`; executed closure validation is pending.
 M1 owns migrations 0011 and 0012.
 R1 reserves migrations 0013 and 0014.
 M2 waits for verified M1 to return to main.
