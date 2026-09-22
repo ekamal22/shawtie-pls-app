@@ -171,6 +171,16 @@ test("M1 browser exposes the required chat affordances and advances receipts onl
   assert.equal(panel.includes('"idempotency-key": pending.key'), true);
   assert.equal(panel.includes("messageEditable(message, conversation)"), true);
   assert.equal(panel.includes("M1_MESSAGE_EDIT_WINDOW_MS"), true);
+  assert.equal(
+    panel.includes('conversation.interactionMode === "account_deletion_view_only"'),
+    true,
+  );
+  assert.equal(panel.includes("const handleSyncFailure = useCallback"), true);
+  assert.equal(
+    panel.includes('caught.code === "CONVERSATION_NOT_FOUND"'),
+    true,
+  );
+  assert.equal(panel.includes("await loadInitial()"), true);
 
   const sendStart = panel.indexOf("async function send(event: FormEvent)");
   const sendRefresh = panel.indexOf(
