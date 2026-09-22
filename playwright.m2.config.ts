@@ -7,6 +7,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: "line",
+  outputDir: "node_modules/.cache/shawtie-m2-playwright",
   timeout: 30_000,
   use: {
     baseURL: "http://127.0.0.1:4173",
