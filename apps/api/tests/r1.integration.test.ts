@@ -52,6 +52,15 @@ function headers(cookie?: string, key?: string): Record<string, string> {
   };
 }
 
+function mutationHeaders(cookie: string, key?: string): Record<string, string> {
+  return {
+    origin: config.appOrigin,
+    "x-shawtie-csrf": "1",
+    cookie,
+    ...(key ? { "idempotency-key": key } : {}),
+  };
+}
+
 function cookieHeader(response: { headers: Record<string, unknown> }): string {
   const raw = response.headers["set-cookie"];
   const values = Array.isArray(raw) ? raw : raw ? [String(raw)] : [];
@@ -168,7 +177,7 @@ async function formPartnership(
   const accepted = await app.inject({
     method: "POST",
     url: "/api/v1/partner-requests/" + requestId + "/accept",
-    headers: headers(bob.cookie),
+    headers: mutationHeaders(bob.cookie),
   });
   assert.equal(accepted.statusCode, 200, accepted.body);
   return (accepted.json() as { partnershipId: string }).partnershipId;
@@ -373,7 +382,7 @@ test("R1 recipient-open exposes preview before release and sealed content after 
     const creatorOpen = await app.inject({
       method: "POST",
       url: "/api/v1/relationship-space/items/" + created.itemId + "/release",
-      headers: headers(alice.cookie, "r1-open-creator"),
+      headers: headers(alice.cookie, "r1-open-creator-0001"),
       payload: { expectedVersion: beforeBody.version },
     });
     assert.equal(creatorOpen.statusCode, 409);
@@ -448,7 +457,7 @@ test("R1 account deletion pauses scheduled release work and recovery wakes overd
     const deletion = await app.inject({
       method: "POST",
       url: "/api/v1/me/account-deletion",
-      headers: headers(reauthCookie),
+      headers: mutationHeaders(reauthCookie),
     });
     assert.equal(deletion.statusCode, 200, deletion.body);
 
@@ -510,7 +519,7 @@ test("R1 account deletion pauses scheduled release work and recovery wakes overd
       headers: headers(),
       payload: { identifier: alice.username },
     });
-    assert.equal(startRecovery.statusCode, 200);
+    assert.equal(startRecovery.statusCode, 202);
     const code = await recoveryCode(database, alice.accountId);
     const complete = await app.inject({
       method: "POST",
@@ -552,7 +561,12 @@ test("R1 derived experiences preserve dates and leap-day anniversary rule", asyn
     const bob = await register(app, database, "date_bob");
     await formPartnership(app, alice, bob, "r1-date-form-0001", "2020-02-29");
 
-    await createItem(app, alice, "r1-date-memory", memoryPayload("September memory", "2020-09-22"));
+    await createItem(
+      app,
+      alice,
+      "r1-date-memory-0001",
+      memoryPayload("September memory", "2020-09-22"),
+    );
 
     const thisDay = await app.inject({
       method: "GET",
@@ -680,7 +694,7 @@ test("R1 deleting a linked target removes incoming links and increments survivin
     const target = await createItem(
       app,
       alice,
-      "r1-link-target",
+      "r1-link-target-0001",
       memoryPayload("Target", "2020-09-22"),
     );
     const curation = await createItem(app, alice, "r1-link-curation", {
@@ -740,7 +754,7 @@ test("R1 unknown content schema versions fail closed", async () => {
     const item = await createItem(
       app,
       alice,
-      "r1-schema-item",
+      "r1-schema-item-0001",
       memoryPayload("Schema", "2020-09-22"),
     );
 
@@ -1298,7 +1312,7 @@ test("R1 breakup restoration preserves item version, release generation, and sch
     const started = await app.inject({
       method: "POST",
       url: "/api/v1/partnerships/" + partnershipId + "/breakup",
-      headers: headers(alice.cookie, "r1-restoration-breakup"),
+      headers: mutationHeaders(alice.cookie, "r1-restoration-breakup"),
     });
     assert.equal(started.statusCode, 200, started.body);
     const breakupId = (started.json() as { breakupId: string }).breakupId;
@@ -1331,7 +1345,7 @@ test("R1 breakup restoration preserves item version, release generation, and sch
         "/breakups/" +
         breakupId +
         "/restore",
-      headers: headers(bob.cookie, "r1-restoration-intent-bob"),
+      headers: mutationHeaders(bob.cookie, "r1-restoration-intent-bob"),
     });
     assert.equal(firstIntent.statusCode, 200, firstIntent.body);
     assert.equal((firstIntent.json() as { restored: boolean }).restored, false);
@@ -1344,7 +1358,7 @@ test("R1 breakup restoration preserves item version, release generation, and sch
         "/breakups/" +
         breakupId +
         "/restore",
-      headers: headers(alice.cookie, "r1-restoration-intent-alice"),
+      headers: mutationHeaders(alice.cookie, "r1-restoration-intent-alice"),
     });
     assert.equal(secondIntent.statusCode, 200, secondIntent.body);
     assert.equal((secondIntent.json() as { restored: boolean }).restored, true);
@@ -1491,7 +1505,7 @@ test("R1 rejects future historical occurrences and past reunion targets using tr
     const pastReunion = await app.inject({
       method: "POST",
       url: "/api/v1/relationship-space/items",
-      headers: headers(alice.cookie, "r1-past-reunion"),
+      headers: headers(alice.cookie, "r1-past-reunion-0001"),
       payload: {
         kind: "reunion",
         contentSchemaVersion: 1,
@@ -1528,13 +1542,13 @@ test("R1 snapshot cursors contain only operational metadata and reject query-sha
     await createItem(
       app,
       alice,
-      "r1-cursor-a",
+      "r1-cursor-a-0001",
       memoryPayload("Cursor private title alpha", "2020-09-22"),
     );
     await createItem(
       app,
       alice,
-      "r1-cursor-b",
+      "r1-cursor-b-0001",
       memoryPayload("Cursor private title beta", "2020-09-23"),
     );
 

@@ -287,7 +287,8 @@ BEGIN
   IF TG_TABLE_NAME = 'relationship_reunion_state' AND actual_kind <> 'reunion' THEN
     RAISE EXCEPTION 'relationship_reunion_state requires reunion item';
   END IF;
-  IF TG_TABLE_NAME = 'relationship_curations' AND actual_kind <> NEW.curation_type THEN
+  IF TG_TABLE_NAME = 'relationship_curations'
+     AND actual_kind <> (to_jsonb(NEW) ->> 'curation_type') THEN
     RAISE EXCEPTION 'relationship_curations type must match item kind';
   END IF;
 

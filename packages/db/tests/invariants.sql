@@ -778,7 +778,7 @@ INSERT INTO relationship_items (
     now()
   );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO relationship_items (
@@ -801,9 +801,9 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO relationship_items (
@@ -824,9 +824,9 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE relationship_items
@@ -840,9 +840,9 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO relationship_someday_state (
@@ -860,9 +860,9 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO relationship_item_references (
@@ -881,9 +881,9 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO relationship_item_links (
@@ -903,9 +903,9 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO relationship_story_members (
@@ -923,7 +923,7 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
 INSERT INTO relationship_events (
   id, partnership_id, item_id, event_type, actor_account_id, item_version
@@ -936,7 +936,7 @@ INSERT INTO relationship_events (
   1
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE relationship_events
@@ -950,7 +950,7 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
 
 ROLLBACK;

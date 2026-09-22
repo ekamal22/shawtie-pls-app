@@ -34,8 +34,6 @@ import {
   type QueryExecutor,
   type RelationshipFeatureState,
   type RelationshipItemRecord,
-  type RelationshipLinkRecord,
-  type RelationshipReferenceRecord,
 } from "@shawtie/db";
 import {
   anniversaryDateForYear,
@@ -828,8 +826,8 @@ export class RelationshipSpaceService {
       content: full
         ? ((item.developmentPlaintextPayload as Record<string, unknown> | null) ?? null)
         : null,
-      references,
-      links,
+      references: [...references],
+      links: [...links],
     };
   }
 

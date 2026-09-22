@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import {
+  relationshipItemKindSchema,
+  relationshipReferenceSchema,
+} from "../../../packages/contracts/src/relationship-space/items.ts";
 
 async function source(path: string): Promise<string> {
   return readFile(new URL(path, import.meta.url), "utf8");
@@ -80,17 +84,26 @@ test("R1 account deletion pauses and recovery wakes pending release work", async
   );
 });
 
-test("R1 Voice Letter is a media reference and not a standalone item kind", async () => {
-  const contracts = await source(
-    "../../../packages/contracts/src/relationship-space/items.ts",
+test("R1 Voice Letter is a media reference and not a standalone item kind", () => {
+  assert.equal(relationshipItemKindSchema.safeParse("voice_letter").success, false);
+  assert.equal(
+    relationshipReferenceSchema.safeParse({
+      referenceType: "media",
+      referenceId: "00000000-0000-4000-8000-000000000001",
+      role: "voice_letter",
+      position: 0,
+    }).success,
+    true,
   );
-  assert.equal(contracts.includes('"voice_letter",'), true);
-  const kinds = contracts.slice(
-    contracts.indexOf("relationshipItemKindSchema"),
-    contracts.indexOf("]);", contracts.indexOf("relationshipItemKindSchema")) + 3,
+  assert.equal(
+    relationshipReferenceSchema.safeParse({
+      referenceType: "message",
+      referenceId: "00000000-0000-4000-8000-000000000001",
+      role: "voice_letter",
+      position: 0,
+    }).success,
+    false,
   );
-  assert.equal(kinds.includes('"voice_letter"'), false);
-  assert.equal(contracts.includes('role: z.enum(["source", "attachment", "voice_letter"])'), true);
 });
 
 
