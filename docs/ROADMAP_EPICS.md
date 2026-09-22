@@ -956,6 +956,12 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 - final dissolution synchronously removes authorization and module-owned messaging cleanup composes with the verified P3 deletion kernel
 - no M1 operational metadata, change row, outbox event, or idempotency response may duplicate private message content
 
+## Current implementation state
+
+M1-A through M1-H source is implemented on `feat/m1-messaging-core`, including migrations 0011/0012, repositories, lifecycle integration, HTTP APIs, browser chat, content-free pre-M2 outbox invalidation handling, verification source, and the local PostgreSQL closure harness.
+
+Acceptance gates remain unchecked until the required commands execute successfully and their evidence is recorded. Source presence alone does not satisfy a gate.
+
 ## Implementation sequence
 
 ### M1-A Domain refinement and contracts
