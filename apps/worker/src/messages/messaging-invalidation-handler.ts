@@ -16,11 +16,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function positiveSafeInteger(value: unknown): value is number {
-  return Number.isSafeInteger(value) && typeof value === "number" && value > 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
-function nonemptyString(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0;
+function uuid(value: unknown): value is string {
+  return (
+    typeof value === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
 }
 
 function assertContentFreeInvalidation(event: OutboxEvent): void {
@@ -52,8 +55,8 @@ function assertContentFreeInvalidation(event: OutboxEvent): void {
   const serverSequence = event.payload.serverSequence;
 
   if (
-    !nonemptyString(conversationId)
-    || !nonemptyString(messageId)
+    !uuid(conversationId)
+    || !uuid(messageId)
     || conversationId !== event.aggregateId
     || !positiveSafeInteger(changeSequence)
     || !(
