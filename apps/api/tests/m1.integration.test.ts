@@ -353,6 +353,40 @@ test("M1 formation provisions one conversation and send/reply are ordered and id
     assert.equal(historyBody.items[1]?.replyContext?.messageId, firstBody.messageId);
     assert.equal(historyBody.items[1]?.replyContext?.body, "first private message");
 
+    const editedFirst = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
+      headers: jsonHeaders(alice.cookie, "m1-basic-edit-key-0001"),
+      payload: { body: "first private message edited later", expectedContentVersion: 1 },
+    });
+    assert.equal(editedFirst.statusCode, 200, editedFirst.body);
+
+    const deletedFirst = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
+      headers: mutationHeaders(alice.cookie, "m1-basic-delete-key-0001"),
+    });
+    assert.equal(deletedFirst.statusCode, 200, deletedFirst.body);
+
+    const replayAfterLaterMutations = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "first private message",
+      "m1-basic-send-key-0001",
+    );
+    assert.equal(replayAfterLaterMutations.statusCode, 201, replayAfterLaterMutations.body);
+    assert.deepEqual(
+      replayAfterLaterMutations.json(),
+      {
+        messageId: firstBody.messageId,
+        serverSequence: 1,
+        contentVersion: 1,
+        changeSequence: 1,
+        createdAt: firstBody.createdAt,
+      },
+    );
+
     const stored = await database.pool.query<{
       sender_device_id: string | null;
       request_fingerprint: Buffer | null;
