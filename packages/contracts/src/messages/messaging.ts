@@ -90,6 +90,7 @@ export const nicknameMutationSchema = z.object({
 
 export const messageProjectionSchema = z.object({
   messageId: uuid,
+  conversationId: uuid,
   senderAccountId: uuid,
   senderDeviceId: uuid.nullable(),
   serverSequence: safePositive,
