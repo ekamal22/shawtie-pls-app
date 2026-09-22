@@ -519,14 +519,3 @@ Content-free `conversation_changes` and outbox invalidations may carry only rout
 
 Tests must scan the M1 operational paths for accidental content duplication.
 
-
-
-No route, repository, error mapper, request logger, security event, lifecycle event, outbox event, scheduled action, or idempotency response body may store or log:
-
-- message body
-- deleted message body
-- historical edit body
-- nickname text unless it is the authoritative nickname row
-- reaction emoji outside the authoritative reaction row
-
-Tests must scan the M1 operational paths for accidental content duplication.
