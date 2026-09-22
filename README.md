@@ -51,6 +51,8 @@ Start with:
 - `docs/api/M2_REALTIME_PROTOCOL.md` for the M2 WebSocket protocol and invalidation contract
 - `docs/architecture/M3_MEDIA_VOICE_DESIGN.md` for the refined M3 media/voice architecture
 - `docs/api/M3_MEDIA_API.md` for the planned M3 media HTTP and cross-feature contract
+- `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md` for the accepted development-only ciphertext-storage bridge before S1
+- `docs/testing/M3_ANDROID_ACCEPTANCE.md` for the design-time M3 physical Android acceptance catalog
 - `docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md` for the completed R1 architecture and implementation design
 - `docs/api/R1_RELATIONSHIP_SPACE_API.md` for the implemented R1 HTTP contract
 - `docs/api/P2_PARTNERSHIP_API.md` for the implemented and locally verified P2 HTTP contract and replay/privacy semantics
