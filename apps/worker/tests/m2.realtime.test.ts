@@ -3,6 +3,7 @@ import test from "node:test";
 import type { M2InternalRealtimeNotification } from "@shawtie/contracts";
 import type { OutboxEvent } from "@shawtie/db";
 import { createMessagingInvalidationHandler } from "../src/messages/messaging-invalidation-handler.ts";
+import { createM2RealtimeOutboxHandlers } from "../src/realtime/realtime-outbox-handler.ts";
 import type { RealtimeInvalidationPublisher } from "../src/realtime/realtime-publisher.ts";
 
 const CONVERSATION = "10000000-0000-4000-8000-000000000001";
@@ -95,6 +96,116 @@ test("M2 worker rejects private fields before realtime publication", async () =>
         },
       }),
     /INVALID_M1_OUTBOX_PAYLOAD/,
+  );
+  assert.equal(published, false);
+});
+
+
+function genericEvent(input: {
+  eventType: string;
+  aggregateType: string;
+  aggregateId: string;
+  payload: unknown;
+}): OutboxEvent {
+  return {
+    id: EVENT,
+    eventType: input.eventType,
+    aggregateType: input.aggregateType,
+    aggregateId: input.aggregateId,
+    deduplicationKey: "m2-generic-test",
+    payload: input.payload,
+    payloadVersion: 1,
+    status: "processing",
+    attemptCount: 1,
+    maxAttempts: 12,
+    availableAt: new Date(),
+    claimedAt: new Date(),
+    claimedBy: "test",
+    leaseExpiresAt: new Date(Date.now() + 60_000),
+    claimVersion: 1n,
+    lastErrorCode: null,
+  };
+}
+
+test("M2 generic relationship invalidation stays content-free", async () => {
+  const PARTNERSHIP = "40000000-0000-4000-8000-000000000001";
+  const ITEM = "50000000-0000-4000-8000-000000000001";
+  const published: M2InternalRealtimeNotification[] = [];
+  const publisher: RealtimeInvalidationPublisher = {
+    async publish(notification) {
+      published.push(notification);
+    },
+  };
+  const handler = createM2RealtimeOutboxHandlers(publisher).find(
+    (candidate) => candidate.eventType === "m2.relationship.changed",
+  );
+  assert.ok(handler);
+
+  await handler.deliver({
+    event: genericEvent({
+      eventType: "m2.relationship.changed",
+      aggregateType: "partnership",
+      aggregateId: PARTNERSHIP,
+      payload: {
+        partnershipId: PARTNERSHIP,
+        itemId: ITEM,
+        itemVersion: 4,
+      },
+    }),
+    signal: new AbortController().signal,
+    async renewLease() {
+      return true;
+    },
+  });
+
+  assert.deepEqual(published, [
+    {
+      v: 1,
+      kind: "relationship.changed",
+      scope: { partnershipId: PARTNERSHIP },
+      data: {
+        eventId: EVENT,
+        partnershipId: PARTNERSHIP,
+        itemId: ITEM,
+        itemVersion: 4,
+      },
+    },
+  ]);
+});
+
+test("M2 generic realtime handler rejects extra private fields", async () => {
+  const PARTNERSHIP = "40000000-0000-4000-8000-000000000001";
+  let published = false;
+  const publisher: RealtimeInvalidationPublisher = {
+    async publish() {
+      published = true;
+    },
+  };
+  const handler = createM2RealtimeOutboxHandlers(publisher).find(
+    (candidate) => candidate.eventType === "m2.partnership.changed",
+  );
+  assert.ok(handler);
+
+  await assert.rejects(
+    () =>
+      handler.deliver({
+        event: genericEvent({
+          eventType: "m2.partnership.changed",
+          aggregateType: "partnership",
+          aggregateId: PARTNERSHIP,
+          payload: {
+            partnershipId: PARTNERSHIP,
+            generation: 2,
+            metadataVersion: 1,
+            privateNote: "must not leave PostgreSQL",
+          },
+        }),
+        signal: new AbortController().signal,
+        async renewLease() {
+          return true;
+        },
+      }),
+    /INVALID_M2_REALTIME_OUTBOX_PAYLOAD/,
   );
   assert.equal(published, false);
 });

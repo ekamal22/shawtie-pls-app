@@ -63,3 +63,36 @@ test("M2 LISTEN reset and worker publication remain correctness hints", async ()
   assert.equal(handler.includes("nickname:"), false);
   assert.equal(workerMain.includes("createDefaultOutboxHandlers(database)"), true);
 });
+
+
+test("M2 cross-feature durable invalidations cover interaction, lifecycle, R1, and security changes", async () => {
+  const messaging = await readFile(
+    new URL("../src/modules/messages/messaging-service.ts", import.meta.url),
+    "utf8",
+  );
+  const partnerships = await readFile(
+    new URL("../src/modules/partnerships/partnership-service.ts", import.meta.url),
+    "utf8",
+  );
+  const relationship = await readFile(
+    new URL("../src/modules/relationship-space/relationship-space-service.ts", import.meta.url),
+    "utf8",
+  );
+  const accounts = await readFile(
+    new URL("../src/modules/accounts/account-service.ts", import.meta.url),
+    "utf8",
+  );
+  const workerHandler = await readFile(
+    new URL("../../worker/src/realtime/realtime-outbox-handler.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(messaging.includes("queueRealtimeReceiptChanged"), true);
+  assert.equal(messaging.includes("queueRealtimeNicknameChanged"), true);
+  assert.equal(partnerships.includes("queueRealtimePartnershipChanged"), true);
+  assert.equal(relationship.includes("queueRealtimeRelationshipChanged"), true);
+  assert.equal(accounts.includes("queueRealtimeAccountSecurityChanged"), true);
+  assert.equal(workerHandler.includes("m2.relationship.changed"), true);
+  assert.equal(workerHandler.includes("m2.partnership.changed"), true);
+  assert.equal(workerHandler.includes("privateNote"), false);
+});
