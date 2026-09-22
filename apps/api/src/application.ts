@@ -10,6 +10,8 @@ import {
 } from "./modules/partner-requests/partner-request-service.ts";
 import { registerPartnerRequestRoutes } from "./modules/partner-requests/routes.ts";
 import { registerAccountRoutes } from "./modules/auth/routes.ts";
+import { MessagingService } from "./modules/messages/messaging-service.ts";
+import { registerMessagingRoutes } from "./modules/messages/routes.ts";
 import { NotificationService } from "./modules/notifications/notification-service.ts";
 import { registerNotificationRoutes } from "./modules/notifications/routes.ts";
 import { createP2PartnershipFormationCoordinator } from "./modules/partnerships/partnership-formation-coordinator.ts";
@@ -77,6 +79,14 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     config: dependencies.config,
     keys,
     service: notificationService,
+  });
+
+  const messagingService = new MessagingService(dependencies.database, keys);
+  registerMessagingRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: messagingService,
   });
 
   return app;
