@@ -280,7 +280,7 @@ export function MessagingPanel() {
       }).catch(() => undefined);
     };
     beat();
-    const timer = window.setInterval(beat, 30_000);
+    const timer = window.setInterval(beat, M1_PRESENCE_HEARTBEAT_MIN_MS);
     return () => window.clearInterval(timer);
   }, []);
 
