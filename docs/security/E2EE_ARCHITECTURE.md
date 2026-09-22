@@ -92,6 +92,8 @@ The rest of the application should not manipulate low-level nonces, ratchets, or
 The server must not receive plaintext for:
 
 - message bodies
+- message reaction content
+- partnership chat nicknames
 - image contents
 - video contents
 - file contents
@@ -103,6 +105,8 @@ The server must not receive plaintext for:
 - call media
 - deferred post-stable call recordings, if ever implemented
 
+M1 may use explicitly named server-readable development plaintext only before S1. S1 must define the migration or wipe path for that pre-E2EE messaging content and must not silently grandfather chat nicknames or reactions as permanent plaintext exceptions.
+
 ## Metadata minimization
 
 Some server-visible metadata is operationally necessary.
@@ -113,7 +117,8 @@ Potentially visible metadata includes:
 - opaque partnership and conversation IDs
 - server receipt time
 - delivery state
-- synchronization sequence
+- immutable message server sequence
+- durable content-free mutation change sequence
 - ciphertext size
 - encrypted-object identifier
 - object size
@@ -130,7 +135,8 @@ Examples:
 - captions
 - attachment descriptions
 - relationship text
-- reaction content where the protocol and product model allow it
+- reaction content
+- partnership chat nicknames
 
 Do not claim that E2EE hides all metadata.
 
@@ -240,7 +246,8 @@ Before implementation of stable-release E2EE, document:
 - attachment encryption
 - partnership termination
 - account deletion
-- migration from pre-E2EE development data
+- migration or secure wipe of pre-E2EE M1 message, reaction, and nickname plaintext
+- compatibility of M1 server-sequence and durable change-sequence metadata under encrypted payloads
 - test vectors
 - failure behavior
 
