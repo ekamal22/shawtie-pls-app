@@ -4,7 +4,7 @@
 
 Baseline CI and repository-health tooling are configured.
 
-The M1 workspace, TypeScript, linting, formatting, runtime-contract, dependency-direction, circular-dependency, and repository-health guardrails are locally validated. On 2026-09-20, the canonical `npm ci` bootstrap succeeded from the committed lockfile, installed 180 packages, reported 0 vulnerabilities, and was followed by a complete passing `npm run health` run.
+The repository workspace, TypeScript, linting, formatting, runtime-contract, dependency-direction, circular-dependency, and repository-health guardrails are locally validated. On 2026-09-20, the canonical `npm ci` bootstrap succeeded from the committed lockfile, installed 180 packages, reported 0 vulnerabilities, and was followed by a complete passing `npm run health` run.
 
 F1 Repository Foundation and Executable Guardrails is therefore complete.
 
@@ -113,7 +113,7 @@ It rejects imports from infrastructure or application frameworks including:
 
 This remains the dedicated hard boundary for domain purity.
 
-The M1 foundation additionally defines strict TypeScript configuration and path aliases, ESLint and Prettier configuration, workspace package boundaries, and `scripts/ci/check-dependencies.mjs`. The dependency checker enforces the accepted workspace dependency directions and rejects circular source or workspace dependencies. Full-repository dependency-installed execution now passes locally.
+The executable repository foundation additionally defines strict TypeScript configuration and path aliases, ESLint and Prettier configuration, workspace package boundaries, and `scripts/ci/check-dependencies.mjs`. The dependency checker enforces the accepted workspace dependency directions and rejects circular source or workspace dependencies. Full-repository dependency-installed execution now passes locally.
 
 ## Secret handling
 
