@@ -741,6 +741,30 @@ export async function appendRelationshipEvent(
   );
 }
 
+export async function listUpcomingRelationshipReleases(
+  executor: QueryExecutor,
+  input: {
+    readonly partnershipId: string;
+    readonly actorAccountId: string;
+    readonly limit: number;
+  },
+): Promise<readonly RelationshipItemRecord[]> {
+  const result = await executor.query<RelationshipItemRow>(
+    `SELECT ${itemColumns}
+     FROM relationship_items item
+     WHERE item.partnership_id = $1
+       AND item.lifecycle = 'active'
+       AND item.kind IN ('for_you', 'future_us')
+       AND item.release_mode = 'scheduled'
+       AND item.released_at IS NULL
+       AND ${visibilitySql()}
+     ORDER BY item.unlock_at, item.id
+     LIMIT $3`,
+    [input.partnershipId, input.actorAccountId, input.limit],
+  );
+  return result.rows.map(mapItem);
+}
+
 export async function listRelationshipItemsForThisDay(
   executor: QueryExecutor,
   input: {
@@ -758,6 +782,7 @@ export async function listRelationshipItemsForThisDay(
        AND item.lifecycle = 'active'
        AND ${visibilitySql()}
        AND item.occurred_precision = 'day'
+       AND (item.release_mode IS NULL OR item.released_at IS NOT NULL)
        AND item.occurred_month = $3
        AND item.occurred_day = $4
      ORDER BY item.occurred_year, item.id
@@ -783,6 +808,7 @@ export async function listRelationshipItemsForYear(
        AND item.lifecycle = 'active'
        AND ${visibilitySql()}
        AND item.occurred_year = $3
+       AND (item.release_mode IS NULL OR item.released_at IS NOT NULL)
      ORDER BY
        COALESCE(item.occurred_month, 0),
        COALESCE(item.occurred_day, 0),

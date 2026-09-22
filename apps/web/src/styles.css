@@ -530,3 +530,67 @@ button:disabled {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+.relationship-sequence {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.relationship-sequence li {
+  padding-left: 3px;
+  white-space: pre-wrap;
+}
+
+.relationship-reunion-editor {
+  display: grid;
+  gap: 7px;
+}
+
+.relationship-reunion-editor input[type="date"] {
+  min-height: 36px;
+  border: 1px solid #d8d0dc;
+  border-radius: 9px;
+  background: white;
+  color: #2d2431;
+  font: inherit;
+  padding: 6px 9px;
+}
+
+.relationship-curation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e5dfe8;
+  border-radius: 12px;
+  padding: 10px 11px;
+  background: white;
+}
+
+.relationship-curation-toolbar p {
+  margin: 0;
+}
+
+.relationship-curation-item {
+  display: grid;
+  gap: 6px;
+}
+
+.relationship-curation-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: #625468;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.relationship-curation-choice input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}

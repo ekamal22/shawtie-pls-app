@@ -224,6 +224,7 @@ export {
   listRelationshipItems,
   listRelationshipItemsForThisDay,
   listRelationshipItemsForYear,
+  listUpcomingRelationshipReleases,
   loadIncomingRelationshipLinkOwnerIds,
   loadRelationshipFeatureState,
   loadRelationshipItem,

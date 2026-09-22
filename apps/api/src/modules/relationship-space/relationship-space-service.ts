@@ -12,6 +12,7 @@ import {
   listRelationshipItems,
   listRelationshipItemsForThisDay,
   listRelationshipItemsForYear,
+  listUpcomingRelationshipReleases,
   loadIncomingRelationshipLinkOwnerIds,
   loadPartnershipReadModelForAccount,
   loadRelationshipFeatureState,
@@ -480,6 +481,56 @@ export class RelationshipSpaceService {
     );
   }
 
+  async #findCompletedMutation(
+    transaction: QueryExecutor,
+    input: {
+      readonly accountId: string;
+      readonly partnershipId: string;
+      readonly operation: string;
+      readonly targetItemId?: string;
+      readonly idempotencyKey: string;
+      readonly body: unknown;
+      readonly now: Date;
+    },
+  ): Promise<MutationReservation | null> {
+    const payload = this.#fingerprintPayload(input);
+    const scope = [
+      "r1",
+      input.partnershipId,
+      input.operation,
+      input.targetItemId ?? "create",
+    ].join(":");
+    const result = await transaction.query<{
+      id: string;
+      request_fingerprint: Buffer | null;
+      response_status: number | null;
+      response_body: unknown;
+    }>(
+      `SELECT id, request_fingerprint, response_status, response_body
+       FROM idempotency_records
+       WHERE account_id = $1
+         AND scope = $2
+         AND idempotency_key = $3
+         AND (expires_at IS NULL OR expires_at > $4)
+       LIMIT 1`,
+      [input.accountId, scope, input.idempotencyKey, input.now],
+    );
+    const row = result.rows[0];
+    if (!row || row.response_status === null) return null;
+    if (!row.request_fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED");
+    const expected = this.#fingerprintForStoredVersion(payload, row.request_fingerprint);
+    if (!this.keys.safeEqual(row.request_fingerprint, expected)) {
+      throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED");
+    }
+    return {
+      replayed: true,
+      id: row.id,
+      fingerprint: row.request_fingerprint,
+      responseStatus: row.response_status,
+      responseBody: row.response_body,
+    };
+  }
+
   async #reserveMutation(
     transaction: QueryExecutor,
     input: {
@@ -705,6 +756,9 @@ export class RelationshipSpaceService {
     if (!isItemVisible(item, actorAccountId)) {
       throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
     }
+    if (item.contentSchemaVersion !== 1) {
+      throw new ApiError(409, "UNSUPPORTED_CONTENT_SCHEMA_VERSION");
+    }
     const full = isFullItemVisible(item, actorAccountId);
     const state = await loadRelationshipFeatureState(executor, item.partnershipId, item.id);
     const references = full
@@ -757,12 +811,23 @@ export class RelationshipSpaceService {
         snapshotAt: now,
         storyOnly: false,
         sort: "created_desc",
-        limit: 9,
+        limit: 8,
       });
-      const recentVisible = recent.slice(0, 8);
       const recentItems: RelationshipItemProjection[] = [];
-      for (const item of recentVisible) {
+      for (const item of recent) {
         recentItems.push(await this.#project(transaction, item, auth.session.accountId));
+      }
+
+      const upcomingRows = await listUpcomingRelationshipReleases(transaction, {
+        partnershipId: current.partnershipId,
+        actorAccountId: auth.session.accountId,
+        limit: 8,
+      });
+      const upcomingReleases: RelationshipItemProjection[] = [];
+      for (const item of upcomingRows) {
+        upcomingReleases.push(
+          await this.#project(transaction, item, auth.session.accountId),
+        );
       }
 
       const reunionRows = await listRelationshipItems(transaction, {
@@ -772,11 +837,23 @@ export class RelationshipSpaceService {
         kind: "reunion",
         storyOnly: false,
         sort: "created_desc",
-        limit: 1,
+        limit: 20,
       });
-      const reunion = reunionRows[0]
-        ? await this.#project(transaction, reunionRows[0], auth.session.accountId)
-        : null;
+      let reunion: RelationshipItemProjection | null = null;
+      for (const item of reunionRows) {
+        const state = await loadRelationshipFeatureState(
+          transaction,
+          item.partnershipId,
+          item.id,
+        );
+        if (
+          state?.type === "reunion" &&
+          compareCalendarDates(state.targetDate, serverDate) >= 0
+        ) {
+          reunion = await this.#project(transaction, item, auth.session.accountId);
+          break;
+        }
+      }
 
       const signalRows = await listRelationshipItems(transaction, {
         partnershipId: current.partnershipId,
@@ -794,10 +871,36 @@ export class RelationshipSpaceService {
 
       const writable =
         current.lifecycleState === "active" && !current.accountDeletionViewOnly;
+      const anniversaryYear = Number(serverDate.slice(0, 4));
       const anniversaryDate = anniversaryDateForYear(
         current.relationshipStartDate,
-        Number(serverDate.slice(0, 4)),
+        anniversaryYear,
       );
+      const anniversaryRows = await listRelationshipItems(transaction, {
+        partnershipId: current.partnershipId,
+        actorAccountId: auth.session.accountId,
+        snapshotAt: now,
+        kind: "anniversary",
+        storyOnly: false,
+        sort: "created_desc",
+        limit: 50,
+      });
+      let savedCurationItemId: string | null = null;
+      for (const item of anniversaryRows) {
+        const state = await loadRelationshipFeatureState(
+          transaction,
+          item.partnershipId,
+          item.id,
+        );
+        if (
+          state?.type === "curation" &&
+          state.curationType === "anniversary" &&
+          state.anchorYear === anniversaryYear
+        ) {
+          savedCurationItemId = item.id;
+          break;
+        }
+      }
 
       return {
         space: {
@@ -822,15 +925,11 @@ export class RelationshipSpaceService {
             sendSignal: writable,
           },
           recentItems,
-          upcomingReleases: recentItems.filter(
-            (item) =>
-              item.release?.mode === "scheduled" &&
-              item.release.state === "locked",
-          ),
+          upcomingReleases,
           reunion,
           anniversary: {
             date: anniversaryDate,
-            savedCurationItemId: null,
+            savedCurationItemId,
           },
           recentSignals,
         },
@@ -959,7 +1058,7 @@ export class RelationshipSpaceService {
         throw new ApiError(409, "NO_CURRENT_PARTNERSHIP");
       }
 
-      const reservation = await this.#reserveMutation(transaction, {
+      const completed = await this.#findCompletedMutation(transaction, {
         accountId: auth.session.accountId,
         partnershipId: lifecycle.partnershipId,
         operation: "create",
@@ -967,10 +1066,10 @@ export class RelationshipSpaceService {
         body: input,
         now,
       });
-      if (reservation.replayed) {
+      if (completed) {
         return {
-          statusCode: reservation.responseStatus as number,
-          body: reservation.responseBody,
+          statusCode: completed.responseStatus as number,
+          body: completed.responseBody,
         };
       }
 
@@ -999,6 +1098,21 @@ export class RelationshipSpaceService {
       );
       if (targets.length !== targetIds.length) throw new ApiError(422, "INVALID_ITEM_LINK");
       await this.#validateLockedLinks(targets, null, input.kind, input.links);
+
+      const reservation = await this.#reserveMutation(transaction, {
+        accountId: auth.session.accountId,
+        partnershipId: lifecycle.partnershipId,
+        operation: "create",
+        idempotencyKey,
+        body: input,
+        now,
+      });
+      if (reservation.replayed) {
+        return {
+          statusCode: reservation.responseStatus as number,
+          body: reservation.responseBody,
+        };
+      }
 
       const itemId = randomUUID();
       const occurrence = occurrenceFields(input.occurrence);
@@ -1107,6 +1221,34 @@ export class RelationshipSpaceService {
         throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
       }
 
+      const completed = await this.#findCompletedMutation(transaction, {
+        accountId: auth.session.accountId,
+        partnershipId: current.partnershipId,
+        operation: "patch",
+        targetItemId: itemId,
+        idempotencyKey,
+        body: input,
+        now,
+      });
+      if (completed) {
+        return {
+          statusCode: completed.responseStatus as number,
+          body: completed.responseBody,
+        };
+      }
+
+      const incomingTargetIds = input.links?.map((link) => link.targetItemId) ?? [];
+      const lockIds = [...new Set([itemId, ...incomingTargetIds])].sort();
+      const locked = await lockRelationshipItemsByIds(
+        transaction,
+        current.partnershipId,
+        lockIds,
+      );
+      const lockedById = new Map(locked.map((item) => [item.id, item]));
+      const item = lockedById.get(itemId);
+      if (!item || !isItemVisible(item, auth.session.accountId)) {
+        throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
+      }
       const reservation = await this.#reserveMutation(transaction, {
         accountId: auth.session.accountId,
         partnershipId: current.partnershipId,
@@ -1123,18 +1265,6 @@ export class RelationshipSpaceService {
         };
       }
 
-      const incomingTargetIds = input.links?.map((link) => link.targetItemId) ?? [];
-      const lockIds = [...new Set([itemId, ...incomingTargetIds])].sort();
-      const locked = await lockRelationshipItemsByIds(
-        transaction,
-        current.partnershipId,
-        lockIds,
-      );
-      const lockedById = new Map(locked.map((item) => [item.id, item]));
-      const item = lockedById.get(itemId);
-      if (!item || !isItemVisible(item, auth.session.accountId)) {
-        throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
-      }
       if (item.version !== BigInt(input.expectedVersion)) {
         throw new ApiError(409, "VERSION_CONFLICT");
       }
@@ -1378,7 +1508,7 @@ export class RelationshipSpaceService {
         throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
       }
 
-      const reservation = await this.#reserveMutation(transaction, {
+      const completed = await this.#findCompletedMutation(transaction, {
         accountId: auth.session.accountId,
         partnershipId: current.partnershipId,
         operation: "delete",
@@ -1387,7 +1517,7 @@ export class RelationshipSpaceService {
         body: { expectedVersion },
         now,
       });
-      if (reservation.replayed) return { statusCode: 204, body: null };
+      if (completed) return { statusCode: 204, body: null };
 
       this.#requireCapability(
         auth.session.accountId,
@@ -1410,8 +1540,30 @@ export class RelationshipSpaceService {
       const byId = new Map(locked.map((item) => [item.id, item]));
       const item = byId.get(itemId);
       if (!item || !isItemVisible(item, auth.session.accountId)) {
+        const replayAfterWait = await this.#findCompletedMutation(transaction, {
+          accountId: auth.session.accountId,
+          partnershipId: current.partnershipId,
+          operation: "delete",
+          targetItemId: itemId,
+          idempotencyKey,
+          body: { expectedVersion },
+          now,
+        });
+        if (replayAfterWait) return { statusCode: 204, body: null };
         throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
       }
+
+      const reservation = await this.#reserveMutation(transaction, {
+        accountId: auth.session.accountId,
+        partnershipId: current.partnershipId,
+        operation: "delete",
+        targetItemId: itemId,
+        idempotencyKey,
+        body: { expectedVersion },
+        now,
+      });
+      if (reservation.replayed) return { statusCode: 204, body: null };
+
       if (item.version !== BigInt(expectedVersion)) {
         throw new ApiError(409, "VERSION_CONFLICT");
       }
@@ -1496,6 +1648,31 @@ export class RelationshipSpaceService {
         throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
       }
 
+      const completed = await this.#findCompletedMutation(transaction, {
+        accountId: auth.session.accountId,
+        partnershipId: current.partnershipId,
+        operation: "release",
+        targetItemId: itemId,
+        idempotencyKey,
+        body: input,
+        now,
+      });
+      if (completed) {
+        return {
+          statusCode: completed.responseStatus as number,
+          body: completed.responseBody,
+        };
+      }
+
+      const locked = await lockRelationshipItemsByIds(
+        transaction,
+        current.partnershipId,
+        [itemId],
+      );
+      const item = locked[0];
+      if (!item || !isItemVisible(item, auth.session.accountId)) {
+        throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
+      }
       const reservation = await this.#reserveMutation(transaction, {
         accountId: auth.session.accountId,
         partnershipId: current.partnershipId,
@@ -1512,15 +1689,6 @@ export class RelationshipSpaceService {
         };
       }
 
-      const locked = await lockRelationshipItemsByIds(
-        transaction,
-        current.partnershipId,
-        [itemId],
-      );
-      const item = locked[0];
-      if (!item || !isItemVisible(item, auth.session.accountId)) {
-        throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
-      }
       if (item.version !== BigInt(input.expectedVersion)) {
         throw new ApiError(409, "VERSION_CONFLICT");
       }

@@ -13,7 +13,11 @@ import {
   requestAccountDeletion,
   type DatabasePool,
 } from "@shawtie/db";
-import { createDefaultScheduledHandlers } from "../src/auth/default-account-handlers.ts";
+import {
+  createDefaultDeletionHandlers,
+  createDefaultScheduledHandlers,
+} from "../src/auth/default-account-handlers.ts";
+import { runDeletionBatch } from "../src/deletion/deletion-consumer.ts";
 import { defaultRetryPolicy } from "../src/runtime/retry-policy.ts";
 import { runScheduledBatch } from "../src/scheduled/scheduled-consumer.ts";
 
@@ -247,8 +251,8 @@ test("R1 breakup destructive deadline wins over a scheduled release at equality 
   try {
     await reset(database);
     const now = new Date();
-    const initiatedAt = new Date(now.getTime() - 8 * 24 * 60 * 60_000);
     const finalDeadline = new Date(now.getTime() - 1_000);
+    const initiatedAt = new Date(finalDeadline.getTime() - 7 * 24 * 60 * 60_000);
     const unlockAt = new Date(now.getTime() - 60_000);
     const alice = await account(database, "r1-worker-breakup-a", initiatedAt);
     const bob = await account(database, "r1-worker-breakup-b", initiatedAt);
@@ -286,6 +290,198 @@ test("R1 breakup destructive deadline wins over a scheduled release at equality 
     );
     assert.equal(persisted.rows[0]?.released_at, null);
     assert.equal(persisted.rows[0]?.action_status, "stale");
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("R1 preconfigured scheduled release may complete strictly before a breakup deadline", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const now = new Date();
+    const finalDeadline = new Date(now.getTime() + 24 * 60 * 60_000);
+    const initiatedAt = new Date(finalDeadline.getTime() - 7 * 24 * 60 * 60_000);
+    const unlockAt = new Date(now.getTime() - 60_000);
+    const alice = await account(database, "r1-worker-before-breakup-a", initiatedAt);
+    const bob = await account(database, "r1-worker-before-breakup-b", initiatedAt);
+    const partnershipId = randomUUID();
+    const breakupId = randomUUID();
+
+    await partnership(database, {
+      partnershipId,
+      firstAccountId: alice,
+      secondAccountId: bob,
+      state: "breakup_pending",
+      generation: 2n,
+      at: initiatedAt,
+    });
+    await database.pool.query(
+      "INSERT INTO breakup_processes (id, partnership_id, initiated_by_account_id, initiated_at, initiator_cancel_until, base_deadline, final_deadline, generation) VALUES ($1,$2,$3,$4,$4::timestamptz + interval '1 hour',$5,$5,2)",
+      [breakupId, partnershipId, alice, initiatedAt, finalDeadline],
+    );
+
+    const item = await scheduledItem(database, {
+      partnershipId,
+      creatorAccountId: alice,
+      unlockAt,
+      now: initiatedAt,
+    });
+
+    assert.equal(await runScheduled(database, "r1-before-breakup-worker"), 1);
+
+    const persisted = await database.pool.query<{
+      released_at: Date | null;
+      action_status: string;
+    }>(
+      "SELECT item.released_at, action.status AS action_status FROM relationship_items item JOIN scheduled_actions action ON action.id = $2 WHERE item.id = $1",
+      [item.itemId, item.actionId],
+    );
+    assert.ok(persisted.rows[0]?.released_at);
+    assert.equal(persisted.rows[0]?.action_status, "completed");
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+test("R1 obsolete release generation is marked stale before content can unlock", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const now = new Date();
+    const createdAt = new Date(now.getTime() - 60 * 60_000);
+    const unlockAt = new Date(now.getTime() - 60_000);
+    const alice = await account(database, "r1-worker-generation-a", createdAt);
+    const bob = await account(database, "r1-worker-generation-b", createdAt);
+    const partnershipId = randomUUID();
+
+    await partnership(database, {
+      partnershipId,
+      firstAccountId: alice,
+      secondAccountId: bob,
+      state: "active",
+      generation: 1n,
+      at: createdAt,
+    });
+    const item = await scheduledItem(database, {
+      partnershipId,
+      creatorAccountId: alice,
+      unlockAt,
+      now: createdAt,
+    });
+
+    await database.pool.query(
+      "UPDATE relationship_items SET release_generation = 2 WHERE id = $1",
+      [item.itemId],
+    );
+
+    assert.equal(await runScheduled(database, "r1-generation-worker"), 1);
+
+    const persisted = await database.pool.query<{
+      released_at: Date | null;
+      action_status: string;
+      release_generation: string;
+    }>(
+      "SELECT item.released_at, item.release_generation::text AS release_generation, action.status AS action_status FROM relationship_items item JOIN scheduled_actions action ON action.id = $2 WHERE item.id = $1",
+      [item.itemId, item.actionId],
+    );
+    assert.equal(persisted.rows[0]?.released_at, null);
+    assert.equal(persisted.rows[0]?.release_generation, "2");
+    assert.equal(persisted.rows[0]?.action_status, "stale");
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("R1 final breakup dissolution cancels pending release work and deletion cleanup removes R1 rows", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const now = new Date();
+    const deadline = new Date(now.getTime() - 60_000);
+    const initiatedAt = new Date(deadline.getTime() - 7 * 24 * 60 * 60_000);
+    const alice = await account(database, "r1-worker-final-a", initiatedAt);
+    const bob = await account(database, "r1-worker-final-b", initiatedAt);
+    const partnershipId = randomUUID();
+    const breakupId = randomUUID();
+
+    await partnership(database, {
+      partnershipId,
+      firstAccountId: alice,
+      secondAccountId: bob,
+      state: "breakup_pending",
+      generation: 2n,
+      at: initiatedAt,
+    });
+    await database.pool.query(
+      "INSERT INTO breakup_processes (id, partnership_id, initiated_by_account_id, initiated_at, initiator_cancel_until, base_deadline, final_deadline, generation) VALUES ($1,$2,$3,$4,$4::timestamptz + interval '1 hour',$5,$5,2)",
+      [breakupId, partnershipId, alice, initiatedAt, deadline],
+    );
+
+    const unlockAt = new Date(now.getTime() + 24 * 60 * 60_000);
+    const item = await scheduledItem(database, {
+      partnershipId,
+      creatorAccountId: alice,
+      unlockAt,
+      now: initiatedAt,
+    });
+    await insertScheduledAction(database.pool, {
+      id: randomUUID(),
+      actionType: "partnership_breakup_finalize",
+      aggregateType: "breakup_process",
+      aggregateId: breakupId,
+      executeAt: deadline,
+      expectedGeneration: 2n,
+      deduplicationKey: "r1-finalize:" + breakupId,
+      payload: { partnershipId },
+      payloadVersion: 1,
+    });
+
+    assert.equal(await runScheduled(database, "r1-finalizer-worker"), 1);
+
+    const action = await database.pool.query<{ status: string }>(
+      "SELECT status FROM scheduled_actions WHERE id = $1",
+      [item.actionId],
+    );
+    assert.equal(action.rows[0]?.status, "cancelled");
+
+    const manifest = await database.pool.query<{ id: string; status: string }>(
+      "SELECT id, status FROM deletion_manifests WHERE subject_type = 'partnership' AND subject_id = $1",
+      [partnershipId],
+    );
+    assert.equal(manifest.rowCount, 1);
+    assert.equal(manifest.rows[0]?.status, "pending");
+
+    const deletionHandlers = createDefaultDeletionHandlers(database);
+    assert.equal(
+      await runDeletionBatch(
+        database,
+        "r1-final-cleanup",
+        deletionHandlers,
+        new AbortController().signal,
+        {
+          batchSize: 20,
+          concurrency: 1,
+          leaseMs: 60_000,
+          retryPolicy: defaultRetryPolicy,
+        },
+      ),
+      2,
+    );
+
+    const roots = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM relationship_items WHERE partnership_id = $1",
+      [partnershipId],
+    );
+    assert.equal(roots.rows[0]?.count, "0");
+
+    const children = await database.pool.query<{ total: string }>(
+      "SELECT ((SELECT count(*) FROM relationship_someday_state WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_signal_state WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_reunion_state WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_curations WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_item_references WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_item_links WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_story_members WHERE partnership_id = $1) + (SELECT count(*) FROM relationship_events WHERE partnership_id = $1))::text AS total",
+      [partnershipId],
+    );
+    assert.equal(children.rows[0]?.total, "0");
   } finally {
     await closeDatabasePool(database);
   }

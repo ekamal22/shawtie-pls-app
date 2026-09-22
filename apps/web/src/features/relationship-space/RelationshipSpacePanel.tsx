@@ -64,6 +64,7 @@ function messageFor(error: unknown): string {
     RELEASE_NOT_ALLOWED: "This item cannot be opened from this account.",
     RELEASE_TIME_INVALID: "Choose a future release time.",
     REUNION_DATE_INVALID: "Choose today or a future reunion date.",
+    UNSUPPORTED_CONTENT_SCHEMA_VERSION: "This relationship item needs a newer app version.",
     VERSION_CONFLICT: "This changed on another device. Refresh and try again.",
   };
   return known[error.code] ?? error.code.replaceAll("_", " ").toLowerCase();
@@ -79,6 +80,34 @@ function readString(
 ): string | null {
   const item = value?.[key];
   return typeof item === "string" && item.trim() ? item : null;
+}
+
+function readSequenceSteps(
+  value: Record<string, unknown> | null,
+): string[] {
+  const steps = value?.steps;
+  if (!Array.isArray(steps)) return [];
+  return steps.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const text = (entry as Record<string, unknown>).text;
+    return typeof text === "string" && text.trim() ? [text] : [];
+  });
+}
+
+function readCoordinate(
+  value: Record<string, unknown> | null,
+  key: "latitude" | "longitude",
+): number | null {
+  const coordinate = value?.[key];
+  return typeof coordinate === "number" && Number.isFinite(coordinate)
+    ? coordinate
+    : null;
+}
+
+function daysUntil(serverDate: string, targetDate: string): number {
+  const start = new Date(serverDate + "T00:00:00.000Z").getTime();
+  const target = new Date(targetDate + "T00:00:00.000Z").getTime();
+  return Math.max(0, Math.ceil((target - start) / (24 * 60 * 60_000)));
 }
 
 function itemTitle(item: RelationshipItem): string {
@@ -154,6 +183,9 @@ function ItemCard({
               : null;
   const [draftBody, setDraftBody] = useState(
     bodyKey ? readString(item.content, bodyKey) ?? "" : "",
+  );
+  const [draftReunionDate, setDraftReunionDate] = useState(
+    item.featureState?.type === "reunion" ? item.featureState.targetDate : "",
   );
   const isCreator = item.creatorAccountId === accountId;
   const locked = item.release?.state === "locked";
@@ -248,6 +280,23 @@ function ItemCard({
     });
   }
 
+  async function saveReunionDate() {
+    if (item.featureState?.type !== "reunion" || !draftReunionDate) return;
+    await run(async () => {
+      await patchRelationshipItem(item.itemId, {
+        expectedVersion: item.version,
+        featureState: {
+          type: "reunion",
+          targetDate: draftReunionDate,
+        },
+      });
+    });
+  }
+
+  const sequenceSteps = readSequenceSteps(item.content);
+  const latitude = readCoordinate(item.content, "latitude");
+  const longitude = readCoordinate(item.content, "longitude");
+
   return (
     <article className="relationship-item-card">
       <div className="relationship-item-card__top">
@@ -282,7 +331,22 @@ function ItemCard({
             readString(item.content, "note") ??
             readString(item.content, "snapshotText") ??
             readString(item.content, "text") ??
+            readString(item.content, "intro") ??
             ""}
+        </p>
+      ) : null}
+
+      {sequenceSteps.length ? (
+        <ol className="relationship-sequence">
+          {sequenceSteps.map((step, index) => (
+            <li key={index}>{step}</li>
+          ))}
+        </ol>
+      ) : null}
+
+      {latitude !== null && longitude !== null ? (
+        <p className="hint">
+          Coordinates: {latitude}, {longitude}
         </p>
       ) : null}
 
@@ -291,7 +355,27 @@ function ItemCard({
       ) : null}
 
       {item.featureState?.type === "reunion" ? (
-        <p className="hint">Target: {item.featureState.targetDate}</p>
+        <div className="relationship-reunion-editor">
+          <p className="hint">Target: {item.featureState.targetDate}</p>
+          {!disabled ? (
+            <div className="relationship-actions">
+              <input
+                type="date"
+                value={draftReunionDate}
+                disabled={busy}
+                onChange={(event) => setDraftReunionDate(event.target.value)}
+              />
+              <button
+                type="button"
+                className="secondary compact"
+                disabled={busy || !draftReunionDate}
+                onClick={() => void saveReunionDate()}
+              >
+                Update date
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {item.featureState?.type === "relationship_signal" ? (
@@ -891,7 +975,11 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
   const [experience, setExperience] = useState<{
     title: string;
     items: RelationshipItem[];
+    curationType?: "our_year" | "anniversary";
+    anchorYear?: number;
+    savedCuration?: RelationshipItem | null;
   } | null>(null);
+  const [selectedCurationIds, setSelectedCurationIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -919,11 +1007,25 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
 
   useEffect(() => {
     const refresh = () => void load().catch(() => undefined);
-    window.addEventListener("shawtie:partnership-changed", refresh);
+    const resetAndRefresh = () => {
+      setHome(undefined);
+      setItems([]);
+      setExperience(null);
+      setNotice("");
+      setError("");
+      void load().catch((caught) => setError(messageFor(caught)));
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+
+    window.addEventListener("shawtie:partnership-changed", resetAndRefresh);
     window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.removeEventListener("shawtie:partnership-changed", refresh);
+      window.removeEventListener("shawtie:partnership-changed", resetAndRefresh);
       window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [filter]);
 
@@ -939,12 +1041,84 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
   }, [home]);
 
   async function runExperience(
-    task: () => Promise<{ title: string; items: RelationshipItem[] }>,
+    task: () => Promise<{
+      title: string;
+      items: RelationshipItem[];
+      curationType?: "our_year" | "anniversary";
+      anchorYear?: number;
+      savedCuration?: RelationshipItem | null;
+    }>,
   ) {
     setBusy(true);
     setError("");
     try {
-      setExperience(await task());
+      const next = await task();
+      setExperience(next);
+      setSelectedCurationIds(
+        next.savedCuration?.links
+          .filter((link) => link.linkType === "curation")
+          .sort((left, right) => left.position - right.position)
+          .map((link) => link.targetItemId) ?? [],
+      );
+    } catch (caught) {
+      setError(messageFor(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function toggleCurationItem(itemId: string) {
+    setSelectedCurationIds((current) =>
+      current.includes(itemId)
+        ? current.filter((value) => value !== itemId)
+        : [...current, itemId],
+    );
+  }
+
+  async function saveExperienceCuration() {
+    if (
+      !experience?.curationType ||
+      experience.anchorYear === undefined ||
+      viewOnly
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const links = selectedCurationIds.map((targetItemId, position) => ({
+        linkType: "curation" as const,
+        targetItemId,
+        position,
+      }));
+      if (experience.savedCuration) {
+        await patchRelationshipItem(experience.savedCuration.itemId, {
+          expectedVersion: experience.savedCuration.version,
+          links,
+        });
+      } else {
+        await createRelationshipItem({
+          kind: experience.curationType,
+          contentSchemaVersion: 1,
+          preview: null,
+          content: {
+            title: experience.title,
+            note: null,
+          },
+          occurrence: null,
+          storyIncluded: false,
+          release: null,
+          featureState: {
+            type: "curation",
+            curationType: experience.curationType,
+            anchorYear: experience.anchorYear,
+          },
+          references: [],
+          links,
+        });
+      }
+      setExperience(null);
+      await refresh("Curation saved.");
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -993,7 +1167,10 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       {home.reunion?.featureState?.type === "reunion" ? (
         <div className="relationship-reunion">
           <span className="relationship-kicker">Until we're together again</span>
-          <strong>{home.reunion.featureState.targetDate}</strong>
+          <strong>
+            {daysUntil(home.serverDate, home.reunion.featureState.targetDate)} days
+          </strong>
+          <span className="hint">{home.reunion.featureState.targetDate}</span>
         </div>
       ) : null}
 
@@ -1085,7 +1262,13 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
               void runExperience(async () => {
                 const year = Number(home.serverDate.slice(0, 4));
                 const result = await loadOurYear(year);
-                return { title: "Our Year " + year, items: result.candidates };
+                return {
+                  title: "Our Year " + year,
+                  items: result.candidates,
+                  curationType: "our_year" as const,
+                  anchorYear: year,
+                  savedCuration: result.savedCuration,
+                };
               })
             }
           >
@@ -1098,9 +1281,13 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
             onClick={() =>
               void runExperience(async () => {
                 const result = await loadAnniversary(home.serverDate);
+                const year = Number(home.serverDate.slice(0, 4));
                 return {
                   title: "Anniversary " + (result.anniversaryDate ?? ""),
                   items: result.eligibleItems,
+                  curationType: "anniversary" as const,
+                  anchorYear: year,
+                  savedCuration: result.savedCuration,
                 };
               })
             }
@@ -1121,16 +1308,43 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
                 Close
               </button>
             </div>
+            {experience.curationType ? (
+              <div className="relationship-curation-toolbar">
+                <p className="hint">
+                  Select the moments you want to keep in this saved curation.
+                </p>
+                <button
+                  type="button"
+                  className="primary compact"
+                  disabled={busy || viewOnly}
+                  onClick={() => void saveExperienceCuration()}
+                >
+                  {experience.savedCuration ? "Update curation" : "Save curation"}
+                </button>
+              </div>
+            ) : null}
             {experience.items.length ? (
               <div className="relationship-card-grid">
                 {experience.items.map((item) => (
-                  <ItemCard
-                    key={item.itemId}
-                    item={item}
-                    accountId={accountId}
-                    disabled={viewOnly}
-                    onChanged={() => refresh()}
-                  />
+                  <div key={item.itemId} className="relationship-curation-item">
+                    {experience.curationType ? (
+                      <label className="relationship-curation-choice">
+                        <input
+                          type="checkbox"
+                          checked={selectedCurationIds.includes(item.itemId)}
+                          disabled={viewOnly}
+                          onChange={() => toggleCurationItem(item.itemId)}
+                        />
+                        <span>Include in curation</span>
+                      </label>
+                    ) : null}
+                    <ItemCard
+                      item={item}
+                      accountId={accountId}
+                      disabled={viewOnly}
+                      onChanged={() => refresh()}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (

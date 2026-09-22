@@ -91,3 +91,58 @@ test("R1 Voice Letter is a media reference and not a standalone item kind", asyn
   assert.equal(kinds.includes('"voice_letter"'), false);
   assert.equal(contracts.includes('role: z.enum(["source", "attachment", "voice_letter"])'), true);
 });
+
+
+test("R1 mutation lock order is partnership then sorted items then operation receipt", async () => {
+  const service = await source("../src/modules/relationship-space/relationship-space-service.ts");
+
+  const sections = [
+    service.slice(service.indexOf("async create("), service.indexOf("async patch(")),
+    service.slice(service.indexOf("async patch("), service.indexOf("async delete(")),
+    service.slice(service.indexOf("async delete("), service.indexOf("async release(")),
+    service.slice(service.indexOf("async release("), service.indexOf("async thisDay(")),
+  ];
+
+  for (const section of sections) {
+    const partnershipLock = section.indexOf("lockPartnershipLifecycle");
+    const replayPreflight = section.indexOf("#findCompletedMutation");
+    const itemLock = section.indexOf("lockRelationshipItemsByIds");
+    const receiptLock = section.indexOf("#reserveMutation");
+
+    assert.ok(partnershipLock >= 0);
+    assert.ok(replayPreflight > partnershipLock);
+    assert.ok(itemLock > replayPreflight);
+    assert.ok(receiptLock > itemLock);
+  }
+});
+
+
+test("R1 server paths do not log private payloads or coordinates", async () => {
+  const service = await source("../src/modules/relationship-space/relationship-space-service.ts");
+  const routes = await source("../src/modules/relationship-space/routes.ts");
+  const worker = await source(
+    "../../worker/src/relationship-space/relationship-item-release-handler.ts",
+  );
+  const combined = service + "\n" + routes + "\n" + worker;
+
+  assert.equal(combined.includes("console.log"), false);
+  assert.equal(combined.includes("request.log"), false);
+  assert.equal(combined.includes("logger.info"), false);
+  assert.equal(combined.includes("logger.debug"), false);
+  assert.equal(worker.includes("latitude"), false);
+  assert.equal(worker.includes("longitude"), false);
+  assert.equal(worker.includes("payload: {"), false);
+  assert.equal(service.includes("payload: {}"), true);
+});
+
+test("R1 migration ownership remains 0013 and 0014 only", async () => {
+  const packageJson = await source("../../../package.json");
+  const design = await source(
+    "../../../docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md",
+  );
+  assert.equal(design.includes("0013_relationship_space_runtime.sql"), true);
+  assert.equal(design.includes("0014_relationship_space_interaction_runtime.sql"), true);
+  assert.equal(design.includes("R1 owns `0011"), false);
+  assert.equal(design.includes("R1 owns `0012"), false);
+  assert.equal(packageJson.includes("test:r1:postgres"), true);
+});
