@@ -106,7 +106,7 @@ M2 version 1 queues only:
 - item patch when the release field is omitted and expectedVersion is preserved
 - item delete with expectedVersion
 
-M2 version 1 does not queue manual release, scheduled/recipient-open/creator-reveal create, any patch that carries a release field, or M3-dependent media/voice references.
+M2 version 1 does not queue manual release, scheduled/recipient-open/creator-reveal create, any patch that carries a release field, or media/Voice Letter references. The design-complete M3 path keeps binary-dependent work in dedicated media drafts, upload jobs, and pending parent bundles rather than widening the generic M2 R1 queue.
 
 Do not silently reuse the chat outbox schema.
 
