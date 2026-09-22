@@ -10,11 +10,15 @@ import type { M2RealtimeServerFrame } from "@shawtie/contracts";
 import {
   ShawtieLocalDatabase,
   requestPersistentLocalStorage,
+  type ChatQueueOperation,
+  type RelationshipQueueOperation,
 } from "../offline/local-db.ts";
+import { M2ReplayEngine } from "../offline/replay-engine.ts";
 import { RealtimeClient, type RealtimeScope } from "./realtime-client.ts";
 import {
   SyncCoordinator,
   type Synchronizer,
+  type SynchronizerPhase,
   type SyncStatus,
 } from "./sync-coordinator.ts";
 
@@ -28,6 +32,7 @@ function dispatch(name: string, detail?: unknown): void {
 export class M2Runtime {
   readonly coordinator = new SyncCoordinator();
   readonly realtime: RealtimeClient;
+  readonly replay: M2ReplayEngine;
   readonly accountId: string;
   #databasePromise: Promise<ShawtieLocalDatabase> | null = null;
 
@@ -37,6 +42,16 @@ export class M2Runtime {
       onScopeChange: async (previous, next) => this.#scopeChanged(previous, next),
       onFrame: async (frame) => this.#frame(frame),
     });
+    this.replay = new M2ReplayEngine(
+      () => this.database(),
+      () => this.realtime.scope,
+      (changeSequence) => this.coordinator.markDirty(changeSequence),
+    );
+    this.coordinator.register(
+      "offline-replay",
+      async () => this.replay.replay(),
+      "replay",
+    );
   }
 
   async start(): Promise<void> {
@@ -63,8 +78,51 @@ export class M2Runtime {
     return this.#databasePromise;
   }
 
-  registerSynchronizer(name: string, synchronizer: Synchronizer): () => void {
-    return this.coordinator.register(name, synchronizer);
+  registerSynchronizer(
+    name: string,
+    synchronizer: Synchronizer,
+    phase: SynchronizerPhase = "reconcile",
+  ): () => void {
+    return this.coordinator.register(name, synchronizer, phase);
+  }
+
+  async queueChat(input: {
+    operationType: ChatQueueOperation["operationType"];
+    messageId?: string | null;
+    requestBody: unknown;
+    expectedContentVersion?: number | null;
+    idempotencyKey?: string;
+  }): Promise<ChatQueueOperation> {
+    const operation = await this.replay.enqueueChat(input);
+    void this.coordinator.requestSync();
+    return operation;
+  }
+
+  async queueRelationshipCreate(body: unknown): Promise<RelationshipQueueOperation> {
+    const operation = await this.replay.enqueueRelationshipCreate(body);
+    void this.coordinator.requestSync();
+    return operation;
+  }
+
+  async queueRelationshipPatch(
+    itemId: string,
+    body: unknown,
+  ): Promise<RelationshipQueueOperation> {
+    const operation = await this.replay.enqueueRelationshipPatch(itemId, body);
+    void this.coordinator.requestSync();
+    return operation;
+  }
+
+  async queueRelationshipDelete(
+    itemId: string,
+    expectedVersion: number,
+  ): Promise<RelationshipQueueOperation> {
+    const operation = await this.replay.enqueueRelationshipDelete(
+      itemId,
+      expectedVersion,
+    );
+    void this.coordinator.requestSync();
+    return operation;
   }
 
   sendPresenceHeartbeat(): boolean {

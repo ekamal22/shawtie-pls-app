@@ -2,6 +2,7 @@ export class ApiClientError extends Error {
   constructor(
     readonly code: string,
     readonly status: number,
+    readonly retryAfterSeconds: number | null = null,
   ) {
     super(code);
     this.name = "ApiClientError";
@@ -41,7 +42,10 @@ export async function apiRequest<T>(
       payload && typeof payload === "object" && "error" in payload && payload.error?.code
         ? payload.error.code
         : "REQUEST_FAILED";
-    throw new ApiClientError(code, response.status);
+    const retryAfter = response.headers.get("retry-after");
+    const retryAfterSeconds =
+      retryAfter && /^\d+$/.test(retryAfter) ? Number(retryAfter) : null;
+    throw new ApiClientError(code, response.status, retryAfterSeconds);
   }
 
   return payload as T;

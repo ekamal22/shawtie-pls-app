@@ -3,6 +3,7 @@ export interface SynchronizerResult {
 }
 
 export type Synchronizer = () => Promise<SynchronizerResult | void>;
+export type SynchronizerPhase = "reconcile" | "replay";
 
 export type SyncStatus =
   | "idle"
@@ -12,7 +13,8 @@ export type SyncStatus =
   | "update-required";
 
 export class SyncCoordinator {
-  readonly #synchronizers = new Map<string, Synchronizer>();
+  readonly #reconcilers = new Map<string, Synchronizer>();
+  readonly #replayers = new Map<string, Synchronizer>();
   readonly #listeners = new Set<(status: SyncStatus) => void>();
   #status: SyncStatus = "idle";
   #dirtyCounter = 0;
@@ -24,12 +26,15 @@ export class SyncCoordinator {
     return this.#status;
   }
 
-  register(name: string, synchronizer: Synchronizer): () => void {
-    this.#synchronizers.set(name, synchronizer);
+  register(
+    name: string,
+    synchronizer: Synchronizer,
+    phase: SynchronizerPhase = "reconcile",
+  ): () => void {
+    const collection = phase === "replay" ? this.#replayers : this.#reconcilers;
+    collection.set(name, synchronizer);
     return () => {
-      if (this.#synchronizers.get(name) === synchronizer) {
-        this.#synchronizers.delete(name);
-      }
+      if (collection.get(name) === synchronizer) collection.delete(name);
     };
   }
 
@@ -80,7 +85,7 @@ export class SyncCoordinator {
       this.#setStatus("syncing");
 
       let observedChangeSequence = 0;
-      for (const synchronizer of this.#synchronizers.values()) {
+      for (const synchronizer of this.#reconcilers.values()) {
         const result = await synchronizer();
         if (result?.latestChangeSequence !== undefined) {
           observedChangeSequence = Math.max(
@@ -90,12 +95,19 @@ export class SyncCoordinator {
         }
       }
 
-      const dirtiedDuringPass = this.#dirtyCounter !== dirtyAtStart;
+      const dirtyAfterReconcile = this.#dirtyCounter !== dirtyAtStart;
       const behindHint =
         targetChangeSequence > 0 &&
         observedChangeSequence < targetChangeSequence;
 
-      if (!dirtiedDuringPass && !behindHint) {
+      if (dirtyAfterReconcile || behindHint) continue;
+
+      for (const replayer of this.#replayers.values()) {
+        await replayer();
+      }
+
+      const dirtiedDuringPass = this.#dirtyCounter !== dirtyAtStart;
+      if (!dirtiedDuringPass) {
         this.#setStatus("live");
         return;
       }
