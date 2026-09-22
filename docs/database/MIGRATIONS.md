@@ -232,7 +232,7 @@ This reservation remains unchanged.
 
 Repository health still enforces one contiguous migration sequence. The reservation does not relax `scripts/db/check-migrations.mjs`: a branch that materializes 0013 or 0014 must have 0011 and 0012 in its ancestry before migration-plan validation can pass. M1 does not renumber or consume R1's reserved migrations.
 
-M1 migration 0011 is designed to refine the existing conversation/message substrate without rewriting migrations 0001 through 0010. Its planned responsibilities include:
+M1 migration 0011 implements the existing conversation/message substrate without rewriting migrations 0001 through 0010. Its responsibilities include:
 
 - primary-conversation backfill and future formation provisioning
 - exact breakup `message_freeze_sequence` capture
@@ -244,7 +244,7 @@ M1 migration 0011 is designed to refine the existing conversation/message substr
 - active-reaction uniqueness and content-removal constraints
 - indexes and constraints required for bounded server-sequence history and change-sequence synchronization
 
-M1 migration 0012 is designed for compact interaction state:
+M1 migration 0012 implements compact interaction state:
 
 - conversation-member delivered/read high-water marks
 - partnership chat nicknames with optimistic versioning
@@ -254,7 +254,7 @@ M1 migration 0012 is designed for compact interaction state:
 
 M1 does not add durable per-heartbeat history.
 
-Neither migration is implemented or verified yet. M1 closure requires migrations 0001 through 0012 to apply from zero against disposable PostgreSQL 16 with database invariants green.
+Both migrations are implemented but are not yet recorded as locally verified. M1 closure requires migrations 0001 through 0012 to apply from zero against disposable PostgreSQL 16 with database invariants green.
 
 The M1 migration/integration tests must additionally prove:
 
