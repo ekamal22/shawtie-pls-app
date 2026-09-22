@@ -7,6 +7,7 @@ import {
   insertAccountNotification,
   insertPartnership,
   insertPartnershipMembers,
+  insertPrimaryConversation,
   invalidatePendingRequestsForAccount,
   loadPartnerAccountEligibility,
   lockPartnerRequestsById,
@@ -99,6 +100,12 @@ async function formLockedPair(
       activatedAt: now,
     });
     await insertPartnershipMembers(executor, partnershipId, input.accountIds, now);
+    await insertPrimaryConversation(executor, {
+      id: randomUUID(),
+      partnershipId,
+      memberIds: input.accountIds,
+      createdAt: now,
+    });
   } catch (error) {
     if (postgresSqlState(error) === POSTGRES_SQLSTATE.uniqueViolation) {
       throw new ApiError(409, "PARTNERSHIP_UNAVAILABLE");
