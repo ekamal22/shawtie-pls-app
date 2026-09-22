@@ -909,43 +909,52 @@ Migration ownership:
 - `0011_messaging_core_runtime.sql`
 - `0012_messaging_interaction_runtime.sql`
 
-R1 reserves migrations 0013 and 0014.
+R1 reserves migrations 0013 and 0014. M1 does not change that reservation or R1 scope.
 
 ## Scope
 
 - one primary conversation per current partnership
 - text messaging
-- replies
+- replies with stable tombstone-safe reply context
 - stable IDs
-- deterministic server sequence
-- idempotent sends
-- 30-minute edits
+- deterministic server message sequence
+- separate durable mutation change sequence
+- idempotent sends and mutations
+- 30-minute edits with optimistic content-version checks
 - deletion tombstones
 - reactions
 - delivery and read receipts
 - typing indicators
 - online and last-seen state
 - shared nicknames
+- content-free durable invalidation metadata for later M2 transport
 - exact P3 breakup and account-deletion integration
 - cross-partnership isolation
 
-M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, IndexedDB offline queues, reconnect gap repair, and physical-device lifecycle acceptance belong to M2.
+M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, IndexedDB offline queues, reconnect orchestration, and physical-device lifecycle acceptance belong to M2.
 
 ## Refined architecture decisions
 
 - a primary conversation is created transactionally with future partnership formation and backfilled for current partnerships
-- message ordering uses the existing monotonic per-conversation server sequence
-- send idempotency uses the existing sender/conversation idempotency uniqueness plus a request fingerprint
+- `server_sequence` orders message creation only
+- a separate `change_sequence` orders every durable send/edit/delete/reaction mutation
+- content-free `conversation_changes` rows make old-message edits, deletes, and reactions recoverable by polling and later M2 reconnect
+- M1 emits versioned content-free outbox invalidations in the same mutation transaction; delivery remains non-authoritative
+- send idempotency uses the existing sender/conversation uniqueness plus a versioned keyed request fingerprint
+- ordinary unkeyed hashes of private message text are not accepted as durable mismatch verifiers
+- sender device identity comes only from the authenticated session
 - breakup initiation snapshots the last committed message sequence as `message_freeze_sequence`
 - pre-breakup freeze uses sequence cutoff first and timestamp fallback only for legacy breakup rows
-- pre-S1 development plaintext is stored only in explicitly named plaintext fields and is never mislabeled as ciphertext
-- edit history is purged when a message is deleted
+- pre-S1 development plaintext exists only for current message/reaction content in explicitly named plaintext fields
+- M1 does not persist plaintext edit history
+- edits require `expectedContentVersion` and stale concurrent edits fail with `VERSION_CONFLICT`
 - read and delivery state use monotonic conversation-member high-water marks
-- typing is short-lived transient state
-- presence stores only the current snapshot, not history
-- nickname metadata is partnership-scoped and versioned
-- final dissolution synchronously removes authorization and destructive cleanup removes conversation and nickname content
-- no M1 operational metadata may duplicate private message content
+- typing is short-lived transient state with server-owned TTL, refresh bounds, and rate limits
+- presence stores only the current snapshot, but disclosure is bounded to activity at or after the current partnership's activation
+- nickname metadata is partnership-scoped, versioned, and classified as protected partnership content for the later S1 decision
+- interaction/page/idempotency limits live in one centralized server-owned configuration surface
+- final dissolution synchronously removes authorization and module-owned messaging cleanup composes with the verified P3 deletion kernel
+- no M1 operational metadata, change row, outbox event, or idempotency response may duplicate private message content
 
 ## Implementation sequence
 
@@ -953,38 +962,52 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 
 - sequence-based breakup message freeze
 - legacy timestamp fallback
+- messaging-specific capability helpers over the existing P3 lifecycle boundary
 - message/reaction/nickname contracts
-- pagination, receipt, presence, and typing contracts
+- server-sequence history contracts
+- durable change-feed contracts
+- receipt, presence, and typing contracts
+- keyed private-request fingerprint contract
+- centralized interaction limits
 
 ### M1-B Migrations and repositories
 
 - migration 0011 messaging core runtime
 - migration 0012 messaging interaction runtime
 - primary conversation provisioning
+- server sequence plus durable change sequence
+- content-free conversation change ledger
 - message sequencing/idempotency repositories
-- edit versions and tombstones
+- optimistic current-content edits without plaintext version history
+- tombstones
 - reactions
 - receipts
 - nicknames
 - presence
 - typing
+- module-owned messaging cleanup
 - deletion integration
 
 ### M1-C Core read and send API
 
-- current conversation projection
-- bounded sequence pagination
+- current conversation projection with latest server and change sequences
+- bounded server-sequence history pagination
+- bounded durable change-feed polling
 - send and reply
+- stable tombstone-safe reply context
 - retry replay
+- keyed request-fingerprint mismatch denial
 - receipt acknowledgement
+- content-free versioned outbox invalidation
 
 ### M1-D Message mutation API
 
-- edit
+- edit with `expectedContentVersion`
 - delete
 - reactions
 - exact 30-minute boundary
 - breakup sequence freeze
+- durable change/outbox invalidation for every committed mutation
 
 ### M1-E Shared chat interaction
 
@@ -992,10 +1015,13 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 - presence
 - typing
 - compact interaction state
+- activation-bounded presence disclosure
+- centralized write-rate and TTL controls
 
 ### M1-F Browser core
 
 - chat history
+- durable mutation polling
 - composer
 - replies
 - edit/delete
@@ -1003,18 +1029,27 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 - delivery/read state
 - typing/presence
 - nickname UI
+- stale-edit conflict handling
 - lifecycle-aware controls
 
-### M1-G Lifecycle, deletion, race, and security hardening
+### M1-G Lifecycle, synchronization, deletion, race, and security hardening
 
+- concurrent sends
+- concurrent mutation change-sequence allocation
 - send versus breakup
 - send versus account deletion
 - mutation versus breakup
+- edit versus edit
+- edit versus delete
+- reaction versus delete
 - final dissolution races
-- deterministic concurrent ordering
-- deletion proof
+- old-message mutation recovery through change cursor
+- module-owned deletion proof
 - cross-partnership denial
+- pre-partnership presence privacy
 - private-content non-duplication guards
+- keyed-fingerprint security guards
+- content-free change/outbox proof
 
 ### M1-H Closure harness and documentation
 
@@ -1045,7 +1080,7 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 - [ ] pre-breakup messages cannot be edited, deleted, or reacted to during breakup_pending
 - [ ] nickname changes remain allowed during breakup_pending
 - [ ] cross-partnership message access tests fail closed
-- [ ] API and security regression tests pass
+- [ ] API and security regression tests pass, including durable mutation synchronization, stale-edit conflict, keyed-fingerprint, presence-privacy, bounded-interaction, deletion-composition, and content-free invalidation evidence
 
 M1 remains IN_PROGRESS until every gate above is supported by executed evidence.
 
