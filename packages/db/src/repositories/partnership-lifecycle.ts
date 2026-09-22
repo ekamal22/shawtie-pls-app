@@ -13,6 +13,7 @@ export interface OpenBreakupProcess {
   readonly baseDeadline: Date;
   readonly finalDeadline: Date;
   readonly generation: bigint;
+  readonly messageFreezeSequence: bigint | null;
   readonly restoreIntentAt: Readonly<Record<string, Date>>;
 }
 
@@ -62,8 +63,9 @@ async function loadOpenBreakup(
     base_deadline: Date;
     final_deadline: Date;
     generation: string | number | bigint;
+    message_freeze_sequence: string | number | bigint | null;
   }>(
-    "SELECT id, partnership_id, initiated_by_account_id, initiated_at, initiator_cancel_until, base_deadline, final_deadline, generation FROM breakup_processes WHERE partnership_id = $1 AND restored_at IS NULL AND dissolved_at IS NULL AND cancelled_at IS NULL AND superseded_at IS NULL LIMIT 1",
+    "SELECT id, partnership_id, initiated_by_account_id, initiated_at, initiator_cancel_until, base_deadline, final_deadline, generation, message_freeze_sequence FROM breakup_processes WHERE partnership_id = $1 AND restored_at IS NULL AND dissolved_at IS NULL AND cancelled_at IS NULL AND superseded_at IS NULL LIMIT 1",
     [partnershipId],
   );
   const row = result.rows[0];
@@ -81,6 +83,8 @@ async function loadOpenBreakup(
     baseDeadline: row.base_deadline,
     finalDeadline: row.final_deadline,
     generation: BigInt(row.generation),
+    messageFreezeSequence:
+      row.message_freeze_sequence === null ? null : BigInt(row.message_freeze_sequence),
     restoreIntentAt: Object.fromEntries(
       intents.rows.map((intent) => [intent.account_id, intent.submitted_at]),
     ),
@@ -158,10 +162,11 @@ export async function insertBreakupProcess(
     readonly baseDeadline: Date;
     readonly finalDeadline: Date;
     readonly generation: bigint;
+    readonly messageFreezeSequence?: bigint | null;
   },
 ): Promise<void> {
   await executor.query(
-    "INSERT INTO breakup_processes (id, partnership_id, initiated_by_account_id, initiated_at, initiator_cancel_until, base_deadline, final_deadline, generation) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+    "INSERT INTO breakup_processes (id, partnership_id, initiated_by_account_id, initiated_at, initiator_cancel_until, base_deadline, final_deadline, generation, message_freeze_sequence) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
     [
       input.id,
       input.partnershipId,
@@ -171,6 +176,7 @@ export async function insertBreakupProcess(
       input.baseDeadline,
       input.finalDeadline,
       input.generation.toString(),
+      input.messageFreezeSequence?.toString() ?? null,
     ],
   );
 }
@@ -562,7 +568,6 @@ export async function deletePartnershipRelationalContent(
   await executor.query("DELETE FROM relationship_items WHERE partnership_id = $1", [partnershipId]);
   await executor.query("DELETE FROM media_objects WHERE partnership_id = $1", [partnershipId]);
   await executor.query("DELETE FROM call_sessions WHERE partnership_id = $1", [partnershipId]);
-  await executor.query("DELETE FROM conversations WHERE partnership_id = $1", [partnershipId]);
 }
 
 export async function deletePartnershipCryptoState(
