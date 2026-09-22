@@ -1533,6 +1533,8 @@ M3 preserves migrations 0001 through 0014 byte-for-byte.
 
 ## Physical Android acceptance gates
 
+Canonical scenario definitions and evidence requirements live in `testing/M3_ANDROID_ACCEPTANCE.md`. The M3 device harness and commands are not implemented yet.
+
 - [ ] image choose/process/send/view passes
 - [ ] video choose/send/view and limit rejection passes
 - [ ] permitted file send/download passes
