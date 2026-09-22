@@ -945,7 +945,7 @@ They are needed to enforce cooldown provenance, permit later former-partner bloc
 
 Their bounded retention policy remains a separate privacy-retention decision. They must never contain message, media, relationship-object, email, DOB, or cryptographic secret content.
 
-Later M3, M2, R1, and S1 milestones must extend the manifest builder and handlers before they close if they introduce new partnership-scoped storage systems.
+R1 and M2 preserve this P3 destruction authority. The design-complete M3 architecture explicitly extends the manifest with a dedicated `partnership_media_storage` target and order-independent relational/provider cleanup before M3 can close. S1 later extends cryptographic cleanup for real key envelopes. None of these later milestones may move authorization revocation behind asynchronous storage cleanup.
 
 ## Serious lifecycle notices
 
