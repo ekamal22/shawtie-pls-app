@@ -390,3 +390,189 @@ test("M2 websocket rejects a foreign Origin before connection authorization", as
     await closeDatabasePool(database);
   }
 });
+
+
+test("M2 product mutations append content-free durable realtime outbox records", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "m2outboxalice");
+    const bob = await register(app, database, "m2outboxbob");
+    const formed = await formPartnership(app, alice, bob, "m2outbox");
+
+    const sent = await sendMessage(
+      app,
+      alice,
+      formed.conversationId,
+      "private message used only to advance receipt authority",
+      "m2-outbox-send-0001",
+    );
+    assert.equal(sent.statusCode, 201, sent.body);
+
+    const receipt = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + formed.conversationId + "/receipt",
+      headers: jsonHeaders(bob.cookie),
+      payload: { type: "read", throughSequence: 1 },
+    });
+    assert.equal(receipt.statusCode, 200, receipt.body);
+
+    const nicknameSentinel = "Private nickname sentinel";
+    const nickname = await app.inject({
+      method: "PATCH",
+      url:
+        "/api/v1/partnerships/" +
+        formed.partnershipId +
+        "/nicknames/" +
+        bob.accountId,
+      headers: jsonHeaders(alice.cookie, "m2-outbox-nickname-0001"),
+      payload: { nickname: nicknameSentinel, expectedVersion: 1 },
+    });
+    assert.equal(nickname.statusCode, 200, nickname.body);
+
+    const relationshipSentinel = "Private relationship note sentinel";
+    const relationship = await app.inject({
+      method: "POST",
+      url: "/api/v1/relationship-space/items",
+      headers: jsonHeaders(alice.cookie, "m2-outbox-r1-0001"),
+      payload: {
+        kind: "memory",
+        contentSchemaVersion: 1,
+        preview: null,
+        content: { title: "Outbox memory", note: relationshipSentinel },
+        occurrence: {
+          precision: "day",
+          year: 2020,
+          month: 9,
+          day: 22,
+        },
+        storyIncluded: false,
+        release: null,
+        featureState: null,
+        references: [],
+        links: [],
+      },
+    });
+    assert.equal(relationship.statusCode, 201, relationship.body);
+
+    const rows = await database.pool.query<{
+      event_type: string;
+      payload: unknown;
+    }>(
+      "SELECT event_type, payload FROM outbox_events WHERE event_type LIKE 'm2.%' ORDER BY created_at, id",
+    );
+
+    const receiptEvent = rows.rows.find(
+      (row) => row.event_type === "m2.conversation.receipt_changed",
+    );
+    const nicknameEvent = rows.rows.find(
+      (row) => row.event_type === "m2.conversation.nickname_changed",
+    );
+    const relationshipEvent = rows.rows.find(
+      (row) => row.event_type === "m2.relationship.changed",
+    );
+
+    assert.ok(receiptEvent);
+    assert.ok(nicknameEvent);
+    assert.ok(relationshipEvent);
+
+    assert.deepEqual(receiptEvent.payload, {
+      conversationId: formed.conversationId,
+      deliveredThrough: 1,
+      readThrough: 1,
+    });
+
+    const nicknamePayload = nicknameEvent.payload as Record<string, unknown>;
+    assert.equal(nicknamePayload.partnershipId, formed.partnershipId);
+    assert.equal(nicknamePayload.subjectAccountId, bob.accountId);
+    assert.equal(typeof nicknamePayload.version, "number");
+
+    const relationshipPayload = relationshipEvent.payload as Record<string, unknown>;
+    assert.equal(relationshipPayload.partnershipId, formed.partnershipId);
+    assert.equal(
+      relationshipPayload.itemId,
+      (relationship.json() as { itemId: string }).itemId,
+    );
+    assert.equal(relationshipPayload.itemVersion, 1);
+
+    const serialized = JSON.stringify(rows.rows);
+    assert.equal(serialized.includes(nicknameSentinel), false);
+    assert.equal(serialized.includes(relationshipSentinel), false);
+    assert.equal(serialized.includes("private message used only"), false);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M2 partnership changed hint immediately revalidates and closes stale socket scope", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "m2scopealice");
+    const bob = await register(app, database, "m2scopebob");
+    const formed = await formPartnership(app, alice, bob, "m2scope");
+
+    const socket = await app.injectWS("/api/v1/realtime", {
+      headers: {
+        origin: config.appOrigin,
+        cookie: alice.cookie,
+        "sec-websocket-protocol": "shawtie.realtime.v1",
+      },
+    });
+
+    try {
+      await waitForFrame(socket, "control.ready");
+
+      const generation = await withTransaction(database.pool, async (transaction) => {
+        await lockAccounts(transaction, [alice.accountId, bob.accountId]);
+        const now = await getTransactionTimestamp(transaction);
+        return terminatePartnershipLifecycle(transaction, {
+          partnershipId: formed.partnershipId,
+          reason: "breakup",
+          effectiveAt: now,
+        });
+      });
+      assert.ok(generation);
+
+      const metadata = await database.pool.query<{
+        metadata_version: string | number | bigint;
+      }>(
+        "SELECT metadata_version FROM partnerships WHERE id = $1",
+        [formed.partnershipId],
+      );
+      const metadataVersion = Number(metadata.rows[0]?.metadata_version);
+      assert.equal(Number.isSafeInteger(metadataVersion), true);
+      assert.equal(metadataVersion > 0, true);
+
+      const resyncPromise = waitForFrame(socket, "control.resync_required");
+      await database.pool.query("SELECT pg_notify($1, $2)", [
+        M2_REALTIME_NOTIFY_CHANNEL,
+        JSON.stringify({
+          v: 1,
+          kind: "partnership.changed",
+          scope: { partnershipId: formed.partnershipId },
+          data: {
+            eventId: "70000000-0000-4000-8000-000000000099",
+            partnershipId: formed.partnershipId,
+            generation: Number(generation),
+            metadataVersion,
+          },
+        }),
+      ]);
+
+      const resync = await resyncPromise;
+      assert.deepEqual(resync.payload, {
+        scope: "partnership",
+        reason: "scope_changed",
+      });
+    } finally {
+      socket.terminate();
+    }
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
