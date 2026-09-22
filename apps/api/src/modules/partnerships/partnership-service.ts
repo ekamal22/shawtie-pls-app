@@ -51,6 +51,7 @@ import {
   type RelationshipStartDateUpdateInput,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
+import { queueRealtimePartnershipChanged } from "../realtime/outbox.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import { formExplicitAcceptedRequest } from "./partnership-formation-coordinator.ts";
 
@@ -539,6 +540,11 @@ export class PartnershipService {
           status: "breakup_pending",
         },
       });
+      await queueRealtimePartnershipChanged(transaction, {
+        partnershipId,
+        generation,
+        metadataVersion: lifecycle.metadataVersion,
+      });
       for (const accountId of lifecycle.memberIds) {
         await this.#queueLifecycleNotice(transaction, {
           recipientAccountId: accountId,
@@ -624,6 +630,11 @@ export class PartnershipService {
         eventType: "breakup_cancelled",
         aggregateVersion: generation,
         metadata: { generation: safeVersion(generation), status: "active" },
+      });
+      await queueRealtimePartnershipChanged(transaction, {
+        partnershipId,
+        generation,
+        metadataVersion: lifecycle.metadataVersion,
       });
       for (const accountId of lifecycle.memberIds) {
         await this.#queueLifecycleNotice(transaction, {
@@ -730,6 +741,11 @@ export class PartnershipService {
           aggregateVersion: generation,
           metadata: { generation: safeVersion(generation), status: "active" },
         });
+        await queueRealtimePartnershipChanged(transaction, {
+          partnershipId,
+          generation,
+          metadataVersion: lifecycle.metadataVersion,
+        });
         for (const accountId of lifecycle.memberIds) {
           await this.#queueLifecycleNotice(transaction, {
             recipientAccountId: accountId,
@@ -801,6 +817,11 @@ export class PartnershipService {
           deadline: finalDeadline.toISOString(),
           status: "breakup_pending",
         },
+      });
+      await queueRealtimePartnershipChanged(transaction, {
+        partnershipId,
+        generation,
+        metadataVersion: lifecycle.metadataVersion,
       });
       await this.#queueLifecycleNotice(transaction, {
         recipientAccountId: otherAccountId,
@@ -1091,6 +1112,11 @@ export class PartnershipService {
           ":" +
           otherMemberId,
         createdAt: now,
+      });
+      await queueRealtimePartnershipChanged(transaction, {
+        partnershipId,
+        generation: partnership.generation,
+        metadataVersion: nextVersion,
       });
 
       return {

@@ -150,13 +150,21 @@ export class RealtimeHub {
           payload: notification.data,
         });
         return;
-      case "partnership.changed":
-        this.#sendTo(this.#byPartnership.get(notification.scope.partnershipId), {
+      case "partnership.changed": {
+        const ids = this.#byPartnership.get(notification.scope.partnershipId);
+        this.#sendTo(ids, {
           v: M2_REALTIME_PROTOCOL_VERSION,
           type: "partnership.changed",
           payload: notification.data,
         });
+        if (ids) {
+          for (const id of ids) {
+            const connection = this.#connections.get(id);
+            if (connection) void this.#revalidate(connection);
+          }
+        }
         return;
+      }
       case "relationship.changed":
         this.#sendTo(this.#byPartnership.get(notification.scope.partnershipId), {
           v: M2_REALTIME_PROTOCOL_VERSION,

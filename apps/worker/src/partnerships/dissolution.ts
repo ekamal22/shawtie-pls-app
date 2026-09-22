@@ -4,6 +4,7 @@ import {
   cancelPendingRelationshipReleaseActionsForPartnership,
   cancelPendingScheduledActionsForAggregate,
   createPartnershipDeletionManifestIfAbsent,
+  insertOutboxEvent,
   insertPartnerCooldown,
   markBreakupDissolved,
   markOpenBreakupSuperseded,
@@ -137,6 +138,20 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
       deadline: input.effectiveAt.toISOString(),
       status: "terminated",
     },
+  });
+  const realtimeEventId = randomUUID();
+  await insertOutboxEvent(transaction, {
+    id: realtimeEventId,
+    eventType: "m2.partnership.changed",
+    aggregateType: "partnership",
+    aggregateId: lifecycle.partnershipId,
+    deduplicationKey: "m2-partnership:" + realtimeEventId,
+    payload: {
+      partnershipId: lifecycle.partnershipId,
+      generation: Number(generation),
+      metadataVersion: Number(lifecycle.metadataVersion),
+    },
+    payloadVersion: 1,
   });
 
   if (input.reason === "breakup") {

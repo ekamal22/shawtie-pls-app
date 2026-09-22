@@ -83,6 +83,10 @@ import type {
   UsernameChangeInput,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
+import {
+  queueRealtimeAccountSecurityChanged,
+  queueRealtimePartnershipChanged,
+} from "../realtime/outbox.ts";
 import { randomNonce, randomOpaqueToken } from "../../security/auth-key-ring.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import { normalizeEmail, normalizeLoginIdentifier } from "../../security/normalization.ts";
@@ -1085,6 +1089,11 @@ export class AccountService {
           aggregateVersion: currentPartnership.generation,
           metadata: { generation: Number(generation), status: "deletion_pending" },
         });
+        await queueRealtimePartnershipChanged(transaction, {
+          partnershipId: currentPartnership.partnershipId,
+          generation: lifecycle.generation,
+          metadataVersion: lifecycle.metadataVersion,
+        });
 
         await insertAccountNotification(transaction, {
           id: randomUUID(),
@@ -1137,6 +1146,10 @@ export class AccountService {
         metadata: { generation: Number(generation) },
         at: now,
       });
+      await queueRealtimeAccountSecurityChanged(
+        transaction,
+        auth.session.accountId,
+      );
       const profile = await getAccountProfile(transaction, auth.session.accountId);
       if (profile) {
         await this.#queueSecurityEmail(
@@ -1261,6 +1274,7 @@ export class AccountService {
         eventType: "account_recovered",
         at: now,
       });
+      await queueRealtimeAccountSecurityChanged(transaction, account.accountId);
 
       const currentPartnership = await getCurrentPartnershipForAccount(
         transaction,
@@ -1280,6 +1294,17 @@ export class AccountService {
           aggregateVersion: currentPartnership.generation,
           metadata: { status: currentPartnership.lifecycleState },
         });
+        const recoveredLifecycle = await lockPartnershipLifecycle(
+          transaction,
+          currentPartnership.partnershipId,
+        );
+        if (recoveredLifecycle) {
+          await queueRealtimePartnershipChanged(transaction, {
+            partnershipId: currentPartnership.partnershipId,
+            generation: recoveredLifecycle.generation,
+            metadataVersion: recoveredLifecycle.metadataVersion,
+          });
+        }
         await insertAccountNotification(transaction, {
           id: randomUUID(),
           recipientAccountId: currentPartnership.otherAccountId,
@@ -1330,6 +1355,10 @@ export class AccountService {
         eventType: "device_revoked",
         at: now,
       });
+      await queueRealtimeAccountSecurityChanged(
+        transaction,
+        auth.session.accountId,
+      );
       return { currentDeviceRevoked: auth.session.deviceId === deviceId };
     });
     if (!result) throw new ApiError(404, "DEVICE_NOT_FOUND");

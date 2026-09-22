@@ -67,6 +67,7 @@ import {
   type ThisDayQuery,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
+import { queueRealtimeRelationshipChanged } from "../realtime/outbox.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 
@@ -1207,6 +1208,11 @@ export class RelationshipSpaceService {
         itemVersion: 1n,
         createdAt: now,
       });
+      await queueRealtimeRelationshipChanged(transaction, {
+        partnershipId: lifecycle.partnershipId,
+        itemId,
+        itemVersion: 1n,
+      });
 
       const response = {
         itemId,
@@ -1482,6 +1488,11 @@ export class RelationshipSpaceService {
         itemVersion: nextVersion,
         createdAt: now,
       });
+      await queueRealtimeRelationshipChanged(transaction, {
+        partnershipId: item.partnershipId,
+        itemId: item.id,
+        itemVersion: nextVersion,
+      });
 
       const response = {
         itemId: item.id,
@@ -1613,6 +1624,11 @@ export class RelationshipSpaceService {
         item.version,
       );
       if (!deleted) throw new ApiError(409, "VERSION_CONFLICT");
+      await queueRealtimeRelationshipChanged(transaction, {
+        partnershipId: item.partnershipId,
+        itemId: item.id,
+        itemVersion: null,
+      });
 
       await this.#completeMutation(
         transaction,
@@ -1734,6 +1750,11 @@ export class RelationshipSpaceService {
         actorAccountId: auth.session.accountId,
         itemVersion: nextVersion,
         createdAt: now,
+      });
+      await queueRealtimeRelationshipChanged(transaction, {
+        partnershipId: item.partnershipId,
+        itemId: item.id,
+        itemVersion: nextVersion,
       });
 
       const response = {

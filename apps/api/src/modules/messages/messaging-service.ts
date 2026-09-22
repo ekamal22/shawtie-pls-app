@@ -64,6 +64,10 @@ import {
   type TypingStateInput,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
+import {
+  queueRealtimeNicknameChanged,
+  queueRealtimeReceiptChanged,
+} from "../realtime/outbox.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 
@@ -989,6 +993,11 @@ export class MessagingService {
           throughSequence: requested,
           at: now,
         });
+        await queueRealtimeReceiptChanged(transaction, {
+          conversationId,
+          deliveredThrough: receipt.deliveredThrough,
+          readThrough: receipt.readThrough,
+        });
         return {
           deliveredThrough: safeNumber(receipt.deliveredThrough),
           readThrough: safeNumber(receipt.readThrough),
@@ -1133,6 +1142,11 @@ export class MessagingService {
         version: safeNumber(version),
         updatedAt: now.toISOString(),
       };
+      await queueRealtimeNicknameChanged(transaction, {
+        partnershipId,
+        subjectAccountId,
+        version,
+      });
       await this.#completePrivateMutation(transaction, reservation, stored, now);
       return {
         ...stored,

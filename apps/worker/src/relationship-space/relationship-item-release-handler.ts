@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   appendRelationshipEvent,
   getRelationshipReleaseGeneration,
+  insertOutboxEvent,
   loadRelationshipReleaseItem,
   lockPartnershipLifecycle,
   lockRelationshipItemsByIds,
@@ -82,6 +83,20 @@ export const relationshipItemReleaseHandler: ScheduledActionHandler = {
       actorAccountId: null,
       itemVersion: nextVersion,
       createdAt: now,
+    });
+    const realtimeEventId = randomUUID();
+    await insertOutboxEvent(transaction, {
+      id: realtimeEventId,
+      eventType: "m2.relationship.changed",
+      aggregateType: "partnership",
+      aggregateId: item.partnershipId,
+      deduplicationKey: "m2-relationship:" + realtimeEventId,
+      payload: {
+        partnershipId: item.partnershipId,
+        itemId: item.id,
+        itemVersion: Number(nextVersion),
+      },
+      payloadVersion: 1,
     });
   },
 };
