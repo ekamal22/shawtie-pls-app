@@ -12,6 +12,7 @@ import {
   insertAccountProfile,
   insertConversationChange,
   insertMessage,
+  insertOutboxEvent,
   insertPartnership,
   insertPartnershipMembers,
   insertPrimaryConversation,
@@ -19,6 +20,8 @@ import {
   type DatabasePool,
 } from "@shawtie/db";
 import { createDefaultDeletionHandlers } from "../src/auth/default-account-handlers.ts";
+import { createDefaultOutboxHandlers } from "../src/outbox/default-outbox-handlers.ts";
+import { runOutboxBatch } from "../src/outbox/outbox-consumer.ts";
 import { runDeletionBatch } from "../src/deletion/deletion-consumer.ts";
 import { defaultRetryPolicy } from "../src/runtime/retry-policy.ts";
 
@@ -236,6 +239,113 @@ test("M1 permanent account cleanup removes the account-scoped presence snapshot"
       [fixture.aliceId],
     );
     assert.equal(presence.rowCount, 0);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("M1 content-free messaging invalidations are consumed as delivered before M2", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const fixture = await createMessagingFixture(database);
+    const eventId = randomUUID();
+
+    await insertOutboxEvent(database.pool, {
+      id: eventId,
+      eventType: "message.created",
+      aggregateType: "conversation",
+      aggregateId: fixture.conversationId,
+      deduplicationKey: "m1-worker-valid-invalidation",
+      payload: {
+        conversationId: fixture.conversationId,
+        messageId: fixture.messageId,
+        serverSequence: 1,
+        changeSequence: 1,
+        contentVersion: 1,
+      },
+      payloadVersion: 1,
+    });
+
+    const processed = await runOutboxBatch(
+      database,
+      "m1-outbox-worker",
+      createDefaultOutboxHandlers(),
+      new AbortController().signal,
+      {
+        batchSize: 10,
+        concurrency: 1,
+        leaseMs: 60_000,
+        retryPolicy: defaultRetryPolicy,
+      },
+    );
+    assert.equal(processed, 1);
+
+    const row = await database.pool.query<{
+      status: string;
+      last_error_code: string | null;
+    }>(
+      "SELECT status, last_error_code FROM outbox_events WHERE id = $1",
+      [eventId],
+    );
+    assert.deepEqual(row.rows[0], {
+      status: "delivered",
+      last_error_code: null,
+    });
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 invalidation sink fails closed if private content appears in the outbox payload", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const fixture = await createMessagingFixture(database);
+    const eventId = randomUUID();
+
+    await insertOutboxEvent(database.pool, {
+      id: eventId,
+      eventType: "message.updated",
+      aggregateType: "conversation",
+      aggregateId: fixture.conversationId,
+      deduplicationKey: "m1-worker-invalid-invalidation",
+      payload: {
+        conversationId: fixture.conversationId,
+        messageId: fixture.messageId,
+        changeSequence: 2,
+        contentVersion: 2,
+        body: "must never leave canonical message storage",
+      },
+      payloadVersion: 1,
+    });
+
+    const processed = await runOutboxBatch(
+      database,
+      "m1-outbox-worker",
+      createDefaultOutboxHandlers(),
+      new AbortController().signal,
+      {
+        batchSize: 10,
+        concurrency: 1,
+        leaseMs: 60_000,
+        retryPolicy: defaultRetryPolicy,
+      },
+    );
+    assert.equal(processed, 1);
+
+    const row = await database.pool.query<{
+      status: string;
+      last_error_code: string | null;
+    }>(
+      "SELECT status, last_error_code FROM outbox_events WHERE id = $1",
+      [eventId],
+    );
+    assert.deepEqual(row.rows[0], {
+      status: "failed",
+      last_error_code: "INVALID_M1_OUTBOX_PAYLOAD",
+    });
   } finally {
     await closeDatabasePool(database);
   }
