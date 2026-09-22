@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-22.
+Refreshed: 2026-09-23.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-`main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3` contains the completed M1/R1 integration. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the next milestone.
+`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the active milestone; implementation is complete and acceptance closure is pending.
 
 Completed milestones:
 
@@ -73,7 +73,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The next verified-mainline work is:
 
 ```text
-main @ d7d95a6
+main @ 9f4237e
 M1 + R1 merged
         |
         v
@@ -86,8 +86,10 @@ Next:
 
 1. preserve the M1 runtime closure anchor `aa40a2c` and R1 source history `9bc9ba4`
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
-3. begin M2 from the updated verified `main`
-4. keep V1 hosted verification separate until Actions capacity returns
+3. execute `npm run test:m2:closure` from a clean checkout at the current M2 implementation head
+4. execute and record the mandatory physical Android scenarios
+5. fix only evidence-backed regressions, then reconcile final M2 evidence/docs and merge when every closure gate is green
+6. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
@@ -216,7 +218,7 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: IN_PROGRESS. Refined architecture and protocol design are complete and second-pass hardened. Source implementation and automated closure harnesses are complete through `4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`; `test:m2:local` now includes PostgreSQL/API/worker validation plus real Chromium acceptance. Executed validation, full health/audit, and physical Android scenario closure are pending.
+Status: IN_PROGRESS, IMPLEMENTATION COMPLETE. Refined architecture and protocol design, runtime implementation, reliability hardening, browser acceptance automation, local closure orchestration, and Android preflight tooling are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`. The latest source closes revoked-session purge ordering, account-routed partnership scope refresh, and offline sync-start gaps, and expands real Chromium acceptance for reconnect/replay idempotency, account isolation, partnership purge, and protected cold-start behavior. `npm run test:m2:closure` now composes branch-policy checks, `test:m2:local`, full health, audit, diff hygiene, and final worktree cleanliness. Executed local closure and physical Android scenario evidence are pending, so the milestone is not yet DONE or merge-ready.
 
 Architecture:
 

@@ -1118,7 +1118,7 @@ Realtime protocol:
 
 Design state:
 
-Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. A second-pass hardening review closes reconnect-race, LISTEN-reset, cold-start plaintext, multi-tab claim, storage-quota, and socket-scope gaps. Source implementation for M2-A through M2-H plus the M2-I automated closure harness is complete through `4a2c98a7fee0c8f7ba5fbd015bc68876a3554f17`. The M2-I harness now includes pinned Playwright 1.63.0 real-Chromium acceptance and a non-destructive Android preparation/evidence command. Final local execution, full health/audit, and mandatory physical Android scenario evidence remain pending.
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Source implementation for M2-A through M2-I is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`. The latest hardening closes three production correctness gaps found during source audit: revoked-session local purge ordering, immediate account-routed partnership scope refresh for sockets that were connected before pairing, and prevention of reconciliation/replay start while the browser is offline. Browser acceptance now covers real runtime reconnect/replay with stable idempotency after a simulated lost response, account-local IndexedDB isolation, final-partnership purge, stronger protected cold-start locking, cross-tab claim fencing, and private-API Cache API exclusion. The automated `test:m2:closure` command adds exact-branch/SHA policy, `[skip ci]` and Unicode-em-dash checks, the Docker/PostgreSQL/API/worker/Chromium local matrix, full repository health, high-severity audit, diff hygiene, and final worktree cleanliness. Final local execution and mandatory physical Android scenario evidence remain pending.
 
 ## Scope
 
@@ -1156,12 +1156,13 @@ Implemented source currently includes:
 - typed chat and R1 offline queues with stable idempotency, lifecycle preflight, claim-generation fencing, delayed retry wakeups, blocked-operation recovery UI, and exact release-sensitive R1 exclusions
 - pre-S1 offline cold-start locking, explicit logout/account-switch local-database purge ordering, and cross-tab logout coordination
 - service-worker shell/static caching with private API exclusion and controlled activation
-- M2 contract/security/worker/browser/PostgreSQL integration tests
-- pinned Playwright 1.63.0 real-Chromium acceptance for IndexedDB persistence, cross-tab fencing, cold-start lock, and private-API Cache API exclusion
+- M2 contract/security/worker/browser/PostgreSQL integration tests, including account-routed partnership refresh and offline sync suppression regressions
+- pinned Playwright 1.63.0 real-Chromium acceptance for IndexedDB persistence, real runtime reconnect/replay with stable idempotency, cross-tab fencing, account isolation, partnership purge, protected cold-start lock, and private-API Cache API exclusion
 - disposable `test:m2:local` harness composing PostgreSQL/API/worker and real Chromium layers
+- strict `test:m2:closure` wrapper enforcing branch/SHA policy, `[skip ci]`, Unicode-em-dash exclusion, local acceptance, full health, audit, diff hygiene, and final worktree cleanliness
 - Android preflight/evidence harness plus `docs/testing/M2_ANDROID_ACCEPTANCE.md`
 
-None of the acceptance gates below are considered passed until executed evidence is recorded. Physical Android acceptance remains mandatory.
+Implementation is complete, but none of the acceptance gates below are considered passed until executed evidence is recorded from the current branch head. Physical Android acceptance remains mandatory, and M2 is not merge-ready until those gates close.
 
 ## Implementation sequence
 

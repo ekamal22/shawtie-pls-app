@@ -51,7 +51,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
           M1 Messaging ✅    R1 Relationship Space ✅
                 |
                 v
-          M2 Realtime + Offline ⚪
+          M2 Realtime + Offline 🟡
                 |
             +---+---+
             |       |
@@ -97,7 +97,7 @@ flowchart TD
     P3 --> M1["M1 Messaging Core ✅"]
     P3 --> R1["R1 Relationship Space ✅"]
 
-    M1 --> M2["M2 Realtime + Offline ⚪"]
+    M1 --> M2["M2 Realtime + Offline 🟡"]
 
     M2 --> M3["M3 Media + Voice Messages ⚪"]
     M2 --> C1["C1 Voice + Video Calling ⚪"]
@@ -188,8 +188,8 @@ main @ 9f4237e
   +--> feat/m2-realtime-offline
 
 M1 and R1 are merged and verified.
-M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented through source anchor `4a2c98a`.
-M2 executed local validation and mandatory physical-device scenario closure are the active work.
+M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented through source anchor `6e3c019`.
+M2 feature implementation is complete. Executed automated closure and mandatory physical-device scenario closure are the active work; further source changes should be evidence-driven.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 M2 is expected to require no PostgreSQL migration and does not reserve 0015.
