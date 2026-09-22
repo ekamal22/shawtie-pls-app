@@ -104,7 +104,7 @@ The refinement is deliberately split:
 - feature semantics that the server must query or enforce are normalized into supporting tables
 - protected prose, private notes, coordinates, captions, and similar content remain in a protected main payload owned by the item; release-gated items may also have a separate protected preview payload that is safe to expose before release
 - relationships between R1 objects are represented explicitly
-- references to separately integrated M1 resources or future M3 resources remain loose and do not require R1 schema ownership of those milestones
+- references to separately integrated M1 and M3 resources remain loose and do not require R1 schema ownership of those milestones
 
 ## Authoritative versus derived model
 
@@ -411,7 +411,7 @@ Allowed roles:
 
 The table intentionally has no foreign key to M1 messages or M3 transport tables.
 
-A reference type is accepted only when a runtime resolver for that external resource type is registered. The combined application now registers the verified M1 message resolver: a real same-partnership message reference is accepted, while invalid or foreign message IDs fail closed. Remember This still stores an independent client-supplied R1 snapshot and never copies M1 plaintext. Before M3, media and voice-letter references remain contract/schema capability only and are rejected by runtime rather than accepting an unverifiable UUID.
+A reference type is accepted only when a runtime resolver for that external resource type is registered. The combined application now registers the verified M1 message resolver: a real same-partnership message reference is accepted, while invalid or foreign message IDs fail closed. Remember This still stores an independent client-supplied R1 snapshot and never copies M1 plaintext. The current runtime still has no M3 resolver, so media and Voice Letter references remain fail-closed. The design-complete M3 integration will register that seam only for ready same-partnership media and will keep media reads dependent on current parent visibility.
 
 When a resolver is available, authorization requires the referenced resource to belong to the same partnership at create/update time. A loose reference is provenance or attachment metadata, never an authorization grant.
 
@@ -432,7 +432,7 @@ attached to an intentional relationship item such as For You, Future Us, Surpris
 
 This keeps binary ownership and transport in M3, keeps release visibility owned by the containing relationship item, and prevents a voice recording attached to an unreleased letter from becoming visible through an independent top-level R1 item.
 
-R1 may close its Voice Letter data-model contract before M3, but end-to-end recording, upload, retrieval, and deletion evidence belongs to M3.
+R1 closed its Voice Letter data-model contract before M3 runtime existed. The design-complete M3 architecture now owns the remaining end-to-end recording, upload, retrieval, authorization, offline, provider-deletion, and Android evidence.
 
 ### Remember This source rule
 
@@ -1210,7 +1210,7 @@ Owns:
 - object-store authorization
 - attachment binary lifecycle
 
-R1 owns only media/reference association semantics. Runtime acceptance of a media or voice-letter reference requires an M3 resolver; R1 does not accept unverifiable external IDs before that integration exists.
+R1 owns only media/reference association semantics. Runtime acceptance of a media or Voice Letter reference still requires the not-yet-implemented M3 resolver. The M3 design requires the actor to be the uploader or already have a current visible parent path, requires ready same-partnership media, and keeps R1 release visibility authoritative.
 
 ### S1
 
@@ -1376,7 +1376,7 @@ R1 closure is complete because executed evidence proves all of the following:
 31. coordinates never enter logs, analytics, events, queue payloads, or unreviewed providers
 32. Remember This does not depend on original message existence and does not server-copy M1 content
 33. the registered M1 resolver accepts real same-partnership messages and invalid or foreign message references fail closed
-34. media and voice-letter references are rejected until a verified M3 resolver exists
+34. current pre-M3 runtime rejects media and Voice Letter references until the verified M3 resolver is implemented
 35. Voice Letters inherit the containing item's visibility and cannot surface as standalone R1 content
 36. explicit signals remain user-triggered and no emotion inference exists
 37. This Day in Us, Our Story, Our Year, and Anniversary use deterministic precision-aware ordering without engagement scoring
@@ -1400,7 +1400,7 @@ R1 owns 0013 and 0014 and does not fabricate 0011 or 0012. Verified M1 migration
 
 ### Media and voice transport
 
-Voice Letters and photo/media associations can be modeled in R1 before M3, but real binary transport and object-storage proof are not R1 completion evidence.
+R1 intentionally closed with media/Voice Letter association semantics but without binary transport. M3 is now design-complete and owns the real binary transport, ciphertext-only object-storage proof, reference-aware access, offline replay, and physical-device evidence; those remain outside R1 completion evidence.
 
 ### Account-deletion scheduled release interpretation
 
