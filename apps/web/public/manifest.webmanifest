@@ -1,0 +1,10 @@
+{
+  "name": "Shawtie pls",
+  "short_name": "Shawtie pls",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "A private shared space for two partners."
+}

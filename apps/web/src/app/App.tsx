@@ -5,7 +5,10 @@ import {
   purgeRememberedAccountLocalData,
   rememberLocalAccount,
 } from "../lib/offline/local-db.ts";
-import { M2RuntimeProvider } from "../lib/realtime/runtime-context.tsx";
+import {
+  M2RuntimeProvider,
+  M2UpdateBanner,
+} from "../lib/realtime/runtime-context.tsx";
 import { MessagingPanel } from "../features/messaging/MessagingPanel.tsx";
 import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
@@ -524,6 +527,7 @@ function AccountScreen({
       {error ? <p className="banner error">{error}</p> : null}
       {notice ? <p className="banner success">{notice}</p> : null}
 
+      <M2UpdateBanner />
       <PartnershipPanel />
       <MessagingPanel />
       <RelationshipSpacePanel accountId={session.accountId} />
@@ -757,7 +761,11 @@ export function App() {
       void refreshSession().catch(() => setSession("offline-locked"));
     };
     window.addEventListener("online", retryOnline);
-    return () => window.removeEventListener("online", retryOnline);
+    window.addEventListener("shawtie:security-changed", retryOnline);
+    return () => {
+      window.removeEventListener("online", retryOnline);
+      window.removeEventListener("shawtie:security-changed", retryOnline);
+    };
   }, []);
 
   if (session === undefined) {

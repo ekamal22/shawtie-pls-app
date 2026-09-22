@@ -16,6 +16,12 @@ import {
 import { M2ReplayEngine } from "../offline/replay-engine.ts";
 import { RealtimeClient, type RealtimeScope } from "./realtime-client.ts";
 import {
+  activateWaitingM2ServiceWorker,
+  hasWaitingM2ServiceWorker,
+  registerM2ServiceWorker,
+  subscribeM2UpdateWaiting,
+} from "../pwa/service-worker-registration.ts";
+import {
   SyncCoordinator,
   type Synchronizer,
   type SynchronizerPhase,
@@ -61,6 +67,7 @@ export class M2Runtime {
     await Promise.all([
       this.#databasePromise,
       requestPersistentLocalStorage(),
+      registerM2ServiceWorker(),
     ]);
     this.realtime.start();
   }
@@ -245,4 +252,40 @@ export function useM2SyncStatus(): SyncStatus {
     [runtime],
   );
   return status;
+}
+
+
+export function M2UpdateBanner() {
+  const runtime = useM2Runtime();
+  const status = useM2SyncStatus();
+  const [waiting, setWaiting] = useState(hasWaitingM2ServiceWorker());
+
+  useEffect(
+    () =>
+      subscribeM2UpdateWaiting(() => {
+        setWaiting(true);
+      }),
+    [],
+  );
+
+  if (!waiting && status !== "update-required") return null;
+
+  return (
+    <section className="panel">
+      <h2>App update available</h2>
+      <p className="hint">
+        Offline replay is paused while the app switches to a compatible version.
+      </p>
+      <button
+        className="primary"
+        onClick={() => {
+          if (!activateWaitingM2ServiceWorker(runtime.coordinator)) {
+            window.location.reload();
+          }
+        }}
+      >
+        Update and reload
+      </button>
+    </section>
+  );
 }
