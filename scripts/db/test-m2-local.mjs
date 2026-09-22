@@ -177,6 +177,31 @@ try {
   }
 
   console.log("M2_LOCAL_POSTGRES_PASS");
+
+  console.log("M2_LOCAL_BROWSER_START");
+  const browserResult = run(
+    process.execPath,
+    [npmCli, "run", "test:m2:browser:e2e"],
+    {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        NODE_ENV: "test",
+      },
+    },
+  );
+
+  if (browserResult.error) throw browserResult.error;
+  if (browserResult.status !== 0) {
+    throw new Error(
+      "M2 browser suite exited with status "
+        + browserResult.status
+        + ". If Chromium is not installed, run npm run test:m2:install-browser once and retry.",
+    );
+  }
+
+  console.log("M2_LOCAL_BROWSER_PASS");
+  console.log("M2_LOCAL_PASS");
 } finally {
   if (started) {
     const cleanup = run(docker, ["stop", "--time", "2", containerName], {
