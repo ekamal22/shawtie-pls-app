@@ -25,6 +25,7 @@ export interface LockedMessage {
   readonly requestFingerprintVersion: number | null;
   readonly serverSequence: bigint;
   readonly contentVersion: bigint;
+  readonly createdChangeSequence: bigint;
   readonly lastChangeSequence: bigint;
   readonly bodyText: string | null;
   readonly createdAt: Date;
@@ -44,6 +45,7 @@ interface LockedMessageRow {
   request_fingerprint_version: number | null;
   server_sequence: string | number | bigint;
   content_version: string | number | bigint;
+  created_change_sequence: string | number | bigint;
   last_change_sequence: string | number | bigint;
   body_text: string | null;
   created_at: Date;
@@ -64,6 +66,7 @@ function mapLockedMessage(row: LockedMessageRow): LockedMessage {
     requestFingerprintVersion: row.request_fingerprint_version,
     serverSequence: BigInt(row.server_sequence),
     contentVersion: BigInt(row.content_version),
+    createdChangeSequence: BigInt(row.created_change_sequence),
     lastChangeSequence: BigInt(row.last_change_sequence),
     bodyText: row.body_text,
     createdAt: row.created_at,
@@ -261,7 +264,7 @@ export async function findMessageByIdempotencyKey(
     `SELECT id, conversation_id, partnership_id, sender_account_id, sender_device_id,
             reply_to_message_id, client_idempotency_key, request_fingerprint,
             request_fingerprint_version, server_sequence, content_version,
-            last_change_sequence, body_text, created_at, edited_at, deleted_at
+            created_change_sequence, last_change_sequence, body_text, created_at, edited_at, deleted_at
      FROM messages
      WHERE conversation_id = $1
        AND sender_account_id = $2
@@ -282,7 +285,7 @@ export async function lockMessageForMutation(
     `SELECT id, conversation_id, partnership_id, sender_account_id, sender_device_id,
             reply_to_message_id, client_idempotency_key, request_fingerprint,
             request_fingerprint_version, server_sequence, content_version,
-            last_change_sequence, body_text, created_at, edited_at, deleted_at
+            created_change_sequence, last_change_sequence, body_text, created_at, edited_at, deleted_at
      FROM messages
      WHERE id = $2 AND conversation_id = $1
      FOR UPDATE`,
@@ -327,8 +330,8 @@ export async function insertMessage(
        id, conversation_id, partnership_id, sender_account_id, sender_device_id,
        reply_to_message_id, client_idempotency_key, server_sequence,
        body_text, content_version, request_fingerprint, request_fingerprint_version,
-       last_change_sequence, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$10,$11,$12,$13)`,
+       created_change_sequence, last_change_sequence, created_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$10,$11,$12,$12,$13)`,
     [
       input.id,
       input.conversationId,
