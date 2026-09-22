@@ -1056,10 +1056,7 @@ test("R1 rejects invalid M1 and unavailable M3 loose references", async () => {
       },
     });
     assert.equal(remember.statusCode, 422);
-    assert.equal(
-      (remember.json() as { error: { code: string } }).error.code,
-      "INVALID_REFERENCE",
-    );
+    assert.equal((remember.json() as { error: { code: string } }).error.code, "INVALID_REFERENCE");
 
     const voice = await app.inject({
       method: "POST",
@@ -1623,12 +1620,7 @@ test("R1 Remember This references a real same-partnership M1 message without cop
     await reset(database);
     const alice = await register(app, database, "message_ref_alice");
     const bob = await register(app, database, "message_ref_bob");
-    const partnershipId = await formPartnership(
-      app,
-      alice,
-      bob,
-      "r1-message-ref-form-0001",
-    );
+    const partnershipId = await formPartnership(app, alice, bob, "r1-message-ref-form-0001");
 
     const current = await app.inject({
       method: "GET",

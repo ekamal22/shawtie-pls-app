@@ -104,7 +104,11 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
           new Date(),
         );
         if (!conversation || conversation.partnershipId !== input.partnershipId) return false;
-        return messageExistsInConversation(executor, conversation.conversationId, input.referenceId);
+        return messageExistsInConversation(
+          executor,
+          conversation.conversationId,
+          input.referenceId,
+        );
       },
     },
   });
