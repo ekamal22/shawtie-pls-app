@@ -73,6 +73,8 @@ The following security principles are part of the baseline:
 - push and email providers receive minimal data
 - browser hardening is part of the E2EE security boundary
 
+- M3 pre-S1 media may use the development-only encrypted-media bridge in ADR-012: ciphertext-only object storage with server-recoverable wrapped media keys; this mode is explicitly not E2EE and is forbidden at stable release
+
 ## Frozen product-to-architecture boundaries
 
 The architecture must preserve product rules defined in the PRD.
@@ -90,6 +92,25 @@ An architecture change cannot silently redefine:
 - E2EE stable-release requirement
 
 Changing one of those rules requires a product decision and PRD change before architecture can adapt.
+
+## M3 pre-S1 development exception
+
+ADR-012 is an accepted temporary development exception needed because M3 precedes S1 while the baseline already requires encrypted media in object storage.
+
+The exception permits:
+
+- client-side encryption of M3 media before upload
+- a server-recoverable wrapped media key only for pre-S1 development and acceptance
+- private object storage containing ciphertext only
+
+The exception does not permit:
+
+- claiming E2EE
+- server or provider plaintext media storage
+- carrying the development media key into stable release
+- rewrapping a server-known development key and calling it E2EE
+
+S1 must client-reencrypt retained media with fresh reviewed key material that was never disclosed to the server, or wipe the pre-S1 media. R2 must verify that development escrow is disabled and no retained object depends on it.
 
 ## Not frozen
 

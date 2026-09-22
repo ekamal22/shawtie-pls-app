@@ -146,6 +146,35 @@ An IndexedDB migration failure is a fail-closed state. The client must not guess
 
 Future C1 signaling or S1 cryptographic changes that require incompatible realtime semantics must introduce an explicitly reviewed protocol-version transition rather than silently changing version 1. M2 scope identity is immutable per socket, so a compatibility or authority transition that changes partnership/conversation identity closes and re-establishes the connection rather than mutating the old scope in place.
 
+
+## M3 media compatibility policy
+
+M3 adds independent media compatibility axes:
+
+- media policy version
+- media object-format version
+- encrypted descriptor schema version
+- browser local schema version
+- temporary pre-S1 key-delivery mode
+
+Initial planned values:
+
+```text
+mediaPolicyVersion = 1
+mediaObjectFormat = m3-secretstream-xchacha20poly1305-v1
+mediaDescriptorSchemaVersion = 1
+localSchemaVersion = 2
+preS1MediaKeyDeliveryMode = development_escrow_v1
+```
+
+The M3 object-format version describes ciphertext framing only. It is not an S1 E2EE protocol version.
+
+Unknown media format or descriptor versions fail closed.
+
+A browser with pending M3 media work must not replay under an unsupported local schema or media format.
+
+S1 must define an explicit transition away from `development_escrow_v1`. A retained object whose media key was previously recoverable by the server cannot become E2EE by rewrapping that same key. Safe migration requires client re-encryption with a fresh S1 key never disclosed to the server, or secure wipe.
+
 ## Testing
 
 Compatibility testing must include:

@@ -20,11 +20,11 @@ A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally veri
 
 P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 migration `0009_partnership_formation_runtime.sql` is implemented and verified with accepted-request linkage, restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. Migration 0008 remains unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`. P3 migration `0010_partnership_lifecycle_runtime.sql` is implemented and verified with breakup cancellation/supersession terminal markers, lifecycle indexes and constraints, exact cooldown hardening, block-source hardening, notification event expansion, and one-partnership deletion-manifest uniqueness without rewriting migrations 0001 through 0009. The fresh immutable partnership ID remains the namespace root.
 
-M1 owns forward-only migrations 0011 and 0012 on its parallel branch. R1 owns forward-only migrations 0013 and 0014 on `feat/r1-relationship-space`. Those four migrations are design targets until their source and executable PostgreSQL evidence exist. Neither feature branch may consume the other branch's migration numbers.
+M1 migrations 0011 and 0012 and R1 migrations 0013 and 0014 are implemented and verified on the combined baseline. M2 is designed to add no PostgreSQL migration. M3 plans to own 0015 and 0016 only after M2 closes; no placeholder reservation files are committed.
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
-M1 reserves forward-only migrations 0011 and 0012 on `feat/m1-messaging-core`. The refined design extends the existing conversation/message and breakup-process substrate with a separate durable mutation change sequence, a content-free conversation-change ledger, current-content versioning, keyed private-request fingerprints, compact receipt/nickname/presence/typing state, and module-owned messaging cleanup. M1 does not persist plaintext edit history. The 0011 and 0012 migration source is implemented on the M1 branch. Disposable-PostgreSQL execution evidence is still required before M1 can close. R1 separately reserves migrations 0013 and 0014.
+M1 and R1 are closed on the verified combined baseline. M1 owns 0011/0012 and R1 owns 0013/0014. M3 extends those verified schemas rather than reopening them.
 
 ## Identifier policy
 
@@ -533,24 +533,89 @@ Persist only the metadata required for call state and history.
 
 ## Media
 
-Logical media metadata should reference random object identifiers, not user filenames.
+M3 defines media as a first-class partnership asset.
 
-Representative fields:
+Canonical refined design:
+
+`M3_MEDIA_VOICE_DESIGN.md`
+
+Existing skeleton:
 
 ```text
 media_objects
-- id
-- partnership_id
-- uploader_account_id
-- storage_object_key
-- ciphertext_size
-- created_at
-- deleted_at
 ```
 
-The object store contains ciphertext.
+Planned migration 0015 hardens it with representative fields:
 
-Access to signed object URLs still requires authenticated partnership authorization.
+```text
+id
+partnership_id
+uploader_account_id
+storage_object_key
+media_class
+state
+object_format_version
+ciphertext_size nullable while pending
+upload_expires_at
+last_upload_grant_expires_at
+ready_at
+orphaned_at
+orphan_generation
+storage_deleted_at
+created_at
+deleted_at
+```
+
+Immutable identity includes:
+
+- media ID
+- partnership ID
+- uploader
+- storage object key
+- creation time
+
+The object key is random and contains no private filename or user identifier.
+
+A separate pre-S1 table stores only the temporary wrapped development key:
+
+```text
+media_development_key_envelopes
+- media_id
+- partnership_id
+- wrap_key_version
+- wrap_nonce
+- wrapped_media_key
+- created_at
+```
+
+The wrapping key is a deployment secret and is never stored in PostgreSQL.
+
+ADR-012 makes this development-only. S1 must migrate or wipe every retained pre-S1 media object and remove the server-recoverable key path before stable release.
+
+Planned migration 0016 adds M1 attachment references:
+
+```text
+message_media_attachments
+- message_id
+- conversation_id
+- partnership_id
+- media_id
+- position
+- created_at
+```
+
+M1 messages also gain a bounded attachment count so a non-deleted message may contain text, media, or both. A deferred database invariant checks count/reference consistency.
+
+Existing R1 `relationship_item_references` keeps its loose polymorphic shape. M3 adds a database validation trigger for `reference_type = 'media'` so only same-partnership ready media can be referenced, and `voice_letter` requires voice media.
+
+A media asset is live while referenced by at least one M1 message attachment or R1 media reference.
+
+Unreferenced ready media is handled through generation-fenced orphan cleanup.
+
+Object storage contains ciphertext only.
+
+Media read authorization is parent-reference aware. Same-partnership membership alone is insufficient because unreleased R1 media must remain hidden until the containing item is visible.
+
 
 ## Durable operations
 

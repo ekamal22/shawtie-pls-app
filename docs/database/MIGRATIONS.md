@@ -258,6 +258,44 @@ If implementation evidence proves that new durable server schema is required, th
 
 IndexedDB local schema versions are client schema and are not PostgreSQL migration numbers.
 
+
+## Planned M3 migration ownership
+
+M3 is designed to own the next two real PostgreSQL migrations after verified M2 closure:
+
+- `0015_media_runtime.sql`
+- `0016_media_references_runtime.sql`
+
+This is planned ownership only.
+
+Do not add placeholder or reserved migration files before M3 implementation begins. The repository must continue to report one contiguous migration chain with `reserved=0`.
+
+Migration 0015 is planned to:
+
+- harden the existing `media_objects` skeleton into a pending/ready/delete lifecycle
+- add media class and object-format metadata
+- add upload expiry and last signed-upload expiry
+- add orphan generation fencing
+- add storage-deletion evidence
+- add `UNIQUE (media_objects.id, partnership_id)`
+- add the pre-S1 development wrapped-key envelope table required by ADR-012
+- add cleanup/query indexes
+
+Migration 0016 is planned to:
+
+- add `message_media_attachments`
+- add bounded message attachment-count support
+- allow non-deleted media-only messages without weakening deleted-message tombstone rules
+- add deferred message attachment-count/reference integrity
+- add same-conversation and same-partnership media foreign keys
+- add R1 same-partnership ready-media reference validation
+- require voice media for `voice_letter`
+- add media-reference lookup indexes used by access authorization and orphan cleanup
+
+M3 must preserve migrations 0001 through 0014 byte-for-byte.
+
+The implementation branch must be created from verified post-M2 `main`, not from the documentation-only M3 design branch.
+
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.

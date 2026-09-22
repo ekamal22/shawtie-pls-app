@@ -83,6 +83,39 @@ After each target completion, the runtime checks whether every target for the ma
 
 A failed or expired target remains resumable. The normal target-claim query may reclaim expired processing rows directly. Long-running target handlers may renew their lease only while claim ownership and claim version still match. Access must remain revoked for the entire retry period.
 
+
+## M3 media deletion target
+
+M3 adds a dedicated partnership deletion target:
+
+`partnership_media_storage`
+
+The existing relational target must not delete the last durable media metadata row before provider cleanup can prove object deletion.
+
+The relational and media-storage targets are intentionally safe in either execution order.
+
+If relational cleanup runs first:
+
+- message and R1 references disappear
+- media rows remain
+- provider cleanup deletes ciphertext
+- rows are removed after storage deletion evidence exists
+
+If media cleanup runs first:
+
+- provider ciphertext is deleted idempotently
+- `storage_deleted_at` records that fact
+- media rows remain while parent references still exist
+- relational cleanup later removes references and the rows
+
+Provider not-found is successful idempotent deletion.
+
+A pre-signed upload URL cannot be recalled. The media target therefore waits until every previously issued upload grant for the partnership has expired before its final provider sweep and before reporting completion. This prevents a stale upload capability from recreating an object after the deletion manifest has already closed.
+
+Authorization is still revoked synchronously at dissolution. The upload-expiry wait affects physical cleanup only.
+
+Orphan media outside full partnership deletion uses the same provider delete primitive but is scheduled through generation-fenced `media_orphan_cleanup` work. A stale orphan generation is a no-op if the media has been referenced again.
+
 See `F2_PERSISTENCE_WORKER_DESIGN.md` for the concrete worker and repository design.
 
 ## Idempotency

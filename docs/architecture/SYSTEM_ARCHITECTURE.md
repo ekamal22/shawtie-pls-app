@@ -380,6 +380,28 @@ M2 introduces no Redis and is expected to require no new PostgreSQL migration.
 
 M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
 
+
+## M3 media and voice-message design
+
+The refined M3 design is defined in `M3_MEDIA_VOICE_DESIGN.md`, `../api/M3_MEDIA_API.md`, and ADR-012.
+
+M3 is designed but not implemented. Runtime work must wait for verified M2 closure and merge.
+
+M3 preserves the modular monolith while adding one explicit binary-content subsystem:
+
+- media is a first-class partnership asset shared by M1 and R1
+- `packages/media-storage` is the provider-neutral object-storage boundary used by API and worker
+- the browser processes and encrypts media before direct provider upload
+- the API owns media metadata, lifecycle checks, reference-aware authorization, and short-lived transfer grants
+- the worker owns upload-expiry cleanup, orphan cleanup, and durable provider deletion
+- M1 messages reference ready media through a same-partnership attachment table
+- R1 uses its existing media-reference seam and keeps release visibility authoritative
+- M2 realtime transports only content-free parent invalidations; no media byte, key, signed URL, or filename enters WebSocket or PostgreSQL NOTIFY
+- M3 local media drafts/jobs remain account/partnership scoped and binary data is not embedded in the M2 JSON chat outbox
+- final dissolution revokes application access synchronously and then completes provider deletion durably
+
+M3 pre-S1 object encryption uses the temporary ADR-012 development bridge. It protects object storage from plaintext exposure but is not stable-release E2EE.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

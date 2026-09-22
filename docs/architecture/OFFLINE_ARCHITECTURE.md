@@ -110,6 +110,30 @@ M2 version 1 does not queue manual release, scheduled/recipient-open/creator-rev
 
 Do not silently reuse the chat outbox schema.
 
+
+### M3 media drafts and upload jobs
+
+M3 binary data does not enter the M2 JSON chat outbox.
+
+The planned M3 local-schema upgrade adds account/partnership-scoped stores for:
+
+- media draft metadata
+- media draft blobs
+- media upload jobs
+- pending message bundles
+
+A pending message bundle contains the stable eventual M1 message idempotency key plus ordered local media draft IDs.
+
+Replay uploads and finalizes every required media asset first. Only then is the normal M2 message-send operation materialized with ready server media IDs.
+
+A network loss after provider PUT, after media completion, or before message send must be resumable without creating duplicate media or duplicate messages.
+
+If authoritative lifecycle later rejects the message, ready unreferenced media becomes orphan cleanup work.
+
+Queueing succeeds only after the IndexedDB transaction containing the draft/job/bundle commits. `navigator.storage.estimate()` is advisory only. Quota or transaction failure must remain visible and cannot be represented as queued.
+
+Pre-S1 local media drafts follow the same cold-start lock as other M2 protected development plaintext. S1 must migrate or wipe incompatible local drafts.
+
 ## Idempotency
 
 Every queued server mutation carries a stable client idempotency key. A locally queued message is rendered as pending and never receives a fake server sequence; authoritative sequence is assigned only by M1 after server acceptance. Multi-tab replay additionally uses local claim owner/generation/expiry metadata so a stale tab cannot remove work reclaimed by a newer tab; server idempotency remains the correctness backstop.
