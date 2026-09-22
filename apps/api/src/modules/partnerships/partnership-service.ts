@@ -6,6 +6,7 @@ import {
   expirePartnerRequestsById,
   getAccountProfile,
   getCurrentPartnershipForAccount,
+  getPrimaryConversationLastServerSequence,
   getTransactionTimestamp,
   insertAccountNotification,
   insertBreakupProcess,
@@ -169,6 +170,10 @@ function lifecycleCapabilityContext(
               ]),
             ),
             generation: safeVersion(lifecycle.breakup.generation),
+            messageFreezeSequence:
+              lifecycle.breakup.messageFreezeSequence === null
+                ? null
+                : safeVersion(lifecycle.breakup.messageFreezeSequence),
           }
         : null,
       accountDeletion: lifecycle.accountDeletion
@@ -470,6 +475,14 @@ export class PartnershipService {
         );
       }
 
+      const messageFreezeSequence = await getPrimaryConversationLastServerSequence(
+        transaction,
+        partnershipId,
+      );
+      if (messageFreezeSequence === null) {
+        throw new Error("Primary conversation missing for current partnership");
+      }
+
       const generation = await setPartnershipBreakupPending(
         transaction,
         partnershipId,
@@ -490,6 +503,7 @@ export class PartnershipService {
         baseDeadline,
         finalDeadline: baseDeadline,
         generation,
+        messageFreezeSequence,
       });
       await insertScheduledAction(transaction, {
         id: randomUUID(),
