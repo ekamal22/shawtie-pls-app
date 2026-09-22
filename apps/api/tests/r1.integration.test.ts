@@ -590,16 +590,12 @@ test("R1 derived experiences preserve dates and leap-day anniversary rule", asyn
       headers: headers(alice.cookie),
     });
     assert.equal(anniversary.statusCode, 200);
-    assert.equal(
-      (anniversary.json() as { anniversaryDate: string }).anniversaryDate,
-      "2025-02-28",
-    );
+    assert.equal((anniversary.json() as { anniversaryDate: string }).anniversaryDate, "2025-02-28");
   } finally {
     await app.close();
     await closeDatabasePool(database);
   }
 });
-
 
 test("R1 home keeps upcoming releases independent of the recent slice and reports saved anniversary curation", async () => {
   const database = requireDisposableDatabase();
@@ -673,8 +669,14 @@ test("R1 home keeps upcoming releases independent of the recent slice and report
         anniversary: { savedCurationItemId: string | null };
       };
     };
-    assert.equal(body.space.recentItems.some((item) => item.itemId === scheduled.itemId), false);
-    assert.equal(body.space.upcomingReleases.some((item) => item.itemId === scheduled.itemId), true);
+    assert.equal(
+      body.space.recentItems.some((item) => item.itemId === scheduled.itemId),
+      false,
+    );
+    assert.equal(
+      body.space.upcomingReleases.some((item) => item.itemId === scheduled.itemId),
+      true,
+    );
     assert.equal(body.space.anniversary.savedCurationItemId, anniversary.itemId);
   } finally {
     await app.close();
@@ -786,19 +788,9 @@ test("R1 future partnership namespace cannot read or replay old relationship-spa
     await reset(database);
     const alice = await register(app, database, "namespace_alice");
     const bob = await register(app, database, "namespace_bob");
-    const oldPartnershipId = await formPartnership(
-      app,
-      alice,
-      bob,
-      "r1-namespace-form-0001",
-    );
+    const oldPartnershipId = await formPartnership(app, alice, bob, "r1-namespace-form-0001");
     const key = "r1-namespace-old-create";
-    const oldItem = await createItem(
-      app,
-      alice,
-      key,
-      memoryPayload("Old namespace", "2020-09-22"),
-    );
+    const oldItem = await createItem(app, alice, key, memoryPayload("Old namespace", "2020-09-22"));
     await createItem(
       app,
       alice,
@@ -878,10 +870,7 @@ test("R1 future partnership namespace cannot read or replay old relationship-spa
       payload: memoryPayload("Old namespace", "2020-09-22"),
     });
     assert.equal(sameKeyNewNamespace.statusCode, 201, sameKeyNewNamespace.body);
-    assert.notEqual(
-      (sameKeyNewNamespace.json() as { itemId: string }).itemId,
-      oldItem.itemId,
-    );
+    assert.notEqual((sameKeyNewNamespace.json() as { itemId: string }).itemId, oldItem.itemId);
 
     const persisted = await database.pool.query<{ partnership_id: string }>(
       "SELECT partnership_id FROM relationship_items WHERE id = $1",
@@ -893,7 +882,6 @@ test("R1 future partnership namespace cannot read or replay old relationship-spa
     await closeDatabasePool(database);
   }
 });
-
 
 test("R1 concurrent duplicate mutations replay exactly instead of degrading to conflicts", async () => {
   const database = requireDisposableDatabase();
@@ -1174,7 +1162,6 @@ test("R1 creator-reveal keeps Surprise main content sealed until the creator rev
   }
 });
 
-
 test("R1 schedule edits advance release generation, cancel old work, and replay without duplication", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -1276,12 +1263,7 @@ test("R1 breakup restoration preserves item version, release generation, and sch
     await reset(database);
     const alice = await register(app, database, "restore_r1_alice");
     const bob = await register(app, database, "restore_r1_bob");
-    const partnershipId = await formPartnership(
-      app,
-      alice,
-      bob,
-      "r1-restoration-form-0001",
-    );
+    const partnershipId = await formPartnership(app, alice, bob, "r1-restoration-form-0001");
 
     const unlockAt = new Date(Date.now() + 48 * 60 * 60_000).toISOString();
     const item = await createItem(app, alice, "r1-restoration-item", {
@@ -1339,12 +1321,7 @@ test("R1 breakup restoration preserves item version, release generation, and sch
 
     const firstIntent = await app.inject({
       method: "POST",
-      url:
-        "/api/v1/partnerships/" +
-        partnershipId +
-        "/breakups/" +
-        breakupId +
-        "/restore",
+      url: "/api/v1/partnerships/" + partnershipId + "/breakups/" + breakupId + "/restore",
       headers: mutationHeaders(bob.cookie, "r1-restoration-intent-bob"),
     });
     assert.equal(firstIntent.statusCode, 200, firstIntent.body);
@@ -1352,12 +1329,7 @@ test("R1 breakup restoration preserves item version, release generation, and sch
 
     const secondIntent = await app.inject({
       method: "POST",
-      url:
-        "/api/v1/partnerships/" +
-        partnershipId +
-        "/breakups/" +
-        breakupId +
-        "/restore",
+      url: "/api/v1/partnerships/" + partnershipId + "/breakups/" + breakupId + "/restore",
       headers: mutationHeaders(alice.cookie, "r1-restoration-intent-alice"),
     });
     assert.equal(secondIntent.statusCode, 200, secondIntent.body);
@@ -1385,7 +1357,6 @@ test("R1 breakup restoration preserves item version, release generation, and sch
     await closeDatabasePool(database);
   }
 });
-
 
 test("R1 Our Story uses deterministic mixed-precision ordering and This Day uses exact day precision only", async () => {
   const database = requireDisposableDatabase();
@@ -1459,9 +1430,7 @@ test("R1 Our Story uses deterministic mixed-precision ordering and This Day uses
     });
     assert.equal(thisDay.statusCode, 200, thisDay.body);
     assert.deepEqual(
-      (thisDay.json() as { items: Array<{ itemId: string }> }).items.map(
-        (item) => item.itemId,
-      ),
+      (thisDay.json() as { items: Array<{ itemId: string }> }).items.map((item) => item.itemId),
       [ids["Exact day"]],
     );
   } finally {
@@ -1577,10 +1546,7 @@ test("R1 snapshot cursors contain only operational metadata and reject query-sha
       headers: headers(alice.cookie),
     });
     assert.equal(mismatched.statusCode, 400);
-    assert.equal(
-      (mismatched.json() as { error: { code: string } }).error.code,
-      "INVALID_CURSOR",
-    );
+    assert.equal((mismatched.json() as { error: { code: string } }).error.code, "INVALID_CURSOR");
 
     const tamperedObject = {
       ...cursorObject,
@@ -1588,10 +1554,9 @@ test("R1 snapshot cursors contain only operational metadata and reject query-sha
         String(cursorObject.binding).slice(0, -1) +
         (String(cursorObject.binding).endsWith("A") ? "B" : "A"),
     };
-    const tamperedCursor = Buffer.from(
-      JSON.stringify(tamperedObject),
-      "utf8",
-    ).toString("base64url");
+    const tamperedCursor = Buffer.from(JSON.stringify(tamperedObject), "utf8").toString(
+      "base64url",
+    );
     const tampered = await app.inject({
       method: "GET",
       url:
@@ -1600,10 +1565,7 @@ test("R1 snapshot cursors contain only operational metadata and reject query-sha
       headers: headers(alice.cookie),
     });
     assert.equal(tampered.statusCode, 400);
-    assert.equal(
-      (tampered.json() as { error: { code: string } }).error.code,
-      "INVALID_CURSOR",
-    );
+    assert.equal((tampered.json() as { error: { code: string } }).error.code, "INVALID_CURSOR");
   } finally {
     await app.close();
     await closeDatabasePool(database);
@@ -1653,7 +1615,6 @@ test("R1 Remember This works as an independent snapshot without an M1 source ref
     await closeDatabasePool(database);
   }
 });
-
 
 test("R1 PATCH validates schedule and reunion dates only when those fields change", async () => {
   const database = requireDisposableDatabase();
@@ -1751,7 +1712,6 @@ test("R1 PATCH validates schedule and reunion dates only when those fields chang
   }
 });
 
-
 test("R1 saved curation creation is race-safe and shared edits use optimistic versioning", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -1843,7 +1803,6 @@ test("R1 saved curation creation is race-safe and shared edits use optimistic ve
   }
 });
 
-
 test("R1 reunion supports prepared-content links while Surprise generic links are rejected", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -1892,16 +1851,13 @@ test("R1 reunion supports prepared-content links while Surprise generic links ar
       headers: headers(bob.cookie),
     });
     assert.equal(reunionRead.statusCode, 200, reunionRead.body);
-    assert.deepEqual(
-      (reunionRead.json() as { links: unknown[] }).links,
-      [
-        {
-          linkType: "prepared_content",
-          targetItemId: target.itemId,
-          position: 0,
-        },
-      ],
-    );
+    assert.deepEqual((reunionRead.json() as { links: unknown[] }).links, [
+      {
+        linkType: "prepared_content",
+        targetItemId: target.itemId,
+        position: 0,
+      },
+    ]);
 
     const surprise = await app.inject({
       method: "POST",
@@ -1930,10 +1886,7 @@ test("R1 reunion supports prepared-content links while Surprise generic links ar
       },
     });
     assert.equal(surprise.statusCode, 400);
-    assert.equal(
-      (surprise.json() as { error: { code: string } }).error.code,
-      "INVALID_ITEM_LINK",
-    );
+    assert.equal((surprise.json() as { error: { code: string } }).error.code, "INVALID_ITEM_LINK");
   } finally {
     await app.close();
     await closeDatabasePool(database);

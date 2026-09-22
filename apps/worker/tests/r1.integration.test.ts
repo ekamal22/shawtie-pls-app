@@ -39,11 +39,7 @@ async function reset(database: DatabasePool): Promise<void> {
   await database.pool.query("DELETE FROM security_email_deliveries");
 }
 
-async function account(
-  database: DatabasePool,
-  username: string,
-  at: Date,
-): Promise<string> {
+async function account(database: DatabasePool, username: string, at: Date): Promise<string> {
   const accountId = randomUUID();
   const email = username + "@example.test";
   await insertAccount(database.pool, {
@@ -237,9 +233,7 @@ test("R1 in-flight release reschedules through account-deletion recovery window"
     assert.equal(persisted.rows[0]?.released_at, null);
     assert.equal(persisted.rows[0]?.action_status, "pending");
     assert.equal(persisted.rows[0]?.execute_at.toISOString(), unlockAt.toISOString());
-    assert.ok(
-      (persisted.rows[0]?.available_at.getTime() ?? 0) >= recoverUntil.getTime(),
-    );
+    assert.ok((persisted.rows[0]?.available_at.getTime() ?? 0) >= recoverUntil.getTime());
     assert.equal(persisted.rows[0]?.attempt_count, 1);
   } finally {
     await closeDatabasePool(database);
@@ -294,7 +288,6 @@ test("R1 breakup destructive deadline wins over a scheduled release at equality 
     await closeDatabasePool(database);
   }
 });
-
 
 test("R1 preconfigured scheduled release may complete strictly before a breakup deadline", async () => {
   const database = requireDisposableDatabase();
@@ -394,7 +387,6 @@ test("R1 obsolete release generation is marked stale before content can unlock",
   }
 });
 
-
 test("R1 final breakup dissolution cancels pending release work and deletion cleanup removes R1 rows", async () => {
   const database = requireDisposableDatabase();
   try {
@@ -487,7 +479,6 @@ test("R1 final breakup dissolution cancels pending release work and deletion cle
   }
 });
 
-
 test("R1 scheduled release fails closed for an unsupported content schema version", async () => {
   const database = requireDisposableDatabase();
   try {
@@ -531,15 +522,11 @@ test("R1 scheduled release fails closed for an unsupported content schema versio
     );
     assert.equal(persisted.rows[0]?.released_at, null);
     assert.equal(persisted.rows[0]?.action_status, "failed");
-    assert.equal(
-      persisted.rows[0]?.last_error_code,
-      "RELATIONSHIP_CONTENT_SCHEMA_UNSUPPORTED",
-    );
+    assert.equal(persisted.rows[0]?.last_error_code, "RELATIONSHIP_CONTENT_SCHEMA_UNSUPPORTED");
   } finally {
     await closeDatabasePool(database);
   }
 });
-
 
 test("R1 permanent account deletion cancels pending relationship release work", async () => {
   const database = requireDisposableDatabase();

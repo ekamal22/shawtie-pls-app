@@ -14,13 +14,15 @@ export function loadRelationshipHome(): Promise<RelationshipSpaceResponse> {
   return apiRequest("/api/v1/relationship-space");
 }
 
-export function listRelationshipItems(input: {
-  kind?: RelationshipItemKind;
-  storyOnly?: boolean;
-  year?: number;
-  cursor?: string;
-  sort?: "created_desc" | "occurred_asc";
-} = {}): Promise<RelationshipItemListResponse> {
+export function listRelationshipItems(
+  input: {
+    kind?: RelationshipItemKind;
+    storyOnly?: boolean;
+    year?: number;
+    cursor?: string;
+    sort?: "created_desc" | "occurred_asc";
+  } = {},
+): Promise<RelationshipItemListResponse> {
   const query = new URLSearchParams();
   if (input.kind) query.set("kind", input.kind);
   if (input.storyOnly) query.set("storyOnly", "true");
@@ -74,20 +76,18 @@ export function releaseRelationshipItem(
 }
 
 export function loadThisDay(on: string): Promise<{ on: string; items: RelationshipItem[] }> {
-  return apiRequest(
-    "/api/v1/relationship-space/experiences/this-day?on=" + encodeURIComponent(on),
-  );
+  return apiRequest("/api/v1/relationship-space/experiences/this-day?on=" + encodeURIComponent(on));
 }
 
-export function loadOurYear(
-  year: number,
-): Promise<{ year: number; savedCuration: RelationshipItem | null; candidates: RelationshipItem[] }> {
+export function loadOurYear(year: number): Promise<{
+  year: number;
+  savedCuration: RelationshipItem | null;
+  candidates: RelationshipItem[];
+}> {
   return apiRequest("/api/v1/relationship-space/experiences/our-year/" + year);
 }
 
-export function loadAnniversary(
-  on?: string,
-): Promise<{
+export function loadAnniversary(on?: string): Promise<{
   relationshipStartDate: string | null;
   anniversaryDate: string | null;
   savedCuration: RelationshipItem | null;

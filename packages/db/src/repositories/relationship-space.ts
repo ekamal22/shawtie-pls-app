@@ -17,10 +17,7 @@ export type RelationshipItemKind =
   | "relationship_signal";
 
 export type RelationshipReleaseMode =
-  | "immediate"
-  | "scheduled"
-  | "recipient_open"
-  | "creator_reveal";
+  "immediate" | "scheduled" | "recipient_open" | "creator_reveal";
 
 export interface RelationshipItemRecord {
   readonly id: string;
@@ -461,10 +458,18 @@ export async function setRelationshipStoryIncluded(
 }
 
 export type RelationshipFeatureState =
-  | { readonly type: "someday"; readonly state: "someday" | "soon" | "completed"; readonly completedAt: Date | null }
+  | {
+      readonly type: "someday";
+      readonly state: "someday" | "soon" | "completed";
+      readonly completedAt: Date | null;
+    }
   | { readonly type: "relationship_signal"; readonly signalKind: string }
   | { readonly type: "reunion"; readonly targetDate: string }
-  | { readonly type: "curation"; readonly curationType: "our_year" | "anniversary"; readonly anchorYear: number };
+  | {
+      readonly type: "curation";
+      readonly curationType: "our_year" | "anniversary";
+      readonly anchorYear: number;
+    };
 
 export async function findRelationshipCurationItemId(
   executor: QueryExecutor,
@@ -493,12 +498,19 @@ export async function loadRelationshipFeatureState(
   partnershipId: string,
   itemId: string,
 ): Promise<RelationshipFeatureState | null> {
-  const someday = await executor.query<{ state: "someday" | "soon" | "completed"; completed_at: Date | null }>(
+  const someday = await executor.query<{
+    state: "someday" | "soon" | "completed";
+    completed_at: Date | null;
+  }>(
     "SELECT state, completed_at FROM relationship_someday_state WHERE partnership_id = $1 AND item_id = $2",
     [partnershipId, itemId],
   );
   if (someday.rows[0]) {
-    return { type: "someday", state: someday.rows[0].state, completedAt: someday.rows[0].completed_at };
+    return {
+      type: "someday",
+      state: someday.rows[0].state,
+      completedAt: someday.rows[0].completed_at,
+    };
   }
 
   const signal = await executor.query<{ signal_kind: string }>(
@@ -517,7 +529,10 @@ export async function loadRelationshipFeatureState(
     return { type: "reunion", targetDate: reunion.rows[0].target_date };
   }
 
-  const curation = await executor.query<{ curation_type: "our_year" | "anniversary"; anchor_year: number }>(
+  const curation = await executor.query<{
+    curation_type: "our_year" | "anniversary";
+    anchor_year: number;
+  }>(
     "SELECT curation_type, anchor_year FROM relationship_curations WHERE partnership_id = $1 AND item_id = $2",
     [partnershipId, itemId],
   );
@@ -612,7 +627,9 @@ export async function replaceRelationshipReferences(
     readonly at: Date;
   },
 ): Promise<void> {
-  await executor.query("DELETE FROM relationship_item_references WHERE item_id = $1", [input.itemId]);
+  await executor.query("DELETE FROM relationship_item_references WHERE item_id = $1", [
+    input.itemId,
+  ]);
   for (const reference of input.references) {
     await executor.query(
       `INSERT INTO relationship_item_references (
@@ -894,12 +911,7 @@ export async function markRelationshipItemReleased(
        AND released_at IS NULL
        AND lifecycle = 'active'
      RETURNING version`,
-    [
-      input.partnershipId,
-      input.itemId,
-      input.expectedGeneration.toString(),
-      input.releasedAt,
-    ],
+    [input.partnershipId, input.itemId, input.expectedGeneration.toString(), input.releasedAt],
   );
   const row = result.rows[0];
   return row ? BigInt(row.version) : null;

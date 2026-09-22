@@ -11,11 +11,7 @@ import {
   patchRelationshipItem,
   releaseRelationshipItem,
 } from "./api.ts";
-import type {
-  RelationshipItem,
-  RelationshipItemKind,
-  RelationshipSpaceHome,
-} from "./model.ts";
+import type { RelationshipItem, RelationshipItemKind, RelationshipSpaceHome } from "./model.ts";
 
 const KINDS: readonly { value: RelationshipItemKind; label: string }[] = [
   { value: "memory", label: "Memory" },
@@ -75,17 +71,12 @@ function titleForKind(kind: RelationshipItemKind): string {
   return KINDS.find((entry) => entry.value === kind)?.label ?? kind;
 }
 
-function readString(
-  value: Record<string, unknown> | null,
-  key: string,
-): string | null {
+function readString(value: Record<string, unknown> | null, key: string): string | null {
   const item = value?.[key];
   return typeof item === "string" && item.trim() ? item : null;
 }
 
-function readSequenceSteps(
-  value: Record<string, unknown> | null,
-): string[] {
+function readSequenceSteps(value: Record<string, unknown> | null): string[] {
   const steps = value?.steps;
   if (!Array.isArray(steps)) return [];
   return steps.flatMap((entry) => {
@@ -100,9 +91,7 @@ function readCoordinate(
   key: "latitude" | "longitude",
 ): number | null {
   const coordinate = value?.[key];
-  return typeof coordinate === "number" && Number.isFinite(coordinate)
-    ? coordinate
-    : null;
+  return typeof coordinate === "number" && Number.isFinite(coordinate) ? coordinate : null;
 }
 
 function localDateTimeInputValue(iso: string): string {
@@ -135,26 +124,14 @@ function occurrenceLabel(item: RelationshipItem): string | null {
   if (value.month === null) return String(value.year);
   const month = String(value.month).padStart(2, "0");
   if (value.precision === "month") return value.year + "-" + month;
-  return (
-    value.year +
-    "-" +
-    month +
-    "-" +
-    String(value.day ?? 1).padStart(2, "0")
-  );
+  return value.year + "-" + month + "-" + String(value.day ?? 1).padStart(2, "0");
 }
 
 function durationLabel(home: RelationshipSpaceHome): string {
   const parts = [
-    home.relationshipDuration.years
-      ? home.relationshipDuration.years + "y"
-      : "",
-    home.relationshipDuration.months
-      ? home.relationshipDuration.months + "m"
-      : "",
-    home.relationshipDuration.days
-      ? home.relationshipDuration.days + "d"
-      : "",
+    home.relationshipDuration.years ? home.relationshipDuration.years + "y" : "",
+    home.relationshipDuration.months ? home.relationshipDuration.months + "m" : "",
+    home.relationshipDuration.days ? home.relationshipDuration.days + "d" : "",
   ].filter(Boolean);
   return parts.join(" ") || "Today";
 }
@@ -189,28 +166,18 @@ function ItemCard({
               ? "intro"
               : null;
   const [draftBody, setDraftBody] = useState(
-    bodyKey ? readString(item.content, bodyKey) ?? "" : "",
+    bodyKey ? (readString(item.content, bodyKey) ?? "") : "",
   );
   const [draftReunionDate, setDraftReunionDate] = useState(
     item.featureState?.type === "reunion" ? item.featureState.targetDate : "",
   );
   const [draftUnlockAt, setDraftUnlockAt] = useState(
-    item.release?.unlockAt
-      ? localDateTimeInputValue(item.release.unlockAt)
-      : "",
+    item.release?.unlockAt ? localDateTimeInputValue(item.release.unlockAt) : "",
   );
   const isCreator = item.creatorAccountId === accountId;
   const locked = item.release?.state === "locked";
-  const canOpen =
-    !disabled &&
-    locked &&
-    item.release?.mode === "recipient_open" &&
-    !isCreator;
-  const canReveal =
-    !disabled &&
-    locked &&
-    item.release?.mode === "creator_reveal" &&
-    isCreator;
+  const canOpen = !disabled && locked && item.release?.mode === "recipient_open" && !isCreator;
+  const canReveal = !disabled && locked && item.release?.mode === "creator_reveal" && isCreator;
   const canDelete =
     !disabled &&
     (isCreator ||
@@ -339,9 +306,7 @@ function ItemCard({
         {item.storyIncluded ? <span className="pill">Our Story</span> : null}
       </div>
 
-      {occurrenceLabel(item) ? (
-        <span className="hint">{occurrenceLabel(item)}</span>
-      ) : null}
+      {occurrenceLabel(item) ? <span className="hint">{occurrenceLabel(item)}</span> : null}
 
       {item.release?.state === "locked" ? (
         <div className="relationship-lock">
@@ -350,9 +315,7 @@ function ItemCard({
             <p>{readString(item.preview, "conditionLabel")}</p>
           ) : null}
           {item.release.unlockAt ? (
-            <p className="hint">
-              Scheduled for {new Date(item.release.unlockAt).toLocaleString()}
-            </p>
+            <p className="hint">Scheduled for {new Date(item.release.unlockAt).toLocaleString()}</p>
           ) : null}
           {!disabled &&
           isCreator &&
@@ -433,9 +396,7 @@ function ItemCard({
       ) : null}
 
       {item.featureState?.type === "relationship_signal" ? (
-        <p className="relationship-signal">
-          {item.featureState.signalKind.replaceAll("_", " ")}
-        </p>
+        <p className="relationship-signal">{item.featureState.signalKind.replaceAll("_", " ")}</p>
       ) : null}
 
       {editing ? (
@@ -443,10 +404,7 @@ function ItemCard({
           {item.content && "title" in item.content ? (
             <label className="field">
               <span>Title</span>
-              <input
-                value={draftTitle}
-                onChange={(event) => setDraftTitle(event.target.value)}
-              />
+              <input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} />
             </label>
           ) : null}
           {bodyKey ? (
@@ -572,16 +530,10 @@ function CreateRelationshipItem({
   >("immediate");
   const [unlockAt, setUnlockAt] = useState("");
   const [conditionLabel, setConditionLabel] = useState("");
-  const [somedayState, setSomedayState] = useState<
-    "someday" | "soon" | "completed"
-  >("someday");
-  const [signalKind, setSignalKind] = useState<(typeof SIGNALS)[number][0]>(
-    "thinking_of_you",
-  );
+  const [somedayState, setSomedayState] = useState<"someday" | "soon" | "completed">("someday");
+  const [signalKind, setSignalKind] = useState<(typeof SIGNALS)[number][0]>("thinking_of_you");
   const [reunionDate, setReunionDate] = useState("");
-  const [loveCategory, setLoveCategory] = useState<
-    "reason" | "noticed" | "remembered"
-  >("reason");
+  const [loveCategory, setLoveCategory] = useState<"reason" | "noticed" | "remembered">("reason");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [busy, setBusy] = useState(false);
@@ -674,10 +626,7 @@ function CreateRelationshipItem({
           ...base,
           preview: {
             title: title.trim() || null,
-            conditionLabel:
-              releaseMode === "recipient_open"
-                ? conditionLabel.trim() || null
-                : null,
+            conditionLabel: releaseMode === "recipient_open" ? conditionLabel.trim() || null : null,
           },
           content: { body: text.trim() },
           release:
@@ -807,13 +756,13 @@ function CreateRelationshipItem({
           disabled={busy || disabled}
           onChange={(event) => setKind(event.target.value as RelationshipItemKind)}
         >
-          {KINDS.filter(
-            (entry) => !["our_year", "anniversary"].includes(entry.value),
-          ).map((entry) => (
-            <option key={entry.value} value={entry.value}>
-              {entry.label}
-            </option>
-          ))}
+          {KINDS.filter((entry) => !["our_year", "anniversary"].includes(entry.value)).map(
+            (entry) => (
+              <option key={entry.value} value={entry.value}>
+                {entry.label}
+              </option>
+            ),
+          )}
         </select>
       </label>
 
@@ -829,9 +778,15 @@ function CreateRelationshipItem({
         </label>
       ) : null}
 
-      {["remember_this", "for_you", "future_us", "love", "surprise", "proposal", "relationship_signal"].includes(
-        kind,
-      ) ? (
+      {[
+        "remember_this",
+        "for_you",
+        "future_us",
+        "love",
+        "surprise",
+        "proposal",
+        "relationship_signal",
+      ].includes(kind) ? (
         <label className="field">
           <span>
             {kind === "surprise" || kind === "proposal"
@@ -850,9 +805,18 @@ function CreateRelationshipItem({
         </label>
       ) : null}
 
-      {["memory", "remember_this", "first", "place", "someday", "our_year", "anniversary", "surprise", "reunion", "proposal"].includes(
-        kind,
-      ) ? (
+      {[
+        "memory",
+        "remember_this",
+        "first",
+        "place",
+        "someday",
+        "our_year",
+        "anniversary",
+        "surprise",
+        "reunion",
+        "proposal",
+      ].includes(kind) ? (
         <label className="field">
           <span>{kind === "surprise" || kind === "proposal" ? "Intro" : "Note"}</span>
           <textarea
@@ -873,12 +837,7 @@ function CreateRelationshipItem({
               disabled={busy || disabled}
               onChange={(event) =>
                 setOccurrencePrecision(
-                  event.target.value as
-                    | "none"
-                    | "day"
-                    | "month"
-                    | "year"
-                    | "unknown",
+                  event.target.value as "none" | "day" | "month" | "year" | "unknown",
                 )
               }
             >
@@ -961,12 +920,7 @@ function CreateRelationshipItem({
               value={releaseMode}
               disabled={busy || disabled}
               onChange={(event) =>
-                setReleaseMode(
-                  event.target.value as
-                    | "immediate"
-                    | "scheduled"
-                    | "recipient_open",
-                )
+                setReleaseMode(event.target.value as "immediate" | "scheduled" | "recipient_open")
               }
             >
               <option value="immediate">Share now</option>
@@ -1007,9 +961,7 @@ function CreateRelationshipItem({
             value={releaseMode}
             disabled={busy || disabled}
             onChange={(event) =>
-              setReleaseMode(
-                event.target.value as "immediate" | "creator_reveal",
-              )
+              setReleaseMode(event.target.value as "immediate" | "creator_reveal")
             }
           >
             <option value="creator_reveal">Keep private until I reveal it</option>
@@ -1025,9 +977,7 @@ function CreateRelationshipItem({
             value={somedayState}
             disabled={busy || disabled}
             onChange={(event) =>
-              setSomedayState(
-                event.target.value as "someday" | "soon" | "completed",
-              )
+              setSomedayState(event.target.value as "someday" | "soon" | "completed")
             }
           >
             <option value="someday">Someday</option>
@@ -1044,9 +994,7 @@ function CreateRelationshipItem({
             value={loveCategory}
             disabled={busy || disabled}
             onChange={(event) =>
-              setLoveCategory(
-                event.target.value as "reason" | "noticed" | "remembered",
-              )
+              setLoveCategory(event.target.value as "reason" | "noticed" | "remembered")
             }
           >
             <option value="reason">A reason</option>
@@ -1075,9 +1023,7 @@ function CreateRelationshipItem({
           <select
             value={signalKind}
             disabled={busy || disabled}
-            onChange={(event) =>
-              setSignalKind(event.target.value as (typeof SIGNALS)[number][0])
-            }
+            onChange={(event) => setSignalKind(event.target.value as (typeof SIGNALS)[number][0])}
           >
             {SIGNALS.map(([value, label]) => (
               <option key={value} value={value}>
@@ -1095,21 +1041,17 @@ function CreateRelationshipItem({
       </button>
 
       <p className="hint">
-        Voice Letters attach to relationship objects through the media milestone.
-        R1 keeps their visibility tied to the item they belong to.
+        Voice Letters attach to relationship objects through the media milestone. R1 keeps their
+        visibility tied to the item they belong to.
       </p>
     </form>
   );
 }
 
 export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
-  const [home, setHome] = useState<RelationshipSpaceHome | null | undefined>(
-    undefined,
-  );
+  const [home, setHome] = useState<RelationshipSpaceHome | null | undefined>(undefined);
   const [items, setItems] = useState<RelationshipItem[]>([]);
-  const [filter, setFilter] = useState<RelationshipItemKind | "all" | "story">(
-    "all",
-  );
+  const [filter, setFilter] = useState<RelationshipItemKind | "all" | "story">("all");
   const [experience, setExperience] = useState<{
     title: string;
     items: RelationshipItem[];
@@ -1198,9 +1140,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       setSelectedCurationIds(
         sourceLinks
           .filter((link) =>
-            next.reunionItem
-              ? link.linkType === "prepared_content"
-              : link.linkType === "curation",
+            next.reunionItem ? link.linkType === "prepared_content" : link.linkType === "curation",
           )
           .sort((left, right) => left.position - right.position)
           .map((link) => link.targetItemId),
@@ -1214,9 +1154,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
 
   function toggleCurationItem(itemId: string) {
     setSelectedCurationIds((current) =>
-      current.includes(itemId)
-        ? current.filter((value) => value !== itemId)
-        : [...current, itemId],
+      current.includes(itemId) ? current.filter((value) => value !== itemId) : [...current, itemId],
     );
   }
 
@@ -1322,9 +1260,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       {home.reunion?.featureState?.type === "reunion" ? (
         <div className="relationship-reunion">
           <span className="relationship-kicker">Until we're together again</span>
-          <strong>
-            {daysUntil(home.serverDate, home.reunion.featureState.targetDate)} days
-          </strong>
+          <strong>{daysUntil(home.serverDate, home.reunion.featureState.targetDate)} days</strong>
           <span className="hint">{home.reunion.featureState.targetDate}</span>
           <button
             type="button"
@@ -1400,8 +1336,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
           Our Story
         </button>
         {KINDS.filter(
-          (entry) =>
-            !["our_year", "anniversary", "relationship_signal"].includes(entry.value),
+          (entry) => !["our_year", "anniversary", "relationship_signal"].includes(entry.value),
         ).map((entry) => (
           <button
             key={entry.value}
@@ -1493,11 +1428,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
           <div className="relationship-experience">
             <div className="relationship-item-card__top">
               <strong>{experience.title}</strong>
-              <button
-                type="button"
-                className="link compact"
-                onClick={() => setExperience(null)}
-              >
+              <button type="button" className="link compact" onClick={() => setExperience(null)}>
                 Close
               </button>
             </div>

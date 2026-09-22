@@ -73,12 +73,7 @@ export function registerRelationshipSpaceRoutes(
     privateNoStore(reply);
     const params = parseAtBoundary(relationshipItemIdParamsSchema, request.params);
     const input = parseAtBoundary(relationshipItemPatchSchema, request.body);
-    const result = await service.patch(
-      auth,
-      params.itemId,
-      input,
-      idempotencyKey(request.headers),
-    );
+    const result = await service.patch(auth, params.itemId, input, idempotencyKey(request.headers));
     void reply.status(result.statusCode);
     return result.body;
   });
@@ -120,15 +115,12 @@ export function registerRelationshipSpaceRoutes(
     return service.thisDay(auth, input);
   });
 
-  app.get(
-    "/api/v1/relationship-space/experiences/our-year/:year",
-    async (request, reply) => {
-      const auth = await requireAuthentication(request, database, config, keys);
-      privateNoStore(reply);
-      const params = parseAtBoundary(ourYearParamsSchema, request.params);
-      return service.ourYear(auth, params);
-    },
-  );
+  app.get("/api/v1/relationship-space/experiences/our-year/:year", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    privateNoStore(reply);
+    const params = parseAtBoundary(ourYearParamsSchema, request.params);
+    return service.ourYear(auth, params);
+  });
 
   app.get("/api/v1/relationship-space/experiences/anniversary", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);

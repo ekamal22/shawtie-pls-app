@@ -86,7 +86,6 @@ test("relationship list query has bounded defaults", () => {
   assert.equal(parsed.storyOnly, false);
 });
 
-
 test("relationship cursors require an opaque integrity binding", () => {
   const base = {
     v: 1,

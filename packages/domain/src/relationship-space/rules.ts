@@ -69,7 +69,9 @@ export function canEditRelationshipContent(input: {
   readonly creatorAccountId: string;
   readonly actorAccountId: string;
   readonly releasedAt: string | null;
-}): { readonly allowed: true } | { readonly allowed: false; readonly reason: RelationshipItemMutationDenial } {
+}):
+  | { readonly allowed: true }
+  | { readonly allowed: false; readonly reason: RelationshipItemMutationDenial } {
   const policy = relationshipItemPolicy(input.kind);
   if (input.kind === "relationship_signal") {
     return { allowed: false, reason: "RELATIONSHIP_ITEM_IMMUTABLE" };
@@ -87,7 +89,9 @@ export function canDeleteRelationshipItem(input: {
   readonly kind: RelationshipItemKind;
   readonly creatorAccountId: string;
   readonly actorAccountId: string;
-}): { readonly allowed: true } | { readonly allowed: false; readonly reason: RelationshipItemMutationDenial } {
+}):
+  | { readonly allowed: true }
+  | { readonly allowed: false; readonly reason: RelationshipItemMutationDenial } {
   const policy = relationshipItemPolicy(input.kind);
   if (policy.deleter === "creator" && input.creatorAccountId !== input.actorAccountId) {
     return { allowed: false, reason: "RELATIONSHIP_ITEM_NOT_OWNED" };
@@ -108,10 +112,14 @@ export function canManuallyReleaseRelationshipItem(input: {
   const policy = relationshipItemPolicy(input.kind);
   if (!input.releaseMode || !policy.releaseModes.includes(input.releaseMode)) return false;
   if (input.releaseMode === "recipient_open") {
-    return policy.manualReleaseActor === "recipient" && input.creatorAccountId !== input.actorAccountId;
+    return (
+      policy.manualReleaseActor === "recipient" && input.creatorAccountId !== input.actorAccountId
+    );
   }
   if (input.releaseMode === "creator_reveal") {
-    return policy.manualReleaseActor === "creator" && input.creatorAccountId === input.actorAccountId;
+    return (
+      policy.manualReleaseActor === "creator" && input.creatorAccountId === input.actorAccountId
+    );
   }
   return false;
 }
@@ -159,12 +167,10 @@ export function occurrenceIsValid(
   if (!occurrence.day || !validCalendarDay(occurrence.year, occurrence.month, occurrence.day)) {
     return false;
   }
-  return !rejectFuture || compareDateParts(
-    occurrence.year,
-    occurrence.month,
-    occurrence.day,
-    trustedServerDate,
-  ) <= 0;
+  return (
+    !rejectFuture ||
+    compareDateParts(occurrence.year, occurrence.month, occurrence.day, trustedServerDate) <= 0
+  );
 }
 
 export function historicalOccurrenceRequiredNotFuture(kind: RelationshipItemKind): boolean {

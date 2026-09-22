@@ -219,7 +219,10 @@ const placeContentSchema = z
     const hasLatitude = value.latitude !== undefined && value.latitude !== null;
     const hasLongitude = value.longitude !== undefined && value.longitude !== null;
     if (hasLatitude !== hasLongitude) {
-      context.addIssue({ code: "custom", message: "latitude and longitude must be supplied together" });
+      context.addIssue({
+        code: "custom",
+        message: "latitude and longitude must be supplied together",
+      });
     }
   });
 
@@ -530,7 +533,8 @@ export const relationshipItemListQuerySchema = z
     sort: z.enum(["created_desc", "occurred_asc"]).default("created_desc"),
     storyOnly: z
       .preprocess(
-        (value) => (value === "true" ? true : value === "false" || value === undefined ? false : value),
+        (value) =>
+          value === "true" ? true : value === "false" || value === undefined ? false : value,
         z.boolean(),
       )
       .default(false),

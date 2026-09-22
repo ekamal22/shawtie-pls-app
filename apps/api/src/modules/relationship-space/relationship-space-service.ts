@@ -525,12 +525,9 @@ export class RelationshipSpaceService {
     },
   ): Promise<MutationReservation | null> {
     const payload = this.#fingerprintPayload(input);
-    const scope = [
-      "r1",
-      input.partnershipId,
-      input.operation,
-      input.targetItemId ?? "create",
-    ].join(":");
+    const scope = ["r1", input.partnershipId, input.operation, input.targetItemId ?? "create"].join(
+      ":",
+    );
     const result = await transaction.query<{
       id: string;
       request_fingerprint: Buffer | null;
@@ -576,12 +573,9 @@ export class RelationshipSpaceService {
   ): Promise<MutationReservation> {
     const payload = this.#fingerprintPayload(input);
     const activeFingerprint = this.#activeFingerprint(payload);
-    const scope = [
-      "r1",
-      input.partnershipId,
-      input.operation,
-      input.targetItemId ?? "create",
-    ].join(":");
+    const scope = ["r1", input.partnershipId, input.operation, input.targetItemId ?? "create"].join(
+      ":",
+    );
 
     await transaction.query(
       "DELETE FROM idempotency_records WHERE account_id = $1 AND scope = $2 AND idempotency_key = $3 AND expires_at IS NOT NULL AND expires_at <= $4",
@@ -601,10 +595,7 @@ export class RelationshipSpaceService {
       ? this.#fingerprintForStoredVersion(payload, record.fingerprint)
       : activeFingerprint;
 
-    if (
-      !record.fingerprint ||
-      !this.keys.safeEqual(record.fingerprint, expected)
-    ) {
+    if (!record.fingerprint || !this.keys.safeEqual(record.fingerprint, expected)) {
       throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED");
     }
 
@@ -770,8 +761,7 @@ export class RelationshipSpaceService {
     }
     if (
       input.references.some(
-        (reference) =>
-          reference.referenceType === "message" && input.kind !== "remember_this",
+        (reference) => reference.referenceType === "message" && input.kind !== "remember_this",
       )
     ) {
       throw new ApiError(400, "INVALID_REFERENCE");
@@ -834,10 +824,7 @@ export class RelationshipSpaceService {
   async home(auth: AuthContext): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) return { space: null };
 
       const serverDate = trustedUtcDate(now);
@@ -861,9 +848,7 @@ export class RelationshipSpaceService {
       });
       const upcomingReleases: RelationshipItemProjection[] = [];
       for (const item of upcomingRows) {
-        upcomingReleases.push(
-          await this.#project(transaction, item, auth.session.accountId),
-        );
+        upcomingReleases.push(await this.#project(transaction, item, auth.session.accountId));
       }
 
       const reunionRows = await listRelationshipItems(transaction, {
@@ -877,15 +862,8 @@ export class RelationshipSpaceService {
       });
       let reunion: RelationshipItemProjection | null = null;
       for (const item of reunionRows) {
-        const state = await loadRelationshipFeatureState(
-          transaction,
-          item.partnershipId,
-          item.id,
-        );
-        if (
-          state?.type === "reunion" &&
-          compareCalendarDates(state.targetDate, serverDate) >= 0
-        ) {
+        const state = await loadRelationshipFeatureState(transaction, item.partnershipId, item.id);
+        if (state?.type === "reunion" && compareCalendarDates(state.targetDate, serverDate) >= 0) {
           reunion = await this.#project(transaction, item, auth.session.accountId);
           break;
         }
@@ -905,8 +883,7 @@ export class RelationshipSpaceService {
         recentSignals.push(await this.#project(transaction, item, auth.session.accountId));
       }
 
-      const writable =
-        current.lifecycleState === "active" && !current.accountDeletionViewOnly;
+      const writable = current.lifecycleState === "active" && !current.accountDeletionViewOnly;
       const anniversaryYear = Number(serverDate.slice(0, 4));
       const anniversaryDate = anniversaryDateForYear(
         current.relationshipStartDate,
@@ -923,11 +900,7 @@ export class RelationshipSpaceService {
       });
       let savedCurationItemId: string | null = null;
       for (const item of anniversaryRows) {
-        const state = await loadRelationshipFeatureState(
-          transaction,
-          item.partnershipId,
-          item.id,
-        );
+        const state = await loadRelationshipFeatureState(transaction, item.partnershipId, item.id);
         if (
           state?.type === "curation" &&
           state.curationType === "anniversary" &&
@@ -947,10 +920,7 @@ export class RelationshipSpaceService {
               : "active",
           relationshipStartDate: current.relationshipStartDate,
           serverDate,
-          relationshipDuration: relationshipDuration(
-            current.relationshipStartDate,
-            serverDate,
-          ),
+          relationshipDuration: relationshipDuration(current.relationshipStartDate, serverDate),
           capabilities: {
             view: true,
             create: writable,
@@ -976,10 +946,7 @@ export class RelationshipSpaceService {
   async list(auth: AuthContext, input: RelationshipItemListQuery): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) return { items: [], nextCursor: null };
 
       let snapshotAt = now;
@@ -1075,10 +1042,7 @@ export class RelationshipSpaceService {
 
   async get(auth: AuthContext, itemId: string): Promise<RelationshipItemProjection> {
     return withTransaction(this.database, async (transaction) => {
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
       const item = await loadRelationshipItem(transaction, current.partnershipId, itemId);
       if (!item || !isItemVisible(item, auth.session.accountId)) {
@@ -1095,10 +1059,7 @@ export class RelationshipSpaceService {
   ): Promise<{ statusCode: number; body: unknown }> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) throw new ApiError(409, "NO_CURRENT_PARTNERSHIP");
       const lifecycle = await lockPartnershipLifecycle(transaction, current.partnershipId);
       if (!lifecycle || !lifecycle.memberIds.includes(auth.session.accountId)) {
@@ -1265,10 +1226,7 @@ export class RelationshipSpaceService {
   ): Promise<{ statusCode: number; body: unknown }> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
 
       const lifecycle = await lockPartnershipLifecycle(transaction, current.partnershipId);
@@ -1298,11 +1256,7 @@ export class RelationshipSpaceService {
 
       const incomingTargetIds = input.links?.map((link) => link.targetItemId) ?? [];
       const lockIds = [...new Set([itemId, ...incomingTargetIds])].sort();
-      const locked = await lockRelationshipItemsByIds(
-        transaction,
-        current.partnershipId,
-        lockIds,
-      );
+      const locked = await lockRelationshipItemsByIds(transaction, current.partnershipId, lockIds);
       const lockedById = new Map(locked.map((item) => [item.id, item]));
       const item = lockedById.get(itemId);
       if (!item || !isItemVisible(item, auth.session.accountId)) {
@@ -1338,23 +1292,15 @@ export class RelationshipSpaceService {
         item.partnershipId,
         item.id,
       );
-      const currentLinks = await loadRelationshipLinks(
-        transaction,
-        item.partnershipId,
-        item.id,
-      );
+      const currentLinks = await loadRelationshipLinks(transaction, item.partnershipId, item.id);
 
       const candidate = parseAtBoundary(relationshipItemCreateSchema, {
         kind: item.kind,
         contentSchemaVersion: item.contentSchemaVersion,
-        preview:
-          input.preview !== undefined ? input.preview : item.developmentPreviewPayload,
-        content:
-          input.content !== undefined ? input.content : item.developmentPlaintextPayload,
-        occurrence:
-          input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
-        storyIncluded:
-          input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
+        preview: input.preview !== undefined ? input.preview : item.developmentPreviewPayload,
+        content: input.content !== undefined ? input.content : item.developmentPlaintextPayload,
+        occurrence: input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
+        storyIncluded: input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
         release: input.release !== undefined ? input.release : releaseFromItem(item),
         featureState:
           input.featureState !== undefined
@@ -1374,8 +1320,7 @@ export class RelationshipSpaceService {
         input.occurrence !== undefined ||
         input.references !== undefined ||
         input.release !== undefined;
-      const sharedStateChanged =
-        input.featureState !== undefined || input.links !== undefined;
+      const sharedStateChanged = input.featureState !== undefined || input.links !== undefined;
       const storyChanged = input.storyIncluded !== undefined;
 
       if (contentChanged) {
@@ -1430,7 +1375,9 @@ export class RelationshipSpaceService {
         );
       }
       if (input.links) {
-        const targets = input.links.map((link) => lockedById.get(link.targetItemId)).filter(Boolean);
+        const targets = input.links
+          .map((link) => lockedById.get(link.targetItemId))
+          .filter(Boolean);
         if (targets.length !== incomingTargetIds.length) {
           throw new ApiError(422, "INVALID_ITEM_LINK");
         }
@@ -1446,7 +1393,10 @@ export class RelationshipSpaceService {
       const nextRelease = releaseFields(candidate.release, now);
       let releaseGeneration = item.releaseGeneration;
       const changedRelease = releaseChanged(item, candidate.release);
-      if (changedRelease && (item.releaseMode === "scheduled" || nextRelease.mode === "scheduled")) {
+      if (
+        changedRelease &&
+        (item.releaseMode === "scheduled" || nextRelease.mode === "scheduled")
+      ) {
         releaseGeneration += 1n;
       }
 
@@ -1471,10 +1421,7 @@ export class RelationshipSpaceService {
         releaseMode: nextRelease.mode,
         releaseGeneration,
         unlockAt: nextRelease.unlockAt,
-        releasedAt:
-          nextRelease.mode === "immediate"
-            ? item.releasedAt ?? now
-            : item.releasedAt,
+        releasedAt: nextRelease.mode === "immediate" ? (item.releasedAt ?? now) : item.releasedAt,
         updatedAt: now,
       });
       if (nextVersion === null) throw new ApiError(409, "VERSION_CONFLICT");
@@ -1515,8 +1462,7 @@ export class RelationshipSpaceService {
           aggregateId: item.id,
           executeAt: nextRelease.unlockAt,
           expectedGeneration: releaseGeneration,
-          deduplicationKey:
-            "relationship-release:" + item.id + ":g:" + releaseGeneration,
+          deduplicationKey: "relationship-release:" + item.id + ":g:" + releaseGeneration,
           payload: {},
           payloadVersion: 1,
         });
@@ -1555,10 +1501,7 @@ export class RelationshipSpaceService {
   ): Promise<{ statusCode: 204; body: null }> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
 
       const lifecycle = await lockPartnershipLifecycle(transaction, current.partnershipId);
@@ -1581,12 +1524,7 @@ export class RelationshipSpaceService {
       });
       if (completed) return { statusCode: 204, body: null };
 
-      this.#requireCapability(
-        auth.session.accountId,
-        lifecycle,
-        now,
-        "delete_relationship_object",
-      );
+      this.#requireCapability(auth.session.accountId, lifecycle, now, "delete_relationship_object");
 
       const ownerIds = await loadIncomingRelationshipLinkOwnerIds(
         transaction,
@@ -1695,10 +1633,7 @@ export class RelationshipSpaceService {
   ): Promise<{ statusCode: number; body: unknown }> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
 
       const lifecycle = await lockPartnershipLifecycle(transaction, current.partnershipId);
@@ -1726,11 +1661,7 @@ export class RelationshipSpaceService {
         };
       }
 
-      const locked = await lockRelationshipItemsByIds(
-        transaction,
-        current.partnershipId,
-        [itemId],
-      );
+      const locked = await lockRelationshipItemsByIds(transaction, current.partnershipId, [itemId]);
       const item = locked[0];
       if (!item || !isItemVisible(item, auth.session.accountId)) {
         throw new ApiError(404, "RELATIONSHIP_ITEM_NOT_FOUND");
@@ -1817,10 +1748,7 @@ export class RelationshipSpaceService {
 
   async thisDay(auth: AuthContext, input: ThisDayQuery): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) return { on: input.on, items: [] };
       const { month, day } = dateParts(input.on);
       const rows = await listRelationshipItemsForThisDay(transaction, {
@@ -1841,10 +1769,7 @@ export class RelationshipSpaceService {
   async ourYear(auth: AuthContext, params: OurYearParams): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) return { year: params.year, savedCuration: null, candidates: [] };
 
       const rows = await listRelationshipItemsForYear(transaction, {
@@ -1869,11 +1794,7 @@ export class RelationshipSpaceService {
       });
       let savedCuration: RelationshipItemProjection | null = null;
       for (const row of curations) {
-        const state = await loadRelationshipFeatureState(
-          transaction,
-          row.partnershipId,
-          row.id,
-        );
+        const state = await loadRelationshipFeatureState(transaction, row.partnershipId, row.id);
         if (
           state?.type === "curation" &&
           state.curationType === "our_year" &&
@@ -1890,10 +1811,7 @@ export class RelationshipSpaceService {
   async anniversary(auth: AuthContext, input: AnniversaryQuery): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const current = await loadPartnershipReadModelForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await loadPartnershipReadModelForAccount(transaction, auth.session.accountId);
       if (!current) {
         return {
           relationshipStartDate: null,
@@ -1930,11 +1848,7 @@ export class RelationshipSpaceService {
       });
       let savedCuration: RelationshipItemProjection | null = null;
       for (const row of curations) {
-        const state = await loadRelationshipFeatureState(
-          transaction,
-          row.partnershipId,
-          row.id,
-        );
+        const state = await loadRelationshipFeatureState(transaction, row.partnershipId, row.id);
         if (
           state?.type === "curation" &&
           state.curationType === "anniversary" &&

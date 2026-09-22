@@ -24,10 +24,7 @@ export interface RelationshipOccurrence {
 }
 
 export type RelationshipReleaseMode =
-  | "immediate"
-  | "scheduled"
-  | "recipient_open"
-  | "creator_reveal";
+  "immediate" | "scheduled" | "recipient_open" | "creator_reveal";
 
 export type SomedayState = "someday" | "soon" | "completed";
 
@@ -63,4 +60,7 @@ export type RelationshipScheduledReleaseDecision =
   | { readonly action: "release" }
   | { readonly action: "too_early" }
   | { readonly action: "pause"; readonly until: string }
-  | { readonly action: "stale"; readonly reason: "released" | "invalid_mode" | "terminated" | "destructive_deadline" };
+  | {
+      readonly action: "stale";
+      readonly reason: "released" | "invalid_mode" | "terminated" | "destructive_deadline";
+    };

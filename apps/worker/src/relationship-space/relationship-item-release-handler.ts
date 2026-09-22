@@ -32,11 +32,9 @@ export const relationshipItemReleaseHandler: ScheduledActionHandler = {
     const lifecycle = await lockPartnershipLifecycle(transaction, initial.partnershipId);
     if (!lifecycle) return { outcome: "stale" as const };
 
-    const locked = await lockRelationshipItemsByIds(
-      transaction,
-      initial.partnershipId,
-      [action.aggregateId],
-    );
+    const locked = await lockRelationshipItemsByIds(transaction, initial.partnershipId, [
+      action.aggregateId,
+    ]);
     const item = locked[0];
     if (!item) return { outcome: "stale" as const };
 

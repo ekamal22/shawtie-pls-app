@@ -36,10 +36,7 @@ test("R1 private idempotency uses a keyed domain-separated verifier and metadata
   assert.equal(service.includes("canonicalJson"), true);
   assert.equal(keyRing.includes('"r1-idempotency-fingerprint"'), true);
   assert.equal(keyRing.includes('"r1-cursor-binding"'), true);
-  assert.equal(
-    service.includes("responseBody: input.body"),
-    false,
-  );
+  assert.equal(service.includes("responseBody: input.body"), false);
 });
 
 test("R1 does not import M1 messaging runtime or M3 media runtime", async () => {
@@ -52,7 +49,9 @@ test("R1 does not import M1 messaging runtime or M3 media runtime", async () => 
 });
 
 test("R1 migrations keep plaintext explicit and never label it as ciphertext", async () => {
-  const migration = await source("../../../packages/db/migrations/0013_relationship_space_runtime.sql");
+  const migration = await source(
+    "../../../packages/db/migrations/0013_relationship_space_runtime.sql",
+  );
   assert.equal(migration.includes("development_preview_payload jsonb"), true);
   assert.equal(migration.includes("development_plaintext_payload jsonb"), true);
   assert.equal(migration.includes("encrypted_preview_payload bytea"), true);
@@ -65,8 +64,8 @@ test("R1 scheduled payload stays content-free and release is generation fenced",
   const handler = await source(
     "../../worker/src/relationship-space/relationship-item-release-handler.ts",
   );
-  assert.equal(service.includes('payload: {}'), true);
-  assert.equal(service.includes('expectedGeneration: releaseGeneration'), true);
+  assert.equal(service.includes("payload: {}"), true);
+  assert.equal(service.includes("expectedGeneration: releaseGeneration"), true);
   assert.equal(handler.includes("expectedGeneration"), true);
   assert.equal(handler.includes("evaluateScheduledRelationshipRelease"), true);
   assert.equal(handler.includes("developmentPlaintextPayload"), false);
@@ -106,7 +105,6 @@ test("R1 Voice Letter is a media reference and not a standalone item kind", () =
   );
 });
 
-
 test("R1 mutation lock order is partnership then sorted items then operation receipt", async () => {
   const service = await source("../src/modules/relationship-space/relationship-space-service.ts");
 
@@ -130,7 +128,6 @@ test("R1 mutation lock order is partnership then sorted items then operation rec
   }
 });
 
-
 test("R1 server paths do not log private payloads or coordinates", async () => {
   const service = await source("../src/modules/relationship-space/relationship-space-service.ts");
   const routes = await source("../src/modules/relationship-space/routes.ts");
@@ -151,9 +148,7 @@ test("R1 server paths do not log private payloads or coordinates", async () => {
 
 test("R1 migration ownership remains 0013 and 0014 only", async () => {
   const packageJson = await source("../../../package.json");
-  const design = await source(
-    "../../../docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md",
-  );
+  const design = await source("../../../docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md");
   assert.equal(design.includes("0013_relationship_space_runtime.sql"), true);
   assert.equal(design.includes("0014_relationship_space_interaction_runtime.sql"), true);
   assert.equal(design.includes("R1 owns `0011"), false);
@@ -161,40 +156,26 @@ test("R1 migration ownership remains 0013 and 0014 only", async () => {
   assert.equal(packageJson.includes("test:r1:postgres"), true);
 });
 
-
 test("R1 isolated local migration reservations are explicit and do not weaken normal migration checks", async () => {
   const checker = await source("../../../scripts/db/check-migrations.mjs");
   const localHarness = await source("../../../scripts/db/test-r1-local.mjs");
 
   assert.equal(checker.includes("SHAWTIE_MIGRATION_RESERVATIONS"), true);
   assert.equal(localHarness.includes('SHAWTIE_MIGRATION_RESERVATIONS: "0011,0012"'), true);
-  assert.equal(
-    checker.includes('process.env.SHAWTIE_MIGRATION_RESERVATIONS ?? ""'),
-    true,
-  );
-  assert.equal(
-    localHarness.includes("0013_relationship_space_runtime.sql"),
-    false,
-  );
-  assert.equal(
-    localHarness.includes("0011_messaging_core_runtime.sql"),
-    false,
-  );
+  assert.equal(checker.includes('process.env.SHAWTIE_MIGRATION_RESERVATIONS ?? ""'), true);
+  assert.equal(localHarness.includes("0013_relationship_space_runtime.sql"), false);
+  assert.equal(localHarness.includes("0011_messaging_core_runtime.sql"), false);
 });
-
 
 test("R1 cursors are keyed to account, partnership, and query shape", async () => {
   const service = await source("../src/modules/relationship-space/relationship-space-service.ts");
-  const contracts = await source(
-    "../../../packages/contracts/src/relationship-space/items.ts",
-  );
+  const contracts = await source("../../../packages/contracts/src/relationship-space/items.ts");
   assert.equal(service.includes('"r1-cursor-binding"'), true);
   assert.equal(service.includes("partnershipId: current.partnershipId"), true);
   assert.equal(service.includes("accountId: auth.session.accountId"), true);
   assert.equal(service.includes("#cursorBindingMatches"), true);
   assert.equal(contracts.includes("binding: z.string().min(16).max(256)"), true);
 });
-
 
 test("R1 contains no passive location or relationship-scoring implementation", async () => {
   const service = await source("../src/modules/relationship-space/relationship-space-service.ts");

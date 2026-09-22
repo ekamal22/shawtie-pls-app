@@ -102,19 +102,11 @@ test("recipient-open belongs to recipient and creator-reveal belongs to creator"
 
 test("occurrence precision validates real dates without fabricating components", () => {
   assert.equal(
-    occurrenceIsValid(
-      { precision: "day", year: 2026, month: 2, day: 29 },
-      "2026-09-22",
-      true,
-    ),
+    occurrenceIsValid({ precision: "day", year: 2026, month: 2, day: 29 }, "2026-09-22", true),
     false,
   );
   assert.equal(
-    occurrenceIsValid(
-      { precision: "month", year: 2026, month: 10, day: null },
-      "2026-09-22",
-      true,
-    ),
+    occurrenceIsValid({ precision: "month", year: 2026, month: 10, day: null }, "2026-09-22", true),
     false,
   );
   assert.equal(
@@ -142,17 +134,11 @@ test("anniversary uses the last valid day for leap-day relationships", () => {
 
 test("mixed precision ordering uses null components as ordering sentinels only", () => {
   assert.deepEqual(
-    relationshipOccurrenceSortTuple(
-      { precision: "year", year: 2025, month: null, day: null },
-      "a",
-    ),
+    relationshipOccurrenceSortTuple({ precision: "year", year: 2025, month: null, day: null }, "a"),
     [2025, 0, 0, "a"],
   );
   assert.deepEqual(
-    relationshipOccurrenceSortTuple(
-      { precision: "month", year: 2025, month: 11, day: null },
-      "b",
-    ),
+    relationshipOccurrenceSortTuple({ precision: "month", year: 2025, month: 11, day: null }, "b"),
     [2025, 11, 0, "b"],
   );
 });
