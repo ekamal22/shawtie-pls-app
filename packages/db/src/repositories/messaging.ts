@@ -684,6 +684,23 @@ export async function setMessageReaction(
   );
 }
 
+export async function hasActiveMessageReaction(
+  executor: QueryExecutor,
+  messageId: string,
+  accountId: string,
+): Promise<boolean> {
+  const result = await executor.query(
+    `SELECT 1
+     FROM message_reactions
+     WHERE message_id = $1
+       AND reactor_account_id = $2
+       AND removed_at IS NULL
+     LIMIT 1`,
+    [messageId, accountId],
+  );
+  return result.rowCount === 1;
+}
+
 export async function removeMessageReaction(
   executor: QueryExecutor,
   messageId: string,
