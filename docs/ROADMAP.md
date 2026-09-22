@@ -101,23 +101,26 @@ Canonical detailed gates:
 
 ## Goal
 
-Create the authoritative private conversation substrate for one active partnership.
+Create the authoritative private conversation substrate for one active partnership with separate immutable message ordering and durable mutation synchronization.
 
 ## Core scope
 
 - one primary conversation per active partnership
 - text messages
-- replies
+- replies with stable tombstone-safe context
 - stable message IDs
-- deterministic server sequence
-- idempotent send
-- 30-minute edit window
-- deletion tombstones
+- deterministic server message sequence
+- durable change sequence for send/edit/delete/reaction synchronization
+- idempotent sends and mutations with keyed private-request fingerprints
+- 30-minute edit window with optimistic content-version conflict handling
+- deletion tombstones without plaintext edit-history retention
 - reactions
 - read receipts
-- typing indicators
-- presence and last-seen behavior
+- typing indicators with bounded TTL/write cadence
+- partnership-scoped presence and last-seen disclosure
 - shared nicknames
+- content-free change/outbox invalidation metadata for later M2 transport
+- module-owned messaging cleanup over the verified P3 dissolution kernel
 
 ## P3 lifecycle obligations
 
@@ -130,9 +133,19 @@ M1 must preserve the verified P3 capability model:
 - terminated partnership: no message mutation authority
 - no cross-partnership access under any identifier guess or race
 
+## Synchronization obligations
+
+M1 must not use message creation sequence as the only reconnect/poll cursor.
+
+- `server_sequence` remains immutable message order and history pagination
+- `change_sequence` covers every durable send/edit/delete/reaction mutation
+- old-message edits, deletes, and reaction changes must be discoverable from a later change cursor
+- durable change rows and outbox invalidations carry no private content
+- browser polling remains canonical-API reconciliation; M2 may later deliver the same invalidations over WebSockets
+
 ## Closure boundary
 
-M1 is DONE only after its API, persistence, ordering, idempotency, lifecycle, race, security, and browser core gates pass.
+M1 is DONE only after its API, persistence, ordering, durable synchronization, idempotency, optimistic-concurrency, lifecycle, race, deletion, privacy, security, and browser core gates pass.
 
 **REDMI PHONE REQUIRED: NO for core closure.**
 
