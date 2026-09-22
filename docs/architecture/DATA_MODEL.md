@@ -22,7 +22,7 @@ P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and ve
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
-M1 reserves forward-only migrations 0011 and 0012 on `feat/m1-messaging-core`. The design refines the existing `conversations`, `messages`, `message_versions`, `message_reactions`, and breakup-process substrate, and adds compact receipt/nickname/presence/typing state. These M1 migrations are design targets until their source and disposable-PostgreSQL evidence are committed. R1 separately reserves migrations 0013 and 0014.
+M1 reserves forward-only migrations 0011 and 0012 on `feat/m1-messaging-core`. The refined design extends the existing conversation/message and breakup-process substrate with a separate durable mutation change sequence, a content-free conversation-change ledger, current-content versioning, keyed private-request fingerprints, compact receipt/nickname/presence/typing state, and module-owned messaging cleanup. M1 does not persist plaintext edit history. These M1 migrations are design targets until their source and disposable-PostgreSQL evidence are committed. R1 separately reserves migrations 0013 and 0014.
 
 ## Identifier policy
 
@@ -317,7 +317,7 @@ An active block prevents:
 
 ## Conversations and messages
 
-Logical tables:
+Logical M1 tables and state:
 
 ```text
 conversations
@@ -325,9 +325,27 @@ messages
 message_versions
 message_reactions
 message_receipts
+conversation_changes
+conversation_member_state
+partnership_chat_nicknames
+account_presence
+conversation_typing_state
 ```
 
-Representative message fields:
+Representative conversation fields:
+
+```text
+id
+partnership_id
+kind
+next_server_sequence
+next_change_sequence
+created_at
+```
+
+`next_server_sequence` orders message creation. `next_change_sequence` orders durable message-state mutations. They are separate because editing, deleting, or reacting to an older message must be synchronizable without pretending a new message was created.
+
+Representative message fields after the M1 refinement:
 
 ```text
 id
@@ -335,35 +353,99 @@ conversation_id
 partnership_id
 sender_account_id
 sender_device_id
+body_text
 ciphertext
 ciphertext_version
 reply_to_message_id
 client_idempotency_key
+request_fingerprint
 server_sequence
+content_version
+last_change_sequence
 created_at
 edited_at
 deleted_at
 ```
 
-### Ordering
+The sender device ID is derived from the authenticated session, not from caller-controlled request input.
 
-Use a monotonic per-conversation server sequence for deterministic synchronization.
+### Message ordering
 
-Timestamps remain useful metadata but should not be the sole ordering primitive.
+Use the monotonic per-conversation `server_sequence` for immutable message creation order and history pagination.
+
+Timestamps remain useful metadata but are not an ordering primitive.
+
+### Durable mutation synchronization
+
+Use a separate monotonic `change_sequence` for:
+
+- message creation
+- message edit
+- message deletion
+- reaction set/change/remove
+
+`conversation_changes` is append-only while retained and carries only synchronization metadata:
+
+```text
+conversation_id
+change_sequence
+change_type
+message_id
+content_version nullable
+created_at
+```
+
+It must never contain message bodies, reaction emoji, nickname text, reply content, or other protected payload.
+
+The message row records its latest applied change sequence. HTTP polling in M1 and later realtime reconnect repair can therefore discover mutations to old messages without relying on client timestamps or new-message sequence movement.
 
 ### Edits
 
-Message versions preserve encrypted edit history where required by product behavior.
+The server validates the 30-minute edit window using trusted server time.
 
-The server validates the 30-minute edit window using server time.
+An edit supplies `expectedContentVersion`. The locked row must still match that version or the mutation returns a deterministic version conflict.
+
+Pre-S1 M1 stores only the current development plaintext body. It does not write prior plaintext bodies to `message_versions`. The existing versions table remains compatibility/future encrypted-history substrate.
 
 ### Deletes
 
-Deletion removes protected content from normal access and preserves only the minimal tombstone information needed to render:
+Deletion removes current protected content and any historical content storage, retires reactions, and preserves only minimal tombstone metadata.
 
-`This message has been deleted`
+The system must not retain plaintext deleted content in logs, versions, durable change rows, outbox events, scheduled work, or idempotency metadata.
 
-The system must not retain plaintext deleted content in logs.
+### Reactions
+
+One active reaction per account per message is database-enforced for M1.
+
+Reaction content exists only in the authoritative reaction row. Durable change rows and outbox invalidations identify the affected message/change but never duplicate the emoji.
+
+### Delivery and read state
+
+M1 writes monotonic high-water marks in `conversation_member_state`.
+
+Read never trails delivered, neither mark may exceed the latest committed message sequence, and clients must not acknowledge across a known unresolved forward-synchronization gap.
+
+The older per-message receipt table remains compatibility substrate rather than the normal M1 write path.
+
+### Presence and typing
+
+`account_presence` stores only the current account snapshot, not history. Disclosure remains partnership-scoped: the current partner may not receive `last_seen_at` information older than the current partnership's activation time.
+
+`conversation_typing_state` is short-lived, server-expiring state. M1 uses centralized server-owned TTL, heartbeat, coalescing, and rate-limit policy so high-frequency interaction metadata cannot create unbounded database writes.
+
+### Shared chat nicknames
+
+`partnership_chat_nicknames` is partnership-scoped shared metadata with optimistic versioning.
+
+Nicknames are protected partnership content. They may be server-readable during pre-S1 development, but the S1 design must explicitly decide their encrypted representation rather than treating them as an accidental permanent plaintext exception.
+
+### Idempotency and private request fingerprints
+
+Retryable private-content mutations use versioned keyed request fingerprints, such as a server-held HMAC over a canonical request representation.
+
+An ordinary unkeyed digest of message text is not a sufficient durable mismatch verifier.
+
+Idempotency records and mutation response metadata must not duplicate private content.
 
 ## Relationship space
 
