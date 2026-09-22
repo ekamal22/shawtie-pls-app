@@ -1133,6 +1133,30 @@ test("M1 concurrent sends stay gap-free and guessed cross-partnership identifier
     const firstPair = await formPartnership(app, alice, bob, "race_first");
     const secondPair = await formPartnership(app, carol, dave, "race_second");
 
+    const secondPairMessage = await sendMessage(
+      app,
+      carol,
+      secondPair.conversationId,
+      "second partnership message",
+      "m1-race-second-pair-message-key",
+    );
+    assert.equal(secondPairMessage.statusCode, 201, secondPairMessage.body);
+    const secondPairMessageId = (secondPairMessage.json() as { messageId: string }).messageId;
+
+    const invalidCrossReply = await sendMessage(
+      app,
+      alice,
+      firstPair.conversationId,
+      "invalid cross-partnership reply",
+      "m1-race-invalid-cross-reply-key",
+      secondPairMessageId,
+    );
+    assert.equal(invalidCrossReply.statusCode, 404, invalidCrossReply.body);
+    assert.equal(
+      (invalidCrossReply.json() as { error: { code: string } }).error.code,
+      "MESSAGE_NOT_FOUND",
+    );
+
     const responses = await Promise.all(
       Array.from({ length: 8 }, (_, index) =>
         sendMessage(
