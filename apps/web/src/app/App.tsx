@@ -1,5 +1,11 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
+import {
+  purgeAccountLocalData,
+  purgeRememberedAccountLocalData,
+  rememberLocalAccount,
+} from "../lib/offline/local-db.ts";
+import { M2RuntimeProvider } from "../lib/realtime/runtime-context.tsx";
 import { MessagingPanel } from "../features/messaging/MessagingPanel.tsx";
 import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
@@ -726,13 +732,18 @@ function AccountScreen({
 }
 
 export function App() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [session, setSession] = useState<
+    Session | null | undefined | "offline-locked"
+  >(undefined);
 
   async function refreshSession() {
     try {
-      setSession(await apiRequest<Session>("/api/v1/auth/session"));
+      const current = await apiRequest<Session>("/api/v1/auth/session");
+      rememberLocalAccount(current.accountId);
+      setSession(current);
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {
+        await purgeRememberedAccountLocalData().catch(() => undefined);
         setSession(null);
         return;
       }
@@ -741,7 +752,12 @@ export function App() {
   }
 
   useEffect(() => {
-    void refreshSession().catch(() => setSession(null));
+    void refreshSession().catch(() => setSession("offline-locked"));
+    const retryOnline = () => {
+      void refreshSession().catch(() => setSession("offline-locked"));
+    };
+    window.addEventListener("online", retryOnline);
+    return () => window.removeEventListener("online", retryOnline);
   }, []);
 
   if (session === undefined) {
@@ -754,13 +770,45 @@ export function App() {
     );
   }
 
-  return session ? (
-    <AccountScreen
-      session={session}
-      onSignedOut={() => setSession(null)}
-      refreshSession={refreshSession}
-    />
-  ) : (
-    <AuthScreen onAuthenticated={refreshSession} />
+  if (session === "offline-locked") {
+    return (
+      <main className="shell auth-shell">
+        <section className="panel">
+          <h1>Offline</h1>
+          <p>
+            Connect once so Shawtie pls can verify this private session before
+            opening locally cached content.
+          </p>
+          <button
+            className="primary"
+            onClick={() =>
+              void refreshSession().catch(() => undefined)
+            }
+          >
+            Try again
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return <AuthScreen onAuthenticated={refreshSession} />;
+  }
+
+  const signedOutAccountId = session.accountId;
+  return (
+    <M2RuntimeProvider accountId={session.accountId}>
+      <AccountScreen
+        session={session}
+        onSignedOut={() => {
+          setSession(null);
+          void purgeAccountLocalData(signedOutAccountId).catch(
+            () => undefined,
+          );
+        }}
+        refreshSession={refreshSession}
+      />
+    </M2RuntimeProvider>
   );
 }
