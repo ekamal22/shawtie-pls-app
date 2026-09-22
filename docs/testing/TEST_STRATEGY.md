@@ -499,7 +499,7 @@ Stable-release evidence must combine:
 
 M1 uses a dedicated disposable PostgreSQL closure harness.
 
-Planned commands:
+Implemented closure commands:
 
 ~~~text
 npm run test:messaging-core
