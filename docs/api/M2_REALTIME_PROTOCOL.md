@@ -18,6 +18,8 @@ Endpoint:
 
 The protocol is content-free for durable application invalidations.
 
+The design-complete M3 media milestone does not change this property. M3 will reuse M1 `message.changed` and R1 `relationship.changed` invalidations after parent mutations; binary media, media keys, signed storage URLs, filenames, MIME descriptors, and provider object metadata remain forbidden from realtime frames.
+
 Durable product mutations remain on HTTP.
 
 Second-pass hardening adds a race-free live barrier, immutable socket scope identity, listener-reset resynchronization, low-frequency visible anti-entropy, and strict rejection of binary/compressed application transport. The implemented hub also supports internal account-routed `partnership.changed` delivery so a socket connected before pairing can be invalidated and revalidated immediately when partnership authority changes. Those account IDs are routing-only internal metadata and are not added to browser invalidation frames.
