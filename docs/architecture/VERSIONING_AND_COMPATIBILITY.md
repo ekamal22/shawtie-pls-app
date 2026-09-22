@@ -144,7 +144,7 @@ A waiting service worker does not activate blindly when that could mix incompati
 
 An IndexedDB migration failure is a fail-closed state. The client must not guess field meanings or replay operations under an unknown schema. Before S1, a cold start or hard reload while offline also remains locked until server-session validation because local protected content is development plaintext rather than reviewed encrypted offline state.
 
-Future C1 signaling or S1 cryptographic changes that require incompatible realtime semantics must introduce an explicitly reviewed protocol-version transition rather than silently changing version 1. M2 scope identity is immutable per socket, so a compatibility or authority transition that changes partnership/conversation identity closes and re-establishes the connection rather than mutating the old scope in place.
+Future C1 Voice Calling signaling, C2 Video Calling signaling extensions, or S1 cryptographic changes that require incompatible realtime semantics must introduce an explicitly reviewed protocol-version transition rather than silently changing version 1. C2 should reuse the C1 call-signaling contract when compatibility permits. M2 scope identity is immutable per socket, so a compatibility or authority transition that changes partnership/conversation identity closes and re-establishes the connection rather than mutating the old scope in place.
 
 
 ## M3 media compatibility policy
