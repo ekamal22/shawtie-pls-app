@@ -56,7 +56,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
-| 5A M1 Messaging Core | NEXT | P3 | No for core closure |
+| 5A M1 Messaging Core | IN_PROGRESS | P3 | No for core closure |
 | 5B R1 Relationship Space | NEXT, may run in parallel | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
@@ -93,7 +93,7 @@ Recommended execution order:
 
 # Milestone 5A: M1 Messaging Core
 
-Status: NEXT.
+Status: IN_PROGRESS.
 
 Canonical detailed gates:
 
