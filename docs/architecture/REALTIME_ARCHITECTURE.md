@@ -59,15 +59,29 @@ Example:
 {
   "type": "message.created",
   "conversationId": "opaque-id",
-  "sequence": 944
+  "messageId": "opaque-id",
+  "serverSequence": 944,
+  "changeSequence": 1201,
+  "contentVersion": 1
 }
 ```
 
+Messaging invalidation events remain content-free. They identify what changed and the authoritative cursor/version needed for reconciliation; they do not carry message bodies or reaction content.
+
 ## Message synchronization
 
-Each conversation uses a monotonic server sequence.
+M1 establishes two distinct monotonic per-conversation sequences:
 
-After reconnect, the client requests all events or messages after its last committed sequence.
+- `server_sequence` is immutable message creation order and history pagination
+- `change_sequence` is durable synchronization order for message creation, edit, delete, and reaction mutations
+
+Realtime transport must preserve this distinction.
+
+After reconnect, the client first verifies authoritative partnership access, then repairs durable messaging changes after its last committed change sequence. Message history gaps use server-sequence pagination.
+
+An edit, deletion, or reaction change to an old message must therefore be recoverable even when no new message was created.
+
+WebSocket events are hints for low latency. PostgreSQL plus the canonical HTTP change/history APIs remain the source of truth.
 
 This avoids relying on socket delivery guarantees or wall-clock ordering.
 
@@ -86,9 +100,10 @@ On reconnect:
 1. reauthenticate
 2. rebuild authorized channel membership
 3. fetch authoritative partnership state
-4. synchronize conversation sequence gaps
-5. invalidate stale relationship state
-6. resume presence and typing state
+4. repair durable conversation change-sequence gaps
+5. repair any required message-history server-sequence gaps
+6. invalidate stale relationship state
+7. resume presence and typing state
 
 A reconnect must never assume the old partnership is still authorized.
 
