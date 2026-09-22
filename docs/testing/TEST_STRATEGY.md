@@ -523,6 +523,80 @@ Stable-release evidence must combine:
 - browser E2E
 - physical-device checks for mobile-critical flows
 
+## M2 Realtime and Offline Reliability verification
+
+M2 has a dedicated closure matrix because WebSocket delivery, browser local persistence, service-worker lifecycle, and physical-device suspension cannot be proven by unit tests alone.
+
+Planned commands:
+
+```text
+npm run test:realtime-offline
+npm run test:m2:security
+npm run test:m2:postgres
+npm run test:m2:browser
+npm run test:m2:local
+npm run health
+npm audit --audit-level=high
+```
+
+Required contract/unit evidence includes:
+
+- strict realtime protocol v1 client/server frame schemas
+- oversize and unexpected-field rejection
+- unknown critical version failure
+- SyncCoordinator state transitions
+- change-sequence versus server-sequence separation
+- local namespace construction
+- atomic cursor/projection persistence behavior
+- offline retry classification
+- chat and R1 operation whitelist validation
+- service-worker compatibility decisions
+
+Required API/security evidence includes:
+
+- exact trusted-Origin WebSocket upgrade enforcement
+- existing server-session authentication
+- no bearer token in the WebSocket URL
+- no arbitrary account/partnership/conversation subscription
+- stale and revoked session closure
+- server-derived scope revalidation
+- malformed and oversize frame handling
+- connection/frame-rate policy
+- no protected content in realtime frames
+- no protected content in PostgreSQL NOTIFY payloads
+
+Required PostgreSQL/API/worker integration evidence includes:
+
+- durable M1 outbox invalidation to realtime publish
+- duplicate publish safety
+- missing LISTEN consumer safety
+- LISTEN reconnect
+- multiple API listener processes
+- worker event-family isolation
+- content-free partnership/R1/security invalidations
+- all earlier milestone regression surfaces
+
+Required browser automation includes:
+
+- IndexedDB persistence across reload
+- atomic canonical projection plus cursor update
+- offline message queue persistence
+- idempotent reconnect replay
+- edit/version conflict handling
+- duplicate and out-of-order realtime hints
+- missed realtime hint followed by canonical repair
+- online/offline transitions
+- page background/foreground transitions
+- multi-tab duplicate replay safety
+- final-dissolution namespace purge
+- service-worker update with pending offline operations
+- private API responses absent from Cache API
+- future partnership isolation
+
+Physical Android acceptance is mandatory for M2. It must prove foreground/background socket suspension recovery, offline queue/replay, lifecycle change while offline, final-dissolution purge before replay, session/device revocation behavior, service-worker update safety, and future-partnership local isolation on the supported physical device.
+
+M2 does not close from simulated socket delivery alone. The authoritative acceptance catalog is in `../ROADMAP_EPICS.md`, and the detailed architecture is in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md`.
+
 ## M1 Messaging Core verification
 
 M1 uses a dedicated disposable PostgreSQL closure harness.

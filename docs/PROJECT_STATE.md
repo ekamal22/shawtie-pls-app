@@ -123,6 +123,7 @@ Current epic status:
 - P2 Partnership Formation and Relationship Date: DONE. All 11 acceptance gates are closed. The P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. The matrix proves explicit and reciprocal formation, accepted-request replay linkage, deterministic locking, incompatible-request invalidation, expiry-action handling, one-partner occupancy races, relationship-date version and generation separation, other-partner notification isolation, notification snapshot pagination, and P1 behavior in real `paired` mode. The standalone historical `test:p1:local` harness remains request-only. Full repository health and `npm audit --audit-level=high` are green. Migration 0008 remains byte-for-byte unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`.
 - M1 Messaging Core: DONE at 18/18 acceptance gates. Runtime closure is anchored at `aa40a2c`; source head `b29b095` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. M1 owns verified migrations 0011 and 0012.
 - R1 Relationship Space: DONE. Source head `9bc9ba4` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. R1 owns migrations 0013 and 0014. Canonical 0001 through 0014 migrations run without reservations, `test:r1:local` passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the real same-partnership M1 message-reference seam is positively verified without copying message plaintext, and full repository health plus audit are green.
+- M2 Realtime and Offline Reliability: IN_PROGRESS. Architecture and protocol design are complete on `feat/m2-realtime-offline`; implementation is intentionally not started until the design boundary is committed. M2 preserves HTTP/PostgreSQL authority, M1 server/change sequence separation, server-derived realtime scope, partnership-scoped IndexedDB isolation, typed offline queues, lifecycle-aware replay, and physical Android closure.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -140,7 +141,8 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
-- `main` -> contains the completed M1/R1 integrated baseline at `d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`
+- `main` -> contains the completed M1/R1 integrated baseline plus merge-state documentation at `9f4237e90c4d289f8b316e5d8dd2bba41609c95d`
+- `feat/m2-realtime-offline` -> M2 architecture/protocol design branch created from `main @ 9f4237e`; implementation not started
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -164,7 +166,7 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 A1, P1, P2, P3, M1, and R1 are complete and merged into the verified mainline.
 
-The next engineering milestone is M2 Realtime and Offline Reliability, created from `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. The M1/R1 exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`.
+M2 Realtime and Offline Reliability is IN_PROGRESS on `feat/m2-realtime-offline`, created from documentation-correct `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. The refined architecture and realtime protocol are complete; runtime implementation has not started. The M1/R1 exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`.
 
 1. preserve M1 ownership of migrations 0011 and 0012 and R1 ownership of migrations 0013 and 0014
 2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries

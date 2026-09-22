@@ -312,3 +312,30 @@ M1 preserves P3 lifecycle authority and adds the following security requirements
 - module-owned messaging cleanup composes with the P3 deletion kernel; M1 does not create a second dissolution implementation
 
 M1 remains a pre-S1 development substrate. It must not be represented as E2EE or suitable for sensitive real-world use until S1 closes the protected-content storage boundary.
+
+## M2 realtime and offline security boundary
+
+The refined M2 design is defined in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md` and `../api/M2_REALTIME_PROTOCOL.md`.
+
+M2 preserves the existing authentication, lifecycle, and private-content boundaries while adding realtime transport and local offline persistence.
+
+Required M2 security rules:
+
+- WebSocket upgrade accepts only the trusted application Origin
+- the existing HttpOnly server-managed session authenticates realtime; bearer tokens are not placed in URLs or browser-readable persistent storage
+- account, partnership, and conversation realtime scope is derived by the server; the client cannot subscribe to arbitrary identifiers
+- durable application mutations remain on the existing authenticated HTTP API
+- realtime invalidations, PostgreSQL NOTIFY payloads, outbox payloads, close reasons, and transport logs contain no protected message or R1 content
+- long-lived connections periodically revalidate session and partnership authorization
+- device/session revocation stops future realtime access and offline replay
+- IndexedDB is account and partnership isolated
+- queued operations are not treated as authorization and are replayed only after canonical lifecycle refresh
+- service workers never cache private/no-store API responses
+- final dissolution removes old partnership state from the UI immediately and purges its local namespace before replay
+- a future partnership cannot inherit old cache, queued mutations, realtime scope, or future cryptographic namespace
+- malformed or unsupported realtime/local-schema versions fail closed
+- slow clients cannot create an unbounded server send buffer
+
+Before S1, M2 local protected content remains development plaintext. Explicit logout, account switch, or observed revocation therefore purges the authorization-bound local protected state. M2 must not invent fake ciphertext or fake cryptographic epochs.
+
+PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notification must not weaken authorization or synchronization correctness because canonical HTTP/PostgreSQL reconciliation remains authoritative.

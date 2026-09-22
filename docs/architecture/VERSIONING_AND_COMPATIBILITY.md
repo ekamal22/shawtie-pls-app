@@ -119,6 +119,33 @@ Realtime messages contain a schema or protocol version.
 
 Unknown critical event versions must trigger canonical resynchronization rather than unsafe interpretation.
 
+## M2 concrete compatibility policy
+
+M2 starts with:
+
+- realtimeProtocolVersion = 1
+- localSchemaVersion = 1
+- API namespace = /api/v1
+- pre-S1 local content context = pre-s1
+
+The pre-S1 content context is a local storage discriminator only. It is not a cryptographic epoch and must not be represented as encryption.
+
+The client may enter live realtime mode only when the negotiated realtime protocol is supported.
+
+The client may replay offline mutations only when:
+
+- the authenticated session is current
+- the client/API compatibility state is supported
+- the IndexedDB schema version is supported
+- the current local namespace matches the authoritative account and partnership
+- the operation schema is recognized
+
+A waiting service worker does not activate blindly when that could mix incompatible application code, local schema, and mutation semantics. M2 pauses replay, checkpoints local state, activates the compatible worker, reloads, validates IndexedDB, validates the session, performs canonical resynchronization, and only then resumes replay.
+
+An IndexedDB migration failure is a fail-closed state. The client must not guess field meanings or replay operations under an unknown schema.
+
+Future C1 signaling or S1 cryptographic changes that require incompatible realtime semantics must introduce an explicitly reviewed protocol-version transition rather than silently changing version 1.
+
 ## Testing
 
 Compatibility testing must include:

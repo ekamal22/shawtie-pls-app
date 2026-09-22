@@ -12,6 +12,21 @@ Unknown critical event versions cause canonical resynchronization instead of uns
 
 The client also tracks API, crypto protocol, and local schema compatibility as defined in `VERSIONING_AND_COMPATIBILITY.md`.
 
+## M2 concrete implementation
+
+The concrete M2 implementation is defined in:
+
+- `M2_REALTIME_OFFLINE_DESIGN.md`
+- `../api/M2_REALTIME_PROTOCOL.md`
+
+M2 uses the official Fastify WebSocket integration, the existing HttpOnly session cookie, exact trusted-Origin validation, server-derived scope, and one dedicated PostgreSQL LISTEN connection per API process.
+
+Cross-process fanout uses compact validated PostgreSQL NOTIFY messages emitted by the durable worker after content-free outbox validation. NOTIFY remains a latency hint only. HTTP and PostgreSQL reconciliation remain authoritative.
+
+M2 does not put durable product mutations on WebSocket. Message and R1 writes remain on their existing HTTP APIs.
+
+M2 uses no Redis and is expected to require no new PostgreSQL migration.
+
 ## Transport
 
 Use one authenticated WebSocket connection per active device where practical.
@@ -20,7 +35,7 @@ The connection is authenticated using the same trusted session identity as the H
 
 ## Authorization
 
-Clients must not be allowed to subscribe to arbitrary resource identifiers.
+Clients must not be allowed to subscribe to arbitrary resource identifiers. M2 exposes no client subscribe/unsubscribe command; account, partnership, and conversation scope is derived only from the authenticated server session and current database state.
 
 The server derives authorized channels after authentication.
 
@@ -81,7 +96,7 @@ After reconnect, the client first verifies authoritative partnership access, the
 
 An edit, deletion, or reaction change to an old message must therefore be recoverable even when no new message was created.
 
-WebSocket events are hints for low latency. PostgreSQL plus the canonical HTTP change/history APIs remain the source of truth.
+WebSocket events are hints for low latency. PostgreSQL plus the canonical HTTP change/history APIs remain the source of truth. The client advances its durable local change cursor only in the same IndexedDB transaction that commits the canonical projections obtained through HTTP reconciliation.
 
 This avoids relying on socket delivery guarantees or wall-clock ordering.
 

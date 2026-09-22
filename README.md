@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified combined technical baseline is `5db7a94183bca153d142389d7188e3887653a9ec`, now contained in `main` through documentation-closed merge head `d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M1 runtime closure remains anchored at `aa40a2c` with source head `b29b095`; R1 source head is `9bc9ba4`; combined source integration is `01fa182`. Exhaustive validation passed 40/40 gates, canonical migrations 0001 through 0014 with `reserved=0`, database invariants, M1 64/64, R1 69/69, full repository health, a zero-vulnerability audit, git cleanliness, and local/remote SHA parity. M2 Realtime and Offline Reliability is the next implementation milestone. Hosted GitHub Actions verification remains separate under V1.
+The verified combined technical baseline is `5db7a94183bca153d142389d7188e3887653a9ec`, now contained in `main` through documentation-closed merge head `d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M1 runtime closure remains anchored at `aa40a2c` with source head `b29b095`; R1 source head is `9bc9ba4`; combined source integration is `01fa182`. Exhaustive validation passed 40/40 gates, canonical migrations 0001 through 0014 with `reserved=0`, database invariants, M1 64/64, R1 69/69, full repository health, a zero-vulnerability audit, git cleanliness, and local/remote SHA parity. M2 Realtime and Offline Reliability is now IN_PROGRESS on `feat/m2-realtime-offline`; its architecture and implementation sequence are defined before runtime coding begins. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 
@@ -47,6 +47,8 @@ Start with:
 - `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` for the completed, locally verified P3 implementation design
 - `docs/architecture/M1_MESSAGING_CORE_DESIGN.md` for the refined M1 Messaging Core architecture and implementation plan
 - `docs/api/M1_MESSAGING_API.md` for the implemented M1 HTTP and synchronization contract
+- `docs/architecture/M2_REALTIME_OFFLINE_DESIGN.md` for the refined M2 realtime/offline architecture and implementation sequence
+- `docs/api/M2_REALTIME_PROTOCOL.md` for the M2 WebSocket protocol and invalidation contract
 - `docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md` for the completed R1 architecture and implementation design
 - `docs/api/R1_RELATIONSHIP_SPACE_API.md` for the implemented R1 HTTP contract
 - `docs/api/P2_PARTNERSHIP_API.md` for the implemented and locally verified P2 HTTP contract and replay/privacy semantics

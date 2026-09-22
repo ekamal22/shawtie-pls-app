@@ -1098,34 +1098,178 @@ M1 is DONE at 18/18 acceptance gates, has passed combined integration validation
 
 # M2: Realtime and Offline Reliability
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+Branch:
+
+`feat/m2-realtime-offline`
+
+Base:
+
+`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`
+
+Architecture:
+
+`docs/architecture/M2_REALTIME_OFFLINE_DESIGN.md`
+
+Realtime protocol:
+
+`docs/api/M2_REALTIME_PROTOCOL.md`
+
+Design state:
+
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Runtime implementation has not started.
 
 ## Scope
 
-- authenticated WebSocket
-- server-derived channel membership
-- reconnect
-- canonical resynchronization
-- IndexedDB namespace partitioning
-- offline chat queue
-- relationship queue
-- optimistic concurrency
-- client compatibility behavior
+- authenticated WebSocket using the existing server session
+- exact trusted-Origin upgrade enforcement
+- server-derived account/partnership/conversation realtime scope
+- content-free versioned invalidations
+- F2 outbox to PostgreSQL NOTIFY low-latency fanout
+- canonical HTTP resynchronization
+- separate `server_sequence` and `change_sequence` repair
+- IndexedDB local schema version 1
+- account/partnership/conversation/content-context namespace isolation
+- typed offline chat queue
+- typed safe-whitelist R1 queue
+- lifecycle-aware replay
+- service-worker app-shell/static caching only
+- update compatibility
+- browser automation
+- physical Android closure
+
+M2 does not own media transport, call signaling, E2EE, or cryptographic recovery.
+
+M2 is expected to require no PostgreSQL migration. Migration 0015 is not reserved merely for M2.
+
+## Implementation sequence
+
+### M2-A Protocol, contracts, and compatibility
+
+- protocol version 1
+- strict client/server frame unions
+- internal NOTIFY envelope schema
+- frame size ceilings
+- local schema v1 types
+- unknown critical versions fail closed
+
+### M2-B Authenticated WebSocket and scope
+
+- Fastify WebSocket endpoint
+- exact Origin
+- session authentication
+- protocol negotiation
+- connection hub
+- server-derived scope
+- liveness
+- bounded backpressure
+- session/scope revalidation
+- graceful shutdown
+
+### M2-C Durable invalidation publisher
+
+- RealtimePublisher port
+- PostgreSQL NOTIFY publisher
+- dedicated API LISTEN connection
+- M1 outbox invalidation delivery
+- content-free receipt/nickname/partnership/R1/account-security invalidations
+- explicit handler ownership
+
+### M2-D Client realtime and canonical sync
+
+- realtime client state machine
+- single-flight SyncCoordinator
+- message change repair
+- history-gap repair
+- R1 invalidation/refetch
+- duplicate/out-of-order coalescing
+- foreground/network reconnect
+- polling fallback
+
+### M2-E IndexedDB namespace and cache
+
+- per-account local database
+- namespaceMeta
+- conversationSync
+- messages
+- relationshipItems
+- relationshipMeta
+- chatOutbox
+- relationshipOutbox
+- atomic data+cursor commits
+- bounded cache
+- purge boundary
+
+### M2-F Offline chat queue
+
+- message send/edit/delete/reaction
+- stable idempotency
+- expected content version
+- retry classification
+- pending UI state
+- no fake server sequence
+- receipt high-water state
+
+### M2-G Offline R1 queue
+
+- separate typed queue
+- safe operation whitelist
+- expectedVersion
+- conflict UX
+- lifecycle preflight
+- no offline release/open/reveal/schedule transition
+
+### M2-H Service worker and compatibility
+
+- app-shell/static cache only
+- never cache private API
+- controlled waiting-worker activation
+- replay pause during update
+- IndexedDB compatibility
+- update-required mode
+
+### M2-I Integration, security, and physical device
+
+- security suite
+- PostgreSQL/API/worker integration
+- real browser offline suite
+- multi-tab safety
+- physical Android foreground/background/network tests
+- full health
+- audit
 
 ## Acceptance gates
 
-- [ ] client cannot subscribe to arbitrary partnership channels
-- [ ] missed events are recovered through canonical resynchronization
+- [ ] WebSocket authenticates with the existing server-managed session and exact trusted Origin
+- [ ] client cannot subscribe to arbitrary account, partnership, conversation, message, or R1 scopes
+- [ ] unsupported critical realtime protocol versions fail closed
+- [ ] internal NOTIFY and browser realtime frames contain no protected content
+- [ ] realtime frame size and rate limits are enforced
+- [ ] stale or revoked sessions cannot retain realtime authorization
 - [ ] duplicate realtime delivery is safe
-- [ ] conversation sequence gaps are repaired
-- [ ] offline message retry is idempotent
-- [ ] queued mutation is rejected when lifecycle changed while offline
-- [ ] local data is partitioned by account, partnership, conversation, and crypto epoch
-- [ ] final dissolution purges old partnership local namespace
-- [ ] future partnership cannot render old cached partnership data
-- [ ] unsupported critical client or realtime version fails closed
-- [ ] service-worker update cannot create unsafe client/API compatibility
-- [ ] reconnect and offline browser tests pass
+- [ ] out-of-order realtime delivery is safe
+- [ ] missed realtime delivery is repaired through canonical HTTP state
+- [ ] `change_sequence` repairs sends, edits, deletes, and reactions without being replaced by `server_sequence`
+- [ ] `server_sequence` repairs required history gaps without becoming mutation synchronization order
+- [ ] local cursor advancement is atomic with corresponding canonical projection persistence
+- [ ] PostgreSQL NOTIFY loss or listener restart does not break correctness
+- [ ] offline message send survives reload and replays with the same idempotency key
+- [ ] queued edits preserve `expectedContentVersion` and cannot extend the 30-minute edit window
+- [ ] queued mutation is blocked or rejected when authoritative lifecycle changed while offline
+- [ ] R1 offline replay is limited to an explicit safe operation whitelist
+- [ ] recipient-open, creator-reveal, and scheduled-release transitions remain online and server-authoritative
+- [ ] IndexedDB is partitioned by account, partnership, conversation, and explicit content context
+- [ ] pre-S1 local persistence does not invent fake encryption or crypto epochs
+- [ ] explicit logout, account switch, or observed revocation cannot expose previous account local plaintext
+- [ ] final dissolution removes old partnership UI state before replay and purges the old local namespace
+- [ ] a future partnership cannot render or replay previous-partnership cache or queue entries
+- [ ] service worker never caches private/no-store API responses
+- [ ] incompatible service-worker/client/local-schema state fails closed before mutation replay
+- [ ] multi-tab duplicate realtime delivery and duplicate offline replay remain correctness-safe
+- [ ] reconnect, offline, service-worker, and IndexedDB browser automation passes
+- [ ] full `npm run health` and high-severity dependency audit pass
+- [ ] physical Android M2 acceptance passes
 
 # M3: Media and Voice Messages
 

@@ -1,5 +1,17 @@
 # Offline Architecture
 
+## M2 concrete implementation
+
+The concrete implementation is defined in `M2_REALTIME_OFFLINE_DESIGN.md`.
+
+M2 local schema version 1 uses an account-bound IndexedDB database with explicit partnership and conversation keys. Before S1, the content context marker is the literal development namespace `pre-s1`; it is not a fake crypto epoch.
+
+M2 provides separate chat and R1 queues. Release/open/reveal and scheduled-release transitions remain online-only.
+
+Final dissolution removes old partnership data from UI before replay and then purges messages, R1 cache, queues, sync metadata, and future media/crypto namespace state.
+
+Explicit logout, account switch, or observed revocation purges pre-S1 local protected plaintext. A temporary network failure does not.
+
 ## Goals
 
 The PWA should remain usable across temporary disconnects without leaking data between accounts or partnerships.
@@ -90,7 +102,7 @@ Do not silently reuse the chat outbox schema.
 
 ## Idempotency
 
-Every queued server mutation carries a stable client idempotency key.
+Every queued server mutation carries a stable client idempotency key. A locally queued message is rendered as pending and never receives a fake server sequence; authoritative sequence is assigned only by M1 after server acceptance.
 
 Retries must not create duplicates.
 
@@ -109,7 +121,7 @@ Do not silently overwrite partner changes.
 
 ## State changes while offline
 
-Before replaying queued mutations, the client must refresh:
+Before replaying queued mutations, the M2 SyncCoordinator serializes one authority refresh and must refresh:
 
 - account state
 - partnership state

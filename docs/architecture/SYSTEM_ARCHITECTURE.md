@@ -352,6 +352,29 @@ R1 preserves the same partnership authority boundary while adding:
 
 The exhaustive combined baseline applies canonical migrations 0001 through 0014 with no reservations and passes R1 69/69 plus the full repository health matrix.
 
+## M2 realtime and offline reliability design
+
+The concrete M2 design is defined in `M2_REALTIME_OFFLINE_DESIGN.md` and `../api/M2_REALTIME_PROTOCOL.md`.
+
+M2 preserves the modular monolith and adds a transport/cache reliability layer without creating a second authority system:
+
+- the API exposes one authenticated WebSocket endpoint for content-free invalidations and transient presence/typing
+- the existing HttpOnly server session authenticates the upgrade
+- realtime scope is derived by the server from current account, partnership, and conversation state
+- durable product mutations remain on existing HTTP endpoints
+- the F2 durable outbox remains the source for reliable change publication
+- the worker publishes validated compact PostgreSQL NOTIFY hints
+- each API process uses one dedicated LISTEN connection for cross-process fanout
+- missed NOTIFY or WebSocket delivery is repaired from canonical HTTP/PostgreSQL state
+- IndexedDB stores bounded account/partnership/conversation-scoped cache and typed offline queues
+- offline replay occurs only after authoritative session/lifecycle reconciliation
+- final dissolution is a hard local namespace purge boundary
+- service workers cache application shell/static assets only and never private API data
+
+M2 introduces no Redis and is expected to require no new PostgreSQL migration.
+
+M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

@@ -238,6 +238,26 @@ The repository now includes:
 
 These artifacts define the repeatable PostgreSQL verification path. Automated runtime and concurrency tests under `packages/testkit/tests` and `apps/worker/tests` pass locally through `npm run test:f2:local`.
 
+## M2 migration position
+
+M2 Realtime and Offline Reliability is expected to require no PostgreSQL migration.
+
+M2 reuses:
+
+- existing server sessions
+- M1 `conversation_changes`
+- M1 content-free outbox events
+- the F2 durable outbox worker
+- P3 lifecycle state and cleanup boundaries
+- R1 persistence and versioning
+- PostgreSQL LISTEN/NOTIFY as a transient low-latency fanout hint
+
+Migration `0015` is not reserved merely because M2 is the next milestone.
+
+If implementation evidence proves that new durable server schema is required, the M2 architecture document and migration ownership section must be amended before a migration is added. Any new migration remains forward-only and must preserve the verified 0001 through 0014 checksums and invariants.
+
+IndexedDB local schema versions are client schema and are not PostgreSQL migration numbers.
+
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.

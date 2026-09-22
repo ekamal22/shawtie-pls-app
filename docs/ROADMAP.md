@@ -59,7 +59,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | --- | --- | --- | --- |
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
-| 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
+| 6 M2 Realtime and Offline Reliability | IN_PROGRESS, design complete; implementation pending | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
@@ -216,34 +216,124 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: PLANNED.
+Status: IN_PROGRESS. Refined architecture and protocol design are complete on `feat/m2-realtime-offline`; runtime implementation has not started.
 
-Depends on verified M1.
+Architecture:
+
+`docs/architecture/M2_REALTIME_OFFLINE_DESIGN.md`
+
+Protocol:
+
+`docs/api/M2_REALTIME_PROTOCOL.md`
 
 ## Goal
 
-Make messaging reliable across reconnects, offline periods, browser lifecycle changes, and duplicate delivery.
+Make the verified M1 and R1 experience resilient across realtime delivery, mobile suspension, unreliable networks, offline user actions, duplicate events, stale local caches, service-worker updates, lifecycle changes, and process restarts without changing the canonical authority model.
 
-## Core scope
+## Non-negotiable authority boundary
 
-- authenticated WebSocket
-- server-derived channel membership
-- reconnect
-- canonical resynchronization
-- sequence-gap repair
-- duplicate-safe realtime delivery
-- IndexedDB namespace partitioning
-- offline message queue
-- relationship mutation queue
-- lifecycle-aware queued mutation rejection
-- service-worker compatibility handling
-- client/API/realtime version safety
+- PostgreSQL remains authoritative
+- durable mutations remain on authenticated HTTP
+- WebSocket frames are content-free invalidation hints plus transient typing/presence
+- `server_sequence` remains immutable message creation/history order
+- `change_sequence` remains durable mutation synchronization order
+- IndexedDB is cache/retry state, not authority
+- queued operations are never permissions
+- final dissolution is a hard local namespace boundary
+- M2 introduces no Redis
+- M2 is expected to require no PostgreSQL migration; migration 0015 is not pre-reserved
+
+## Implementation slices
+
+### M2-A Protocol, contracts, and compatibility
+
+- realtime protocol v1
+- strict frame schemas and byte ceilings
+- compatibility constants
+- local schema v1 types
+- unknown critical versions fail closed
+
+### M2-B Authenticated WebSocket and server-derived scope
+
+- `/api/v1/realtime`
+- exact Origin validation
+- existing HttpOnly session authentication
+- official Fastify WebSocket integration
+- account/device/session context
+- server-derived partnership/conversation membership
+- bounded liveness and backpressure
+- periodic authorization revalidation
+
+### M2-C Durable invalidation publisher
+
+- F2 outbox to RealtimePublisher
+- PostgreSQL NOTIFY fanout hint
+- dedicated API LISTEN connection
+- M1 message invalidations
+- partnership/R1/receipt/nickname/account-security invalidations
+- explicit event-family ownership
+- lost NOTIFY remains correctness-safe
+
+### M2-D Client realtime and canonical synchronization
+
+- one SyncCoordinator
+- `change_sequence` repair
+- `server_sequence` gap repair
+- duplicate/out-of-order event coalescing
+- visibility and reconnect handling
+- canonical HTTP reconciliation before live mode
+- polling retained only as bounded fallback
+
+### M2-E IndexedDB namespace and cache
+
+- account-bound database
+- partnership/conversation/content-context keys
+- local schema version 1
+- atomic projection plus cursor transactions
+- bounded message/R1 cache
+- explicit retained-history window
+- logout/account-switch/final-dissolution purge
+
+### M2-F Offline chat queue
+
+- persisted send/edit/delete/reaction operations
+- stable idempotency keys
+- no fake server sequence
+- queued/sending/retrying/blocked UI state
+- expectedContentVersion preservation
+- monotonic pending receipt high-water state
+- lifecycle-aware replay
+
+### M2-G Offline R1 queue
+
+- separate typed queue
+- explicit safe operation whitelist
+- expectedVersion preservation
+- conflict UI
+- release/open/reveal and scheduled-release changes remain online-only
+
+### M2-H Service worker and compatibility
+
+- app-shell/static caching only
+- no private API Cache API entries
+- controlled worker activation
+- local-schema compatibility check
+- update-required mode
+- safe recovery from interrupted update
+
+### M2-I Security, integration closure, and physical Android
+
+- realtime security suite
+- PostgreSQL/API/worker integration
+- browser offline/reconnect suite
+- service-worker tests
+- multi-tab duplicate safety
+- Redmi physical-device acceptance
+- full health and audit
 
 ## Closure boundary
 
-M2 must prove reconnect, resync, offline retry, local namespace isolation, dissolution purge, compatibility behavior, and physical mobile lifecycle behavior.
-
-**REDMI PHONE REQUIRED: YES.**
+M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` are green, including physical Android evidence.
 
 # Milestone 7: M3 Media and Voice Messages
 
