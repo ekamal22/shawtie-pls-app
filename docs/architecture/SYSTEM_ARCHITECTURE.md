@@ -315,6 +315,25 @@ P3 uses one canonical partnership-dissolution kernel for both normal breakup and
 
 Migration 0010 implements breakup cancellation and supersession terminal markers, cooldown and block hardening, former-history and cleanup indexes, and one-partnership deletion-manifest uniqueness without rewriting verified migrations 0001 through 0009.
 
+## M1 messaging core design
+
+The refined M1 design is defined in `M1_MESSAGING_CORE_DESIGN.md` and `../api/M1_MESSAGING_API.md`.
+
+M1 preserves the verified P3 lifecycle and transaction authority while adding the conversation substrate:
+
+- `server_sequence` remains immutable message creation order and history pagination
+- a separate `change_sequence` orders durable send/edit/delete/reaction mutations
+- content-free `conversation_changes` provide canonical mutation catch-up for polling and later M2 reconnect
+- M1 writes content-free versioned outbox invalidations in the same authoritative mutation transaction
+- edits use `expectedContentVersion` so concurrent clients cannot silently overwrite one another
+- pre-S1 development stores only current message/reaction plaintext and does not create plaintext edit history
+- private mutation mismatch fingerprints use a versioned keyed server construction rather than an ordinary digest of message content
+- presence disclosure is limited to the current partnership and does not reveal last-seen activity from before that partnership activated
+- typing and presence use centralized server-owned TTL, cadence, coalescing, and rate limits
+- messaging cleanup remains module-owned and composes with the canonical P3 dissolution kernel
+
+M1 keeps PostgreSQL and HTTP canonical. M2 may add WebSocket delivery and offline queues without redefining message order, mutation order, lifecycle authorization, or deletion semantics.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.
