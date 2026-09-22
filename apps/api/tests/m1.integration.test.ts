@@ -797,10 +797,16 @@ test("M1 private message content never leaks into durable operational metadata",
     assert.equal(currentMessage.rows[0]?.body_text, currentSentinel);
 
     const oldBody = await database.pool.query(
-      "SELECT 1 FROM messages WHERE body_text = $1 UNION ALL SELECT 1 FROM message_versions WHERE convert_from(ciphertext, 'UTF8') = $1",
+      "SELECT 1 FROM messages WHERE body_text = $1",
       [originalSentinel],
     );
     assert.equal(oldBody.rowCount, 0);
+
+    const historicalBodies = await database.pool.query(
+      "SELECT 1 FROM message_versions WHERE message_id = $1",
+      [messageId],
+    );
+    assert.equal(historicalBodies.rowCount, 0);
 
     const leaked = await database.pool.query<{
       outbox: string;
