@@ -20,6 +20,8 @@ A1 migration `0007_accounts_devices_runtime.sql` is implemented and locally veri
 
 P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and verified with exact request-expiry evidence, terminal-shape constraints, pair-limit indexes, decline-cooldown indexes, request-attempt hardening, append-only attempt behavior, and the manually entered `relationship_start_date` required by P2 formation. P2 migration `0009_partnership_formation_runtime.sql` is implemented and verified with accepted-request linkage, restrictive foreign-key semantics, legacy-safe `NOT VALID` linkage constraints, minimal durable account notifications, and formation/query indexes. Migration 0008 remains unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`. P3 migration `0010_partnership_lifecycle_runtime.sql` is implemented and verified with breakup cancellation/supersession terminal markers, lifecycle indexes and constraints, exact cooldown hardening, block-source hardening, notification event expansion, and one-partnership deletion-manifest uniqueness without rewriting migrations 0001 through 0009. The fresh immutable partnership ID remains the namespace root.
 
+M1 owns forward-only migrations 0011 and 0012 on its parallel branch. R1 owns forward-only migrations 0013 and 0014 on `feat/r1-relationship-space`. Those four migrations are design targets until their source and executable PostgreSQL evidence exist. Neither feature branch may consume the other branch's migration numbers.
+
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
 ## Identifier policy
@@ -365,14 +367,28 @@ The system must not retain plaintext deleted content in logs.
 
 ## Relationship space
 
-Use a generic item table with typed operational detail where required.
+R1 keeps the existing `relationship_items` table as the aggregate root and adds typed supporting state only where the server must enforce product semantics.
+
+Canonical design:
 
 ```text
 relationship_items
 relationship_events
+relationship_someday_state
+relationship_signal_state
+relationship_reunion_state
+relationship_curations
+relationship_item_references
+relationship_item_links
+relationship_story_members
 ```
 
-Representative item fields:
+Migration ownership:
+
+- `0013_relationship_space_runtime.sql`: root refinement, normalized occurrence components, explicit pre-S1 development plaintext payload, release state/generation, feature-state tables, and query indexes
+- `0014_relationship_space_interaction_runtime.sql`: same-partnership links, loose external references, Our Story membership, and relationship-event integrity hardening
+
+Representative root fields after R1 design:
 
 ```text
 id
@@ -381,31 +397,65 @@ creator_account_id
 kind
 lifecycle
 version
-created_at
-occurred_date
-occurred_precision
+content_schema_version
+development_plaintext_payload
 encrypted_payload
+ciphertext_version
+occurred_precision
+occurred_year
+occurred_month
+occurred_day
+unlock_at
+release_mode
+release_generation
+released_at
+created_at
+updated_at
+deleted_at
 ```
 
-Kinds may include:
+The existing `occurred_date` remains compatibility substrate. R1 uses explicit date components so month, year, and unknown precision do not fabricate missing calendar values.
 
-- memory
-- remember_this
-- first
-- place
-- for_you
-- voice_letter
-- future_us
-- love
-- someday
-- surprise
-- reunion
-- proposal
-- relationship_signal
+At most one protected content representation is populated:
 
-Server-readable typed tables should exist only for operational fields the server must evaluate, such as unlock timestamps.
+- pre-S1 development uses only `development_plaintext_payload`
+- S1 later uses `encrypted_payload` plus `ciphertext_version`
+- plaintext is never written into ciphertext fields
 
-Private content should remain inside encrypted payloads once E2EE is active.
+Protected content includes private text, notes, place coordinates, condition labels, saved-message snapshots, surprise/proposal wording, and explicit shared-feeling text. It must not be duplicated into events, logs, queues, notifications, analytics, traces, or idempotency response metadata.
+
+Server-readable supporting state is limited to fields needed for deterministic product behavior, such as:
+
+- Someday state
+- explicit relationship-signal code
+- manual reunion target date
+- curation type/year
+- schedule mode/generation/time
+- same-partnership item link identifiers and order
+- loose source/attachment identifiers
+
+Our Story is a derived chronological projection over explicitly selected `relationship_story_members`. This Day in Us is derived only from items with exact day precision. Our Year and Anniversary may have explicit saved curation but never use engagement scoring.
+
+`relationship_item_references` deliberately does not foreign-key into M1 message or M3 media schemas. Resolution independently checks same-partnership authorization. Remember This stores its own explicit R1 snapshot and does not cause server-side copying of M1 plaintext.
+
+`relationship_item_links` uses composite same-partnership foreign keys. It supports curation, ordered sequence steps, and reunion prepared content without permitting cross-partnership links.
+
+Date/time For You and Future Us releases use the existing durable `scheduled_actions` table:
+
+```text
+action_type = relationship_item_release
+aggregate_type = relationship_item
+aggregate_id = item_id
+expected_generation = release_generation
+payload_version = 1
+payload = {}
+```
+
+The scheduled payload contains no relationship content.
+
+User item deletion hard-deletes the item and cascades all R1 child state. Final dissolution remains P3-owned: synchronous authorization revocation is followed by the existing partnership deletion manifest and `partnership_relational_content` cleanup. New R1 relational tables must remain covered by that cascade or the deletion manifest must be extended before R1 can close.
+
+The full R1 persistence and lifecycle design is canonical in `R1_RELATIONSHIP_SPACE_DESIGN.md`.
 
 ## Calls
 

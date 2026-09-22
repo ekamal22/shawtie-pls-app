@@ -176,6 +176,18 @@ The hardened P3 design consolidates partnership destruction behind one canonical
 
 Account recovery restores authentication state only. It does not recreate a partnership already dissolved by an earlier breakup deadline, and it does not recreate cryptographic trust or historical E2EE keys.
 
+## R1 relationship-space deletion integration
+
+R1 does not create a second partnership deletion workflow.
+
+The R1 design keeps new relational supporting state as descendants of `relationship_items` with deletion-safe foreign keys. The existing P3 `partnership_relational_content` target already deletes `relationship_events` and `relationship_items`; deleting the item root therefore cascades R1 feature state, references, links, story membership, and curations.
+
+R1 scheduled-action payloads contain only operational IDs, generation, timing, and payload version. They contain no protected relationship content. Final dissolution cancels pending relationship-item release work before relational cleanup, while any already-processing worker must re-check authoritative terminated state and become stale/no-op.
+
+User-requested R1 item deletion hard-deletes the item and its child rows rather than retaining a content-bearing tombstone.
+
+If R1 runtime introduces any storage outside the relationship-item relational tree, the partnership deletion manifest and a retry-safe deletion handler must be extended before R1 can close.
+
 ## Failure behavior
 
 If a deletion target fails:

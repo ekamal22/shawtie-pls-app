@@ -35,6 +35,10 @@ canStartCall
 callRequiresExplicitAcceptance
 canCreateRelationshipObject
 canEditRelationshipObject
+canDeleteRelationshipObject
+canCurateRelationshipSpace
+canReleaseRelationshipObject
+canCreateRelationshipSignal
 canChangeNickname
 canChangeEmail
 canChangeUsername
@@ -59,6 +63,27 @@ The capability engine must:
 - accept trusted server time when time affects a rule
 - return stable denial codes
 - be exhaustively unit-tested across lifecycle states
+
+## R1 relationship-space refinement
+
+R1 design refines the relationship-object capability surface without replacing the central engine.
+
+Planned user-driven R1 capabilities are:
+
+- `create_relationship_object`
+- `edit_relationship_object`
+- `delete_relationship_object`
+- `curate_relationship_space`
+- `release_relationship_object`
+- `create_relationship_signal`
+
+For normal user actions these capabilities require an active current partnership and no account-deletion view-only overlay. They are denied during `breakup_pending`, during account-deletion view-only state, after termination, and for non-members.
+
+Scheduled date/time release is not represented as a user mutation capability. The R1 worker re-evaluates a separate release predicate against authoritative lifecycle plus item release state. A For You or Future Us release that was durably configured before a view-only transition may continue according to the R1 design, while schedule changes and manual release remain denied.
+
+Feature rules can further restrict an otherwise available capability. For example, unreleased delivery content is creator-private and released For You/Future Us content is immutable.
+
+These are design commitments until R1-A runtime domain code and tests exist.
 
 ## API enforcement
 

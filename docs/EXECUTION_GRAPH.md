@@ -48,7 +48,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
                 +-------+--------+
                 |                |
                 v                v
-          M1 Messaging ⚪    R1 Relationship Space ⚪
+          M1 Messaging 🟡    R1 Relationship Space 🟡
                 |
                 v
           M2 Realtime + Offline ⚪
@@ -94,8 +94,8 @@ flowchart TD
 
     P2 --> P3["P3 Lifecycle + Deletion ✅"]
 
-    P3 --> M1["M1 Messaging Core ⚪"]
-    P3 --> R1["R1 Relationship Space ⚪"]
+    P3 --> M1["M1 Messaging Core 🟡"]
+    P3 --> R1["R1 Relationship Space 🟡"]
 
     M1 --> M2["M2 Realtime + Offline ⚪"]
 
@@ -178,6 +178,11 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 
 M1 and R1 may progress in parallel.
+M1 architecture/API design is complete on `feat/m1-messaging-core`; runtime implementation is pending.
+R1 architecture/API design is complete on `feat/r1-relationship-space`; runtime implementation is pending.
+M1 owns migrations 0011 and 0012.
+R1 owns migrations 0013 and 0014.
+Neither branch may consume the other branch's migration ownership.
 M2 waits for verified M1 to return to main.
 ~~~
 

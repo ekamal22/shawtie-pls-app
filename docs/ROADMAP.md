@@ -56,8 +56,8 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
-| 5A M1 Messaging Core | NEXT | P3 | No for core closure |
-| 5B R1 Relationship Space | NEXT, may run in parallel | P3 | No for core closure |
+| 5A M1 Messaging Core | IN_PROGRESS, design complete | P3 | No for core closure |
+| 5B R1 Relationship Space | IN_PROGRESS, design complete | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
@@ -79,21 +79,22 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 ~~~
 
-M1 and R1 may progress in parallel because both now depend on the verified P3 lifecycle/capability boundary rather than on each other.
+M1 and R1 may progress in parallel because both depend on the verified P3 lifecycle/capability boundary rather than on each other. Their architecture/API designs are complete on separate branches, while runtime implementation remains pending. M1 owns migrations 0011 and 0012; R1 owns 0013 and 0014.
 
 Recommended execution order:
 
-1. create `feat/m1-messaging-core` from the latest `main` containing verified P3
-2. create `feat/r1-relationship-space` from that same verified mainline when R1 implementation begins
-3. keep M1 and R1 schema/API changes explicitly coordinated
-4. close each epic only from its own acceptance evidence
-5. merge completed milestone branches back to main before dependent milestones branch
-6. begin M2 only from main containing verified M1
-7. keep V1 separate until hosted Actions capacity returns
+1. continue M1 runtime work only on `feat/m1-messaging-core`
+2. continue R1 runtime work only on `feat/r1-relationship-space`
+3. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
+4. keep M1 and R1 shared-file changes explicitly coordinated
+5. close each epic only from its own acceptance evidence
+6. merge completed milestone branches back to main before dependent milestones branch
+7. begin M2 only from main containing verified M1
+8. keep V1 separate until hosted Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
-Status: NEXT.
+Status: IN_PROGRESS. Architecture/API design is complete on the parallel M1 branch; runtime implementation remains pending.
 
 Canonical detailed gates:
 
@@ -138,7 +139,15 @@ M1 is DONE only after its API, persistence, ordering, idempotency, lifecycle, ra
 
 # Milestone 5B: R1 Relationship Space
 
-Status: NEXT. May run in parallel with M1.
+Status: IN_PROGRESS. Architecture/API design is complete on `feat/r1-relationship-space`; runtime implementation remains pending. R1 may run in parallel with M1.
+
+Canonical architecture:
+
+`docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
+
+Canonical API:
+
+`docs/api/R1_RELATIONSHIP_SPACE_API.md`
 
 Canonical detailed gates:
 

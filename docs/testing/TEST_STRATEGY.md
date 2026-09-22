@@ -285,6 +285,50 @@ npm audit --audit-level=high
 
 The P3 local harness emitted `P3_LOCAL_POSTGRES_PASS` after migrations, invariants, API, worker, race, deletion, and cross-epic regression work completed successfully. Hosted GitHub Actions verification remains separate under V1.
 
+### R1 relationship-space verification
+
+R1 design is defined by:
+
+- `../architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
+- `../api/R1_RELATIONSHIP_SPACE_API.md`
+
+R1 runtime tests do not exist yet. The following are required closure evidence once implementation begins:
+
+- canonical migrations 0001 through 0014 from zero after verified M1 migrations are available
+- relationship-item kind/date/release/link/reference database invariants
+- P1, P2, and P3 regressions
+- Relationship Home, list, detail, create, update, delete, and derived-experience API integration
+- optimistic version conflicts with no silent partner overwrite
+- privacy-safe foreign/unknown/unreleased item lookup
+- breakup and account-deletion view-only enforcement
+- preconfigured For You/Future Us release behavior in lifecycle overlays
+- release-generation fencing, stale action behavior, duplicate-claim safety, and unknown payload-version failure
+- release versus edit/reschedule/breakup/account-deletion/restoration/dissolution races
+- item deletion and partnership dissolution proof across every R1 table
+- deletion target crash/reclaim regression
+- future-partnership namespace isolation
+- Remember This source disappearance and no server-side M1 plaintext copy
+- explicit coordinate non-leakage to logs/events/queues/analytics
+- protected plaintext non-duplication across operational metadata
+- deterministic This Day, Our Year, and Anniversary behavior with no engagement or emotional scoring
+- explicit relationship-signal creation only
+- browser lifecycle modes and production build
+
+Planned command surface:
+
+```text
+npm run test:relationship-space
+npm run test:r1:security
+npm run test:r1:postgres
+npm run test:r1:local
+npm run health
+npm audit --audit-level=high
+```
+
+These names are design targets. Do not claim they exist or pass until implemented and executed.
+
+R1 core closure does not require physical Redmi acceptance. M2 owns offline/reconnect device acceptance, M3 owns media transport acceptance, and S1 owns E2EE acceptance.
+
 ### Integration
 
 Exercise API plus PostgreSQL plus provider fakes.

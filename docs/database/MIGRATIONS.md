@@ -41,6 +41,34 @@ P3 forward-only migration `0010_partnership_lifecycle_runtime.sql` is committed.
 
 P3 security verification pins verified migration 0009 before P3-only migration work is accepted. The clean ten-migration P3 run and catalog invariants are green; migration 0010 has SHA-256 `f976bee5747938b1f0b9759bf601419d1296648b7d92421bdd45ee12ea445b1d`.
 
+## Parallel feature migration reservations
+
+The verified physical schema remains implemented only through migration 0010.
+
+Parallel feature branches reserve the next forward-only numbers:
+
+M1 owns:
+
+- `0011_messaging_core_runtime.sql`
+- `0012_messaging_interaction_runtime.sql`
+
+R1 owns:
+
+- `0013_relationship_space_runtime.sql`
+- `0014_relationship_space_interaction_runtime.sql`
+
+R1 migration design is complete, but migration 0013 and 0014 source files are not implemented or verified yet.
+
+Planned R1 migration responsibilities:
+
+- 0013 refines `relationship_items` with explicit pre-S1 development plaintext storage, normalized occurrence components, release state/generation, supporting feature-state tables, and indexes
+- 0014 adds same-partnership R1 links, loose external references, explicit Our Story membership, and relationship-event integrity hardening
+- new R1 relational tables remain descendants of `relationship_items` so P3 `partnership_relational_content` cleanup can remove them through cascade
+- R1 scheduled actions use the existing durable scheduled-action table and do not create a second timer system
+- R1 does not insert fake crypto epochs or claim E2EE before S1
+
+The final R1 closure migration gate requires migrations 0001 through 0014 to apply from zero in canonical order after verified M1 migrations are available through the approved integration baseline. R1 must not create placeholder 0011 or 0012 migrations to make that test pass early.
+
 ## Policy
 
 Production migrations are forward-first.

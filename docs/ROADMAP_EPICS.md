@@ -1027,7 +1027,31 @@ Status: PLANNED
 
 # R1: Relationship Space
 
-Status: PLANNED
+Status: IN_PROGRESS
+
+Branch:
+
+`feat/r1-relationship-space`
+
+Architecture:
+
+`docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
+
+API contract:
+
+`docs/api/R1_RELATIONSHIP_SPACE_API.md`
+
+Migration ownership:
+
+- `0013_relationship_space_runtime.sql`
+- `0014_relationship_space_interaction_runtime.sql`
+
+Parallel reservation:
+
+- M1 owns 0011 and 0012
+- R1 must not create, rename, or modify M1 migration numbers
+
+Architecture/design is complete. Runtime implementation and executable acceptance evidence are pending.
 
 ## Scope
 
@@ -1037,7 +1061,7 @@ Status: PLANNED
 - Firsts
 - Places We Became Us
 - For You
-- Voice Letters
+- Voice Letters relationship-object model
 - Future Us
 - Love
 - Someday
@@ -1047,21 +1071,200 @@ Status: PLANNED
 - Surprise Mode
 - Until We're Together Again
 - Proposal Mode
-- relationship signals
+- explicit relationship signals
+- P3 lifecycle integration
+- scheduled-release durability
+- deletion and future-partnership isolation
+- responsive relationship-space browser surface
+
+R1 does not own M1 messaging persistence, M2 realtime/offline queues, M3 media transport, or S1 E2EE.
+
+## Refined architecture decisions
+
+- the immutable partnership ID is the only relationship-space namespace authority
+- the existing `relationship_items` table remains the aggregate root and is refined through forward-only migrations
+- common content remains on the item while server-required feature semantics use normalized supporting tables
+- occurrence precision uses explicit year/month/day components so month, year, and unknown dates do not fabricate missing values
+- pre-S1 development plaintext is stored only in an explicitly named development plaintext field and never in ciphertext fields
+- S1 later replaces development plaintext with reviewed encrypted relationship-object envelopes
+- Our Story uses explicit membership plus deterministic date ordering
+- Remember This creates an independent R1 snapshot from an explicit client action and never causes the server to copy M1 message plaintext
+- Places coordinates remain protected content and never enter logs or analytics
+- For You and Future Us support immediate, scheduled, and explicitly labelled manual release modes
+- condition labels are presentation text only; R1 has no emotional or behavioral condition evaluator
+- scheduled releases use existing durable `scheduled_actions` with item release-generation fencing and content-free payloads
+- scheduled date/time For You and Future Us releases continue when already configured before breakup or account-deletion view-only state
+- normal relationship-space mutations are disabled in both view-only states
+- Someday state and explicit relationship-signal type are normalized server-readable product state
+- This Day in Us is derived from exact user-supplied day precision only
+- Our Year and Anniversary use deterministic candidates plus optional persisted curation, never engagement scoring
+- Surprise and Proposal use ordered same-partnership item links
+- reunion state uses a manual target date and never location surveillance
+- user item deletion hard-deletes the item and cascades all R1 child state
+- final dissolution remains P3-owned and the existing relational deletion target removes R1 through the relationship-item cascade
+- cross-partnership item IDs, links, and references fail closed
+- browser capability state remains advisory and server authorization remains authoritative
+
+## Implementation sequence
+
+### R1-A Domain model and contracts
+
+- stable item kinds
+- occurrence precision
+- release modes and generation
+- optimistic versions
+- feature-specific schemas
+- privacy-safe cursor contracts
+- capability refinements
+- derived experience contracts
+
+### R1-B Migrations 0013 and 0014 plus repositories
+
+- relationship-item root refinement
+- explicit pre-S1 development plaintext representation
+- normalized occurrence components
+- feature state tables
+- same-partnership links
+- loose external references
+- Our Story membership
+- relationship-event hardening
+- indexes and invariants
+- deletion-safe foreign-key cascades
+
+### R1-C Relationship Home and core CRUD API
+
+- private aggregate home read model
+- list/detail/create/update/delete
+- create idempotency
+- `expectedVersion`
+- stable `VERSION_CONFLICT`
+- lifecycle authorization
+- privacy-safe not-found behavior
+- `Cache-Control: private, no-store`
+
+### R1-D Scheduled content
+
+- For You
+- Future Us
+- immediate release
+- date/time release
+- labelled manual release
+- release-generation fencing
+- durable worker
+- stale/cancel/supersession handling
+- breakup, account-deletion, restoration, and dissolution behavior
+
+### R1-E Structured relationship features
+
+- Our Story
+- Remember This
+- Firsts
+- Places We Became Us
+- Love
+- Someday
+- explicit relationship signals
+- reunion date
+- reference/link integrity
+
+### R1-F Derived and curated experiences
+
+- This Day in Us
+- Our Year
+- Anniversary Experience
+- Surprise Mode
+- Until We're Together Again
+- Proposal Mode
+- deterministic eligibility and ordering
+- persisted curation only where user intent must survive
+
+### R1-G Browser Relationship Space
+
+- dedicated responsive Relationship Space
+- home and feature navigation
+- create/edit/detail flows
+- unreleased private delivery handling
+- active and view-only lifecycle modes
+- schedule rendering
+- derived experience rendering
+- namespace reset after partnership change or termination
+
+### R1-H Lifecycle, race, deletion, and security hardening
+
+- concurrent partner edits
+- update versus delete
+- release versus edit
+- release versus schedule change
+- release versus breakup
+- release versus account deletion
+- release versus restoration
+- release versus final dissolution
+- create/update/delete versus breakup
+- mutation versus final dissolution
+- account recovery preserving identity and versions
+- guessed foreign item IDs
+- cross-partnership link/reference attempts
+- duplicate scheduled-action claims
+- deletion target crash/reclaim
+- protected plaintext non-duplication
+- location-coordinate log exclusion
+
+### R1-I Closure harness and documentation
+
+Planned command surface:
+
+```text
+npm run test:relationship-space
+npm run test:r1:security
+npm run test:r1:postgres
+npm run test:r1:local
+npm run health
+npm audit --audit-level=high
+```
+
+These commands are design targets and must not be reported as implemented until source and executed evidence exist.
 
 ## Acceptance gates
 
-- [ ] all first-stable relationship features defined by the PRD have implemented data models
-- [ ] relationship items are partnership-scoped
-- [ ] shared mutable items use version checks where required
-- [ ] breakup_pending makes relationship objects view-only
-- [ ] scheduled For You and Future Us content still releases during breakup_pending
-- [ ] restored partnership returns relationship objects to writable state
-- [ ] final dissolution deletes relationship-space data
-- [ ] no feature introduces public-social ranking, follower, advertising, or streak mechanics
-- [ ] location memories require explicit user-created location data and no passive background tracking
-- [ ] relationship-signal actions are explicit and do not infer emotion
-- [ ] relationship-space cross-partnership security tests pass
+- [ ] migrations 0001 through 0014 apply from zero in canonical order after verified M1 migrations are available
+- [ ] migrations 0001 through 0010 remain unchanged
+- [ ] R1 does not create or modify migrations 0011 or 0012
+- [ ] relationship-item database invariants pass
+- [ ] all R1 kinds have explicit contract coverage
+- [ ] pre-S1 plaintext is stored only in the documented development plaintext field
+- [ ] no R1 plaintext appears in logs, lifecycle events, security events, outbox, scheduled actions, notifications, traces, analytics, or idempotency response bodies
+- [ ] Relationship Home is partnership-scoped, bounded, deterministic, and private/no-store
+- [ ] create is idempotent without storing protected request content in idempotency metadata
+- [ ] shared mutations require expectedVersion and stale writes return `409 VERSION_CONFLICT`
+- [ ] concurrent partner edits cannot silently overwrite each other
+- [ ] foreign, deleted, unreleased-to-caller, and random item IDs fail with privacy-safe not-found behavior
+- [ ] Our Story preserves explicit date precision and never fabricates missing date components
+- [ ] Remember This survives source disappearance without server-side copying M1 message plaintext
+- [ ] Places coordinates are explicit only and never collected in background
+- [ ] For You and Future Us scheduled release uses durable generation-fenced work
+- [ ] unknown release payload versions fail closed
+- [ ] duplicate claims cannot release an item twice
+- [ ] breakup_pending makes normal R1 mutations view-only while preconfigured date releases continue
+- [ ] account-deletion overlay makes normal R1 mutations view-only while preconfigured date releases continue
+- [ ] restoration preserves the same item IDs, versions, curation, and schedule identity
+- [ ] final dissolution synchronously ends R1 authorization
+- [ ] final dissolution deletes every R1 authoritative row through the P3 deletion architecture
+- [ ] user item deletion leaves no protected R1 content in supporting/history tables
+- [ ] stale scheduled work for deleted or dissolved objects fails safely
+- [ ] deletion crash/reclaim remains retry-safe and fenced
+- [ ] a future partnership cannot access an old partnership's R1 data
+- [ ] relationship signals are explicit user actions only
+- [ ] no R1 feature computes relationship quality, emotional state, compatibility, breakup risk, responsiveness, or engagement score
+- [ ] This Day in Us uses exact eligible occurrence dates only
+- [ ] Our Year and Anniversary selection is deterministic and has no engagement ranking
+- [ ] Surprise and Proposal ordered links cannot cross partnerships
+- [ ] reunion experience uses only a manually entered date and no location surveillance
+- [ ] browser lifecycle modes match authoritative server capability
+- [ ] R1 browser builds successfully without requiring physical Redmi acceptance
+- [ ] P1, P2, and P3 regressions remain green
+- [ ] full `npm run health` passes
+- [ ] `npm audit --audit-level=high` passes
+
+R1 remains IN_PROGRESS until every required gate is closed by executed evidence.
 
 # S1: E2EE and Cryptographic Recovery
 
