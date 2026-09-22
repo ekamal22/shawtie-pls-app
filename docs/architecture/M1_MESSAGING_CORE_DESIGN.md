@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN REFINED, IMPLEMENTATION PENDING.
+IMPLEMENTED, CLOSURE VALIDATION PENDING.
 
 Branch:
 
@@ -691,7 +691,7 @@ M2 replaces polling delivery with WebSocket events.
 
 ### Server-owned interaction limits
 
-Before runtime implementation, M1 freezes one centralized configuration surface for:
+M1 uses one centralized server-owned configuration surface for:
 
 - maximum UTF-8 message size
 - maximum nickname size
@@ -1081,7 +1081,9 @@ The disposable PostgreSQL harness must run:
 - M1 security tests
 - API/web builds
 
-M1 remains IN_PROGRESS until:
+The M1-A through M1-H runtime, persistence, API, browser, worker invalidation-sink, race/security test source, and closure harness are implemented on `feat/m1-messaging-core`.
+
+Implementation presence is not closure evidence. M1 remains IN_PROGRESS until:
 
 - `npm run test:m1:local` passes
 - `npm run health` passes
