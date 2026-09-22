@@ -176,6 +176,29 @@ The hardened P3 design consolidates partnership destruction behind one canonical
 
 Account recovery restores authentication state only. It does not recreate a partnership already dissolved by an earlier breakup deadline, and it does not recreate cryptographic trust or historical E2EE keys.
 
+## M1 messaging cleanup boundary
+
+M1 does not create a second dissolution mechanism.
+
+The verified P3 dissolution kernel remains responsible for synchronous authorization revocation and partnership deletion-manifest creation. M1 supplies module-owned relational cleanup that the existing partnership relational deletion path composes.
+
+Messaging cleanup must be idempotent and remove, as applicable:
+
+- primary conversation rows
+- current message content and tombstones
+- message reactions
+- compatibility receipt rows
+- conversation-member delivered/read state
+- typing state
+- partnership chat nicknames
+- durable conversation-change rows
+
+Permanent account deletion additionally removes the account-scoped current presence snapshot through the account cleanup path.
+
+No M1 cleanup handler may take ownership of unrelated relationship-space tables.
+
+Deletion evidence must prove that no plaintext message body, historical body, reaction content, nickname content, or durable messaging change row survives final partnership cleanup, while authorization remains revoked throughout retries.
+
 ## Failure behavior
 
 If a deletion target fails:
