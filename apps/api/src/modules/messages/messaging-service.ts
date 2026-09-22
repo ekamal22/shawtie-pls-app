@@ -1069,11 +1069,17 @@ export class MessagingService {
 
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
+      const conversation = await loadCurrentConversationReadModel(
+        transaction,
+        auth.session.accountId,
+        now,
+      );
       const snapshot = await heartbeatPresence(transaction, {
         accountId: auth.session.accountId,
         at: now,
         onlineUntil: addMs(now, M1_PRESENCE_ONLINE_TTL_MS),
         minRefreshBefore: addMs(now, -M1_PRESENCE_HEARTBEAT_MIN_MS),
+        forceRefreshAfter: conversation?.activatedAt ?? null,
       });
       return {
         online: snapshot.onlineUntil.getTime() > now.getTime(),
