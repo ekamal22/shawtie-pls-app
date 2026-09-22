@@ -2,6 +2,7 @@ export { workerConfigFromEnv, type WorkerConfig } from "./config.ts";
 export { DeletionHandlerRegistry } from "./deletion/deletion-handler-registry.ts";
 export type { DeletionHandler, DeletionHandlerContext } from "./deletion/deletion-handler.ts";
 export { OutboxHandlerRegistry } from "./outbox/outbox-handler-registry.ts";
+export { createDefaultOutboxHandlers } from "./outbox/default-outbox-handlers.ts";
 export type { OutboxHandler, OutboxHandlerContext } from "./outbox/outbox-handler.ts";
 export { ScheduledActionHandlerRegistry } from "./scheduled/scheduled-handler-registry.ts";
 export type {
@@ -33,3 +34,5 @@ export {
 export { runOutboxBatch } from "./outbox/outbox-consumer.ts";
 export { runScheduledBatch } from "./scheduled/scheduled-consumer.ts";
 export { runDeletionBatch } from "./deletion/deletion-consumer.ts";
+
+export { createM1MessagingInvalidationHandlers } from "./messages/messaging-invalidation-handler.ts";
