@@ -292,3 +292,23 @@ Former-partner blocking derives the target from a terminated historical partners
 P3 notifications, lifecycle events, deletion manifests, and serious-email parameters may contain identifiers, event type, status, generation, and authoritative deadlines where required. They must never contain message content, media content, relationship-object content, relationship start date, email address as event metadata, date of birth, device secrets, or cryptographic key material.
 
 P3 does not provision E2EE epochs or keys. S1 remains the authority for reviewed cryptographic state.
+
+## M1 messaging-core security boundary
+
+The refined M1 design is defined in `../architecture/M1_MESSAGING_CORE_DESIGN.md` and `../api/M1_MESSAGING_API.md`.
+
+M1 preserves P3 lifecycle authority and adds the following security requirements:
+
+- message creation order and mutation synchronization use separate monotonic sequences so an old-message edit/delete/reaction cannot disappear merely because no new message was created
+- durable `conversation_changes` and outbox invalidations are content-free and may contain only routing, cursor, resource identity, mutation type, and version metadata
+- private mutation mismatch fingerprints use a versioned keyed server HMAC or equivalently reviewed keyed primitive; an ordinary digest of message text is not an acceptable durable verifier
+- sender device identity is derived from the authenticated session
+- edits require `expectedContentVersion`; stale concurrent edits fail deterministically rather than overwriting a newer body
+- M1 does not write plaintext edit history
+- deleted message content must not survive in current rows, historical storage, logs, idempotency metadata, change rows, outbox payloads, lifecycle events, or durable jobs
+- partnership chat nicknames are protected partnership content and require an explicit S1 encryption decision
+- current-partnership presence disclosure suppresses last-seen activity from before that partnership activated
+- typing and presence endpoints use server-owned TTL/cadence/rate limits and write coalescing
+- module-owned messaging cleanup composes with the P3 deletion kernel; M1 does not create a second dissolution implementation
+
+M1 remains a pre-S1 development substrate. It must not be represented as E2EE or suitable for sensitive real-world use until S1 closes the protected-content storage boundary.
