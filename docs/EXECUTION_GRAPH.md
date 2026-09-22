@@ -53,15 +53,15 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
                 v
           M2 Realtime + Offline 🟡
                 |
-            +---+---+
-            |       |
-            v       v
-       M3 Media ⚪  C1 Voice Calling ⚪
-       design ready       |
-                          v
-                    C2 Video Calling ⚪
-            |             |
-            +------+------+
+            +---+--------+
+            |            |
+            v            v
+       M3 Media ⚪   C1 Voice Calling ⚪
+       design ready      |
+            |            v
+            |       C2 Video Calling ⚪
+            |            |
+            +------+-----+
                    |
                    v
         S1 E2EE + Crypto Recovery ⚪
