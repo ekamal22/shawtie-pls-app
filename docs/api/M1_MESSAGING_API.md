@@ -2,7 +2,7 @@
 
 ## Status
 
-IMPLEMENTED, CLOSURE VALIDATION PENDING.
+IMPLEMENTED AND LOCALLY VERIFIED.
 
 All routes are under `/api/v1`.
 
@@ -518,4 +518,3 @@ Private request fingerprints use a versioned keyed construction and are never a 
 Content-free `conversation_changes` and outbox invalidations may carry only routing, cursor, resource identity, mutation type, and version metadata.
 
 Tests must scan the M1 operational paths for accidental content duplication.
-

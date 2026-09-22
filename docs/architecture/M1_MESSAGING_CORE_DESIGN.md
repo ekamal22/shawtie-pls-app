@@ -2,7 +2,7 @@
 
 ## Status
 
-IMPLEMENTED, CLOSURE VALIDATION PENDING.
+DONE LOCALLY. MERGE TO MAIN PENDING.
 
 Branch:
 
@@ -19,7 +19,7 @@ M1 owns migration numbers:
 
 The parallel R1 branch reserves `0013` and `0014`. M1 must not consume those numbers.
 
-M1 closes only from executed evidence. Source presence alone does not make the epic DONE.
+M1 closed from executed local evidence on 2026-09-22. Hosted GitHub Actions verification remains separate under V1.
 
 ## Purpose
 
@@ -1105,14 +1105,15 @@ The disposable PostgreSQL harness must run:
 - M1 security tests
 - API/web builds
 
-The M1-A through M1-H runtime, persistence, API, browser, worker invalidation-sink, race/security test source, and closure harness are implemented on `feat/m1-messaging-core`.
+The M1-A through M1-H runtime, persistence, API, browser, worker invalidation-sink, race/security test source, and closure harness are implemented and locally verified on `feat/m1-messaging-core`.
 
-Implementation presence is not closure evidence. M1 remains IN_PROGRESS until:
+Closure evidence executed on 2026-09-22:
 
-- `npm run test:m1:local` passes
-- `npm run health` passes
-- `npm audit --audit-level=high` passes
-- documentation is reconciled from executed evidence
+- `npm run test:m1:local` passed with migrations 0001 through 0012 from zero, database invariants green, and 64/64 PostgreSQL/API/worker tests passing
+- `npm run test:m1:security` passed 17/17 across M1 domain, contract, and security coverage
+- `npm run health` passed repository health, typecheck, production builds, lint, formatting, dependency checks, and 108/108 unit/security tests
+- `npm audit --audit-level=high` reported 0 vulnerabilities
+- `git diff --check` passed
 
 ## Acceptance-gate mapping
 
@@ -1141,7 +1142,7 @@ Implementation evidence must prove every one of them:
 
 ## Closure standard
 
-M1 is DONE only when all canonical gates are supported by executed local evidence.
+All 18 canonical gates are supported by executed local evidence, so M1 is DONE locally. Reintegration to `main` remains a separate task.
 
 No hosted GitHub Actions run is required for M1 closure while V1 remains separately blocked, but every M1 commit continues to use `[skip ci]` until that policy changes.
 

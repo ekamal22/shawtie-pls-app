@@ -254,7 +254,7 @@ M1 migration 0012 implements compact interaction state:
 
 M1 does not add durable per-heartbeat history.
 
-Both migrations are implemented but are not yet recorded as locally verified. M1 closure requires migrations 0001 through 0012 to apply from zero against disposable PostgreSQL 16 with database invariants green.
+Both migrations are locally verified. On 2026-09-22 the M1 disposable PostgreSQL 16 harness applied migrations 0001 through 0012 from zero, passed database invariants, and completed the 64-test PostgreSQL/API/worker matrix with `M1_LOCAL_POSTGRES_PASS`.
 
 The M1 migration/integration tests must additionally prove:
 

@@ -557,3 +557,5 @@ The M1 PostgreSQL matrix must include:
 - centralized interaction-limit contract coverage so message, page, typing, presence, and idempotency ceilings do not drift between layers
 
 M1 does not require physical Redmi acceptance. Physical Android validation begins at M2.
+
+M1 verification completed locally on 2026-09-22. `npm run test:m1:security` passed 17/17, and `npm run test:m1:local` applied migrations 0001 through 0012 from zero, passed database invariants, and passed the complete PostgreSQL/API/worker matrix 64/64 with `M1_LOCAL_POSTGRES_PASS`. The matrix includes P1, P2, P3, A1, lifecycle, concurrency, idempotency, durable-change synchronization, cleanup, and worker invalidation regressions. Full repository health passed with Domain 51/51, Contracts 22/22, API unit/security 31/31, Worker 4/4, and all static, typecheck, build, lint, formatting, and dependency checks green. `npm audit --audit-level=high` reported 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.

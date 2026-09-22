@@ -890,7 +890,7 @@ Implemented and verified by the complete local matrix, repository health, and de
 
 # M1: Messaging Core
 
-Status: IN_PROGRESS
+Status: DONE locally on `feat/m1-messaging-core`; merge to `main` pending
 
 Branch:
 
@@ -958,9 +958,9 @@ M1 intentionally keeps HTTP and PostgreSQL authoritative. WebSocket delivery, In
 
 ## Current implementation state
 
-M1-A through M1-H source is implemented on `feat/m1-messaging-core`, including migrations 0011/0012, repositories, lifecycle integration, HTTP APIs, browser chat, content-free pre-M2 outbox invalidation handling, verification source, and the local PostgreSQL closure harness.
+M1-A through M1-H are implemented and locally verified on `feat/m1-messaging-core`, including migrations 0011/0012, repositories, lifecycle integration, HTTP APIs, browser chat, content-free pre-M2 outbox invalidation handling, and the local PostgreSQL closure harness.
 
-Acceptance gates remain unchecked until the required commands execute successfully and their evidence is recorded. Source presence alone does not satisfy a gate.
+On 2026-09-22, the closure harness applied migrations 0001 through 0012 from zero, passed database invariants, and passed 64/64 PostgreSQL/API/worker tests. M1 security passed 17/17, full repository health passed, and the high-severity dependency audit reported 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
 
 ## Implementation sequence
 
@@ -1069,26 +1069,26 @@ Acceptance gates remain unchecked until the required commands execute successful
 
 ## Acceptance gates
 
-- [ ] one primary conversation exists per active partnership
-- [ ] message sends are idempotent
-- [ ] server sequence provides deterministic ordering
-- [ ] replies reference valid partnership messages
-- [ ] edits are allowed only within the 30-minute window
-- [ ] edited indicator is visible
-- [ ] deletion removes message content for both and preserves tombstone
-- [ ] default reactions are available
-- [ ] add-emoji reaction path works
-- [ ] read receipts are always on
-- [ ] typing indicators are always on
-- [ ] online status and last seen follow product rules
-- [ ] nicknames are shared and visible to both partners
-- [ ] breakup_pending preserves new messages and replies
-- [ ] pre-breakup messages cannot be edited, deleted, or reacted to during breakup_pending
-- [ ] nickname changes remain allowed during breakup_pending
-- [ ] cross-partnership message access tests fail closed
-- [ ] API and security regression tests pass, including durable mutation synchronization, stale-edit conflict, keyed-fingerprint, presence-privacy, bounded-interaction, deletion-composition, and content-free invalidation evidence
+- [x] one primary conversation exists per active partnership
+- [x] message sends are idempotent
+- [x] server sequence provides deterministic ordering
+- [x] replies reference valid partnership messages
+- [x] edits are allowed only within the 30-minute window
+- [x] edited indicator is visible
+- [x] deletion removes message content for both and preserves tombstone
+- [x] default reactions are available
+- [x] add-emoji reaction path works
+- [x] read receipts are always on
+- [x] typing indicators are always on
+- [x] online status and last seen follow product rules
+- [x] nicknames are shared and visible to both partners
+- [x] breakup_pending preserves new messages and replies
+- [x] pre-breakup messages cannot be edited, deleted, or reacted to during breakup_pending
+- [x] nickname changes remain allowed during breakup_pending
+- [x] cross-partnership message access tests fail closed
+- [x] API and security regression tests pass, including durable mutation synchronization, stale-edit conflict, keyed-fingerprint, presence-privacy, bounded-interaction, deletion-composition, and content-free invalidation evidence
 
-M1 remains IN_PROGRESS until every gate above is supported by executed evidence.
+M1 is DONE locally at 18/18 acceptance gates. Reintegration to `main` is out of scope for this branch closure.
 
 # M2: Realtime and Offline Reliability
 

@@ -121,7 +121,7 @@ Current epic status:
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
 - P1 Discovery and Partner Requests: DONE. All 14 acceptance gates are closed. Migration 0008 applies as part of an eight-migration clean run with database invariants green; `npm run test:p1:local` passes the disposable PostgreSQL/API/worker matrix 16/16 with `P1_LOCAL_POSTGRES_PASS`; the final full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4; Prettier, ESLint, dependency checks, typecheck, and production builds are green; and `npm audit --audit-level=high` reports 0 vulnerabilities.
 - P2 Partnership Formation and Relationship Date: DONE. All 11 acceptance gates are closed. The P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. The matrix proves explicit and reciprocal formation, accepted-request replay linkage, deterministic locking, incompatible-request invalidation, expiry-action handling, one-partner occupancy races, relationship-date version and generation separation, other-partner notification isolation, notification snapshot pagination, and P1 behavior in real `paired` mode. The standalone historical `test:p1:local` harness remains request-only. Full repository health and `npm audit --audit-level=high` are green. Migration 0008 remains byte-for-byte unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`.
-- M1 Messaging Core: IN_PROGRESS on `feat/m1-messaging-core`. Runtime implementation is present across migrations 0011/0012, repositories, formation/breakup/deletion integration, messaging API, browser chat surface, content-free pre-M2 worker invalidation handling, domain/contracts, database invariants, security regressions, concurrency/lifecycle races, and the disposable-PostgreSQL closure harness. The refined design separates immutable message ordering from durable mutation synchronization, requires optimistic message edit versions, removes plaintext edit-history retention, uses keyed private-request fingerprints, bounds presence/typing disclosure and write rates, and keeps messaging deletion cleanup module-owned over the verified P3 lifecycle kernel. Executed acceptance evidence remains pending, so M1 is not DONE.
+- M1 Messaging Core: DONE locally at 18/18 acceptance gates on `feat/m1-messaging-core`; merge to `main` is pending. Migrations 0001 through 0012 apply from zero with database invariants green; `npm run test:m1:local` passes the complete PostgreSQL/API/worker and cross-epic regression matrix 64/64 with `M1_LOCAL_POSTGRES_PASS`; `npm run test:m1:security` passes 17/17; full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, Worker 4/4, and all static/build checks green; and `npm audit --audit-level=high` reports 0 vulnerabilities. Executed evidence covers distinct immutable `server_sequence` and durable `change_sequence`, old-message mutation recovery, idempotency, optimistic edits, lifecycle races, deletion, privacy, browser behavior, and content-free worker invalidations.
 - R1 Relationship Space: parallel branch reserved from the same verified baseline; M1 does not consume R1 migrations 0013 or 0014.
 - all other pre-release implementation epics not listed above: PLANNED
 
@@ -161,17 +161,13 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 A1, P1, P2, and P3 are complete and merged into the verified mainline.
 
-M1 Messaging Core implementation is present on `feat/m1-messaging-core`; closure validation is next. R1 may continue in parallel on its separate branch.
+M1 Messaging Core is locally closed on `feat/m1-messaging-core`; reintegration to `main` is a separate task. R1 may continue in parallel on its separate branch.
 
-1. run `npm run test:m1:local` against disposable PostgreSQL 16
-2. fix any migration, invariant, API, worker, browser-build, race, or regression failure revealed by that run
-3. run `npm run health`
-4. run `npm audit --audit-level=high`
-5. reconcile M1 acceptance gates and repository documentation only from executed evidence
-6. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
-7. keep M1 changes out of R1-owned migrations 0013 and 0014
-8. begin M2 only after verified M1 is merged to main
-9. keep V1 hosted verification separate until GitHub Actions capacity returns
+1. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and cleanup boundaries
+2. keep M1 changes out of R1-owned migrations 0013 and 0014
+3. reintegrate verified M1 to `main` in a later dedicated task
+4. begin M2 only after verified M1 is merged to main
+5. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 

@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. M1 Messaging Core is IN_PROGRESS on `feat/m1-messaging-core`: runtime persistence, API, browser, worker invalidation handling, tests, and the disposable-PostgreSQL closure harness are implemented. Executed closure evidence from `test:m1:local`, full health, and dependency audit remains pending. Hosted GitHub Actions verification remains separate under V1.
+The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. M1 Messaging Core is also DONE locally on `feat/m1-messaging-core`: migrations 0001 through 0012 apply from zero, the 64-test disposable PostgreSQL/API/worker matrix passes, full repository health passes, and the high-severity dependency audit reports 0 vulnerabilities. M1 has not been merged to `main`. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 

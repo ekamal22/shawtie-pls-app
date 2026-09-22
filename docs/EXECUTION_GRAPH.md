@@ -48,7 +48,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
                 +-------+--------+
                 |                |
                 v                v
-          M1 Messaging 🟡    R1 Relationship Space ⚪
+          M1 Messaging ✅    R1 Relationship Space ⚪
                 |
                 v
           M2 Realtime + Offline ⚪
@@ -94,7 +94,7 @@ flowchart TD
 
     P2 --> P3["P3 Lifecycle + Deletion ✅"]
 
-    P3 --> M1["M1 Messaging Core 🟡"]
+    P3 --> M1["M1 Messaging Core ✅"]
     P3 --> R1["R1 Relationship Space ⚪"]
 
     M1 --> M2["M2 Realtime + Offline ⚪"]
@@ -130,6 +130,8 @@ P3 ✅
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
+
+M1 is locally closed at 18/18 gates on `feat/m1-messaging-core`. Migrations 0001 through 0012 apply from zero with database invariants green, the disposable PostgreSQL/API/worker matrix passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, M1 security passes 17/17, full repository health passes, and the high-severity dependency audit reports 0 vulnerabilities. Merge to `main` is pending and out of scope for branch closure.
 
 ## Most recently completed milestone
 
@@ -178,7 +180,7 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 
 M1 and R1 may progress in parallel.
-M1 refined architecture/API design and runtime implementation are present on `feat/m1-messaging-core`; executed closure validation is pending.
+M1 is DONE locally on `feat/m1-messaging-core`; merge to `main` is pending.
 M1 owns migrations 0011 and 0012.
 R1 reserves migrations 0013 and 0014.
 M2 waits for verified M1 to return to main.

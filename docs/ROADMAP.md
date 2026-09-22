@@ -56,7 +56,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
-| 5A M1 Messaging Core | IN_PROGRESS | P3 | No for core closure |
+| 5A M1 Messaging Core | DONE locally, merge pending | P3 | No for core closure |
 | 5B R1 Relationship Space | NEXT, may run in parallel | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
@@ -93,7 +93,7 @@ Recommended execution order:
 
 # Milestone 5A: M1 Messaging Core
 
-Status: IN_PROGRESS.
+Status: DONE locally on `feat/m1-messaging-core`; merge to `main` pending.
 
 Canonical detailed gates:
 
@@ -145,9 +145,9 @@ M1 must not use message creation sequence as the only reconnect/poll cursor.
 
 ## Current implementation state
 
-The M1 branch now contains the runtime implementation for migrations, repositories, lifecycle integration, messaging API, browser chat, content-free pre-M2 outbox invalidation handling, domain/contracts, database invariants, race/security tests, and the disposable-PostgreSQL closure harness.
+The M1 branch contains the locally verified runtime implementation for migrations, repositories, lifecycle integration, messaging API, browser chat, content-free pre-M2 outbox invalidation handling, domain/contracts, database invariants, race/security tests, and the disposable-PostgreSQL closure harness.
 
-This source state does not close M1. Executed `test:m1:local`, full health, and dependency-audit evidence are still required.
+On 2026-09-22, `test:m1:local` passed 64/64 after applying migrations 0001 through 0012 from zero with database invariants green. Full repository health passed, and the high-severity dependency audit reported 0 vulnerabilities. All 18 M1 acceptance gates are closed. M1 has not yet been merged to `main`.
 
 ## Closure boundary
 
