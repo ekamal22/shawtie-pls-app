@@ -471,6 +471,39 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     });
     assert.equal(reaction.statusCode, 200, reaction.body);
 
+    const changedReaction = await app.inject({
+      method: "PUT",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + firstBody.messageId
+        + "/reaction",
+      headers: jsonHeaders(bob.cookie, "m1-reaction-key-0002"),
+      payload: { emoji: "🥹" },
+    });
+    assert.equal(changedReaction.statusCode, 200, changedReaction.body);
+    assert.equal(
+      (changedReaction.json() as { reaction: { emoji: string } }).reaction.emoji,
+      "🥹",
+    );
+
+    const removedReaction = await app.inject({
+      method: "DELETE",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + firstBody.messageId
+        + "/reaction",
+      headers: mutationHeaders(bob.cookie, "m1-reaction-remove-key-0001"),
+    });
+    assert.equal(removedReaction.statusCode, 200, removedReaction.body);
+    assert.equal(
+      (removedReaction.json() as { reaction: null }).reaction,
+      null,
+    );
+
     const deletion = await app.inject({
       method: "DELETE",
       url:
@@ -550,7 +583,13 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     };
     assert.deepEqual(
       changeBody.items.map((change) => change.type),
-      ["message.updated", "message.reaction_changed", "message.deleted"],
+      [
+        "message.updated",
+        "message.reaction_changed",
+        "message.reaction_changed",
+        "message.reaction_changed",
+        "message.deleted",
+      ],
     );
     assert.equal(
       changeBody.items.every((change) => change.messageId === firstBody.messageId),
@@ -558,7 +597,7 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     );
     assert.deepEqual(
       changeBody.items.map((change) => change.changeSequence),
-      [3, 4, 5],
+      [3, 4, 5, 6, 7],
     );
 
     const tombstone = await app.inject({
