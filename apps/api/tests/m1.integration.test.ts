@@ -636,6 +636,96 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
   }
 });
 
+test("M1 send fingerprint replay survives key rotation and fails closed without the historical key", async () => {
+  const database = requireDisposableDatabase();
+  let app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "rotation_alice");
+    const bob = await register(app, database, "rotation_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "rotation");
+
+    const first = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "rotation-safe private message",
+      "m1-rotation-send-idempotency-key",
+    );
+    assert.equal(first.statusCode, 201, first.body);
+    const firstBody = first.json() as {
+      messageId: string;
+      serverSequence: number;
+      changeSequence: number;
+    };
+
+    await app.close();
+
+    const rotatedConfig: ApiConfig = {
+      ...config,
+      authKeys: {
+        activeVersion: 2,
+        keys: new Map([
+          [1, rootKey],
+          [2, Buffer.alloc(32, 8)],
+        ]),
+      },
+    };
+    app = createApiApplication({ database, config: rotatedConfig });
+
+    const replayWithRetainedKey = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "rotation-safe private message",
+      "m1-rotation-send-idempotency-key",
+    );
+    assert.equal(replayWithRetainedKey.statusCode, 201, replayWithRetainedKey.body);
+    assert.deepEqual(
+      {
+        messageId: (replayWithRetainedKey.json() as { messageId: string }).messageId,
+        serverSequence: (replayWithRetainedKey.json() as { serverSequence: number }).serverSequence,
+        changeSequence: (replayWithRetainedKey.json() as { changeSequence: number }).changeSequence,
+      },
+      firstBody,
+    );
+
+    const rotatedAlice = await login(app, alice);
+    await app.close();
+
+    const retiredConfig: ApiConfig = {
+      ...config,
+      authKeys: {
+        activeVersion: 2,
+        keys: new Map([[2, Buffer.alloc(32, 8)]]),
+      },
+    };
+    app = createApiApplication({ database, config: retiredConfig });
+
+    const replayWithoutHistoricalKey = await sendMessage(
+      app,
+      rotatedAlice,
+      conversationId,
+      "rotation-safe private message",
+      "m1-rotation-send-idempotency-key",
+    );
+    assert.equal(replayWithoutHistoricalKey.statusCode, 409, replayWithoutHistoricalKey.body);
+    assert.equal(
+      (replayWithoutHistoricalKey.json() as { error: { code: string } }).error.code,
+      "IDEMPOTENCY_KEY_REUSED",
+    );
+
+    const count = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM messages WHERE conversation_id = $1",
+      [conversationId],
+    );
+    assert.equal(count.rows[0]?.count, "1");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M1 private message content never leaks into durable operational metadata", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
