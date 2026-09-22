@@ -65,6 +65,14 @@ feat/c1-calling
 feat/s1-e2ee
 ```
 
+Architecture-only branches may be used before a dependency milestone closes when they contain documentation only and cannot be mistaken for implementation. Current example:
+
+```text
+design/m3-media-voice
+```
+
+`design/m3-media-voice` is based on the current M2 design/runtime state only to refine M3 architecture. It must not receive M3 runtime source, migrations, production dependencies, or closure claims. After M2 is verified and merged, the real `feat/m3-media-voice` branch must be created from the then-current verified `main`; do not convert the design branch into the implementation branch.
+
 ## Epic acceptance gates
 
 Before starting implementation work, identify the roadmap epic in `../ROADMAP_EPICS.md`.
