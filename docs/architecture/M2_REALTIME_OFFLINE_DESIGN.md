@@ -86,7 +86,7 @@ M2 does not implement:
 
 M3 owns media and voice-message transport.
 
-C1 owns call signaling and WebRTC.
+C1 owns call signaling and voice-call WebRTC. C2 extends the verified C1 call core with video media.
 
 S1 owns reviewed E2EE and cryptographic recovery.
 
@@ -1786,7 +1786,11 @@ M3 owns actual media upload, media retrieval, media local metadata, voice-messag
 
 ### C1
 
-C1 may add call signaling frame types to a new reviewed realtime protocol version or a backward-compatible v1 extension if compatibility rules allow it.
+C1 Voice Calling may add the first call-signaling frame types to a new reviewed realtime protocol version or a backward-compatible v1 extension if compatibility rules allow it. C1 owns the shared call-state/signaling substrate and audio-only WebRTC behavior.
+
+### C2
+
+C2 Video Calling reuses the verified C1 signaling and call-state substrate. If video can be represented as a bounded media-type extension, C2 must not invent a second signaling model. If incompatible semantics are genuinely required, C2 must use an explicitly reviewed protocol-version transition.
 
 M2 does not pre-implement call signaling.
 
