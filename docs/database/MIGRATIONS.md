@@ -228,9 +228,40 @@ R1 reserves:
 - `0013`
 - `0014`
 
-M1 migration 0011 is designed to refine the existing conversation/message substrate without rewriting migrations 0001 through 0010. Its planned responsibilities include primary-conversation backfill/provisioning, exact breakup message-freeze sequence capture, explicit pre-S1 development message/reaction payload fields, message content-versioning support, idempotency fingerprints, and reaction uniqueness/content-removal constraints.
+This reservation remains unchanged.
 
-M1 migration 0012 is designed for compact interaction state: conversation-member delivery/read high-water marks, partnership chat nicknames, current presence snapshots, and short-lived typing state.
+Repository health still enforces one contiguous migration sequence. The reservation does not relax `scripts/db/check-migrations.mjs`: a branch that materializes 0013 or 0014 must have 0011 and 0012 in its ancestry before migration-plan validation can pass. M1 does not renumber or consume R1's reserved migrations.
+
+M1 migration 0011 is designed to refine the existing conversation/message substrate without rewriting migrations 0001 through 0010. Its planned responsibilities include:
+
+- primary-conversation backfill and future formation provisioning
+- exact breakup `message_freeze_sequence` capture
+- separate `next_server_sequence` message ordering and `next_change_sequence` mutation synchronization
+- append-only, content-free `conversation_changes`
+- explicit pre-S1 current message/reaction plaintext fields without plaintext edit history
+- message `content_version` and `last_change_sequence`
+- versioned keyed private-request fingerprints
+- active-reaction uniqueness and content-removal constraints
+- indexes and constraints required for bounded server-sequence history and change-sequence synchronization
+
+M1 migration 0012 is designed for compact interaction state:
+
+- conversation-member delivered/read high-water marks
+- partnership chat nicknames with optimistic versioning
+- current account presence snapshots
+- short-lived conversation typing state
+- constraints supporting partnership-scoped presence disclosure and bounded interaction state
+
+M1 does not add durable per-heartbeat history.
 
 Neither migration is implemented or verified yet. M1 closure requires migrations 0001 through 0012 to apply from zero against disposable PostgreSQL 16 with database invariants green.
 
+The M1 migration/integration tests must additionally prove:
+
+- committed message creation allocates one server sequence and one change sequence
+- edit/delete/reaction mutations allocate change sequences without changing immutable message order
+- failed/rolled-back mutations do not consume committed cursor values
+- old-message mutations are discoverable through the change ledger
+- no change row contains message, reaction, nickname, or reply content
+- no M1 migration writes plaintext message edit history
+- messaging cleanup remains module-owned and compatible with the existing P3 dissolution kernel
