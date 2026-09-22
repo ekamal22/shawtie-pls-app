@@ -73,3 +73,32 @@ test("M2 cold start locks cached plaintext until server session verification", a
       app.indexOf("<M2RuntimeProvider"),
   );
 });
+
+
+test("M2 cross-tab logout closes private local state before account purge", async () => {
+  const control = await source("../src/lib/offline/account-control.ts");
+  const runtime = await source("../src/lib/realtime/runtime-context.tsx");
+  const app = await source("../src/app/App.tsx");
+
+  assert.equal(control.includes("BroadcastChannel"), true);
+  assert.equal(control.includes('type: "logout"'), true);
+  assert.equal(runtime.includes("subscribeLocalLogout"), true);
+  assert.equal(runtime.includes('new CustomEvent("shawtie:local-logout"'), true);
+  assert.equal(app.includes("broadcastLocalLogout"), true);
+  assert.equal(app.includes("purgeAccountLocalData"), true);
+});
+
+test("M2 PWA manifest is installable without granting private Cache API access", async () => {
+  const manifest = JSON.parse(await source("../public/manifest.webmanifest")) as {
+    display?: string;
+    start_url?: string;
+    icons?: Array<{ src?: string; purpose?: string }>;
+  };
+  const icon = await source("../public/icon.svg");
+
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.start_url, "/");
+  assert.equal(manifest.icons?.some((entry) => entry.src === "/icon.svg"), true);
+  assert.equal(manifest.icons?.some((entry) => entry.purpose?.includes("maskable")), true);
+  assert.equal(icon.includes("<svg"), true);
+});

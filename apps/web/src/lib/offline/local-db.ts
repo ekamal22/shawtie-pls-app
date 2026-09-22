@@ -600,8 +600,10 @@ export async function purgeAccountLocalData(accountId: string): Promise<void> {
     request.onsuccess = () => resolve();
     request.onerror = () =>
       reject(request.error ?? new Error("Unable to delete local database"));
-    request.onblocked = () =>
-      reject(new Error("Close other Shawtie pls tabs before clearing local data"));
+    request.onblocked = () => {
+      // Other Shawtie pls tabs receive the logout broadcast and close their
+      // database handles; the delete request completes after those handles close.
+    };
   });
   try {
     if (localStorage.getItem(LAST_ACCOUNT_KEY) === accountId) {

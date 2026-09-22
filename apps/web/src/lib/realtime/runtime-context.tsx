@@ -15,6 +15,7 @@ import {
 } from "../offline/local-db.ts";
 import { M2ReplayEngine } from "../offline/replay-engine.ts";
 import { RealtimeClient, type RealtimeScope } from "./realtime-client.ts";
+import { subscribeLocalLogout } from "../offline/account-control.ts";
 import {
   activateWaitingM2ServiceWorker,
   hasWaitingM2ServiceWorker,
@@ -223,11 +224,19 @@ export function M2RuntimeProvider({
   useEffect(() => {
     activeRuntime = runtime;
     void runtime.start();
+    const unsubscribeLogout = subscribeLocalLogout(accountId, () => {
+      void runtime.stop().finally(() => {
+        window.dispatchEvent(
+          new CustomEvent("shawtie:local-logout", { detail: accountId }),
+        );
+      });
+    });
     return () => {
+      unsubscribeLogout();
       if (activeRuntime === runtime) activeRuntime = null;
       void runtime.stop();
     };
-  }, [runtime]);
+  }, [accountId, runtime]);
 
   return (
     <RuntimeContext.Provider value={runtime}>

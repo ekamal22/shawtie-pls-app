@@ -4,6 +4,7 @@ import {
   purgeAccountLocalData,
   purgeRememberedAccountLocalData,
   rememberLocalAccount,
+  rememberedLocalAccount,
 } from "../lib/offline/local-db.ts";
 import {
   M2RuntimeProvider,
@@ -743,6 +744,11 @@ export function App() {
   async function refreshSession() {
     try {
       const current = await apiRequest<Session>("/api/v1/auth/session");
+      const previousAccountId = rememberedLocalAccount();
+      if (previousAccountId && previousAccountId !== current.accountId) {
+        broadcastLocalLogout(previousAccountId);
+        void purgeAccountLocalData(previousAccountId).catch(() => undefined);
+      }
       rememberLocalAccount(current.accountId);
       setSession(current);
     } catch (error) {
@@ -760,11 +766,20 @@ export function App() {
     const retryOnline = () => {
       void refreshSession().catch(() => setSession("offline-locked"));
     };
+    const localLogout = (event: Event) => {
+      const accountId = (event as CustomEvent<string>).detail;
+      setSession(null);
+      if (accountId) {
+        void purgeAccountLocalData(accountId).catch(() => undefined);
+      }
+    };
     window.addEventListener("online", retryOnline);
     window.addEventListener("shawtie:security-changed", retryOnline);
+    window.addEventListener("shawtie:local-logout", localLogout);
     return () => {
       window.removeEventListener("online", retryOnline);
       window.removeEventListener("shawtie:security-changed", retryOnline);
+      window.removeEventListener("shawtie:local-logout", localLogout);
     };
   }, []);
 
@@ -810,6 +825,7 @@ export function App() {
       <AccountScreen
         session={session}
         onSignedOut={() => {
+          broadcastLocalLogout(signedOutAccountId);
           setSession(null);
           void purgeAccountLocalData(signedOutAccountId).catch(
             () => undefined,
