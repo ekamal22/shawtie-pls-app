@@ -1431,4 +1431,4 @@ Implemented source includes:
 - responsive Relationship Space browser flows including curations, reunion planning, partial occurrence precision, and rescheduling
 - R1 security, API integration, worker integration, and local PostgreSQL harnesses
 
-R1 is `DONE`. The combined baseline passes strict canonical migrations 0001 through 0014 with no reservations, database invariants, R1 69/69, the M1 reference seam, full repository health, audit, and git hygiene. Controlled merge to `main` remains a repository-flow step rather than an R1 acceptance blocker.
+R1 is `DONE`. The combined baseline passes strict canonical migrations 0001 through 0014 with no reservations, database invariants, R1 69/69, the M1 reference seam, full repository health, audit, and git hygiene. The documentation-closed M1/R1 integration is merged to `main @ d7d95a6`.

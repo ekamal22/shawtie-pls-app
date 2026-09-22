@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation and the first two parallel product-substrate milestones are locally complete. F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed evidence. M1 runtime closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` with source head `b29b095`; R1 source head is `9bc9ba4`; source integration is anchored at `01fa182`; exhaustive combined technical validation is anchored at `5db7a94183bca153d142389d7188e3887653a9ec`. On that baseline, migrations 0001 through 0014 apply from zero with `reserved=0` and database invariants green; `test:m1:local` passes 64/64; `test:r1:local` passes 69/69; the final full health run passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4; `npm audit --audit-level=high` reports 0 vulnerabilities; and git cleanliness plus local/remote SHA parity pass. The controlled merge of `integration/m1-r1` to `main` remains pending. Hosted GitHub Actions verification is tracked separately under V1.
+Foundation implementation and the first two parallel product-substrate milestones are locally complete. F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed evidence. M1 runtime closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` with source head `b29b095`; R1 source head is `9bc9ba4`; source integration is anchored at `01fa182`; exhaustive combined technical validation is anchored at `5db7a94183bca153d142389d7188e3887653a9ec`. On that baseline, migrations 0001 through 0014 apply from zero with `reserved=0` and database invariants green; `test:m1:local` passes 64/64; `test:r1:local` passes 69/69; the final full health run passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4; `npm audit --audit-level=high` reports 0 vulnerabilities; and git cleanliness plus local/remote SHA parity pass. The documentation-closed M1/R1 integration is merged to `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. Hosted GitHub Actions verification is tracked separately under V1.
 
 ## Product definition
 
@@ -139,8 +139,8 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/p3-partnership-lifecycle` -> completed P3 development and closure history
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
-- `integration/m1-r1` -> combined source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`; controlled merge to `main` pending
-- `main` still contains the verified P3 runtime baseline until the controlled integration merge
+- `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
+- `main` -> contains the completed M1/R1 integrated baseline at `d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -162,14 +162,14 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1, P1, P2, and P3 are complete and merged into the verified mainline. M1 and R1 are complete on the integration branch and have passed exhaustive combined validation.
+A1, P1, P2, P3, M1, and R1 are complete and merged into the verified mainline.
 
-The next controlled engineering step is to merge `integration/m1-r1` to `main` after this documentation closure. The exhaustive technical validation anchor is `5db7a94183bca153d142389d7188e3887653a9ec`.
+The next engineering milestone is M2 Realtime and Offline Reliability, created from `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. The M1/R1 exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`.
 
 1. preserve M1 ownership of migrations 0011 and 0012 and R1 ownership of migrations 0013 and 0014
 2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
-3. merge the documentation-closed integration branch to `main` without changing the validated runtime baseline
-4. begin M2 only from the updated `main` containing the verified M1/R1 integration
+3. preserve M1 `server_sequence` as immutable message-history order and `change_sequence` as durable mutation-synchronization order
+4. implement M2 without making WebSocket delivery or IndexedDB state authoritative
 5. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
@@ -193,6 +193,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1, P1, P2, P3, M1, and R1 documentation are reconciled against completed acceptance evidence. M1 remains closed at 18/18 gates with runtime anchor `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. R1 is closed by the combined validation baseline `5db7a94183bca153d142389d7188e3887653a9ec`, which proves canonical migrations 0001 through 0014 with no reservations, R1 69/69, M1 64/64, full health, zero audit vulnerabilities, git cleanliness, and local/remote SHA parity. The integration branch still awaits controlled merge to `main`.
+A1, P1, P2, P3, M1, and R1 documentation are reconciled against completed acceptance evidence. M1 remains closed at 18/18 gates with runtime anchor `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. R1 is closed by the combined validation baseline `5db7a94183bca153d142389d7188e3887653a9ec`, which proves canonical migrations 0001 through 0014 with no reservations, R1 69/69, M1 64/64, full health, zero audit vulnerabilities, git cleanliness, and local/remote SHA parity. The documentation-closed integration is merged to `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

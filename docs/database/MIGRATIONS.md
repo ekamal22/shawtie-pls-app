@@ -2,7 +2,7 @@
 
 ## Status
 
-The verified `main` substrate remains implemented through P3 migration `0010_partnership_lifecycle_runtime.sql` until the controlled integration merge. The verified integration baseline `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec` contains M1 migrations 0011/0012 and R1 migrations 0013/0014. Canonical migrations 0001 through 0014 apply from zero against disposable PostgreSQL 16 with `reserved=0` and database invariants green.
+The verified `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3` substrate is implemented through R1 migration `0014_relationship_space_interaction_runtime.sql`. The technical validation baseline `5db7a94183bca153d142389d7188e3887653a9ec` contains M1 migrations 0011/0012 and R1 migrations 0013/0014. Canonical migrations 0001 through 0014 apply from zero against disposable PostgreSQL 16 with `reserved=0` and database invariants green.
 
 ## Current and next migration
 
@@ -43,7 +43,7 @@ P3 security verification pins verified migration 0009 before P3-only migration w
 
 ## Parallel feature migration reservations
 
-The verified physical schema on `main` remains through migration 0010 until merge; the exhaustively validated integration schema is implemented through migration 0014.
+The verified physical schema on `main` is implemented through migration 0014.
 
 M1 owns:
 

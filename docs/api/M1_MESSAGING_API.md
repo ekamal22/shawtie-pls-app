@@ -2,7 +2,7 @@
 
 ## Status
 
-IMPLEMENTED, COMBINED-INTEGRATION VALIDATED, MAIN MERGE PENDING.
+IMPLEMENTED, COMBINED-INTEGRATION VALIDATED, MERGED TO MAIN.
 
 Technical validation anchor: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`. The M1 PostgreSQL/API/worker matrix passes 64/64 on the canonical 0001 through 0014 schema.
 

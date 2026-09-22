@@ -2,7 +2,7 @@
 
 ## Status
 
-DONE. COMBINED INTEGRATION VALIDATED. MERGE TO MAIN PENDING.
+DONE. COMBINED INTEGRATION VALIDATED AND MERGED TO MAIN.
 
 Branch:
 
@@ -1150,7 +1150,7 @@ Implementation evidence must prove every one of them:
 
 ## Closure standard
 
-All 18 canonical gates are supported by executed evidence, so M1 is DONE. Source reintegration with R1 is complete and exhaustively validated; the remaining repository-flow step is the controlled merge of `integration/m1-r1` to `main`.
+All 18 canonical gates are supported by executed evidence, so M1 is DONE. Source reintegration with R1 is complete, exhaustively validated, and merged to `main @ d7d95a6`.
 
 No hosted GitHub Actions run is required for M1 closure while V1 remains separately blocked, but every M1 commit continues to use `[skip ci]` until that policy changes.
 

@@ -890,7 +890,7 @@ Implemented and verified by the complete local matrix, repository health, and de
 
 # M1: Messaging Core
 
-Status: DONE; combined integration validated on `integration/m1-r1`; merge to `main` pending
+Status: DONE; combined integration validated and merged to `main @ d7d95a6`
 
 Verified closure commit:
 
@@ -1094,7 +1094,7 @@ On 2026-09-22, the closure harness applied migrations 0001 through 0012 from zer
 - [x] cross-partnership message access tests fail closed
 - [x] API and security regression tests pass, including durable mutation synchronization, stale-edit conflict, keyed-fingerprint, presence-privacy, bounded-interaction, deletion-composition, and content-free invalidation evidence
 
-M1 is DONE at 18/18 acceptance gates and has passed combined integration validation. The remaining repository-flow step is the controlled merge of `integration/m1-r1` to `main`.
+M1 is DONE at 18/18 acceptance gates, has passed combined integration validation, and is merged to `main @ d7d95a6`.
 
 # M2: Realtime and Offline Reliability
 

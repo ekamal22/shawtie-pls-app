@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified P3 code baseline remains `9820801` on `main`. M1 and R1 are now combined and exhaustively validated on `integration/m1-r1`, with technical validation anchored at `5db7a94183bca153d142389d7188e3887653a9ec`. The integration branch has not yet been merged to `main`.
+`main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3` contains the completed M1/R1 integration. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the next milestone.
 
 Completed milestones:
 
@@ -25,7 +25,7 @@ Completed milestones:
 | 2 P1 Discovery and Partner Requests | DONE | 14/14 gates |
 | 3 P2 Partnership Formation | DONE | 11/11 gates |
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
-| 5A M1 Messaging Core | DONE, integration validated; main merge pending | 18/18 gates; combined anchor `5db7a94` |
+| 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | V1 Hosted CI Verification | BLOCKED | separate track until GitHub Actions capacity returns |
 
 P3 closure evidence remains:
@@ -57,8 +57,8 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
-| 5A M1 Messaging Core | DONE, integration validated; main merge pending | P3 | No for core closure |
-| 5B R1 Relationship Space | DONE, integration validated; main merge pending | P3 | No for core closure |
+| 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
+| 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
@@ -73,32 +73,25 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The next verified-mainline work is:
 
 ```text
-integration/m1-r1
-technical validation anchor 5db7a94
-        |
-        v
-final documentation closure
-        |
-        v
-controlled merge to main
+main @ d7d95a6
+M1 + R1 merged
         |
         v
 feat/m2-realtime-offline
 ```
 
-M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, and were exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`. The combined run uses the real M1 migrations 0011/0012 plus R1 migrations 0013/0014 with no reservation.
+M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, documentation-closed at `d7d95a6`, and are now on `main`.
 
 Next:
 
 1. preserve the M1 runtime closure anchor `aa40a2c` and R1 source history `9bc9ba4`
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
-3. merge the documentation-closed `integration/m1-r1` branch to `main`
-4. begin M2 only from the updated verified `main`
-5. keep V1 hosted verification separate until Actions capacity returns
+3. begin M2 from the updated verified `main`
+4. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
-Status: DONE. Runtime acceptance closed at `aa40a2c`; source head `b29b095` is combined and exhaustively validated on `integration/m1-r1 @ 5db7a94`. Controlled merge to `main` remains pending.
+Status: DONE and merged to `main`. Runtime acceptance closed at `aa40a2c`; source head `b29b095` is combined and exhaustively validated at `5db7a94` and included in `main @ d7d95a6`.
 
 Canonical detailed gates:
 
@@ -152,7 +145,7 @@ M1 must not use message creation sequence as the only reconnect/poll cursor.
 
 The M1 branch contains the locally verified runtime implementation for migrations, repositories, lifecycle integration, messaging API, browser chat, content-free pre-M2 outbox invalidation handling, domain/contracts, database invariants, race/security tests, and the disposable-PostgreSQL closure harness.
 
-On 2026-09-22, M1 closure passed 64/64 and all 18 acceptance gates closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. The later combined baseline `5db7a94` re-ran M1 against the canonical 0001 through 0014 schema and again passed 64/64 with `M1_LOCAL_POSTGRES_PASS`, full health, audit, and git hygiene green. M1 has not yet been merged to `main`.
+On 2026-09-22, M1 closure passed 64/64 and all 18 acceptance gates closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. The later combined baseline `5db7a94` re-ran M1 against the canonical 0001 through 0014 schema and again passed 64/64 with `M1_LOCAL_POSTGRES_PASS`, full health, audit, and git hygiene green. M1 is merged to `main @ d7d95a6`.
 
 ## Closure boundary
 
@@ -162,7 +155,7 @@ M1 is DONE only after its API, persistence, ordering, durable synchronization, i
 
 # Milestone 5B: R1 Relationship Space
 
-Status: DONE. R1 source head `9bc9ba4` is combined with verified M1 and exhaustively validated on `integration/m1-r1 @ 5db7a94`. The canonical PostgreSQL/API/worker matrix runs real migrations 0001 through 0014 with `reserved=0`, passes database invariants and 69/69 tests with `R1_LOCAL_POSTGRES_PASS`, proves a real same-partnership M1 message can be referenced without server-side plaintext copying, keeps invalid and unavailable references fail-closed, and passes full repository health plus a zero-vulnerability audit. Controlled merge to `main` remains pending.
+Status: DONE. R1 source head `9bc9ba4` is combined with verified M1 and exhaustively validated on `integration/m1-r1 @ 5db7a94`. The canonical PostgreSQL/API/worker matrix runs real migrations 0001 through 0014 with `reserved=0`, passes database invariants and 69/69 tests with `R1_LOCAL_POSTGRES_PASS`, proves a real same-partnership M1 message can be referenced without server-side plaintext copying, keeps invalid and unavailable references fail-closed, and passes full repository health plus a zero-vulnerability audit. R1 is merged to `main @ d7d95a6`.
 
 Canonical architecture:
 

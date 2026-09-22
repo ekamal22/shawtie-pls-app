@@ -2150,7 +2150,7 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The repository has completed the verified F0, F1, F2, A1, P1, P2, P3, M1, and R1 milestones locally. M1 Messaging Core is DONE at 18/18 acceptance gates, and R1 Relationship Space is DONE after exhaustive combined validation on `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`. The controlled integration merge to `main` remains pending.
+The repository has completed the verified F0, F1, F2, A1, P1, P2, P3, M1, and R1 milestones locally and merged the documentation-closed M1/R1 integration to `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. M1 Messaging Core is DONE at 18/18 acceptance gates, and R1 Relationship Space is DONE after exhaustive combined validation at `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the next implementation milestone.
 
 Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 
