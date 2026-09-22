@@ -2,7 +2,7 @@
 
 ## Status
 
-Canonical protocol design for M2 implementation.
+Implemented canonical protocol contract for M2. Source implementation is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; executed closure evidence is pending.
 
 Protocol identifier:
 
@@ -20,7 +20,7 @@ The protocol is content-free for durable application invalidations.
 
 Durable product mutations remain on HTTP.
 
-Second-pass hardening adds a race-free live barrier, immutable socket scope identity, listener-reset resynchronization, low-frequency visible anti-entropy, and strict rejection of binary/compressed application transport.
+Second-pass hardening adds a race-free live barrier, immutable socket scope identity, listener-reset resynchronization, low-frequency visible anti-entropy, and strict rejection of binary/compressed application transport. The implemented hub also supports internal account-routed `partnership.changed` delivery so a socket connected before pairing can be invalidated and revalidated immediately when partnership authority changes. Those account IDs are routing-only internal metadata and are not added to browser invalidation frames.
 
 ## Upgrade requirements
 

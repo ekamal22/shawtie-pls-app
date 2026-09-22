@@ -4,13 +4,15 @@
 
 The concrete implementation is defined in `M2_REALTIME_OFFLINE_DESIGN.md`.
 
+Implementation status: M2 offline source is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; executed local and physical-device closure are pending.
+
 M2 local schema version 1 uses an account-bound IndexedDB database with explicit partnership and conversation keys. Before S1, the content context marker is the literal development namespace `pre-s1`; it is not a fake crypto epoch.
 
-M2 provides separate chat and R1 queues. Release/open/reveal and scheduled-release transitions remain online-only.
+M2 provides separate chat and R1 queues. Release/open/reveal and scheduled-release transitions remain online-only. The SyncCoordinator does not start canonical reconciliation or replay while `navigator.onLine` is false; queued work remains persisted and resumes only after connectivity returns.
 
 Final dissolution removes old partnership data from UI before replay and then purges messages, R1 cache, queues, sync metadata, and future media/crypto namespace state.
 
-Explicit logout, account switch, or observed revocation purges pre-S1 local protected plaintext. A temporary network failure does not. However, before S1, a cold start or hard reload while offline must not unlock cached protected plaintext because the HttpOnly server session cannot be revalidated; the app shows a locked offline shell until online validation succeeds.
+Explicit logout, account switch, or observed revocation closes the active M2 runtime before deleting the account-bound IndexedDB database, then purges pre-S1 local protected plaintext. A temporary network failure does not. However, before S1, a cold start or hard reload while offline must not unlock cached protected plaintext because the HttpOnly server session cannot be revalidated; the app shows a locked offline shell until online validation succeeds.
 
 ## Goals
 

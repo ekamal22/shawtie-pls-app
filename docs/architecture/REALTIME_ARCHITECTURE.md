@@ -19,13 +19,15 @@ The concrete M2 implementation is defined in:
 - `M2_REALTIME_OFFLINE_DESIGN.md`
 - `../api/M2_REALTIME_PROTOCOL.md`
 
+Implementation status: M2 realtime source is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; executed local and physical-device closure are pending.
+
 M2 uses the official Fastify WebSocket integration, the existing HttpOnly session cookie, exact trusted-Origin validation, server-derived scope, and one dedicated PostgreSQL LISTEN connection per API process.
 
 Cross-process fanout uses compact validated PostgreSQL NOTIFY messages emitted by the durable worker after content-free outbox validation. NOTIFY remains a latency hint only. HTTP and PostgreSQL reconciliation remain authoritative.
 
 M2 does not put durable product mutations on WebSocket. Message and R1 writes remain on their existing HTTP APIs.
 
-One socket's partnership/conversation identity is immutable after ready. If authoritative identity changes, the old scope is removed and the socket reconnects. Browser code also ignores callbacks from an older in-memory connection generation after reconnect.
+One socket's partnership/conversation identity is immutable after ready. If authoritative identity changes, the old scope is removed and the socket reconnects. Browser code also ignores callbacks from an older in-memory connection generation after reconnect. `partnership.changed` invalidations are internally routable by both partnership and authoritative member account IDs so a socket that connected while unpaired can be revalidated immediately when partnership authority changes.
 
 The API LISTEN connection has an in-memory generation. LISTEN loss marks local sockets dirty; after listener recovery the hub sends `control.resync_required(listener_reset)`. Visible clients additionally run low-frequency canonical anti-entropy so silent hint loss cannot leave a healthy-looking socket stale indefinitely.
 
