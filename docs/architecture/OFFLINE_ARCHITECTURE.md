@@ -25,12 +25,16 @@ A conceptual local layout is:
 account
   partnership
     conversation cache
+      latest_server_sequence
+      latest_change_sequence
     relationship cache
     media metadata
     chat outbox
     relationship outbox
     crypto state
 ```
+
+For messaging, `latest_server_sequence` tracks immutable message creation/history order while `latest_change_sequence` tracks durable send/edit/delete/reaction reconciliation. A client must not treat the message-order cursor as sufficient mutation synchronization.
 
 ## Partnership isolation
 
@@ -71,9 +75,12 @@ partnership_id
 conversation_id
 operation_type
 payload
+expected_content_version nullable
 created_at
 retry_count
 ```
+
+M2 may queue only operations whose feature policy explicitly permits offline replay. Message edits must preserve the M1 `expectedContentVersion` contract so reconnect cannot silently overwrite a newer edit.
 
 ### Relationship outbox
 
@@ -107,6 +114,8 @@ Before replaying queued mutations, the client must refresh:
 - account state
 - partnership state
 - authorization
+- durable messaging changes after the last committed `change_sequence`
+- any required message-history gaps by `server_sequence`
 - cooldown state where relevant
 
 If the partnership has entered a state that disallows the queued action, the operation is rejected locally and server-side.
