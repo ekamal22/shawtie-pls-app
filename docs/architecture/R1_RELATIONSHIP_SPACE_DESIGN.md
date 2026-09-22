@@ -4,7 +4,7 @@
 
 R1 Relationship Space is `IN_PROGRESS`.
 
-Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 runtime implementation is now present on this branch across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, and the dedicated local closure harness. Executed closure evidence is still pending, so no R1 acceptance gate is closed from source presence alone.
+Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source implementation is complete at runtime checkpoint `acf1752` across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, and the dedicated local closure harness. Executed closure evidence is still pending, so no R1 acceptance gate is closed from source presence alone.
 
 Branch:
 
@@ -13,6 +13,14 @@ Branch:
 Verified starting point:
 
 `ac7423d0966fa65993dc3955799835b3abd49c23`
+
+### Current implementation state
+
+Runtime source implementation is complete at checkpoint `acf1752`.
+
+The current branch contains the R1 domain/contracts, migrations 0013/0014, database repositories and invariants, private API, durable release worker, lifecycle integration, responsive browser implementation, security tests, API/worker integration tests, and the dedicated local R1 harness.
+
+This does **not** mean R1 is closed. The full PostgreSQL regression matrix, repository health gate, formatting/lint/typecheck/build checks, dependency-direction checks, and high-severity dependency audit still need executed evidence. Final integrated closure also requires the real M1-owned migrations 0011/0012 to be present; R1 does not copy them.
 
 Migration ownership:
 
@@ -149,7 +157,7 @@ New kinds require a forward migration or an explicitly versioned compatibility c
 
 ### relationship_items additions
 
-Planned additions:
+Implemented additions:
 
 ```text
 content_schema_version integer not null default 1
@@ -1111,32 +1119,16 @@ R1 adds a dedicated feature root:
 
 `apps/web/src/features/relationship-space/`
 
-Planned structure:
+Implemented structure:
 
 ```text
 relationship-space/
   api.ts
   model.ts
   RelationshipSpacePanel.tsx
-  home/
-    RelationshipHome.tsx
-  items/
-    RelationshipItemList.tsx
-    RelationshipItemDetail.tsx
-    RelationshipItemEditor.tsx
-    RelationshipItemCard.tsx
-  experiences/
-    OurStory.tsx
-    ThisDayInUs.tsx
-    OurYear.tsx
-    AnniversaryExperience.tsx
-    SequenceExperience.tsx
-    ReunionExperience.tsx
-  kinds/
-    feature-registry.ts
-    editors/
-    projections/
 ```
+
+The current R1 browser intentionally keeps feature composition in one mobile-first `RelationshipSpacePanel.tsx` rather than creating speculative subdirectories. It already contains the implemented home aggregate, item cards/editing, release controls, Our Story filtering, derived experiences, saved curations, reunion planning, signals, occurrence-precision entry, and schedule rescheduling. A later UI-only refactor may split these components without changing the R1 API or authority model.
 
 The kind registry maps stable item kinds to explicit contract schemas and feature adapters. It is not a catch-all arbitrary JSON renderer.
 
@@ -1334,7 +1326,7 @@ Required matrix includes:
 
 ### R1-I Closure harness and docs
 
-Planned commands, which do not exist until implemented:
+Implemented closure commands. Execution evidence is still pending:
 
 ```text
 npm run test:relationship-space
@@ -1420,7 +1412,7 @@ This rule must stay synchronized across the PRD, worker design, API contract, te
 
 ## Completion statement
 
-R1 architecture, implementation design, and the planned runtime source surfaces are implemented on `feat/r1-relationship-space`.
+R1 architecture, implementation design, and runtime source surfaces are implemented on `feat/r1-relationship-space`.
 
 Current source checkpoint:
 

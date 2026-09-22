@@ -131,6 +131,8 @@ P3 ✅
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
+R1 source implementation is complete on its parallel branch at `acf1752`, but R1 is still yellow because its PostgreSQL regression, full repository health, and dependency-audit evidence have not yet been executed and recorded. M1 remains a separate parallel workstream; R1 has not consumed M1 migrations 0011/0012.
+
 ## Most recently completed milestone
 
 ### P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns
@@ -179,7 +181,7 @@ latest main containing verified P3
 
 M1 and R1 may progress in parallel.
 M1 architecture/API design is complete on `feat/m1-messaging-core`; runtime implementation is pending.
-R1 architecture/API design and runtime source implementation are present on `feat/r1-relationship-space`; executable closure evidence is pending.
+R1 architecture/API design and source implementation are complete at `acf1752` on `feat/r1-relationship-space`; executable closure evidence is pending.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 Neither branch may consume the other branch's migration ownership.

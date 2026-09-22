@@ -1051,11 +1051,11 @@ Parallel reservation:
 - M1 owns 0011 and 0012
 - R1 must not create, rename, or modify M1 migration numbers
 
-Architecture/design and runtime source implementation are present through source checkpoint `acf1752`. Executable acceptance evidence is still pending, so the epic remains IN_PROGRESS.
+Architecture/design and R1 source implementation are complete through runtime checkpoint `acf1752`. Executable acceptance evidence is still pending, so the epic remains IN_PROGRESS.
 
 ## Current implemented progress
 
-Source implementation now includes:
+Completed source implementation includes:
 
 - R1 domain policies, capability refinements, date and release predicates
 - explicit Zod contracts for every R1 kind and mutation
@@ -1073,7 +1073,7 @@ Source implementation now includes:
 
 The isolated `test:r1:local` harness opts into migration reservations 0011/0012 only so R1 can be exercised without copying M1. Final integrated closure must run without that reservation and with the real M1 migrations present.
 
-The source above is implemented but not yet accepted as green. The checkboxes below remain open until the commands are executed and evidence is recorded.
+The source implementation above is complete but not yet accepted as green. The checkboxes below remain open until the closure commands are executed and evidence is recorded. Any further R1 runtime changes should be driven by validation failures, not by unimplemented planned scope.
 
 ## Scope
 

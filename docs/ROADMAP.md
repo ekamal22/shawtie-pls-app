@@ -57,7 +57,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
 | 5A M1 Messaging Core | IN_PROGRESS, design complete | P3 | No for core closure |
-| 5B R1 Relationship Space | IN_PROGRESS, implementation present; verification pending | P3 | No for core closure |
+| 5B R1 Relationship Space | IN_PROGRESS, source implementation complete; verification pending | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
@@ -79,12 +79,12 @@ latest main containing verified P3
   +--> feat/r1-relationship-space
 ~~~
 
-M1 and R1 may progress in parallel because both depend on the verified P3 lifecycle/capability boundary rather than on each other. M1 architecture/API design is complete while its runtime work proceeds independently. R1 architecture/API design and runtime source implementation are present on its separate branch, with executable closure evidence still pending. M1 owns migrations 0011 and 0012; R1 owns 0013 and 0014.
+M1 and R1 may progress in parallel because both depend on the verified P3 lifecycle/capability boundary rather than on each other. M1 architecture/API design is complete while its runtime work proceeds independently. R1 architecture/API design and source implementation are complete at `acf1752` on its separate branch, with executable closure evidence still pending. M1 owns migrations 0011 and 0012; R1 owns 0013 and 0014.
 
 Recommended execution order:
 
 1. continue M1 runtime work only on `feat/m1-messaging-core`
-2. continue R1 runtime work only on `feat/r1-relationship-space`
+2. run R1 validation on `feat/r1-relationship-space` and change runtime code only to fix failures found by those gates
 3. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 4. keep M1 and R1 shared-file changes explicitly coordinated
 5. close each epic only from its own acceptance evidence
@@ -139,7 +139,7 @@ M1 is DONE only after its API, persistence, ordering, idempotency, lifecycle, ra
 
 # Milestone 5B: R1 Relationship Space
 
-Status: IN_PROGRESS. Architecture/API design and runtime source implementation are present through source checkpoint `acf1752` on `feat/r1-relationship-space`; executable PostgreSQL, full health, and dependency-audit closure evidence remain pending. R1 continues independently from M1.
+Status: IN_PROGRESS. Architecture/API design and R1 source implementation are complete through runtime checkpoint `acf1752` on `feat/r1-relationship-space`; executable PostgreSQL, full health, and dependency-audit closure evidence remain pending. R1 continues independently from M1.
 
 Canonical architecture:
 

@@ -2,13 +2,36 @@
 
 ## Status
 
-This is the canonical R1 HTTP API design.
+This is the canonical R1 HTTP API design and current implementation contract.
 
-R1 architecture and runtime API implementation are present on `feat/r1-relationship-space`. Executed closure evidence remains pending, so this document does not claim the API is verified until the R1 test gates run successfully.
+R1 architecture and runtime API source implementation are complete at checkpoint `acf1752` on `feat/r1-relationship-space`. Executed closure evidence remains pending, so this document does not claim the API is verified until the R1 test gates run successfully.
 
 Base path:
 
 `/api/v1/relationship-space`
+
+## Current implementation snapshot
+
+Runtime source implementation is complete at checkpoint `acf1752`.
+
+Implemented HTTP/runtime behavior includes:
+
+- authenticated Relationship Home aggregate
+- item list/detail/create/update/delete
+- recipient-open and creator-reveal transitions
+- scheduled-release generation fencing
+- This Day in Us, Our Year, and Anniversary experience reads
+- saved Our Year/Anniversary curations
+- reunion state and prepared-content links
+- Someday shared state and explicit relationship signals
+- day/month/year/unknown occurrence precision
+- keyed mutation idempotency
+- keyed cursor integrity bound to account, partnership, and query shape
+- account-deletion view-only pause/recovery integration
+- breakup view-only behavior and final-dissolution cancellation
+- fail-closed external message/media references until verified M1/M3 resolvers exist
+
+Verification status remains **pending**. These routes and tests exist in source, but R1 remains `IN_PROGRESS` until the full closure commands execute successfully.
 
 Every successful or error response that can reveal private relationship-space state must include:
 
