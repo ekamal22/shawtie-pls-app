@@ -632,6 +632,104 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
   }
 });
 
+test("M1 reply context survives pagination and deleted reply targets stay tombstone-safe", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "reply_alice");
+    const bob = await register(app, database, "reply_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "reply");
+
+    const anchor = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "anchor outside page",
+      "m1-reply-anchor-key-0001",
+    );
+    assert.equal(anchor.statusCode, 201, anchor.body);
+    const anchorId = (anchor.json() as { messageId: string }).messageId;
+
+    const filler = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "filler",
+      "m1-reply-filler-key-0001",
+    );
+    assert.equal(filler.statusCode, 201, filler.body);
+
+    const reply = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "reply to anchor",
+      "m1-reply-message-key-0001",
+      anchorId,
+    );
+    assert.equal(reply.statusCode, 201, reply.body);
+    const replyId = (reply.json() as { messageId: string }).messageId;
+
+    const page = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages?limit=2",
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(page.statusCode, 200, page.body);
+    const pageBody = page.json() as {
+      items: Array<{
+        messageId: string;
+        serverSequence: number;
+        replyContext: { messageId: string; body: string | null; deleted: boolean } | null;
+      }>;
+      hasMore: boolean;
+    };
+    assert.equal(pageBody.hasMore, true);
+    assert.deepEqual(
+      pageBody.items.map((message) => message.serverSequence),
+      [2, 3],
+    );
+    const pagedReply = pageBody.items.find((message) => message.messageId === replyId);
+    assert.equal(pagedReply?.replyContext?.messageId, anchorId);
+    assert.equal(pagedReply?.replyContext?.body, "anchor outside page");
+    assert.equal(pagedReply?.replyContext?.deleted, false);
+
+    const deleted = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + anchorId,
+      headers: mutationHeaders(alice.cookie, "m1-reply-anchor-delete-key"),
+    });
+    assert.equal(deleted.statusCode, 200, deleted.body);
+
+    const replyAfterDelete = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + replyId,
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(replyAfterDelete.statusCode, 200, replyAfterDelete.body);
+    const tombstoneContext = (replyAfterDelete.json() as {
+      replyContext: { messageId: string; body: string | null; deleted: boolean } | null;
+    }).replyContext;
+    assert.equal(tombstoneContext?.messageId, anchorId);
+    assert.equal(tombstoneContext?.body, null);
+    assert.equal(tombstoneContext?.deleted, true);
+
+    const replyToTombstone = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "reply to tombstone",
+      "m1-reply-tombstone-key-0001",
+      anchorId,
+    );
+    assert.equal(replyToTombstone.statusCode, 201, replyToTombstone.body);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M1 API rejects editing at the trusted thirty-minute boundary", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
