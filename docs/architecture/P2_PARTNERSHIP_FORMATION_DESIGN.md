@@ -87,7 +87,7 @@ P2 owns:
 
 P3 owns post-formation breakup, restoration, dissolution, account-deletion lifecycle integration, cooldown persistence, and former-partner blocking.
 
-M1 owns primary conversation creation and messaging runtime.
+M1 owns the primary-conversation provisioning hook and messaging runtime. That hook executes inside the existing P2 formation transaction after authoritative partnership identity and membership are established; it does not redefine P2 consent, occupancy, request-consumption, or relationship-date authority.
 
 S1 owns the reviewed cryptographic protocol, real key material, device key delivery, cryptographic epochs, rotation, and recovery.
 
