@@ -8,6 +8,8 @@ import {
 const DATABASE_PREFIX = "shawtie-local-v1:";
 const LAST_ACCOUNT_KEY = "shawtie:last-account";
 const DATABASE_VERSION = M2_LOCAL_SCHEMA_VERSION;
+export const M2_MAX_CACHED_MESSAGES_PER_CONVERSATION = 500;
+export const M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP = 500;
 
 export interface ConversationSyncState {
   readonly partnershipId: string;
@@ -250,7 +252,36 @@ export class ShawtieLocalDatabase {
         contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
       } satisfies CachedMessage);
     }
-    tx.objectStore("conversationSync").put(input.sync);
+
+    const range = IDBKeyRange.bound(
+      [input.partnershipId, input.conversationId, 0],
+      [input.partnershipId, input.conversationId, Number.MAX_SAFE_INTEGER],
+    );
+    const cached = (await requestResult(
+      messages.index("byConversationSequence").getAll(range),
+    )) as CachedMessage[];
+    const excess = Math.max(
+      0,
+      cached.length - M2_MAX_CACHED_MESSAGES_PER_CONVERSATION,
+    );
+    for (const message of cached.slice(0, excess)) {
+      messages.delete([
+        input.partnershipId,
+        input.conversationId,
+        message.messageId,
+      ]);
+    }
+    const retained = cached.slice(excess);
+    const retainedStart =
+      retained.at(0)?.serverSequence ?? input.sync.retainedHistoryStartSequence;
+    const retainedEnd =
+      retained.at(-1)?.serverSequence ?? input.sync.retainedHistoryEndSequence;
+
+    tx.objectStore("conversationSync").put({
+      ...input.sync,
+      retainedHistoryStartSequence: retainedStart,
+      retainedHistoryEndSequence: retainedEnd,
+    } satisfies ConversationSyncState);
     tx.objectStore("namespaceMeta").put({
       partnershipId: input.partnershipId,
       conversationId: input.conversationId,
@@ -266,7 +297,10 @@ export class ShawtieLocalDatabase {
     partnershipId: string,
     items: readonly RelationshipItemProjection[],
   ): Promise<void> {
-    const tx = this.#database.transaction(["relationshipItems", "relationshipMeta"], "readwrite");
+    const tx = this.#database.transaction(
+      ["relationshipItems", "relationshipMeta"],
+      "readwrite",
+    );
     const store = tx.objectStore("relationshipItems");
     for (const item of items) {
       store.put({
@@ -275,12 +309,60 @@ export class ShawtieLocalDatabase {
         contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
       } satisfies CachedRelationshipItem);
     }
+
+    const all = (await requestResult(store.getAll())) as CachedRelationshipItem[];
+    const partnershipItems = all
+      .filter((item) => item.partnershipId === partnershipId)
+      .sort(
+        (left, right) =>
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt) ||
+          right.itemId.localeCompare(left.itemId),
+      );
+    for (const item of partnershipItems.slice(
+      M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP,
+    )) {
+      store.delete([partnershipId, item.itemId]);
+    }
+
     tx.objectStore("relationshipMeta").put({
       partnershipId,
       stale: false,
       lastSyncedAt: new Date().toISOString(),
     });
     await transactionDone(tx);
+  }
+
+  async advancePendingReceipts(input: {
+    partnershipId: string;
+    conversationId: string;
+    deliveredThrough: number;
+    readThrough: number;
+  }): Promise<ConversationSyncState | null> {
+    const tx = this.#database.transaction(["conversationSync"], "readwrite");
+    const store = tx.objectStore("conversationSync");
+    const key = [input.partnershipId, input.conversationId];
+    const current = (await requestResult(store.get(key))) as
+      | ConversationSyncState
+      | undefined;
+    if (!current) {
+      tx.abort();
+      return null;
+    }
+
+    const next: ConversationSyncState = {
+      ...current,
+      pendingDeliveredThrough: Math.max(
+        current.pendingDeliveredThrough,
+        input.deliveredThrough,
+      ),
+      pendingReadThrough: Math.max(
+        current.pendingReadThrough,
+        input.readThrough,
+      ),
+    };
+    store.put(next);
+    await transactionDone(tx);
+    return next;
   }
 
   async purgePartnership(partnershipId: string): Promise<void> {
@@ -432,11 +514,36 @@ export class ShawtieLocalDatabase {
       return false;
     }
 
-    tx.objectStore("messages").put({
+    const messages = tx.objectStore("messages");
+    messages.put({
       ...message,
       partnershipId: operation.partnershipId,
       contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
     } satisfies CachedMessage);
+
+    const range = IDBKeyRange.bound(
+      [operation.partnershipId, operation.conversationId, 0],
+      [
+        operation.partnershipId,
+        operation.conversationId,
+        Number.MAX_SAFE_INTEGER,
+      ],
+    );
+    const cached = (await requestResult(
+      messages.index("byConversationSequence").getAll(range),
+    )) as CachedMessage[];
+    const excess = Math.max(
+      0,
+      cached.length - M2_MAX_CACHED_MESSAGES_PER_CONVERSATION,
+    );
+    for (const cachedMessage of cached.slice(0, excess)) {
+      messages.delete([
+        operation.partnershipId,
+        operation.conversationId,
+        cachedMessage.messageId,
+      ]);
+    }
+    const retained = cached.slice(excess);
 
     const syncStore = tx.objectStore("conversationSync");
     const existing = (await requestResult(
@@ -455,11 +562,15 @@ export class ShawtieLocalDatabase {
         message.serverSequence,
       ),
       retainedHistoryStartSequence:
-        existing?.retainedHistoryStartSequence || message.serverSequence,
-      retainedHistoryEndSequence: Math.max(
-        existing?.retainedHistoryEndSequence ?? 0,
+        retained.at(0)?.serverSequence ??
+        existing?.retainedHistoryStartSequence ??
         message.serverSequence,
-      ),
+      retainedHistoryEndSequence:
+        retained.at(-1)?.serverSequence ??
+        Math.max(
+          existing?.retainedHistoryEndSequence ?? 0,
+          message.serverSequence,
+        ),
       pendingDeliveredThrough: existing?.pendingDeliveredThrough ?? 0,
       pendingReadThrough: existing?.pendingReadThrough ?? 0,
       lastSyncedAt: new Date().toISOString(),

@@ -13,7 +13,11 @@ import {
   type DatabasePool,
 } from "@shawtie/db";
 import type { ApiConfig } from "../src/config.ts";
-import { M2_REALTIME_NOTIFY_CHANNEL } from "@shawtie/contracts";
+import {
+  M2_CLIENT_PROTOCOL_HEADER,
+  M2_LOCAL_SCHEMA_HEADER,
+  M2_REALTIME_NOTIFY_CHANNEL,
+} from "@shawtie/contracts";
 import type { RawData, WebSocket } from "ws";
 
 function requireDisposableDatabase(): DatabasePool {
@@ -571,6 +575,46 @@ test("M2 partnership changed hint immediately revalidates and closes stale socke
     } finally {
       socket.terminate();
     }
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("M2 advertised HTTP compatibility fails closed before authentication", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+
+    const incompatible = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/session",
+      headers: {
+        [M2_CLIENT_PROTOCOL_HEADER]: "999",
+        [M2_LOCAL_SCHEMA_HEADER]: "1",
+      },
+    });
+    assert.equal(incompatible.statusCode, 426, incompatible.body);
+    assert.equal(
+      (incompatible.json() as { error: { code: string } }).error.code,
+      "CLIENT_UPDATE_REQUIRED",
+    );
+
+    const compatible = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/session",
+      headers: {
+        [M2_CLIENT_PROTOCOL_HEADER]: "1",
+        [M2_LOCAL_SCHEMA_HEADER]: "1",
+      },
+    });
+    assert.equal(compatible.statusCode, 401, compatible.body);
+    assert.equal(
+      (compatible.json() as { error: { code: string } }).error.code,
+      "AUTH_REQUIRED",
+    );
   } finally {
     await app.close();
     await closeDatabasePool(database);

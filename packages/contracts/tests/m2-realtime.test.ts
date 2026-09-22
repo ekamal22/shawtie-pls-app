@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  M2_CLIENT_COMPATIBILITY_VERSION,
+  M2_CLIENT_PROTOCOL_HEADER,
   M2_INTERNAL_NOTIFY_MAX_BYTES,
+  M2_LOCAL_SCHEMA_HEADER,
   M2_LOCAL_SCHEMA_VERSION,
   M2_PRE_S1_CONTENT_CONTEXT,
   M2_REALTIME_MAX_FRAME_BYTES,
@@ -23,6 +26,12 @@ const CONNECTION = "60000000-0000-4000-8000-000000000001";
 
 test("M2 protocol and local-schema constants are frozen at v1", () => {
   assert.equal(M2_REALTIME_PROTOCOL_VERSION, 1);
+  assert.equal(M2_CLIENT_COMPATIBILITY_VERSION, 1);
+  assert.equal(
+    M2_CLIENT_PROTOCOL_HEADER,
+    "x-shawtie-client-protocol-version",
+  );
+  assert.equal(M2_LOCAL_SCHEMA_HEADER, "x-shawtie-local-schema-version");
   assert.equal(M2_REALTIME_SUBPROTOCOL, "shawtie.realtime.v1");
   assert.equal(M2_REALTIME_MAX_FRAME_BYTES, 4096);
   assert.equal(M2_INTERNAL_NOTIFY_MAX_BYTES, 2048);

@@ -151,3 +151,51 @@ test("M2 blocked queues expose retry and discard conflict recovery", async () =>
   assert.equal(runtime.includes("discardQueuedOperation"), true);
   assert.equal(app.includes("<M2QueueStatus />"), true);
 });
+
+
+test("M2 browser advertises HTTP compatibility and pauses replay on update-required", async () => {
+  const client = await source("../src/lib/api-client.ts");
+  const runtime = await source("../src/lib/realtime/runtime-context.tsx");
+
+  assert.equal(client.includes("M2_CLIENT_PROTOCOL_HEADER"), true);
+  assert.equal(client.includes("M2_LOCAL_SCHEMA_HEADER"), true);
+  assert.equal(client.includes('"CLIENT_UPDATE_REQUIRED"'), true);
+  assert.equal(client.includes('"shawtie:update-required"'), true);
+  assert.equal(runtime.includes('"shawtie:update-required"'), true);
+  assert.equal(runtime.includes("markUpdateRequired"), true);
+});
+
+test("M2 canonical caches are bounded without evicting offline queues", async () => {
+  const local = await source("../src/lib/offline/local-db.ts");
+
+  assert.equal(
+    local.includes("M2_MAX_CACHED_MESSAGES_PER_CONVERSATION = 500"),
+    true,
+  );
+  assert.equal(
+    local.includes("M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP = 500"),
+    true,
+  );
+  assert.equal(local.includes("retainedHistoryStartSequence: retainedStart"), true);
+  assert.equal(local.includes("partnershipItems.slice("), true);
+  assert.equal(
+    local.includes('const tx = this.#database.transaction(["chatOutbox"]'),
+    true,
+  );
+});
+
+test("M2 receipt high-water is persisted before HTTP acknowledgement", async () => {
+  const local = await source("../src/lib/offline/local-db.ts");
+  const messaging = await source(
+    "../src/features/messaging/MessagingPanel.tsx",
+  );
+
+  assert.equal(local.includes("advancePendingReceipts"), true);
+  assert.equal(local.includes("pendingDeliveredThrough: Math.max("), true);
+  assert.ok(
+    messaging.indexOf("advancePendingReceipts") <
+      messaging.indexOf('body: { type: "delivered"'),
+  );
+  assert.equal(messaging.includes("ApiNetworkError"), true);
+  assert.equal(messaging.includes("pendingReadThrough"), true);
+});

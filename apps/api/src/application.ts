@@ -36,7 +36,10 @@ import { registerPartnershipRoutes } from "./modules/partnerships/routes.ts";
 import { RelationshipSpaceService } from "./modules/relationship-space/relationship-space-service.ts";
 import { registerRelationshipSpaceRoutes } from "./modules/relationship-space/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
-import { installMutationSecurity } from "./plugins/request-security.ts";
+import {
+  installM2Compatibility,
+  installMutationSecurity,
+} from "./plugins/request-security.ts";
 import { AuthKeyRing } from "./security/auth-key-ring.ts";
 import { PasswordHasher } from "./security/password-hasher.ts";
 
@@ -67,6 +70,7 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
   });
   app.register(helmet);
   installErrorHandler(app);
+  installM2Compatibility(app);
   installMutationSecurity(app, dependencies.config);
 
   const keys = new AuthKeyRing(dependencies.config.authKeys);

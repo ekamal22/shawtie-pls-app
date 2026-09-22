@@ -266,6 +266,8 @@ export function M2RuntimeProvider({
   const runtime = useMemo(() => new M2Runtime(accountId), [accountId]);
 
   useEffect(() => {
+    const updateRequired = () => runtime.coordinator.markUpdateRequired();
+    window.addEventListener("shawtie:update-required", updateRequired);
     activeRuntime = runtime;
     void runtime.start();
     const unsubscribeLogout = subscribeLocalLogout(accountId, () => {
@@ -276,6 +278,7 @@ export function M2RuntimeProvider({
       });
     });
     return () => {
+      window.removeEventListener("shawtie:update-required", updateRequired);
       unsubscribeLogout();
       if (activeRuntime === runtime) activeRuntime = null;
       void runtime.stop();

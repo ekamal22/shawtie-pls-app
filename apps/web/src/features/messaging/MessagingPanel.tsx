@@ -8,7 +8,11 @@ import {
   M1_VISIBLE_CHANGE_POLL_MS,
 } from "@shawtie/contracts";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
+import {
+  ApiClientError,
+  ApiNetworkError,
+  apiRequest,
+} from "../../lib/api-client.ts";
 import {
   useM2Runtime,
   useM2SyncStatus,
@@ -211,19 +215,51 @@ export function MessagingPanel() {
     [],
   );
 
-  const acknowledge = useCallback(async (summary: ConversationSummary, throughSequence: number) => {
-    if (throughSequence <= 0) return;
-    await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
-      method: "POST",
-      body: { type: "delivered", throughSequence },
-    });
-    if (document.visibilityState === "visible") {
-      await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
-        method: "POST",
-        body: { type: "read", throughSequence },
+  const acknowledge = useCallback(
+    async (summary: ConversationSummary, throughSequence: number) => {
+      if (throughSequence <= 0) return;
+
+      const database = await runtime.database();
+      const pending = await database.advancePendingReceipts({
+        partnershipId: summary.partnershipId,
+        conversationId: summary.conversationId,
+        deliveredThrough: throughSequence,
+        readThrough:
+          document.visibilityState === "visible" ? throughSequence : 0,
       });
-    }
-  }, []);
+
+      const deliveredThrough = Math.max(
+        throughSequence,
+        pending?.pendingDeliveredThrough ?? 0,
+      );
+      const readThrough = pending?.pendingReadThrough ?? 0;
+
+      if (!navigator.onLine) return;
+
+      try {
+        await apiRequest(
+          "/api/v1/conversations/" + summary.conversationId + "/receipt",
+          {
+            method: "POST",
+            body: { type: "delivered", throughSequence: deliveredThrough },
+          },
+        );
+        if (readThrough > 0) {
+          await apiRequest(
+            "/api/v1/conversations/" + summary.conversationId + "/receipt",
+            {
+              method: "POST",
+              body: { type: "read", throughSequence: readThrough },
+            },
+          );
+        }
+      } catch (error) {
+        if (error instanceof ApiNetworkError) return;
+        throw error;
+      }
+    },
+    [runtime],
+  );
 
   const loadInitial = useCallback(async () => {
     const summary = await refreshConversation();

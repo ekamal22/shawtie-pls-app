@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const M2_REALTIME_PROTOCOL_VERSION = 1 as const;
+export const M2_CLIENT_COMPATIBILITY_VERSION = 1 as const;
+export const M2_CLIENT_PROTOCOL_HEADER = "x-shawtie-client-protocol-version" as const;
+export const M2_LOCAL_SCHEMA_HEADER = "x-shawtie-local-schema-version" as const;
 export const M2_REALTIME_SUBPROTOCOL = "shawtie.realtime.v1" as const;
 export const M2_REALTIME_NOTIFY_CHANNEL = "shawtie_realtime_v1" as const;
 export const M2_REALTIME_MAX_FRAME_BYTES = 4 * 1024;

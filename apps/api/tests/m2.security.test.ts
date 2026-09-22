@@ -116,3 +116,24 @@ test("M2 realtime applies durable connection and per-socket frame rate limits", 
   assert.equal(hub.includes("frameWindowCount += 1"), true);
   assert.equal(hub.includes('"Rate limited"'), true);
 });
+
+
+test("M2 advertised HTTP compatibility versions fail closed on mismatch", async () => {
+  const security = await readFile(
+    new URL("../src/plugins/request-security.ts", import.meta.url),
+    "utf8",
+  );
+  const application = await readFile(
+    new URL("../src/application.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(security.includes("installM2Compatibility"), true);
+  assert.equal(security.includes("M2_CLIENT_PROTOCOL_HEADER"), true);
+  assert.equal(security.includes("M2_LOCAL_SCHEMA_HEADER"), true);
+  assert.equal(security.includes('"CLIENT_UPDATE_REQUIRED"'), true);
+  assert.ok(
+    application.indexOf("installM2Compatibility(app)") <
+      application.indexOf("registerAccountRoutes"),
+  );
+});
