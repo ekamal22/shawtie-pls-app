@@ -6,6 +6,11 @@ export interface ScheduledActionHandlerContext {
   readonly now: Date;
 }
 
+export type ScheduledActionHandlerResult =
+  | void
+  | { readonly outcome: "stale" }
+  | { readonly outcome: "reschedule"; readonly availableAt: Date };
+
 export interface ScheduledActionHandler {
   readonly actionType: string;
   readonly payloadVersion: number;
@@ -13,5 +18,5 @@ export interface ScheduledActionHandler {
     transaction: QueryExecutor,
     action: ScheduledAction,
   ) => Promise<bigint>;
-  execute(context: ScheduledActionHandlerContext): Promise<void>;
+  execute(context: ScheduledActionHandlerContext): Promise<ScheduledActionHandlerResult>;
 }

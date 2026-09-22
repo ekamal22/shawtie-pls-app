@@ -15,6 +15,8 @@ import { registerNotificationRoutes } from "./modules/notifications/routes.ts";
 import { createP2PartnershipFormationCoordinator } from "./modules/partnerships/partnership-formation-coordinator.ts";
 import { PartnershipService } from "./modules/partnerships/partnership-service.ts";
 import { registerPartnershipRoutes } from "./modules/partnerships/routes.ts";
+import { RelationshipSpaceService } from "./modules/relationship-space/relationship-space-service.ts";
+import { registerRelationshipSpaceRoutes } from "./modules/relationship-space/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
 import { installMutationSecurity } from "./plugins/request-security.ts";
 import { AuthKeyRing } from "./security/auth-key-ring.ts";
@@ -77,6 +79,14 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     config: dependencies.config,
     keys,
     service: notificationService,
+  });
+
+  const relationshipSpaceService = new RelationshipSpaceService(dependencies.database, keys);
+  registerRelationshipSpaceRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: relationshipSpaceService,
   });
 
   return app;

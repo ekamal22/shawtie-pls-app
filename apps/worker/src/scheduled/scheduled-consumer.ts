@@ -5,6 +5,7 @@ import {
   getTransactionTimestamp,
   lockScheduledActionClaim,
   markScheduledActionStale,
+  rescheduleScheduledActionClaim,
   retryScheduledAction,
   type DatabasePool,
   type DurableClaim,
@@ -63,7 +64,23 @@ async function executeClaim(
       }
 
       const now = await getTransactionTimestamp(transaction);
-      await handler.execute({ transaction, action: locked, now });
+      const result = await handler.execute({ transaction, action: locked, now });
+
+      if (result && result.outcome === "stale") {
+        const stale = await markScheduledActionStale(transaction, claim);
+        if (!stale) throw new Error("Scheduled claim was lost before stale acknowledgement");
+        return;
+      }
+
+      if (result && result.outcome === "reschedule") {
+        const rescheduled = await rescheduleScheduledActionClaim(
+          transaction,
+          claim,
+          result.availableAt,
+        );
+        if (!rescheduled) throw new Error("Scheduled claim was lost before reschedule");
+        return;
+      }
 
       const completed = await completeScheduledAction(transaction, claim);
       if (!completed) throw new Error("Scheduled claim was lost before completion");

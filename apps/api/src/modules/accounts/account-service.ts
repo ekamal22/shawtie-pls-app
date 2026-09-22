@@ -38,6 +38,8 @@ import {
   lockActiveChallengeForAccount,
   lockActiveChallengeForRegistration,
   lockRegistrationIntent,
+  lockPartnershipLifecycle,
+  pausePendingRelationshipReleaseActionsForPartnership,
   recordChallengeFailure,
   recoverAccountDeletion,
   releaseCurrentEmail,
@@ -52,6 +54,7 @@ import {
   supersedeActiveChallenges,
   updateDisplayName,
   updatePasswordCredential,
+  wakePendingRelationshipReleaseActionsForPartnership,
   withTransaction,
   getTransactionTimestamp,
   type DatabasePool,
@@ -1033,6 +1036,20 @@ export class AccountService {
         throw new ApiError(409, "ACCOUNT_LOCKED");
       }
 
+      if (currentPartnership) {
+        const lifecycle = await lockPartnershipLifecycle(
+          transaction,
+          currentPartnership.partnershipId,
+        );
+        if (
+          !lifecycle ||
+          lifecycle.lifecycleState === "terminated" ||
+          !lifecycle.memberIds.includes(auth.session.accountId)
+        ) {
+          throw new ApiError(409, "ACCOUNT_LOCKED");
+        }
+      }
+
       const currentGeneration = await getAccountDeletionGeneration(
         transaction,
         auth.session.accountId,
@@ -1055,6 +1072,11 @@ export class AccountService {
       await revokeAllSessionsForAccount(transaction, auth.session.accountId, now);
 
       if (currentPartnership) {
+        await pausePendingRelationshipReleaseActionsForPartnership(
+          transaction,
+          currentPartnership.partnershipId,
+          recoverUntil,
+        );
         await appendLifecycleEvent(transaction, {
           id: randomUUID(),
           partnershipId: currentPartnership.partnershipId,
@@ -1200,6 +1222,20 @@ export class AccountService {
         ? [account.accountId, initialPartnership.otherAccountId]
         : [account.accountId];
       await lockAccounts(transaction, lockIds);
+      if (initialPartnership) {
+        const lifecycle = await lockPartnershipLifecycle(
+          transaction,
+          initialPartnership.partnershipId,
+        );
+        if (
+          !lifecycle ||
+          lifecycle.lifecycleState === "terminated" ||
+          !lifecycle.memberIds.includes(account.accountId)
+        ) {
+          return { ok: false as const, code: "ACCOUNT_LOCKED" };
+        }
+      }
+
       const challenge = await lockActiveChallengeForAccount(
         transaction,
         account.accountId,
@@ -1231,6 +1267,11 @@ export class AccountService {
         account.accountId,
       );
       if (currentPartnership) {
+        await wakePendingRelationshipReleaseActionsForPartnership(
+          transaction,
+          currentPartnership.partnershipId,
+          now,
+        );
         await appendLifecycleEvent(transaction, {
           id: randomUUID(),
           partnershipId: currentPartnership.partnershipId,

@@ -1,0 +1,86 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  relationshipItemCreateSchema,
+  relationshipItemListQuerySchema,
+  relationshipItemPatchSchema,
+  relationshipItemReleaseSchema,
+} from "../src/index.ts";
+
+test("relationship create accepts scheduled For You preview plus sealed body", () => {
+  const result = relationshipItemCreateSchema.safeParse({
+    kind: "for_you",
+    contentSchemaVersion: 1,
+    preview: { title: "Later", conditionLabel: null },
+    content: { body: "Private body" },
+    occurrence: null,
+    storyIncluded: false,
+    release: { mode: "scheduled", unlockAt: "2026-12-31T21:00:00.000Z" },
+    featureState: null,
+    references: [],
+    links: [],
+  });
+  assert.equal(result.success, true);
+});
+
+test("relationship create rejects a standalone voice_letter kind", () => {
+  const result = relationshipItemCreateSchema.safeParse({
+    kind: "voice_letter",
+    contentSchemaVersion: 1,
+    preview: null,
+    content: {},
+    occurrence: null,
+    storyIncluded: false,
+    release: null,
+    featureState: null,
+    references: [],
+    links: [],
+  });
+  assert.equal(result.success, false);
+});
+
+test("message references must be source references and voice letters must be media references", () => {
+  const bad = relationshipItemCreateSchema.safeParse({
+    kind: "memory",
+    contentSchemaVersion: 1,
+    preview: null,
+    content: { title: "Memory" },
+    occurrence: null,
+    storyIncluded: false,
+    release: null,
+    featureState: null,
+    references: [
+      {
+        referenceType: "message",
+        referenceId: "00000000-0000-4000-8000-000000000001",
+        role: "voice_letter",
+        position: 0,
+      },
+    ],
+    links: [],
+  });
+  assert.equal(bad.success, false);
+});
+
+test("relationship patch requires expectedVersion and at least one mutation field", () => {
+  assert.equal(relationshipItemPatchSchema.safeParse({ expectedVersion: 1 }).success, false);
+  assert.equal(
+    relationshipItemPatchSchema.safeParse({
+      expectedVersion: 1,
+      storyIncluded: true,
+    }).success,
+    true,
+  );
+});
+
+test("relationship release body is version checked", () => {
+  assert.equal(relationshipItemReleaseSchema.safeParse({ expectedVersion: 1 }).success, true);
+  assert.equal(relationshipItemReleaseSchema.safeParse({ expectedVersion: 0 }).success, false);
+});
+
+test("relationship list query has bounded defaults", () => {
+  const parsed = relationshipItemListQuerySchema.parse({});
+  assert.equal(parsed.limit, 30);
+  assert.equal(parsed.sort, "created_desc");
+  assert.equal(parsed.storyOnly, false);
+});

@@ -58,6 +58,13 @@ test("active partnership capability matrix allows normal collaboration but block
     "start_call",
     "create_relationship_object",
     "edit_relationship_object",
+    "edit_relationship_object_content",
+    "delete_relationship_object",
+    "mutate_relationship_shared_state",
+    "curate_relationship_space",
+    "recipient_open_relationship_object",
+    "creator_reveal_relationship_object",
+    "create_relationship_signal",
     "change_nickname",
     "change_email",
   );
@@ -86,6 +93,13 @@ test("breakup_pending keeps messaging, media, calls, nicknames, and email change
     "RELATIONSHIP_OBJECTS_VIEW_ONLY",
     "create_relationship_object",
     "edit_relationship_object",
+    "edit_relationship_object_content",
+    "delete_relationship_object",
+    "mutate_relationship_shared_state",
+    "curate_relationship_space",
+    "recipient_open_relationship_object",
+    "creator_reveal_relationship_object",
+    "create_relationship_signal",
   );
   assertDenied(context, "BLOCK_NOT_ALLOWED", "block_former_partner");
   assertDenied(context, "PARTNERSHIP_OCCUPIED", "form_partnership");
@@ -204,6 +218,13 @@ test("account deletion overlay makes shared partnership view-only and locks dele
     "send_media",
     "start_call",
     "create_relationship_object",
+    "edit_relationship_object_content",
+    "delete_relationship_object",
+    "mutate_relationship_shared_state",
+    "curate_relationship_space",
+    "recipient_open_relationship_object",
+    "creator_reveal_relationship_object",
+    "create_relationship_signal",
     "change_nickname",
   );
   assertDenied(remaining, "PARTNERSHIP_OCCUPIED", "form_partnership");

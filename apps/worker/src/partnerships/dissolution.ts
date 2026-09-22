@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   appendLifecycleEvent,
+  cancelPendingRelationshipReleaseActionsForPartnership,
   cancelPendingScheduledActionsForAggregate,
   createPartnershipDeletionManifestIfAbsent,
   insertPartnerCooldown,
@@ -94,6 +95,11 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
   await cancelPendingScheduledActionsForAggregate(
     transaction,
     "partnership",
+    lifecycle.partnershipId,
+    input.observedAt,
+  );
+  await cancelPendingRelationshipReleaseActionsForPartnership(
+    transaction,
     lifecycle.partnershipId,
     input.observedAt,
   );
