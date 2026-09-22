@@ -402,6 +402,29 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     const firstBody = first.json() as { messageId: string };
     const baselineCursor = 2;
 
+    const noReactionRemoval = await app.inject({
+      method: "DELETE",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + (second.json() as { messageId: string }).messageId
+        + "/reaction",
+      headers: mutationHeaders(bob.cookie, "m1-noop-reaction-remove-key"),
+    });
+    assert.equal(noReactionRemoval.statusCode, 200, noReactionRemoval.body);
+    assert.equal(
+      (noReactionRemoval.json() as { changeSequence: number }).changeSequence,
+      2,
+    );
+    const afterNoop = await database.pool.query<{
+      next_change_sequence: string | number | bigint;
+    }>(
+      "SELECT next_change_sequence FROM conversations WHERE id = $1",
+      [conversationId],
+    );
+    assert.equal(Number(afterNoop.rows[0]?.next_change_sequence), 3);
+
     const [editA, editB] = await Promise.all([
       app.inject({
         method: "PATCH",
@@ -458,6 +481,37 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
       headers: mutationHeaders(alice.cookie, "m1-delete-key-0001"),
     });
     assert.equal(deletion.statusCode, 200, deletion.body);
+    const deletionBody = deletion.json() as {
+      changeSequence: number;
+      deletedAt: string;
+    };
+
+    const deleteReplay = await app.inject({
+      method: "DELETE",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + firstBody.messageId,
+      headers: mutationHeaders(alice.cookie, "m1-delete-key-0001"),
+    });
+    assert.equal(deleteReplay.statusCode, 200, deleteReplay.body);
+    assert.deepEqual(deleteReplay.json(), deletionBody);
+
+    const deleteDifferentKey = await app.inject({
+      method: "DELETE",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + firstBody.messageId,
+      headers: mutationHeaders(alice.cookie, "m1-delete-key-0002"),
+    });
+    assert.equal(deleteDifferentKey.statusCode, 409, deleteDifferentKey.body);
+    assert.equal(
+      (deleteDifferentKey.json() as { error: { code: string } }).error.code,
+      "MESSAGE_DELETED",
+    );
 
     const changes = await app.inject({
       method: "GET",
@@ -512,6 +566,47 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
       [firstBody.messageId],
     );
     assert.equal(versions.rowCount, 0);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 API rejects editing at the trusted thirty-minute boundary", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "boundary_alice");
+    const bob = await register(app, database, "boundary_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "boundary");
+
+    const sent = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "boundary message",
+      "m1-boundary-send-key-0001",
+    );
+    assert.equal(sent.statusCode, 201, sent.body);
+    const messageId = (sent.json() as { messageId: string }).messageId;
+
+    await database.pool.query(
+      "UPDATE messages SET created_at = clock_timestamp() - interval '30 minutes' WHERE id = $1",
+      [messageId],
+    );
+
+    const edit = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
+      headers: jsonHeaders(alice.cookie, "m1-boundary-edit-key-0001"),
+      payload: { body: "too late", expectedContentVersion: 1 },
+    });
+    assert.equal(edit.statusCode, 409, edit.body);
+    assert.equal(
+      (edit.json() as { error: { code: string } }).error.code,
+      "MESSAGE_EDIT_WINDOW_EXPIRED",
+    );
   } finally {
     await app.close();
     await closeDatabasePool(database);
