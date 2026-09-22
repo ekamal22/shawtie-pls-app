@@ -75,6 +75,7 @@ The selected architecture is:
 - `api/M2_REALTIME_PROTOCOL.md`
 - `architecture/M3_MEDIA_VOICE_DESIGN.md`
 - `api/M3_MEDIA_API.md`
+- `testing/M3_ANDROID_ACCEPTANCE.md`
 - `architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
 - `api/R1_RELATIONSHIP_SPACE_API.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
