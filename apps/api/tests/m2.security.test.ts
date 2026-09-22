@@ -96,3 +96,23 @@ test("M2 cross-feature durable invalidations cover interaction, lifecycle, R1, a
   assert.equal(workerHandler.includes("m2.partnership.changed"), true);
   assert.equal(workerHandler.includes("privateNote"), false);
 });
+
+
+test("M2 realtime applies durable connection and per-socket frame rate limits", async () => {
+  const routes = await readFile(
+    new URL("../src/modules/realtime/routes.ts", import.meta.url),
+    "utf8",
+  );
+  const hub = await readFile(
+    new URL("../src/modules/realtime/realtime-hub.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(routes.includes("consumeRateLimitBuckets"), true);
+  assert.equal(routes.includes('"m2.realtime.connect.account"'), true);
+  assert.equal(routes.includes('"m2.realtime.connect.network"'), true);
+  assert.equal(routes.includes("REALTIME_CONNECT_RATE_LIMIT"), true);
+  assert.equal(hub.includes("MAX_CLIENT_FRAMES_PER_WINDOW"), true);
+  assert.equal(hub.includes("frameWindowCount += 1"), true);
+  assert.equal(hub.includes('"Rate limited"'), true);
+});

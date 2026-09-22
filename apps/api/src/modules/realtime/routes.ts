@@ -2,7 +2,12 @@ import {
   M2_REALTIME_SUBPROTOCOL,
   type M2RealtimeClientFrame,
 } from "@shawtie/contracts";
-import type { DatabasePool } from "@shawtie/db";
+import {
+  consumeRateLimitBuckets,
+  getTransactionTimestamp,
+  withTransaction,
+  type DatabasePool,
+} from "@shawtie/db";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ApiConfig } from "../../config.ts";
 import { ApiError } from "../../lib/api-error.ts";
@@ -18,6 +23,62 @@ import type {
   RealtimeHub,
 } from "./realtime-hub.ts";
 import type { RealtimeTransientPublisher } from "./transient-publisher.ts";
+
+const REALTIME_CONNECT_RATE_LIMIT = 30;
+const REALTIME_CONNECT_RATE_WINDOW_MS = 60_000;
+
+async function consumeRealtimeConnectionRateLimit(
+  request: FastifyRequest,
+  auth: AuthContext,
+  dependencies: {
+    readonly database: DatabasePool;
+    readonly keys: AuthKeyRing;
+  },
+): Promise<void> {
+  const decision = await withTransaction(
+    dependencies.database,
+    async (transaction) => {
+      const now = await getTransactionTimestamp(transaction);
+      const subjects = [
+        {
+          scope: "m2.realtime.connect.account",
+          subject: "account\0" + auth.session.accountId,
+        },
+        {
+          scope: "m2.realtime.connect.network",
+          subject: "network\0" + request.ip,
+        },
+      ];
+      return consumeRateLimitBuckets(
+        transaction,
+        subjects.flatMap((item) =>
+          dependencies.keys.versions.map((version) => ({
+            scope: item.scope,
+            keyVersion: version,
+            keyHash: dependencies.keys.verifier(
+              "rate-limit-key",
+              item.subject,
+              version,
+            ),
+            windowMs: REALTIME_CONNECT_RATE_WINDOW_MS,
+            limit: REALTIME_CONNECT_RATE_LIMIT,
+            blockMs: REALTIME_CONNECT_RATE_WINDOW_MS,
+          })),
+        ),
+        now,
+      );
+    },
+  );
+
+  if (!decision.allowed) {
+    throw new ApiError(
+      429,
+      "RATE_LIMITED",
+      "RATE_LIMITED",
+      Math.max(1, Math.ceil(decision.retryAfterMs / 1_000)),
+    );
+  }
+}
 
 function offeredProtocols(request: FastifyRequest): readonly string[] {
   const value = request.headers["sec-websocket-protocol"];
@@ -111,15 +172,14 @@ export function registerRealtimeRoutes(
         if (!offeredProtocols(request).includes(M2_REALTIME_SUBPROTOCOL)) {
           throw new ApiError(400, "REALTIME_PROTOCOL_REQUIRED");
         }
-        authenticated.set(
+        const auth = await requireAuthentication(
           request,
-          await requireAuthentication(
-            request,
-            dependencies.database,
-            dependencies.config,
-            dependencies.keys,
-          ),
+          dependencies.database,
+          dependencies.config,
+          dependencies.keys,
         );
+        await consumeRealtimeConnectionRateLimit(request, auth, dependencies);
+        authenticated.set(request, auth);
       },
     },
     (socket, request) => {

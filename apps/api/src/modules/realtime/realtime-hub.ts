@@ -26,6 +26,8 @@ const STALE_PONG_MS = 90_000;
 const SESSION_REVALIDATE_MS = 60_000;
 const MAINTENANCE_INTERVAL_MS = 15_000;
 const MAX_PROTOCOL_ERRORS = 3;
+const CLIENT_FRAME_WINDOW_MS = 60_000;
+const MAX_CLIENT_FRAMES_PER_WINDOW = 240;
 
 export interface RealtimeConnectionContext {
   readonly connectionId: string;
@@ -48,6 +50,8 @@ interface ConnectionState extends RealtimeConnectionContext {
   lastPingNonce: string | null;
   lastSessionValidationAt: number;
   protocolErrors: number;
+  frameWindowStartedAt: number;
+  frameWindowCount: number;
   initialized: boolean;
   revalidating: boolean;
 }
@@ -108,6 +112,8 @@ export class RealtimeHub {
       lastPingNonce: null,
       lastSessionValidationAt: Date.now(),
       protocolErrors: 0,
+      frameWindowStartedAt: Date.now(),
+      frameWindowCount: 0,
       initialized: false,
       revalidating: false,
     };
@@ -316,6 +322,17 @@ export class RealtimeHub {
     }
     if (!connection.initialized) {
       this.#close(connection, 1008, "Connection not ready");
+      return;
+    }
+
+    const now = Date.now();
+    if (now - connection.frameWindowStartedAt >= CLIENT_FRAME_WINDOW_MS) {
+      connection.frameWindowStartedAt = now;
+      connection.frameWindowCount = 0;
+    }
+    connection.frameWindowCount += 1;
+    if (connection.frameWindowCount > MAX_CLIENT_FRAMES_PER_WINDOW) {
+      this.#close(connection, 1008, "Rate limited");
       return;
     }
 
