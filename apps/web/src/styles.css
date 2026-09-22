@@ -594,3 +594,21 @@ button:disabled {
   height: 16px;
   margin: 0;
 }
+
+
+.relationship-schedule-editor {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.relationship-schedule-editor input[type="datetime-local"] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8d0dc;
+  border-radius: 9px;
+  background: white;
+  color: #2d2431;
+  font: inherit;
+  padding: 7px 9px;
+}

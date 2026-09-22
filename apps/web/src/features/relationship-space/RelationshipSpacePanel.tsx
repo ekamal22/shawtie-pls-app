@@ -48,6 +48,7 @@ function messageFor(error: unknown): string {
   if (!(error instanceof ApiClientError)) return "Something went wrong.";
   const known: Record<string, string> = {
     AUTH_REQUIRED: "Please sign in again.",
+    CURATION_ALREADY_EXISTS: "That curation already exists. Refresh and edit the saved version.",
     IDEMPOTENCY_KEY_REUSED: "That action changed. Try again.",
     INVALID_ITEM_LINK: "One selected relationship item is no longer available.",
     INVALID_OCCURRENCE: "Check the date and try again.",
@@ -102,6 +103,12 @@ function readCoordinate(
   return typeof coordinate === "number" && Number.isFinite(coordinate)
     ? coordinate
     : null;
+}
+
+function localDateTimeInputValue(iso: string): string {
+  const value = new Date(iso);
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
 }
 
 function daysUntil(serverDate: string, targetDate: string): number {
@@ -186,6 +193,11 @@ function ItemCard({
   );
   const [draftReunionDate, setDraftReunionDate] = useState(
     item.featureState?.type === "reunion" ? item.featureState.targetDate : "",
+  );
+  const [draftUnlockAt, setDraftUnlockAt] = useState(
+    item.release?.unlockAt
+      ? localDateTimeInputValue(item.release.unlockAt)
+      : "",
   );
   const isCreator = item.creatorAccountId === accountId;
   const locked = item.release?.state === "locked";
@@ -293,6 +305,26 @@ function ItemCard({
     });
   }
 
+  async function saveSchedule() {
+    if (
+      !isCreator ||
+      item.release?.mode !== "scheduled" ||
+      item.release.state !== "locked" ||
+      !draftUnlockAt
+    ) {
+      return;
+    }
+    await run(async () => {
+      await patchRelationshipItem(item.itemId, {
+        expectedVersion: item.version,
+        release: {
+          mode: "scheduled",
+          unlockAt: new Date(draftUnlockAt).toISOString(),
+        },
+      });
+    });
+  }
+
   const sequenceSteps = readSequenceSteps(item.content);
   const latitude = readCoordinate(item.content, "latitude");
   const longitude = readCoordinate(item.content, "longitude");
@@ -322,6 +354,27 @@ function ItemCard({
               Scheduled for {new Date(item.release.unlockAt).toLocaleString()}
             </p>
           ) : null}
+          {!disabled &&
+          isCreator &&
+          item.release.mode === "scheduled" &&
+          item.release.state === "locked" ? (
+            <div className="relationship-schedule-editor">
+              <input
+                type="datetime-local"
+                value={draftUnlockAt}
+                disabled={busy}
+                onChange={(event) => setDraftUnlockAt(event.target.value)}
+              />
+              <button
+                type="button"
+                className="secondary compact"
+                disabled={busy || !draftUnlockAt}
+                onClick={() => void saveSchedule()}
+              >
+                Reschedule
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -331,6 +384,7 @@ function ItemCard({
             readString(item.content, "note") ??
             readString(item.content, "snapshotText") ??
             readString(item.content, "text") ??
+            readString(item.content, "sharedFeelingText") ??
             readString(item.content, "intro") ??
             ""}
         </p>
@@ -507,7 +561,12 @@ function CreateRelationshipItem({
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [note, setNote] = useState("");
+  const [occurrencePrecision, setOccurrencePrecision] = useState<
+    "none" | "day" | "month" | "year" | "unknown"
+  >("none");
   const [occurrenceDate, setOccurrenceDate] = useState("");
+  const [occurrenceMonth, setOccurrenceMonth] = useState("");
+  const [occurrenceYear, setOccurrenceYear] = useState("");
   const [releaseMode, setReleaseMode] = useState<
     "immediate" | "scheduled" | "recipient_open" | "creator_reveal"
   >("immediate");
@@ -539,7 +598,27 @@ function CreateRelationshipItem({
   }, [kind, revealKind, releaseKind]);
 
   function occurrence() {
-    if (!occurrenceDate) return null;
+    if (occurrencePrecision === "none") return null;
+    if (occurrencePrecision === "unknown") {
+      return { precision: "unknown" as const, year: null, month: null, day: null };
+    }
+    if (occurrencePrecision === "year") {
+      return {
+        precision: "year" as const,
+        year: Number(occurrenceYear),
+        month: null,
+        day: null,
+      };
+    }
+    if (occurrencePrecision === "month") {
+      const [year, month] = occurrenceMonth.split("-").map(Number);
+      return {
+        precision: "month" as const,
+        year,
+        month,
+        day: null,
+      };
+    }
     const [year, month, day] = occurrenceDate.split("-").map(Number);
     return { precision: "day" as const, year, month, day };
   }
@@ -696,7 +775,10 @@ function CreateRelationshipItem({
       setTitle("");
       setText("");
       setNote("");
+      setOccurrencePrecision("none");
       setOccurrenceDate("");
+      setOccurrenceMonth("");
+      setOccurrenceYear("");
       setConditionLabel("");
       setUnlockAt("");
       setLatitude("");
@@ -725,7 +807,9 @@ function CreateRelationshipItem({
           disabled={busy || disabled}
           onChange={(event) => setKind(event.target.value as RelationshipItemKind)}
         >
-          {KINDS.map((entry) => (
+          {KINDS.filter(
+            (entry) => !["our_year", "anniversary"].includes(entry.value),
+          ).map((entry) => (
             <option key={entry.value} value={entry.value}>
               {entry.label}
             </option>
@@ -781,15 +865,69 @@ function CreateRelationshipItem({
       ) : null}
 
       {["memory", "remember_this", "first", "place", "love"].includes(kind) ? (
-        <label className="field">
-          <span>Date, optional</span>
-          <input
-            type="date"
-            value={occurrenceDate}
-            disabled={busy || disabled}
-            onChange={(event) => setOccurrenceDate(event.target.value)}
-          />
-        </label>
+        <div className="stack">
+          <label className="field">
+            <span>When did this happen?</span>
+            <select
+              value={occurrencePrecision}
+              disabled={busy || disabled}
+              onChange={(event) =>
+                setOccurrencePrecision(
+                  event.target.value as
+                    | "none"
+                    | "day"
+                    | "month"
+                    | "year"
+                    | "unknown",
+                )
+              }
+            >
+              <option value="none">No date</option>
+              <option value="day">Exact day</option>
+              <option value="month">Month only</option>
+              <option value="year">Year only</option>
+              <option value="unknown">Unknown date</option>
+            </select>
+          </label>
+          {occurrencePrecision === "day" ? (
+            <label className="field">
+              <span>Date</span>
+              <input
+                type="date"
+                value={occurrenceDate}
+                disabled={busy || disabled}
+                required
+                onChange={(event) => setOccurrenceDate(event.target.value)}
+              />
+            </label>
+          ) : null}
+          {occurrencePrecision === "month" ? (
+            <label className="field">
+              <span>Month</span>
+              <input
+                type="month"
+                value={occurrenceMonth}
+                disabled={busy || disabled}
+                required
+                onChange={(event) => setOccurrenceMonth(event.target.value)}
+              />
+            </label>
+          ) : null}
+          {occurrencePrecision === "year" ? (
+            <label className="field">
+              <span>Year</span>
+              <input
+                type="number"
+                min="1900"
+                max="9999"
+                value={occurrenceYear}
+                disabled={busy || disabled}
+                required
+                onChange={(event) => setOccurrenceYear(event.target.value)}
+              />
+            </label>
+          ) : null}
+        </div>
       ) : null}
 
       {kind === "place" ? (
@@ -978,6 +1116,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
     curationType?: "our_year" | "anniversary";
     anchorYear?: number;
     savedCuration?: RelationshipItem | null;
+    reunionItem?: RelationshipItem;
   } | null>(null);
   const [selectedCurationIds, setSelectedCurationIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -1047,6 +1186,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       curationType?: "our_year" | "anniversary";
       anchorYear?: number;
       savedCuration?: RelationshipItem | null;
+      reunionItem?: RelationshipItem;
     }>,
   ) {
     setBusy(true);
@@ -1054,11 +1194,16 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
     try {
       const next = await task();
       setExperience(next);
+      const sourceLinks = next.savedCuration?.links ?? next.reunionItem?.links ?? [];
       setSelectedCurationIds(
-        next.savedCuration?.links
-          .filter((link) => link.linkType === "curation")
+        sourceLinks
+          .filter((link) =>
+            next.reunionItem
+              ? link.linkType === "prepared_content"
+              : link.linkType === "curation",
+          )
           .sort((left, right) => left.position - right.position)
-          .map((link) => link.targetItemId) ?? [],
+          .map((link) => link.targetItemId),
       );
     } catch (caught) {
       setError(messageFor(caught));
@@ -1075,17 +1220,27 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
     );
   }
 
-  async function saveExperienceCuration() {
-    if (
-      !experience?.curationType ||
-      experience.anchorYear === undefined ||
-      viewOnly
-    ) {
-      return;
-    }
+  async function saveExperienceLinks() {
+    if (!experience || viewOnly) return;
     setBusy(true);
     setError("");
     try {
+      if (experience.reunionItem) {
+        const links = selectedCurationIds.map((targetItemId, position) => ({
+          linkType: "prepared_content" as const,
+          targetItemId,
+          position,
+        }));
+        await patchRelationshipItem(experience.reunionItem.itemId, {
+          expectedVersion: experience.reunionItem.version,
+          links,
+        });
+        setExperience(null);
+        await refresh("Reunion plan updated.");
+        return;
+      }
+
+      if (!experience.curationType || experience.anchorYear === undefined) return;
       const links = selectedCurationIds.map((targetItemId, position) => ({
         linkType: "curation" as const,
         targetItemId,
@@ -1171,6 +1326,27 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
             {daysUntil(home.serverDate, home.reunion.featureState.targetDate)} days
           </strong>
           <span className="hint">{home.reunion.featureState.targetDate}</span>
+          <button
+            type="button"
+            className="secondary compact"
+            disabled={busy || viewOnly}
+            onClick={() =>
+              void runExperience(async () => {
+                const result = await listRelationshipItems({});
+                return {
+                  title: "Reunion plan",
+                  items: result.items.filter(
+                    (item) =>
+                      item.itemId !== home.reunion?.itemId &&
+                      (item.release === null || item.release.state === "released"),
+                  ),
+                  reunionItem: home.reunion!,
+                };
+              })
+            }
+          >
+            Plan reunion
+          </button>
         </div>
       ) : null}
 
@@ -1179,6 +1355,23 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
           <h3>Waiting for you</h3>
           <div className="relationship-card-grid">
             {home.upcomingReleases.map((item) => (
+              <ItemCard
+                key={item.itemId}
+                item={item}
+                accountId={accountId}
+                disabled={viewOnly}
+                onChanged={() => refresh()}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {home.recentSignals.length ? (
+        <div className="relationship-section">
+          <h3>Signals</h3>
+          <div className="relationship-card-grid">
+            {home.recentSignals.map((item) => (
               <ItemCard
                 key={item.itemId}
                 item={item}
@@ -1308,18 +1501,24 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
                 Close
               </button>
             </div>
-            {experience.curationType ? (
+            {experience.curationType || experience.reunionItem ? (
               <div className="relationship-curation-toolbar">
                 <p className="hint">
-                  Select the moments you want to keep in this saved curation.
+                  {experience.reunionItem
+                    ? "Choose shared moments to prepare for the reunion."
+                    : "Select the moments you want to keep in this saved curation."}
                 </p>
                 <button
                   type="button"
                   className="primary compact"
                   disabled={busy || viewOnly}
-                  onClick={() => void saveExperienceCuration()}
+                  onClick={() => void saveExperienceLinks()}
                 >
-                  {experience.savedCuration ? "Update curation" : "Save curation"}
+                  {experience.reunionItem
+                    ? "Save reunion plan"
+                    : experience.savedCuration
+                      ? "Update curation"
+                      : "Save curation"}
                 </button>
               </div>
             ) : null}
@@ -1327,7 +1526,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
               <div className="relationship-card-grid">
                 {experience.items.map((item) => (
                   <div key={item.itemId} className="relationship-curation-item">
-                    {experience.curationType ? (
+                    {experience.curationType || experience.reunionItem ? (
                       <label className="relationship-curation-choice">
                         <input
                           type="checkbox"
@@ -1335,7 +1534,9 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
                           disabled={viewOnly}
                           onChange={() => toggleCurationItem(item.itemId)}
                         />
-                        <span>Include in curation</span>
+                        <span>
+                          {experience.reunionItem ? "Prepare for reunion" : "Include in curation"}
+                        </span>
                       </label>
                     ) : null}
                     <ItemCard

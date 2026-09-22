@@ -218,6 +218,7 @@ export {
   cancelPendingRelationshipReleaseActionsForPartnership,
   deleteIncomingRelationshipLinks,
   deleteRelationshipItem,
+  findRelationshipCurationItemId,
   getRelationshipReleaseGeneration,
   incrementRelationshipItemVersion,
   insertRelationshipItem,

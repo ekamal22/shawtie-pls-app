@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   relationshipItemCreateSchema,
+  relationshipItemCursorSchema,
   relationshipItemListQuerySchema,
   relationshipItemPatchSchema,
   relationshipItemReleaseSchema,
@@ -83,4 +84,24 @@ test("relationship list query has bounded defaults", () => {
   assert.equal(parsed.limit, 30);
   assert.equal(parsed.sort, "created_desc");
   assert.equal(parsed.storyOnly, false);
+});
+
+
+test("relationship cursors require an opaque integrity binding", () => {
+  const base = {
+    v: 1,
+    sort: "created_desc",
+    snapshotAt: "2026-09-22T12:00:00.000Z",
+    createdAt: "2026-09-22T11:00:00.000Z",
+    itemId: "00000000-0000-4000-8000-000000000001",
+    queryShape: "r1:created_desc:*:all:*",
+  };
+  assert.equal(relationshipItemCursorSchema.safeParse(base).success, false);
+  assert.equal(
+    relationshipItemCursorSchema.safeParse({
+      ...base,
+      binding: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    }).success,
+    true,
+  );
 });

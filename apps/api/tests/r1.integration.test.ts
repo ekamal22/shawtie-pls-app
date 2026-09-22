@@ -785,6 +785,20 @@ test("R1 future partnership namespace cannot read or replay old relationship-spa
       key,
       memoryPayload("Old namespace", "2020-09-22"),
     );
+    await createItem(
+      app,
+      alice,
+      "r1-namespace-old-second",
+      memoryPayload("Old namespace second", "2020-09-23"),
+    );
+    const oldList = await app.inject({
+      method: "GET",
+      url: "/api/v1/relationship-space/items?limit=1&sort=created_desc",
+      headers: headers(alice.cookie),
+    });
+    assert.equal(oldList.statusCode, 200, oldList.body);
+    const oldCursor = (oldList.json() as { nextCursor: string | null }).nextCursor;
+    assert.ok(oldCursor);
 
     const terminatedAt = new Date();
     await database.pool.query(
@@ -817,6 +831,19 @@ test("R1 future partnership namespace cannot read or replay old relationship-spa
     await database.pool.query(
       "INSERT INTO partnership_members (partnership_id, account_id, joined_at) VALUES ($1,$2,$4),($1,$3,$4)",
       [newPartnershipId, alice.accountId, bob.accountId, new Date()],
+    );
+
+    const oldCursorReuse = await app.inject({
+      method: "GET",
+      url:
+        "/api/v1/relationship-space/items?limit=1&sort=created_desc&cursor=" +
+        encodeURIComponent(oldCursor),
+      headers: headers(alice.cookie),
+    });
+    assert.equal(oldCursorReuse.statusCode, 400);
+    assert.equal(
+      (oldCursorReuse.json() as { error: { code: string } }).error.code,
+      "INVALID_CURSOR",
     );
 
     const oldRead = await app.inject({
@@ -1525,7 +1552,7 @@ test("R1 snapshot cursors contain only operational metadata and reject query-sha
     const cursorObject = JSON.parse(decoded) as Record<string, unknown>;
     assert.deepEqual(
       Object.keys(cursorObject).sort(),
-      ["createdAt", "itemId", "queryShape", "snapshotAt", "sort", "v"].sort(),
+      ["binding", "createdAt", "itemId", "queryShape", "snapshotAt", "sort", "v"].sort(),
     );
 
     const mismatched = await app.inject({
@@ -1538,6 +1565,29 @@ test("R1 snapshot cursors contain only operational metadata and reject query-sha
     assert.equal(mismatched.statusCode, 400);
     assert.equal(
       (mismatched.json() as { error: { code: string } }).error.code,
+      "INVALID_CURSOR",
+    );
+
+    const tamperedObject = {
+      ...cursorObject,
+      binding:
+        String(cursorObject.binding).slice(0, -1) +
+        (String(cursorObject.binding).endsWith("A") ? "B" : "A"),
+    };
+    const tamperedCursor = Buffer.from(
+      JSON.stringify(tamperedObject),
+      "utf8",
+    ).toString("base64url");
+    const tampered = await app.inject({
+      method: "GET",
+      url:
+        "/api/v1/relationship-space/items?limit=1&sort=created_desc&cursor=" +
+        encodeURIComponent(tamperedCursor),
+      headers: headers(alice.cookie),
+    });
+    assert.equal(tampered.statusCode, 400);
+    assert.equal(
+      (tampered.json() as { error: { code: string } }).error.code,
       "INVALID_CURSOR",
     );
   } finally {
@@ -1584,6 +1634,292 @@ test("R1 Remember This works as an independent snapshot without an M1 source ref
     };
     assert.equal(body.content?.snapshotText, "This is the independent snapshot.");
     assert.deepEqual(body.references, []);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("R1 PATCH validates schedule and reunion dates only when those fields change", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "patch_time_alice");
+    const bob = await register(app, database, "patch_time_bob");
+    await formPartnership(app, alice, bob, "r1-patch-time-form-0001");
+
+    const scheduled = await createItem(app, alice, "r1-patch-time-scheduled", {
+      kind: "future_us",
+      contentSchemaVersion: 1,
+      preview: { title: "Overdue", conditionLabel: null },
+      content: { body: "Still pending" },
+      occurrence: null,
+      storyIncluded: false,
+      release: {
+        mode: "scheduled",
+        unlockAt: new Date(Date.now() + 60 * 60_000).toISOString(),
+      },
+      featureState: null,
+      references: [],
+      links: [],
+    });
+    await database.pool.query(
+      "UPDATE relationship_items SET unlock_at = clock_timestamp() - interval '1 minute' WHERE id = $1",
+      [scheduled.itemId],
+    );
+
+    const storyPatch = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/relationship-space/items/" + scheduled.itemId,
+      headers: headers(alice.cookie, "r1-patch-time-story"),
+      payload: {
+        expectedVersion: 1,
+        storyIncluded: true,
+      },
+    });
+    assert.equal(storyPatch.statusCode, 200, storyPatch.body);
+
+    const home = await app.inject({
+      method: "GET",
+      url: "/api/v1/relationship-space",
+      headers: headers(alice.cookie),
+    });
+    assert.equal(home.statusCode, 200, home.body);
+    const today = (home.json() as { space: { serverDate: string } }).space.serverDate;
+
+    const reunion = await createItem(app, alice, "r1-patch-time-reunion", {
+      kind: "reunion",
+      contentSchemaVersion: 1,
+      preview: null,
+      content: { title: "Reunion", note: "Original note" },
+      occurrence: null,
+      storyIncluded: false,
+      release: null,
+      featureState: { type: "reunion", targetDate: today },
+      references: [],
+      links: [],
+    });
+    await database.pool.query(
+      "UPDATE relationship_reunion_state SET target_date = DATE '2000-01-01' WHERE item_id = $1",
+      [reunion.itemId],
+    );
+
+    const contentPatch = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/relationship-space/items/" + reunion.itemId,
+      headers: headers(bob.cookie, "r1-patch-time-reunion-note"),
+      payload: {
+        expectedVersion: 1,
+        content: { title: "Reunion", note: "Updated after target passed" },
+      },
+    });
+    assert.equal(contentPatch.statusCode, 200, contentPatch.body);
+
+    const invalidDateChange = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/relationship-space/items/" + reunion.itemId,
+      headers: headers(bob.cookie, "r1-patch-time-reunion-date"),
+      payload: {
+        expectedVersion: 2,
+        featureState: { type: "reunion", targetDate: "2000-01-02" },
+      },
+    });
+    assert.equal(invalidDateChange.statusCode, 422);
+    assert.equal(
+      (invalidDateChange.json() as { error: { code: string } }).error.code,
+      "REUNION_DATE_INVALID",
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("R1 saved curation creation is race-safe and shared edits use optimistic versioning", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "curation_alice");
+    const bob = await register(app, database, "curation_bob");
+    await formPartnership(app, alice, bob, "r1-curation-form-0001");
+
+    const first = await createItem(
+      app,
+      alice,
+      "r1-curation-target-a",
+      memoryPayload("Curation target A", "2020-09-22"),
+    );
+    const second = await createItem(
+      app,
+      bob,
+      "r1-curation-target-b",
+      memoryPayload("Curation target B", "2020-09-23"),
+    );
+
+    const body = {
+      kind: "our_year",
+      contentSchemaVersion: 1,
+      preview: null,
+      content: { title: "Our Year 2020", note: null },
+      occurrence: null,
+      storyIncluded: false,
+      release: null,
+      featureState: {
+        type: "curation",
+        curationType: "our_year",
+        anchorYear: 2020,
+      },
+      references: [],
+      links: [{ linkType: "curation", targetItemId: first.itemId, position: 0 }],
+    };
+
+    const create = (account: TestAccount, key: string) =>
+      app.inject({
+        method: "POST",
+        url: "/api/v1/relationship-space/items",
+        headers: headers(account.cookie, key),
+        payload: body,
+      });
+
+    const [left, right] = await Promise.all([
+      create(alice, "r1-curation-race-a"),
+      create(bob, "r1-curation-race-b"),
+    ]);
+    const responses = [left, right];
+    assert.equal(responses.filter((response) => response.statusCode === 201).length, 1);
+    assert.equal(responses.filter((response) => response.statusCode === 409).length, 1);
+    const conflict = responses.find((response) => response.statusCode === 409);
+    assert.equal(
+      (conflict?.json() as { error: { code: string } }).error.code,
+      "CURATION_ALREADY_EXISTS",
+    );
+    const winner = responses.find((response) => response.statusCode === 201);
+    const curationId = (winner?.json() as { itemId: string }).itemId;
+
+    const patch = (account: TestAccount, key: string, targetItemId: string) =>
+      app.inject({
+        method: "PATCH",
+        url: "/api/v1/relationship-space/items/" + curationId,
+        headers: headers(account.cookie, key),
+        payload: {
+          expectedVersion: 1,
+          links: [{ linkType: "curation", targetItemId, position: 0 }],
+        },
+      });
+
+    const [patchA, patchB] = await Promise.all([
+      patch(alice, "r1-curation-edit-a", first.itemId),
+      patch(bob, "r1-curation-edit-b", second.itemId),
+    ]);
+    const patchResponses = [patchA, patchB];
+    assert.equal(patchResponses.filter((response) => response.statusCode === 200).length, 1);
+    assert.equal(patchResponses.filter((response) => response.statusCode === 409).length, 1);
+    const versionConflict = patchResponses.find((response) => response.statusCode === 409);
+    assert.equal(
+      (versionConflict?.json() as { error: { code: string } }).error.code,
+      "VERSION_CONFLICT",
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("R1 reunion supports prepared-content links while Surprise generic links are rejected", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "prepared_alice");
+    const bob = await register(app, database, "prepared_bob");
+    await formPartnership(app, alice, bob, "r1-prepared-form-0001");
+
+    const target = await createItem(
+      app,
+      alice,
+      "r1-prepared-target",
+      memoryPayload("Prepared memory", "2020-09-22"),
+    );
+    const home = await app.inject({
+      method: "GET",
+      url: "/api/v1/relationship-space",
+      headers: headers(alice.cookie),
+    });
+    assert.equal(home.statusCode, 200, home.body);
+    const today = (home.json() as { space: { serverDate: string } }).space.serverDate;
+
+    const reunion = await createItem(app, alice, "r1-prepared-reunion", {
+      kind: "reunion",
+      contentSchemaVersion: 1,
+      preview: null,
+      content: { title: "Reunion", note: null },
+      occurrence: null,
+      storyIncluded: false,
+      release: null,
+      featureState: { type: "reunion", targetDate: today },
+      references: [],
+      links: [
+        {
+          linkType: "prepared_content",
+          targetItemId: target.itemId,
+          position: 0,
+        },
+      ],
+    });
+
+    const reunionRead = await app.inject({
+      method: "GET",
+      url: "/api/v1/relationship-space/items/" + reunion.itemId,
+      headers: headers(bob.cookie),
+    });
+    assert.equal(reunionRead.statusCode, 200, reunionRead.body);
+    assert.deepEqual(
+      (reunionRead.json() as { links: unknown[] }).links,
+      [
+        {
+          linkType: "prepared_content",
+          targetItemId: target.itemId,
+          position: 0,
+        },
+      ],
+    );
+
+    const surprise = await app.inject({
+      method: "POST",
+      url: "/api/v1/relationship-space/items",
+      headers: headers(alice.cookie, "r1-prepared-surprise-invalid-link"),
+      payload: {
+        kind: "surprise",
+        contentSchemaVersion: 1,
+        preview: { title: "Private sequence" },
+        content: {
+          intro: null,
+          steps: [{ type: "text", text: "Private step" }],
+        },
+        occurrence: null,
+        storyIncluded: false,
+        release: { mode: "creator_reveal", unlockAt: null },
+        featureState: null,
+        references: [],
+        links: [
+          {
+            linkType: "prepared_content",
+            targetItemId: target.itemId,
+            position: 0,
+          },
+        ],
+      },
+    });
+    assert.equal(surprise.statusCode, 400);
+    assert.equal(
+      (surprise.json() as { error: { code: string } }).error.code,
+      "INVALID_ITEM_LINK",
+    );
   } finally {
     await app.close();
     await closeDatabasePool(database);

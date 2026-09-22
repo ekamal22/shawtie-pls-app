@@ -486,3 +486,122 @@ test("R1 final breakup dissolution cancels pending release work and deletion cle
     await closeDatabasePool(database);
   }
 });
+
+
+test("R1 scheduled release fails closed for an unsupported content schema version", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const now = new Date();
+    const createdAt = new Date(now.getTime() - 60 * 60_000);
+    const unlockAt = new Date(now.getTime() - 60_000);
+    const alice = await account(database, "r1-worker-schema-a", createdAt);
+    const bob = await account(database, "r1-worker-schema-b", createdAt);
+    const partnershipId = randomUUID();
+
+    await partnership(database, {
+      partnershipId,
+      firstAccountId: alice,
+      secondAccountId: bob,
+      state: "active",
+      generation: 1n,
+      at: createdAt,
+    });
+    const item = await scheduledItem(database, {
+      partnershipId,
+      creatorAccountId: alice,
+      unlockAt,
+      now: createdAt,
+    });
+
+    await database.pool.query(
+      "UPDATE relationship_items SET content_schema_version = 2 WHERE id = $1",
+      [item.itemId],
+    );
+
+    assert.equal(await runScheduled(database, "r1-schema-worker"), 1);
+
+    const persisted = await database.pool.query<{
+      released_at: Date | null;
+      action_status: string;
+      last_error_code: string | null;
+    }>(
+      "SELECT item.released_at, action.status AS action_status, action.last_error_code FROM relationship_items item JOIN scheduled_actions action ON action.id = $2 WHERE item.id = $1",
+      [item.itemId, item.actionId],
+    );
+    assert.equal(persisted.rows[0]?.released_at, null);
+    assert.equal(persisted.rows[0]?.action_status, "failed");
+    assert.equal(
+      persisted.rows[0]?.last_error_code,
+      "RELATIONSHIP_CONTENT_SCHEMA_UNSUPPORTED",
+    );
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+
+test("R1 permanent account deletion cancels pending relationship release work", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const now = new Date();
+    const requestedAt = new Date(now.getTime() - 8 * 24 * 60 * 60_000);
+    const recoverUntil = new Date(requestedAt.getTime() + 7 * 24 * 60 * 60_000);
+    const deleting = await account(database, "r1-worker-delete-a", requestedAt);
+    const remaining = await account(database, "r1-worker-delete-b", requestedAt);
+    const partnershipId = randomUUID();
+
+    await partnership(database, {
+      partnershipId,
+      firstAccountId: deleting,
+      secondAccountId: remaining,
+      state: "active",
+      generation: 1n,
+      at: requestedAt,
+    });
+    const item = await scheduledItem(database, {
+      partnershipId,
+      creatorAccountId: deleting,
+      unlockAt: new Date(now.getTime() + 24 * 60 * 60_000),
+      now: requestedAt,
+    });
+
+    await requestAccountDeletion(database.pool, {
+      id: randomUUID(),
+      accountId: deleting,
+      requestedAt,
+      recoverUntil,
+      generation: 1n,
+    });
+    await insertScheduledAction(database.pool, {
+      id: randomUUID(),
+      actionType: "account_deletion_finalize",
+      aggregateType: "account",
+      aggregateId: deleting,
+      executeAt: recoverUntil,
+      expectedGeneration: 1n,
+      deduplicationKey: "r1-account-delete:" + deleting,
+      payload: {},
+      payloadVersion: 1,
+    });
+
+    assert.equal(await runScheduled(database, "r1-account-delete-worker"), 1);
+
+    const persisted = await database.pool.query<{
+      lifecycle_state: string;
+      termination_reason: string | null;
+      release_status: string;
+      released_at: Date | null;
+    }>(
+      "SELECT partnership.lifecycle_state, partnership.termination_reason, action.status AS release_status, item.released_at FROM partnerships partnership JOIN relationship_items item ON item.partnership_id = partnership.id AND item.id = $2 JOIN scheduled_actions action ON action.id = $3 WHERE partnership.id = $1",
+      [partnershipId, item.itemId, item.actionId],
+    );
+    assert.equal(persisted.rows[0]?.lifecycle_state, "terminated");
+    assert.equal(persisted.rows[0]?.termination_reason, "partner_account_deleted");
+    assert.equal(persisted.rows[0]?.release_status, "cancelled");
+    assert.equal(persisted.rows[0]?.released_at, null);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});

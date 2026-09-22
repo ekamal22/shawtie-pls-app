@@ -548,6 +548,7 @@ export const relationshipCreatedCursorSchema = z
     createdAt: timestamp,
     itemId: uuid,
     queryShape: z.string().min(1).max(256),
+    binding: z.string().min(16).max(256),
   })
   .strict();
 
@@ -561,6 +562,7 @@ export const relationshipOccurredCursorSchema = z
     occurredDay: z.number().int().min(0).max(32),
     itemId: uuid,
     queryShape: z.string().min(1).max(256),
+    binding: z.string().min(16).max(256),
   })
   .strict();
 

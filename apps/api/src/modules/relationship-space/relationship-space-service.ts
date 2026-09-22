@@ -5,6 +5,7 @@ import {
   completeLifecycleIdempotency,
   deleteIncomingRelationshipLinks,
   deleteRelationshipItem,
+  findRelationshipCurationItemId,
   getTransactionTimestamp,
   incrementRelationshipItemVersion,
   insertRelationshipItem,
@@ -481,6 +482,38 @@ export class RelationshipSpaceService {
     );
   }
 
+  #cursorBindingPayload(input: {
+    readonly accountId: string;
+    readonly partnershipId: string;
+    readonly queryShape: string;
+  }): string {
+    return canonicalJson({
+      v: 1,
+      accountId: input.accountId,
+      partnershipId: input.partnershipId,
+      queryShape: input.queryShape,
+    });
+  }
+
+  #activeCursorBinding(payload: string): string {
+    const verifier = this.keys.activeVerifier("r1-cursor-binding", payload);
+    return encodeFingerprint(verifier.version, verifier.value).toString("base64url");
+  }
+
+  #cursorBindingMatches(payload: string, encoded: string): boolean {
+    try {
+      const stored = Buffer.from(encoded, "base64url");
+      const version = fingerprintVersion(stored);
+      const expected = encodeFingerprint(
+        version,
+        this.keys.verifier("r1-cursor-binding", payload, version),
+      );
+      return this.keys.safeEqual(stored, expected);
+    } catch {
+      return false;
+    }
+  }
+
   async #findCompletedMutation(
     transaction: QueryExecutor,
     input: {
@@ -712,6 +745,10 @@ export class RelationshipSpaceService {
   #validateCreateSemantics(
     input: RelationshipItemCreateInput,
     now: Date,
+    options: {
+      readonly validateReleaseTime?: boolean;
+      readonly validateReunionTarget?: boolean;
+    } = {},
   ): void {
     if (privatePayloadBytes(input.preview, input.content) > MAX_PROTECTED_JSON_BYTES) {
       throw new ApiError(400, "INVALID_RELATIONSHIP_ITEM");
@@ -727,6 +764,7 @@ export class RelationshipSpaceService {
       throw new ApiError(400, "INVALID_OCCURRENCE");
     }
     if (
+      options.validateReunionTarget !== false &&
       input.featureState?.type === "reunion" &&
       compareCalendarDates(input.featureState.targetDate, trustedDate) < 0
     ) {
@@ -740,7 +778,7 @@ export class RelationshipSpaceService {
     ) {
       throw new ApiError(400, "INVALID_REFERENCE");
     }
-    if (input.release?.mode === "scheduled") {
+    if (options.validateReleaseTime !== false && input.release?.mode === "scheduled") {
       const unlock = new Date(input.release.unlockAt);
       if (!Number.isFinite(unlock.getTime()) || unlock.getTime() <= now.getTime()) {
         throw new ApiError(422, "RELEASE_TIME_INVALID");
@@ -953,10 +991,19 @@ export class RelationshipSpaceService {
       let cursorOccurredMonth: number | undefined;
       let cursorOccurredDay: number | undefined;
       const shape = queryShape(input);
+      const cursorBindingPayload = this.#cursorBindingPayload({
+        accountId: auth.session.accountId,
+        partnershipId: current.partnershipId,
+        queryShape: shape,
+      });
 
       if (input.cursor) {
         const cursor = decodeCursor(input.cursor);
-        if (cursor.queryShape !== shape || cursor.sort !== input.sort) {
+        if (
+          cursor.queryShape !== shape ||
+          cursor.sort !== input.sort ||
+          !this.#cursorBindingMatches(cursorBindingPayload, cursor.binding)
+        ) {
           throw new ApiError(400, "INVALID_CURSOR");
         }
         const parsedSnapshot = new Date(cursor.snapshotAt);
@@ -1010,6 +1057,7 @@ export class RelationshipSpaceService {
                 createdAt: last.createdAt.toISOString(),
                 itemId: last.id,
                 queryShape: shape,
+                binding: this.#activeCursorBinding(cursorBindingPayload),
               })
             : encodeCursor({
                 v: 1,
@@ -1020,6 +1068,7 @@ export class RelationshipSpaceService {
                 occurredDay: last.occurredDay ?? 0,
                 itemId: last.id,
                 queryShape: shape,
+                binding: this.#activeCursorBinding(cursorBindingPayload),
               })
           : null;
       return { items, nextCursor };
@@ -1082,6 +1131,18 @@ export class RelationshipSpaceService {
           : "create_relationship_object",
       );
       this.#validateCreateSemantics(input, now);
+
+      if (input.featureState?.type === "curation") {
+        const existingCurationId = await findRelationshipCurationItemId(
+          transaction,
+          lifecycle.partnershipId,
+          input.featureState.curationType,
+          input.featureState.anchorYear,
+        );
+        if (existingCurationId) {
+          throw new ApiError(409, "CURATION_ALREADY_EXISTS");
+        }
+      }
 
       await this.#validateReferences(
         transaction,
@@ -1304,7 +1365,10 @@ export class RelationshipSpaceService {
         references: input.references ?? currentReferences,
         links: input.links ?? currentLinks,
       });
-      this.#validateCreateSemantics(candidate, now);
+      this.#validateCreateSemantics(candidate, now, {
+        validateReleaseTime: input.release !== undefined,
+        validateReunionTarget: input.featureState !== undefined,
+      });
 
       const contentChanged =
         input.preview !== undefined ||

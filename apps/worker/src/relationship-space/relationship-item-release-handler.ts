@@ -43,6 +43,9 @@ export const relationshipItemReleaseHandler: ScheduledActionHandler = {
     if (item.releaseGeneration !== action.expectedGeneration) {
       return { outcome: "stale" as const };
     }
+    if (item.contentSchemaVersion !== 1) {
+      throw new PermanentWorkerError("RELATIONSHIP_CONTENT_SCHEMA_UNSUPPORTED");
+    }
 
     const decision = evaluateScheduledRelationshipRelease({
       now: now.toISOString(),

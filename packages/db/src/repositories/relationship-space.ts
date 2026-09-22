@@ -466,6 +466,28 @@ export type RelationshipFeatureState =
   | { readonly type: "reunion"; readonly targetDate: string }
   | { readonly type: "curation"; readonly curationType: "our_year" | "anniversary"; readonly anchorYear: number };
 
+export async function findRelationshipCurationItemId(
+  executor: QueryExecutor,
+  partnershipId: string,
+  curationType: "our_year" | "anniversary",
+  anchorYear: number,
+): Promise<string | null> {
+  const result = await executor.query<{ item_id: string }>(
+    `SELECT curation.item_id
+     FROM relationship_curations curation
+     JOIN relationship_items item
+       ON item.id = curation.item_id
+      AND item.partnership_id = curation.partnership_id
+     WHERE curation.partnership_id = $1
+       AND curation.curation_type = $2
+       AND curation.anchor_year = $3
+       AND item.lifecycle = 'active'
+     LIMIT 1`,
+    [partnershipId, curationType, anchorYear],
+  );
+  return result.rows[0]?.item_id ?? null;
+}
+
 export async function loadRelationshipFeatureState(
   executor: QueryExecutor,
   partnershipId: string,
