@@ -1,5 +1,10 @@
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
+import websocket from "@fastify/websocket";
+import {
+  M2_REALTIME_MAX_FRAME_BYTES,
+  M2_REALTIME_SUBPROTOCOL,
+} from "@shawtie/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
 import {
   loadCurrentConversationReadModel,
@@ -17,6 +22,13 @@ import { registerAccountRoutes } from "./modules/auth/routes.ts";
 import { MessagingService } from "./modules/messages/messaging-service.ts";
 import { registerMessagingRoutes } from "./modules/messages/routes.ts";
 import { NotificationService } from "./modules/notifications/notification-service.ts";
+import { RealtimeHub } from "./modules/realtime/realtime-hub.ts";
+import { RealtimeListener } from "./modules/realtime/realtime-listener.ts";
+import {
+  createRealtimeClientFrameHandler,
+  registerRealtimeRoutes,
+} from "./modules/realtime/routes.ts";
+import { RealtimeTransientPublisher } from "./modules/realtime/transient-publisher.ts";
 import { registerNotificationRoutes } from "./modules/notifications/routes.ts";
 import { createP2PartnershipFormationCoordinator } from "./modules/partnerships/partnership-formation-coordinator.ts";
 import { PartnershipService } from "./modules/partnerships/partnership-service.ts";
@@ -44,6 +56,15 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
   if (!dependencies) return app;
 
   app.register(cookie);
+  app.register(websocket, {
+    options: {
+      maxPayload: M2_REALTIME_MAX_FRAME_BYTES,
+      perMessageDeflate: false,
+      handleProtocols(protocols) {
+        return protocols.has(M2_REALTIME_SUBPROTOCOL) ? M2_REALTIME_SUBPROTOCOL : false;
+      },
+    },
+  });
   app.register(helmet);
   installErrorHandler(app);
   installMutationSecurity(app, dependencies.config);
@@ -93,6 +114,27 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     config: dependencies.config,
     keys,
     service: messagingService,
+  });
+
+  const realtimePublisher = new RealtimeTransientPublisher(dependencies.database);
+  const realtimeHub = new RealtimeHub(
+    dependencies.database,
+    keys,
+    createRealtimeClientFrameHandler(messagingService, realtimePublisher),
+  );
+  const realtimeListener = new RealtimeListener(dependencies.database, realtimeHub);
+  registerRealtimeRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    hub: realtimeHub,
+  });
+  app.addHook("onReady", async () => {
+    await realtimeListener.start();
+  });
+  app.addHook("onClose", async () => {
+    await realtimeListener.stop();
+    realtimeHub.close();
   });
 
   const relationshipSpaceService = new RelationshipSpaceService(dependencies.database, keys, {

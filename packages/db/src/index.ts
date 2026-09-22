@@ -1,5 +1,9 @@
 export { databaseConfigFromEnv, type DatabaseConfig } from "./connection/database-config.ts";
 export { closeDatabasePool, createDatabasePool, type DatabasePool } from "./connection/pool.ts";
+export {
+  createPostgresNotificationListener,
+  type PostgresNotificationListener,
+} from "./realtime/postgres-notifications.ts";
 export { withTransaction, type TransactionOptions } from "./connection/transaction.ts";
 export { getClockTimestamp, getTransactionTimestamp } from "./connection/time.ts";
 export { DatabaseError, normalizeDatabaseError } from "./errors/database-error.ts";

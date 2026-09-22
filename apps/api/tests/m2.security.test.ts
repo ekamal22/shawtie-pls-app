@@ -1,0 +1,65 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+test("M2 websocket registration is authenticated, origin-bound, and content-free", async () => {
+  const application = await readFile(new URL("../src/application.ts", import.meta.url), "utf8");
+  const routes = await readFile(
+    new URL("../src/modules/realtime/routes.ts", import.meta.url),
+    "utf8",
+  );
+  const hub = await readFile(
+    new URL("../src/modules/realtime/realtime-hub.ts", import.meta.url),
+    "utf8",
+  );
+  const contracts = await readFile(
+    new URL("../../../packages/contracts/src/realtime/m2.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(application.indexOf("app.register(websocket") < application.indexOf("registerRealtimeRoutes"));
+  assert.equal(application.includes("perMessageDeflate: false"), true);
+  assert.equal(application.includes("M2_REALTIME_MAX_FRAME_BYTES"), true);
+  assert.equal(routes.includes('request.headers.origin !== dependencies.config.appOrigin'), true);
+  assert.equal(routes.includes("requireAuthentication("), true);
+  assert.equal(routes.includes("M2_REALTIME_SUBPROTOCOL"), true);
+  assert.equal(routes.includes("subscribe"), false);
+
+  assert.equal(hub.includes("if (isBinary)"), true);
+  assert.equal(hub.includes("connection.socket.bufferedAmount > MAX_BUFFERED_BYTES"), true);
+  assert.equal(hub.includes("authenticateSessionToken("), true);
+  assert.equal(hub.includes('reason: "scope_changed"'), true);
+  assert.equal(hub.includes("sameIdentity(scope, connection)"), true);
+  assert.equal(contracts.includes('"message.send"'), false);
+  assert.equal(contracts.includes("bodyText"), false);
+});
+
+test("M2 LISTEN reset and worker publication remain correctness hints", async () => {
+  const listener = await readFile(
+    new URL("../src/modules/realtime/realtime-listener.ts", import.meta.url),
+    "utf8",
+  );
+  const dbListener = await readFile(
+    new URL("../../../packages/db/src/realtime/postgres-notifications.ts", import.meta.url),
+    "utf8",
+  );
+  const workerPublisher = await readFile(
+    new URL("../../worker/src/realtime/realtime-publisher.ts", import.meta.url),
+    "utf8",
+  );
+  const handler = await readFile(
+    new URL("../../worker/src/messages/messaging-invalidation-handler.ts", import.meta.url),
+    "utf8",
+  );
+  const workerMain = await readFile(new URL("../../worker/src/main.ts", import.meta.url), "utf8");
+
+  assert.equal(listener.includes('hub.requestResyncAll("listener_reset")'), true);
+  assert.equal(dbListener.includes("LISTEN"), true);
+  assert.equal(dbListener.includes("scheduleReconnect"), true);
+  assert.equal(workerPublisher.includes("SELECT pg_notify($1, $2)"), true);
+  assert.equal(workerPublisher.includes("M2_INTERNAL_NOTIFY_MAX_BYTES"), true);
+  assert.equal(handler.includes("body:"), false);
+  assert.equal(handler.includes("emoji:"), false);
+  assert.equal(handler.includes("nickname:"), false);
+  assert.equal(workerMain.includes("createDefaultOutboxHandlers(database)"), true);
+});
