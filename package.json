@@ -66,7 +66,9 @@
     "test:m2:postgres": "npm run db:migrations:check && npm run test:m2:security && npm run db:test:invariants && npm run build --workspace @shawtie/testkit && node --test --test-concurrency=1 apps/api/tests/p1.integration.test.ts apps/api/tests/p2.integration.test.ts apps/api/tests/p3.integration.test.ts apps/api/tests/m1.integration.test.ts apps/api/tests/r1.integration.test.ts apps/api/tests/m2.integration.test.ts apps/worker/tests/p1.integration.test.ts apps/worker/tests/a1.integration.test.ts apps/worker/tests/p3.integration.test.ts apps/worker/tests/m1.integration.test.ts apps/worker/tests/r1.integration.test.ts",
     "test:m2:local": "node scripts/db/test-m2-local.mjs",
     "test:m2:browser:e2e": "playwright test --config=playwright.m2.config.ts",
-    "test:m2:install-browser": "playwright install chromium"
+    "test:m2:install-browser": "playwright install chromium",
+    "test:m2:device:prepare": "node scripts/device/m2-android-acceptance.mjs",
+    "test:m2:device:cleanup": "node scripts/device/m2-android-acceptance.mjs --cleanup"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
