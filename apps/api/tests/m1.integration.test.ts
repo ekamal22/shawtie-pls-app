@@ -513,6 +513,27 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
       "MESSAGE_DELETED",
     );
 
+    const originalSendReplay = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "old message",
+      "m1-change-send-key-0001",
+    );
+    assert.equal(originalSendReplay.statusCode, 201, originalSendReplay.body);
+    assert.deepEqual(
+      {
+        messageId: (originalSendReplay.json() as { messageId: string }).messageId,
+        contentVersion: (originalSendReplay.json() as { contentVersion: number }).contentVersion,
+        changeSequence: (originalSendReplay.json() as { changeSequence: number }).changeSequence,
+      },
+      {
+        messageId: firstBody.messageId,
+        contentVersion: 1,
+        changeSequence: 1,
+      },
+    );
+
     const changes = await app.inject({
       method: "GET",
       url:
