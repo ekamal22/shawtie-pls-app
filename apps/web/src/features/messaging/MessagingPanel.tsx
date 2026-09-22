@@ -1,4 +1,10 @@
 import {
+  M1_MESSAGE_MAX_CHARACTERS,
+  M1_PRESENCE_HEARTBEAT_MIN_MS,
+  M1_TYPING_MIN_REFRESH_MS,
+  M1_VISIBLE_CHANGE_POLL_MS,
+} from "@shawtie/contracts";
+import {
   type FormEvent,
   useCallback,
   useEffect,
@@ -261,7 +267,7 @@ export function MessagingPanel() {
     if (!conversation) return;
     const timer = window.setInterval(() => {
       void syncChanges().catch((caught) => setError(errorText(caught)));
-    }, 2_000);
+    }, M1_VISIBLE_CHANGE_POLL_MS);
     return () => window.clearInterval(timer);
   }, [conversation, syncChanges]);
 
@@ -346,7 +352,7 @@ export function MessagingPanel() {
     setComposer(value);
     if (!conversation?.capabilities.typing || !value.trim()) return;
     const now = Date.now();
-    if (now - lastTypingSentRef.current < 2_000) return;
+    if (now - lastTypingSentRef.current < M1_TYPING_MIN_REFRESH_MS) return;
     lastTypingSentRef.current = now;
     void apiRequest(
       "/api/v1/conversations/" + conversation.conversationId + "/typing",
@@ -708,7 +714,7 @@ export function MessagingPanel() {
           }
           disabled={!conversation.capabilities.sendMessage || busy}
           rows={3}
-          maxLength={4_000}
+          maxLength={M1_MESSAGE_MAX_CHARACTERS}
         />
         <button
           className="primary"
