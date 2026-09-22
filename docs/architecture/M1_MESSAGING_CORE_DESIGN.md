@@ -70,6 +70,8 @@ M1 does not implement:
 - cryptographic device enrollment
 - cryptographic recovery
 
+M3 is now design-complete in `M3_MEDIA_VOICE_DESIGN.md` and keeps these M1 non-goals intact. M1 remains the message authority; M3 will add immutable ready-media references without moving binary storage, upload state, signed transfer capabilities, or provider deletion into the messaging module.
+
 M1 may provide short HTTP polling in the browser so the core chat is usable before M2. Polling is a temporary transport adapter, not M2 completion.
 
 ## Security boundary before S1
