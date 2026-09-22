@@ -197,3 +197,20 @@ export {
   type RelationshipReleaseInput,
   type ThisDayQuery,
 } from "./relationship-space/items.ts";
+
+export {
+  M2_INTERNAL_NOTIFY_MAX_BYTES,
+  M2_LOCAL_SCHEMA_VERSION,
+  M2_PRE_S1_CONTENT_CONTEXT,
+  M2_REALTIME_MAX_FRAME_BYTES,
+  M2_REALTIME_PROTOCOL_VERSION,
+  M2_REALTIME_SUBPROTOCOL,
+  assertM2RealtimeFrameSize,
+  m2FrameByteLength,
+  m2InternalRealtimeNotificationSchema,
+  m2RealtimeClientFrameSchema,
+  m2RealtimeServerFrameSchema,
+  type M2InternalRealtimeNotification,
+  type M2RealtimeClientFrame,
+  type M2RealtimeServerFrame,
+} from "./realtime/m2.ts";

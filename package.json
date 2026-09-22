@@ -58,7 +58,9 @@
     "test:r1:security": "npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run test:relationship-space && node --test apps/api/tests/r1.security.test.ts",
     "test:r1:postgres": "npm run test:r1:security && npm run db:test:invariants && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && npm run build --workspace @shawtie/web && node --test --test-concurrency=1 apps/api/tests/p1.integration.test.ts apps/api/tests/p2.integration.test.ts apps/api/tests/p3.integration.test.ts apps/api/tests/r1.integration.test.ts apps/worker/tests/p1.integration.test.ts apps/worker/tests/a1.integration.test.ts apps/worker/tests/p3.integration.test.ts apps/worker/tests/r1.integration.test.ts",
     "test:r1:api": "npm run test:r1:postgres",
-    "test:r1:local": "node scripts/db/test-r1-local.mjs"
+    "test:r1:local": "node scripts/db/test-r1-local.mjs",
+    "test:m2:contracts": "node --test packages/contracts/tests/m2-realtime.test.ts",
+    "test:realtime-offline": "npm run test:m2:contracts"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
