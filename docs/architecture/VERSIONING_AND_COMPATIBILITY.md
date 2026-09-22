@@ -130,7 +130,7 @@ M2 starts with:
 
 The pre-S1 content context is a local storage discriminator only. It is not a cryptographic epoch and must not be represented as encryption.
 
-The client may enter live realtime mode only when the negotiated realtime protocol is supported.
+The client may enter live realtime mode only when the negotiated realtime protocol is supported and the race-free dirty-counter/high-water reconciliation barrier closes for the current in-memory connection generation.
 
 The client may replay offline mutations only when:
 
@@ -142,9 +142,9 @@ The client may replay offline mutations only when:
 
 A waiting service worker does not activate blindly when that could mix incompatible application code, local schema, and mutation semantics. M2 pauses replay, checkpoints local state, activates the compatible worker, reloads, validates IndexedDB, validates the session, performs canonical resynchronization, and only then resumes replay.
 
-An IndexedDB migration failure is a fail-closed state. The client must not guess field meanings or replay operations under an unknown schema.
+An IndexedDB migration failure is a fail-closed state. The client must not guess field meanings or replay operations under an unknown schema. Before S1, a cold start or hard reload while offline also remains locked until server-session validation because local protected content is development plaintext rather than reviewed encrypted offline state.
 
-Future C1 signaling or S1 cryptographic changes that require incompatible realtime semantics must introduce an explicitly reviewed protocol-version transition rather than silently changing version 1.
+Future C1 signaling or S1 cryptographic changes that require incompatible realtime semantics must introduce an explicitly reviewed protocol-version transition rather than silently changing version 1. M2 scope identity is immutable per socket, so a compatibility or authority transition that changes partnership/conversation identity closes and re-establishes the connection rather than mutating the old scope in place.
 
 ## Testing
 

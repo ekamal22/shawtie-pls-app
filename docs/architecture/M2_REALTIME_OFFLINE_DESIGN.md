@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. IMPLEMENTATION NOT STARTED.
+DESIGN COMPLETE, SECOND-PASS HARDENED. IMPLEMENTATION NOT STARTED.
 
 Branch:
 
@@ -38,6 +38,26 @@ WebSocket delivery is a hint.
 IndexedDB is a cache and retry substrate.
 
 The server capability engine and lifecycle state remain authoritative on every replayed mutation.
+
+## Second-pass hardening decisions
+
+The second architecture pass tightens correctness around failure modes that are easy to miss in a normal WebSocket/offline design:
+
+- a socket is not considered live until a race-free synchronization barrier closes
+- partnership/conversation scope identity is immutable for one socket lifetime
+- client callbacks from an older socket generation are ignored after reconnect
+- API LISTEN loss or reconnect forces local clients to resynchronize
+- visible clients perform low-frequency canonical anti-entropy even when the socket looks healthy
+- multi-tab queue replay uses local claim generation fencing in addition to server idempotency
+- successful queue replay is not removed locally until canonical state and queue completion commit together
+- pre-S1 cold-start offline mode does not reveal protected IndexedDB plaintext before online session validation
+- IndexedDB quota/storage failure must fail visibly before an operation is represented as queued
+- browser site-data eviction is treated as an external storage-loss event, not as a silently guaranteed offline durability case
+- WebSocket compression is disabled and binary application frames are rejected because M2 frames are small and content-free
+- R1 offline replay uses an exact conservative whitelist rather than a broad category description
+- PostgreSQL NOTIFY publication must be committed before the durable outbox claim is acknowledged delivered
+
+These refinements do not add a new product milestone or durable authority system.
 
 ## Non-goals
 
@@ -187,6 +207,15 @@ The upgrade path must:
 9. register only those server-derived scopes in the connection hub
 10. return no private content during upgrade
 
+Additional transport rules:
+
+- application frames are text JSON only
+- binary application frames are rejected
+- per-message WebSocket compression is disabled
+- the accepted subprotocol must be exactly `shawtie.realtime.v1`
+- no private data is placed in close reason text
+- scope identity is frozen after `control.ready`; if authoritative partnership or conversation identity changes, the server requests resynchronization and closes the socket so reconnect derives a fresh scope
+
 The browser cannot request a partnership, conversation, account, item, or message subscription by identifier.
 
 ## Server-derived connection scope
@@ -216,6 +245,10 @@ These indexes are acceleration structures, not authorization databases.
 A later lifecycle invalidation causes scope refresh or connection closure.
 
 A periodic session/scope revalidation closes a stale connection even if a realtime invalidation was missed.
+
+The partnership/conversation identity attached to one WebSocket is immutable. Lifecycle state may change while that identity remains current, in which case the socket emits an invalidation and the client refreshes capabilities. If the authoritative partnership ID or conversation ID changes, including final dissolution followed by later re-pairing, the old socket is removed from its scopes and closed. A fresh connection must derive the new identity.
+
+The browser maintains an in-memory `connectionGeneration`. Every socket callback captures the generation that created it. After reconnect increments the generation, callbacks from an older socket are ignored even if the browser event loop delivers them late. This is a client race guard, not a wire protocol field.
 
 ## No Redis
 
@@ -248,11 +281,17 @@ The worker flow becomes:
 4. publish the compact internal invalidation through PostgreSQL NOTIFY
 5. mark the durable outbox row delivered through the existing fenced acknowledgement path
 
-A successful NOTIFY means only that PostgreSQL accepted the transient notification.
+The worker publishes the notification through a committed PostgreSQL operation before acknowledging the durable outbox claim as delivered. If the worker crashes after publish but before durable acknowledgement, later duplicate publication is safe.
+
+A successful NOTIFY means only that PostgreSQL accepted and committed the transient notification.
 
 It does not mean any browser received it.
 
 That is acceptable because the durable change ledger remains the synchronization source of truth.
+
+The API listener owns a monotonically increasing in-memory listener generation. When the LISTEN connection is lost, all local sockets are marked synchronization-dirty. After LISTEN is re-established, the hub sends `control.resync_required` with reason `listener_reset` to connected clients. The client performs canonical HTTP reconciliation before treating the connection as fully synchronized again.
+
+In addition, a visible authenticated client runs a low-frequency anti-entropy reconciliation even when WebSocket transport appears healthy. This periodic pass is deliberately much less frequent than the pre-M2 2-second poll and exists only to bound recovery from silent transport-hint loss, worker delay, proxy oddities, or a missed listener-reset signal. Exact cadence is a tested configuration constant rather than product authority.
 
 ## Additional content-free invalidations
 
@@ -434,6 +473,33 @@ Reconnect behavior:
 - browser online/offline events are hints only
 - a successful socket connection is not considered synchronized until canonical reconciliation completes
 
+## Race-free live synchronization barrier
+
+A WebSocket opening does not make the client live.
+
+For each connection generation, the client keeps:
+
+- `syncDirtyCounter`, incremented for every relevant realtime invalidation
+- `highestHintedChangeSequence` for the current conversation
+- the high-water values supplied by `control.ready`
+- the locally committed change and history cursors
+
+A synchronization pass:
+
+1. snapshots the current `syncDirtyCounter`
+2. reconciles canonical HTTP state
+3. drains M1 changes until the committed local `latestChangeSequence` reaches the authoritative high-water observed during that pass
+4. repairs required history gaps
+5. refreshes partnership/R1 authority
+6. commits all local cursor/projection state
+7. checks whether `syncDirtyCounter` is unchanged and whether no higher hinted change sequence arrived during the pass
+8. enters `live` only if both conditions hold
+9. otherwise loops through another bounded synchronization pass
+
+This closes the race where an invalidation arrives while the client is between its final HTTP read and the state transition to live.
+
+There is no client `control.synced` authority message. The barrier is local; the server never trusts the browser to declare canonical state complete.
+
 ## Canonical reconnect algorithm
 
 After WebSocket ready, application foreground, network restoration, or explicit resync request:
@@ -452,7 +518,8 @@ After WebSocket ready, application foreground, network restoration, or explicit 
 12. replay permitted offline operations only after authoritative refresh
 13. refresh read/delivery high-water state
 14. enter live state
-15. if another invalidation arrived while synchronizing, run another bounded sync cycle
+15. close the race-free live synchronization barrier; if another invalidation arrived while synchronizing or a higher hinted change sequence appeared, run another bounded sync cycle
+16. while visible, schedule the low-frequency anti-entropy reconciliation even if the socket remains healthy
 
 Only one sync cycle may mutate local cursor state at a time.
 
@@ -494,7 +561,7 @@ When latestServerSequence is above the locally known contiguous end:
 4. continue until caught up or the configured page budget yields
 5. resume on the next sync turn if more pages remain
 
-Initial bootstrap may fetch the latest history page and then set the local change cursor to the authoritative latest change sequence because the fetched page is already a current-state projection.
+Initial bootstrap may fetch the latest history page and then set the local change cursor to the authoritative latest change sequence only when that page and the authoritative conversation snapshot belong to the same synchronization pass and the race-free live barrier subsequently closes. A realtime invalidation during bootstrap makes the pass dirty and forces another reconciliation before live mode.
 
 Existing caches use change reconciliation first.
 
@@ -693,6 +760,12 @@ The implementation must define and test ceilings for:
 
 Eviction applies only to canonical cache entries, never silently to unsent user operations.
 
+The installed PWA should request persistent browser storage when supported and record whether persistence was granted, but correctness never assumes the browser will preserve site data forever. User-cleared site data, browser storage eviction, OS cleanup, or private-browsing semantics are external storage-loss cases.
+
+Before presenting a mutation as `queued`, the client must durably persist the queue record. If IndexedDB is unavailable, quota is exhausted, serialization fails, or the transaction aborts, the UI keeps the user's unsent content in the composer/editor when possible and reports that offline persistence failed. It must not show a false queued state.
+
+Storage pressure handling may evict rehydratable canonical cache first. It must not silently evict unsent queue entries to make space.
+
 When an old message page is evicted, retainedHistoryStartSequence advances explicitly so the missing old range is not mistaken for a synchronization gap.
 
 ## Offline authentication bootstrap
@@ -704,10 +777,13 @@ On application startup:
 - HTTP 401 means signed out; stop replay and purge pre-S1 plaintext local state
 - explicit logout means purge pre-S1 plaintext local state
 - device revocation means stop replay, close realtime, and purge authorization-bound local state
-- temporary network failure may enter offline mode using the last locally bound account namespace
-- once connectivity returns, session validation occurs before replay
+- a temporary network failure is not treated as HTTP 401
+- if the application was already authenticated and then loses connectivity while still running, it may continue showing the already-open authorized in-memory/local view while clearly offline
+- a cold start, hard reload, browser restart, or service-worker relaunch while offline must not unlock protected pre-S1 IndexedDB plaintext because the browser cannot revalidate the HttpOnly server session
+- cold-start offline mode therefore renders a locked/offline shell until online session validation succeeds
+- once connectivity returns, session validation occurs before local protected content is opened and before any replay
 
-The current application behavior that treats an arbitrary session-load failure as signed out must be refined for M2.
+The current application behavior that treats an arbitrary session-load failure as signed out must be refined for M2, but pre-S1 development plaintext must not become an offline authentication bypass. S1 may later define a reviewed encrypted offline-unlock model.
 
 ## Offline chat queue
 
@@ -745,13 +821,18 @@ The UI renders it as a separate pending local item with:
 
 The UI must not label a queued message as Sent, Delivered, or Read.
 
-When the server accepts the idempotent send:
+When the server accepts or idempotently replays the send:
 
 1. receive authoritative messageId, serverSequence, and changeSequence
-2. fetch or apply the canonical message projection
-3. persist the canonical projection
-4. remove the local pending-send record
-5. advance local cursors only through the normal synchronization rules
+2. fetch the canonical message projection
+3. begin one IndexedDB completion transaction
+4. persist the canonical projection
+5. remove the queued local operation only if its current claim generation still belongs to this replay attempt
+6. update any local pending-send overlay
+7. commit
+8. advance synchronization cursors only through the normal canonical synchronization rules
+
+If the browser crashes after the server accepts the mutation but before the IndexedDB completion transaction commits, the same stable idempotency key is replayed after restart. The queue is not considered complete merely because an HTTP response was observed.
 
 ## Queued edit semantics
 
@@ -775,26 +856,24 @@ The UI keeps the attempted text available for the user to copy or review, but do
 
 M2 introduces a separate typed R1 queue.
 
-Initial queueable R1 operations are limited to operations whose existing HTTP contracts are idempotent and whose replay cannot create a time-sensitive release transition.
+The M2 version-1 R1 queue uses an exact conservative whitelist.
 
-Expected queueable categories:
+Queueable:
 
-- ordinary item create with immediate/non-release-gated semantics
-- ordinary item update with expectedVersion
-- ordinary item delete
-- explicitly shared state updates with expectedVersion
-- saved curation mutations with expectedVersion where the existing endpoint supports safe replay
+- `POST /relationship-space/items` only when `release` is null or `release.mode` is `immediate`, all references are already-authoritative resource IDs supported by the current resolver set, and no M3 media/voice dependency exists
+- `PATCH /relationship-space/items/:itemId` only when the patch omits the `release` field entirely and carries the existing `expectedVersion`; content, occurrence, story membership, Someday/shared feature state, links, references, reunion state, and saved curation changes remain server-validated at replay time
+- `DELETE /relationship-space/items/:itemId` with the existing `expectedVersion`
 
-Online-only in M2 version 1:
+Not queueable in M2 version 1:
 
-- recipient-open
-- creator-reveal
-- schedule creation or rescheduling
-- any operation that can immediately expose sealed content
+- `POST /relationship-space/items/:itemId/release`
+- create with `scheduled`, `recipient_open`, or `creator_reveal` release mode
+- any patch that includes the `release` field, including reschedule or release-mode replacement
+- any operation that can immediately expose previously sealed content
 - media or Voice Letter references before M3
-- external-resource-dependent operations whose resolver is unavailable
+- an external reference whose resolver is unavailable
 
-The final implementation whitelist must be explicit in code and contract tests.
+Every R1 replay still performs authoritative lifecycle, ownership, reference, time, and expected-version validation on the server.
 
 Unknown R1 operation types fail closed and are not replayed.
 
@@ -812,13 +891,19 @@ Within one partnership namespace:
 
 Multiple browser tabs may attempt replay.
 
-Correctness relies on server idempotency.
+Correctness relies on server idempotency and expected-version checks, but local coordination is hardened so a stale tab cannot remove work completed or reclaimed by a newer tab.
 
-Where supported, use a browser-level lock for efficiency.
+Each queued operation supports local claim metadata:
 
-A fallback may use a short local claim record.
+- `claimOwner`
+- `claimGeneration`
+- `claimExpiresAt`
 
-Duplicate replay must remain safe even if coordination fails.
+A claimant updates those fields in one IndexedDB transaction. Completion, retry scheduling, or queue removal is accepted only when the claimant still owns the same claim generation. A later claimant increments the generation, so an older tab returning late from the network cannot delete or rewrite the newer claim.
+
+`navigator.locks`, when available, is an outer efficiency optimization. The persisted local claim generation is the fallback coordination mechanism. Neither is an authorization control; server idempotency remains the correctness backstop.
+
+Duplicate replay must remain safe even if all browser coordination fails.
 
 ## Retry classification
 
@@ -908,7 +993,7 @@ When a new worker is waiting:
 
 If safe compatibility cannot be proven, fail closed and require an application refresh before mutation.
 
-The service worker does not migrate IndexedDB itself.
+The service worker does not migrate IndexedDB itself and does not own durable product-mutation replay in M2. Replay remains in the authenticated page application, where session/lifecycle authority and conflict UX are available.
 
 ## Local schema migration failure
 
@@ -1090,6 +1175,42 @@ No correctness loss.
 
 Later reconnect repairs from canonical state.
 
+### API LISTEN connection resets while WebSockets remain open
+
+The hub marks local connections dirty.
+
+After LISTEN reconnect, connected clients receive `control.resync_required` with reason `listener_reset`.
+
+Visible-page anti-entropy also bounds recovery if that signal itself is missed.
+
+No durable state depends on the listener generation.
+
+### Client receives an old-socket callback after reconnect
+
+The callback carries the old in-memory `connectionGeneration`.
+
+The client ignores it.
+
+It cannot mutate the current synchronization coordinator or namespace.
+
+### Cold start occurs while offline before S1
+
+The application shell may load.
+
+Protected IndexedDB content remains locked.
+
+No queue replay occurs.
+
+Online server-session validation is required before protected local state becomes visible.
+
+### IndexedDB quota prevents queue persistence
+
+The operation is not labeled queued.
+
+The unsent content remains available to the user where practical.
+
+Canonical cache may be evicted first, but unsent queue entries are not silently sacrificed.
+
 ### API process crashes after receiving NOTIFY
 
 Some sockets miss the hint.
@@ -1217,6 +1338,7 @@ apps/web/src/lib/offline/namespace.ts
 apps/web/src/lib/offline/chat-outbox.ts
 apps/web/src/lib/offline/relationship-outbox.ts
 apps/web/src/lib/offline/replay-engine.ts
+apps/web/src/lib/offline/replay-claims.ts
 apps/web/src/lib/offline/compatibility.ts
 apps/web/src/lib/pwa/service-worker-registration.ts
 
@@ -1271,6 +1393,9 @@ Exit evidence:
 - revoked/expired session cannot establish or retain a live socket
 - guessed identifiers cannot change scope
 - duplicate connections remain safe
+- partnership/conversation identity is immutable for one socket lifetime
+- binary frames and per-message compression are disabled/rejected as designed
+- old client socket generations cannot affect the new connection
 
 ### M2-C Durable invalidation publisher
 
@@ -1289,6 +1414,8 @@ Exit evidence:
 - dropped NOTIFY does not lose correctness
 - duplicate NOTIFY is safe
 - unrelated outbox families remain unclaimed
+- LISTEN loss/reconnect causes client resynchronization rather than silent stale live state
+- publish is committed before the durable outbox claim is acknowledged delivered
 
 ### M2-D Client realtime and canonical synchronization engine
 
@@ -1301,6 +1428,8 @@ Implement:
 - event coalescing
 - visibility/online reconnect
 - HTTP polling fallback during socket outage
+- race-free live barrier using dirty-counter/high-water checks
+- low-frequency visible-page anti-entropy even with a healthy socket
 
 The existing 2-second visible polling loop may remain as a bounded fallback during early M2 slices but should no longer be the normal live path after closure.
 
@@ -1342,6 +1471,8 @@ Implement:
 - optimistic pending-send presentation
 - retry classifier
 - aggregate serialization
+- persisted local claim-generation fencing across tabs
+- atomic canonical-projection plus queue-completion transaction
 - edit conflict UX
 - pending receipt high-water state
 
@@ -1411,6 +1542,10 @@ Required physical Android scenarios:
 11. revoke current device or session, verify realtime closes and replay stops
 12. service-worker update with queued operations, verify safe checkpoint/reload behavior
 13. future partnership cannot render previous partnership local data
+14. cold-start offline before S1 shows a locked shell rather than cached private plaintext
+15. reset the API LISTEN connection while WebSockets stay open and verify forced canonical resync
+16. induce IndexedDB quota/storage failure and verify the UI never falsely reports an operation as queued
+17. race two tabs replaying one queued operation and verify stale local claim completion cannot delete a newer claim
 
 M2 is not DONE until physical-device evidence is recorded.
 
@@ -1610,6 +1745,18 @@ M2 is DONE only when all of the following have executed evidence:
 27. full repository health passes
 28. high-severity dependency audit passes
 29. physical Android M2 acceptance passes
+30. a socket cannot enter live state until the dirty-counter/high-water synchronization barrier closes without a concurrent invalidation
+31. partnership/conversation scope identity is immutable for one socket lifetime and identity change forces reconnect
+32. callbacks from an older browser connection generation cannot mutate the current sync state
+33. API LISTEN loss/reconnect forces canonical resynchronization for local sockets
+34. visible-page anti-entropy repairs silent missed hints even while WebSocket transport appears healthy
+35. multi-tab replay uses claim-generation fencing so a stale tab cannot remove or overwrite a newer local claim
+36. pre-S1 cold-start offline mode does not expose protected IndexedDB plaintext before server-session validation
+37. IndexedDB quota/storage failure cannot be represented as successful offline queueing and never silently evicts unsent operations
+38. WebSocket binary application frames are rejected and per-message compression is disabled
+39. R1 offline queue enforcement matches the exact version-1 whitelist
+40. successful or idempotently replayed mutations remove their local queue record only through a fenced local completion transaction after canonical state is persisted
+41. PostgreSQL NOTIFY publication is committed before the corresponding durable outbox claim is acknowledged delivered
 
 ## Handoff to later milestones
 

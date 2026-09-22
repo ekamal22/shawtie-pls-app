@@ -1118,7 +1118,7 @@ Realtime protocol:
 
 Design state:
 
-Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Runtime implementation has not started.
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. A second-pass hardening review also closes reconnect-race, LISTEN-reset, cold-start plaintext, multi-tab claim, storage-quota, and socket-scope gaps. Runtime implementation has not started.
 
 ## Scope
 
@@ -1270,6 +1270,18 @@ M2 is expected to require no PostgreSQL migration. Migration 0015 is not reserve
 - [ ] reconnect, offline, service-worker, and IndexedDB browser automation passes
 - [ ] full `npm run health` and high-severity dependency audit pass
 - [ ] physical Android M2 acceptance passes
+- [ ] socket enters live only after the dirty-counter/high-water synchronization barrier closes without a concurrent invalidation
+- [ ] partnership/conversation scope identity is immutable for one socket lifetime and scope identity change forces reconnect
+- [ ] late callbacks from an older browser connection generation cannot mutate current sync state
+- [ ] PostgreSQL LISTEN loss/reconnect forces canonical resynchronization for local sockets
+- [ ] visible-page anti-entropy repairs silent missed hints even while WebSocket transport appears healthy
+- [ ] multi-tab queue replay uses claim-generation fencing so a stale tab cannot remove or overwrite a newer claim
+- [ ] pre-S1 cold-start offline mode does not expose protected IndexedDB plaintext before server-session validation
+- [ ] IndexedDB quota/storage failure cannot be represented as successful queueing and unsent operations are never silently evicted
+- [ ] binary WebSocket application frames are rejected and per-message compression is disabled
+- [ ] R1 offline queue enforcement matches the exact M2 version-1 endpoint/payload whitelist
+- [ ] local queue completion is fenced and canonical state is persisted before the queue record is removed
+- [ ] PostgreSQL NOTIFY publication is committed before its durable outbox claim is acknowledged delivered
 
 # M3: Media and Voice Messages
 

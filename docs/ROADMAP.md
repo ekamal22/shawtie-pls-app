@@ -216,7 +216,7 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: IN_PROGRESS. Refined architecture and protocol design are complete on `feat/m2-realtime-offline`; runtime implementation has not started.
+Status: IN_PROGRESS. Refined architecture and protocol design are complete and second-pass hardened on `feat/m2-realtime-offline`; runtime implementation has not started.
 
 Architecture:
 
@@ -240,6 +240,12 @@ Make the verified M1 and R1 experience resilient across realtime delivery, mobil
 - IndexedDB is cache/retry state, not authority
 - queued operations are never permissions
 - final dissolution is a hard local namespace boundary
+- socket live state requires a race-free dirty-counter/high-water reconciliation barrier
+- socket partnership/conversation identity is immutable and identity changes force reconnect
+- LISTEN reset plus low-frequency visible anti-entropy prevents silent stale healthy-looking sockets
+- pre-S1 cold-start offline cannot reveal cached private plaintext before session validation
+- multi-tab replay is locally claim-generation fenced while server idempotency remains authoritative
+- offline queue success exists only after durable IndexedDB commit; quota/storage failure cannot fake a queued state
 - M2 introduces no Redis
 - M2 is expected to require no PostgreSQL migration; migration 0015 is not pre-reserved
 

@@ -366,7 +366,12 @@ M2 preserves the modular monolith and adds a transport/cache reliability layer w
 - the worker publishes validated compact PostgreSQL NOTIFY hints
 - each API process uses one dedicated LISTEN connection for cross-process fanout
 - missed NOTIFY or WebSocket delivery is repaired from canonical HTTP/PostgreSQL state
+- LISTEN reset forces local socket resynchronization, while visible-page anti-entropy bounds silent hint-loss recovery
+- a socket keeps immutable partnership/conversation identity for its lifetime; identity change forces reconnect
+- the client enters live state only after a dirty-counter/high-water synchronization barrier closes
 - IndexedDB stores bounded account/partnership/conversation-scoped cache and typed offline queues
+- pre-S1 cold-start offline mode keeps protected local plaintext locked until server-session validation
+- multi-tab queue replay uses local claim-generation fencing in addition to server idempotency
 - offline replay occurs only after authoritative session/lifecycle reconciliation
 - final dissolution is a hard local namespace purge boundary
 - service workers cache application shell/static assets only and never private API data

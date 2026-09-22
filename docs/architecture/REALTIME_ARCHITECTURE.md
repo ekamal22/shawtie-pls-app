@@ -25,11 +25,15 @@ Cross-process fanout uses compact validated PostgreSQL NOTIFY messages emitted b
 
 M2 does not put durable product mutations on WebSocket. Message and R1 writes remain on their existing HTTP APIs.
 
+One socket's partnership/conversation identity is immutable after ready. If authoritative identity changes, the old scope is removed and the socket reconnects. Browser code also ignores callbacks from an older in-memory connection generation after reconnect.
+
+The API LISTEN connection has an in-memory generation. LISTEN loss marks local sockets dirty; after listener recovery the hub sends `control.resync_required(listener_reset)`. Visible clients additionally run low-frequency canonical anti-entropy so silent hint loss cannot leave a healthy-looking socket stale indefinitely.
+
 M2 uses no Redis and is expected to require no new PostgreSQL migration.
 
 ## Transport
 
-Use one authenticated WebSocket connection per active device where practical.
+Use one authenticated WebSocket connection per active device where practical. Application frames are small text JSON only; binary application frames are rejected and per-message compression is disabled.
 
 The connection is authenticated using the same trusted session identity as the HTTP API.
 
@@ -92,7 +96,7 @@ M1 establishes two distinct monotonic per-conversation sequences:
 
 Realtime transport must preserve this distinction.
 
-After reconnect, the client first verifies authoritative partnership access, then repairs durable messaging changes after its last committed change sequence. Message history gaps use server-sequence pagination.
+After reconnect, the client first verifies authoritative partnership access, then repairs durable messaging changes after its last committed change sequence. Message history gaps use server-sequence pagination. The client enters live mode only after a dirty-counter/high-water barrier proves no relevant realtime invalidation raced the final reconciliation window.
 
 An edit, deletion, or reaction change to an old message must therefore be recoverable even when no new message was created.
 

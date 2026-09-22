@@ -10,7 +10,7 @@ M2 provides separate chat and R1 queues. Release/open/reveal and scheduled-relea
 
 Final dissolution removes old partnership data from UI before replay and then purges messages, R1 cache, queues, sync metadata, and future media/crypto namespace state.
 
-Explicit logout, account switch, or observed revocation purges pre-S1 local protected plaintext. A temporary network failure does not.
+Explicit logout, account switch, or observed revocation purges pre-S1 local protected plaintext. A temporary network failure does not. However, before S1, a cold start or hard reload while offline must not unlock cached protected plaintext because the HttpOnly server session cannot be revalidated; the app shows a locked offline shell until online validation succeeds.
 
 ## Goals
 
@@ -98,11 +98,19 @@ M2 may queue only operations whose feature policy explicitly permits offline rep
 
 For relationship-object mutations that are explicitly designed to support offline writes.
 
+M2 version 1 queues only:
+
+- item create when release is null or immediate and all references are already-authoritative/currently supported
+- item patch when the release field is omitted and expectedVersion is preserved
+- item delete with expectedVersion
+
+M2 version 1 does not queue manual release, scheduled/recipient-open/creator-reveal create, any patch that carries a release field, or M3-dependent media/voice references.
+
 Do not silently reuse the chat outbox schema.
 
 ## Idempotency
 
-Every queued server mutation carries a stable client idempotency key. A locally queued message is rendered as pending and never receives a fake server sequence; authoritative sequence is assigned only by M1 after server acceptance.
+Every queued server mutation carries a stable client idempotency key. A locally queued message is rendered as pending and never receives a fake server sequence; authoritative sequence is assigned only by M1 after server acceptance. Multi-tab replay additionally uses local claim owner/generation/expiry metadata so a stale tab cannot remove work reclaimed by a newer tab; server idempotency remains the correctness backstop.
 
 Retries must not create duplicates.
 
@@ -142,7 +150,7 @@ The service worker may cache:
 
 It must not create a separate uncontrolled cache of decrypted private content.
 
-Private data caching belongs in the application-controlled IndexedDB layer.
+Private data caching belongs in the application-controlled IndexedDB layer. The PWA requests persistent storage when supported, but does not claim that browser/OS eviction or user-cleared site data can never remove local state. An operation is shown as queued only after its IndexedDB transaction commits; quota or storage failure leaves it unqueued and preserves the user's unsent text where practical.
 
 ## Device revocation
 

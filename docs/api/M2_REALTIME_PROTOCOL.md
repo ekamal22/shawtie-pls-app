@@ -20,6 +20,8 @@ The protocol is content-free for durable application invalidations.
 
 Durable product mutations remain on HTTP.
 
+Second-pass hardening adds a race-free live barrier, immutable socket scope identity, listener-reset resynchronization, low-frequency visible anti-entropy, and strict rejection of binary/compressed application transport.
+
 ## Upgrade requirements
 
 The server accepts the WebSocket upgrade only when:
@@ -30,6 +32,8 @@ The server accepts the WebSocket upgrade only when:
 - the current account is authorized
 - the client offers shawtie.realtime.v1
 - connection-rate policy allows the attempt
+- per-message WebSocket compression is disabled
+- application data frames are text JSON only
 
 The client does not send an access token in the URL or subprotocol.
 
@@ -58,6 +62,8 @@ Rules:
 - client and server frames are bounded to 4 KiB
 - unknown critical frame types fail closed
 - private content is prohibited
+- binary application frames are rejected
+- one socket's partnership/conversation identity is immutable after `control.ready`
 
 ## Server to client frames
 
@@ -75,15 +81,18 @@ Sent after upgrade authentication and initial server-derived scope load.
     "accountId": "uuid",
     "partnershipId": "uuid-or-null",
     "conversationId": "uuid-or-null",
+    "partnershipGeneration": 7,
     "latestServerSequence": 42,
     "latestChangeSequence": 58
   }
 }
 ~~~
 
-The high-water values are synchronization hints.
+The high-water values are synchronization targets for the current connection generation, not proof that local state is current.
 
-The client still performs canonical reconciliation before entering live state.
+`partnershipGeneration` is the authoritative lifecycle generation observed while deriving the ready scope. It is not a client capability token.
+
+The client still performs canonical reconciliation before entering live state. It may enter live only after the dirty-counter/high-water synchronization barrier closes without a concurrent invalidation.
 
 ### control.ping
 
@@ -105,12 +114,12 @@ The client still performs canonical reconciliation before entering live state.
   "type": "control.resync_required",
   "payload": {
     "scope": "account|partnership|conversation|relationship",
-    "reason": "gap|backpressure|scope_changed|unknown_state"
+    "reason": "gap|backpressure|scope_changed|listener_reset|anti_entropy|unknown_state"
   }
 }
 ~~~
 
-The client pauses optimistic live assumptions and runs canonical HTTP synchronization.
+The client pauses optimistic live assumptions and runs canonical HTTP synchronization. `listener_reset` is emitted after the API's PostgreSQL LISTEN connection is re-established because notifications may have been missed while the browser WebSocket remained open.
 
 ### control.update_required
 
@@ -405,6 +414,23 @@ Examples:
 
 The client never supplies these routing keys as subscriptions.
 
+## Socket scope lifetime
+
+The account identity is bound to the authenticated session for the socket lifetime.
+
+The partnership and conversation identity reported by `control.ready` are also immutable for that socket lifetime.
+
+If authoritative scope identity changes:
+
+1. the server removes the connection from the old scope indexes
+2. it emits `control.resync_required` with reason `scope_changed` when safe
+3. it closes the socket
+4. the client reconnects and receives a new server-derived scope
+
+A lifecycle change that keeps the same partnership/conversation identity may remain on the socket and is handled as an invalidation plus canonical capability refresh.
+
+The browser separately increments an in-memory `connectionGeneration` for every new WebSocket object. Event callbacks created by an older generation are ignored after reconnect. This generation is intentionally not trusted or transmitted over the wire.
+
 ## Ordering
 
 The protocol defines no global WebSocket event order.
@@ -422,6 +448,24 @@ For R1 and partnership state:
 A lower-sequence WebSocket frame arriving after a higher-sequence frame is harmless.
 
 The client compares with its committed cursor and performs canonical reconciliation.
+
+## Race-free transition to live
+
+For one browser connection generation, every relevant realtime frame increments an in-memory dirty counter and may raise the highest hinted message change sequence.
+
+A sync pass snapshots that counter before canonical reads.
+
+After reconciliation, the client enters live only when:
+
+- the local committed change cursor has reached the authoritative/highest hinted target for the pass
+- required recent history gaps are repaired
+- partnership and R1 authority are refreshed
+- the dirty counter has not changed during the pass
+- no higher hinted change sequence arrived during the pass
+
+Otherwise the client immediately runs another bounded reconciliation pass.
+
+There is no client frame that declares itself synchronized. The server never trusts a browser assertion of canonical completeness.
 
 ## Deduplication
 
@@ -451,6 +495,8 @@ Under pressure:
 
 The server does not grow an unbounded queue.
 
+Per-message compression is disabled, so backpressure accounting is performed on the actual small uncompressed application frames rather than an attacker-controlled compression ratio.
+
 ## Connection closure
 
 Normal closure uses standard WebSocket close behavior.
@@ -458,6 +504,8 @@ Normal closure uses standard WebSocket close behavior.
 Policy/auth/protocol failures use a policy close after any safe control frame.
 
 The client treats every unexpected close as requiring authority revalidation before replay.
+
+A client also performs low-frequency canonical anti-entropy while visible even when the socket has not closed. This bounds recovery from a silently missed NOTIFY, proxy behavior, or transport-hint loss. Anti-entropy is not a second product-ordering mechanism; it invokes the same canonical synchronization path.
 
 A close reason is operational metadata only.
 
@@ -508,10 +556,16 @@ The minimum reconnect repair is:
 
 1. session
 2. current partnership/conversation
-3. change_sequence
-4. required server_sequence history gap
-5. R1 stale state
-6. offline queue replay
+3. verify ready scope identity still matches authoritative state
+4. change_sequence
+5. required server_sequence history gap
+6. R1 stale state
+7. close the dirty-counter/high-water live barrier
+8. offline queue replay
+
+If the API listener generation reset while the socket remained open, the same repair runs after control.resync_required(listener_reset).
+
+While visible, the client also schedules bounded low-frequency anti-entropy through this same path.
 
 ## Testing requirements
 
@@ -537,5 +591,12 @@ Protocol tests must include:
 - listener reconnect
 - multiple API listeners
 - slow connection backpressure
+- binary frame rejection
+- per-message compression disabled
+- scope identity change forces reconnect
+- late callback from an old browser connection generation is ignored
+- invalidation arriving during final sync prevents premature live transition
+- LISTEN reset with healthy WebSocket forces resync
+- healthy-socket anti-entropy repairs a deliberately missed hint
 - session revocation while connected
 - final dissolution while connected

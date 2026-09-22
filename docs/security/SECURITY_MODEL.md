@@ -322,15 +322,21 @@ M2 preserves the existing authentication, lifecycle, and private-content boundar
 Required M2 security rules:
 
 - WebSocket upgrade accepts only the trusted application Origin
+- WebSocket application frames are text JSON only; binary application frames are rejected and per-message compression is disabled
 - the existing HttpOnly server-managed session authenticates realtime; bearer tokens are not placed in URLs or browser-readable persistent storage
 - account, partnership, and conversation realtime scope is derived by the server; the client cannot subscribe to arbitrary identifiers
 - durable application mutations remain on the existing authenticated HTTP API
 - realtime invalidations, PostgreSQL NOTIFY payloads, outbox payloads, close reasons, and transport logs contain no protected message or R1 content
 - long-lived connections periodically revalidate session and partnership authorization
+- one socket's partnership/conversation identity is immutable; identity change removes old scope and forces reconnect
+- browser callbacks from an older in-memory connection generation cannot mutate current sync state
 - device/session revocation stops future realtime access and offline replay
 - IndexedDB is account and partnership isolated
 - queued operations are not treated as authorization and are replayed only after canonical lifecycle refresh
+- multi-tab replay uses local claim-generation fencing so a stale tab cannot delete/rewrite work reclaimed by a newer tab; server idempotency remains the correctness backstop
 - service workers never cache private/no-store API responses
+- before S1, cold-start/hard-reload offline mode does not unlock protected IndexedDB plaintext before online server-session validation
+- IndexedDB quota/storage failure cannot be represented as successful queueing and must not silently evict unsent operations
 - final dissolution removes old partnership state from the UI immediately and purges its local namespace before replay
 - a future partnership cannot inherit old cache, queued mutations, realtime scope, or future cryptographic namespace
 - malformed or unsupported realtime/local-schema versions fail closed
@@ -338,4 +344,4 @@ Required M2 security rules:
 
 Before S1, M2 local protected content remains development plaintext. Explicit logout, account switch, or observed revocation therefore purges the authorization-bound local protected state. M2 must not invent fake ciphertext or fake cryptographic epochs.
 
-PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notification must not weaken authorization or synchronization correctness because canonical HTTP/PostgreSQL reconciliation remains authoritative.
+PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notification must not weaken authorization or synchronization correctness because canonical HTTP/PostgreSQL reconciliation remains authoritative. LISTEN loss/reconnect forces connected local clients to resynchronize, and visible clients run low-frequency canonical anti-entropy to bound recovery from silent hint loss. NOTIFY publication is committed before the corresponding durable outbox claim is acknowledged delivered.

@@ -545,6 +545,8 @@ Required contract/unit evidence includes:
 - oversize and unexpected-field rejection
 - unknown critical version failure
 - SyncCoordinator state transitions
+- dirty-counter/high-water live-barrier races
+- old browser connection-generation callback rejection
 - change-sequence versus server-sequence separation
 - local namespace construction
 - atomic cursor/projection persistence behavior
@@ -564,6 +566,9 @@ Required API/security evidence includes:
 - connection/frame-rate policy
 - no protected content in realtime frames
 - no protected content in PostgreSQL NOTIFY payloads
+- binary frame rejection and disabled WebSocket compression
+- immutable socket partnership/conversation identity
+- scope-identity change forcing reconnect
 
 Required PostgreSQL/API/worker integration evidence includes:
 
@@ -571,6 +576,8 @@ Required PostgreSQL/API/worker integration evidence includes:
 - duplicate publish safety
 - missing LISTEN consumer safety
 - LISTEN reconnect
+- LISTEN reset while browser sockets stay open forcing `listener_reset` canonical resync
+- durable outbox acknowledgement only after committed NOTIFY publication
 - multiple API listener processes
 - worker event-family isolation
 - content-free partnership/R1/security invalidations
@@ -584,16 +591,22 @@ Required browser automation includes:
 - idempotent reconnect replay
 - edit/version conflict handling
 - duplicate and out-of-order realtime hints
+- invalidation arriving during the final reconciliation window preventing premature live mode
+- low-frequency visible anti-entropy repairing a deliberately suppressed realtime hint
 - missed realtime hint followed by canonical repair
 - online/offline transitions
 - page background/foreground transitions
 - multi-tab duplicate replay safety
+- persisted claim-generation fencing where an older tab returns late after another tab reclaimed the operation
 - final-dissolution namespace purge
 - service-worker update with pending offline operations
+- pre-S1 offline cold-start showing a locked shell until server-session validation
+- IndexedDB quota/transaction failure preserving unsent user content and refusing false queued state
+- browser storage persistence request/fallback behavior without claiming guaranteed survival of user-cleared site data
 - private API responses absent from Cache API
 - future partnership isolation
 
-Physical Android acceptance is mandatory for M2. It must prove foreground/background socket suspension recovery, offline queue/replay, lifecycle change while offline, final-dissolution purge before replay, session/device revocation behavior, service-worker update safety, and future-partnership local isolation on the supported physical device.
+Physical Android acceptance is mandatory for M2. It must prove foreground/background socket suspension recovery, offline queue/replay, lifecycle change while offline, final-dissolution purge before replay, session/device revocation behavior, service-worker update safety, future-partnership local isolation, pre-S1 cold-start locking, LISTEN-reset resynchronization, storage-failure handling, and multi-tab stale-claim fencing on the supported physical device where practical.
 
 M2 does not close from simulated socket delivery alone. The authoritative acceptance catalog is in `../ROADMAP_EPICS.md`, and the detailed architecture is in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md`.
 
