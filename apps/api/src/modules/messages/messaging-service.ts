@@ -840,6 +840,7 @@ export class MessagingService {
           partnershipId: conversation.partnershipId,
           accountId: auth.session.accountId,
           emoji: input.emoji,
+          changeSequence,
           at: now,
         });
         await insertConversationChange(transaction, {
@@ -906,10 +907,12 @@ export class MessagingService {
           };
         }
 
+        const changeSequence = await allocateChangeSequence(transaction, conversationId);
         const removed = await removeMessageReaction(
           transaction,
           messageId,
           auth.session.accountId,
+          changeSequence,
         );
         if (!removed) {
           const stored = {
@@ -920,7 +923,6 @@ export class MessagingService {
           return { ...stored, reaction: null };
         }
 
-        const changeSequence = await allocateChangeSequence(transaction, conversationId);
         await insertConversationChange(transaction, {
           conversationId,
           changeSequence,
