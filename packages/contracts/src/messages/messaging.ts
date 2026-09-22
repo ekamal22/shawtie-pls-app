@@ -1,5 +1,23 @@
 import { z } from "zod";
 
+export const M1_MESSAGE_MAX_UTF8_BYTES = 8_192;
+export const M1_MESSAGE_MAX_CHARACTERS = 4_000;
+export const M1_NICKNAME_MAX_UTF8_BYTES = 256;
+export const M1_NICKNAME_MAX_CHARACTERS = 80;
+export const M1_HISTORY_DEFAULT_LIMIT = 50;
+export const M1_HISTORY_MAX_LIMIT = 100;
+export const M1_CHANGE_DEFAULT_LIMIT = 100;
+export const M1_CHANGE_MAX_LIMIT = 200;
+export const M1_TYPING_TTL_MS = 5_000;
+export const M1_TYPING_MIN_REFRESH_MS = 2_000;
+export const M1_PRESENCE_HEARTBEAT_MIN_MS = 30_000;
+export const M1_PRESENCE_ONLINE_TTL_MS = 60_000;
+export const M1_VISIBLE_CHANGE_POLL_MS = 2_000;
+export const M1_TYPING_RATE_WINDOW_MS = 60_000;
+export const M1_TYPING_RATE_LIMIT = 60;
+export const M1_PRESENCE_RATE_WINDOW_MS = 60_000;
+export const M1_PRESENCE_RATE_LIMIT = 30;
+
 const uuid = z.string().uuid();
 const timestamp = z.string().min(20).max(40);
 const safePositive = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
@@ -22,9 +40,9 @@ export const messageIdParamsSchema = z.object({
   messageId: uuid,
 });
 
-export const messageBodySchema = boundedUtf8(8_192)
+export const messageBodySchema = boundedUtf8(M1_MESSAGE_MAX_UTF8_BYTES)
   .transform((value) => value.trim())
-  .pipe(z.string().min(1).max(4_000));
+  .pipe(z.string().min(1).max(M1_MESSAGE_MAX_CHARACTERS));
 
 export const messageSendSchema = z.object({
   body: messageBodySchema,
@@ -48,7 +66,7 @@ export const messageHistoryQuerySchema = z
   .object({
     beforeSequence: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     afterSequence: safeNonnegative.optional(),
-    limit: cursorLimit.max(100).default(50),
+    limit: cursorLimit.max(M1_HISTORY_MAX_LIMIT).default(M1_HISTORY_DEFAULT_LIMIT),
   })
   .superRefine((value, context) => {
     if (value.beforeSequence !== undefined && value.afterSequence !== undefined) {
@@ -61,7 +79,7 @@ export const messageHistoryQuerySchema = z
 
 export const messageChangeQuerySchema = z.object({
   afterChangeSequence: safeNonnegative,
-  limit: cursorLimit.max(200).default(100),
+  limit: cursorLimit.max(M1_CHANGE_MAX_LIMIT).default(M1_CHANGE_DEFAULT_LIMIT),
 });
 
 export const messageReceiptSchema = z.object({
@@ -81,9 +99,9 @@ export const nicknameSubjectParamsSchema = z.object({
 });
 
 export const nicknameMutationSchema = z.object({
-  nickname: boundedUtf8(256)
+  nickname: boundedUtf8(M1_NICKNAME_MAX_UTF8_BYTES)
     .transform((value) => value.trim())
-    .pipe(z.string().min(1).max(80))
+    .pipe(z.string().min(1).max(M1_NICKNAME_MAX_CHARACTERS))
     .nullable(),
   expectedVersion: safePositive,
 });
