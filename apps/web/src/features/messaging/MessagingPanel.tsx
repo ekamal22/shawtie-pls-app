@@ -2,6 +2,7 @@ import {
   M1_CHANGE_DEFAULT_LIMIT,
   M1_HISTORY_DEFAULT_LIMIT,
   M1_MESSAGE_MAX_CHARACTERS,
+  M1_NICKNAME_MAX_CHARACTERS,
   M1_PRESENCE_HEARTBEAT_MIN_MS,
   M1_TYPING_MIN_REFRESH_MS,
   M1_VISIBLE_CHANGE_POLL_MS,
@@ -103,6 +104,7 @@ interface ConversationChange {
 }
 
 const defaultReactions = ["❤️", "😂", "😭", "😮", "😡", "👍"];
+const M1_MESSAGE_EDIT_WINDOW_MS = 30 * 60_000;
 
 function idempotencyKey(): string {
   return "m1-" + crypto.randomUUID();
@@ -146,6 +148,19 @@ function messageMutable(message: Message, conversation: ConversationSummary): bo
   return false;
 }
 
+function messageEditable(message: Message, conversation: ConversationSummary): boolean {
+  return (
+    messageMutable(message, conversation)
+    && Date.now() < new Date(message.createdAt).getTime() + M1_MESSAGE_EDIT_WINDOW_MS
+  );
+}
+
+interface PendingSend {
+  readonly key: string;
+  readonly body: string;
+  readonly replyToMessageId: string | null;
+}
+
 export function MessagingPanel() {
   const [conversation, setConversation] = useState<ConversationSummary | null | undefined>(
     undefined,
@@ -158,8 +173,12 @@ export function MessagingPanel() {
   const [partnerNickname, setPartnerNickname] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sendStatus, setSendStatus] = useState<"sending" | "failed" | null>(null);
   const changeCursorRef = useRef(0);
   const lastTypingSentRef = useRef(0);
+  const pendingSendRef = useRef<PendingSend | null>(null);
+  const selfNicknameDirtyRef = useRef(false);
+  const partnerNicknameDirtyRef = useRef(false);
 
   const refreshConversation = useCallback(async () => {
     const result = await apiRequest<{ conversation: ConversationSummary | null }>(
@@ -167,8 +186,12 @@ export function MessagingPanel() {
     );
     setConversation(result.conversation);
     if (result.conversation) {
-      setSelfNickname(result.conversation.self.nickname ?? "");
-      setPartnerNickname(result.conversation.partner.nickname ?? "");
+      if (!selfNicknameDirtyRef.current) {
+        setSelfNickname(result.conversation.self.nickname ?? "");
+      }
+      if (!partnerNicknameDirtyRef.current) {
+        setPartnerNickname(result.conversation.partner.nickname ?? "");
+      }
     }
     return result.conversation;
   }, []);
@@ -332,32 +355,53 @@ export function MessagingPanel() {
     if (!conversation || !composer.trim()) return;
     const body = composer;
     const replyToMessageId = replyingTo?.messageId ?? null;
-    const key = idempotencyKey();
+    const existing = pendingSendRef.current;
+    const pending =
+      existing
+      && existing.body === body
+      && existing.replyToMessageId === replyToMessageId
+        ? existing
+        : { key: idempotencyKey(), body, replyToMessageId };
+    pendingSendRef.current = pending;
+    setSendStatus("sending");
+
     await run(async () => {
-      const created = await apiRequest<{
-        messageId: string;
-        serverSequence: number;
-        contentVersion: number;
-        changeSequence: number;
-        createdAt: string;
-      }>("/api/v1/conversations/" + conversation.conversationId + "/messages", {
-        method: "POST",
-        headers: { "idempotency-key": key },
-        body: { body, replyToMessageId },
-      });
-      setComposer("");
-      setReplyingTo(null);
-      changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence);
-      await refreshMessage(conversation.conversationId, created.messageId);
-      await apiRequest(
-        "/api/v1/conversations/" + conversation.conversationId + "/typing",
-        { method: "POST", body: { typing: false } },
-      ).catch(() => undefined);
+      try {
+        const created = await apiRequest<{
+          messageId: string;
+          serverSequence: number;
+          contentVersion: number;
+          changeSequence: number;
+          createdAt: string;
+        }>("/api/v1/conversations/" + conversation.conversationId + "/messages", {
+          method: "POST",
+          headers: { "idempotency-key": pending.key },
+          body: { body, replyToMessageId },
+        });
+
+        await refreshMessage(conversation.conversationId, created.messageId);
+        changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence);
+        pendingSendRef.current = null;
+        setSendStatus(null);
+        setComposer("");
+        setReplyingTo(null);
+        await apiRequest(
+          "/api/v1/conversations/" + conversation.conversationId + "/typing",
+          { method: "POST", body: { typing: false } },
+        ).catch(() => undefined);
+      } catch (caught) {
+        setSendStatus("failed");
+        throw caught;
+      }
     });
   }
 
   function composerChanged(value: string) {
     setComposer(value);
+    if (pendingSendRef.current && pendingSendRef.current.body !== value) {
+      pendingSendRef.current = null;
+      setSendStatus(null);
+    }
     if (!conversation?.capabilities.typing || !value.trim()) return;
     const now = Date.now();
     if (now - lastTypingSentRef.current < M1_TYPING_MIN_REFRESH_MS) return;
@@ -467,6 +511,11 @@ export function MessagingPanel() {
           },
         },
       );
+      if (subject === "self") {
+        selfNicknameDirtyRef.current = false;
+      } else {
+        partnerNicknameDirtyRef.current = false;
+      }
       await refreshConversation();
     });
   }
@@ -524,7 +573,11 @@ export function MessagingPanel() {
             <span>Your nickname</span>
             <input
               value={selfNickname}
-              onChange={(event) => setSelfNickname(event.target.value)}
+              onChange={(event) => {
+                selfNicknameDirtyRef.current = true;
+                setSelfNickname(event.target.value);
+              }}
+              maxLength={M1_NICKNAME_MAX_CHARACTERS}
               disabled={!conversation.capabilities.changeNickname || busy}
             />
             <button
@@ -546,7 +599,11 @@ export function MessagingPanel() {
             <span>{conversation.partner.displayName}'s nickname</span>
             <input
               value={partnerNickname}
-              onChange={(event) => setPartnerNickname(event.target.value)}
+              onChange={(event) => {
+                partnerNicknameDirtyRef.current = true;
+                setPartnerNickname(event.target.value);
+              }}
+              maxLength={M1_NICKNAME_MAX_CHARACTERS}
               disabled={!conversation.capabilities.changeNickname || busy}
             />
             <button
@@ -629,7 +686,7 @@ export function MessagingPanel() {
                     Reply
                   </button>
                 ) : null}
-                {own && mutable && message.body ? (
+                {own && messageEditable(message, conversation) && message.body ? (
                   <button
                     className="link compact"
                     type="button"
@@ -701,6 +758,14 @@ export function MessagingPanel() {
           <button className="link compact" type="button" onClick={() => setReplyingTo(null)}>
             Cancel
           </button>
+        </div>
+      ) : null}
+
+      {sendStatus ? (
+        <div className="message-delivery" role="status">
+          {sendStatus === "sending"
+            ? "Sending..."
+            : "Send failed. Retry will reuse the same request."}
         </div>
       ) : null}
 
