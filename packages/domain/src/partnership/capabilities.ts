@@ -1,4 +1,5 @@
 import type { CapabilityContext, CapabilityDecision, CapabilityName, DenialCode } from "./types.ts";
+import { isMessageEditWindowOpen, isMessageFrozenByBreakup } from "../message/rules.ts";
 import { isAtOrAfter, isBefore } from "./time.ts";
 
 const ALLOW: CapabilityDecision = { allowed: true, reason: null };
@@ -27,7 +28,7 @@ function isCooldownActive(ctx: CapabilityContext): boolean {
 
 function isPreBreakupMessage(ctx: CapabilityContext): boolean {
   if (!ctx.message || !ctx.partnership?.breakup) return false;
-  return isBefore(ctx.message.createdAt, ctx.partnership.breakup.initiatedAt);
+  return isMessageFrozenByBreakup(ctx.message, ctx.partnership.breakup);
 }
 
 function messageBaseDecision(ctx: CapabilityContext): CapabilityDecision | null {
@@ -172,11 +173,8 @@ export function evaluateCapability(
     ) {
       return deny("MESSAGE_NOT_OWNED");
     }
-    if (capability === "edit_message") {
-      const editDeadline = new Date(ctx.message.createdAt).getTime() + 30 * 60 * 1000;
-      if (new Date(ctx.now).getTime() >= editDeadline) {
-        return deny("MESSAGE_EDIT_WINDOW_EXPIRED");
-      }
+    if (capability === "edit_message" && !isMessageEditWindowOpen(ctx.message.createdAt, ctx.now)) {
+      return deny("MESSAGE_EDIT_WINDOW_EXPIRED");
     }
     return ALLOW;
   }
