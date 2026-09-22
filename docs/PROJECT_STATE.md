@@ -9,7 +9,8 @@ Foundation implementation and the first two parallel product-substrate milestone
 M2 Realtime and Offline Reliability is the active milestone. Its source implementation and automated closure surface are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; only executed local acceptance, physical Android acceptance, evidence reconciliation, and merge closure remain. No known M2 feature or architecture slice is currently unimplemented.
 
 M3 Media and Voice Messages remains PLANNED, but its refined architecture is now complete on the documentation-only `design/m3-media-voice` branch. M3 implementation has not started and must wait for verified M2 closure and merge. The design defines first-class partnership media assets, ciphertext-only object storage, M1/R1 media references, offline upload orchestration, durable provider deletion, and the accepted development-only pre-S1 key-escrow bridge in ADR-012.
-The design-time physical Android acceptance contract is also defined in `docs/testing/M3_ANDROID_ACCEPTANCE.md`; it is a procedure catalog only and does not imply runnable M3 device tooling or executed evidence.
+
+Repo-wide M3 design documentation reconciliation is complete through `353b99cee735727975cc64faf5b6041abd8fb02e`. That sweep updates every affected living roadmap, architecture, API, security, migration, offline, deletion, workflow, testing, and compatibility boundary while preserving historical milestone evidence. The design-time physical Android acceptance contract is defined in `docs/testing/M3_ANDROID_ACCEPTANCE.md`; it is a procedure catalog only and does not imply runnable M3 device tooling or executed evidence. The M3 design branch contains documentation only and does not introduce M3 runtime source, migrations, or production dependencies.
 
 ## Product definition
 
