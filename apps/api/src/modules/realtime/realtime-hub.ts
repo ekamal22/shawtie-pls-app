@@ -157,17 +157,22 @@ export class RealtimeHub {
         });
         return;
       case "partnership.changed": {
-        const ids = this.#byPartnership.get(notification.scope.partnershipId);
+        const ids = new Set<string>(
+          this.#byPartnership.get(notification.scope.partnershipId) ?? [],
+        );
+        for (const accountId of notification.scope.accountIds) {
+          for (const id of this.#byAccount.get(accountId) ?? []) {
+            ids.add(id);
+          }
+        }
         this.#sendTo(ids, {
           v: M2_REALTIME_PROTOCOL_VERSION,
           type: "partnership.changed",
           payload: notification.data,
         });
-        if (ids) {
-          for (const id of ids) {
-            const connection = this.#connections.get(id);
-            if (connection) void this.#revalidate(connection);
-          }
+        for (const id of ids) {
+          const connection = this.#connections.get(id);
+          if (connection) void this.#revalidate(connection);
         }
         return;
       }

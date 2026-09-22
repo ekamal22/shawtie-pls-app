@@ -542,6 +542,7 @@ export class PartnershipService {
       });
       await queueRealtimePartnershipChanged(transaction, {
         partnershipId,
+        accountIds: lifecycle.memberIds,
         generation,
         metadataVersion: lifecycle.metadataVersion,
       });
@@ -633,6 +634,7 @@ export class PartnershipService {
       });
       await queueRealtimePartnershipChanged(transaction, {
         partnershipId,
+        accountIds: lifecycle.memberIds,
         generation,
         metadataVersion: lifecycle.metadataVersion,
       });
@@ -743,6 +745,7 @@ export class PartnershipService {
         });
         await queueRealtimePartnershipChanged(transaction, {
           partnershipId,
+          accountIds: lifecycle.memberIds,
           generation,
           metadataVersion: lifecycle.metadataVersion,
         });
@@ -820,6 +823,7 @@ export class PartnershipService {
       });
       await queueRealtimePartnershipChanged(transaction, {
         partnershipId,
+        accountIds: lifecycle.memberIds,
         generation,
         metadataVersion: lifecycle.metadataVersion,
       });
@@ -1115,6 +1119,7 @@ export class PartnershipService {
       });
       await queueRealtimePartnershipChanged(transaction, {
         partnershipId,
+        accountIds: partnership.memberIds,
         generation: partnership.generation,
         metadataVersion: nextVersion,
       });

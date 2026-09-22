@@ -24,6 +24,7 @@ import {
   type ResolvedFormationConsent,
 } from "@shawtie/domain";
 import { ApiError } from "../../lib/api-error.ts";
+import { queueRealtimePartnershipChanged } from "../realtime/outbox.ts";
 import type {
   PartnershipFormationCoordinator,
   ReciprocalPairCandidate,
@@ -140,6 +141,12 @@ async function formLockedPair(
     eventType: "partnership_formed",
     aggregateVersion: 1n,
     metadata: { source: input.consent.source },
+  });
+  await queueRealtimePartnershipChanged(executor, {
+    partnershipId,
+    accountIds: input.accountIds,
+    generation: 1n,
+    metadataVersion: 1n,
   });
 
   const notificationRecipient =

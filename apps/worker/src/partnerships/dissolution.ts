@@ -148,6 +148,7 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
     deduplicationKey: "m2-partnership:" + realtimeEventId,
     payload: {
       partnershipId: lifecycle.partnershipId,
+      accountIds: [...lifecycle.memberIds].sort(),
       generation: Number(generation),
       metadataVersion: Number(lifecycle.metadataVersion),
     },
