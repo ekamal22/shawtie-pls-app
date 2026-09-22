@@ -198,7 +198,7 @@ From P2 onward:
 6. preserve the completed milestone branch
 7. create the next dependent milestone branch from the newly updated `main`
 
-The legacy `feat/m1-executable-foundation` branch is historical and is not the future M1 Messaging Core branch.
+The legacy `feat/m1-executable-foundation` branch is historical and is not the M1 Messaging Core branch.
 
 The next milestone branches are:
 

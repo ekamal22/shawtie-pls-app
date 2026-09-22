@@ -141,7 +141,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
-The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the future M1 Messaging Core branch and must not be reused for messaging work.
+The legacy `feat/m1-executable-foundation` branch records the earlier executable-foundation development line. It is not the M1 Messaging Core branch and must not be reused for messaging work.
 
 From P2 onward, each milestone uses its own branch created from the latest verified `main`, closes its acceptance gates and documentation on that branch, then merges to `main` before the next dependent milestone branch is created.
 
