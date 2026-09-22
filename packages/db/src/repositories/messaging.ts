@@ -660,6 +660,7 @@ export async function setMessageReaction(
     readonly partnershipId: string;
     readonly accountId: string;
     readonly emoji: string;
+    readonly changeSequence: bigint;
     readonly at: Date;
   },
 ): Promise<void> {
@@ -677,12 +678,17 @@ export async function setMessageReaction(
        removed_at = NULL`,
     [input.id, input.messageId, input.accountId, input.partnershipId, input.emoji, input.at],
   );
+  await executor.query(
+    "UPDATE messages SET last_change_sequence = $2 WHERE id = $1 AND deleted_at IS NULL",
+    [input.messageId, input.changeSequence.toString()],
+  );
 }
 
 export async function removeMessageReaction(
   executor: QueryExecutor,
   messageId: string,
   accountId: string,
+  changeSequence: bigint,
 ): Promise<boolean> {
   const result = await executor.query(
     `DELETE FROM message_reactions
@@ -691,7 +697,12 @@ export async function removeMessageReaction(
        AND removed_at IS NULL`,
     [messageId, accountId],
   );
-  return result.rowCount === 1;
+  if (result.rowCount !== 1) return false;
+  await executor.query(
+    "UPDATE messages SET last_change_sequence = $2 WHERE id = $1 AND deleted_at IS NULL",
+    [messageId, changeSequence.toString()],
+  );
+  return true;
 }
 
 export async function upsertConversationReceipt(
