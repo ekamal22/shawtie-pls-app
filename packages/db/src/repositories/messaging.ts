@@ -846,6 +846,7 @@ export async function heartbeatPresence(
     readonly at: Date;
     readonly onlineUntil: Date;
     readonly minRefreshBefore: Date;
+    readonly forceRefreshAfter?: Date | null;
   },
 ): Promise<PresenceSnapshot> {
   const result = await executor.query<{
@@ -862,8 +863,18 @@ export async function heartbeatPresence(
        online_until = EXCLUDED.online_until,
        updated_at = EXCLUDED.updated_at
      WHERE account_presence.updated_at <= $4
+        OR (
+          $5::timestamptz IS NOT NULL
+          AND account_presence.last_seen_at < $5
+        )
      RETURNING last_seen_at, online_until, updated_at`,
-    [input.accountId, input.at, input.onlineUntil, input.minRefreshBefore],
+    [
+      input.accountId,
+      input.at,
+      input.onlineUntil,
+      input.minRefreshBefore,
+      input.forceRefreshAfter ?? null,
+    ],
   );
   const row = result.rows[0];
   if (row) {
