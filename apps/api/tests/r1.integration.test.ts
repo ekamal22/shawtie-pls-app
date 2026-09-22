@@ -1022,7 +1022,7 @@ test("R1 unreleased creator-private IDs are indistinguishable from random IDs", 
   }
 });
 
-test("R1 rejects M1 and M3 loose references until a verified resolver is registered", async () => {
+test("R1 rejects invalid M1 and unavailable M3 loose references", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
   try {
@@ -1055,10 +1055,10 @@ test("R1 rejects M1 and M3 loose references until a verified resolver is registe
         links: [],
       },
     });
-    assert.equal(remember.statusCode, 409);
+    assert.equal(remember.statusCode, 422);
     assert.equal(
       (remember.json() as { error: { code: string } }).error.code,
-      "REFERENCE_TYPE_UNAVAILABLE",
+      "INVALID_REFERENCE",
     );
 
     const voice = await app.inject({

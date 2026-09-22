@@ -156,12 +156,12 @@ test("R1 migration ownership remains 0013 and 0014 only", async () => {
   assert.equal(packageJson.includes("test:r1:postgres"), true);
 });
 
-test("R1 isolated local migration reservations are explicit and do not weaken normal migration checks", async () => {
+test("R1 combined local harness uses the canonical migration sequence without reservations", async () => {
   const checker = await source("../../../scripts/db/check-migrations.mjs");
   const localHarness = await source("../../../scripts/db/test-r1-local.mjs");
 
   assert.equal(checker.includes("SHAWTIE_MIGRATION_RESERVATIONS"), true);
-  assert.equal(localHarness.includes('SHAWTIE_MIGRATION_RESERVATIONS: "0011,0012"'), true);
+  assert.equal(localHarness.includes("SHAWTIE_MIGRATION_RESERVATIONS"), false);
   assert.equal(checker.includes('process.env.SHAWTIE_MIGRATION_RESERVATIONS ?? ""'), true);
   assert.equal(localHarness.includes("0013_relationship_space_runtime.sql"), false);
   assert.equal(localHarness.includes("0011_messaging_core_runtime.sql"), false);
