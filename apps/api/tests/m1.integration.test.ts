@@ -741,6 +741,29 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
       "PRE_BREAKUP_MESSAGE_LOCKED",
     );
 
+    const deleteOld = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + beforeId,
+      headers: mutationHeaders(alice.cookie, "m1-breakup-old-delete-key"),
+    });
+    assert.equal(deleteOld.statusCode, 409, deleteOld.body);
+    assert.equal(
+      (deleteOld.json() as { error: { code: string } }).error.code,
+      "PRE_BREAKUP_MESSAGE_LOCKED",
+    );
+
+    const nicknameDuringBreakup = await app.inject({
+      method: "PATCH",
+      url:
+        "/api/v1/partnerships/"
+        + partnershipId
+        + "/nicknames/"
+        + bob.accountId,
+      headers: jsonHeaders(alice.cookie, "m1-breakup-nickname-key"),
+      payload: { nickname: "Still Bee", expectedVersion: 1 },
+    });
+    assert.equal(nicknameDuringBreakup.statusCode, 200, nicknameDuringBreakup.body);
+
     const post = await sendMessage(
       app,
       bob,
@@ -779,6 +802,12 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
     };
     assert.equal(currentBody.conversation.interactionMode, "breakup_restricted");
     assert.equal(currentBody.conversation.breakup?.messageFreezeSequence, 1);
+    assert.equal(
+      (current.json() as {
+        conversation: { partner: { nickname: string | null } };
+      }).conversation.partner.nickname,
+      "Still Bee",
+    );
   } finally {
     await app.close();
     await closeDatabasePool(database);
