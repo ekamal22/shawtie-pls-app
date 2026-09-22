@@ -697,4 +697,202 @@ BEGIN
 END;
 $$;
 
+
+INSERT INTO conversations (
+  id, partnership_id, kind, next_server_sequence, next_change_sequence, created_at
+) VALUES (
+  '78000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  'primary',
+  2,
+  2,
+  TIMESTAMPTZ '2026-03-01 00:00:00+00'
+);
+
+INSERT INTO conversation_member_state (
+  conversation_id, partnership_id, account_id, delivered_through, read_through, updated_at
+) VALUES
+  (
+    '78000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    0,
+    0,
+    TIMESTAMPTZ '2026-03-01 00:00:00+00'
+  ),
+  (
+    '78000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    0,
+    0,
+    TIMESTAMPTZ '2026-03-01 00:00:00+00'
+  );
+
+INSERT INTO messages (
+  id, conversation_id, partnership_id, sender_account_id,
+  client_idempotency_key, server_sequence, body_text, content_version,
+  request_fingerprint, request_fingerprint_version, last_change_sequence, created_at
+) VALUES (
+  '78100000-0000-4000-8000-000000000001',
+  '78000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'm1-invariant-message-1',
+  1,
+  'synthetic m1 message',
+  1,
+  decode('0102', 'hex'),
+  1,
+  1,
+  TIMESTAMPTZ '2026-03-01 00:00:00+00'
+);
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO messages (
+      id, conversation_id, partnership_id, sender_account_id,
+      client_idempotency_key, server_sequence, body_text, content_version,
+      last_change_sequence, created_at
+    ) VALUES (
+      '78100000-0000-4000-8000-000000000002',
+      '78000000-0000-4000-8000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      'm1-invariant-message-2',
+      1,
+      'duplicate sequence',
+      1,
+      2,
+      TIMESTAMPTZ '2026-03-01 00:01:00+00'
+    );
+    RAISE EXCEPTION 'expected M1 conversation server sequence uniqueness violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO conversation_changes (
+  conversation_id, change_sequence, change_type, message_id, content_version, created_at
+) VALUES (
+  '78000000-0000-4000-8000-000000000001',
+  1,
+  'message.created',
+  '78100000-0000-4000-8000-000000000001',
+  1,
+  TIMESTAMPTZ '2026-03-01 00:00:00+00'
+);
+
+DO $
+BEGIN
+  BEGIN
+    UPDATE conversation_changes
+    SET change_type = 'message.updated'
+    WHERE conversation_id = '78000000-0000-4000-8000-000000000001'
+      AND change_sequence = 1;
+    RAISE EXCEPTION 'expected M1 conversation change append-only rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'conversation_changes rows are append-only while retained' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    UPDATE conversation_member_state
+    SET delivered_through = 1, read_through = 2
+    WHERE conversation_id = '78000000-0000-4000-8000-000000000001'
+      AND account_id = '00000000-0000-0000-0000-000000000001';
+    RAISE EXCEPTION 'expected M1 read-through delivery invariant';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
+INSERT INTO message_reactions (
+  id, message_id, reactor_account_id, partnership_id, emoji_text, created_at
+) VALUES (
+  '78200000-0000-4000-8000-000000000001',
+  '78100000-0000-4000-8000-000000000001',
+  '00000000-0000-0000-0000-000000000002',
+  '20000000-0000-0000-0000-000000000001',
+  '❤️',
+  TIMESTAMPTZ '2026-03-01 00:02:00+00'
+);
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO message_reactions (
+      id, message_id, reactor_account_id, partnership_id, emoji_text, created_at
+    ) VALUES (
+      '78200000-0000-4000-8000-000000000002',
+      '78100000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      '20000000-0000-0000-0000-000000000001',
+      '😂',
+      TIMESTAMPTZ '2026-03-01 00:03:00+00'
+    );
+    RAISE EXCEPTION 'expected M1 one active reaction per account violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO partnership_chat_nicknames (
+      partnership_id, subject_account_id, nickname, version,
+      updated_by_account_id, updated_at
+    ) VALUES (
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000003',
+      'not a member',
+      1,
+      '00000000-0000-0000-0000-000000000001',
+      TIMESTAMPTZ '2026-03-01 00:04:00+00'
+    );
+    RAISE EXCEPTION 'expected M1 nickname membership violation';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
+BEGIN
+  BEGIN
+    INSERT INTO messages (
+      id, conversation_id, partnership_id, sender_account_id,
+      client_idempotency_key, server_sequence, body_text, content_version,
+      last_change_sequence, created_at, deleted_at
+    ) VALUES (
+      '78100000-0000-4000-8000-000000000003',
+      '78000000-0000-4000-8000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      'm1-deleted-content-shape',
+      3,
+      'must not survive deletion',
+      1,
+      3,
+      TIMESTAMPTZ '2026-03-01 00:05:00+00',
+      TIMESTAMPTZ '2026-03-01 00:06:00+00'
+    );
+    RAISE EXCEPTION 'expected M1 deleted message content removal violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$;
+
 ROLLBACK;
