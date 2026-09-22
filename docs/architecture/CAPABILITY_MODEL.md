@@ -92,6 +92,8 @@ P3 refines the lifecycle capability surface with `initiate_breakup` and exact no
 
 Former-partner blocking is allowed only from a terminated source partnership and must derive the target from that historical partnership rather than trusting a client-provided account ID.
 
+M1 refines the messaging capability inputs without changing relationship-object rules. For message mutation during `breakup_pending`, the authoritative design uses the message's immutable `serverSequence` against the breakup process `messageFreezeSequence`; trusted timestamp comparison remains only a legacy fallback for breakup rows that predate the cutoff. Messaging-specific helpers may be factored around the shared lifecycle guards so M1 and parallel feature work do not duplicate or rewrite each other's feature semantics. Optimistic `expectedContentVersion` checks are repository/API concurrency guards after capability approval, not client-provided authorization.
+
 ## UI use
 
 The client may receive a server-derived capability snapshot for presentation.
