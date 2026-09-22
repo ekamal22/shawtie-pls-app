@@ -104,7 +104,7 @@ test("M2 PWA manifest is installable without granting private Cache API access",
 });
 
 
-test("M2 account switch closes active IndexedDB before deleting old account data", async () => {
+test("M2 account switch and revoked session close IndexedDB before account purge", async () => {
   const app = await source("../src/app/App.tsx");
   const runtime = await source("../src/lib/realtime/runtime-context.tsx");
 
@@ -117,6 +117,25 @@ test("M2 account switch closes active IndexedDB before deleting old account data
   assert.ok(
     app.indexOf("await closeActiveM2Runtime(signedOutAccountId)") <
       app.indexOf("await purgeAccountLocalData(signedOutAccountId)"),
+  );
+
+  const revokedStart = app.indexOf(
+    "error instanceof ApiClientError && error.status === 401",
+  );
+  const revokedEnd = app.indexOf("throw error;", revokedStart);
+  const revokedBlock = app.slice(revokedStart, revokedEnd);
+  assert.ok(revokedStart >= 0);
+  assert.equal(
+    revokedBlock.includes("broadcastLocalLogout(revokedAccountId)"),
+    true,
+  );
+  assert.ok(
+    revokedBlock.indexOf("await closeActiveM2Runtime(revokedAccountId)") <
+      revokedBlock.indexOf("await purgeAccountLocalData(revokedAccountId)"),
+  );
+  assert.ok(
+    revokedBlock.indexOf("setSession(null)") <
+      revokedBlock.indexOf("await purgeAccountLocalData(revokedAccountId)"),
   );
   assert.equal(runtime.includes("export async function closeActiveM2Runtime"), true);
 });

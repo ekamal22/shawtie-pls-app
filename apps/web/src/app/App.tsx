@@ -3,7 +3,6 @@ import { ApiClientError, apiRequest } from "../lib/api-client.ts";
 import { broadcastLocalLogout } from "../lib/offline/account-control.ts";
 import {
   purgeAccountLocalData,
-  purgeRememberedAccountLocalData,
   rememberLocalAccount,
   rememberedLocalAccount,
 } from "../lib/offline/local-db.ts";
@@ -758,8 +757,15 @@ export function App() {
       setSession(current);
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {
-        await purgeRememberedAccountLocalData().catch(() => undefined);
+        const revokedAccountId = rememberedLocalAccount();
+        if (revokedAccountId) {
+          broadcastLocalLogout(revokedAccountId);
+          await closeActiveM2Runtime(revokedAccountId);
+        }
         setSession(null);
+        if (revokedAccountId) {
+          await purgeAccountLocalData(revokedAccountId).catch(() => undefined);
+        }
         return;
       }
       throw error;
