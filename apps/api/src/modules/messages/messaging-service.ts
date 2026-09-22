@@ -39,18 +39,22 @@ import {
   type QueryExecutor,
 } from "@shawtie/db";
 import {
-  MESSAGE_CHANGE_MAX_LIMIT,
-  PRESENCE_HEARTBEAT_MIN_MS,
-  PRESENCE_ONLINE_TTL_MS,
-  TYPING_MIN_REFRESH_MS,
-  TYPING_TTL_MS,
   evaluateCapability,
   type CapabilityContext,
   type CapabilityName,
   type PartnershipState,
 } from "@shawtie/domain";
-import type {
-  MessageChangeQuery,
+import {
+  M1_CHANGE_MAX_LIMIT,
+  M1_M1_PRESENCE_HEARTBEAT_MIN_MS,
+  M1_M1_PRESENCE_ONLINE_TTL_MS,
+  M1_M1_PRESENCE_RATE_LIMIT,
+  M1_M1_PRESENCE_RATE_WINDOW_MS,
+  M1_M1_TYPING_MIN_REFRESH_MS,
+  M1_M1_TYPING_RATE_LIMIT,
+  M1_M1_TYPING_RATE_WINDOW_MS,
+  M1_M1_TYPING_TTL_MS,
+  type MessageChangeQuery,
   MessageEditInput,
   MessageHistoryQuery,
   MessageReactionInput,
@@ -65,11 +69,6 @@ import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 
 const DAY = 24 * 60 * 60_000;
 const IDEMPOTENCY_RETENTION_MS = 7 * DAY;
-const TYPING_RATE_WINDOW_MS = 60_000;
-const TYPING_RATE_LIMIT = 60;
-const PRESENCE_RATE_WINDOW_MS = 60_000;
-const PRESENCE_RATE_LIMIT = 30;
-
 type MessageMutationCapability =
   | "view_shared_data"
   | "send_message"
@@ -506,7 +505,7 @@ export class MessagingService {
       "view_shared_data",
       null,
       async ({ transaction, conversation }) => {
-        const requested = Math.min(input.limit, MESSAGE_CHANGE_MAX_LIMIT);
+        const requested = Math.min(input.limit, M1_CHANGE_MAX_LIMIT);
         const rows = await listConversationChanges(
           transaction,
           conversationId,
@@ -1032,8 +1031,8 @@ export class MessagingService {
     await this.#consumeInteractionRateLimit(
       auth.session.accountId,
       "m1.typing",
-      TYPING_RATE_LIMIT,
-      TYPING_RATE_WINDOW_MS,
+      M1_TYPING_RATE_LIMIT,
+      M1_TYPING_RATE_WINDOW_MS,
     );
 
     return this.#withConversation(
@@ -1042,7 +1041,7 @@ export class MessagingService {
       "send_message",
       null,
       async ({ transaction, now, conversation }) => {
-        const expiresAt = addMs(now, TYPING_TTL_MS);
+        const expiresAt = addMs(now, M1_TYPING_TTL_MS);
         const stored = await setConversationTypingState(transaction, {
           conversationId,
           partnershipId: conversation.partnershipId,
@@ -1050,7 +1049,7 @@ export class MessagingService {
           typing: input.typing,
           at: now,
           expiresAt,
-          minRefreshBefore: addMs(now, -TYPING_MIN_REFRESH_MS),
+          minRefreshBefore: addMs(now, -M1_TYPING_MIN_REFRESH_MS),
         });
         return {
           typing: input.typing && stored !== null && stored.getTime() > now.getTime(),
@@ -1064,8 +1063,8 @@ export class MessagingService {
     await this.#consumeInteractionRateLimit(
       auth.session.accountId,
       "m1.presence",
-      PRESENCE_RATE_LIMIT,
-      PRESENCE_RATE_WINDOW_MS,
+      M1_PRESENCE_RATE_LIMIT,
+      M1_PRESENCE_RATE_WINDOW_MS,
     );
 
     return withTransaction(this.database, async (transaction) => {
@@ -1073,8 +1072,8 @@ export class MessagingService {
       const snapshot = await heartbeatPresence(transaction, {
         accountId: auth.session.accountId,
         at: now,
-        onlineUntil: addMs(now, PRESENCE_ONLINE_TTL_MS),
-        minRefreshBefore: addMs(now, -PRESENCE_HEARTBEAT_MIN_MS),
+        onlineUntil: addMs(now, M1_PRESENCE_ONLINE_TTL_MS),
+        minRefreshBefore: addMs(now, -M1_PRESENCE_HEARTBEAT_MIN_MS),
       });
       return {
         online: snapshot.onlineUntil.getTime() > now.getTime(),
