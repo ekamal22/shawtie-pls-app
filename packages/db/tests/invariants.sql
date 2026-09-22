@@ -750,7 +750,7 @@ INSERT INTO messages (
   TIMESTAMPTZ '2026-03-01 00:00:00+00'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO messages (
@@ -775,7 +775,7 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO conversation_changes (
   conversation_id, change_sequence, change_type, message_id, content_version, created_at
@@ -788,7 +788,7 @@ INSERT INTO conversation_changes (
   TIMESTAMPTZ '2026-03-01 00:00:00+00'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE conversation_changes
@@ -803,9 +803,9 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE conversation_member_state
@@ -817,7 +817,7 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO message_reactions (
   id, message_id, reactor_account_id, partnership_id, emoji_text, created_at
@@ -830,7 +830,7 @@ INSERT INTO message_reactions (
   TIMESTAMPTZ '2026-03-01 00:02:00+00'
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO message_reactions (
@@ -848,9 +848,9 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO partnership_chat_nicknames (
@@ -869,9 +869,9 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO messages (
@@ -897,6 +897,6 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 ROLLBACK;
