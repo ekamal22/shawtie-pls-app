@@ -575,8 +575,8 @@ export class MessagingService {
           return {
             messageId: existing.id,
             serverSequence: safeNumber(existing.serverSequence),
-            contentVersion: safeNumber(existing.contentVersion),
-            changeSequence: safeNumber(existing.lastChangeSequence),
+            contentVersion: 1,
+            changeSequence: safeNumber(existing.createdChangeSequence),
             createdAt: existing.createdAt.toISOString(),
           };
         }
