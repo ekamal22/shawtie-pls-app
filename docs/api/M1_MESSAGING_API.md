@@ -233,6 +233,42 @@ Same key with different body or reply target returns:
 
 `409 IDEMPOTENCY_KEY_REUSED`
 
+
+## Planned M3 attachment extension
+
+This subsection is design-only until M3 is implemented and verified.
+
+M3 extends message send to allow text, media, or both:
+
+```json
+{
+  "body": null,
+  "replyToMessageId": null,
+  "attachments": [
+    {
+      "mediaId": "uuid",
+      "position": 0
+    }
+  ]
+}
+```
+
+M3 rules:
+
+- at least one of non-empty body or attachment is required
+- maximum 10 attachments
+- referenced media must be ready and authorized in the same partnership
+- message creation and attachment rows commit atomically
+- send idempotency includes ordered media IDs/positions
+- attachments are immutable after send
+- message edit changes text only
+- message deletion removes attachment references before normal orphan reconciliation
+- media-only replies expose a content-free attachment summary
+- message projections never embed signed URLs, filenames, MIME descriptors, or media keys
+- existing `server_sequence` and `change_sequence` semantics do not change
+
+The canonical planned media contract is `M3_MEDIA_API.md`.
+
 ## PATCH /conversations/:conversationId/messages/:messageId
 
 Header:

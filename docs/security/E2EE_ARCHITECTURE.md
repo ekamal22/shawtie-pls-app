@@ -161,6 +161,31 @@ Examples:
 
 Do not claim that E2EE hides all metadata.
 
+## M3 pre-S1 encrypted-media bridge
+
+M3 precedes S1 but the frozen architecture already requires object storage to receive encrypted media.
+
+ADR-012 therefore defines a development-only bridge:
+
+- browser encrypts every media object before upload
+- provider receives ciphertext and an opaque object key only
+- a fresh per-media key is generated on the client
+- API stores only a wrapped development media-key envelope
+- API may recover that key before S1 and therefore this mode is not E2EE
+- API never receives the media plaintext bytes
+- stable release is forbidden while development escrow remains
+
+M3 uses a versioned secretstream object format so large files can be encrypted and authenticated in bounded chunks.
+
+The exact S1 E2EE protocol is still not selected here.
+
+When S1 arrives, retained pre-S1 media must either:
+
+- be decrypted on an authorized client and re-encrypted with fresh S1 key material never disclosed to the server, or
+- be securely deleted
+
+Rewrapping the old development key is insufficient because the server historically knew that key.
+
 ## Attachment encryption
 
 Recommended flow:

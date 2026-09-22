@@ -8,6 +8,51 @@ This document identifies the assets Shawtie pls must protect, the actors and fai
 
 The threat model is a living security document. New architecture decisions, new infrastructure providers, new E2EE protocol choices, or new public features must update this document when they materially change risk.
 
+## M3 media threat refinement
+
+M3 adds private object storage, signed bearer capabilities, client-side media processing, microphone capture, large offline blobs, and temporary pre-S1 media-key escrow.
+
+Additional threats include:
+
+- guessed media ID used to bypass parent visibility
+- unreleased R1 Voice Letter leaked through a generic same-partnership media endpoint
+- public or misconfigured object-storage bucket
+- filename or MIME leakage through object keys/provider metadata
+- signed URL leakage through logs, referrers, analytics, or service-worker cache
+- stale signed upload completing after lifecycle revocation
+- stale signed upload recreating an object after a deletion target already completed
+- provider delete partial failure
+- orphan cleanup racing a new media reference
+- media attachment crossing partnership boundaries
+- malicious encrypted attachment presented as executable active content
+- browser quota failure represented as successful offline queueing
+- microphone capture beginning without explicit user action
+- development media key written to logs/database plaintext
+- development escrow accidentally shipped as stable E2EE
+- S1 reusing a server-known development media key and falsely treating historical media as E2EE
+
+Required mitigations include:
+
+- server-derived partnership authority
+- reference-aware read authorization
+- same-partnership database constraints/triggers
+- private object storage with public access disabled
+- opaque extension-free object keys
+- `application/octet-stream` provider objects
+- short-lived no-log signed URLs
+- trusted-origin CORS
+- persisted upload-grant expiry plus final post-expiry deletion sweep
+- idempotent durable provider deletion
+- generation-fenced orphan cleanup
+- safe file-download behavior with no active inline rendering
+- atomic IndexedDB persistence before queued state
+- explicit microphone permission flow
+- wrapped-only development media keys in PostgreSQL
+- explicit stable-release guard against development escrow
+- S1 client re-encryption with fresh keys or wipe
+
+M3 cannot make already-downloaded media disappear from a recipient device. Revocation means no new application authorization and bounded expiry of already-issued provider capabilities.
+
 ## Security objectives
 
 Shawtie pls must protect:

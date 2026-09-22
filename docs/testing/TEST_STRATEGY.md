@@ -621,6 +621,79 @@ M2 does not close from simulated socket delivery alone. The authoritative accept
 
 The M2 source implementation and command surface are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`, including the disposable PostgreSQL/API/worker path, real Chromium runtime acceptance, and `test:m2:closure`. The latest browser suite covers reconnect/replay with a stable idempotency key after simulated response loss, account-local IndexedDB isolation, final-partnership purge, stronger protected cold-start locking, cross-tab claim fencing, and private-API Cache API exclusion. This document does not treat any of those gates as passed until execution evidence from the current M2 branch head is recorded.
 
+## M3 Media and Voice Messages verification
+
+M3 architecture is design-complete but implementation has not started.
+
+The future M3 closure must verify four independent layers:
+
+1. PostgreSQL media/reference invariants
+2. API/worker/provider-storage behavior
+3. real browser processing/encryption/offline behavior
+4. physical Android media and microphone behavior
+
+Planned command surface:
+
+```text
+npm run test:m3:security
+npm run test:m3:postgres
+npm run test:m3:browser
+npm run test:m3:browser:e2e
+npm run test:m3:local
+npm run test:m3:closure
+npm run test:m3:device:prepare
+npm run test:m3:device:cleanup
+```
+
+Required persistence/integration evidence includes:
+
+- migrations 0001 through 0016 from zero
+- media state and same-partnership constraints
+- message attachment-count/reference integrity
+- R1 same-partnership ready-media trigger
+- voice-letter voice-class enforcement
+- upload expiry
+- generation-fenced orphan cleanup
+- provider delete retry
+- relational-first deletion ordering
+- provider-first deletion ordering
+- stale signed-upload capability cannot resurrect media after final deletion completion
+
+Required security evidence includes:
+
+- private provider container
+- no provider plaintext media
+- no filename/user identifier in object keys
+- wrong key/context/truncated/reordered ciphertext fails
+- no raw development media key in PostgreSQL
+- no key/signed URL/filename/ciphertext in logs
+- unreleased R1 media denied
+- foreign media IDs remain non-enumerating
+- stable-release guard rejects development escrow
+- generic files are not auto-executed or active-inline rendered
+
+Required browser evidence includes:
+
+- image processing and metadata stripping
+- video and voice duration/size limits
+- voice record/preview/cancel/playback
+- direct upload progress and retry
+- loss after PUT before completion
+- media-only message
+- text plus media message
+- message deletion and orphan transition
+- R1 attachment and Voice Letter visibility
+- offline media draft reload
+- stable message idempotency after media upload resume
+- IndexedDB quota failure
+- account switch/logout purge
+- final-dissolution local purge
+- service-worker media cache exclusion
+
+Physical Android acceptance is mandatory and follows the detailed catalog in `../ROADMAP_EPICS.md` and `../architecture/M3_MEDIA_VOICE_DESIGN.md`.
+
+M3 must also rerun M1, R1, and M2 regressions because it changes the message projection, R1 media resolver, IndexedDB schema, and deletion workflow.
+
 ## M1 Messaging Core verification
 
 M1 uses a dedicated disposable PostgreSQL closure harness.

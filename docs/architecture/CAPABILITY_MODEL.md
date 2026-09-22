@@ -121,6 +121,31 @@ Former-partner blocking is allowed only from a terminated source partnership and
 
 M1 refines the messaging capability inputs without changing relationship-object rules. For message mutation during `breakup_pending`, the authoritative design uses the message's immutable `serverSequence` against the breakup process `messageFreezeSequence`; trusted timestamp comparison remains only a legacy fallback for breakup rows that predate the cutoff. Messaging-specific helpers may be factored around the shared lifecycle guards so M1 and parallel feature work do not duplicate or rewrite each other's feature semantics. Optimistic `expectedContentVersion` checks are repository/API concurrency guards after capability approval, not client-provided authorization.
 
+
+## M3 media capability refinement
+
+M3 reuses the existing partnership capability engine rather than creating storage-provider permissions as product authority.
+
+Relevant product capabilities include:
+
+- `canSendMedia`
+- ordinary message-send capability
+- current R1 mutation capabilities
+- current resource view capability
+
+Rules:
+
+- active partnership may create ordinary chat media
+- `breakup_pending` may create ordinary chat media because the PRD keeps messaging/media open
+- R1 user mutation remains denied during `breakup_pending`, so new R1 media references are also denied
+- account-deletion overlay denies every new media mutation
+- terminated partnership denies every new media mutation and media read grant
+- a storage object being present never creates a capability
+
+Media read authorization additionally requires a visible parent reference or uploader-owned unreferenced draft state. This reference visibility is application authorization layered after the pure lifecycle capability decision.
+
+Signed provider URLs are consequences of a current authorization decision, not capability state the client can replay indefinitely.
+
 ## UI use
 
 The client may receive a server-derived capability snapshot for presentation.

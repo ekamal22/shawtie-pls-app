@@ -316,7 +316,7 @@ A voice recording is represented as an external reference:
 
 The containing relationship item owns visibility and release semantics. M3 owns recording, upload, object access, and deletion of the binary media.
 
-Until an M3 media resolver is registered, runtime requests containing media or voice-letter references are rejected rather than storing unverifiable IDs.
+Current runtime still rejects media or voice-letter references because M3 is not implemented. The design-complete M3 integration will register the existing media resolver seam only after a media object is ready and same-partnership authorization succeeds. The recipient still cannot fetch an unreleased Voice Letter because media reads delegate to R1 item visibility.
 
 ### future_us
 
@@ -1096,8 +1096,10 @@ Rules:
 - references never grant access
 - a reference type is accepted only when its runtime resolver is registered
 - before verified M1 integration, Remember This may omit the message reference and preserve only the explicit R1 snapshot
-- before M3 integration, media and voice-letter references are rejected
-- when a resolver exists, the resource must independently authorize to the same partnership
+- before M3 runtime integration, media and voice-letter references are rejected
+- M3 integration accepts only ready media that independently authorizes to the same partnership
+- `voice_letter` requires a voice-class media asset
+- media access remains dependent on the containing R1 item's current visibility; the reference itself never grants read access
 - disappearance of a previously valid loose source reference does not delete the R1 item
 - R1 does not require M1 schema changes
 - M3 owns actual media transport and object access

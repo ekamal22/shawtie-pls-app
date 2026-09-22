@@ -143,6 +143,9 @@ Examples:
 | Media plaintext | HIGHLY_SENSITIVE | No | Yes | Never | Never plaintext server backup | Never provider plaintext | Media deletion or final dissolution |
 | Media ciphertext | HIGHLY_SENSITIVE | Yes as ciphertext | Yes | Never log payload | Encrypted object backup only until deletion | Object-storage provider holds ciphertext | Media deletion or final dissolution |
 | Media object key | SENSITIVE | Yes | No, random opaque value | May log only in tightly controlled storage diagnostics | Operational metadata backup | Object-storage provider receives key | Media deletion or final dissolution |
+| M3 development wrapped media key envelope | HIGHLY_SENSITIVE | Yes, wrapped only | Client holds raw key transiently | Never log | Restricted operational backup only while pre-S1 media exists | No ordinary provider exposure | S1 client re-encryption/wipe, media deletion, or final dissolution |
+| M3 development media wrapping key | SECRET | No database storage | No | Never | Secret manager/environment only, versioned rotation | Never | Retire only after no envelope requires that version |
+| Signed media upload/read URL | SECRET-like bearer capability | Generated transiently | Transient only | Never log full URL | Never | Object-storage provider necessarily receives capability | Short expiry |
 | Voice-message plaintext | HIGHLY_SENSITIVE | No | Yes | Never | Never plaintext server backup | Never provider plaintext | Message or partnership deletion |
 | Call audio/video plaintext | HIGHLY_SENSITIVE | No | Yes | Never | No server recording in MVP | Endpoint only | End of call |
 | Call signaling state | SENSITIVE | Yes | Metadata | Minimal structured logs | Short operational retention | TURN does not need application signaling detail | Bounded operational retention |

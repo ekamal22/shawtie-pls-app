@@ -156,13 +156,36 @@ See `DEVICE_AND_RECOVERY.md`.
 
 ## Media
 
-Client encrypts protected media before upload once E2EE is active.
+M3's refined security design is defined in `../architecture/M3_MEDIA_VOICE_DESIGN.md`, `../api/M3_MEDIA_API.md`, and ADR-012.
 
-Object storage remains private.
+Media security rules:
 
-Media retrieval requires authorized short-lived signed access even though stored objects are ciphertext.
+- every media asset is bound to one immutable partnership
+- provider object keys are random opaque values
+- object storage receives ciphertext only
+- exact filename and MIME descriptor are encrypted inside the media container
+- API never accepts or proxies media plaintext bytes
+- signed upload/read capabilities are short-lived bearer capabilities and are never logged
+- authorization is reference-aware; same-partnership membership alone does not reveal an unreleased R1 attachment
+- parent references can bind only ready same-partnership media
+- no media byte, media key, signed URL, filename, or MIME descriptor enters realtime frames or durable notification/outbox payloads
+- general files are never auto-executed or rendered as active web content
+- service worker caches no private media transfer
+- final dissolution stops new application grants before durable provider cleanup
 
-Object keys must not include private filenames or relationship text.
+Before S1, ADR-012 permits a development-only server-recoverable wrapped media key while keeping provider storage ciphertext-only.
+
+That mode is explicitly not E2EE.
+
+The raw development media key:
+
+- is accepted only as a no-log sensitive API field over authenticated TLS
+- is wrapped immediately under a versioned server key-encryption key
+- is never stored plaintext in PostgreSQL
+- is returned only after the full media-reference authorization decision
+- must be removed through S1 migration or wipe before stable release
+
+S1 must not rewrap the same historically server-known development key and claim E2EE. Preserved media requires fresh client re-encryption with a key never disclosed to the server.
 
 ## Logging
 
