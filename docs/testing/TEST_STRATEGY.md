@@ -292,9 +292,9 @@ Canonical design:
 - `../architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
 - `../api/R1_RELATIONSHIP_SPACE_API.md`
 
-R1 runtime tests do not exist yet.
+R1 runtime verification is complete on the combined integration baseline. Domain/contracts pass 16/16, R1 security passes 13/13, and the canonical disposable PostgreSQL/API/worker matrix passes 69/69 with `R1_LOCAL_POSTGRES_PASS` after applying real migrations 0001 through 0014 with no reservations and database invariants green.
 
-Required closure evidence includes canonical migrations 0001 through 0014, same-partnership/immutable-root invariants, all-mutation idempotency and keyed fingerprints, creator/shared-state permission checks, preview versus sealed-content denial, recipient-open/creator-reveal authorization, breakup scheduled-release exception, account-deletion pause/recovery wake, destructive-deadline precedence, release-generation and claim fencing, linked-target deletion/version behavior, final-dissolution cleanup, future-partnership isolation, M1/M3 resolver gates, Voice Letter container visibility, coordinate/log non-leakage, date precision/future rejection, February 29 anniversary behavior, deterministic unranked derived experiences, explicit signals, browser lifecycle modes, full health, and dependency audit.
+Executed R1 closure evidence covers canonical migrations 0001 through 0014, same-partnership/immutable-root invariants, all-mutation idempotency and keyed fingerprints, creator/shared-state permission checks, preview versus sealed-content denial, recipient-open/creator-reveal authorization, breakup scheduled-release exception, account-deletion pause/recovery wake, destructive-deadline precedence, release-generation and claim fencing, linked-target deletion/version behavior, final-dissolution cleanup, future-partnership isolation, the real M1 message resolver plus fail-closed M3 resolver gate, Voice Letter container visibility, coordinate/log non-leakage, date precision/future rejection, February 29 anniversary behavior, deterministic unranked derived experiences, explicit signals, browser lifecycle modes, full health, and dependency audit.
 
 Planned command surface:
 
@@ -304,6 +304,8 @@ npm run test:r1:security
 npm run test:r1:postgres
 npm run test:r1:local
 npm run health
+
+The integrated `test:r1:local` path uses no migration reservation. It positively verifies a real same-partnership M1 message reference while preserving the independent client-supplied R1 snapshot and proves invalid or unavailable external references fail closed.
 npm audit --audit-level=high
 ```
 
@@ -584,4 +586,4 @@ The M1 PostgreSQL matrix must include:
 
 M1 does not require physical Redmi acceptance. Physical Android validation begins at M2.
 
-M1 verification completed locally on 2026-09-22. `npm run test:m1:security` passed 17/17, and `npm run test:m1:local` applied migrations 0001 through 0012 from zero, passed database invariants, and passed the complete PostgreSQL/API/worker matrix 64/64 with `M1_LOCAL_POSTGRES_PASS`. The matrix includes P1, P2, P3, A1, lifecycle, concurrency, idempotency, durable-change synchronization, cleanup, and worker invalidation regressions. Full repository health passed with Domain 51/51, Contracts 22/22, API unit/security 31/31, Worker 4/4, and all static, typecheck, build, lint, formatting, and dependency checks green. `npm audit --audit-level=high` reported 0 vulnerabilities. Hosted GitHub Actions verification remains separate under V1.
+M1 verification completed locally on 2026-09-22. `npm run test:m1:security` passed 17/17, and the original `test:m1:local` closure applied migrations 0001 through 0012 and passed 64/64 with `M1_LOCAL_POSTGRES_PASS`. The later exhaustive integration baseline `5db7a94` re-ran M1 against the real canonical 0001 through 0014 schema and again passed 64/64. That same baseline closes R1 at 69/69 and ends with full health at Domain 60/60, Contracts 29/29, API unit/security 44/44, Worker 4/4, plus a zero-vulnerability audit and clean git hygiene. Hosted GitHub Actions verification remains separate under V1.

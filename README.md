@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The repository mainline contains the verified P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns code baseline at commit `9820801`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, and P3 are DONE locally. M1 Messaging Core is independently DONE, with runtime closure anchored at `aa40a2c` and the integrated branch head sourced from `b29b095`. R1 Relationship Space is source-complete and isolated-green at source branch head `9bc9ba4`. The combined M1/R1 source tree is assembled on `integration/m1-r1`, but combined technical validation is still pending and R1 remains IN_PROGRESS. Hosted GitHub Actions verification remains separate under V1.
+The verified combined technical baseline is `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M1 runtime closure remains anchored at `aa40a2c` with source head `b29b095`; R1 source head is `9bc9ba4`; the combined source merge is `01fa182`. Exhaustive validation on `5db7a94` passed 40/40 gates, canonical migrations 0001 through 0014 with `reserved=0`, database invariants, M1 64/64, R1 69/69, full repository health, a zero-vulnerability audit, git cleanliness, and local/remote SHA parity. The controlled merge of `integration/m1-r1` to `main` remains pending. Hosted GitHub Actions verification remains separate under V1.
 
 ## Product direction
 
@@ -46,7 +46,9 @@ Start with:
 - `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the completed, locally verified P2 implementation design
 - `docs/architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md` for the completed, locally verified P3 implementation design
 - `docs/architecture/M1_MESSAGING_CORE_DESIGN.md` for the refined M1 Messaging Core architecture and implementation plan
-- `docs/api/M1_MESSAGING_API.md` for the refined M1 HTTP and synchronization contract
+- `docs/api/M1_MESSAGING_API.md` for the implemented M1 HTTP and synchronization contract
+- `docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md` for the completed R1 architecture and implementation design
+- `docs/api/R1_RELATIONSHIP_SPACE_API.md` for the implemented R1 HTTP contract
 - `docs/api/P2_PARTNERSHIP_API.md` for the implemented and locally verified P2 HTTP contract and replay/privacy semantics
 - `docs/ROADMAP_EPICS.md` for epic status and acceptance gates
 - `docs/product/PRD.md` for product requirements

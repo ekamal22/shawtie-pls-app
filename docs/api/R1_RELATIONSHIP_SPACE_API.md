@@ -4,7 +4,7 @@
 
 This is the canonical R1 HTTP API design and current implementation contract.
 
-R1 architecture and runtime API source implementation are isolated-green on `feat/r1-relationship-space`. The R1 security suite passes 13/13, the isolated PostgreSQL/API/worker matrix passes 68/68, and formatting plus static/build gates pass. Verified M1 migrations 0011/0012 are anchored at the M1 runtime closure point `aa40a2c`; the documentation-reconciled M1 branch head is `b29b095`. Final integrated closure remains pending.
+R1 architecture and runtime API source implementation are DONE and combined-integration validated on `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`. R1 security passes 13/13, the canonical PostgreSQL/API/worker matrix passes 69/69 with real migrations 0001 through 0014 and no reservations, full health passes, and the high-severity audit reports 0 vulnerabilities.
 
 Base path:
 
@@ -12,7 +12,7 @@ Base path:
 
 ## Current implementation snapshot
 
-Runtime source implementation is isolated-green on `feat/r1-relationship-space`.
+Runtime source implementation is complete on `feat/r1-relationship-space` and validated in the combined integration baseline.
 
 Implemented HTTP/runtime behavior includes:
 
@@ -29,9 +29,9 @@ Implemented HTTP/runtime behavior includes:
 - keyed cursor integrity bound to account, partnership, and query shape
 - account-deletion view-only pause/recovery integration
 - breakup view-only behavior and final-dissolution cancellation
-- fail-closed external message/media references until verified M1/M3 resolvers exist
+- verified same-partnership M1 message references through the registered resolver; invalid or foreign M1 references fail closed; M3 media references remain fail-closed until M3 exists
 
-Isolated verification is green. R1 remains `IN_PROGRESS` because the strict canonical migration chain and full repository-health closure require later M1/R1 integration without reservations.
+Combined verification is green and R1 is `DONE`. The strict canonical migration chain, full repository-health closure, audit, and no-reservation requirement are all satisfied.
 
 Every successful or error response that can reveal private relationship-space state must include:
 
@@ -1381,4 +1381,4 @@ R1 API closure must execute tests proving:
 
 This document defines the R1 API surface only.
 
-The R1 runtime slices and isolated executable acceptance evidence are green on `feat/r1-relationship-space`. Final integrated closure still requires canonical migrations 0001 through 0014 and the strict full-health gate without reservations.
+The R1 runtime slices and executable acceptance evidence are green. Final integrated closure is complete at `5db7a94`: canonical migrations 0001 through 0014, strict full health, R1 69/69, M1 64/64, audit, and no-reservation validation all pass.

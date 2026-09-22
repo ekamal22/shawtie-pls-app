@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified P3 code baseline is commit `9820801`, now contained in `main`. Documentation-only roadmap reconciliation may advance the `main` branch beyond that code commit without changing the verified runtime baseline. M1 Messaging Core is independently verified and locally closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` on `feat/m1-messaging-core`; it has not yet been merged to `main`.
+The verified P3 code baseline remains `9820801` on `main`. M1 and R1 are now combined and exhaustively validated on `integration/m1-r1`, with technical validation anchored at `5db7a94183bca153d142389d7188e3887653a9ec`. The integration branch has not yet been merged to `main`.
 
 Completed milestones:
 
@@ -25,7 +25,7 @@ Completed milestones:
 | 2 P1 Discovery and Partner Requests | DONE | 14/14 gates |
 | 3 P2 Partnership Formation | DONE | 11/11 gates |
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
-| 5A M1 Messaging Core | DONE locally, merge pending | 18/18 gates at `aa40a2c` |
+| 5A M1 Messaging Core | DONE, integration validated; main merge pending | 18/18 gates; combined anchor `5db7a94` |
 | V1 Hosted CI Verification | BLOCKED | separate track until GitHub Actions capacity returns |
 
 P3 closure evidence remains:
@@ -57,8 +57,8 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 | Milestone | Status | Depends on | Physical Android |
 | --- | --- | --- | --- |
-| 5A M1 Messaging Core | DONE locally, merge pending | P3 | No for core closure |
-| 5B R1 Relationship Space | IN_PROGRESS, source integrated; combined validation pending | P3 | No for core closure |
+| 5A M1 Messaging Core | DONE, integration validated; main merge pending | P3 | No for core closure |
+| 5B R1 Relationship Space | DONE, integration validated; main merge pending | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | PLANNED | M1 | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
@@ -72,29 +72,33 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 The next verified-mainline work is:
 
-~~~text
-latest main containing verified P3
-  |
-  +--> feat/m1-messaging-core
-  |
-  +--> feat/r1-relationship-space
-~~~
+```text
+integration/m1-r1
+technical validation anchor 5db7a94
+        |
+        v
+final documentation closure
+        |
+        v
+controlled merge to main
+        |
+        v
+feat/m2-realtime-offline
+```
 
-M1 and R1 progressed in parallel from the verified P3 boundary. M1 is locally DONE with runtime closure anchored at `aa40a2c`; its documentation-reconciled branch head is `b29b095`. R1 architecture/API design and source implementation are isolated-green on `feat/r1-relationship-space`, including the formatting gate. The reserved-gap PostgreSQL matrix passes 68/68, but final integrated closure still requires combining the real M1 migrations 0011 and 0012 with R1 migrations 0013 and 0014.
+M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, and were exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`. The combined run uses the real M1 migrations 0011/0012 plus R1 migrations 0013/0014 with no reservation.
 
-Recommended execution order:
+Next:
 
-1. preserve M1 runtime closure at `aa40a2c` and integrated source head `b29b095`
-2. preserve R1 isolated-green evidence at source head `9bc9ba4`
-3. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
-4. validate the combined source on `integration/m1-r1` in the dedicated follow-up task
-5. close R1 only after canonical migration and full-health evidence passes without reservations
-6. begin M2 only from main containing verified M1
-7. keep V1 separate until hosted Actions capacity returns
+1. preserve the M1 runtime closure anchor `aa40a2c` and R1 source history `9bc9ba4`
+2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
+3. merge the documentation-closed `integration/m1-r1` branch to `main`
+4. begin M2 only from the updated verified `main`
+5. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
-Status: DONE locally on the separate M1 branch. Runtime acceptance closed at `aa40a2c`; the documentation-reconciled branch head is `b29b095`; merge to `main` is pending.
+Status: DONE. Runtime acceptance closed at `aa40a2c`; source head `b29b095` is combined and exhaustively validated on `integration/m1-r1 @ 5db7a94`. Controlled merge to `main` remains pending.
 
 Canonical detailed gates:
 
@@ -148,7 +152,7 @@ M1 must not use message creation sequence as the only reconnect/poll cursor.
 
 The M1 branch contains the locally verified runtime implementation for migrations, repositories, lifecycle integration, messaging API, browser chat, content-free pre-M2 outbox invalidation handling, domain/contracts, database invariants, race/security tests, and the disposable-PostgreSQL closure harness.
 
-On 2026-09-22, `test:m1:local` passed 64/64 after applying migrations 0001 through 0012 from zero with database invariants green. Full repository health passed, and the high-severity dependency audit reported 0 vulnerabilities. All 18 M1 acceptance gates are closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. M1 has not yet been merged to `main`.
+On 2026-09-22, M1 closure passed 64/64 and all 18 acceptance gates closed at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. The later combined baseline `5db7a94` re-ran M1 against the canonical 0001 through 0014 schema and again passed 64/64 with `M1_LOCAL_POSTGRES_PASS`, full health, audit, and git hygiene green. M1 has not yet been merged to `main`.
 
 ## Closure boundary
 
@@ -158,7 +162,7 @@ M1 is DONE only after its API, persistence, ordering, durable synchronization, i
 
 # Milestone 5B: R1 Relationship Space
 
-Status: IN_PROGRESS and `R1 ISOLATED GREEN`. Architecture/API design and R1 source implementation are verified on `feat/r1-relationship-space`. The isolated PostgreSQL/API/worker matrix passes 68/68 with explicit reservations for M1-owned migrations 0011/0012, security and earlier-milestone regressions are green, format/typecheck/build/lint/dependency checks pass, and the dependency audit reports 0 vulnerabilities. Verified M1 migrations are anchored at the M1 runtime closure point `aa40a2c`; the current documentation-reconciled M1 branch head is `b29b095`. Final canonical migrations and full repository health remain integration-pending. R1 is not DONE.
+Status: DONE. R1 source head `9bc9ba4` is combined with verified M1 and exhaustively validated on `integration/m1-r1 @ 5db7a94`. The canonical PostgreSQL/API/worker matrix runs real migrations 0001 through 0014 with `reserved=0`, passes database invariants and 69/69 tests with `R1_LOCAL_POSTGRES_PASS`, proves a real same-partnership M1 message can be referenced without server-side plaintext copying, keeps invalid and unavailable references fail-closed, and passes full repository health plus a zero-vulnerability audit. Controlled merge to `main` remains pending.
 
 Canonical architecture:
 

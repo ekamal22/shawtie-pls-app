@@ -334,6 +334,24 @@ M1 preserves the verified P3 lifecycle and transaction authority while adding th
 
 M1 keeps PostgreSQL and HTTP canonical. M2 may add WebSocket delivery and offline queues without redefining message order, mutation order, lifecycle authorization, or deletion semantics.
 
+## R1 relationship-space design
+
+The hardened R1 design is defined in `R1_RELATIONSHIP_SPACE_DESIGN.md` and `../api/R1_RELATIONSHIP_SPACE_API.md`. R1 is implemented and DONE on the combined integration baseline `5db7a94`.
+
+R1 preserves the same partnership authority boundary while adding:
+
+- relationship-item CRUD and structured relationship experiences
+- explicit creator-owned versus pair-mutable policy
+- preview and sealed-main release semantics
+- generation-fenced scheduled release using the existing F2 worker substrate
+- account-deletion pause/recovery and P3 final-dissolution cleanup
+- R1-owned migrations 0013 and 0014 after M1-owned 0011 and 0012
+- a registered M1 message-reference resolver that authorizes only real same-partnership messages
+- independent Remember This snapshots that never server-copy M1 message plaintext
+- fail-closed M3 media/voice references until M3 exists
+
+The exhaustive combined baseline applies canonical migrations 0001 through 0014 with no reservations and passes R1 69/69 plus the full repository health matrix.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

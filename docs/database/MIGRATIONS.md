@@ -2,7 +2,7 @@
 
 ## Status
 
-The verified `main` substrate is implemented through P3 migration `0010_partnership_lifecycle_runtime.sql`. On `feat/m1-messaging-core`, M1 migrations `0011_messaging_core_runtime.sql` and `0012_messaging_interaction_runtime.sql` are also locally verified: migrations 0001 through 0012 apply from zero against disposable PostgreSQL 16, database invariants pass, and M1 closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. M1 has not yet been merged to `main`.
+The verified `main` substrate remains implemented through P3 migration `0010_partnership_lifecycle_runtime.sql` until the controlled integration merge. The verified integration baseline `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec` contains M1 migrations 0011/0012 and R1 migrations 0013/0014. Canonical migrations 0001 through 0014 apply from zero against disposable PostgreSQL 16 with `reserved=0` and database invariants green.
 
 ## Current and next migration
 
@@ -43,7 +43,7 @@ P3 security verification pins verified migration 0009 before P3-only migration w
 
 ## Parallel feature migration reservations
 
-The verified physical schema remains implemented only through migration 0010.
+The verified physical schema on `main` remains through migration 0010 until merge; the exhaustively validated integration schema is implemented through migration 0014.
 
 M1 owns:
 
@@ -55,7 +55,7 @@ R1 owns:
 - `0013_relationship_space_runtime.sql`
 - `0014_relationship_space_interaction_runtime.sql`
 
-R1 migration source is not implemented or verified yet.
+R1 migrations 0013 and 0014 are implemented and verified on the combined integration baseline.
 
 Planned 0013 responsibilities include preview/main content columns, normalized occurrence fields, supported kind/content-version and release-shape checks, positive release generation, `UNIQUE (relationship_items.id, partnership_id)`, immutable root identity, feature-state tables, and R1 query indexes.
 
@@ -63,7 +63,7 @@ Planned 0014 responsibilities include composite same-partnership foreign keys, l
 
 R1 reuses existing durable scheduled actions and does not create fake crypto epochs or placeholder M1 migrations.
 
-The final R1 closure gate requires migrations 0001 through 0014 from zero after verified M1 migrations are available through the approved integration baseline.
+The final R1 closure gate is complete: migrations 0001 through 0014 apply from zero on the approved integration baseline with no reservation and database invariants green.
 
 ## Policy
 
@@ -238,23 +238,23 @@ The repository now includes:
 
 These artifacts define the repeatable PostgreSQL verification path. Automated runtime and concurrency tests under `packages/testkit/tests` and `apps/worker/tests` pass locally through `npm run test:f2:local`.
 
-## M1 migration reservation
+## M1 and R1 migration ownership
 
-The parallel M1 and R1 milestone branches use non-overlapping forward-only migration ranges.
+The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.
 
 M1 owns:
 
 - `0011_messaging_core_runtime.sql`
 - `0012_messaging_interaction_runtime.sql`
 
-R1 reserves:
+R1 owns:
 
-- `0013`
-- `0014`
+- `0013_relationship_space_runtime.sql`
+- `0014_relationship_space_interaction_runtime.sql`
 
-This reservation remains unchanged.
+The integrated migration chain is contiguous and uses no reservation.
 
-Repository health still enforces one contiguous migration sequence. The reservation does not relax `scripts/db/check-migrations.mjs`: a branch that materializes 0013 or 0014 must have 0011 and 0012 in its ancestry before migration-plan validation can pass. M1 does not renumber or consume R1's reserved migrations.
+Repository health enforces one contiguous migration sequence. The combined branch contains real 0011, 0012, 0013, and 0014 in ancestry, so `scripts/db/check-migrations.mjs` passes with `count=14 reserved=0`. M1 and R1 retain their documented migration ownership.
 
 M1 migration 0011 implements the existing conversation/message substrate without rewriting migrations 0001 through 0010. Its responsibilities include:
 
@@ -278,7 +278,7 @@ M1 migration 0012 implements compact interaction state:
 
 M1 does not add durable per-heartbeat history.
 
-Both migrations are locally verified. On 2026-09-22 the M1 disposable PostgreSQL 16 harness applied migrations 0001 through 0012 from zero, passed database invariants, and completed the 64-test PostgreSQL/API/worker matrix with `M1_LOCAL_POSTGRES_PASS`. The verified M1 closure commit is `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; canonical 0013/0014 validation remains a later M1 plus R1 integration concern.
+Both M1 migrations are locally verified. On 2026-09-22 the M1 closure harness applied migrations 0001 through 0012 and passed 64/64. The later exhaustive integration baseline `5db7a94` applied the canonical 0001 through 0014 chain with no reservations and database invariants green; M1 again passed 64/64 and R1 passed 69/69. The M1 runtime closure anchor remains `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`.
 
 The M1 migration/integration tests must additionally prove:
 

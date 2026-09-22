@@ -48,7 +48,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
                 +-------+--------+
                 |                |
                 v                v
-          M1 Messaging ✅    R1 Relationship Space 🟡
+          M1 Messaging ✅    R1 Relationship Space ✅
                 |
                 v
           M2 Realtime + Offline ⚪
@@ -95,7 +95,7 @@ flowchart TD
     P2 --> P3["P3 Lifecycle + Deletion ✅"]
 
     P3 --> M1["M1 Messaging Core ✅"]
-    P3 --> R1["R1 Relationship Space 🟡"]
+    P3 --> R1["R1 Relationship Space ✅"]
 
     M1 --> M2["M2 Realtime + Offline ⚪"]
 
@@ -128,12 +128,12 @@ P2 ✅
    ->
 P3 ✅
    ->
-M1 ✅ (local closure, merge pending)
+M1 ✅ (integration validated, main merge pending)
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
 
-M1 is locally DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and the integrated source head at `b29b095`. R1 source implementation from `9bc9ba4` is isolated-green. Both source trees are combined on `integration/m1-r1`; canonical combined validation and full repository-health closure are still pending, so R1 stays yellow.
+M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source head `b29b095`. R1 source head `9bc9ba4` is also DONE. Both are source-integrated at `01fa182` and exhaustively validated together on `integration/m1-r1 @ 5db7a94`; canonical migrations, full health, audit, and git hygiene are green.
 
 ## Most recently completed milestone
 
@@ -162,7 +162,7 @@ Verified implementation state:
 7. full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4
 8. `npm audit --audit-level=high` reports 0 vulnerabilities and `git diff --check` passes
 
-M1 is locally closed at 18/18 gates. M1 and R1 source integration is assembled on `integration/m1-r1`, with combined validation pending. Merge to `main` remains pending, so M2 must not branch from the shared mainline yet.
+M1 is closed at 18/18 gates and the combined M1/R1 integration is exhaustively green at `5db7a94`. Merge to `main` remains pending, so M2 must not branch from the shared mainline yet.
 
 M1 preserves verified migrations 0001 through 0010 and owns only migrations 0011 and 0012.
 
@@ -189,7 +189,7 @@ latest main containing verified P3
 
 M1 and R1 were developed in parallel from the verified P3 boundary.
 M1 is locally DONE; runtime closure is anchored at `aa40a2c`, and source head `b29b095` is integrated here.
-R1 architecture/API design and source implementation are isolated-green at source head `9bc9ba4` and integrated here; final combined validation and full-health closure are pending.
+R1 architecture/API design and source implementation at `9bc9ba4` are integrated and fully validated here; R1 is DONE.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 Neither source module consumes the other's migration ownership.

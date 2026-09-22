@@ -2,7 +2,7 @@
 
 ## Status
 
-DONE LOCALLY. MERGE TO MAIN PENDING.
+DONE. COMBINED INTEGRATION VALIDATED. MERGE TO MAIN PENDING.
 
 Branch:
 
@@ -14,14 +14,18 @@ Verified closure commit:
 
 Branch base:
 
-`main @ ac7423d`
+`main @ ac7423d` was the parallel-development base.
+
+Combined validation baseline:
+
+`integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`
 
 M1 owns migration numbers:
 
 - `0011_messaging_core_runtime.sql`
 - `0012_messaging_interaction_runtime.sql`
 
-The parallel R1 branch reserves `0013` and `0014`. M1 must not consume those numbers.
+R1 owns `0013` and `0014`. The combined integration baseline contains all four real migrations 0011 through 0014, and M1 does not consume R1's numbers.
 
 M1 closed from executed local evidence on 2026-09-22. Hosted GitHub Actions verification remains separate under V1.
 
@@ -887,7 +891,7 @@ R1 must not take ownership of conversation/message schema.
 
 M1 must keep messaging cleanup module-owned rather than expanding R1-owned relationship semantics. The P3 dissolution path composes module cleanup without requiring either parallel feature branch to own the other's private tables.
 
-The existing migration reservation remains unchanged. Because repository health enforces a contiguous migration sequence, reservation does not permit a branch containing 0013 or 0014 to pass migration-plan validation unless 0011 and 0012 are present in its ancestry. M1 does not change R1's reserved numbers or scope.
+The earlier parallel branches used non-overlapping migration ownership. On the combined baseline, real 0011, 0012, 0013, and 0014 are contiguous in ancestry, migration-plan validation passes with `reserved=0`, and M1 does not change R1's numbers or scope.
 
 ## Implementation sequence
 
@@ -1109,11 +1113,11 @@ The disposable PostgreSQL harness must run:
 - M1 security tests
 - API/web builds
 
-The M1-A through M1-H runtime, persistence, API, browser, worker invalidation-sink, race/security test source, and closure harness are implemented and locally verified on `feat/m1-messaging-core`.
+The M1-A through M1-H runtime, persistence, API, browser, worker invalidation-sink, race/security test source, and closure harness are implemented and verified. The M1 source head `b29b095` is integrated with R1 and exhaustively revalidated at `integration/m1-r1 @ 5db7a94`.
 
 Closure evidence executed on 2026-09-22:
 
-- `npm run test:m1:local` passed with migrations 0001 through 0012 from zero, database invariants green, and 64/64 PostgreSQL/API/worker tests passing
+- `npm run test:m1:local` passed the original 0001 through 0012 closure 64/64 and later passed 64/64 again on the integrated canonical 0001 through 0014 schema
 - `npm run test:m1:security` passed 17/17 across M1 domain, contract, and security coverage
 - `npm run health` passed repository health, typecheck, production builds, lint, formatting, dependency checks, and 108/108 unit/security tests
 - `npm audit --audit-level=high` reported 0 vulnerabilities
@@ -1146,7 +1150,7 @@ Implementation evidence must prove every one of them:
 
 ## Closure standard
 
-All 18 canonical gates are supported by executed local evidence, so M1 is DONE locally. Reintegration to `main` remains a separate task.
+All 18 canonical gates are supported by executed evidence, so M1 is DONE. Source reintegration with R1 is complete and exhaustively validated; the remaining repository-flow step is the controlled merge of `integration/m1-r1` to `main`.
 
 No hosted GitHub Actions run is required for M1 closure while V1 remains separately blocked, but every M1 commit continues to use `[skip ci]` until that policy changes.
 

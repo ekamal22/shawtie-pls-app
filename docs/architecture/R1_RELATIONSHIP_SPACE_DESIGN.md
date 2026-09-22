@@ -2,9 +2,9 @@
 
 ## Status
 
-R1 Relationship Space is `IN_PROGRESS`.
+R1 Relationship Space is `DONE`.
 
-Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source implementation is isolated-green on `feat/r1-relationship-space` across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, formatting, static/build gates, and the dedicated local closure harness. Verified M1 migrations 0011/0012 are anchored at the M1 runtime closure point `aa40a2c`; the documentation-reconciled M1 branch head is `b29b095`. Final integrated closure evidence remains pending, so R1 is not DONE.
+Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 source head `9bc9ba4` is integrated with verified M1 and exhaustively validated on `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`. The canonical 0001 through 0014 schema runs without reservations, R1 passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, full health and audit are green, and R1 is DONE.
 
 Branch:
 
@@ -16,11 +16,11 @@ Verified starting point:
 
 ### Current implementation state
 
-Runtime source implementation is isolated-green on `feat/r1-relationship-space`.
+Runtime source implementation is complete on `feat/r1-relationship-space` and combined-integration validated on `integration/m1-r1`.
 
 The current branch contains the R1 domain/contracts, migrations 0013/0014, database repositories and invariants, private API, durable release worker, lifecycle integration, responsive browser implementation, security tests, API/worker integration tests, and the dedicated local R1 harness.
 
-This does **not** mean R1 is closed. Executed isolated evidence includes domain/contracts 16/16, R1 security 13/13, disposable PostgreSQL migrations and invariants PASS, API/worker integration 68/68 with `R1_LOCAL_POSTGRES_PASS`, P1/P2/P3 security regressions 13/13, 21/21, and 34/34, format/typecheck/build/lint/dependency checks green, and the high-severity dependency audit at 0 vulnerabilities. Final integrated closure requires combining the real M1-owned migrations 0011/0012 with R1 migrations 0013/0014 and completing a strict full-health run; R1 does not copy M1 migrations.
+Historical isolated evidence included domain/contracts 16/16, R1 security 13/13, and a reserved-gap 68/68 PostgreSQL/API/worker matrix. Final integrated closure is now complete: real M1-owned migrations 0011/0012 and R1-owned 0013/0014 run in canonical order with `reserved=0`, database invariants pass, R1 passes 69/69, the exhaustive 40-gate sweep passes, and R1 does not copy or redefine M1 migrations.
 
 Migration ownership:
 
@@ -31,7 +31,7 @@ Migration ownership:
 
 R1 does not merge, copy, or redefine M1 messaging persistence. R1 is implemented against the same verified P3 baseline and uses loose references where a future message or media resource may be associated with a relationship object.
 
-For isolated R1 branch testing only, `test:r1:local` opts into `SHAWTIE_MIGRATION_RESERVATIONS=0011,0012`. This lets the migration-plan checker acknowledge the two M1-owned numbers without creating placeholder SQL files. Normal `health` and integrated `test:r1:postgres` runs remain strict and require the real M1 migrations before R1 can close.
+Historical isolated R1 branch testing used `SHAWTIE_MIGRATION_RESERVATIONS=0011,0012` so it could validate without placeholder M1 SQL. The integrated `test:r1:local` harness has removed that reservation and now runs the real canonical M1 plus R1 migration chain.
 
 ## Purpose
 
@@ -411,7 +411,7 @@ Allowed roles:
 
 The table intentionally has no foreign key to M1 messages or M3 transport tables.
 
-A reference type is accepted only when a runtime resolver for that external resource type is registered. Before verified M1 integration, Remember This may be created from an explicit client snapshot without a persisted message reference. Before M3, media and voice-letter references are contract/schema capability only and are rejected by runtime rather than accepting an unverifiable UUID.
+A reference type is accepted only when a runtime resolver for that external resource type is registered. The combined application now registers the verified M1 message resolver: a real same-partnership message reference is accepted, while invalid or foreign message IDs fail closed. Remember This still stores an independent client-supplied R1 snapshot and never copies M1 plaintext. Before M3, media and voice-letter references remain contract/schema capability only and are rejected by runtime rather than accepting an unverifiable UUID.
 
 When a resolver is available, authorization requires the referenced resource to belong to the same partnership at create/update time. A loose reference is provenance or attachment metadata, never an authorization grant.
 
@@ -1341,7 +1341,7 @@ R1 closure evidence must include the canonical migration sequence through 0014 a
 
 ## Acceptance evidence required
 
-R1 remains IN_PROGRESS until executed evidence proves all of the following:
+R1 closure is complete because executed evidence proves all of the following:
 
 1. migrations 0001 through 0014 apply from zero in canonical order
 2. database invariants pass, including composite same-partnership foreign keys and immutable root identity
@@ -1375,7 +1375,7 @@ R1 remains IN_PROGRESS until executed evidence proves all of the following:
 30. February 29 anniversary behavior follows the documented last-valid-day rule
 31. coordinates never enter logs, analytics, events, queue payloads, or unreviewed providers
 32. Remember This does not depend on original message existence and does not server-copy M1 content
-33. message references are rejected until a verified M1 resolver exists
+33. the registered M1 resolver accepts real same-partnership messages and invalid or foreign message references fail closed
 34. media and voice-letter references are rejected until a verified M3 resolver exists
 35. Voice Letters inherit the containing item's visibility and cannot surface as standalone R1 content
 36. explicit signals remain user-triggered and no emotion inference exists
@@ -1394,9 +1394,9 @@ R1 remains IN_PROGRESS until executed evidence proves all of the following:
 
 R1 runtime can be developed before S1 only with explicit development plaintext storage. This is not stable-release security. Stable release remains blocked until S1 migration and inspection evidence close the boundary.
 
-### Parallel M1 migration availability
+### Resolved M1 migration integration
 
-R1 owns 0013 and 0014 but does not fabricate 0011 or 0012. The final clean 0001 through 0014 closure run can occur only after verified M1 migrations are available through the integration baseline.
+R1 owns 0013 and 0014 and does not fabricate 0011 or 0012. Verified M1 migrations are now present in the integration baseline, and the final clean 0001 through 0014 closure run has passed without reservations.
 
 ### Media and voice transport
 
@@ -1412,11 +1412,11 @@ This rule must stay synchronized across the PRD, worker design, API contract, te
 
 ## Completion statement
 
-R1 architecture, implementation design, and runtime source surfaces are implemented and isolated-green on `feat/r1-relationship-space`.
+R1 architecture, implementation design, and runtime source surfaces are implemented and DONE. The source history remains on `feat/r1-relationship-space`, and the authoritative combined technical validation anchor is `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec`.
 
 Current source checkpoint:
 
-`0b863c5`
+`9bc9ba4` (source head); `5db7a94` (combined technical validation anchor)
 
 Implemented source includes:
 
@@ -1431,4 +1431,4 @@ Implemented source includes:
 - responsive Relationship Space browser flows including curations, reunion planning, partial occurrence precision, and rescheduling
 - R1 security, API integration, worker integration, and local PostgreSQL harnesses
 
-R1 remains `IN_PROGRESS`. Isolated executable evidence is green, including formatting, but final closure requires M1/R1 integration, the strict canonical 0001 through 0014 run, and a green full repository-health gate without reservations.
+R1 is `DONE`. The combined baseline passes strict canonical migrations 0001 through 0014 with no reservations, database invariants, R1 69/69, the M1 reference seam, full repository health, audit, and git hygiene. Controlled merge to `main` remains a repository-flow step rather than an R1 acceptance blocker.

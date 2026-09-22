@@ -62,6 +62,8 @@ The selected architecture is:
 - `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`
 - `architecture/M1_MESSAGING_CORE_DESIGN.md`
 - `api/M1_MESSAGING_API.md`
+- `architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
+- `api/R1_RELATIONSHIP_SPACE_API.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
 - `architecture/DATA_MODEL.md`
 - `architecture/PARTNERSHIP_STATE_MACHINE.md`
@@ -106,7 +108,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`, `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`, `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`, `architecture/P3_PARTNERSHIP_LIFECYCLE_DESIGN.md`, and `architecture/M1_MESSAGING_CORE_DESIGN.md` are completed, locally verified implementation designs. P1 is DONE at all 14 acceptance gates. P2 is DONE at all 11 acceptance gates and is merged to `main` at `04b5229`. P3 is DONE at all 22 acceptance gates with green lifecycle domain/contracts, security, ten-migration PostgreSQL, database-invariant, API/worker/race, full health, and dependency-audit evidence. M1 Messaging Core is DONE locally at all 18 acceptance gates on `feat/m1-messaging-core`, with its 12-migration PostgreSQL/invariant path, 64-test integration matrix, security suite, full health, and dependency audit green. M1 merge to `main` remains pending.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs now include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined and exhaustively validated on `integration/m1-r1`, with technical validation anchored at `5db7a94183bca153d142389d7188e3887653a9ec`: canonical migrations 0001 through 0014 run with `reserved=0`, database invariants pass, M1 passes 64/64 with `M1_LOCAL_POSTGRES_PASS`, R1 passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, full health passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4, and the high-severity audit reports 0 vulnerabilities. R1 is DONE. The integration branch still requires a controlled merge to `main`; hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

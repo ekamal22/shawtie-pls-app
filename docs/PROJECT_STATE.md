@@ -4,7 +4,7 @@
 
 Architecture Baseline 1.0 is accepted and frozen.
 
-Foundation implementation is complete and product substrate implementation is underway. F0 Governance and Security Baseline, F1 Repository Foundation and Executable Guardrails, F2 Persistence and Worker Foundation, A1 Accounts and Devices, P1 Discovery and Partner Requests, P2 Partnership Formation and Relationship Date, and P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns are complete on the verified mainline. M1 Messaging Core is also locally complete at 18/18 acceptance gates on `feat/m1-messaging-core` at closure commit `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; merge to `main` remains pending. On the verified M1 branch, migrations 0001 through 0012 apply from zero against disposable PostgreSQL 16 with database invariants green, `npm run test:m1:local` passes 64/64, `npm run test:m1:security` passes 17/17, full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4, and `npm audit --audit-level=high` reports 0 vulnerabilities. Hosted GitHub Actions verification is tracked separately under V1 and does not block continued development.
+Foundation implementation and the first two parallel product-substrate milestones are locally complete. F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed evidence. M1 runtime closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` with source head `b29b095`; R1 source head is `9bc9ba4`; source integration is anchored at `01fa182`; exhaustive combined technical validation is anchored at `5db7a94183bca153d142389d7188e3887653a9ec`. On that baseline, migrations 0001 through 0014 apply from zero with `reserved=0` and database invariants green; `test:m1:local` passes 64/64; `test:r1:local` passes 69/69; the final full health run passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4; `npm audit --audit-level=high` reports 0 vulnerabilities; and git cleanliness plus local/remote SHA parity pass. The controlled merge of `integration/m1-r1` to `main` remains pending. Hosted GitHub Actions verification is tracked separately under V1.
 
 ## Product definition
 
@@ -121,8 +121,8 @@ Current epic status:
 - A1 Accounts and Devices: DONE. All 20 acceptance gates are closed. The expanded disposable PostgreSQL suite passes 27/27 with all seven migrations applied from zero and database invariants green; `npm run test:a1:security` passes 16/16; the full `npm run health` regression passes with Domain 32/32, Contracts 4/4, API unit/security 8/8, and Worker 4/4; and `npm audit --audit-level=high` reports 0 vulnerabilities. The final acceptance run includes challenge expiry/exhaustion/resend/rate-limit coverage, ownership and registration races, logout and revoked-cookie rejection, absolute/idle session expiry and session-generation fencing, recent reauthentication, username API rules, device list/rename/revocation/current-device behavior, exact account-recovery deadline behavior, browser-security negative paths, raw-code/outbox exclusion, and raw device-handle storage exclusion. The final test-harness correction is commit `4019db2`; no production change was required for that failure.
 - P1 Discovery and Partner Requests: DONE. All 14 acceptance gates are closed. Migration 0008 applies as part of an eight-migration clean run with database invariants green; `npm run test:p1:local` passes the disposable PostgreSQL/API/worker matrix 16/16 with `P1_LOCAL_POSTGRES_PASS`; the final full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4; Prettier, ESLint, dependency checks, typecheck, and production builds are green; and `npm audit --audit-level=high` reports 0 vulnerabilities.
 - P2 Partnership Formation and Relationship Date: DONE. All 11 acceptance gates are closed. The P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. The matrix proves explicit and reciprocal formation, accepted-request replay linkage, deterministic locking, incompatible-request invalidation, expiry-action handling, one-partner occupancy races, relationship-date version and generation separation, other-partner notification isolation, notification snapshot pagination, and P1 behavior in real `paired` mode. The standalone historical `test:p1:local` harness remains request-only. Full repository health and `npm audit --audit-level=high` are green. Migration 0008 remains byte-for-byte unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`.
-- M1 Messaging Core: DONE locally at 18/18 acceptance gates. Runtime closure is anchored at `aa40a2c`; source head `b29b095` is included in `integration/m1-r1`. M1 owns verified migrations 0011 and 0012.
-- R1 Relationship Space: IN_PROGRESS and independently `R1 ISOLATED GREEN` at source head `9bc9ba4`, now included in `integration/m1-r1`. R1 owns migrations 0013 and 0014. Combined technical validation and full repository-health closure remain pending, so R1 is not DONE.
+- M1 Messaging Core: DONE at 18/18 acceptance gates. Runtime closure is anchored at `aa40a2c`; source head `b29b095` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. M1 owns verified migrations 0011 and 0012.
+- R1 Relationship Space: DONE. Source head `9bc9ba4` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. R1 owns migrations 0013 and 0014. Canonical 0001 through 0014 migrations run without reservations, `test:r1:local` passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the real same-partnership M1 message-reference seam is positively verified without copying message plaintext, and full repository health plus audit are green.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -137,8 +137,10 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `milestone/p1-discovery-requests` -> `69cb238`
 - `feat/p2-partnership-formation` -> `04b5229`
 - `feat/p3-partnership-lifecycle` -> completed P3 development and closure history
-- `feat/m1-messaging-core` -> locally closed M1 at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`; merge to `main` pending
-- `main` contains verified P3 code baseline `9820801`; later documentation-only commits may advance the branch without changing that runtime evidence
+- `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
+- `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
+- `integration/m1-r1` -> combined source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`; controlled merge to `main` pending
+- `main` still contains the verified P3 runtime baseline until the controlled integration merge
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -160,16 +162,15 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-A1, P1, P2, and P3 are complete and merged into the verified mainline.
+A1, P1, P2, and P3 are complete and merged into the verified mainline. M1 and R1 are complete on the integration branch and have passed exhaustive combined validation.
 
-M1 and R1 source are combined on `integration/m1-r1`. M1 runtime closure remains anchored at `aa40a2c`, with source head `b29b095`; R1 source head is `9bc9ba4`. Final canonical repository-health closure is a later validation task.
+The next controlled engineering step is to merge `integration/m1-r1` to `main` after this documentation closure. The exhaustive technical validation anchor is `5db7a94183bca153d142389d7188e3887653a9ec`.
 
-1. preserve R1 ownership of migrations 0013 and 0014
-2. preserve M1 ownership of verified migrations 0011 and 0012
-3. preserve P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
-4. close R1 only after canonical 0001 through 0014 PostgreSQL evidence and full health pass without reservations
-5. begin M2 only after verified M1 returns to main
-6. keep V1 hosted verification separate until GitHub Actions capacity returns
+1. preserve M1 ownership of migrations 0011 and 0012 and R1 ownership of migrations 0013 and 0014
+2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
+3. merge the documentation-closed integration branch to `main` without changing the validated runtime baseline
+4. begin M2 only from the updated `main` containing the verified M1/R1 integration
+5. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy
 
@@ -192,6 +193,6 @@ Stable release remains blocked until:
 
 ## Documentation freshness
 
-A1, P1, P2, P3, and M1 documentation are reconciled against completed acceptance evidence. A1 is closed at 20/20 gates, P1 at 14/14 gates, P2 at 11/11 gates, P3 at 22/22 gates, and M1 at 18/18 gates on `feat/m1-messaging-core`. M1 closure is anchored at `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288` and is supported by the green 12-migration PostgreSQL path, database invariants, 64/64 API/worker integration matrix, 17/17 M1 security suite, full repository health, dependency audit, and `git diff --check`. M1 is not yet merged to `main`.
+A1, P1, P2, P3, M1, and R1 documentation are reconciled against completed acceptance evidence. M1 remains closed at 18/18 gates with runtime anchor `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`. R1 is closed by the combined validation baseline `5db7a94183bca153d142389d7188e3887653a9ec`, which proves canonical migrations 0001 through 0014 with no reservations, R1 69/69, M1 64/64, full health, zero audit vulnerabilities, git cleanliness, and local/remote SHA parity. The integration branch still awaits controlled merge to `main`.
 
 Current-state claims belong here and in `ROADMAP_EPICS.md`. Product, architecture, security, and ADR documents should not be interpreted as proof that their described runtime behavior is already implemented.

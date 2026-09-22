@@ -890,7 +890,7 @@ Implemented and verified by the complete local matrix, repository health, and de
 
 # M1: Messaging Core
 
-Status: DONE locally on `feat/m1-messaging-core`; merge to `main` pending
+Status: DONE; combined integration validated on `integration/m1-r1`; merge to `main` pending
 
 Verified closure commit:
 
@@ -915,7 +915,7 @@ Migration ownership:
 
 R1 reserves migrations 0013 and 0014. M1 does not change that reservation or R1 scope.
 
-The integrated source uses M1 head `b29b095` and R1 head `9bc9ba4` on `integration/m1-r1`. Combined technical validation is pending, and R1 is not yet DONE.
+The integrated source uses M1 head `b29b095` and R1 head `9bc9ba4` on `integration/m1-r1`. Source integration is anchored at `01fa182`; exhaustive combined technical validation is anchored at `5db7a94183bca153d142389d7188e3887653a9ec`. Canonical migrations 0001 through 0014 run with `reserved=0`, and R1 is DONE.
 
 ## Scope
 
@@ -1094,7 +1094,7 @@ On 2026-09-22, the closure harness applied migrations 0001 through 0012 from zer
 - [x] cross-partnership message access tests fail closed
 - [x] API and security regression tests pass, including durable mutation synchronization, stale-edit conflict, keyed-fingerprint, presence-privacy, bounded-interaction, deletion-composition, and content-free invalidation evidence
 
-M1 is DONE locally at 18/18 acceptance gates. Reintegration to `main` is out of scope for this branch closure.
+M1 is DONE at 18/18 acceptance gates and has passed combined integration validation. The remaining repository-flow step is the controlled merge of `integration/m1-r1` to `main`.
 
 # M2: Realtime and Offline Reliability
 
@@ -1194,7 +1194,7 @@ Status: PLANNED
 
 # R1: Relationship Space
 
-Status: IN_PROGRESS
+Status: DONE
 
 Branch:
 
@@ -1213,12 +1213,13 @@ Migration ownership:
 - `0013_relationship_space_runtime.sql`
 - `0014_relationship_space_interaction_runtime.sql`
 
-Parallel reservation:
+Migration ownership boundary:
 
 - M1 owns 0011 and 0012
+- R1 owns 0013 and 0014
 - R1 must not create, rename, or modify M1 migration numbers
 
-Architecture/design and R1 source implementation are complete and isolated-green on `feat/r1-relationship-space`. M1 is locally complete with runtime closure anchored at `aa40a2c`, and its pushed documentation-reconciled branch head is `b29b095`. Final integrated acceptance remains pending, so R1 remains IN_PROGRESS.
+Architecture/design and R1 source implementation are complete on `feat/r1-relationship-space` at source head `9bc9ba4`. M1 runtime closure remains anchored at `aa40a2c` with source head `b29b095`. The sources are integrated at `01fa182` and exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, so R1 is DONE.
 
 ## Current implemented progress
 
@@ -1238,9 +1239,9 @@ Completed source implementation includes:
 - resolver-gated message/media/Voice Letter references
 - R1 security, API integration, worker integration, and local PostgreSQL harnesses
 
-The isolated `test:r1:local` harness opts into migration reservations 0011/0012 only so R1 can be exercised without copying M1. Final integrated closure must run without that reservation and with the real M1 migrations present.
+Historical isolated R1 branch validation used reservations for M1-owned 0011/0012 rather than copying M1 SQL. The integrated `test:r1:local` harness now uses the real M1 migrations and no reservation.
 
-The source implementation above is complete and the isolated R1 evidence is green. Executed results are domain/contracts 16/16, R1 security 13/13, disposable PostgreSQL migrations and invariants PASS, API/worker integration 68/68 with `R1_LOCAL_POSTGRES_PASS`, P1/P2/P3 security regressions 13/13, 21/21, and 34/34, format/typecheck/build/lint/dependency checks green, and the high-severity audit at 0 vulnerabilities. The final integrated migration and full-health gates remain open until verified M1 migrations 0011/0012 and R1 migrations 0013/0014 are combined without reservations. Any further R1 runtime changes should be driven by validation failures, not by unimplemented planned scope.
+The source implementation above is complete. Historical isolated evidence was green at 68/68. Final integrated evidence is now also green: real migrations 0001 through 0014 apply with `reserved=0`, database invariants pass, R1 security passes 13/13, the combined PostgreSQL/API/worker matrix passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the positive same-partnership M1 message-reference seam passes without copying message plaintext, full repository health passes with Domain 60/60, Contracts 29/29, API unit/security 44/44, and Worker 4/4, and the high-severity audit reports 0 vulnerabilities.
 
 ## Scope
 
@@ -1436,61 +1437,64 @@ npm run health
 npm audit --audit-level=high
 ```
 
-The isolated command surface has executed successfully through `test:r1:local`. Strict `test:r1:postgres` and `health` remain integration commands because they require the real M1 migration chain. They must not use reservations.
+The integrated command surface has executed successfully through `test:r1:local`, strict canonical migrations, and full `health`. The integrated harness uses the real M1 migration chain and no reservations.
 
 ## Acceptance gates
 
-- [ ] migrations 0001 through 0014 apply from zero in canonical order after verified M1 migrations are available
-- [ ] migrations 0001 through 0010 remain unchanged
-- [ ] R1 does not create or modify migrations 0011 or 0012
-- [ ] relationship-item database invariants include composite same-partnership keys and immutable identity
-- [ ] every R1 kind/contentSchemaVersion has explicit contract coverage
-- [ ] development preview/main plaintext is never mislabeled as ciphertext
-- [ ] intended recipient cannot receive sealed main content before release
-- [ ] no R1 plaintext or raw private request hash appears in logs, events, queues, notifications, traces, analytics, or idempotency response bodies
-- [ ] Relationship Home is partnership-scoped, bounded, deterministic, and private/no-store
-- [ ] every state-changing endpoint has exact lost-response idempotency
-- [ ] same idempotency key with different private request fails deterministically
-- [ ] expectedVersion conflicts never silently overwrite current state
-- [ ] creator-owned content cannot be edited/deleted by the other partner
-- [ ] pair-mutable state follows the documented policy matrix
-- [ ] foreign, deleted, unreleased-hidden, and random item IDs fail with privacy-safe behavior
-- [ ] Our Story preserves precision and uses one deterministic mixed-precision order
-- [ ] future historical occurrence dates are rejected using trusted UTC date
-- [ ] February 29 anniversary behavior is deterministic
-- [ ] Remember This survives source disappearance without server-side copying M1 plaintext
-- [ ] message references are rejected until an M1 resolver is registered
-- [ ] media and Voice Letter references are rejected until an M3 resolver is registered
-- [ ] Voice Letter visibility is inherited from its containing relationship object
-- [ ] Places coordinates are explicit only and never collected in background
-- [ ] For You/Future Us scheduled release uses durable generation-fenced work
-- [ ] recipient-open exposes preview but not main content until explicit open
-- [ ] Surprise/Proposal creator-reveal keeps main sequence unavailable before reveal
-- [ ] unknown content schema versions and durable payload versions fail closed
-- [ ] duplicate scheduled claims cannot release twice
-- [ ] breakup makes normal R1 mutations view-only while preconfigured scheduled release may continue strictly before destructive deadline
-- [ ] account-deletion overlay pauses all unreleased delivery transitions
-- [ ] account recovery wakes due paused work without changing unlock time or release generation
-- [ ] destructive deadline wins over release at exact equality and when finalization is late
-- [ ] restoration preserves item IDs, versions, curation, and schedule identity
-- [ ] final dissolution synchronously ends R1 authorization and replay access
-- [ ] final dissolution deletes every R1 authoritative row through P3 deletion architecture
-- [ ] user item deletion leaves no protected R1 content in supporting/history tables
-- [ ] deleting a linked target explicitly updates surviving curation owner versions
-- [ ] stale work for deleted/dissolved objects becomes safe stale/no-op
-- [ ] deletion crash/reclaim remains retry-safe and fenced
-- [ ] future partnership cannot access old R1 data
-- [ ] relationship signals are explicit user actions only
-- [ ] no feature computes relationship quality, emotion, compatibility, breakup risk, responsiveness, or engagement score
-- [ ] This Day in Us uses exact eligible day precision only
-- [ ] Our Year and Anniversary are deterministic and unranked by engagement
-- [ ] Surprise/Proposal sequence content cannot leak through generic item-link traversal
-- [ ] reunion target date is manual, trusted-date validated, and has no location surveillance
-- [ ] browser lifecycle modes match authoritative server capability
-- [ ] R1 browser builds successfully without physical Redmi acceptance
-- [ ] P1, P2, and P3 regressions remain green
-- [ ] full `npm run health` passes
-- [ ] `npm audit --audit-level=high` passes
+- [x] migrations 0001 through 0014 apply from zero in canonical order after verified M1 migrations are available
+- [x] migrations 0001 through 0010 remain unchanged
+- [x] R1 does not create or modify migrations 0011 or 0012
+- [x] relationship-item database invariants include composite same-partnership keys and immutable identity
+- [x] every R1 kind/contentSchemaVersion has explicit contract coverage
+- [x] development preview/main plaintext is never mislabeled as ciphertext
+- [x] intended recipient cannot receive sealed main content before release
+- [x] no R1 plaintext or raw private request hash appears in logs, events, queues, notifications, traces, analytics, or idempotency response bodies
+- [x] Relationship Home is partnership-scoped, bounded, deterministic, and private/no-store
+- [x] every state-changing endpoint has exact lost-response idempotency
+- [x] same idempotency key with different private request fails deterministically
+- [x] expectedVersion conflicts never silently overwrite current state
+- [x] creator-owned content cannot be edited/deleted by the other partner
+- [x] pair-mutable state follows the documented policy matrix
+- [x] foreign, deleted, unreleased-hidden, and random item IDs fail with privacy-safe behavior
+- [x] Our Story preserves precision and uses one deterministic mixed-precision order
+- [x] future historical occurrence dates are rejected using trusted UTC date
+- [x] February 29 anniversary behavior is deterministic
+- [x] Remember This survives source disappearance without server-side copying M1 plaintext
+- [x] message references require the registered M1 resolver; invalid or foreign messages fail closed
+- [x] media and Voice Letter references are rejected until an M3 resolver is registered
+- [x] Voice Letter visibility is inherited from its containing relationship object
+- [x] Places coordinates are explicit only and never collected in background
+- [x] For You/Future Us scheduled release uses durable generation-fenced work
+- [x] recipient-open exposes preview but not main content until explicit open
+- [x] Surprise/Proposal creator-reveal keeps main sequence unavailable before reveal
+- [x] unknown content schema versions and durable payload versions fail closed
+- [x] duplicate scheduled claims cannot release twice
+- [x] breakup makes normal R1 mutations view-only while preconfigured scheduled release may continue strictly before destructive deadline
+- [x] account-deletion overlay pauses all unreleased delivery transitions
+- [x] account recovery wakes due paused work without changing unlock time or release generation
+- [x] destructive deadline wins over release at exact equality and when finalization is late
+- [x] restoration preserves item IDs, versions, curation, and schedule identity
+- [x] final dissolution synchronously ends R1 authorization and replay access
+- [x] final dissolution deletes every R1 authoritative row through P3 deletion architecture
+- [x] user item deletion leaves no protected R1 content in supporting/history tables
+- [x] deleting a linked target explicitly updates surviving curation owner versions
+- [x] stale work for deleted/dissolved objects becomes safe stale/no-op
+- [x] deletion crash/reclaim remains retry-safe and fenced
+- [x] future partnership cannot access old R1 data
+- [x] relationship signals are explicit user actions only
+- [x] no feature computes relationship quality, emotion, compatibility, breakup risk, responsiveness, or engagement score
+- [x] This Day in Us uses exact eligible day precision only
+- [x] Our Year and Anniversary are deterministic and unranked by engagement
+- [x] Surprise/Proposal sequence content cannot leak through generic item-link traversal
+- [x] reunion target date is manual, trusted-date validated, and has no location surveillance
+- [x] browser lifecycle modes match authoritative server capability
+- [x] R1 browser builds successfully without physical Redmi acceptance
+- [x] P1, P2, and P3 regressions remain green
+- [x] full `npm run health` passes
+- [x] `npm audit --audit-level=high` passes
+
+
+Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec` passed the exhaustive 40-gate local validation sweep, including canonical 0001 through 0014 migrations with no reservations, R1 69/69, M1 64/64, full health, audit, whitespace, clean worktree, and SHA parity.
 
 # S1: E2EE and Cryptographic Recovery
 
