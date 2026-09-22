@@ -6,6 +6,10 @@ import {
   closeDatabasePool,
   createDatabasePool,
   databaseConfigFromEnv,
+  getTransactionTimestamp,
+  lockAccounts,
+  terminatePartnershipLifecycle,
+  withTransaction,
   type DatabasePool,
 } from "@shawtie/db";
 import type { ApiConfig } from "../src/config.ts";
@@ -1285,6 +1289,216 @@ test("M1 account-deletion overlay is view-only and recovery preserves the same c
       "m1-overlay-send-key-0003",
     );
     assert.equal(resumed.statusCode, 201, resumed.body);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 send and breakup initiation serialize around the immutable freeze sequence", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "send_breakup_alice");
+    const bob = await register(app, database, "send_breakup_bob");
+    const { partnershipId, conversationId } = await formPartnership(
+      app,
+      alice,
+      bob,
+      "send_breakup",
+    );
+
+    const [send, breakup] = await Promise.all([
+      sendMessage(
+        app,
+        bob,
+        conversationId,
+        "racing breakup",
+        "m1-send-breakup-race-message-key",
+      ),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/partnerships/" + partnershipId + "/breakup",
+        headers: mutationHeaders(alice.cookie, "m1-send-breakup-race-start-key"),
+      }),
+    ]);
+    assert.equal(send.statusCode, 201, send.body);
+    assert.equal(breakup.statusCode, 200, breakup.body);
+
+    const sent = send.json() as { messageId: string; serverSequence: number };
+    const persisted = await database.pool.query<{
+      message_freeze_sequence: string | number | bigint | null;
+    }>(
+      "SELECT message_freeze_sequence FROM breakup_processes WHERE partnership_id = $1 AND restored_at IS NULL AND dissolved_at IS NULL AND cancelled_at IS NULL AND superseded_at IS NULL",
+      [partnershipId],
+    );
+    const cutoff = Number(persisted.rows[0]?.message_freeze_sequence);
+    assert.ok(cutoff === 0 || cutoff === 1);
+
+    const reaction = await app.inject({
+      method: "PUT",
+      url:
+        "/api/v1/conversations/"
+        + conversationId
+        + "/messages/"
+        + sent.messageId
+        + "/reaction",
+      headers: jsonHeaders(alice.cookie, "m1-send-breakup-race-reaction-key"),
+      payload: { emoji: "👍" },
+    });
+
+    if (sent.serverSequence <= cutoff) {
+      assert.equal(reaction.statusCode, 409, reaction.body);
+      assert.equal(
+        (reaction.json() as { error: { code: string } }).error.code,
+        "PRE_BREAKUP_MESSAGE_LOCKED",
+      );
+    } else {
+      assert.equal(reaction.statusCode, 200, reaction.body);
+    }
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 send and account deletion serialize into a durable view-only overlay", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "send_delete_alice");
+    const bob = await register(app, database, "send_delete_bob");
+    const { conversationId } = await formPartnership(app, alice, bob, "send_delete");
+    const reauthedCookie = await reauthenticate(app, alice);
+
+    const [send, deletion] = await Promise.all([
+      sendMessage(
+        app,
+        bob,
+        conversationId,
+        "racing deletion",
+        "m1-send-delete-race-message-key",
+      ),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/me/account-deletion",
+        headers: jsonHeaders(reauthedCookie),
+        payload: {},
+      }),
+    ]);
+    assert.equal(deletion.statusCode, 200, deletion.body);
+    assert.ok(send.statusCode === 201 || send.statusCode === 409, send.body);
+    if (send.statusCode === 409) {
+      assert.equal(
+        (send.json() as { error: { code: string } }).error.code,
+        "ACCOUNT_LOCKED",
+      );
+    }
+
+    const current = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/current",
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(current.statusCode, 200, current.body);
+    assert.equal(
+      (current.json() as { conversation: { interactionMode: string } }).conversation
+        .interactionMode,
+      "account_deletion_view_only",
+    );
+
+    const laterSend = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "must remain blocked",
+      "m1-send-delete-after-overlay-key",
+    );
+    assert.equal(laterSend.statusCode, 409, laterSend.body);
+    assert.equal(
+      (laterSend.json() as { error: { code: string } }).error.code,
+      "ACCOUNT_LOCKED",
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M1 message mutation and final dissolution serialize with authorization revoked at termination", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "final_race_alice");
+    const bob = await register(app, database, "final_race_bob");
+    const { partnershipId, conversationId } = await formPartnership(
+      app,
+      alice,
+      bob,
+      "final_race",
+    );
+
+    const breakup = await app.inject({
+      method: "POST",
+      url: "/api/v1/partnerships/" + partnershipId + "/breakup",
+      headers: mutationHeaders(alice.cookie, "m1-final-race-breakup-key"),
+    });
+    assert.equal(breakup.statusCode, 200, breakup.body);
+
+    const sent = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "post-cutoff mutable",
+      "m1-final-race-message-key",
+    );
+    assert.equal(sent.statusCode, 201, sent.body);
+    const messageId = (sent.json() as { messageId: string }).messageId;
+
+    const [edit] = await Promise.all([
+      app.inject({
+        method: "PATCH",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
+        headers: jsonHeaders(bob.cookie, "m1-final-race-edit-key"),
+        payload: { body: "race edit", expectedContentVersion: 1 },
+      }),
+      withTransaction(database, async (transaction) => {
+        const now = await getTransactionTimestamp(transaction);
+        await lockAccounts(transaction, [alice.accountId, bob.accountId]);
+        const generation = await terminatePartnershipLifecycle(transaction, {
+          partnershipId,
+          reason: "breakup",
+          effectiveAt: now,
+        });
+        assert.ok(generation !== null);
+      }),
+    ]);
+
+    assert.ok(edit.statusCode === 200 || edit.statusCode === 404, edit.body);
+
+    const partnership = await database.pool.query<{
+      lifecycle_state: string;
+      released_count: string;
+    }>(
+      "SELECT lifecycle_state, (SELECT count(*)::text FROM partnership_members WHERE partnership_id = $1 AND released_at IS NOT NULL) AS released_count FROM partnerships WHERE id = $1",
+      [partnershipId],
+    );
+    assert.equal(partnership.rows[0]?.lifecycle_state, "terminated");
+    assert.equal(partnership.rows[0]?.released_count, "2");
+
+    const after = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(after.statusCode, 404, after.body);
+    assert.equal(
+      (after.json() as { error: { code: string } }).error.code,
+      "CONVERSATION_NOT_FOUND",
+    );
   } finally {
     await app.close();
     await closeDatabasePool(database);
