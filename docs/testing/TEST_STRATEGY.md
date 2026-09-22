@@ -690,7 +690,7 @@ Required browser evidence includes:
 - final-dissolution local purge
 - service-worker media cache exclusion
 
-Physical Android acceptance is mandatory and follows the detailed catalog in `../ROADMAP_EPICS.md` and `../architecture/M3_MEDIA_VOICE_DESIGN.md`.
+Physical Android acceptance is mandatory and follows the detailed catalog in `../ROADMAP_EPICS.md` and `../architecture/M3_MEDIA_VOICE_DESIGN.md`. The dedicated design-time device contract is `M3_ANDROID_ACCEPTANCE.md`; its planned commands must not be described as runnable until M3 implementation creates them.
 
 M3 must also rerun M1, R1, and M2 regressions because it changes the message projection, R1 media resolver, IndexedDB schema, and deletion workflow.
 
