@@ -288,6 +288,23 @@ export function MessagingPanel() {
     }
   }, [acknowledge, conversation, messages, refreshConversation, refreshMessage]);
 
+  const handleSyncFailure = useCallback(
+    async (caught: unknown) => {
+      if (caught instanceof ApiClientError && caught.code === "CONVERSATION_NOT_FOUND") {
+        try {
+          await loadInitial();
+          setError("");
+          return;
+        } catch (refreshError) {
+          setError(errorText(refreshError));
+          return;
+        }
+      }
+      setError(errorText(caught));
+    },
+    [loadInitial],
+  );
+
   useEffect(() => {
     void loadInitial().catch((caught) => setError(errorText(caught)));
   }, [loadInitial]);
@@ -295,10 +312,10 @@ export function MessagingPanel() {
   useEffect(() => {
     if (!conversation) return;
     const timer = window.setInterval(() => {
-      void syncChanges().catch((caught) => setError(errorText(caught)));
+      void syncChanges().catch((caught) => void handleSyncFailure(caught));
     }, M1_VISIBLE_CHANGE_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [conversation, syncChanges]);
+  }, [conversation, handleSyncFailure, syncChanges]);
 
   useEffect(() => {
     const beat = () => {
@@ -316,11 +333,11 @@ export function MessagingPanel() {
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== "visible") return;
-      void syncChanges().catch((caught) => setError(errorText(caught)));
+      void syncChanges().catch((caught) => void handleSyncFailure(caught));
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [syncChanges]);
+  }, [handleSyncFailure, syncChanges]);
 
   async function run(task: () => Promise<void>) {
     setBusy(true);
