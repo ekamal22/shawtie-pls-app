@@ -430,6 +430,7 @@ Browser behavior:
 - last seen is the latest accepted server heartbeat
 - permanent account deletion scrubs the presence row
 - presence is exposed only to the currently authorized partner
+- a current-partnership projection suppresses any last-seen heartbeat older than that partnership's `activated_at`
 
 ### conversation_typing_state
 
