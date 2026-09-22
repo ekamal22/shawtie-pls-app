@@ -516,16 +516,28 @@ The M1 PostgreSQL matrix must include:
 - database invariants
 - P1/P2/P3 regression suites
 - primary-conversation provisioning
-- send idempotency and request-fingerprint mismatch
-- deterministic concurrent server sequencing
+- deterministic server-sequence allocation for message creation
+- deterministic durable change-sequence allocation across send/edit/delete/reaction mutations
+- bounded change-feed replay from a committed cursor
+- edit/delete/reaction of an old message discovered without relying on a new-message server sequence
+- send idempotency and keyed request-fingerprint mismatch
+- proof that private request fingerprints are keyed and do not persist raw or ordinary-digest message content
 - same-conversation reply enforcement
+- reply-context rendering when the referenced message is outside the loaded history page
+- tombstone-safe reply context for deleted referenced messages
 - exact 30-minute edit boundary
-- tombstone deletion and historical-version content removal
+- optimistic edit version checks and stale `expectedContentVersion` rejection
+- concurrent edit versus edit
+- edit versus delete
+- reaction versus delete
+- tombstone deletion with no plaintext edit-history retention
 - reaction add/change/remove
 - default and add-emoji paths
 - monotonic delivered/read high-water marks
-- typing expiry
-- presence privacy
+- no receipt advancement across a known unresolved forward-sync gap
+- typing expiry, write coalescing, and endpoint rate limiting
+- presence privacy and current-partnership activation boundary
+- proof that a newly formed partner cannot observe pre-partnership last-seen activity
 - nickname version conflicts
 - breakup sequence-freeze behavior
 - send versus breakup initiation
@@ -533,9 +545,11 @@ The M1 PostgreSQL matrix must include:
 - final dissolution versus message mutation
 - account recovery preserving authorized conversation state
 - cross-partnership conversation/message guessing denial
-- final-dissolution cleanup
+- module-owned messaging cleanup idempotency
+- final-dissolution cleanup of messages, reactions, receipt/member state, typing, nickname state, and durable change rows
 - permanent account-deletion presence cleanup
-- security guards proving private message content is absent from logs, lifecycle events, notifications, durable work, and idempotency metadata
+- content-free outbox invalidations for durable message mutations
+- security guards proving private message content is absent from logs, lifecycle events, notifications, durable work, change rows, outbox payloads, and idempotency metadata
+- centralized interaction-limit contract coverage so message, page, typing, presence, and idempotency ceilings do not drift between layers
 
 M1 does not require physical Redmi acceptance. Physical Android validation begins at M2.
-
