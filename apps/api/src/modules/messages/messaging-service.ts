@@ -6,6 +6,7 @@ import {
   consumeRateLimitBuckets,
   findMessageByIdempotencyKey,
   getTransactionTimestamp,
+  hasActiveMessageReaction,
   heartbeatPresence,
   insertConversationChange,
   insertMessage,
@@ -198,7 +199,7 @@ export class MessagingService {
   async #withConversation<T>(
     auth: AuthContext,
     conversationId: string,
-    capability: MessageMutationCapability,
+    capability: MessageMutationCapability | null,
     messageId: string | null,
     work: (context: LockedMessagingContext) => Promise<T>,
   ): Promise<T> {
@@ -235,15 +236,15 @@ export class MessagingService {
         : null;
       if (messageId && !message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
 
-      const decision = evaluateCapability(
-        capability as CapabilityName,
-        lifecycleContext(auth.session.accountId, lifecycle, now, message),
-      );
-      if (!decision.allowed) {
-        if (capability === "view_shared_data") {
-          throw new ApiError(404, "CONVERSATION_NOT_FOUND");
-        }
-        throw this.#capabilityError(decision.reason, messageId !== null);
+      if (capability !== null) {
+        this.#assertCapability(
+          auth,
+          lifecycle,
+          now,
+          message,
+          capability,
+          messageId !== null,
+        );
       }
 
       return work({
@@ -254,6 +255,25 @@ export class MessagingService {
         message,
       });
     });
+  }
+
+  #assertCapability(
+    auth: AuthContext,
+    lifecycle: LockedPartnershipLifecycle,
+    now: Date,
+    message: LockedMessage | null,
+    capability: MessageMutationCapability,
+    messageScoped: boolean,
+  ): void {
+    const decision = evaluateCapability(
+      capability as CapabilityName,
+      lifecycleContext(auth.session.accountId, lifecycle, now, message),
+    );
+    if (decision.allowed) return;
+    if (capability === "view_shared_data") {
+      throw new ApiError(404, "CONVERSATION_NOT_FOUND");
+    }
+    throw this.#capabilityError(decision.reason, messageScoped);
   }
 
   #privateFingerprintPayload(action: string, fields: Record<string, unknown>): string {
@@ -525,9 +545,9 @@ export class MessagingService {
     return this.#withConversation(
       auth,
       conversationId,
-      input.replyToMessageId ? "reply_message" : "send_message",
       null,
-      async ({ transaction, now, conversation }) => {
+      null,
+      async ({ transaction, now, lifecycle, conversation }) => {
         const existing = await findMessageByIdempotencyKey(transaction, {
           conversationId,
           senderAccountId: auth.session.accountId,
@@ -561,6 +581,15 @@ export class MessagingService {
             createdAt: existing.createdAt.toISOString(),
           };
         }
+
+        this.#assertCapability(
+          auth,
+          lifecycle,
+          now,
+          null,
+          input.replyToMessageId ? "reply_message" : "send_message",
+          false,
+        );
 
         if (
           input.replyToMessageId &&
@@ -679,9 +708,9 @@ export class MessagingService {
     return this.#withConversation(
       auth,
       conversationId,
-      "edit_message",
+      null,
       messageId,
-      async ({ transaction, now, message }) => {
+      async ({ transaction, now, lifecycle, message }) => {
         if (!message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
         const reservation = await this.#reservePrivateMutation(transaction, {
           accountId: auth.session.accountId,
@@ -691,6 +720,8 @@ export class MessagingService {
           now,
         });
         if (reservation.responseStatus !== null) return reservation.responseBody;
+
+        this.#assertCapability(auth, lifecycle, now, message, "edit_message", true);
 
         if (message.contentVersion !== BigInt(input.expectedContentVersion)) {
           throw new ApiError(409, "VERSION_CONFLICT");
@@ -748,9 +779,9 @@ export class MessagingService {
     return this.#withConversation(
       auth,
       conversationId,
-      "delete_message",
+      null,
       messageId,
-      async ({ transaction, now, message }) => {
+      async ({ transaction, now, lifecycle, message }) => {
         if (!message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
         const reservation = await this.#reservePrivateMutation(transaction, {
           accountId: auth.session.accountId,
@@ -760,6 +791,8 @@ export class MessagingService {
           now,
         });
         if (reservation.responseStatus !== null) return reservation.responseBody;
+
+        this.#assertCapability(auth, lifecycle, now, message, "delete_message", true);
 
         const changeSequence = await allocateChangeSequence(transaction, conversationId);
         const nextVersion = await tombstoneMessage(transaction, {
@@ -812,9 +845,9 @@ export class MessagingService {
     return this.#withConversation(
       auth,
       conversationId,
-      "react_message",
+      null,
       messageId,
-      async ({ transaction, now, conversation, message }) => {
+      async ({ transaction, now, lifecycle, conversation, message }) => {
         if (!message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
         const reservation = await this.#reservePrivateMutation(transaction, {
           accountId: auth.session.accountId,
@@ -832,6 +865,8 @@ export class MessagingService {
             },
           };
         }
+
+        this.#assertCapability(auth, lifecycle, now, message, "react_message", true);
 
         const changeSequence = await allocateChangeSequence(transaction, conversationId);
         await setMessageReaction(transaction, {
@@ -889,9 +924,9 @@ export class MessagingService {
     return this.#withConversation(
       auth,
       conversationId,
-      "react_message",
+      null,
       messageId,
-      async ({ transaction, now, message }) => {
+      async ({ transaction, now, lifecycle, message }) => {
         if (!message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
         const reservation = await this.#reservePrivateMutation(transaction, {
           accountId: auth.session.accountId,
@@ -907,14 +942,14 @@ export class MessagingService {
           };
         }
 
-        const changeSequence = await allocateChangeSequence(transaction, conversationId);
-        const removed = await removeMessageReaction(
+        this.#assertCapability(auth, lifecycle, now, message, "react_message", true);
+
+        const exists = await hasActiveMessageReaction(
           transaction,
           messageId,
           auth.session.accountId,
-          changeSequence,
         );
-        if (!removed) {
+        if (!exists) {
           const stored = {
             messageId,
             changeSequence: safeNumber(message.lastChangeSequence),
@@ -922,6 +957,15 @@ export class MessagingService {
           await this.#completePrivateMutation(transaction, reservation, stored, now);
           return { ...stored, reaction: null };
         }
+
+        const changeSequence = await allocateChangeSequence(transaction, conversationId);
+        const removed = await removeMessageReaction(
+          transaction,
+          messageId,
+          auth.session.accountId,
+          changeSequence,
+        );
+        if (!removed) throw new Error("Active reaction disappeared while message lock was held");
 
         await insertConversationChange(transaction, {
           conversationId,
@@ -1072,14 +1116,6 @@ export class MessagingService {
         throw new ApiError(404, "PARTNERSHIP_UNAVAILABLE");
       }
 
-      const decision = evaluateCapability(
-        "change_nickname",
-        lifecycleContext(auth.session.accountId, lifecycle, now, null),
-      );
-      if (!decision.allowed) {
-        throw new ApiError(409, decision.reason ?? "PARTNERSHIP_UNAVAILABLE");
-      }
-
       const reservation = await this.#reservePrivateMutation(transaction, {
         accountId: auth.session.accountId,
         scope: "m1.partnership.nickname",
@@ -1092,6 +1128,14 @@ export class MessagingService {
           ...objectRecord(reservation.responseBody),
           nickname: input.nickname,
         };
+      }
+
+      const nicknameDecision = evaluateCapability(
+        "change_nickname",
+        lifecycleContext(auth.session.accountId, lifecycle, now, null),
+      );
+      if (!nicknameDecision.allowed) {
+        throw new ApiError(409, nicknameDecision.reason ?? "PARTNERSHIP_UNAVAILABLE");
       }
 
       const version = await updatePartnershipNickname(transaction, {
