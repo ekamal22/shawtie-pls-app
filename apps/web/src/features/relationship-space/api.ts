@@ -64,7 +64,7 @@ export async function createRelationshipItem(
   const key = mutationKey();
   const queue = async () => {
     try {
-      const operation = await runtimeOrThrow().queueRelationshipCreate(body);
+      const operation = await runtimeOrThrow().queueRelationshipCreate(body, key);
       return { queued: true as const, operationId: operation.operationId };
     } catch {
       throw new ApiClientError("OFFLINE_OPERATION_REQUIRES_CONNECTION", 0);
@@ -103,7 +103,7 @@ export async function patchRelationshipItem(
   const key = mutationKey();
   const queue = async () => {
     try {
-      const operation = await runtimeOrThrow().queueRelationshipPatch(itemId, body);
+      const operation = await runtimeOrThrow().queueRelationshipPatch(itemId, body, key);
       return { queued: true as const, operationId: operation.operationId };
     } catch {
       throw new ApiClientError("OFFLINE_OPERATION_REQUIRES_CONNECTION", 0);
@@ -138,6 +138,7 @@ export async function deleteRelationshipItem(
     const operation = await runtimeOrThrow().queueRelationshipDelete(
       itemId,
       expectedVersion,
+      key,
     );
     return { queued: true as const, operationId: operation.operationId };
   };

@@ -98,8 +98,14 @@ export class M2Runtime {
     return operation;
   }
 
-  async queueRelationshipCreate(body: unknown): Promise<RelationshipQueueOperation> {
-    const operation = await this.replay.enqueueRelationshipCreate(body);
+  async queueRelationshipCreate(
+    body: unknown,
+    idempotencyKey?: string,
+  ): Promise<RelationshipQueueOperation> {
+    const operation = await this.replay.enqueueRelationshipCreate(
+      body,
+      idempotencyKey,
+    );
     void this.coordinator.requestSync();
     return operation;
   }
@@ -107,8 +113,13 @@ export class M2Runtime {
   async queueRelationshipPatch(
     itemId: string,
     body: unknown,
+    idempotencyKey?: string,
   ): Promise<RelationshipQueueOperation> {
-    const operation = await this.replay.enqueueRelationshipPatch(itemId, body);
+    const operation = await this.replay.enqueueRelationshipPatch(
+      itemId,
+      body,
+      idempotencyKey,
+    );
     void this.coordinator.requestSync();
     return operation;
   }
@@ -116,10 +127,12 @@ export class M2Runtime {
   async queueRelationshipDelete(
     itemId: string,
     expectedVersion: number,
+    idempotencyKey?: string,
   ): Promise<RelationshipQueueOperation> {
     const operation = await this.replay.enqueueRelationshipDelete(
       itemId,
       expectedVersion,
+      idempotencyKey,
     );
     void this.coordinator.requestSync();
     return operation;
