@@ -160,6 +160,37 @@ test("M2 internal notification requires routing metadata without protected conte
   );
 });
 
+test("M2 internal partnership invalidation carries only distinct account routing IDs", () => {
+  const notification = {
+    v: 1,
+    kind: "partnership.changed",
+    scope: {
+      partnershipId: PARTNERSHIP,
+      accountIds: [
+        ACCOUNT,
+        "10000000-0000-4000-8000-000000000002",
+      ],
+    },
+    data: {
+      eventId: EVENT,
+      partnershipId: PARTNERSHIP,
+      generation: 1,
+      metadataVersion: 1,
+    },
+  };
+  assert.equal(
+    safeParseAtBoundary(m2InternalRealtimeNotificationSchema, notification).success,
+    true,
+  );
+  assert.equal(
+    safeParseAtBoundary(m2InternalRealtimeNotificationSchema, {
+      ...notification,
+      scope: { partnershipId: PARTNERSHIP, accountIds: [ACCOUNT, ACCOUNT] },
+    }).success,
+    false,
+  );
+});
+
 test("M2 frame ceiling rejects oversized serialized frames", () => {
   assert.doesNotThrow(() =>
     assertM2RealtimeFrameSize({

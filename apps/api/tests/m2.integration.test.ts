@@ -510,6 +510,88 @@ test("M2 product mutations append content-free durable realtime outbox records",
   }
 });
 
+test("M2 partnership formation invalidation immediately refreshes an unpaired socket", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "m2formalice");
+    const bob = await register(app, database, "m2formbob");
+
+    const socket = await app.injectWS("/api/v1/realtime", {
+      headers: {
+        origin: config.appOrigin,
+        cookie: alice.cookie,
+        "sec-websocket-protocol": "shawtie.realtime.v1",
+      },
+    });
+
+    try {
+      const initialReady = await waitForFrame(socket, "control.ready");
+      const initialPayload = initialReady.payload as Record<string, unknown>;
+      assert.equal(initialPayload.partnershipId, null);
+      assert.equal(initialPayload.conversationId, null);
+
+      const formed = await formPartnership(app, alice, bob, "m2formation");
+      const outbox = await database.pool.query<{
+        id: string;
+        payload: {
+          partnershipId: string;
+          accountIds: string[];
+          generation: number;
+          metadataVersion: number;
+        };
+      }>(
+        `SELECT id, payload
+         FROM outbox_events
+         WHERE event_type = 'm2.partnership.changed'
+           AND aggregate_id = $1
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [formed.partnershipId],
+      );
+      const event = outbox.rows[0];
+      assert.ok(event);
+      assert.deepEqual(event.payload, {
+        partnershipId: formed.partnershipId,
+        accountIds: [alice.accountId, bob.accountId].sort(),
+        generation: 1,
+        metadataVersion: 1,
+      });
+
+      const resyncPromise = waitForFrame(socket, "control.resync_required");
+      await database.pool.query("SELECT pg_notify($1, $2)", [
+        M2_REALTIME_NOTIFY_CHANNEL,
+        JSON.stringify({
+          v: 1,
+          kind: "partnership.changed",
+          scope: {
+            partnershipId: formed.partnershipId,
+            accountIds: event.payload.accountIds,
+          },
+          data: {
+            eventId: event.id,
+            partnershipId: formed.partnershipId,
+            generation: 1,
+            metadataVersion: 1,
+          },
+        }),
+      ]);
+
+      const resync = await resyncPromise;
+      assert.deepEqual(resync.payload, {
+        scope: "partnership",
+        reason: "scope_changed",
+      });
+    } finally {
+      socket.terminate();
+    }
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M2 partnership changed hint immediately revalidates and closes stale socket scope", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -557,7 +639,10 @@ test("M2 partnership changed hint immediately revalidates and closes stale socke
         JSON.stringify({
           v: 1,
           kind: "partnership.changed",
-          scope: { partnershipId: formed.partnershipId },
+          scope: {
+            partnershipId: formed.partnershipId,
+            accountIds: [alice.accountId, bob.accountId].sort(),
+          },
           data: {
             eventId: "70000000-0000-4000-8000-000000000099",
             partnershipId: formed.partnershipId,

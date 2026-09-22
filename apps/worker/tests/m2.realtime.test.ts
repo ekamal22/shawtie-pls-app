@@ -173,6 +173,57 @@ test("M2 generic relationship invalidation stays content-free", async () => {
   ]);
 });
 
+test("M2 partnership invalidation forwards distinct account routing IDs", async () => {
+  const PARTNERSHIP = "40000000-0000-4000-8000-000000000001";
+  const ACCOUNT_A = "60000000-0000-4000-8000-000000000001";
+  const ACCOUNT_B = "60000000-0000-4000-8000-000000000002";
+  const published: M2InternalRealtimeNotification[] = [];
+  const publisher: RealtimeInvalidationPublisher = {
+    async publish(notification) {
+      published.push(notification);
+    },
+  };
+  const handler = createM2RealtimeOutboxHandlers(publisher).find(
+    (candidate) => candidate.eventType === "m2.partnership.changed",
+  );
+  assert.ok(handler);
+
+  await handler.deliver({
+    event: genericEvent({
+      eventType: "m2.partnership.changed",
+      aggregateType: "partnership",
+      aggregateId: PARTNERSHIP,
+      payload: {
+        partnershipId: PARTNERSHIP,
+        accountIds: [ACCOUNT_B, ACCOUNT_A],
+        generation: 1,
+        metadataVersion: 1,
+      },
+    }),
+    signal: new AbortController().signal,
+    async renewLease() {
+      return true;
+    },
+  });
+
+  assert.deepEqual(published, [
+    {
+      v: 1,
+      kind: "partnership.changed",
+      scope: {
+        partnershipId: PARTNERSHIP,
+        accountIds: [ACCOUNT_A, ACCOUNT_B],
+      },
+      data: {
+        eventId: EVENT,
+        partnershipId: PARTNERSHIP,
+        generation: 1,
+        metadataVersion: 1,
+      },
+    },
+  ]);
+});
+
 test("M2 generic realtime handler rejects extra private fields", async () => {
   const PARTNERSHIP = "40000000-0000-4000-8000-000000000001";
   let published = false;
@@ -195,6 +246,10 @@ test("M2 generic realtime handler rejects extra private fields", async () => {
           aggregateId: PARTNERSHIP,
           payload: {
             partnershipId: PARTNERSHIP,
+            accountIds: [
+              "60000000-0000-4000-8000-000000000001",
+              "60000000-0000-4000-8000-000000000002",
+            ],
             generation: 2,
             metadataVersion: 1,
             privateNote: "must not leave PostgreSQL",
