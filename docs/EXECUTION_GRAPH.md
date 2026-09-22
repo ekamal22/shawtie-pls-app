@@ -179,7 +179,7 @@ latest main containing verified P3
 
 M1 and R1 may progress in parallel.
 M1 architecture/API design is complete on `feat/m1-messaging-core`; runtime implementation is pending.
-R1 architecture/API design is complete on `feat/r1-relationship-space`; runtime implementation is pending.
+R1 architecture/API design and runtime source implementation are present on `feat/r1-relationship-space`; executable closure evidence is pending.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 Neither branch may consume the other branch's migration ownership.

@@ -122,7 +122,7 @@ Current epic status:
 - P1 Discovery and Partner Requests: DONE. All 14 acceptance gates are closed. Migration 0008 applies as part of an eight-migration clean run with database invariants green; `npm run test:p1:local` passes the disposable PostgreSQL/API/worker matrix 16/16 with `P1_LOCAL_POSTGRES_PASS`; the final full `npm run health` regression passes with Domain 38/38, Contracts 8/8, API unit/security 11/11, and Worker 4/4; Prettier, ESLint, dependency checks, typecheck, and production builds are green; and `npm audit --audit-level=high` reports 0 vulnerabilities.
 - P2 Partnership Formation and Relationship Date: DONE. All 11 acceptance gates are closed. The P2 domain/contracts suite passes 14/14, the P2 security suite passes 5/5, all nine migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 27/27 with `P2_LOCAL_POSTGRES_PASS`. The matrix proves explicit and reciprocal formation, accepted-request replay linkage, deterministic locking, incompatible-request invalidation, expiry-action handling, one-partner occupancy races, relationship-date version and generation separation, other-partner notification isolation, notification snapshot pagination, and P1 behavior in real `paired` mode. The standalone historical `test:p1:local` harness remains request-only. Full repository health and `npm audit --audit-level=high` are green. Migration 0008 remains byte-for-byte unchanged at SHA-256 `94e2d22ceff3b73fc990fc07810cabedea097d7440a571c54c00ec185bebd18e`.
 - M1 Messaging Core: IN_PROGRESS on `feat/m1-messaging-core`. Its refined architecture and API design are complete on the parallel branch; runtime implementation and acceptance evidence remain pending. M1 owns migrations 0011 and 0012.
-- R1 Relationship Space: IN_PROGRESS on `feat/r1-relationship-space`. Architecture and API design are complete through a second-pass edge-semantics refinement covering preview/sealed content roles, all-mutation idempotency, recipient-open and creator-reveal flows, account-deletion release pause/recovery wake, destructive-deadline precedence, resolver-gated external references, precision/date edge cases, and deletion/version interactions. Runtime implementation and acceptance evidence remain pending. R1 owns migrations 0013 and 0014 and does not redefine P3 lifecycle authority.
+- R1 Relationship Space: IN_PROGRESS on `feat/r1-relationship-space`. Architecture/API design and runtime implementation are present through source checkpoint `acf1752`: domain, contracts, migrations 0013/0014, repositories, API, durable release worker, lifecycle hooks, browser flows, database invariants, security tests, API/worker integration tests, cursor binding, curation/reunion controls, and the dedicated `test:r1:local` harness. R1 remains unclosed because the full PostgreSQL regression matrix, repository health, and dependency audit have not yet been executed for this branch. Isolated local testing explicitly reserves M1-owned migration numbers 0011/0012 without adding placeholder migrations; final closure still requires the real M1 migrations.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -161,10 +161,10 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 A1, P1, P2, and P3 are complete and merged into the verified mainline.
 
-M1 and R1 architecture work is complete on their separate parallel branches. Runtime implementation remains pending for both.
+M1 and R1 remain separate parallel branches. M1 runtime work continues independently. R1 source implementation is present and now needs executable closure evidence.
 
-1. implement M1 only in `feat/m1-messaging-core` with ownership of migrations 0011 and 0012
-2. implement R1 only in `feat/r1-relationship-space` with ownership of migrations 0013 and 0014
+1. continue M1 only in `feat/m1-messaging-core` with ownership of migrations 0011 and 0012
+2. run and fix the R1 closure harness only in `feat/r1-relationship-space`, which owns migrations 0013 and 0014
 3. keep shared-file edits minimal, append-oriented, and easy to reconcile
 4. do not merge or cherry-pick M1 runtime into R1 merely to satisfy migration numbering
 5. preserve P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries

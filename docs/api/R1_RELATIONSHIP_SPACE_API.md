@@ -4,7 +4,7 @@
 
 This is the canonical R1 HTTP API design.
 
-R1 architecture is complete. Runtime implementation has not started.
+R1 architecture and runtime API implementation are present on `feat/r1-relationship-space`. Executed closure evidence remains pending, so this document does not claim the API is verified until the R1 test gates run successfully.
 
 Base path:
 
@@ -633,6 +633,8 @@ A cursor never contains item content, coordinates, titles, notes, relationship s
 
 A cursor created for a different query shape is rejected.
 
+The cursor also carries a server-keyed integrity binding over the authenticated account, authoritative partnership, and query shape. Tampering or reusing a cursor after moving into a different partnership returns `400 INVALID_CURSOR`.
+
 New items created after `snapshotAt` do not appear in an already-started snapshot traversal.
 
 ## POST /relationship-space/items
@@ -937,7 +939,7 @@ Replacing the ordered set atomically avoids partial curation reorder state. Surp
 
 `200`
 
-Returns the new item projection and version.
+Returns content-free mutation metadata containing the item ID, new version, and trusted update timestamp. The browser refetches the canonical authorized item projection after the mutation. This keeps idempotency response metadata free of protected relationship content.
 
 ### Conflict
 

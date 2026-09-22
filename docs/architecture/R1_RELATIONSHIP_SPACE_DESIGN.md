@@ -4,7 +4,7 @@
 
 R1 Relationship Space is `IN_PROGRESS`.
 
-Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. Runtime implementation has not started on this branch. No R1 acceptance gate may be closed from design text alone.
+Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. R1 runtime implementation is now present on this branch across domain, contracts, migrations, repositories, API, worker, browser, security tests, integration tests, database invariants, and the dedicated local closure harness. Executed closure evidence is still pending, so no R1 acceptance gate is closed from source presence alone.
 
 Branch:
 
@@ -21,7 +21,9 @@ Migration ownership:
 - R1 owns `0013_relationship_space_runtime.sql`
 - R1 owns `0014_relationship_space_interaction_runtime.sql`
 
-R1 does not merge, copy, or redefine M1 messaging persistence. R1 is designed against the same verified P3 baseline and uses loose references where a future message or media resource may be associated with a relationship object.
+R1 does not merge, copy, or redefine M1 messaging persistence. R1 is implemented against the same verified P3 baseline and uses loose references where a future message or media resource may be associated with a relationship object.
+
+For isolated R1 branch testing only, `test:r1:local` opts into `SHAWTIE_MIGRATION_RESERVATIONS=0011,0012`. This lets the migration-plan checker acknowledge the two M1-owned numbers without creating placeholder SQL files. Normal `health` and integrated `test:r1:postgres` runs remain strict and require the real M1 migrations before R1 can close.
 
 ## Purpose
 
@@ -962,20 +964,21 @@ This means R1 has no hidden event-sourced content archive.
 
 ## Cursor integrity
 
-R1 list cursors follow the existing repository pattern: versioned base64url-encoded structured cursors validated at the API boundary.
+R1 list cursors are versioned base64url-encoded structured cursors validated at the API boundary.
 
-They are pagination state, not authorization tokens.
+They are pagination state, not authorization tokens, and now carry a server-keyed `r1-cursor-binding` value. The binding covers authenticated account ID, authoritative partnership ID, and normalized query shape.
 
 Every cursor decoder validates:
 
 - supported cursor version
 - `snapshotAt` is valid and not in the future
 - query-shape discriminator matches the current filters and sort mode
+- keyed binding matches the current account, partnership, and query shape
 - occurrence sort components satisfy the documented precision/null ordering
 - item ID is a UUID
 - cursor length is bounded
 
-Tampering may change pagination position only if the modified cursor still satisfies every validation rule. Authorization is still re-applied to every database query, so a cursor can never select another partnership.
+Tampered cursors and cursors copied into a future partnership fail with `INVALID_CURSOR`. Authorization is still independently re-applied to every database query.
 
 ## Cross-partnership authorization
 
@@ -1417,8 +1420,23 @@ This rule must stay synchronized across the PRD, worker design, API contract, te
 
 ## Completion statement
 
-This document completes R1 architecture and implementation design only.
+R1 architecture, implementation design, and the planned runtime source surfaces are implemented on `feat/r1-relationship-space`.
 
-R1 runtime implementation has not started.
+Current source checkpoint:
 
-No migration 0013 or 0014 source file, R1 repository, R1 API handler, R1 worker handler, R1 browser feature, or R1 closure harness is claimed to exist until it is actually implemented and verified.
+`acf1752`
+
+Implemented source includes:
+
+- migrations 0013 and 0014
+- relationship-space domain policy and contracts
+- database repositories and invariants
+- private Relationship Space API routes and service
+- keyed mutation receipts and keyed partnership-bound cursors
+- durable scheduled release handling and release-generation fencing
+- account-deletion pause and recovery wake integration
+- P3 dissolution cancellation integration
+- responsive Relationship Space browser flows including curations, reunion planning, partial occurrence precision, and rescheduling
+- R1 security, API integration, worker integration, and local PostgreSQL harnesses
+
+R1 remains `IN_PROGRESS` until the implemented closure commands are executed successfully and the acceptance evidence is recorded. Source implementation alone is not verification.

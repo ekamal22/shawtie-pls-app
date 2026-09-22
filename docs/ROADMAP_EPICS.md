@@ -1051,7 +1051,29 @@ Parallel reservation:
 - M1 owns 0011 and 0012
 - R1 must not create, rename, or modify M1 migration numbers
 
-Architecture/design is complete through the second-pass edge-semantics refinement. Runtime implementation and executable acceptance evidence are pending.
+Architecture/design and runtime source implementation are present through source checkpoint `acf1752`. Executable acceptance evidence is still pending, so the epic remains IN_PROGRESS.
+
+## Current implemented progress
+
+Source implementation now includes:
+
+- R1 domain policies, capability refinements, date and release predicates
+- explicit Zod contracts for every R1 kind and mutation
+- migrations 0013 and 0014 plus database invariants
+- relationship-space repositories and durable release scheduling
+- private API home/list/detail/create/update/delete/release/experience routes
+- keyed idempotency receipts and partnership-bound keyed cursors
+- optimistic version checks and race-safe shared curation handling
+- account-deletion pause/recovery wake and P3 dissolution cancellation hooks
+- responsive browser Relationship Space with lifecycle view-only modes
+- Our Story, Someday, reunion planning, signals, derived experiences, saved curations, Surprise and Proposal rendering
+- day/month/year/unknown occurrence entry and schedule rescheduling
+- resolver-gated message/media/Voice Letter references
+- R1 security, API integration, worker integration, and local PostgreSQL harnesses
+
+The isolated `test:r1:local` harness opts into migration reservations 0011/0012 only so R1 can be exercised without copying M1. Final integrated closure must run without that reservation and with the real M1 migrations present.
+
+The source above is implemented but not yet accepted as green. The checkboxes below remain open until the commands are executed and evidence is recorded.
 
 ## Scope
 
@@ -1247,7 +1269,7 @@ npm run health
 npm audit --audit-level=high
 ```
 
-These commands are design targets and must not be reported as implemented until source and executed evidence exist.
+These commands are implemented on the branch. They must not be reported as passing until executed evidence exists.
 
 ## Acceptance gates
 
