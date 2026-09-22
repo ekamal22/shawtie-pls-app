@@ -287,6 +287,7 @@ test("M1 formation provisions one conversation and send/reply are ordered and id
       serverSequence: number;
       changeSequence: number;
       contentVersion: number;
+      createdAt: string;
     };
     assert.deepEqual(
       {
