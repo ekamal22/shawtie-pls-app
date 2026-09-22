@@ -66,24 +66,26 @@ The capability engine must:
 
 ## R1 relationship-space refinement
 
-R1 design refines the relationship-object capability surface without replacing the central engine.
-
-Planned user-driven R1 capabilities are:
+Planned user-driven R1 capabilities:
 
 - `create_relationship_object`
-- `edit_relationship_object`
+- `edit_relationship_object_content`
 - `delete_relationship_object`
+- `mutate_relationship_shared_state`
 - `curate_relationship_space`
-- `release_relationship_object`
+- `recipient_open_relationship_object`
+- `creator_reveal_relationship_object`
 - `create_relationship_signal`
 
-For normal user actions these capabilities require an active current partnership and no account-deletion view-only overlay. They are denied during `breakup_pending`, during account-deletion view-only state, after termination, and for non-members.
+Normal user actions require active current partnership and no account-deletion overlay.
 
-Scheduled date/time release is not represented as a user mutation capability. The R1 worker re-evaluates a separate release predicate against authoritative lifecycle plus item release state. A For You or Future Us release that was durably configured before a view-only transition may continue according to the R1 design, while schedule changes and manual release remain denied.
+Feature policy narrows actor rights: authored content is creator-owned by default; Someday, reunion, and saved curation contain explicitly pair-mutable state; recipient-open belongs to the non-creator recipient for For You/Future Us; creator-reveal belongs to the creator for Surprise/Proposal; released delivery content is immutable.
 
-Feature rules can further restrict an otherwise available capability. For example, unreleased delivery content is creator-private and released For You/Future Us content is immutable.
+During `breakup_pending`, user-driven R1 mutation capabilities are denied.
 
-These are design commitments until R1-A runtime domain code and tests exist.
+Scheduled release is evaluated by a separate pure predicate. A preconfigured For You/Future Us schedule may release during breakup only while trusted time is strictly before the effective destructive deadline. Account-deletion overlay pauses unreleased delivery. Exact deadline equality denies release, and a late finalizer does not extend eligibility.
+
+These remain design commitments until R1-A implementation and tests exist.
 
 ## API enforcement
 

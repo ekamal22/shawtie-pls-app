@@ -1051,7 +1051,7 @@ Parallel reservation:
 - M1 owns 0011 and 0012
 - R1 must not create, rename, or modify M1 migration numbers
 
-Architecture/design is complete. Runtime implementation and executable acceptance evidence are pending.
+Architecture/design is complete through the second-pass edge-semantics refinement. Runtime implementation and executable acceptance evidence are pending.
 
 ## Scope
 
@@ -1061,7 +1061,7 @@ Architecture/design is complete. Runtime implementation and executable acceptanc
 - Firsts
 - Places We Became Us
 - For You
-- Voice Letters relationship-object model
+- Voice Letter attachment model
 - Future Us
 - Love
 - Someday
@@ -1074,6 +1074,7 @@ Architecture/design is complete. Runtime implementation and executable acceptanc
 - explicit relationship signals
 - P3 lifecycle integration
 - scheduled-release durability
+- mutation idempotency
 - deletion and future-partnership isolation
 - responsive relationship-space browser surface
 
@@ -1081,78 +1082,93 @@ R1 does not own M1 messaging persistence, M2 realtime/offline queues, M3 media t
 
 ## Refined architecture decisions
 
-- the immutable partnership ID is the only relationship-space namespace authority
-- the existing `relationship_items` table remains the aggregate root and is refined through forward-only migrations
-- common content remains on the item while server-required feature semantics use normalized supporting tables
-- occurrence precision uses explicit year/month/day components so month, year, and unknown dates do not fabricate missing values
-- pre-S1 development plaintext is stored only in an explicitly named development plaintext field and never in ciphertext fields
-- S1 later replaces development plaintext with reviewed encrypted relationship-object envelopes
-- Our Story uses explicit membership plus deterministic date ordering
-- Remember This creates an independent R1 snapshot from an explicit client action and never causes the server to copy M1 message plaintext
-- Places coordinates remain protected content and never enter logs or analytics
-- For You and Future Us support immediate, scheduled, and explicitly labelled manual release modes
-- condition labels are presentation text only; R1 has no emotional or behavioral condition evaluator
-- scheduled releases use existing durable `scheduled_actions` with item release-generation fencing and content-free payloads
-- scheduled date/time For You and Future Us releases continue when already configured before breakup or account-deletion view-only state
-- normal relationship-space mutations are disabled in both view-only states
-- Someday state and explicit relationship-signal type are normalized server-readable product state
-- This Day in Us is derived from exact user-supplied day precision only
-- Our Year and Anniversary use deterministic candidates plus optional persisted curation, never engagement scoring
-- Surprise and Proposal use ordered same-partnership item links
-- reunion state uses a manual target date and never location surveillance
-- user item deletion hard-deletes the item and cascades all R1 child state
-- final dissolution remains P3-owned and the existing relational deletion target removes R1 through the relationship-item cascade
-- cross-partnership item IDs, links, and references fail closed
-- browser capability state remains advisory and server authorization remains authoritative
+- immutable partnership ID is the relationship-space namespace authority
+- existing `relationship_items` remains the aggregate root
+- protected preview and protected main payloads are separated for release-gated items
+- pre-S1 preview/main plaintext uses explicitly named development fields and never ciphertext fields
+- S1 later encrypts preview and main separately so the server can expose preview while withholding sealed content
+- normalized year/month/day components preserve occurrence precision without inventing dates
+- historical occurrence dates cannot be in the future under trusted PostgreSQL UTC date
+- February 29 anniversaries use February 28 in non-leap years
+- authored content is creator-owned by default; only explicitly shared state such as Someday, reunion, and saved curation is pair-mutable
+- every state-changing R1 endpoint uses Idempotency-Key
+- private request fingerprints are domain-separated server-keyed HMACs, never raw unkeyed hashes of relationship content
+- Our Story uses explicit membership plus one precision-aware deterministic ordering rule
+- Remember This creates an independent client-supplied R1 snapshot and never makes the server copy M1 plaintext
+- message references are accepted only when an M1 resolver is registered
+- Voice Letter is a media reference role, not a standalone relationship item
+- media/voice references are accepted only when an M3 resolver is registered
+- Places coordinates remain protected content and never enter routine logs or analytics
+- For You and Future Us support immediate, scheduled, and recipient-open release
+- Surprise and Proposal support immediate or creator-reveal release
+- Surprise/Proposal private sequence content stays inside the protected container payload instead of generic linked child items
+- scheduled actions use item release-generation fencing and content-free durable payloads
+- breakup permits only the explicit preconfigured scheduled-release exception
+- account-deletion view-only pauses all unreleased delivery transitions
+- account recovery preserves original unlock time/generation and wakes due paused work safely
+- destructive lifecycle deadline wins over release at exact equality and when finalization is late
+- final dissolution remains P3-owned
+- curation target deletion updates surviving curation owner versions explicitly instead of silently cascading
+- cross-partnership IDs, links, references, cursors, and replays fail closed
+- browser capability state remains advisory
 
 ## Implementation sequence
 
 ### R1-A Domain model and contracts
 
-- stable item kinds
-- occurrence precision
-- release modes and generation
-- optimistic versions
-- feature-specific schemas
+- stable item kinds and feature policy matrix
+- preview/main content roles
+- normalized occurrence precision
+- release modes and release generation
+- creator versus shared-state permissions
+- mutation idempotency contracts
 - privacy-safe cursor contracts
 - capability refinements
-- derived experience contracts
+- derived experience date rules
 
 ### R1-B Migrations 0013 and 0014 plus repositories
 
 - relationship-item root refinement
-- explicit pre-S1 development plaintext representation
+- explicit pre-S1 preview/main plaintext fields
+- encrypted-preview compatibility field
 - normalized occurrence components
 - feature state tables
-- same-partnership links
+- same-partnership curation/prepared-content links
 - loose external references
 - Our Story membership
 - relationship-event hardening
 - indexes and invariants
-- deletion-safe foreign-key cascades
+- explicit incoming-link cleanup/versioning
+- deletion-safe foreign-key behavior
 
 ### R1-C Relationship Home and core CRUD API
 
 - private aggregate home read model
 - list/detail/create/update/delete
-- create idempotency
-- `expectedVersion`
-- stable `VERSION_CONFLICT`
+- all-mutation lost-response idempotency
+- expectedVersion conflict handling
+- creator/shared-state authorization
 - lifecycle authorization
 - privacy-safe not-found behavior
-- `Cache-Control: private, no-store`
+- no-store response policy
+- defensive payload/reference/link bounds
 
-### R1-D Scheduled content
+### R1-D Delivery and release state
 
 - For You
 - Future Us
-- immediate release
-- date/time release
-- labelled manual release
+- Surprise
+- Proposal
+- immediate
+- scheduled
+- recipient-open
+- creator-reveal
+- preview versus sealed projection
 - release-generation fencing
-- durable worker
+- durable scheduled worker
+- account-deletion pause/recovery wake
+- destructive-deadline precedence
 - stale/cancel/supersession handling
-- breakup, account-deletion, restoration, and dissolution behavior
 
 ### R1-E Structured relationship features
 
@@ -1164,48 +1180,58 @@ R1 does not own M1 messaging persistence, M2 realtime/offline queues, M3 media t
 - Someday
 - explicit relationship signals
 - reunion date
-- reference/link integrity
+- M1/M3 reference-resolver integration points
 
 ### R1-F Derived and curated experiences
 
+- precision-aware timeline order
 - This Day in Us
 - Our Year
 - Anniversary Experience
-- Surprise Mode
+- February 29 behavior
+- Surprise rendering
 - Until We're Together Again
-- Proposal Mode
-- deterministic eligibility and ordering
-- persisted curation only where user intent must survive
+- Proposal rendering
+- deterministic eligibility only
 
 ### R1-G Browser Relationship Space
 
 - dedicated responsive Relationship Space
 - home and feature navigation
-- create/edit/detail flows
-- unreleased private delivery handling
-- active and view-only lifecycle modes
+- creator-owned and pair-shared mutation controls
+- preview/sealed release UI
+- recipient-open and creator-reveal flows
+- lifecycle view-only modes
+- account-deletion paused-state rendering
 - schedule rendering
 - derived experience rendering
 - namespace reset after partnership change or termination
 
 ### R1-H Lifecycle, race, deletion, and security hardening
 
-- concurrent partner edits
+- all mutation lost-response replays
+- idempotency key reuse with different private payload
+- concurrent shared-state edits
 - update versus delete
-- release versus edit
-- release versus schedule change
+- linked target delete versus curation update
+- release versus content edit
+- release versus schedule edit
 - release versus breakup
 - release versus account deletion
+- recovery wake versus breakup deadline
 - release versus restoration
 - release versus final dissolution
+- late finalizer at destructive deadline
 - create/update/delete versus breakup
 - mutation versus final dissolution
 - account recovery preserving identity and versions
 - guessed foreign item IDs
 - cross-partnership link/reference attempts
+- resolver-unavailable behavior
 - duplicate scheduled-action claims
 - deletion target crash/reclaim
-- protected plaintext non-duplication
+- preview/sealed premature-disclosure tests
+- protected plaintext/hash non-duplication
 - location-coordinate log exclusion
 
 ### R1-I Closure harness and documentation
@@ -1228,43 +1254,54 @@ These commands are design targets and must not be reported as implemented until 
 - [ ] migrations 0001 through 0014 apply from zero in canonical order after verified M1 migrations are available
 - [ ] migrations 0001 through 0010 remain unchanged
 - [ ] R1 does not create or modify migrations 0011 or 0012
-- [ ] relationship-item database invariants pass
-- [ ] all R1 kinds have explicit contract coverage
-- [ ] pre-S1 plaintext is stored only in the documented development plaintext field
-- [ ] no R1 plaintext appears in logs, lifecycle events, security events, outbox, scheduled actions, notifications, traces, analytics, or idempotency response bodies
+- [ ] relationship-item database invariants include composite same-partnership keys and immutable identity
+- [ ] every R1 kind/contentSchemaVersion has explicit contract coverage
+- [ ] development preview/main plaintext is never mislabeled as ciphertext
+- [ ] intended recipient cannot receive sealed main content before release
+- [ ] no R1 plaintext or raw private request hash appears in logs, events, queues, notifications, traces, analytics, or idempotency response bodies
 - [ ] Relationship Home is partnership-scoped, bounded, deterministic, and private/no-store
-- [ ] create is idempotent without storing protected request content in idempotency metadata
-- [ ] shared mutations require expectedVersion and stale writes return `409 VERSION_CONFLICT`
-- [ ] concurrent partner edits cannot silently overwrite each other
-- [ ] foreign, deleted, unreleased-to-caller, and random item IDs fail with privacy-safe not-found behavior
-- [ ] Our Story preserves explicit date precision and never fabricates missing date components
-- [ ] Remember This survives source disappearance without server-side copying M1 message plaintext
+- [ ] every state-changing endpoint has exact lost-response idempotency
+- [ ] same idempotency key with different private request fails deterministically
+- [ ] expectedVersion conflicts never silently overwrite current state
+- [ ] creator-owned content cannot be edited/deleted by the other partner
+- [ ] pair-mutable state follows the documented policy matrix
+- [ ] foreign, deleted, unreleased-hidden, and random item IDs fail with privacy-safe behavior
+- [ ] Our Story preserves precision and uses one deterministic mixed-precision order
+- [ ] future historical occurrence dates are rejected using trusted UTC date
+- [ ] February 29 anniversary behavior is deterministic
+- [ ] Remember This survives source disappearance without server-side copying M1 plaintext
+- [ ] message references are rejected until an M1 resolver is registered
+- [ ] media and Voice Letter references are rejected until an M3 resolver is registered
+- [ ] Voice Letter visibility is inherited from its containing relationship object
 - [ ] Places coordinates are explicit only and never collected in background
-- [ ] For You and Future Us scheduled release uses durable generation-fenced work
-- [ ] unknown release payload versions fail closed
-- [ ] duplicate claims cannot release an item twice
-- [ ] breakup_pending makes normal R1 mutations view-only while preconfigured date releases continue
-- [ ] account-deletion overlay makes normal R1 mutations view-only while preconfigured date releases continue
-- [ ] restoration preserves the same item IDs, versions, curation, and schedule identity
-- [ ] final dissolution synchronously ends R1 authorization
-- [ ] final dissolution deletes every R1 authoritative row through the P3 deletion architecture
+- [ ] For You/Future Us scheduled release uses durable generation-fenced work
+- [ ] recipient-open exposes preview but not main content until explicit open
+- [ ] Surprise/Proposal creator-reveal keeps main sequence unavailable before reveal
+- [ ] unknown content schema versions and durable payload versions fail closed
+- [ ] duplicate scheduled claims cannot release twice
+- [ ] breakup makes normal R1 mutations view-only while preconfigured scheduled release may continue strictly before destructive deadline
+- [ ] account-deletion overlay pauses all unreleased delivery transitions
+- [ ] account recovery wakes due paused work without changing unlock time or release generation
+- [ ] destructive deadline wins over release at exact equality and when finalization is late
+- [ ] restoration preserves item IDs, versions, curation, and schedule identity
+- [ ] final dissolution synchronously ends R1 authorization and replay access
+- [ ] final dissolution deletes every R1 authoritative row through P3 deletion architecture
 - [ ] user item deletion leaves no protected R1 content in supporting/history tables
-- [ ] stale scheduled work for deleted or dissolved objects fails safely
+- [ ] deleting a linked target explicitly updates surviving curation owner versions
+- [ ] stale work for deleted/dissolved objects becomes safe stale/no-op
 - [ ] deletion crash/reclaim remains retry-safe and fenced
-- [ ] a future partnership cannot access an old partnership's R1 data
+- [ ] future partnership cannot access old R1 data
 - [ ] relationship signals are explicit user actions only
-- [ ] no R1 feature computes relationship quality, emotional state, compatibility, breakup risk, responsiveness, or engagement score
-- [ ] This Day in Us uses exact eligible occurrence dates only
-- [ ] Our Year and Anniversary selection is deterministic and has no engagement ranking
-- [ ] Surprise and Proposal ordered links cannot cross partnerships
-- [ ] reunion experience uses only a manually entered date and no location surveillance
+- [ ] no feature computes relationship quality, emotion, compatibility, breakup risk, responsiveness, or engagement score
+- [ ] This Day in Us uses exact eligible day precision only
+- [ ] Our Year and Anniversary are deterministic and unranked by engagement
+- [ ] Surprise/Proposal sequence content cannot leak through generic item-link traversal
+- [ ] reunion target date is manual, trusted-date validated, and has no location surveillance
 - [ ] browser lifecycle modes match authoritative server capability
-- [ ] R1 browser builds successfully without requiring physical Redmi acceptance
+- [ ] R1 browser builds successfully without physical Redmi acceptance
 - [ ] P1, P2, and P3 regressions remain green
 - [ ] full `npm run health` passes
 - [ ] `npm audit --audit-level=high` passes
-
-R1 remains IN_PROGRESS until every required gate is closed by executed evidence.
 
 # S1: E2EE and Cryptographic Recovery
 

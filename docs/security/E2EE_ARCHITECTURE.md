@@ -103,6 +103,27 @@ The server must not receive plaintext for:
 - call media
 - deferred post-stable call recordings, if ever implemented
 
+## R1 preview and sealed-content handoff
+
+R1 defines two protected relationship-content roles:
+
+- preview content that may be visible before release
+- sealed main content that must remain unavailable to the intended recipient until release
+
+S1 must preserve this distinction cryptographically and at the API projection boundary.
+
+Requirements:
+
+- preview and main content are encrypted separately when both exist
+- the reviewed protocol authenticates item ID, partnership ID, item kind, content schema version, and payload role
+- preview ciphertext cannot be substituted for main ciphertext or vice versa
+- the server may return preview ciphertext before release
+- the server must withhold sealed main ciphertext from the intended recipient before release
+- creator-authorized reads may receive both while product state allows editing
+- release state is server-authoritative metadata and does not require the server to decrypt either envelope
+- final dissolution destroys relationship-object cryptographic access along with normal P3 deletion
+- S1 migration either client-reencrypts or wipes all pre-S1 development preview/main plaintext
+
 ## Metadata minimization
 
 Some server-visible metadata is operationally necessary.

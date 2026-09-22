@@ -4,7 +4,7 @@
 
 R1 Relationship Space is `IN_PROGRESS`.
 
-Architecture and implementation design are complete in this document. Runtime implementation has not started on this branch. No R1 acceptance gate may be closed from design text alone.
+Architecture and implementation design are complete in this document, including the second-pass edge-semantics refinement. Runtime implementation has not started on this branch. No R1 acceptance gate may be closed from design text alone.
 
 Branch:
 
@@ -92,7 +92,7 @@ The refinement is deliberately split:
 
 - common identity, lifecycle, content envelope, occurrence metadata, release state, and version stay on the root item
 - feature semantics that the server must query or enforce are normalized into supporting tables
-- protected prose, private notes, coordinates, condition labels, captions, and similar content remain in one protected payload owned by the item
+- protected prose, private notes, coordinates, captions, and similar content remain in a protected main payload owned by the item; release-gated items may also have a separate protected preview payload that is safe to expose before release
 - relationships between R1 objects are represented explicitly
 - references to future M1 or M3 resources remain loose and do not require schema changes in those milestones
 
@@ -106,16 +106,16 @@ The refinement is deliberately split:
 | Firsts | `relationship_items(kind=first)` | Timeline/list projection |
 | Places We Became Us | `relationship_items(kind=place)` | Map/list rendering is client behavior; no background tracking |
 | For You | `relationship_items(kind=for_you)` with release state | Scheduled visibility transition |
-| Voice Letters | `relationship_items(kind=voice_letter)` plus optional media reference | Binary recording/upload belongs to M3 |
+| Voice Letters | Voice recording is a `media` reference with role `voice_letter` attached to an intentional R1 item | Binary recording/upload belongs to M3; R1 does not create a second standalone voice-letter content aggregate |
 | Future Us | `relationship_items(kind=future_us)` with release state | Scheduled visibility transition |
 | Love | `relationship_items(kind=love)` | Private collection/list |
 | Someday | Item plus `relationship_someday_state` | Lists grouped by explicit state |
 | This Day in Us | No independent authoritative row | Deterministic date-based query over eligible R1 objects |
 | Our Year | Optional `our_year` curation item plus `relationship_curations` and ordered links | Candidate recap is derived from eligible items for the selected year |
 | Anniversary Experience | Optional `anniversary` curation item plus `relationship_curations` and ordered links | Anniversary date derives from P3 relationship start date |
-| Surprise Mode | `relationship_items(kind=surprise)` plus ordered links | Client reveals linked steps in saved order |
+| Surprise Mode | `relationship_items(kind=surprise)` with creator-owned protected sequence payload and release state | Client reveals the saved sequence after creator reveal; media references may be step-positioned |
 | Until We're Together Again | Reunion item plus `relationship_reunion_state` | Countdown derives from manually entered target date |
-| Proposal Mode | `relationship_items(kind=proposal)` plus ordered links | Client presents the saved sequence; no gamified yes/no state |
+| Proposal Mode | `relationship_items(kind=proposal)` with creator-owned protected sequence payload and release state | Client presents the saved sequence after creator reveal; no gamified yes/no state |
 | Relationship signals | Item plus `relationship_signal_state` | Chronological explicit signal projection only |
 
 Derived views are disposable read models. They never become an alternate authority for content or lifecycle.
@@ -129,7 +129,6 @@ R1 supports these stable domain kinds:
 `first`  
 `place`  
 `for_you`  
-`voice_letter`  
 `future_us`  
 `love`  
 `someday`  
@@ -152,7 +151,9 @@ Planned additions:
 
 ```text
 content_schema_version integer not null default 1
+development_preview_payload jsonb
 development_plaintext_payload jsonb
+encrypted_preview_payload bytea
 occurred_year smallint
 occurred_month smallint
 occurred_day smallint
@@ -167,15 +168,32 @@ The existing `encrypted_payload` and `ciphertext_version` remain reserved for S1
 
 ### Content representation invariant
 
-At most one protected-content representation may be populated:
+R1 distinguishes a protected preview from protected main content.
 
-- pre-S1 R1 development writes `development_plaintext_payload`
-- post-S1 protected writes use `encrypted_payload` plus `ciphertext_version`
-- the two representations may never be populated together
+The preview exists only when a locked delivery experience needs to show a teaser before the sealed content is available. Examples include a For You condition label or a Surprise title.
 
-Metadata-only rows may have neither representation.
+Pre-S1 development fields:
 
-Pre-S1 code must not write plaintext into `encrypted_payload`.
+- `development_preview_payload`
+- `development_plaintext_payload`
+
+S1 fields:
+
+- `encrypted_preview_payload`
+- the existing `encrypted_payload`
+- the existing `ciphertext_version`, which identifies the reviewed protocol used by both envelopes for that item
+
+An item is in exactly one content-storage mode:
+
+- development mode may populate the development preview and/or development main payload and must leave both encrypted payload columns null
+- encrypted mode may populate the encrypted preview and/or encrypted main payload and must leave both development payload columns null
+- metadata-only rows may leave all four content columns null
+
+R1 never writes plaintext into an encrypted field.
+
+Before release, the intended recipient may receive only the protected preview representation that the current authorization rules permit. The sealed main payload is not returned to that recipient before release. The creator may read both while active and while their account remains authorized.
+
+This preview/main split is an S1 handoff requirement as well as a pre-S1 API rule. S1 must preserve the ability for the server to withhold sealed ciphertext while still returning separately encrypted preview ciphertext.
 
 ### Occurrence precision
 
@@ -195,26 +213,49 @@ Migration 0013 backfills only components that are actually supported by the lega
 
 After R1 starts writing, the normalized component columns are authoritative for R1 occurrence semantics. The legacy `occurred_date` column remains compatibility substrate and is not used to invent missing precision.
 
+R1 uses the same trusted PostgreSQL UTC calendar date convention as P2 for date validation.
+
+For historical occurrence kinds such as memory, Remember This, Firsts, Places, and Love, a supplied occurrence date may not be in the future. Future intentions belong in Someday, Future Us, reunion state, Surprise, or Proposal rather than being represented as a memory that has already happened.
+
+Relationship signals do not accept client-supplied occurrence time. Their ordering uses trusted `created_at`.
+
 ### Release state
 
 `release_mode` is null for ordinary relationship objects.
 
-For `for_you` and `future_us`, it is one of:
+R1 supports four explicit release modes:
 
 - `immediate`
 - `scheduled`
-- `labelled_manual`
+- `recipient_open`
+- `creator_reveal`
+
+Allowed mode by kind:
+
+| Kind | Allowed release modes |
+| --- | --- |
+| `for_you` | immediate, scheduled, recipient_open |
+| `future_us` | immediate, scheduled, recipient_open |
+| `surprise` | immediate, creator_reveal |
+| `proposal` | immediate, creator_reveal |
+| every other kind | null only |
 
 Rules:
 
 - immediate: `released_at` is set in the create transaction and `unlock_at` is null
-- scheduled: `unlock_at` is required; `released_at` starts null
-- labelled_manual: `unlock_at` is null; the private condition label lives only in the protected payload; release requires an explicit user action while mutation capability is available
-- `release_generation` is positive and advances whenever a pending release schedule is changed or superseded
-- a scheduled action uses the item ID as its aggregate ID and the release generation as its generation fence
-- once released, the protected payload and references of For You and Future Us are immutable in R1; deletion remains a separate active-state operation
+- scheduled: `unlock_at` is required, must be strictly later than trusted transaction time at creation/reschedule, and `released_at` starts null
+- recipient_open: `unlock_at` is null; the intended partner sees only the authorized preview and explicitly opens the item while active
+- creator_reveal: `unlock_at` is null; the creator prepares the experience privately and explicitly reveals it while active
+- `release_generation` is positive and advances whenever a pending scheduled release is changed or superseded
+- a scheduled action uses item ID as aggregate ID and release generation as its generation fence
+- scheduled release always delivers the latest committed protected content for that generation; scheduling does not freeze a separate content revision
+- once a delivery item is released, its protected preview, main payload, and external references are immutable in R1; active-state deletion remains a separate operation according to the ownership matrix
 
-There is no autonomous condition evaluator. R1 never turns a behavioral or emotional observation into a release.
+There is no autonomous condition evaluator. `recipient_open` means the recipient decides when a displayed condition label applies. R1 never infers that a condition has become true.
+
+Manual recipient-open and creator-reveal transitions are user mutations. They are denied during `breakup_pending` and account-deletion view-only states.
+
+Only a preconfigured `scheduled` release receives the breakup exception defined by the PRD.
 
 ### Indexes
 
@@ -226,6 +267,40 @@ There is no autonomous condition evaluator. R1 never turns a behavioral or emoti
 - active kind queries used by bounded feature lists
 
 The existing 0010 scheduled-action aggregate index remains sufficient for action lookup.
+
+### Root-row and foreign-key hardening
+
+Migration 0013 also adds a unique key on:
+
+`relationship_items(id, partnership_id)`
+
+Every R1 child table that stores `item_id` plus `partnership_id` uses a composite foreign key to that pair.
+
+This is required so database integrity, not only service code, prevents an R1 child row from naming an item in another partnership.
+
+0013 adds legacy-safe checks for new or updated rows covering:
+
+- supported R1 kind values
+- positive `content_schema_version`
+- positive `release_generation`
+- valid normalized occurrence shapes
+- valid release-mode/kind combinations
+- release timestamp shape
+- development versus encrypted content-mode exclusivity
+
+The root identity fields are immutable after insert:
+
+- `id`
+- `partnership_id`
+- `creator_account_id`
+- `kind`
+- `created_at`
+
+R1 repositories never update those fields. Migration hardening must reject an attempted update of immutable identity fields.
+
+The legacy `lifecycle` column remains compatibility substrate. R1 writes only `active` rows and hard-deletes user-deleted items rather than transitioning them to a retained `deleted` content row.
+
+`content_schema_version` is interpreted by kind. Unknown versions fail closed in the client and, while plaintext development mode exists, at the API boundary. S1 later keeps the same version identifier while moving plaintext validation to the authorized client before encryption.
 
 ### relationship_someday_state
 
@@ -274,7 +349,7 @@ partnership_id
 target_date
 ```
 
-The date is manually supplied and validated with trusted server date logic. No location field exists.
+The date is manually supplied and validated with trusted PostgreSQL UTC calendar-date logic. A new or changed reunion target must be today or later. No location field exists.
 
 ### relationship_curations
 
@@ -322,10 +397,32 @@ Allowed roles:
 
 - `source`
 - `attachment`
+- `voice_letter`
 
 The table intentionally has no foreign key to M1 messages or M3 transport tables.
 
-Authorization rules still require the referenced resource, when resolved, to belong to the same partnership. A missing original resource is rendered as unavailable rather than causing the R1 object to disappear.
+A reference type is accepted only when a runtime resolver for that external resource type is registered. Before verified M1 integration, Remember This may be created from an explicit client snapshot without a persisted message reference. Before M3, media and voice-letter references are contract/schema capability only and are rejected by runtime rather than accepting an unverifiable UUID.
+
+When a resolver is available, authorization requires the referenced resource to belong to the same partnership at create/update time. A loose reference is provenance or attachment metadata, never an authorization grant.
+
+If a previously valid source later disappears, the R1 item remains. The source is rendered unavailable rather than causing the R1 item to disappear.
+
+### Voice Letter rule
+
+Voice Letter is not a standalone `relationship_items.kind`.
+
+It is a media reference with:
+
+```text
+reference_type = media
+role = voice_letter
+```
+
+attached to an intentional relationship item such as For You, Future Us, Surprise, Proposal, Love, or another supported container.
+
+This keeps binary ownership and transport in M3, keeps release visibility owned by the containing relationship item, and prevents a voice recording attached to an unreleased letter from becoming visible through an independent top-level R1 item.
+
+R1 may close its Voice Letter data-model contract before M3, but end-to-end recording, upload, retrieval, and deletion evidence belongs to M3.
 
 ### Remember This source rule
 
@@ -346,7 +443,7 @@ Before S1 this means the explicitly created R1 snapshot is server-readable devel
 
 ### relationship_item_links
 
-Purpose: same-partnership links between R1 objects.
+Purpose: explicit links from a curation or reunion container to existing same-partnership R1 items.
 
 Representative fields:
 
@@ -362,18 +459,24 @@ created_at
 Allowed link types:
 
 - `curation`
-- `sequence_step`
 - `prepared_content`
-
-Composite foreign keys bind both item IDs to the same partnership. This prevents an item from linking into another partnership even if a UUID is guessed.
 
 Uses:
 
 - Our Year and Anniversary ordered selections use `curation`
-- Surprise and Proposal sequences use `sequence_step`
-- reunion prepared content uses `prepared_content`
+- reunion may link already-existing eligible shared content with `prepared_content`
 
-A sequence step is another ordinary R1 item. R1 therefore does not introduce a second content-bearing step table that S1 would also need to encrypt.
+Surprise and Proposal do not use generic relationship-item links for private sequence steps. Their multi-step sequence is part of the container's protected main payload, with external media references optionally carrying step positions. This prevents an unreleased private step from becoming reachable as an ordinary top-level item.
+
+Database rules:
+
+- owner and target are bound to the same partnership through composite foreign keys
+- owner deletion may cascade its outgoing links
+- target deletion is restrictive, not a silent cascade that mutates a surviving curation behind its version token
+- deleting a target with incoming links first locks surviving owner items in immutable ID order, removes those incoming links, increments each surviving owner version once, appends minimal relationship event metadata, and then deletes the target
+- a link never grants visibility to the target
+
+At selection time, a curation target must already be independently visible to both current partners. A later link never bypasses the target's own visibility rule.
 
 ### relationship_story_members
 
@@ -431,9 +534,10 @@ R1 contains highly sensitive relationship content.
 
 ### Temporarily server-readable before S1
 
-During development only, private feature payloads are stored in:
+During development only, private feature payloads are stored in the explicit development columns:
 
-`relationship_items.development_plaintext_payload`
+- `relationship_items.development_preview_payload`
+- `relationship_items.development_plaintext_payload`
 
 Examples include:
 
@@ -471,11 +575,13 @@ S1 must:
 
 1. implement a reviewed relationship-object encryption envelope
 2. have authorized clients encrypt protected payloads before upload
-3. write ciphertext only to the existing `encrypted_payload`
-4. write the reviewed protocol identifier to `ciphertext_version`
-5. stop all new `development_plaintext_payload` writes
-6. migrate development data only through a reviewed client-side re-encryption flow or wipe it
-7. prove that stable-release data inspection finds no protected R1 plaintext in PostgreSQL, logs, queues, providers, or object storage
+3. encrypt preview and main content separately where a release-gated item has both roles
+4. write preview ciphertext only to `encrypted_preview_payload` and main ciphertext only to the existing `encrypted_payload`
+5. write the reviewed protocol identifier to `ciphertext_version`
+6. stop all new development-preview and development-main plaintext writes
+7. migrate development data only through a reviewed client-side re-encryption flow or wipe it
+8. bind at least partnership ID, item ID, item kind, content schema version, and payload role (preview or main) into the reviewed authenticated-encryption context
+9. prove that stable-release data inspection finds no protected R1 plaintext in PostgreSQL, logs, queues, providers, or object storage
 
 R1 does not insert fake `partnership_crypto_epochs`. Real epochs begin only when S1 provisions reviewed cryptographic state.
 
@@ -509,7 +615,7 @@ If a map provider is introduced later, provider exposure requires separate revie
 
 Authorized current partners may read eligible R1 content.
 
-Creation, edit, delete, story curation, schedule changes, manual labelled release, and feature-specific actions are allowed only where the feature's own rules permit them.
+Creation, creator/content edits, permitted shared-state edits, delete, story curation, schedule changes, recipient-open, creator-reveal, and feature-specific actions are allowed only where the feature policy matrix permits them.
 
 ### breakup_pending
 
@@ -520,7 +626,7 @@ All user-driven R1 mutation capability is view-only:
 - no user delete
 - no story curation changes
 - no Someday state change
-- no manual labelled release
+- no recipient-open or creator-reveal
 - no schedule change
 - no relationship signal creation
 
@@ -549,9 +655,35 @@ R1 remains readable to the partner who still has account access according to P3 
 
 Normal R1 mutation is disabled.
 
-For R1, a date/time release that was already durably configured before the account-deletion overlay continues for For You and Future Us. This is treated as a state transition on an existing object, not creation of new shared content. No manual release, schedule creation, reschedule, edit, or delete is allowed while the overlay exists.
+Unlike `breakup_pending`, account deletion has no product rule that explicitly authorizes scheduled relationship-content delivery while one partner is locked out. R1 therefore takes the privacy-conservative rule:
 
-If the account is recovered before final dissolution, the same namespace and item versions remain.
+- unreleased scheduled relationship content is paused during the account-deletion overlay
+- recipient-open and creator-reveal are denied
+- schedule creation/reschedule, edit, delete, curation, shared-state changes, and signals are denied
+- the original `unlock_at`, `execute_at`, and release generation are preserved; pausing does not rewrite product time
+- when account deletion starts, a narrow R1 integration hook moves due/future pending relationship-release work to an availability time no earlier than `recover_until`
+- if recovery happens earlier, the recovery path wakes any release whose original `unlock_at` is already due
+- after recovery, a due release may proceed only if the partnership still exists and no controlling breakup/final-dissolution deadline has arrived
+- if permanent account deletion or an earlier breakup dissolves the partnership, the pending release is cancelled and deleted with the relationship space
+
+If the account is recovered before final dissolution, the same namespace, item versions, original schedule time, and release generation remain.
+
+When breakup and account deletion overlap, the account-deletion pause wins while the deletion overlay exists. Recovery returns control to the normal active or breakup rule without manufacturing a new schedule.
+
+### Destructive deadline precedence
+
+A scheduled relationship release is never allowed merely because the lifecycle worker that performs destruction is late.
+
+The release predicate must inspect the authoritative P3 deadlines.
+
+At trusted execution time:
+
+- if a controlling breakup final deadline has arrived, release is denied even if the persisted partnership row has not yet been transitioned to `terminated`
+- if a controlling permanent account-deletion deadline has arrived, release is denied
+- if both destructive paths exist, P3's existing earlier-deadline precedence determines the effective destructive boundary
+- at exact equality with the effective destructive deadline, destruction wins and release does not occur
+
+Therefore a release due before a breakup deadline may occur while the partnership is still valid, but a delayed worker may not reveal it after that destructive deadline.
 
 ### Final dissolution
 
@@ -596,28 +728,37 @@ Operational scheduled-action rows may retain opaque IDs and status according to 
 
 ## Feature mutation semantics
 
-### Shared mutable content
+R1 separates creator-owned authored content from pair-mutable shared state.
 
-Memory, Remember This, Firsts, Places, Love, Someday, saved curations, and ordinary shared container metadata use optimistic concurrency.
+| Feature | Read while normally shared | Protected content edit | Shared state edit | Delete | Release behavior |
+| --- | --- | --- | --- | --- | --- |
+| Memory | both | creator | none | creator | none |
+| Remember This | both | creator | none | creator | none |
+| First | both | creator | none | creator | none |
+| Place | both | creator | none | creator | none |
+| Love | both | creator | none | creator | none |
+| Someday | both | creator | either partner may change Someday/Soon/Completed | creator | none |
+| Our Year curation | both | either partner | either partner may replace curation order | either partner | none |
+| Anniversary curation | both | either partner | either partner may replace curation order | either partner | none |
+| Reunion | both | either partner | either partner may change target date/prepared-content links | either partner | none |
+| For You | creator until release, then both; recipient may see preview | creator before release | schedule owned by creator | creator | immediate, scheduled, recipient_open |
+| Future Us | creator until release, then both; recipient may see preview | creator before release | schedule owned by creator | creator | immediate, scheduled, recipient_open |
+| Surprise | creator until reveal, then both; recipient may see preview | creator before reveal | reveal owned by creator | creator | immediate or creator_reveal |
+| Proposal | creator until reveal, then both; recipient may see preview | creator before reveal | reveal owned by creator | creator | immediate or creator_reveal |
+| Relationship signal | both after creation | immutable | none | creator | immediate on explicit creation |
 
-Either current partner may edit shared items unless the feature is creator-private by design.
+Every state-changing operation still uses optimistic versioning even when only the creator is permitted to author the content. Versioning protects multi-device retries, curation races, shared Someday/reunion state, and future client concurrency.
 
-### Creator-private before reveal
-
-For You, Future Us, Surprise, Proposal, and their unreleased/private preparation state are visible and mutable only to the creator before reveal, subject to lifecycle capability.
-
-The partner receives no protected payload for an unreleased item.
-
-### Released For You and Future Us
+### Released delivery items
 
 Release is monotonic.
 
-Once released:
+Once For You, Future Us, Surprise, or Proposal is released:
 
-- both authorized partners may read it
-- protected content and references are immutable in R1
-- active-state deletion remains available to the creator
-- a repeated scheduled release is a no-op
+- both authorized partners may read the main protected content
+- protected preview, main content, and external references are immutable in R1
+- active-state deletion remains available only to the actor allowed by the matrix
+- repeated exact release requests replay through idempotency rather than applying release twice
 
 ### Relationship signals
 
@@ -649,16 +790,18 @@ The payload is intentionally empty. It does not contain the letter body, title, 
 The handler:
 
 1. validates action type and payload version through the existing registry
-2. reads the item only to discover immutable partnership ID and current release generation
-3. treats a missing/deleted item as stale
-4. checks the generic expected-generation fence
-5. locks authoritative partnership lifecycle before locking the item row
-6. re-reads the item under lock
-7. re-checks item lifecycle, kind, release mode, release generation, `unlock_at`, and `released_at`
-8. re-evaluates current P3 lifecycle state
-9. releases only when the current state permits the preconfigured release
-10. sets `released_at`, increments item `version`, and appends minimal relationship event metadata
-11. lets the existing durable consumer complete the claimed action
+2. loads the current release generation; a missing item returns generation sentinel `0`, which makes the generic generation guard mark the action stale rather than permanently fail it
+3. loads immutable partnership ID for the still-existing item
+4. locks authoritative partnership lifecycle before locking the item row
+5. re-reads the item under lock
+6. re-checks item lifecycle, kind, release mode, release generation, `unlock_at`, and `released_at`
+7. verifies trusted `now >= unlock_at`
+8. evaluates the current P3 lifecycle, account-deletion overlay, and destructive deadlines
+9. pauses rather than releases if account deletion currently blocks delivery
+10. denies release at or after the controlling destructive deadline even if finalization work is late
+11. releases only when the current state permits the preconfigured scheduled release
+12. sets `released_at`, increments item `version`, and appends minimal relationship-event metadata
+13. lets the existing durable consumer complete the claimed action
 
 The handler never trusts the persisted job as an instruction that bypasses current state.
 
@@ -679,7 +822,7 @@ Changing a pending schedule while active:
 
 Deleting the item cancels a pending action before deleting the item.
 
-Breakup and account-deletion overlays do not increment `release_generation`, so an already configured permitted release remains valid.
+Breakup does not increment `release_generation`, so an already configured scheduled release keeps the same identity. Account deletion also preserves the generation and original schedule time, but pauses availability until recovery or destructive cancellation.
 
 Final dissolution extends the P3 dissolution transaction with a narrow R1 cancellation helper. The helper cancels pending scheduled actions whose aggregate is a relationship item currently owned by that partnership. It runs before the deletion manifest is processed, while relationship-item rows still exist. It does not change P3 lifecycle authority. Any already-processing release is fenced by the authoritative partnership lifecycle re-check and becomes stale/no-op if termination committed first.
 
@@ -718,9 +861,9 @@ A scheduled-release worker never acquires account locks after acquiring the part
 | Release vs content edit | Both lock partnership then item. If edit commits first, worker re-checks latest generation/version state. If release commits first, released delivery content is immutable and edit is denied |
 | Release vs schedule edit | Schedule edit increments release generation. A worker holding the old generation becomes stale |
 | Release vs breakup initiation | Partnership lock linearizes. A preconfigured For You/Future Us date release remains permitted after breakup; normal mutation does not |
-| Release vs account deletion | Partnership lock linearizes. Preconfigured date release remains permitted; all user-driven mutations are denied |
+| Release vs account deletion | Account-deletion overlay pauses unreleased content. Recovery may wake the same generation if its original unlock time is due and no destructive deadline has arrived |
 | Release vs restoration | Same namespace and release generation; released state is monotonic, so no duplicate release |
-| Release vs final dissolution | If release commits first it is immediately subject to subsequent dissolution deletion. If termination commits first the worker sees terminated and does not release |
+| Release vs final dissolution | Effective destructive deadline wins at equality and also when finalization is late. A release that committed strictly before the deadline may exist briefly and is then deleted; at/after the deadline the worker must not release |
 | Create vs breakup | Breakup first causes create denial; create first commits a valid object that becomes view-only |
 | Update/delete vs breakup | Breakup first denies mutation; mutation first may commit and the resulting object then becomes view-only |
 | Mutation vs final dissolution | Termination first denies access. Mutation first commits only before authorization is revoked, after which cleanup deletes it |
@@ -731,26 +874,73 @@ A scheduled-release worker never acquires account locks after acquiring the part
 
 Persisted committed state, not request arrival time, determines the result.
 
-## Idempotency
+## Idempotency and lost-response safety
 
-R1 create requests require `Idempotency-Key`.
+Every R1 mutation requires `Idempotency-Key`:
 
-The existing `idempotency_records` substrate is reused with an R1-specific scope.
+- create
+- update
+- delete
+- recipient-open
+- creator-reveal
+- story membership changes when exposed separately
+- curation/shared-state mutations
 
-Stored idempotency data is limited to:
+R1 reuses the existing `idempotency_records` table without changing its schema.
+
+R1 scopes each record as:
+
+`r1:<partnershipId>:<operation>`
+
+and includes the same partnership ID inside the keyed fingerprint input.
+
+R1 stores:
 
 - account ID
-- R1 operation scope
+- partnership-bound operation scope
 - opaque idempotency key
+- a server-keyed request fingerprint
 - response status
-- response metadata containing item ID and version only
-- timestamps and expiry
+- response metadata containing only opaque IDs, versions, and release timestamps when applicable
+- timestamps and bounded expiry
 
 The protected request body is never copied into `response_body`.
 
-R1 does not require a content-derived fingerprint to make duplicate create safe. Reuse of the same key within the scope identifies the same logical create and replays the original metadata result. A caller creating different content must use a new key.
+### Private request fingerprint
 
-Version-checked update and delete operations are naturally duplicate-safe at the state boundary and do not store private response bodies.
+R1 must not store a raw unkeyed SHA-256 hash of a private relationship-content request because low-entropy content could be dictionary-tested from a database leak.
+
+Instead the API computes a domain-separated HMAC over a canonical representation containing:
+
+- authenticated account ID
+- partnership ID
+- operation type
+- target item ID when present
+- expected version when present
+- normalized request body
+
+The fingerprint byte string encodes the server-key version followed by the HMAC output. The key version must remain available for at least the idempotency retention period.
+
+The runtime may extend the existing domain-separated server keyring with an R1 idempotency-fingerprint label. It must not introduce a new plaintext secret in source control.
+
+### Replay order
+
+An exact completed replay:
+
+- authenticates the account
+- validates that the receipt belongs to that account and partnership
+- verifies the keyed fingerprint
+- returns the stored metadata result without reapplying the mutation
+- may replay across a later non-terminated view-only transition because replay is not a new relationship mutation
+- never returns a partnership-scoped receipt after final dissolution
+
+The same key with a different fingerprint returns:
+
+`409 IDEMPOTENCY_KEY_REUSED`
+
+Default R1 receipt retention is 24 hours. After expiry, clients refetch canonical state rather than expecting an old mutation receipt to exist forever.
+
+This closes lost-response ambiguity for PATCH, DELETE, and manual release instead of relying on version conflict behavior to guess whether the caller's previous attempt committed.
 
 ## Relationship events
 
@@ -770,6 +960,23 @@ Item hard deletion cascades its events. Final dissolution deletes every remainin
 
 This means R1 has no hidden event-sourced content archive.
 
+## Cursor integrity
+
+R1 list cursors follow the existing repository pattern: versioned base64url-encoded structured cursors validated at the API boundary.
+
+They are pagination state, not authorization tokens.
+
+Every cursor decoder validates:
+
+- supported cursor version
+- `snapshotAt` is valid and not in the future
+- query-shape discriminator matches the current filters and sort mode
+- occurrence sort components satisfy the documented precision/null ordering
+- item ID is a UUID
+- cursor length is bounded
+
+Tampering may change pagination position only if the modified cursor still satisfies every validation rule. Authorization is still re-applied to every database query, so a cursor can never select another partnership.
+
 ## Cross-partnership authorization
 
 Every item query is constrained by both:
@@ -783,7 +990,7 @@ The repository does not:
 2. return a different error for foreign partnership
 3. authorize from creator username or other mutable identity
 
-Internal item links use same-partnership composite foreign keys.
+Internal item links use same-partnership composite foreign keys, and link visibility never overrides target visibility.
 
 Loose message/media references are never authorization grants. Resolution independently verifies the referenced resource's partnership.
 
@@ -794,7 +1001,7 @@ Relationship Home is a bounded aggregate query, not a stored document.
 It may return:
 
 - current relationship-space lifecycle mode
-- relationship duration derived from P3 `relationship_start_date`
+- relationship duration derived from P3 `relationship_start_date` against trusted PostgreSQL UTC calendar date
 - recent eligible relationship items
 - upcoming or newly released For You/Future Us metadata the caller is allowed to see
 - active manual reunion date
@@ -814,15 +1021,16 @@ The home response is always `Cache-Control: private, no-store`.
 
 Our Story selects only items explicitly present in `relationship_story_members`.
 
-Sort rules:
+Sort rules use one precision-aware total order without fabricating dates:
 
-1. exact day items by full date
-2. month-precision items by year and month
-3. year-precision items by year
-4. unknown/undated items in a separate undated group
+1. all dated items sort by `occurred_year`
+2. within a year, year-only items sort before known months
+3. within a known month, month-only items sort before exact days
+4. exact days then sort by day
 5. item ID is the deterministic final tie-breaker
+6. unknown/undated items appear in a separate Undated group after the dated timeline
 
-The UI never displays an invented day or month.
+Null month/day components are ordering sentinels only. The UI never displays an invented day or month.
 
 ### This Day in Us
 
@@ -846,6 +1054,8 @@ If the partners save a curation, the `our_year` curation item and ordered `curat
 
 The anniversary calendar date derives only from the manually entered P3 relationship start date.
 
+For a February 29 relationship start date, a non-leap-year anniversary uses February 28, following a last-valid-day-of-month rule. This rule is deterministic domain logic and must have boundary tests.
+
 The experience can combine explicitly eligible or saved R1 items.
 
 A saved anniversary curation is optional and versioned.
@@ -854,9 +1064,9 @@ A saved anniversary curation is optional and versioned.
 
 Surprise is a private creator-owned container before reveal.
 
-Its sequence is an ordered set of `sequence_step` links to R1 items.
+Its ordered text/structure sequence lives inside the protected main payload. Optional external media/voice references may include a step position. Generic links to independently visible R1 items are not used as private sequence steps.
 
-R1 does not persist a behavioral completion score. Client progress through a reveal is presentation state unless a later requirement explicitly needs durable progress.
+The creator may reveal it only while active. After reveal, the sequence is immutable. R1 does not persist a behavioral completion score. Client progress through a reveal is presentation state unless a later requirement explicitly needs durable progress.
 
 ### Until We're Together Again
 
@@ -868,9 +1078,29 @@ No device location, distance, travel inference, or geofence is consulted.
 
 ### Proposal Mode
 
-Proposal Mode is an intentional private sequence leading to an in-person proposal.
+Proposal Mode is an intentional private creator-owned sequence leading to an in-person proposal.
+
+Its sequence uses the same protected-payload model as Surprise and becomes shared only through creator reveal while active.
 
 It has no persisted yes/no decision mechanic and no engagement score.
+
+## Defensive bounds
+
+R1 contracts use explicit safety ceilings so one private object cannot become an unbounded request, database row, cursor, or response.
+
+Initial design ceilings:
+
+- combined development preview plus main JSON payload: 64 KiB before transport encoding
+- external references per item: 32
+- saved curation links per curation item: 100
+- Surprise or Proposal logical steps inside the protected payload: 50
+- relationship-space page size: default 30, maximum 100
+- latitude: -90 through 90
+- longitude: -180 through 180
+
+Exact string-field limits belong in the kind-specific contracts. Binary media never counts against the JSON payload ceiling because M3 owns binary transport.
+
+S1 may define a slightly larger ciphertext ceiling to account for authenticated-encryption overhead, but it must preserve a bounded plaintext-equivalent product limit.
 
 ## Browser architecture
 
@@ -985,7 +1215,7 @@ Owns:
 - object-store authorization
 - attachment binary lifecycle
 
-R1 only owns media/reference associations.
+R1 owns only media/reference association semantics. Runtime acceptance of a media or voice-letter reference requires an M3 resolver; R1 does not accept unverifiable external IDs before that integration exists.
 
 ### S1
 
@@ -1016,7 +1246,7 @@ Owns:
 
 - root item refinement
 - supporting feature tables
-- references and same-partnership links
+- references, same-partnership curation links, and reference-resolver availability gates
 - story membership
 - event hardening
 - indexes and invariants
@@ -1037,7 +1267,7 @@ Owns:
 
 - For You
 - Future Us
-- immediate, scheduled, and labelled-manual release modes
+- immediate, scheduled, recipient-open, and creator-reveal release modes
 - release generation fencing
 - retry-safe scheduled handler
 - breakup/account-deletion/final-dissolution behavior
@@ -1119,32 +1349,49 @@ R1 closure evidence must include the canonical migration sequence through 0014 a
 R1 remains IN_PROGRESS until executed evidence proves all of the following:
 
 1. migrations 0001 through 0014 apply from zero in canonical order
-2. database invariants pass
+2. database invariants pass, including composite same-partnership foreign keys and immutable root identity
 3. P1, P2, and P3 regression surfaces remain green
 4. R1 domain and contract tests pass
 5. CRUD and derived API integration tests pass
 6. private responses use no-store
-7. optimistic conflicts return stable `VERSION_CONFLICT`
-8. foreign and unknown item IDs are indistinguishable
-9. breakup and account-deletion view-only states reject user mutations
-10. preconfigured For You/Future Us releases obey lifecycle rules
-11. stale release generations cannot unlock content
-12. duplicate claims cannot release twice
-13. restoration preserves schedule and object identity
-14. final dissolution synchronously ends authorization
-15. partnership relational cleanup deletes all R1 authoritative rows
-16. scheduled rows retained for operations contain no private content
-17. item deletion leaves no protected content in an alternate R1 table
-18. deletion crash/reclaim is retry-safe
-19. future partnership namespaces cannot read old R1 data
-20. coordinates never enter logs, analytics, events, or queue payloads
-21. Remember This does not depend on original message existence and does not server-copy M1 content
-22. explicit signals remain user-triggered and no emotion inference exists
-23. derived experiences use deterministic rules without engagement scoring
-24. browser lifecycle modes match server authority
-25. browser production build passes
-26. full repository health passes
-27. high-severity dependency audit passes
+7. all state-changing R1 endpoints have exact lost-response idempotency
+8. private request fingerprints are server-keyed and raw relationship-content hashes are not persisted
+9. optimistic conflicts return stable `VERSION_CONFLICT`
+10. foreign, deleted, unreleased-to-caller, and unknown item IDs are indistinguishable where required
+11. creator-owned authored content and pair-mutable shared state follow the feature policy matrix
+12. breakup rejects user mutations while allowing only the explicit preconfigured scheduled-release exception
+13. account-deletion overlay pauses all unreleased delivery transitions
+14. recovery wakes due paused releases without changing original unlock time or release generation
+15. destructive lifecycle deadline wins over release at exact equality and when finalization is late
+16. stale release generations cannot unlock content
+17. missing-item generation lookup makes durable release work stale rather than permanently failed
+18. duplicate claims cannot release twice
+19. recipient-open exposes preview but not sealed main content before explicit open
+20. creator-reveal keeps Surprise and Proposal main content unavailable before reveal
+21. restoration preserves schedule, item identity, versions, and original release generation
+22. final dissolution synchronously ends authorization and prevents idempotency receipt replay
+23. final dissolution makes old R1 idempotency receipts unreplayable; bounded receipts expire without exposing protected content
+24. scheduled rows retained for operations contain no private content
+25. user item deletion leaves no protected content in an alternate R1 table
+26. deletion of a linked target explicitly updates surviving curation owners and versions rather than silently cascading
+27. deletion crash/reclaim is retry-safe
+28. future partnership namespaces cannot read old R1 data
+29. occurrence precision never fabricates missing dates and future historical occurrences are rejected
+30. February 29 anniversary behavior follows the documented last-valid-day rule
+31. coordinates never enter logs, analytics, events, queue payloads, or unreviewed providers
+32. Remember This does not depend on original message existence and does not server-copy M1 content
+33. message references are rejected until a verified M1 resolver exists
+34. media and voice-letter references are rejected until a verified M3 resolver exists
+35. Voice Letters inherit the containing item's visibility and cannot surface as standalone R1 content
+36. explicit signals remain user-triggered and no emotion inference exists
+37. This Day in Us, Our Story, Our Year, and Anniversary use deterministic precision-aware ordering without engagement scoring
+38. Surprise and Proposal sequence content cannot become visible through generic item-link traversal
+39. reunion target date uses trusted UTC date, remains manual, and has no location surveillance
+40. unknown content schema versions and durable payload versions fail closed
+41. browser lifecycle modes match server authority
+42. browser production build passes
+43. full repository health passes
+44. high-severity dependency audit passes
 
 ## Design risks intentionally bounded
 
@@ -1162,7 +1409,11 @@ Voice Letters and photo/media associations can be modeled in R1 before M3, but r
 
 ### Account-deletion scheduled release interpretation
 
-R1 treats an already configured date/time release as a visibility transition of an existing object and therefore permits it during the P3 account-deletion view-only overlay. This decision is deliberately narrow: no user-driven relationship-space mutation is enabled. If product policy later chooses to pause such releases, the PRD, worker behavior, and acceptance matrix must change together.
+R1 now resolves this boundary conservatively: account-deletion view-only pauses unreleased relationship-content delivery. This differs from breakup, where the PRD explicitly keeps scheduled For You and Future Us releases moving.
+
+Recovery preserves original product time and release generation and wakes work that became due while paused. Permanent deletion or an earlier breakup cancels it.
+
+This rule must stay synchronized across the PRD, worker design, API contract, tests, and P3 integration hook.
 
 ## Completion statement
 

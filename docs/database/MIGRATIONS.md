@@ -45,8 +45,6 @@ P3 security verification pins verified migration 0009 before P3-only migration w
 
 The verified physical schema remains implemented only through migration 0010.
 
-Parallel feature branches reserve the next forward-only numbers:
-
 M1 owns:
 
 - `0011_messaging_core_runtime.sql`
@@ -57,17 +55,15 @@ R1 owns:
 - `0013_relationship_space_runtime.sql`
 - `0014_relationship_space_interaction_runtime.sql`
 
-R1 migration design is complete, but migration 0013 and 0014 source files are not implemented or verified yet.
+R1 migration source is not implemented or verified yet.
 
-Planned R1 migration responsibilities:
+Planned 0013 responsibilities include preview/main content columns, normalized occurrence fields, supported kind/content-version and release-shape checks, positive release generation, `UNIQUE (relationship_items.id, partnership_id)`, immutable root identity, feature-state tables, and R1 query indexes.
 
-- 0013 refines `relationship_items` with explicit pre-S1 development plaintext storage, normalized occurrence components, release state/generation, supporting feature-state tables, and indexes
-- 0014 adds same-partnership R1 links, loose external references, explicit Our Story membership, and relationship-event integrity hardening
-- new R1 relational tables remain descendants of `relationship_items` so P3 `partnership_relational_content` cleanup can remove them through cascade
-- R1 scheduled actions use the existing durable scheduled-action table and do not create a second timer system
-- R1 does not insert fake crypto epochs or claim E2EE before S1
+Planned 0014 responsibilities include composite same-partnership foreign keys, loose message/media references, curation/prepared-content links with restrictive target deletion, Our Story membership, and relationship-event hardening.
 
-The final R1 closure migration gate requires migrations 0001 through 0014 to apply from zero in canonical order after verified M1 migrations are available through the approved integration baseline. R1 must not create placeholder 0011 or 0012 migrations to make that test pass early.
+R1 reuses existing durable scheduled actions and does not create fake crypto epochs or placeholder M1 migrations.
+
+The final R1 closure gate requires migrations 0001 through 0014 from zero after verified M1 migrations are available through the approved integration baseline.
 
 ## Policy
 

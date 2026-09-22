@@ -383,12 +383,9 @@ relationship_item_links
 relationship_story_members
 ```
 
-Migration ownership:
+Migration 0013 owns preview/main content roles, normalized occurrence components, release state/generation, feature state, query indexes, and a composite `UNIQUE (id, partnership_id)` root key. Migration 0014 owns same-partnership child foreign keys, loose references, curation/prepared-content links, Our Story membership, and event hardening.
 
-- `0013_relationship_space_runtime.sql`: root refinement, normalized occurrence components, explicit pre-S1 development plaintext payload, release state/generation, feature-state tables, and query indexes
-- `0014_relationship_space_interaction_runtime.sql`: same-partnership links, loose external references, Our Story membership, and relationship-event integrity hardening
-
-Representative root fields after R1 design:
+Representative root fields:
 
 ```text
 id
@@ -398,7 +395,9 @@ kind
 lifecycle
 version
 content_schema_version
+development_preview_payload
 development_plaintext_payload
+encrypted_preview_payload
 encrypted_payload
 ciphertext_version
 occurred_precision
@@ -414,48 +413,25 @@ updated_at
 deleted_at
 ```
 
-The existing `occurred_date` remains compatibility substrate. R1 uses explicit date components so month, year, and unknown precision do not fabricate missing calendar values.
+Root item ID, partnership ID, creator account ID, kind, and created timestamp are immutable.
 
-At most one protected content representation is populated:
+The existing `occurred_date` remains compatibility substrate. Explicit components preserve day/month/year/unknown precision. Historical occurrences are not future-dated under trusted PostgreSQL UTC date.
 
-- pre-S1 development uses only `development_plaintext_payload`
-- S1 later uses `encrypted_payload` plus `ciphertext_version`
-- plaintext is never written into ciphertext fields
+Protected content has two roles: preview and main. Pre-S1 development uses explicit development columns. S1 later uses separate encrypted preview/main envelopes and the reviewed ciphertext version. Development and encrypted storage modes never mix on one item.
 
-Protected content includes private text, notes, place coordinates, condition labels, saved-message snapshots, surprise/proposal wording, and explicit shared-feeling text. It must not be duplicated into events, logs, queues, notifications, analytics, traces, or idempotency response metadata.
+Voice Letter is a media reference role, not a standalone item kind. The containing item owns release and visibility.
 
-Server-readable supporting state is limited to fields needed for deterministic product behavior, such as:
+Loose message/media references are accepted only when the corresponding M1/M3 resolver exists. A reference never grants authorization.
 
-- Someday state
-- explicit relationship-signal code
-- manual reunion target date
-- curation type/year
-- schedule mode/generation/time
-- same-partnership item link identifiers and order
-- loose source/attachment identifiers
+Item links support only curation and reunion prepared-content links to independently visible same-partnership targets. Surprise/Proposal private sequences stay inside the protected container payload.
 
-Our Story is a derived chronological projection over explicitly selected `relationship_story_members`. This Day in Us is derived only from items with exact day precision. Our Year and Anniversary may have explicit saved curation but never use engagement scoring.
+Incoming target deletion is explicit for surviving curation owners so owner versions increment rather than changing silently through cascade.
 
-`relationship_item_references` deliberately does not foreign-key into M1 message or M3 media schemas. Resolution independently checks same-partnership authorization. Remember This stores its own explicit R1 snapshot and does not cause server-side copying of M1 plaintext.
+Scheduled For You/Future Us release uses existing durable `scheduled_actions` with empty payload and `expected_generation = release_generation`. Original `execute_at` remains product time even if `available_at` is postponed during account-deletion recovery.
 
-`relationship_item_links` uses composite same-partnership foreign keys. It supports curation, ordered sequence steps, and reunion prepared content without permitting cross-partnership links.
+User item deletion hard-deletes the item after incoming-link reconciliation. Final dissolution remains P3-owned and deletes R1 relational content after synchronous authorization revocation.
 
-Date/time For You and Future Us releases use the existing durable `scheduled_actions` table:
-
-```text
-action_type = relationship_item_release
-aggregate_type = relationship_item
-aggregate_id = item_id
-expected_generation = release_generation
-payload_version = 1
-payload = {}
-```
-
-The scheduled payload contains no relationship content.
-
-User item deletion hard-deletes the item and cascades all R1 child state. Final dissolution remains P3-owned: synchronous authorization revocation is followed by the existing partnership deletion manifest and `partnership_relational_content` cleanup. New R1 relational tables must remain covered by that cascade or the deletion manifest must be extended before R1 can close.
-
-The full R1 persistence and lifecycle design is canonical in `R1_RELATIONSHIP_SPACE_DESIGN.md`.
+The full R1 design is canonical in `R1_RELATIONSHIP_SPACE_DESIGN.md`.
 
 ## Calls
 

@@ -287,32 +287,14 @@ The P3 local harness emitted `P3_LOCAL_POSTGRES_PASS` after migrations, invarian
 
 ### R1 relationship-space verification
 
-R1 design is defined by:
+Canonical design:
 
 - `../architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
 - `../api/R1_RELATIONSHIP_SPACE_API.md`
 
-R1 runtime tests do not exist yet. The following are required closure evidence once implementation begins:
+R1 runtime tests do not exist yet.
 
-- canonical migrations 0001 through 0014 from zero after verified M1 migrations are available
-- relationship-item kind/date/release/link/reference database invariants
-- P1, P2, and P3 regressions
-- Relationship Home, list, detail, create, update, delete, and derived-experience API integration
-- optimistic version conflicts with no silent partner overwrite
-- privacy-safe foreign/unknown/unreleased item lookup
-- breakup and account-deletion view-only enforcement
-- preconfigured For You/Future Us release behavior in lifecycle overlays
-- release-generation fencing, stale action behavior, duplicate-claim safety, and unknown payload-version failure
-- release versus edit/reschedule/breakup/account-deletion/restoration/dissolution races
-- item deletion and partnership dissolution proof across every R1 table
-- deletion target crash/reclaim regression
-- future-partnership namespace isolation
-- Remember This source disappearance and no server-side M1 plaintext copy
-- explicit coordinate non-leakage to logs/events/queues/analytics
-- protected plaintext non-duplication across operational metadata
-- deterministic This Day, Our Year, and Anniversary behavior with no engagement or emotional scoring
-- explicit relationship-signal creation only
-- browser lifecycle modes and production build
+Required closure evidence includes canonical migrations 0001 through 0014, same-partnership/immutable-root invariants, all-mutation idempotency and keyed fingerprints, creator/shared-state permission checks, preview versus sealed-content denial, recipient-open/creator-reveal authorization, breakup scheduled-release exception, account-deletion pause/recovery wake, destructive-deadline precedence, release-generation and claim fencing, linked-target deletion/version behavior, final-dissolution cleanup, future-partnership isolation, M1/M3 resolver gates, Voice Letter container visibility, coordinate/log non-leakage, date precision/future rejection, February 29 anniversary behavior, deterministic unranked derived experiences, explicit signals, browser lifecycle modes, full health, and dependency audit.
 
 Planned command surface:
 
@@ -325,7 +307,7 @@ npm run health
 npm audit --audit-level=high
 ```
 
-These names are design targets. Do not claim they exist or pass until implemented and executed.
+These names are design targets until implemented and executed.
 
 R1 core closure does not require physical Redmi acceptance. M2 owns offline/reconnect device acceptance, M3 owns media transport acceptance, and S1 owns E2EE acceptance.
 

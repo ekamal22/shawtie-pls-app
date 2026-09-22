@@ -180,13 +180,15 @@ Account recovery restores authentication state only. It does not recreate a part
 
 R1 does not create a second partnership deletion workflow.
 
-The R1 design keeps new relational supporting state as descendants of `relationship_items` with deletion-safe foreign keys. The existing P3 `partnership_relational_content` target already deletes `relationship_events` and `relationship_items`; deleting the item root therefore cascades R1 feature state, references, links, story membership, and curations.
+R1 child state remains under `relationship_items` with same-partnership foreign keys. The P3 `partnership_relational_content` target remains the destructive relational cleanup authority.
 
-R1 scheduled-action payloads contain only operational IDs, generation, timing, and payload version. They contain no protected relationship content. Final dissolution cancels pending relationship-item release work before relational cleanup, while any already-processing worker must re-check authoritative terminated state and become stale/no-op.
+Before deleting an individual R1 target item, incoming curation/prepared-content links owned by surviving items are removed explicitly and each surviving owner version is incremented once. Target-side foreign keys do not silently cascade a surviving curation mutation behind its optimistic version.
 
-User-requested R1 item deletion hard-deletes the item and its child rows rather than retaining a content-bearing tombstone.
+Pending relationship-item release actions are cancelled before relational item cleanup. Already-processing workers re-check lifecycle and destructive deadlines and cannot reveal content after eligibility ends.
 
-If R1 runtime introduces any storage outside the relationship-item relational tree, the partnership deletion manifest and a retry-safe deletion handler must be extended before R1 can close.
+User item deletion hard-deletes preview, main content, child state, references, story membership, and item events rather than retaining a content-bearing tombstone.
+
+If R1 introduces storage outside the relationship-item relational tree, the deletion manifest and retry-safe handlers must be extended before R1 can close.
 
 ## Failure behavior
 

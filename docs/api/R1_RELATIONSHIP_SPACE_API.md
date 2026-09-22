@@ -48,7 +48,6 @@ remember_this
 first
 place
 for_you
-voice_letter
 future_us
 love
 someday
@@ -97,7 +96,8 @@ Modes:
 
 - `immediate`
 - `scheduled`
-- `labelled_manual`
+- `recipient_open`
+- `creator_reveal`
 
 States:
 
@@ -128,6 +128,7 @@ Representative projection:
   "release": null,
   "featureState": null,
   "contentSchemaVersion": 1,
+  "preview": null,
   "content": {
     "title": "The month we met",
     "note": "..."
@@ -143,11 +144,23 @@ The server may include it in internal repository types, but it is not a client a
 
 ### Private unreleased projection
 
-An unreleased For You or Future Us item is readable only by its creator.
+Release-gated items separate preview from sealed main content.
 
-The intended recipient receives no item detail before release. Guessing the item ID returns the same not-found shape as an unknown item.
+Before release:
 
-After release, both currently authorized partners may read it.
+- the creator may read preview and main content while authorized
+- the intended partner may receive only the preview fields allowed for that kind
+- main `content` is returned as null to the intended partner
+- the API never returns the sealed development payload or sealed ciphertext to the intended partner before release
+- a guessed unreleased item ID that has no partner-visible preview uses the normal not-found response
+
+After release, both currently authorized partners may read preview and main content.
+
+For `recipient_open`, the preview is the user-facing reason to open, such as "Open when you need reassurance." The server never evaluates whether that condition is true.
+
+For `creator_reveal`, Surprise and Proposal may expose an optional teaser preview while keeping the sequence content sealed until the creator reveals it.
+
+This split is preserved by S1: encrypted preview may be returned before release, but encrypted main content is withheld until release.
 
 ### Feature state
 
@@ -242,34 +255,62 @@ Coordinates are optional. If supplied they remain protected content.
 
 ### for_you
 
+Preview:
+
 ```json
 {
   "title": "optional string",
-  "body": "string",
   "conditionLabel": "optional string"
 }
 ```
 
-`conditionLabel` is presentation text for `labelled_manual`. It is not interpreted by an autonomous worker.
-
-### voice_letter
+Main content:
 
 ```json
 {
-  "title": "optional string",
-  "caption": "optional string"
+  "body": "string"
 }
 ```
 
-The voice binary is a media reference owned by M3, not content embedded in this JSON.
+A condition label is display text only. It does not create an autonomous condition evaluator.
+
+`conditionLabel` is presentation text for `recipient_open`. The intended partner decides when to open it; the server never interprets the condition.
+
+### Voice Letter attachment
+
+Voice Letter is not a standalone relationship-item kind.
+
+A voice recording is represented as an external reference:
+
+```json
+{
+  "referenceType": "media",
+  "referenceId": "uuid",
+  "role": "voice_letter",
+  "position": 0
+}
+```
+
+The containing relationship item owns visibility and release semantics. M3 owns recording, upload, object access, and deletion of the binary media.
+
+Until an M3 media resolver is registered, runtime requests containing media or voice-letter references are rejected rather than storing unverifiable IDs.
 
 ### future_us
 
+Preview:
+
 ```json
 {
   "title": "optional string",
-  "body": "optional string",
   "conditionLabel": "optional string"
+}
+```
+
+Main content:
+
+```json
+{
+  "body": "optional string"
 }
 ```
 
@@ -317,14 +358,29 @@ Selection and order use same-partnership curation links.
 
 ### surprise
 
+Preview:
+
 ```json
 {
-  "title": "optional string",
-  "intro": "optional string"
+  "title": "optional string"
 }
 ```
 
-Ordered reveal content uses `sequence_step` item links.
+Main content:
+
+```json
+{
+  "intro": "optional string",
+  "steps": [
+    {
+      "type": "text",
+      "text": "..."
+    }
+  ]
+}
+```
+
+The protected main payload owns the logical sequence. External media references may carry a matching step position. Generic relationship-item links are not private sequence steps.
 
 ### reunion
 
@@ -339,14 +395,29 @@ The manual target date is typed feature state. Prepared items use `prepared_cont
 
 ### proposal
 
+Preview:
+
 ```json
 {
-  "title": "optional string",
-  "intro": "optional string"
+  "title": "optional string"
 }
 ```
 
-Ordered content uses `sequence_step` links. There is no yes/no response field.
+Main content:
+
+```json
+{
+  "intro": "optional string",
+  "steps": [
+    {
+      "type": "text",
+      "text": "..."
+    }
+  ]
+}
+```
+
+The protected main payload owns the logical sequence. External media references may carry a matching step position. There is no yes/no response field.
 
 ### relationship_signal
 
@@ -362,7 +433,7 @@ The explicit signal code is typed feature state.
 
 ### expectedVersion
 
-Every update or delete of an existing mutable item carries:
+Every mutation of an existing relationship item carries:
 
 ```json
 {
@@ -370,21 +441,31 @@ Every update or delete of an existing mutable item carries:
 }
 ```
 
-If the current version is not 4:
+If the current version differs and the request is not an exact completed idempotency replay:
 
 `409 VERSION_CONFLICT`
 
-A successful semantic update increments the item version exactly once.
+A successful semantic mutation increments the item version exactly once.
 
 ### Idempotency-Key
 
-Create requires:
+Every state-changing R1 endpoint requires:
 
 `Idempotency-Key: <opaque-client-key>`
 
-The same key in the same R1 create scope replays the original item ID/version result.
+This includes create, update, delete, recipient-open, creator-reveal, curation changes, story changes, and shared-state changes.
 
-Idempotency persistence never stores the private request body.
+The API stores only operation metadata. It never stores the protected request body in the idempotency response.
+
+To detect accidental key reuse safely, the request fingerprint is a domain-separated server-keyed HMAC over the canonical request, account ID, partnership ID, operation type, target item ID where present, and expected version where present.
+
+A raw unkeyed hash of private R1 content must not be persisted.
+
+Exact completed replay returns the original status and metadata result without reapplying the mutation. Replay is bounded to 24 hours by default and is not available after final partnership dissolution.
+
+Same key plus different keyed fingerprint:
+
+`409 IDEMPOTENCY_KEY_REUSED`
 
 ### Lifecycle authorization
 
@@ -393,18 +474,53 @@ Normal user-driven mutation is permitted only in `active`.
 During `breakup_pending_view_only`:
 
 - reads continue
-- scheduled date/time For You/Future Us releases already configured before breakup continue
-- create, update, delete, manual release, reschedule, signal creation, curation edits, and Someday state changes are denied
+- a scheduled For You/Future Us release configured before breakup may continue only while trusted time is strictly before the effective destructive deadline
+- create, update, delete, recipient-open, creator-reveal, reschedule, signal creation, curation edits, and Someday/reunion state changes are denied
 
 During `account_deletion_view_only`:
 
-- authorized view-only access continues
-- preconfigured date/time For You/Future Us release continues
-- all user-driven R1 mutation is denied
+- authorized view-only access continues for the remaining partner according to P3
+- all unreleased delivery transitions are paused, including scheduled release
+- create, update, delete, recipient-open, creator-reveal, reschedule, signal creation, curation edits, and shared-state changes are denied
+- original `unlockAt` and release generation are preserved
+- recovery wakes due paused scheduled work only if no destructive deadline has arrived
+
+At or after a controlling breakup or permanent account-deletion deadline, release is denied even if lifecycle-finalizer execution is late.
 
 After termination:
 
-- no relationship-space read or mutation is authorized
+- no relationship-space read, mutation, or idempotency receipt replay is authorized
+
+### Date and time authority
+
+R1 uses the same trusted PostgreSQL UTC business-date convention as P2.
+
+- historical occurrence dates may not be in the future
+- a new or changed reunion target date must be today or later
+- `scheduled.unlockAt` must be strictly later than trusted transaction time
+- exact equality with a destructive partnership deadline belongs to destruction, not content release
+
+### Content schema version
+
+Each item kind has an explicit supported `contentSchemaVersion`.
+
+Unknown versions fail closed.
+
+During pre-S1 development, server contracts validate plaintext preview/main shapes. After S1, the authorized client validates plaintext before encryption while the server validates the outer kind/version/envelope metadata without requiring plaintext access.
+
+### Defensive request bounds
+
+Initial R1 ceilings:
+
+- combined preview plus main development JSON: 64 KiB
+- references per item: 32
+- saved curation links per item: 100
+- Surprise/Proposal logical steps: 50
+- list page size: default 30, maximum 100
+- latitude range: -90 through 90
+- longitude range: -180 through 180
+
+Exact string caps are kind-specific contract constants.
 
 ## GET /relationship-space
 
@@ -419,6 +535,7 @@ Returns the private Relationship Home read model.
   "space": {
     "mode": "active",
     "relationshipStartDate": "2025-11-15",
+    "serverDate": "2026-09-22",
     "relationshipDuration": {
       "years": 0,
       "months": 10,
@@ -532,6 +649,7 @@ Representative:
 {
   "kind": "place",
   "contentSchemaVersion": 1,
+  "preview": null,
   "content": {
     "title": "Where we first talked",
     "note": "..."
@@ -560,10 +678,12 @@ Scheduled For You example:
 {
   "kind": "for_you",
   "contentSchemaVersion": 1,
-  "content": {
+  "preview": {
     "title": "Open this on New Year's Eve",
-    "body": "...",
     "conditionLabel": null
+  },
+  "content": {
+    "body": "..."
   },
   "occurrence": null,
   "storyIncluded": false,
@@ -578,6 +698,63 @@ Scheduled For You example:
 ```
 
 Scheduled release time is interpreted and persisted using trusted server semantics. A client clock never causes early release.
+
+### Recipient-open For You shape
+
+```json
+{
+  "kind": "for_you",
+  "contentSchemaVersion": 1,
+  "preview": {
+    "title": "For a hard day",
+    "conditionLabel": "Open when you need reassurance"
+  },
+  "content": {
+    "body": "..."
+  },
+  "occurrence": null,
+  "storyIncluded": false,
+  "release": {
+    "mode": "recipient_open",
+    "unlockAt": null
+  },
+  "featureState": null,
+  "references": [],
+  "links": []
+}
+```
+
+The intended partner may see the preview but not `content` until they explicitly open it while the partnership is active.
+
+### Creator-reveal Surprise shape
+
+```json
+{
+  "kind": "surprise",
+  "contentSchemaVersion": 1,
+  "preview": {
+    "title": "I made something for you"
+  },
+  "content": {
+    "intro": "...",
+    "steps": [
+      {
+        "type": "text",
+        "text": "..."
+      }
+    ]
+  },
+  "occurrence": null,
+  "storyIncluded": false,
+  "release": {
+    "mode": "creator_reveal",
+    "unlockAt": null
+  },
+  "featureState": null,
+  "references": [],
+  "links": []
+}
+```
 
 ### Someday create shape
 
@@ -607,6 +784,7 @@ Scheduled release time is interpreted and persisted using trusted server semanti
 {
   "kind": "relationship_signal",
   "contentSchemaVersion": 1,
+  "preview": null,
   "content": {
     "sharedFeelingText": null
   },
@@ -663,6 +841,8 @@ The response must not reveal which condition occurred.
 
 ## PATCH /relationship-space/items/:itemId
 
+Requires `Idempotency-Key`.
+
 Applies one version-checked item mutation.
 
 ### Request
@@ -704,6 +884,8 @@ Before release, the creator may update a pending release while active:
 }
 ```
 
+The new `unlockAt` must be strictly later than trusted transaction time.
+
 A schedule change:
 
 - increments item version
@@ -734,12 +916,12 @@ A container update may replace the complete ordered link set as one versioned mu
   "expectedVersion": 5,
   "links": [
     {
-      "linkType": "sequence_step",
+      "linkType": "curation",
       "targetItemId": "uuid",
       "position": 0
     },
     {
-      "linkType": "sequence_step",
+      "linkType": "curation",
       "targetItemId": "uuid",
       "position": 1
     }
@@ -747,9 +929,9 @@ A container update may replace the complete ordered link set as one versioned mu
 }
 ```
 
-Every linked target is verified to belong to the same current partnership.
+Every linked target is verified to belong to the same current partnership and to be independently visible to both current partners. A link never grants target visibility.
 
-Replacing the ordered set atomically avoids partial sequence reorder state.
+Replacing the ordered set atomically avoids partial curation reorder state. Surprise and Proposal sequence steps are not represented with generic item links.
 
 ### Success
 
@@ -764,6 +946,8 @@ Returns the new item projection and version.
 The error may include the current version number, but never the current private content body.
 
 ## DELETE /relationship-space/items/:itemId
+
+Requires `Idempotency-Key`.
 
 Hard-deletes one item and all R1 child state.
 
@@ -790,13 +974,22 @@ Deletion:
 - leaves no R1 content-bearing history
 - causes later detail reads to return the normal not-found response
 
-A retry after a completed hard delete is effect-idempotent and receives the same privacy-safe not-found behavior.
+An exact retry within the retained idempotency window replays `204` even though the item row is already gone. After receipt expiry, canonical lookup returns the normal privacy-safe not-found behavior.
+
+If the deleted item was a target of surviving curation links, the deletion transaction first removes those incoming links and increments each surviving curation owner version once. It does not silently rely on target-side cascading that would mutate a saved curation behind its optimistic version.
 
 ## POST /relationship-space/items/:itemId/release
 
-Explicitly releases a `labelled_manual` For You or Future Us item.
+Requires `Idempotency-Key`.
 
-This endpoint never evaluates the condition label.
+Performs an explicit manual release transition.
+
+It is used for:
+
+- `recipient_open` on For You or Future Us
+- `creator_reveal` on Surprise or Proposal
+
+It is never used for scheduled release. Scheduled release is worker-driven.
 
 ### Request
 
@@ -806,14 +999,23 @@ This endpoint never evaluates the condition label.
 }
 ```
 
-### Rules
+### recipient_open rules
+
+- caller must be the non-creator intended partner
+- partnership must be active
+- item kind must be For You or Future Us
+- release mode must be `recipient_open`
+- item must not already be released
+- expected version must match unless this is an exact completed replay
+
+### creator_reveal rules
 
 - caller must be the creator
-- partnership mode must allow normal mutation
-- item must be active
-- release mode must be `labelled_manual`
+- partnership must be active
+- item kind must be Surprise or Proposal
+- release mode must be `creator_reveal`
 - item must not already be released
-- expected version must match
+- expected version must match unless this is an exact completed replay
 
 ### Success
 
@@ -821,13 +1023,11 @@ This endpoint never evaluates the condition label.
 
 Returns the released item projection with incremented version and trusted `releasedAt`.
 
-If the exact request is retried after a lost response and the item is already released, the service may return the current released projection rather than attempting a second release, provided no intervening conflicting item mutation occurred.
+Exact retry replays the original release metadata without applying release twice.
 
 During breakup or account-deletion view-only state:
 
 `409 RELATIONSHIP_SPACE_VIEW_ONLY`
-
-Scheduled release does not call this endpoint. It is worker-driven.
 
 ## Reference contract
 
@@ -855,11 +1055,25 @@ Representative media attachment reference:
 }
 ```
 
+Representative Voice Letter reference:
+
+```json
+{
+  "referenceType": "media",
+  "referenceId": "uuid",
+  "role": "voice_letter",
+  "position": 0
+}
+```
+
 Rules:
 
 - references never grant access
-- when a resolver is available, the referenced resource must independently authorize to the same partnership
-- unresolved source references do not delete the R1 item
+- a reference type is accepted only when its runtime resolver is registered
+- before verified M1 integration, Remember This may omit the message reference and preserve only the explicit R1 snapshot
+- before M3 integration, media and voice-letter references are rejected
+- when a resolver exists, the resource must independently authorize to the same partnership
+- disappearance of a previously valid loose source reference does not delete the R1 item
 - R1 does not require M1 schema changes
 - M3 owns actual media transport and object access
 - reference IDs, roles, and positions are operational metadata and must not be combined with protected content in logs
@@ -877,6 +1091,22 @@ Changing it:
 - is available only during active lifecycle
 - does not change the item's occurrence date
 - never assigns a date to an undated item
+
+## Precision-aware chronological ordering
+
+Any R1 endpoint that promises chronological occurrence order uses one total ordering rule:
+
+1. `occurredYear`
+2. year-only entries before known months in that year
+3. `occurredMonth`
+4. month-only entries before exact days in that month
+5. `occurredDay`
+6. item ID as final tie-breaker
+7. unknown/undated entries in a separate trailing group
+
+Null components are ordering sentinels only and are never rendered as fabricated dates.
+
+Occurrence-order cursors carry explicit null/precision information so pagination uses the same order as the first page.
 
 ## GET /relationship-space/experiences/this-day
 
@@ -972,11 +1202,13 @@ If omitted, server current date may be used only for deciding whether an anniver
 
 No activation timestamp is substituted for the relationship start date.
 
+For a February 29 relationship start date, a non-leap-year anniversary is February 28 under the documented last-valid-day-of-month rule.
+
 ## Surprise, Proposal, and Reunion reads
 
 These experiences use the ordinary item detail endpoint.
 
-A `surprise` or `proposal` detail response returns authorized linked items in saved `sequence_step` order.
+A `surprise` or `proposal` detail response returns its protected sequence from the container content only after release. Before release, the intended partner receives only any authorized preview and never the sealed sequence.
 
 A `reunion` detail response returns:
 
@@ -1028,6 +1260,7 @@ Representative R1 codes:
 | 409 | `VERSION_CONFLICT` | expectedVersion is stale |
 | 409 | `ITEM_ALREADY_RELEASED` | Mutation conflicts with monotonic release state |
 | 409 | `RELEASE_NOT_ALLOWED` | Item kind/mode/caller does not support requested release |
+| 409 | `REFERENCE_TYPE_UNAVAILABLE` | Message/media resolver required for this reference type is not registered |
 | 409 | `ITEM_IMMUTABLE_AFTER_RELEASE` | Released delivery content cannot be edited |
 | 409 | `IDEMPOTENCY_KEY_REUSED` | Reserved for invalid reuse if runtime adopts structural fingerprint enforcement |
 | 422 | `RELEASE_TIME_INVALID` | Schedule violates release contract |
@@ -1067,10 +1300,13 @@ The action carries operational routing only in durable scheduled-action columns:
 - action type
 - aggregate type
 - aggregate ID
-- execute time
+- original execute time
+- retry/availability time
 - expected release generation
 - deduplication key
 - payload version
+
+If account deletion starts, the original execute time remains unchanged while availability may be postponed until recovery. Recovery may wake an already-due action early. The worker still rejects release at or after any controlling destructive deadline.
 
 ## API test obligations
 
@@ -1079,21 +1315,40 @@ R1 API closure must execute tests proving:
 - every private route emits `private, no-store`
 - no current partnership returns the documented home shape
 - active create/list/detail/update/delete succeed
+- all state-changing endpoints require Idempotency-Key
+- exact lost-response replay works for create, update, delete, recipient-open, creator-reveal, curation, and shared-state mutations
+- same idempotency key plus different private request returns `IDEMPOTENCY_KEY_REUSED`
+- private fingerprints are keyed and no raw request-content hash is persisted
 - stale expectedVersion returns exactly `VERSION_CONFLICT`
-- simultaneous partner updates cannot silently overwrite
-- foreign and random item IDs produce indistinguishable not-found responses
-- intended recipient cannot retrieve unreleased private delivery content
-- release makes content visible exactly once
-- breakup rejects all user mutations while preconfigured date releases continue
-- account-deletion view-only rejects all user mutations while preconfigured date releases continue
+- simultaneous permitted partner mutations cannot silently overwrite
+- creator-owned content denies partner edits/deletes
+- foreign, random, deleted, and unreleased hidden item IDs produce indistinguishable not-found responses where required
+- intended recipient may receive preview but cannot retrieve sealed main content before release
+- recipient-open succeeds only for intended partner while active
+- creator-reveal succeeds only for creator while active
+- release makes sealed content visible exactly once
+- scheduled unlockAt equal to/past trusted transaction time is rejected at create/reschedule
+- breakup rejects user mutations while a preconfigured scheduled release can continue strictly before destructive deadline
+- account-deletion view-only rejects all user mutations and pauses scheduled release
+- account recovery wakes due paused releases with original unlockAt and release generation intact
+- release at exact destructive deadline is denied even if lifecycle finalization is late
 - restoration preserves item IDs, versions, and pending schedule identity
-- final dissolution denies reads before cleanup completion
-- deleted items cannot be recovered through references, links, events, or curation tables
+- final dissolution denies reads and receipt replay before cleanup completion
+- deleted items cannot be recovered through references, events, or curation tables
+- deleting a curation target updates surviving owner versions explicitly
 - Remember This survives original source disappearance
 - Remember This does not cause the server to fetch/copy M1 plaintext
+- message references are rejected before M1 resolver registration
+- media and Voice Letter references are rejected before M3 resolver registration
+- a Voice Letter cannot surface independently of its containing item's visibility
 - cross-partnership links and references fail closed
 - location coordinates never appear in structured logs or error output
-- idempotency response metadata contains no protected content
+- occurrence dates reject future historical dates
+- reunion target date rejects dates before trusted UTC today
+- February 29 anniversary uses February 28 in non-leap years
+- chronological mixed-precision ordering is deterministic without fake dates
+- unknown content schema versions fail closed
+- Surprise/Proposal sealed sequences are not reachable through generic item links
 - derived experience results are deterministic and do not use engagement or sentiment inputs
 - relationship signals can be created only by explicit user requests
 

@@ -139,7 +139,7 @@ M1 is DONE only after its API, persistence, ordering, idempotency, lifecycle, ra
 
 # Milestone 5B: R1 Relationship Space
 
-Status: IN_PROGRESS. Architecture/API design is complete on `feat/r1-relationship-space`; runtime implementation remains pending. R1 may run in parallel with M1.
+Status: IN_PROGRESS. Architecture/API design is complete through the second-pass edge-semantics refinement on `feat/r1-relationship-space`; runtime implementation remains pending. R1 may run in parallel with M1.
 
 Canonical architecture:
 
@@ -180,9 +180,12 @@ Implement the private shared relationship space without introducing public-socia
 ## P3 lifecycle obligations
 
 - relationship objects are partnership-scoped
-- breakup_pending makes mutable relationship objects view-only
-- scheduled For You and Future Us releases continue according to product rules
-- restoration returns permitted objects to writable state
+- breakup_pending makes user-driven relationship-object mutations view-only
+- preconfigured For You/Future Us scheduled release may continue during breakup only strictly before the effective destructive deadline
+- account-deletion recovery pauses unreleased relationship-space delivery
+- recovery preserves original unlock time and safely wakes due work
+- destructive deadline wins over release at exact equality and when finalization is late
+- restoration returns permitted objects to writable state without recreating schedules
 - final dissolution removes relationship-space authorization before cleanup
 - location memories require explicit user-created location data
 - no passive background location tracking

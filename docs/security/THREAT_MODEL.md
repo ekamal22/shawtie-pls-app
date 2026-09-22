@@ -99,7 +99,10 @@ The following invariants are security-critical:
 - reasons
 - relationship timeline objects
 - private notes
+- preview content for locked delivery items
+- sealed main content for locked delivery items
 - scheduled release state
+- R1 mutation keyed fingerprints
 
 ### Cryptographic assets
 
@@ -480,6 +483,64 @@ Verification:
 - cross-partnership API tests
 - media authorization tests
 - guessed-ID tests
+
+### T08R: Relationship-space premature disclosure or visibility escalation
+
+Impact: Critical
+
+Threats:
+
+- sealed For You/Future Us content returned before release
+- Surprise/Proposal sequence reachable through generic item traversal
+- Voice Letter media reachable independently of its containing item
+- links granting visibility the target did not independently have
+- stale scheduled work revealing content after a destructive deadline
+
+Controls:
+
+- separate preview and main content roles
+- sealed main content withheld before release
+- Surprise/Proposal sequence stored inside protected container content
+- Voice Letter visibility inherited from containing item
+- links never grant target visibility
+- release predicate checks lifecycle, account-deletion pause, and effective destructive deadline
+- exact deadline equality belongs to destruction
+- release generation and worker claim fencing
+
+Verification:
+
+- pre-release sealed-content denial
+- link visibility-escalation tests
+- Voice Letter container-visibility tests
+- release versus breakup/deletion/deadline races
+- late-finalizer regression
+
+### T08S: Relationship-content leakage through operational metadata
+
+Impact: Critical
+
+Threats:
+
+- private content copied to logs, events, queues, traces, analytics, notifications, or idempotency responses
+- raw unkeyed private request hashes enabling offline dictionary tests
+- precise coordinates emitted to diagnostics or unreviewed providers
+
+Controls:
+
+- logging allowlist
+- content-free scheduled payloads
+- metadata-only relationship events
+- server-keyed domain-separated idempotency fingerprints
+- no protected request body in idempotency responses
+- coordinates kept inside protected relationship payload
+- provider review before map integration
+
+Verification:
+
+- structured log capture
+- queue/event/idempotency storage inspection
+- raw-hash absence
+- coordinate non-leakage
 
 ### T08A: Discovery enumeration and partner-request privacy oracle
 
