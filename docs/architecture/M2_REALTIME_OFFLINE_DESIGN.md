@@ -866,7 +866,7 @@ The M2 version-1 R1 queue uses an exact conservative whitelist.
 
 Queueable:
 
-- `POST /relationship-space/items` only when `release` is null or `release.mode` is `immediate`, all references are already-authoritative resource IDs supported by the current resolver set, and no M3 media/voice dependency exists
+- `POST /relationship-space/items` only when `release` is null or `release.mode` is `immediate`, all references are already-authoritative resource IDs supported by the current resolver set, and the operation contains no media or Voice Letter reference. The design-complete M3 path uses separate media draft/upload orchestration rather than placing binary-dependent work into this generic M2 R1 queue
 - `PATCH /relationship-space/items/:itemId` only when the patch omits the `release` field entirely and carries the existing `expectedVersion`; content, occurrence, story membership, Someday/shared feature state, links, references, reunion state, and saved curation changes remain server-validated at replay time
 - `DELETE /relationship-space/items/:itemId` with the existing `expectedVersion`
 
@@ -876,7 +876,7 @@ Not queueable in M2 version 1:
 - create with `scheduled`, `recipient_open`, or `creator_reveal` release mode
 - any patch that includes the `release` field, including reschedule or release-mode replacement
 - any operation that can immediately expose previously sealed content
-- media or Voice Letter references before M3
+- media or Voice Letter references in the M2 version-1 R1 queue. M3 keeps binary-dependent replay in its own media draft/upload and pending-parent orchestration
 - an external reference whose resolver is unavailable
 
 Every R1 replay still performs authoritative lifecycle, ownership, reference, time, and expected-version validation on the server.
@@ -1772,14 +1772,17 @@ M2 is DONE only when all of the following have executed evidence:
 
 ### M3
 
-M3 may reuse:
+M3 architecture is design-complete in `M3_MEDIA_VOICE_DESIGN.md` and `../api/M3_MEDIA_API.md`, but runtime implementation remains blocked until M2 closure and merge.
 
-- realtime hub extension points
-- local namespace infrastructure
+M3 reuses:
+
+- content-free parent invalidation paths instead of binary WebSocket delivery
+- account/partnership local namespace infrastructure
 - service-worker compatibility controls
-- offline operation infrastructure
+- authority-first replay barriers
+- server idempotency and local claim-fencing principles
 
-M3 owns actual media upload, media retrieval, media local metadata, and voice-message transport.
+M3 owns actual media upload, media retrieval, media local metadata, voice-message transport, pending parent bundles, and durable provider deletion. It does not add media bytes, keys, signed URLs, filenames, or MIME descriptors to the M2 realtime protocol.
 
 ### C1
 
