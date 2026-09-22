@@ -21,8 +21,8 @@ function positiveSafeInteger(value: unknown): value is number {
 
 function uuid(value: unknown): value is string {
   return (
-    typeof value === "string"
-    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
   );
 }
 
@@ -55,14 +55,11 @@ function assertContentFreeInvalidation(event: OutboxEvent): void {
   const serverSequence = event.payload.serverSequence;
 
   if (
-    !uuid(conversationId)
-    || !uuid(messageId)
-    || conversationId !== event.aggregateId
-    || !positiveSafeInteger(changeSequence)
-    || !(
-      contentVersion === null
-      || positiveSafeInteger(contentVersion)
-    )
+    !uuid(conversationId) ||
+    !uuid(messageId) ||
+    conversationId !== event.aggregateId ||
+    !positiveSafeInteger(changeSequence) ||
+    !(contentVersion === null || positiveSafeInteger(contentVersion))
   ) {
     throw new PermanentWorkerError("INVALID_M1_OUTBOX_PAYLOAD");
   }

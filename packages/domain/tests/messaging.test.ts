@@ -40,35 +40,14 @@ test("M1 legacy breakup rows use trusted timestamp fallback", () => {
     initiatedAt: "2026-09-22T12:00:00.000Z",
     messageFreezeSequence: null,
   };
-  assert.equal(
-    isMessageFrozenByBreakup(
-      { createdAt: "2026-09-22T11:59:59.999Z" },
-      breakup,
-    ),
-    true,
-  );
-  assert.equal(
-    isMessageFrozenByBreakup(
-      { createdAt: "2026-09-22T12:00:00.000Z" },
-      breakup,
-    ),
-    false,
-  );
+  assert.equal(isMessageFrozenByBreakup({ createdAt: "2026-09-22T11:59:59.999Z" }, breakup), true);
+  assert.equal(isMessageFrozenByBreakup({ createdAt: "2026-09-22T12:00:00.000Z" }, breakup), false);
 });
 
 test("M1 edit window closes at exact thirty-minute boundary", () => {
   const createdAt = "2026-09-22T12:00:00.000Z";
   assert.equal(MESSAGE_EDIT_WINDOW_MS, 30 * 60_000);
-  assert.equal(
-    messageEditDeadline(createdAt),
-    "2026-09-22T12:30:00.000Z",
-  );
-  assert.equal(
-    isMessageEditWindowOpen(createdAt, "2026-09-22T12:29:59.999Z"),
-    true,
-  );
-  assert.equal(
-    isMessageEditWindowOpen(createdAt, "2026-09-22T12:30:00.000Z"),
-    false,
-  );
+  assert.equal(messageEditDeadline(createdAt), "2026-09-22T12:30:00.000Z");
+  assert.equal(isMessageEditWindowOpen(createdAt, "2026-09-22T12:29:59.999Z"), true);
+  assert.equal(isMessageEditWindowOpen(createdAt, "2026-09-22T12:30:00.000Z"), false);
 });

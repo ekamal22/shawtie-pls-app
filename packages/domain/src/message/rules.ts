@@ -15,9 +15,9 @@ export function isMessageFrozenByBreakup(
   breakup: BreakupFreezeInput,
 ): boolean {
   if (
-    breakup.messageFreezeSequence !== undefined
-    && breakup.messageFreezeSequence !== null
-    && message.serverSequence !== undefined
+    breakup.messageFreezeSequence !== undefined &&
+    breakup.messageFreezeSequence !== null &&
+    message.serverSequence !== undefined
   ) {
     return message.serverSequence <= breakup.messageFreezeSequence;
   }

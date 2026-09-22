@@ -236,14 +236,7 @@ export class MessagingService {
       if (messageId && !message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
 
       if (capability !== null) {
-        this.#assertCapability(
-          auth,
-          lifecycle,
-          now,
-          message,
-          capability,
-          messageId !== null,
-        );
+        this.#assertCapability(auth, lifecycle, now, message, capability, messageId !== null);
       }
 
       return work({
@@ -354,11 +347,7 @@ export class MessagingService {
         this.keys.versions.map((version) => ({
           scope,
           keyVersion: version,
-          keyHash: this.keys.verifier(
-            "rate-limit-key",
-            "m1\0" + scope + "\0" + accountId,
-            version,
-          ),
+          keyHash: this.keys.verifier("rate-limit-key", "m1\0" + scope + "\0" + accountId, version),
           windowMs,
           limit,
           blockMs: windowMs,
@@ -368,18 +357,19 @@ export class MessagingService {
     });
 
     if (!decision.allowed) {
-      throw new ApiError(429, "RATE_LIMITED", "RATE_LIMITED", Math.max(1, Math.ceil(decision.retryAfterMs / 1_000)));
+      throw new ApiError(
+        429,
+        "RATE_LIMITED",
+        "RATE_LIMITED",
+        Math.max(1, Math.ceil(decision.retryAfterMs / 1_000)),
+      );
     }
   }
 
   async current(auth: AuthContext): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const row = await loadCurrentConversationReadModel(
-        transaction,
-        auth.session.accountId,
-        now,
-      );
+      const row = await loadCurrentConversationReadModel(transaction, auth.session.accountId, now);
       if (!row) return { conversation: null };
 
       const interactionMode = row.accountDeletionViewOnly
@@ -421,10 +411,14 @@ export class MessagingService {
             nickname: row.partner.nickname,
             nicknameVersion: safeNumber(row.partner.nicknameVersion),
             presence: {
-              online: Boolean(row.partner.onlineUntil && row.partner.onlineUntil.getTime() > now.getTime()),
+              online: Boolean(
+                row.partner.onlineUntil && row.partner.onlineUntil.getTime() > now.getTime(),
+              ),
               lastSeenAt: row.partner.lastSeenAt?.toISOString() ?? null,
             },
-            typing: Boolean(row.partner.typingUntil && row.partner.typingUntil.getTime() > now.getTime()),
+            typing: Boolean(
+              row.partner.typingUntil && row.partner.typingUntil.getTime() > now.getTime(),
+            ),
           },
           receipts: {
             selfDeliveredThrough: safeNumber(row.self.deliveredThrough),
@@ -457,8 +451,7 @@ export class MessagingService {
         const requested = input.limit;
         const rows = await listConversationMessages(transaction, {
           conversationId,
-          beforeSequence:
-            input.beforeSequence === undefined ? null : BigInt(input.beforeSequence),
+          beforeSequence: input.beforeSequence === undefined ? null : BigInt(input.beforeSequence),
           afterSequence: input.afterSequence === undefined ? null : BigInt(input.afterSequence),
           limit: requested + 1,
         });
@@ -518,8 +511,7 @@ export class MessagingService {
             changeSequence: safeNumber(row.changeSequence),
             type: row.changeType,
             messageId: row.messageId,
-            contentVersion:
-              row.contentVersion === null ? null : safeNumber(row.contentVersion),
+            contentVersion: row.contentVersion === null ? null : safeNumber(row.contentVersion),
             changedAt: row.createdAt.toISOString(),
           })),
           latestChangeSequence: safeNumber(conversation.nextChangeSequence - 1n),
@@ -553,10 +545,7 @@ export class MessagingService {
           idempotencyKey,
         });
         if (existing) {
-          if (
-            existing.requestFingerprint === null ||
-            existing.requestFingerprintVersion === null
-          ) {
+          if (existing.requestFingerprint === null || existing.requestFingerprintVersion === null) {
             throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED");
           }
           let expected: Buffer;
@@ -592,23 +581,13 @@ export class MessagingService {
 
         if (
           input.replyToMessageId &&
-          !(await messageExistsInConversation(
-            transaction,
-            conversationId,
-            input.replyToMessageId,
-          ))
+          !(await messageExistsInConversation(transaction, conversationId, input.replyToMessageId))
         ) {
           throw new ApiError(404, "MESSAGE_NOT_FOUND");
         }
 
-        const fingerprint = this.keys.activeVerifier(
-          "message-request-fingerprint",
-          payload,
-        );
-        const sequences = await allocateMessageAndChangeSequence(
-          transaction,
-          conversationId,
-        );
+        const fingerprint = this.keys.activeVerifier("message-request-fingerprint", payload);
+        const sequences = await allocateMessageAndChangeSequence(transaction, conversationId);
         const messageId = randomUUID();
 
         await insertMessage(transaction, {
@@ -660,10 +639,7 @@ export class MessagingService {
       readonly conversationId: string;
       readonly messageId: string;
       readonly type:
-        | "message.created"
-        | "message.updated"
-        | "message.deleted"
-        | "message.reaction_changed";
+        "message.created" | "message.updated" | "message.deleted" | "message.reaction_changed";
       readonly serverSequence?: bigint;
       readonly changeSequence: bigint;
       readonly contentVersion: bigint | null;
@@ -674,8 +650,7 @@ export class MessagingService {
       eventType: input.type,
       aggregateType: "conversation",
       aggregateId: input.conversationId,
-      deduplicationKey:
-        "m1-change:" + input.conversationId + ":" + input.changeSequence.toString(),
+      deduplicationKey: "m1-change:" + input.conversationId + ":" + input.changeSequence.toString(),
       payload: {
         conversationId: input.conversationId,
         messageId: input.messageId,
@@ -683,8 +658,7 @@ export class MessagingService {
           ? {}
           : { serverSequence: safeNumber(input.serverSequence) }),
         changeSequence: safeNumber(input.changeSequence),
-        contentVersion:
-          input.contentVersion === null ? null : safeNumber(input.contentVersion),
+        contentVersion: input.contentVersion === null ? null : safeNumber(input.contentVersion),
       },
       payloadVersion: 1,
     });
@@ -1167,11 +1141,7 @@ export class MessagingService {
     });
   }
 
-  async message(
-    auth: AuthContext,
-    conversationId: string,
-    messageId: string,
-  ): Promise<unknown> {
+  async message(auth: AuthContext, conversationId: string, messageId: string): Promise<unknown> {
     return this.#withConversation(
       auth,
       conversationId,

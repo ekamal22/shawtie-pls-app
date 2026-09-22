@@ -7,13 +7,7 @@ import {
   M1_TYPING_MIN_REFRESH_MS,
   M1_VISIBLE_CHANGE_POLL_MS,
 } from "@shawtie/contracts";
-import {
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
 
 interface ConversationSummary {
@@ -151,8 +145,8 @@ function messageMutable(message: Message, conversation: ConversationSummary): bo
 
 function messageEditable(message: Message, conversation: ConversationSummary): boolean {
   return (
-    messageMutable(message, conversation)
-    && Date.now() < new Date(message.createdAt).getTime() + M1_MESSAGE_EDIT_WINDOW_MS
+    messageMutable(message, conversation) &&
+    Date.now() < new Date(message.createdAt).getTime() + M1_MESSAGE_EDIT_WINDOW_MS
   );
 }
 
@@ -208,28 +202,19 @@ export function MessagingPanel() {
     [],
   );
 
-  const acknowledge = useCallback(
-    async (summary: ConversationSummary, throughSequence: number) => {
-      if (throughSequence <= 0) return;
-      await apiRequest(
-        "/api/v1/conversations/" + summary.conversationId + "/receipt",
-        {
-          method: "POST",
-          body: { type: "delivered", throughSequence },
-        },
-      );
-      if (document.visibilityState === "visible") {
-        await apiRequest(
-          "/api/v1/conversations/" + summary.conversationId + "/receipt",
-          {
-            method: "POST",
-            body: { type: "read", throughSequence },
-          },
-        );
-      }
-    },
-    [],
-  );
+  const acknowledge = useCallback(async (summary: ConversationSummary, throughSequence: number) => {
+    if (throughSequence <= 0) return;
+    await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
+      method: "POST",
+      body: { type: "delivered", throughSequence },
+    });
+    if (document.visibilityState === "visible") {
+      await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
+        method: "POST",
+        body: { type: "read", throughSequence },
+      });
+    }
+  }, []);
 
   const loadInitial = useCallback(async () => {
     const summary = await refreshConversation();
@@ -241,10 +226,10 @@ export function MessagingPanel() {
     }
 
     const page = await apiRequest<MessagePage>(
-      "/api/v1/conversations/"
-        + summary.conversationId
-        + "/messages?limit="
-        + M1_HISTORY_DEFAULT_LIMIT,
+      "/api/v1/conversations/" +
+        summary.conversationId +
+        "/messages?limit=" +
+        M1_HISTORY_DEFAULT_LIMIT,
     );
     setMessages(page.items);
     setHasOlder(page.hasMore);
@@ -265,12 +250,12 @@ export function MessagingPanel() {
         latestChangeSequence: number;
         hasMore: boolean;
       }>(
-        "/api/v1/conversations/"
-          + summary.conversationId
-          + "/changes?afterChangeSequence="
-          + cursor
-          + "&limit="
-          + M1_CHANGE_DEFAULT_LIMIT,
+        "/api/v1/conversations/" +
+          summary.conversationId +
+          "/changes?afterChangeSequence=" +
+          cursor +
+          "&limit=" +
+          M1_CHANGE_DEFAULT_LIMIT,
       );
 
       for (const change of result.items) {
@@ -356,12 +341,12 @@ export function MessagingPanel() {
     if (!conversation || !messages[0]) return;
     await run(async () => {
       const page = await apiRequest<MessagePage>(
-        "/api/v1/conversations/"
-          + conversation.conversationId
-          + "/messages?limit="
-          + M1_HISTORY_DEFAULT_LIMIT
-          + "&beforeSequence="
-          + messages[0]!.serverSequence,
+        "/api/v1/conversations/" +
+          conversation.conversationId +
+          "/messages?limit=" +
+          M1_HISTORY_DEFAULT_LIMIT +
+          "&beforeSequence=" +
+          messages[0]!.serverSequence,
       );
       setMessages((current) => mergeMessages(current, page.items));
       setHasOlder(page.hasMore);
@@ -375,9 +360,7 @@ export function MessagingPanel() {
     const replyToMessageId = replyingTo?.messageId ?? null;
     const existing = pendingSendRef.current;
     const pending =
-      existing
-      && existing.body === body
-      && existing.replyToMessageId === replyToMessageId
+      existing && existing.body === body && existing.replyToMessageId === replyToMessageId
         ? existing
         : { key: idempotencyKey(), body, replyToMessageId };
     pendingSendRef.current = pending;
@@ -403,10 +386,10 @@ export function MessagingPanel() {
         setSendStatus(null);
         setComposer("");
         setReplyingTo(null);
-        await apiRequest(
-          "/api/v1/conversations/" + conversation.conversationId + "/typing",
-          { method: "POST", body: { typing: false } },
-        ).catch(() => undefined);
+        await apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
+          method: "POST",
+          body: { typing: false },
+        }).catch(() => undefined);
       } catch (caught) {
         setSendStatus("failed");
         throw caught;
@@ -424,10 +407,10 @@ export function MessagingPanel() {
     const now = Date.now();
     if (now - lastTypingSentRef.current < M1_TYPING_MIN_REFRESH_MS) return;
     lastTypingSentRef.current = now;
-    void apiRequest(
-      "/api/v1/conversations/" + conversation.conversationId + "/typing",
-      { method: "POST", body: { typing: true } },
-    ).catch(() => undefined);
+    void apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
+      method: "POST",
+      body: { typing: true },
+    }).catch(() => undefined);
   }
 
   async function editMessage(message: Message) {
@@ -437,10 +420,7 @@ export function MessagingPanel() {
     await run(async () => {
       try {
         await apiRequest(
-          "/api/v1/conversations/"
-            + conversation.conversationId
-            + "/messages/"
-            + message.messageId,
+          "/api/v1/conversations/" + conversation.conversationId + "/messages/" + message.messageId,
           {
             method: "PATCH",
             headers: { "idempotency-key": idempotencyKey() },
@@ -452,8 +432,8 @@ export function MessagingPanel() {
         );
       } catch (caught) {
         if (
-          caught instanceof ApiClientError
-          && (caught.code === "VERSION_CONFLICT" || caught.code === "MESSAGE_DELETED")
+          caught instanceof ApiClientError &&
+          (caught.code === "VERSION_CONFLICT" || caught.code === "MESSAGE_DELETED")
         ) {
           await refreshMessage(conversation.conversationId, message.messageId);
         }
@@ -468,10 +448,7 @@ export function MessagingPanel() {
     await run(async () => {
       try {
         await apiRequest(
-          "/api/v1/conversations/"
-            + conversation.conversationId
-            + "/messages/"
-            + message.messageId,
+          "/api/v1/conversations/" + conversation.conversationId + "/messages/" + message.messageId,
           {
             method: "DELETE",
             headers: { "idempotency-key": idempotencyKey() },
@@ -491,11 +468,11 @@ export function MessagingPanel() {
     if (!conversation) return;
     await run(async () => {
       await apiRequest(
-        "/api/v1/conversations/"
-          + conversation.conversationId
-          + "/messages/"
-          + message.messageId
-          + "/reaction",
+        "/api/v1/conversations/" +
+          conversation.conversationId +
+          "/messages/" +
+          message.messageId +
+          "/reaction",
         {
           method: "PUT",
           headers: { "idempotency-key": idempotencyKey() },
@@ -510,11 +487,11 @@ export function MessagingPanel() {
     if (!conversation) return;
     await run(async () => {
       await apiRequest(
-        "/api/v1/conversations/"
-          + conversation.conversationId
-          + "/messages/"
-          + message.messageId
-          + "/reaction",
+        "/api/v1/conversations/" +
+          conversation.conversationId +
+          "/messages/" +
+          message.messageId +
+          "/reaction",
         {
           method: "DELETE",
           headers: { "idempotency-key": idempotencyKey() },
@@ -534,10 +511,7 @@ export function MessagingPanel() {
     await run(async () => {
       try {
         await apiRequest(
-          "/api/v1/partnerships/"
-            + conversation.partnershipId
-            + "/nicknames/"
-            + target.accountId,
+          "/api/v1/partnerships/" + conversation.partnershipId + "/nicknames/" + target.accountId,
           {
             method: "PATCH",
             headers: { "idempotency-key": idempotencyKey() },
@@ -627,11 +601,7 @@ export function MessagingPanel() {
               type="button"
               disabled={!conversation.capabilities.changeNickname || busy}
               onClick={() =>
-                void saveNickname(
-                  "self",
-                  selfNickname,
-                  conversation.self.nicknameVersion,
-                )
+                void saveNickname("self", selfNickname, conversation.self.nicknameVersion)
               }
             >
               Save
@@ -653,11 +623,7 @@ export function MessagingPanel() {
               type="button"
               disabled={!conversation.capabilities.changeNickname || busy}
               onClick={() =>
-                void saveNickname(
-                  "partner",
-                  partnerNickname,
-                  conversation.partner.nicknameVersion,
-                )
+                void saveNickname("partner", partnerNickname, conversation.partner.nicknameVersion)
               }
             >
               Save
@@ -702,7 +668,7 @@ export function MessagingPanel() {
                 <div className="reply-context">
                   {message.replyContext.deleted
                     ? "Replying to a deleted message"
-                    : message.replyContext.body ?? "Replying to a protected message"}
+                    : (message.replyContext.body ?? "Replying to a protected message")}
                 </div>
               ) : null}
 
@@ -724,7 +690,11 @@ export function MessagingPanel() {
 
               <div className="message-actions">
                 {!message.deletedAt && conversation.capabilities.sendMessage ? (
-                  <button className="link compact" type="button" onClick={() => setReplyingTo(message)}>
+                  <button
+                    className="link compact"
+                    type="button"
+                    onClick={() => setReplyingTo(message)}
+                  >
                     Reply
                   </button>
                 ) : null}
@@ -795,7 +765,8 @@ export function MessagingPanel() {
       {replyingTo ? (
         <div className="replying-banner">
           <span>
-            Replying to {replyingTo.senderAccountId === conversation.self.accountId ? selfName : partnerName}
+            Replying to{" "}
+            {replyingTo.senderAccountId === conversation.self.accountId ? selfName : partnerName}
           </span>
           <button className="link compact" type="button" onClick={() => setReplyingTo(null)}>
             Cancel
@@ -817,10 +788,10 @@ export function MessagingPanel() {
           onChange={(event) => composerChanged(event.target.value)}
           onBlur={() => {
             if (!conversation.capabilities.typing) return;
-            void apiRequest(
-              "/api/v1/conversations/" + conversation.conversationId + "/typing",
-              { method: "POST", body: { typing: false } },
-            ).catch(() => undefined);
+            void apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
+              method: "POST",
+              body: { typing: false },
+            }).catch(() => undefined);
           }}
           placeholder={
             conversation.capabilities.sendMessage

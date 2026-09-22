@@ -3,10 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("M1 private request fingerprints are keyed and versioned", async () => {
-  const ring = await readFile(
-    new URL("../src/security/auth-key-ring.ts", import.meta.url),
-    "utf8",
-  );
+  const ring = await readFile(new URL("../src/security/auth-key-ring.ts", import.meta.url), "utf8");
   const service = await readFile(
     new URL("../src/modules/messages/messaging-service.ts", import.meta.url),
     "utf8",
@@ -19,7 +16,7 @@ test("M1 private request fingerprints are keyed and versioned", async () => {
   assert.equal(ring.includes('"message-request-fingerprint"'), true);
   assert.equal(service.includes('activeVerifier("message-request-fingerprint"'), true);
   assert.equal(/verifier\(\s*"message-request-fingerprint"/.test(service), true);
-  assert.equal(service.includes('createHash('), false);
+  assert.equal(service.includes("createHash("), false);
   assert.equal(migration.includes("request_fingerprint_version"), true);
 });
 
@@ -98,9 +95,7 @@ test("M1 presence projection is bounded by current partnership activation", asyn
   );
 
   assert.equal(
-    repository.includes(
-      "partner_presence.last_seen_at >= partnership.activated_at",
-    ),
+    repository.includes("partner_presence.last_seen_at >= partnership.activated_at"),
     true,
   );
   assert.equal(repository.includes("CREATE TABLE account_presence"), false);
@@ -121,10 +116,7 @@ test("M1 routes protect all messaging mutations with authentication and request 
   }
   assert.equal(routes.includes("requireAuthentication"), true);
   assert.equal(routes.includes("idempotencyKey(request.headers)"), true);
-  assert.equal(
-    security.includes('["POST", "PUT", "PATCH", "DELETE"]'),
-    true,
-  );
+  assert.equal(security.includes('["POST", "PUT", "PATCH", "DELETE"]'), true);
 });
 
 test("M1 relationship-space ownership remains untouched by messaging cleanup", async () => {
@@ -133,12 +125,18 @@ test("M1 relationship-space ownership remains untouched by messaging cleanup", a
     "utf8",
   );
   const deletion = await readFile(
-    new URL("../../worker/src/partnerships/partnership-relational-deletion-handler.ts", import.meta.url),
+    new URL(
+      "../../worker/src/partnerships/partnership-relational-deletion-handler.ts",
+      import.meta.url,
+    ),
     "utf8",
   );
 
   const cleanupStart = messaging.indexOf("export async function deletePartnershipMessagingContent");
-  const cleanupEnd = messaging.indexOf("\nexport async function deleteAccountPresence", cleanupStart);
+  const cleanupEnd = messaging.indexOf(
+    "\nexport async function deleteAccountPresence",
+    cleanupStart,
+  );
   const cleanup = messaging.slice(cleanupStart, cleanupEnd);
 
   assert.equal(cleanup.includes("relationship_items"), false);
@@ -146,7 +144,6 @@ test("M1 relationship-space ownership remains untouched by messaging cleanup", a
   assert.equal(deletion.includes("deletePartnershipMessagingContent"), true);
   assert.equal(deletion.includes("deletePartnershipRelationalContent"), true);
 });
-
 
 test("M1 browser exposes the required chat affordances and advances receipts only after reconciliation", async () => {
   const panel = await readFile(
@@ -176,10 +173,7 @@ test("M1 browser exposes the required chat affordances and advances receipts onl
     true,
   );
   assert.equal(panel.includes("const handleSyncFailure = useCallback"), true);
-  assert.equal(
-    panel.includes('caught.code === "CONVERSATION_NOT_FOUND"'),
-    true,
-  );
+  assert.equal(panel.includes('caught.code === "CONVERSATION_NOT_FOUND"'), true);
   assert.equal(panel.includes("await loadInitial()"), true);
 
   const sendStart = panel.indexOf("async function send(event: FormEvent)");

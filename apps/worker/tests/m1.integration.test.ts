@@ -244,7 +244,6 @@ test("M1 permanent account cleanup removes the account-scoped presence snapshot"
   }
 });
 
-
 test("M1 content-free messaging invalidations are consumed as delivered before M2", async () => {
   const database = requireDisposableDatabase();
   try {
@@ -285,10 +284,7 @@ test("M1 content-free messaging invalidations are consumed as delivered before M
     const row = await database.pool.query<{
       status: string;
       last_error_code: string | null;
-    }>(
-      "SELECT status, last_error_code FROM outbox_events WHERE id = $1",
-      [eventId],
-    );
+    }>("SELECT status, last_error_code FROM outbox_events WHERE id = $1", [eventId]);
     assert.deepEqual(row.rows[0], {
       status: "delivered",
       last_error_code: null,
@@ -338,10 +334,7 @@ test("M1 invalidation sink fails closed if private content appears in the outbox
     const row = await database.pool.query<{
       status: string;
       last_error_code: string | null;
-    }>(
-      "SELECT status, last_error_code FROM outbox_events WHERE id = $1",
-      [eventId],
-    );
+    }>("SELECT status, last_error_code FROM outbox_events WHERE id = $1", [eventId]);
     assert.deepEqual(row.rows[0], {
       status: "failed",
       last_error_code: "INVALID_M1_OUTBOX_PAYLOAD",
@@ -350,7 +343,6 @@ test("M1 invalidation sink fails closed if private content appears in the outbox
     await closeDatabasePool(database);
   }
 });
-
 
 test("M1 outbox consumer leaves unrelated event families pending and fails unknown M1 versions", async () => {
   const database = requireDisposableDatabase();

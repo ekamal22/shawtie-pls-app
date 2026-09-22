@@ -56,15 +56,12 @@ export function registerMessagingRoutes(
     return service.listMessages(auth, params.conversationId, input);
   });
 
-  app.get(
-    "/api/v1/conversations/:conversationId/messages/:messageId",
-    async (request, reply) => {
-      const auth = await requireAuthentication(request, database, config, keys);
-      const params = parseAtBoundary(messageIdParamsSchema, request.params);
-      privateNoStore(reply);
-      return service.message(auth, params.conversationId, params.messageId);
-    },
-  );
+  app.get("/api/v1/conversations/:conversationId/messages/:messageId", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    const params = parseAtBoundary(messageIdParamsSchema, request.params);
+    privateNoStore(reply);
+    return service.message(auth, params.conversationId, params.messageId);
+  });
 
   app.get("/api/v1/conversations/:conversationId/changes", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
@@ -89,22 +86,19 @@ export function registerMessagingRoutes(
     return result;
   });
 
-  app.patch(
-    "/api/v1/conversations/:conversationId/messages/:messageId",
-    async (request, reply) => {
-      const auth = await requireAuthentication(request, database, config, keys);
-      const params = parseAtBoundary(messageIdParamsSchema, request.params);
-      const input = parseAtBoundary(messageEditSchema, request.body);
-      privateNoStore(reply);
-      return service.edit(
-        auth,
-        params.conversationId,
-        params.messageId,
-        input,
-        idempotencyKey(request.headers),
-      );
-    },
-  );
+  app.patch("/api/v1/conversations/:conversationId/messages/:messageId", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    const params = parseAtBoundary(messageIdParamsSchema, request.params);
+    const input = parseAtBoundary(messageEditSchema, request.body);
+    privateNoStore(reply);
+    return service.edit(
+      auth,
+      params.conversationId,
+      params.messageId,
+      input,
+      idempotencyKey(request.headers),
+    );
+  });
 
   app.delete(
     "/api/v1/conversations/:conversationId/messages/:messageId",
@@ -176,20 +170,17 @@ export function registerMessagingRoutes(
     return service.presence(auth);
   });
 
-  app.patch(
-    "/api/v1/partnerships/:partnershipId/nicknames/:accountId",
-    async (request, reply) => {
-      const auth = await requireAuthentication(request, database, config, keys);
-      const params = parseAtBoundary(nicknameSubjectParamsSchema, request.params);
-      const input = parseAtBoundary(nicknameMutationSchema, request.body);
-      privateNoStore(reply);
-      return service.nickname(
-        auth,
-        params.partnershipId,
-        params.accountId,
-        input,
-        idempotencyKey(request.headers),
-      );
-    },
-  );
+  app.patch("/api/v1/partnerships/:partnershipId/nicknames/:accountId", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    const params = parseAtBoundary(nicknameSubjectParamsSchema, request.params);
+    const input = parseAtBoundary(nicknameMutationSchema, request.body);
+    privateNoStore(reply);
+    return service.nickname(
+      auth,
+      params.partnershipId,
+      params.accountId,
+      input,
+      idempotencyKey(request.headers),
+    );
+  });
 }
