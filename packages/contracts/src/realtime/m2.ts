@@ -95,6 +95,13 @@ const partnershipPayloadSchema = z
   })
   .strict();
 
+const partnershipAccountIdsSchema = z
+  .array(uuidSchema)
+  .length(2)
+  .refine((accountIds) => new Set(accountIds).size === 2, {
+    message: "Partnership realtime routing requires two distinct accounts",
+  });
+
 const relationshipPayloadSchema = z
   .object({
     eventId: uuidSchema,
@@ -201,7 +208,12 @@ export const m2InternalRealtimeNotificationSchema = z.discriminatedUnion("kind",
     .object({
       v: z.literal(M2_REALTIME_PROTOCOL_VERSION),
       kind: z.literal("partnership.changed"),
-      scope: z.object({ partnershipId: uuidSchema }).strict(),
+      scope: z
+        .object({
+          partnershipId: uuidSchema,
+          accountIds: partnershipAccountIdsSchema,
+        })
+        .strict(),
       data: partnershipPayloadSchema,
     })
     .strict(),

@@ -64,11 +64,19 @@ export async function queueRealtimePartnershipChanged(
   transaction: QueryExecutor,
   input: {
     partnershipId: string;
+    accountIds: readonly string[];
     generation: bigint;
     metadataVersion: bigint;
   },
 ): Promise<void> {
+  if (
+    input.accountIds.length !== 2 ||
+    new Set(input.accountIds).size !== 2
+  ) {
+    throw new Error("Realtime partnership routing requires exactly two distinct accounts");
+  }
   const id = randomUUID();
+  const accountIds = [...input.accountIds].sort();
   await insertOutboxEvent(transaction, {
     id,
     eventType: "m2.partnership.changed",
@@ -77,6 +85,7 @@ export async function queueRealtimePartnershipChanged(
     deduplicationKey: "m2-partnership:" + id,
     payload: {
       partnershipId: input.partnershipId,
+      accountIds,
       generation: safeVersion(input.generation),
       metadataVersion: safeVersion(input.metadataVersion),
     },

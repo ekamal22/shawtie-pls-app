@@ -53,6 +53,17 @@ function positive(value: unknown): number {
   return number;
 }
 
+function accountIds(value: unknown): [string, string] {
+  if (!Array.isArray(value) || value.length !== 2) {
+    throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
+  }
+  const parsed: [string, string] = [uuid(value[0]), uuid(value[1])];
+  if (parsed[0] === parsed[1]) {
+    throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
+  }
+  return parsed.sort() as [string, string];
+}
+
 function exactKeys(
   payload: Record<string, unknown>,
   keys: readonly string[],
@@ -119,8 +130,14 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
   }
 
   if (event.eventType === "m2.partnership.changed") {
-    exactKeys(payload, ["partnershipId", "generation", "metadataVersion"]);
+    exactKeys(payload, [
+      "partnershipId",
+      "accountIds",
+      "generation",
+      "metadataVersion",
+    ]);
     const partnershipId = uuid(payload.partnershipId);
+    const routedAccountIds = accountIds(payload.accountIds);
     if (
       event.aggregateType !== "partnership" ||
       event.aggregateId !== partnershipId
@@ -130,7 +147,7 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
     return {
       v: M2_REALTIME_PROTOCOL_VERSION,
       kind: "partnership.changed",
-      scope: { partnershipId },
+      scope: { partnershipId, accountIds: routedAccountIds },
       data: {
         eventId: event.id,
         partnershipId,
