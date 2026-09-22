@@ -136,6 +136,7 @@ function mergeMessages(current: Message[], incoming: Message[]): Message[] {
 
 function messageMutable(message: Message, conversation: ConversationSummary): boolean {
   if (message.deletedAt) return false;
+  if (conversation.interactionMode === "account_deletion_view_only") return false;
   if (conversation.lifecycleState === "active") return true;
   const breakup = conversation.breakup;
   if (!breakup) return false;
