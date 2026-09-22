@@ -29,7 +29,7 @@ Implemented HTTP/runtime behavior includes:
 - keyed cursor integrity bound to account, partnership, and query shape
 - account-deletion view-only pause/recovery integration
 - breakup view-only behavior and final-dissolution cancellation
-- verified same-partnership M1 message references through the registered resolver; invalid or foreign M1 references fail closed; M3 media references remain fail-closed until M3 exists
+- verified same-partnership M1 message references through the registered resolver; invalid or foreign M1 references fail closed; current runtime keeps M3 media references fail-closed until the design-complete M3 resolver is implemented and verified
 
 Combined verification is green and R1 is `DONE`. The strict canonical migration chain, full repository-health closure, audit, and no-reservation requirement are all satisfied.
 
