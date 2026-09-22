@@ -68,7 +68,8 @@
     "test:m2:browser:e2e": "playwright test --config=playwright.m2.config.ts",
     "test:m2:install-browser": "playwright install chromium",
     "test:m2:device:prepare": "node scripts/device/m2-android-acceptance.mjs",
-    "test:m2:device:cleanup": "node scripts/device/m2-android-acceptance.mjs --cleanup"
+    "test:m2:device:cleanup": "node scripts/device/m2-android-acceptance.mjs --cleanup",
+    "test:m2:closure": "node scripts/ci/test-m2-closure.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
