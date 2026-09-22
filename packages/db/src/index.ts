@@ -219,6 +219,7 @@ export {
   deletePartnershipMessagingContent,
   findMessageByIdempotencyKey,
   getPrimaryConversationLastServerSequence,
+  hasActiveMessageReaction,
   heartbeatPresence,
   insertConversationChange,
   insertMessage,
