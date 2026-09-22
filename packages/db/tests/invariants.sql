@@ -732,7 +732,8 @@ INSERT INTO conversation_member_state (
 INSERT INTO messages (
   id, conversation_id, partnership_id, sender_account_id,
   client_idempotency_key, server_sequence, body_text, content_version,
-  request_fingerprint, request_fingerprint_version, last_change_sequence, created_at
+  request_fingerprint, request_fingerprint_version, created_change_sequence,
+  last_change_sequence, created_at
 ) VALUES (
   '78100000-0000-4000-8000-000000000001',
   '78000000-0000-4000-8000-000000000001',
@@ -745,6 +746,7 @@ INSERT INTO messages (
   decode('0102', 'hex'),
   1,
   1,
+  1,
   TIMESTAMPTZ '2026-03-01 00:00:00+00'
 );
 
@@ -754,7 +756,7 @@ BEGIN
     INSERT INTO messages (
       id, conversation_id, partnership_id, sender_account_id,
       client_idempotency_key, server_sequence, body_text, content_version,
-      last_change_sequence, created_at
+      created_change_sequence, last_change_sequence, created_at
     ) VALUES (
       '78100000-0000-4000-8000-000000000002',
       '78000000-0000-4000-8000-000000000001',
@@ -764,6 +766,7 @@ BEGIN
       1,
       'duplicate sequence',
       1,
+      2,
       2,
       TIMESTAMPTZ '2026-03-01 00:01:00+00'
     );
@@ -874,7 +877,7 @@ BEGIN
     INSERT INTO messages (
       id, conversation_id, partnership_id, sender_account_id,
       client_idempotency_key, server_sequence, body_text, content_version,
-      last_change_sequence, created_at, deleted_at
+      created_change_sequence, last_change_sequence, created_at, deleted_at
     ) VALUES (
       '78100000-0000-4000-8000-000000000003',
       '78000000-0000-4000-8000-000000000001',
@@ -884,6 +887,7 @@ BEGIN
       3,
       'must not survive deletion',
       1,
+      3,
       3,
       TIMESTAMPTZ '2026-03-01 00:05:00+00',
       TIMESTAMPTZ '2026-03-01 00:06:00+00'
