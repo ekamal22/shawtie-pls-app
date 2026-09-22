@@ -59,3 +59,42 @@ test("M2 update-required state prevents mutation replay", async () => {
   assert.equal(coordinator.status, "update-required");
   assert.equal(replayed, false);
 });
+
+test("M2 coordinator does not reconcile or replay while the browser is offline", async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: { onLine: false },
+  });
+
+  try {
+    const coordinator = new SyncCoordinator();
+    let reconciled = 0;
+    let replayed = 0;
+
+    coordinator.register("messages", async () => {
+      reconciled += 1;
+      return { latestChangeSequence: 1 };
+    });
+    coordinator.register(
+      "outbox",
+      async () => {
+        replayed += 1;
+      },
+      "replay",
+    );
+
+    coordinator.markDirty(1);
+    await coordinator.requestSync();
+
+    assert.equal(coordinator.status, "offline");
+    assert.equal(reconciled, 0);
+    assert.equal(replayed, 0);
+  } finally {
+    if (descriptor) {
+      Object.defineProperty(globalThis, "navigator", descriptor);
+    } else {
+      delete (globalThis as { navigator?: unknown }).navigator;
+    }
+  }
+});

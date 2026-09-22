@@ -64,6 +64,10 @@ export class SyncCoordinator {
 
   requestSync(): Promise<void> {
     if (this.#status === "update-required") return Promise.resolve();
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      this.markOffline();
+      return Promise.resolve();
+    }
     if (this.#running) {
       this.#rerun = true;
       return this.#running;
