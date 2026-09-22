@@ -1,3 +1,10 @@
+ALTER TABLE idempotency_records
+  ADD COLUMN request_fingerprint_version integer;
+
+ALTER TABLE idempotency_records
+  ADD CONSTRAINT idempotency_records_fingerprint_version_positive
+    CHECK (request_fingerprint_version IS NULL OR request_fingerprint_version > 0);
+
 ALTER TABLE breakup_processes
   ADD COLUMN message_freeze_sequence bigint;
 
