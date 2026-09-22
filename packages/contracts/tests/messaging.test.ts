@@ -45,15 +45,23 @@ test("M1 history contract keeps before and after cursors mutually exclusive", ()
     }).success,
     false,
   );
-  assert.equal(
-    safeParseAtBoundary(messageHistoryQuerySchema, { limit: 101 }).success,
-    false,
-  );
+  assert.equal(safeParseAtBoundary(messageHistoryQuerySchema, { limit: 101 }).success, false);
+
+  const afterCursor = safeParseAtBoundary(messageHistoryQuerySchema, {
+    afterSequence: "3",
+    limit: "25",
+  });
+  assert.equal(afterCursor.success, true);
+  if (afterCursor.success) {
+    assert.equal(afterCursor.data.afterSequence, 3);
+    assert.equal(afterCursor.data.limit, 25);
+  }
 });
 
 test("M1 change feed requires a bounded durable cursor", () => {
   const valid = safeParseAtBoundary(messageChangeQuerySchema, {
-    afterChangeSequence: 0,
+    afterChangeSequence: "0",
+    limit: "100",
   });
   assert.equal(valid.success, true);
   if (valid.success) assert.equal(valid.data.limit, 100);
@@ -90,14 +98,8 @@ test("M1 edit requires optimistic content version", () => {
 });
 
 test("M1 reaction and nickname content stay bounded", () => {
-  assert.equal(
-    safeParseAtBoundary(messageReactionSchema, { emoji: "❤️" }).success,
-    true,
-  );
-  assert.equal(
-    safeParseAtBoundary(messageReactionSchema, { emoji: "" }).success,
-    false,
-  );
+  assert.equal(safeParseAtBoundary(messageReactionSchema, { emoji: "❤️" }).success, true);
+  assert.equal(safeParseAtBoundary(messageReactionSchema, { emoji: "" }).success, false);
   assert.equal(
     safeParseAtBoundary(nicknameMutationSchema, {
       nickname: null,

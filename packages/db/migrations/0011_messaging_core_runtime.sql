@@ -87,7 +87,7 @@ ALTER TABLE messages
 CREATE FUNCTION reject_message_creation_identity_update()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF NEW.id IS DISTINCT FROM OLD.id
      OR NEW.conversation_id IS DISTINCT FROM OLD.conversation_id
@@ -101,7 +101,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER messages_creation_identity_immutable
 BEFORE UPDATE ON messages

@@ -419,10 +419,7 @@ export async function insertConversationChange(
     readonly conversationId: string;
     readonly changeSequence: bigint;
     readonly changeType:
-      | "message.created"
-      | "message.updated"
-      | "message.deleted"
-      | "message.reaction_changed";
+      "message.created" | "message.updated" | "message.deleted" | "message.reaction_changed";
     readonly messageId: string;
     readonly contentVersion: bigint | null;
     readonly createdAt: Date;
@@ -491,9 +488,7 @@ function reactionList(value: unknown): readonly { accountId: string; emoji: stri
     if (!item || typeof item !== "object") return [];
     const accountId = "accountId" in item ? item.accountId : null;
     const emoji = "emoji" in item ? item.emoji : null;
-    return typeof accountId === "string" && typeof emoji === "string"
-      ? [{ accountId, emoji }]
-      : [];
+    return typeof accountId === "string" && typeof emoji === "string" ? [{ accountId, emoji }] : [];
   });
 }
 
@@ -616,10 +611,7 @@ export async function loadMessageProjection(
 export interface ConversationChangeRow {
   readonly changeSequence: bigint;
   readonly changeType:
-    | "message.created"
-    | "message.updated"
-    | "message.deleted"
-    | "message.reaction_changed";
+    "message.created" | "message.updated" | "message.deleted" | "message.reaction_changed";
   readonly messageId: string;
   readonly contentVersion: bigint | null;
   readonly createdAt: Date;
@@ -745,8 +737,8 @@ export async function upsertConversationReceipt(
        delivered_through, read_through, updated_at
      ) VALUES (
        $1,$2,$3,
-       $4,
-       CASE WHEN $5 = 'read' THEN $4 ELSE 0 END,
+       $4::bigint,
+       CASE WHEN $5::text = 'read' THEN $4::bigint ELSE 0::bigint END,
        $6
      )
      ON CONFLICT (conversation_id, account_id)
@@ -821,13 +813,7 @@ export async function updatePartnershipNickname(
      ) VALUES ($1,$2,$4,2,$3,$5)
      ON CONFLICT (partnership_id, subject_account_id) DO NOTHING
      RETURNING version`,
-    [
-      input.partnershipId,
-      input.subjectAccountId,
-      input.actorAccountId,
-      input.nickname,
-      input.at,
-    ],
+    [input.partnershipId, input.subjectAccountId, input.actorAccountId, input.nickname, input.at],
   );
   const insertedRow = inserted.rows[0];
   return insertedRow ? BigInt(insertedRow.version) : null;
@@ -1139,14 +1125,10 @@ export async function deletePartnershipMessagingContent(
   executor: QueryExecutor,
   partnershipId: string,
 ): Promise<void> {
-  await executor.query(
-    "DELETE FROM partnership_chat_nicknames WHERE partnership_id = $1",
-    [partnershipId],
-  );
-  await executor.query(
-    "DELETE FROM conversations WHERE partnership_id = $1",
-    [partnershipId],
-  );
+  await executor.query("DELETE FROM partnership_chat_nicknames WHERE partnership_id = $1", [
+    partnershipId,
+  ]);
+  await executor.query("DELETE FROM conversations WHERE partnership_id = $1", [partnershipId]);
 }
 
 export async function deleteAccountPresence(

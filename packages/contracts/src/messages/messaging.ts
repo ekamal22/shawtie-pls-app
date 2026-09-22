@@ -22,6 +22,7 @@ const uuid = z.string().uuid();
 const timestamp = z.string().min(20).max(40);
 const safePositive = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const safeNonnegative = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+const safeNonnegativeQuery = z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const cursorLimit = z.coerce.number().int().min(1);
 const textEncoder = new TextEncoder();
 
@@ -65,7 +66,7 @@ export const messageReactionSchema = z.object({
 export const messageHistoryQuerySchema = z
   .object({
     beforeSequence: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
-    afterSequence: safeNonnegative.optional(),
+    afterSequence: safeNonnegativeQuery.optional(),
     limit: cursorLimit.max(M1_HISTORY_MAX_LIMIT).default(M1_HISTORY_DEFAULT_LIMIT),
   })
   .superRefine((value, context) => {
@@ -78,7 +79,7 @@ export const messageHistoryQuerySchema = z
   });
 
 export const messageChangeQuerySchema = z.object({
-  afterChangeSequence: safeNonnegative,
+  afterChangeSequence: safeNonnegativeQuery,
   limit: cursorLimit.max(M1_CHANGE_MAX_LIMIT).default(M1_CHANGE_DEFAULT_LIMIT),
 });
 

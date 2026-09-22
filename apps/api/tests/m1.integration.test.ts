@@ -218,9 +218,11 @@ async function formPartnership(
     headers: { cookie: sender.cookie },
   });
   assert.equal(current.statusCode, 200, current.body);
-  const conversation = (current.json() as {
-    conversation: { conversationId: string; partnershipId: string } | null;
-  }).conversation;
+  const conversation = (
+    current.json() as {
+      conversation: { conversationId: string; partnershipId: string } | null;
+    }
+  ).conversation;
   assert.ok(conversation);
   assert.equal(conversation.partnershipId, partnershipId);
 
@@ -261,12 +263,7 @@ test("M1 formation provisions one conversation and send/reply are ordered and id
     await reset(database);
     const alice = await register(app, database, "basic_alice");
     const bob = await register(app, database, "basic_bob");
-    const { partnershipId, conversationId } = await formPartnership(
-      app,
-      alice,
-      bob,
-      "basic",
-    );
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob, "basic");
 
     const conversationCount = await database.pool.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM conversations WHERE partnership_id = $1 AND kind = 'primary'",
@@ -377,16 +374,13 @@ test("M1 formation provisions one conversation and send/reply are ordered and id
       "m1-basic-send-key-0001",
     );
     assert.equal(replayAfterLaterMutations.statusCode, 201, replayAfterLaterMutations.body);
-    assert.deepEqual(
-      replayAfterLaterMutations.json(),
-      {
-        messageId: firstBody.messageId,
-        serverSequence: 1,
-        contentVersion: 1,
-        changeSequence: 1,
-        createdAt: firstBody.createdAt,
-      },
-    );
+    assert.deepEqual(replayAfterLaterMutations.json(), {
+      messageId: firstBody.messageId,
+      serverSequence: 1,
+      contentVersion: 1,
+      changeSequence: 1,
+      createdAt: firstBody.createdAt,
+    });
 
     const stored = await database.pool.query<{
       sender_device_id: string | null;
@@ -444,44 +438,30 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     const noReactionRemoval = await app.inject({
       method: "DELETE",
       url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + (second.json() as { messageId: string }).messageId
-        + "/reaction",
+        "/api/v1/conversations/" +
+        conversationId +
+        "/messages/" +
+        (second.json() as { messageId: string }).messageId +
+        "/reaction",
       headers: mutationHeaders(bob.cookie, "m1-noop-reaction-remove-key"),
     });
     assert.equal(noReactionRemoval.statusCode, 200, noReactionRemoval.body);
-    assert.equal(
-      (noReactionRemoval.json() as { changeSequence: number }).changeSequence,
-      2,
-    );
+    assert.equal((noReactionRemoval.json() as { changeSequence: number }).changeSequence, 2);
     const afterNoop = await database.pool.query<{
       next_change_sequence: string | number | bigint;
-    }>(
-      "SELECT next_change_sequence FROM conversations WHERE id = $1",
-      [conversationId],
-    );
+    }>("SELECT next_change_sequence FROM conversations WHERE id = $1", [conversationId]);
     assert.equal(Number(afterNoop.rows[0]?.next_change_sequence), 3);
 
     const [editA, editB] = await Promise.all([
       app.inject({
         method: "PATCH",
-        url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + firstBody.messageId,
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
         headers: jsonHeaders(alice.cookie, "m1-edit-race-key-0001"),
         payload: { body: "edit winner A", expectedContentVersion: 1 },
       }),
       app.inject({
         method: "PATCH",
-        url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + firstBody.messageId,
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
         headers: jsonHeaders(alice.cookie, "m1-edit-race-key-0002"),
         payload: { body: "edit winner B", expectedContentVersion: 1 },
       }),
@@ -492,19 +472,16 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
       editA.body + "\n" + editB.body,
     );
     const loser = editA.statusCode === 409 ? editA : editB;
-    assert.equal(
-      (loser.json() as { error: { code: string } }).error.code,
-      "VERSION_CONFLICT",
-    );
+    assert.equal((loser.json() as { error: { code: string } }).error.code, "VERSION_CONFLICT");
 
     const reaction = await app.inject({
       method: "PUT",
       url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId
-        + "/reaction",
+        "/api/v1/conversations/" +
+        conversationId +
+        "/messages/" +
+        firstBody.messageId +
+        "/reaction",
       headers: jsonHeaders(bob.cookie, "m1-reaction-key-0001"),
       payload: { emoji: "❤️" },
     });
@@ -513,43 +490,33 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     const changedReaction = await app.inject({
       method: "PUT",
       url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId
-        + "/reaction",
+        "/api/v1/conversations/" +
+        conversationId +
+        "/messages/" +
+        firstBody.messageId +
+        "/reaction",
       headers: jsonHeaders(bob.cookie, "m1-reaction-key-0002"),
       payload: { emoji: "🥹" },
     });
     assert.equal(changedReaction.statusCode, 200, changedReaction.body);
-    assert.equal(
-      (changedReaction.json() as { reaction: { emoji: string } }).reaction.emoji,
-      "🥹",
-    );
+    assert.equal((changedReaction.json() as { reaction: { emoji: string } }).reaction.emoji, "🥹");
 
     const removedReaction = await app.inject({
       method: "DELETE",
       url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId
-        + "/reaction",
+        "/api/v1/conversations/" +
+        conversationId +
+        "/messages/" +
+        firstBody.messageId +
+        "/reaction",
       headers: mutationHeaders(bob.cookie, "m1-reaction-remove-key-0001"),
     });
     assert.equal(removedReaction.statusCode, 200, removedReaction.body);
-    assert.equal(
-      (removedReaction.json() as { reaction: null }).reaction,
-      null,
-    );
+    assert.equal((removedReaction.json() as { reaction: null }).reaction, null);
 
     const deletion = await app.inject({
       method: "DELETE",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId,
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
       headers: mutationHeaders(alice.cookie, "m1-delete-key-0001"),
     });
     assert.equal(deletion.statusCode, 200, deletion.body);
@@ -560,11 +527,7 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
 
     const deleteReplay = await app.inject({
       method: "DELETE",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId,
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
       headers: mutationHeaders(alice.cookie, "m1-delete-key-0001"),
     });
     assert.equal(deleteReplay.statusCode, 200, deleteReplay.body);
@@ -572,11 +535,7 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
 
     const deleteDifferentKey = await app.inject({
       method: "DELETE",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId,
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
       headers: mutationHeaders(alice.cookie, "m1-delete-key-0002"),
     });
     assert.equal(deleteDifferentKey.statusCode, 409, deleteDifferentKey.body);
@@ -609,11 +568,11 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
     const changes = await app.inject({
       method: "GET",
       url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/changes?afterChangeSequence="
-        + baselineCursor
-        + "&limit=100",
+        "/api/v1/conversations/" +
+        conversationId +
+        "/changes?afterChangeSequence=" +
+        baselineCursor +
+        "&limit=100",
       headers: { cookie: bob.cookie },
     });
     assert.equal(changes.statusCode, 200, changes.body);
@@ -641,11 +600,7 @@ test("M1 old-message edits reactions and deletion are recovered from durable cha
 
     const tombstone = await app.inject({
       method: "GET",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + firstBody.messageId,
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + firstBody.messageId,
       headers: { cookie: bob.cookie },
     });
     assert.equal(tombstone.statusCode, 200, tombstone.body);
@@ -773,12 +728,7 @@ test("M1 private message content never leaks into durable operational metadata",
     await reset(database);
     const alice = await register(app, database, "privacy_alice");
     const bob = await register(app, database, "privacy_bob");
-    const { partnershipId, conversationId } = await formPartnership(
-      app,
-      alice,
-      bob,
-      "privacy",
-    );
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob, "privacy");
 
     const originalSentinel = "M1_PRIVATE_ORIGINAL_9c4e4d7a";
     const currentSentinel = "M1_PRIVATE_CURRENT_2d8f6a1b";
@@ -802,12 +752,7 @@ test("M1 private message content never leaks into durable operational metadata",
 
     const reaction = await app.inject({
       method: "PUT",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + messageId
-        + "/reaction",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId + "/reaction",
       headers: jsonHeaders(bob.cookie, "m1-privacy-reaction-key"),
       payload: { emoji: "🥹" },
     });
@@ -815,11 +760,7 @@ test("M1 private message content never leaks into durable operational metadata",
 
     const nickname = await app.inject({
       method: "PATCH",
-      url:
-        "/api/v1/partnerships/"
-        + partnershipId
-        + "/nicknames/"
-        + bob.accountId,
+      url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
       headers: jsonHeaders(alice.cookie, "m1-privacy-nickname-key"),
       payload: { nickname: "Private Bee", expectedVersion: 1 },
     });
@@ -831,10 +772,9 @@ test("M1 private message content never leaks into durable operational metadata",
     );
     assert.equal(currentMessage.rows[0]?.body_text, currentSentinel);
 
-    const oldBody = await database.pool.query(
-      "SELECT 1 FROM messages WHERE body_text = $1",
-      [originalSentinel],
-    );
+    const oldBody = await database.pool.query("SELECT 1 FROM messages WHERE body_text = $1", [
+      originalSentinel,
+    ]);
     assert.equal(oldBody.rowCount, 0);
 
     const historicalBodies = await database.pool.query(
@@ -962,9 +902,11 @@ test("M1 reply context survives pagination and deleted reply targets stay tombst
       headers: { cookie: bob.cookie },
     });
     assert.equal(replyAfterDelete.statusCode, 200, replyAfterDelete.body);
-    const tombstoneContext = (replyAfterDelete.json() as {
-      replyContext: { messageId: string; body: string | null; deleted: boolean } | null;
-    }).replyContext;
+    const tombstoneContext = (
+      replyAfterDelete.json() as {
+        replyContext: { messageId: string; body: string | null; deleted: boolean } | null;
+      }
+    ).replyContext;
     assert.equal(tombstoneContext?.messageId, anchorId);
     assert.equal(tombstoneContext?.body, null);
     assert.equal(tombstoneContext?.deleted, true);
@@ -1003,10 +945,26 @@ test("M1 API rejects editing at the trusted thirty-minute boundary", async () =>
     assert.equal(sent.statusCode, 201, sent.body);
     const messageId = (sent.json() as { messageId: string }).messageId;
 
-    await database.pool.query(
-      "UPDATE messages SET created_at = clock_timestamp() - interval '30 minutes' WHERE id = $1",
-      [messageId],
-    );
+    const fixtureClient = await database.pool.connect();
+    try {
+      await fixtureClient.query("BEGIN");
+      await fixtureClient.query(
+        "ALTER TABLE messages DISABLE TRIGGER messages_creation_identity_immutable",
+      );
+      await fixtureClient.query(
+        "UPDATE messages SET created_at = clock_timestamp() - interval '30 minutes' WHERE id = $1",
+        [messageId],
+      );
+      await fixtureClient.query(
+        "ALTER TABLE messages ENABLE TRIGGER messages_creation_identity_immutable",
+      );
+      await fixtureClient.query("COMMIT");
+    } catch (error) {
+      await fixtureClient.query("ROLLBACK");
+      throw error;
+    } finally {
+      fixtureClient.release();
+    }
 
     const edit = await app.inject({
       method: "PATCH",
@@ -1032,12 +990,7 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
     await reset(database);
     const alice = await register(app, database, "breakup_alice");
     const bob = await register(app, database, "breakup_bob");
-    const { partnershipId, conversationId } = await formPartnership(
-      app,
-      alice,
-      bob,
-      "breakup",
-    );
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob, "breakup");
 
     const before = await sendMessage(
       app,
@@ -1078,12 +1031,7 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
 
     const reactOld = await app.inject({
       method: "PUT",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + beforeId
-        + "/reaction",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + beforeId + "/reaction",
       headers: jsonHeaders(bob.cookie, "m1-breakup-old-react-key"),
       payload: { emoji: "😂" },
     });
@@ -1106,11 +1054,7 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
 
     const nicknameDuringBreakup = await app.inject({
       method: "PATCH",
-      url:
-        "/api/v1/partnerships/"
-        + partnershipId
-        + "/nicknames/"
-        + bob.accountId,
+      url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
       headers: jsonHeaders(alice.cookie, "m1-breakup-nickname-key"),
       payload: { nickname: "Still Bee", expectedVersion: 1 },
     });
@@ -1130,11 +1074,7 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
 
     const editPost = await app.inject({
       method: "PATCH",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + postBody.messageId,
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + postBody.messageId,
       headers: jsonHeaders(bob.cookie, "m1-breakup-post-edit-key"),
       payload: { body: "after breakup edited", expectedContentVersion: 1 },
     });
@@ -1155,9 +1095,11 @@ test("M1 breakup sequence cutoff freezes old messages while post-breakup message
     assert.equal(currentBody.conversation.interactionMode, "breakup_restricted");
     assert.equal(currentBody.conversation.breakup?.messageFreezeSequence, 1);
     assert.equal(
-      (current.json() as {
-        conversation: { partner: { nickname: string | null } };
-      }).conversation.partner.nickname,
+      (
+        current.json() as {
+          conversation: { self: { nickname: string | null } };
+        }
+      ).conversation.self.nickname,
       "Still Bee",
     );
   } finally {
@@ -1182,12 +1124,7 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     });
     assert.equal(prePresence.statusCode, 200, prePresence.body);
 
-    const { partnershipId, conversationId } = await formPartnership(
-      app,
-      alice,
-      bob,
-      "interaction",
-    );
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob, "interaction");
 
     const beforeHeartbeat = await app.inject({
       method: "GET",
@@ -1196,9 +1133,11 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     });
     assert.equal(beforeHeartbeat.statusCode, 200, beforeHeartbeat.body);
     assert.equal(
-      (beforeHeartbeat.json() as {
-        conversation: { partner: { presence: { lastSeenAt: string | null } } };
-      }).conversation.partner.presence.lastSeenAt,
+      (
+        beforeHeartbeat.json() as {
+          conversation: { partner: { presence: { lastSeenAt: string | null } } };
+        }
+      ).conversation.partner.presence.lastSeenAt,
       null,
     );
 
@@ -1225,10 +1164,9 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     const firstPresenceRow = await database.pool.query<{
       last_seen_at: Date;
       updated_at: Date;
-    }>(
-      "SELECT last_seen_at, updated_at FROM account_presence WHERE account_id = $1",
-      [alice.accountId],
-    );
+    }>("SELECT last_seen_at, updated_at FROM account_presence WHERE account_id = $1", [
+      alice.accountId,
+    ]);
     const firstPresence = firstPresenceRow.rows[0];
     assert.ok(firstPresence);
     assert.ok(firstPresence.last_seen_at.getTime() >= new Date(visibleLastSeen).getTime());
@@ -1244,10 +1182,9 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     const secondPresenceRow = await database.pool.query<{
       last_seen_at: Date;
       updated_at: Date;
-    }>(
-      "SELECT last_seen_at, updated_at FROM account_presence WHERE account_id = $1",
-      [alice.accountId],
-    );
+    }>("SELECT last_seen_at, updated_at FROM account_presence WHERE account_id = $1", [
+      alice.accountId,
+    ]);
     assert.equal(
       secondPresenceRow.rows[0]?.updated_at.getTime(),
       firstPresence.updated_at.getTime(),
@@ -1270,11 +1207,7 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
 
     const nickname = await app.inject({
       method: "PATCH",
-      url:
-        "/api/v1/partnerships/"
-        + partnershipId
-        + "/nicknames/"
-        + bob.accountId,
+      url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
       headers: jsonHeaders(alice.cookie, "m1-nickname-key-0001"),
       payload: { nickname: "Bee", expectedVersion: 1 },
     });
@@ -1288,9 +1221,11 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     });
     assert.equal(nicknameVisibleToAlice.statusCode, 200, nicknameVisibleToAlice.body);
     assert.equal(
-      (nicknameVisibleToAlice.json() as {
-        conversation: { partner: { nickname: string | null } };
-      }).conversation.partner.nickname,
+      (
+        nicknameVisibleToAlice.json() as {
+          conversation: { partner: { nickname: string | null } };
+        }
+      ).conversation.partner.nickname,
       "Bee",
     );
 
@@ -1301,19 +1236,17 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     });
     assert.equal(nicknameVisibleToBob.statusCode, 200, nicknameVisibleToBob.body);
     assert.equal(
-      (nicknameVisibleToBob.json() as {
-        conversation: { self: { nickname: string | null } };
-      }).conversation.self.nickname,
+      (
+        nicknameVisibleToBob.json() as {
+          conversation: { self: { nickname: string | null } };
+        }
+      ).conversation.self.nickname,
       "Bee",
     );
 
     const staleNickname = await app.inject({
       method: "PATCH",
-      url:
-        "/api/v1/partnerships/"
-        + partnershipId
-        + "/nicknames/"
-        + bob.accountId,
+      url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
       headers: jsonHeaders(bob.cookie, "m1-nickname-key-0002"),
       payload: { nickname: "B", expectedVersion: 1 },
     });
@@ -1337,9 +1270,11 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
       headers: { cookie: alice.cookie },
     });
     assert.equal(
-      (typingVisible.json() as {
-        conversation: { partner: { typing: boolean } };
-      }).conversation.partner.typing,
+      (
+        typingVisible.json() as {
+          conversation: { partner: { typing: boolean } };
+        }
+      ).conversation.partner.typing,
       true,
     );
 
@@ -1353,9 +1288,11 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
       headers: { cookie: alice.cookie },
     });
     assert.equal(
-      (typingExpired.json() as {
-        conversation: { partner: { typing: boolean } };
-      }).conversation.partner.typing,
+      (
+        typingExpired.json() as {
+          conversation: { partner: { typing: boolean } };
+        }
+      ).conversation.partner.typing,
       false,
     );
 
@@ -1464,10 +1401,7 @@ test("M1 typing writes coalesce and the endpoint enforces its server rate limit"
       payload: { typing: true },
     });
     assert.equal(limited.statusCode, 429, limited.body);
-    assert.equal(
-      (limited.json() as { error: { code: string } }).error.code,
-      "RATE_LIMITED",
-    );
+    assert.equal((limited.json() as { error: { code: string } }).error.code, "RATE_LIMITED");
     assert.ok(Number(limited.headers["retry-after"]) >= 1);
   } finally {
     await app.close();
@@ -1509,15 +1443,19 @@ test("M1 account-deletion overlay is view-only and recovery preserves the same c
     });
     assert.equal(current.statusCode, 200, current.body);
     assert.equal(
-      (current.json() as {
-        conversation: { conversationId: string; interactionMode: string };
-      }).conversation.conversationId,
+      (
+        current.json() as {
+          conversation: { conversationId: string; interactionMode: string };
+        }
+      ).conversation.conversationId,
       conversationId,
     );
     assert.equal(
-      (current.json() as {
-        conversation: { interactionMode: string };
-      }).conversation.interactionMode,
+      (
+        current.json() as {
+          conversation: { interactionMode: string };
+        }
+      ).conversation.interactionMode,
       "account_deletion_view_only",
     );
 
@@ -1537,10 +1475,7 @@ test("M1 account-deletion overlay is view-only and recovery preserves the same c
       "m1-overlay-send-key-0002",
     );
     assert.equal(denied.statusCode, 409, denied.body);
-    assert.equal(
-      (denied.json() as { error: { code: string } }).error.code,
-      "ACCOUNT_LOCKED",
-    );
+    assert.equal((denied.json() as { error: { code: string } }).error.code, "ACCOUNT_LOCKED");
 
     const startRecovery = await app.inject({
       method: "POST",
@@ -1566,15 +1501,19 @@ test("M1 account-deletion overlay is view-only and recovery preserves the same c
     });
     assert.equal(after.statusCode, 200, after.body);
     assert.equal(
-      (after.json() as {
-        conversation: { conversationId: string; interactionMode: string };
-      }).conversation.conversationId,
+      (
+        after.json() as {
+          conversation: { conversationId: string; interactionMode: string };
+        }
+      ).conversation.conversationId,
       conversationId,
     );
     assert.equal(
-      (after.json() as {
-        conversation: { interactionMode: string };
-      }).conversation.interactionMode,
+      (
+        after.json() as {
+          conversation: { interactionMode: string };
+        }
+      ).conversation.interactionMode,
       "normal",
     );
 
@@ -1627,10 +1566,7 @@ test("M1 edit-delete and reaction-delete races converge on content-free tombston
     assert.equal(deletion.statusCode, 200, deletion.body);
     assert.ok(edit.statusCode === 200 || edit.statusCode === 409, edit.body);
     if (edit.statusCode === 409) {
-      assert.equal(
-        (edit.json() as { error: { code: string } }).error.code,
-        "MESSAGE_DELETED",
-      );
+      assert.equal((edit.json() as { error: { code: string } }).error.code, "MESSAGE_DELETED");
     }
 
     const editDeleteFinal = await app.inject({
@@ -1655,12 +1591,7 @@ test("M1 edit-delete and reaction-delete races converge on content-free tombston
     const [reaction, reactionDeletion] = await Promise.all([
       app.inject({
         method: "PUT",
-        url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + reactableId
-          + "/reaction",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + reactableId + "/reaction",
         headers: jsonHeaders(alice.cookie, "m1-react-delete-race-react-key"),
         payload: { emoji: "😮" },
       }),
@@ -1673,10 +1604,7 @@ test("M1 edit-delete and reaction-delete races converge on content-free tombston
     assert.equal(reactionDeletion.statusCode, 200, reactionDeletion.body);
     assert.ok(reaction.statusCode === 200 || reaction.statusCode === 409, reaction.body);
     if (reaction.statusCode === 409) {
-      assert.equal(
-        (reaction.json() as { error: { code: string } }).error.code,
-        "MESSAGE_DELETED",
-      );
+      assert.equal((reaction.json() as { error: { code: string } }).error.code, "MESSAGE_DELETED");
     }
 
     const reactionDeleteFinal = await app.inject({
@@ -1686,10 +1614,7 @@ test("M1 edit-delete and reaction-delete races converge on content-free tombston
     });
     assert.equal(reactionDeleteFinal.statusCode, 200, reactionDeleteFinal.body);
     assert.equal((reactionDeleteFinal.json() as { body: string | null }).body, null);
-    assert.deepEqual(
-      (reactionDeleteFinal.json() as { reactions: unknown[] }).reactions,
-      [],
-    );
+    assert.deepEqual((reactionDeleteFinal.json() as { reactions: unknown[] }).reactions, []);
 
     const persistedReactions = await database.pool.query(
       "SELECT 1 FROM message_reactions WHERE message_id = ANY($1::uuid[])",
@@ -1717,13 +1642,7 @@ test("M1 send and breakup initiation serialize around the immutable freeze seque
     );
 
     const [send, breakup] = await Promise.all([
-      sendMessage(
-        app,
-        bob,
-        conversationId,
-        "racing breakup",
-        "m1-send-breakup-race-message-key",
-      ),
+      sendMessage(app, bob, conversationId, "racing breakup", "m1-send-breakup-race-message-key"),
       app.inject({
         method: "POST",
         url: "/api/v1/partnerships/" + partnershipId + "/breakup",
@@ -1745,12 +1664,7 @@ test("M1 send and breakup initiation serialize around the immutable freeze seque
 
     const reaction = await app.inject({
       method: "PUT",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + sent.messageId
-        + "/reaction",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + sent.messageId + "/reaction",
       headers: jsonHeaders(alice.cookie, "m1-send-breakup-race-reaction-key"),
       payload: { emoji: "👍" },
     });
@@ -1781,13 +1695,7 @@ test("M1 send and account deletion serialize into a durable view-only overlay", 
     const reauthedCookie = await reauthenticate(app, alice);
 
     const [send, deletion] = await Promise.all([
-      sendMessage(
-        app,
-        bob,
-        conversationId,
-        "racing deletion",
-        "m1-send-delete-race-message-key",
-      ),
+      sendMessage(app, bob, conversationId, "racing deletion", "m1-send-delete-race-message-key"),
       app.inject({
         method: "POST",
         url: "/api/v1/me/account-deletion",
@@ -1798,10 +1706,7 @@ test("M1 send and account deletion serialize into a durable view-only overlay", 
     assert.equal(deletion.statusCode, 200, deletion.body);
     assert.ok(send.statusCode === 201 || send.statusCode === 409, send.body);
     if (send.statusCode === 409) {
-      assert.equal(
-        (send.json() as { error: { code: string } }).error.code,
-        "ACCOUNT_LOCKED",
-      );
+      assert.equal((send.json() as { error: { code: string } }).error.code, "ACCOUNT_LOCKED");
     }
 
     const current = await app.inject({
@@ -1824,10 +1729,7 @@ test("M1 send and account deletion serialize into a durable view-only overlay", 
       "m1-send-delete-after-overlay-key",
     );
     assert.equal(laterSend.statusCode, 409, laterSend.body);
-    assert.equal(
-      (laterSend.json() as { error: { code: string } }).error.code,
-      "ACCOUNT_LOCKED",
-    );
+    assert.equal((laterSend.json() as { error: { code: string } }).error.code, "ACCOUNT_LOCKED");
   } finally {
     await app.close();
     await closeDatabasePool(database);
@@ -1841,12 +1743,7 @@ test("M1 message mutation and final dissolution serialize with authorization rev
     await reset(database);
     const alice = await register(app, database, "final_race_alice");
     const bob = await register(app, database, "final_race_bob");
-    const { partnershipId, conversationId } = await formPartnership(
-      app,
-      alice,
-      bob,
-      "final_race",
-    );
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob, "final_race");
 
     const breakup = await app.inject({
       method: "POST",
@@ -1959,7 +1856,10 @@ test("M1 concurrent sends stay gap-free and guessed cross-partnership identifier
         ),
       ),
     );
-    assert.equal(responses.every((response) => response.statusCode === 201), true);
+    assert.equal(
+      responses.every((response) => response.statusCode === 201),
+      true,
+    );
 
     const sequences = responses
       .map((response) => (response.json() as { serverSequence: number }).serverSequence)
@@ -1972,10 +1872,7 @@ test("M1 concurrent sends stay gap-free and guessed cross-partnership identifier
 
     const otherHistory = await app.inject({
       method: "GET",
-      url:
-        "/api/v1/conversations/"
-        + secondPair.conversationId
-        + "/messages?limit=50",
+      url: "/api/v1/conversations/" + secondPair.conversationId + "/messages?limit=50",
       headers: { cookie: alice.cookie },
     });
     assert.equal(otherHistory.statusCode, 404, otherHistory.body);
@@ -2004,10 +1901,10 @@ test("M1 concurrent sends stay gap-free and guessed cross-partnership identifier
     const guessedMessage = await app.inject({
       method: "GET",
       url:
-        "/api/v1/conversations/"
-        + secondPair.conversationId
-        + "/messages/"
-        + firstMessage.rows[0]?.id,
+        "/api/v1/conversations/" +
+        secondPair.conversationId +
+        "/messages/" +
+        firstMessage.rows[0]?.id,
       headers: { cookie: carol.cookie },
     });
     assert.equal(guessedMessage.statusCode, 404, guessedMessage.body);
@@ -2020,7 +1917,6 @@ test("M1 concurrent sends stay gap-free and guessed cross-partnership identifier
     await closeDatabasePool(database);
   }
 });
-
 
 test("M1 concurrent edit and reaction allocate a gap-free durable change sequence and polling is replay-safe", async () => {
   const database = requireDisposableDatabase();
@@ -2060,12 +1956,7 @@ test("M1 concurrent edit and reaction allocate a gap-free durable change sequenc
       }),
       app.inject({
         method: "PUT",
-        url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + secondId
-          + "/reaction",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + secondId + "/reaction",
         headers: jsonHeaders(alice.cookie, "m1-cross-type-reaction"),
         payload: { emoji: "❤️" },
       }),
@@ -2081,18 +1972,12 @@ test("M1 concurrent edit and reaction allocate a gap-free durable change sequenc
 
     const firstPoll = await app.inject({
       method: "GET",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/changes?afterChangeSequence=2&limit=100",
+      url: "/api/v1/conversations/" + conversationId + "/changes?afterChangeSequence=2&limit=100",
       headers: { cookie: bob.cookie },
     });
     const duplicatePoll = await app.inject({
       method: "GET",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/changes?afterChangeSequence=2&limit=100",
+      url: "/api/v1/conversations/" + conversationId + "/changes?afterChangeSequence=2&limit=100",
       headers: { cookie: bob.cookie },
     });
     assert.equal(firstPoll.statusCode, 200, firstPoll.body);
@@ -2108,21 +1993,21 @@ test("M1 concurrent edit and reaction allocate a gap-free durable change sequenc
       polled.items.map((item) => item.changeSequence),
       [3, 4],
     );
-    assert.deepEqual(
-      [...polled.items.map((item) => item.type)].sort(),
-      ["message.reaction_changed", "message.updated"],
-    );
+    assert.deepEqual([...polled.items.map((item) => item.type)].sort(), [
+      "message.reaction_changed",
+      "message.updated",
+    ]);
     assert.equal(polled.latestChangeSequence, 4);
     assert.equal(polled.hasMore, false);
 
     const resume = await app.inject({
       method: "GET",
       url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/changes?afterChangeSequence="
-        + polled.items[0]!.changeSequence
-        + "&limit=100",
+        "/api/v1/conversations/" +
+        conversationId +
+        "/changes?afterChangeSequence=" +
+        polled.items[0]!.changeSequence +
+        "&limit=100",
       headers: { cookie: bob.cookie },
     });
     assert.equal(resume.statusCode, 200, resume.body);
@@ -2201,12 +2086,7 @@ test("M1 edit and reaction races with breakup initiation serialize around the fr
       }),
       app.inject({
         method: "PUT",
-        url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + reactionId
-          + "/reaction",
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + reactionId + "/reaction",
         headers: jsonHeaders(alice.cookie, "m1-mutation-breakup-reaction"),
         payload: { emoji: "😮" },
       }),
@@ -2253,12 +2133,7 @@ test("M1 edit and reaction races with breakup initiation serialize around the fr
 
     const reactionAfterFreeze = await app.inject({
       method: "PUT",
-      url:
-        "/api/v1/conversations/"
-        + conversationId
-        + "/messages/"
-        + reactionId
-        + "/reaction",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + reactionId + "/reaction",
       headers: jsonHeaders(bob.cookie, "m1-mutation-breakup-reaction-after"),
       payload: { emoji: "😂" },
     });
@@ -2285,21 +2160,13 @@ test("M1 nickname optimistic concurrency permits exactly one winner", async () =
     const [first, second] = await Promise.all([
       app.inject({
         method: "PATCH",
-        url:
-          "/api/v1/partnerships/"
-          + partnershipId
-          + "/nicknames/"
-          + bob.accountId,
+        url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
         headers: jsonHeaders(alice.cookie, "m1-nickname-race-first"),
         payload: { nickname: "Bee One", expectedVersion: 1 },
       }),
       app.inject({
         method: "PATCH",
-        url:
-          "/api/v1/partnerships/"
-          + partnershipId
-          + "/nicknames/"
-          + bob.accountId,
+        url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
         headers: jsonHeaders(bob.cookie, "m1-nickname-race-second"),
         payload: { nickname: "Bee Two", expectedVersion: 1 },
       }),
@@ -2310,10 +2177,7 @@ test("M1 nickname optimistic concurrency permits exactly one winner", async () =
       [200, 409],
     );
     const loser = first.statusCode === 409 ? first : second;
-    assert.equal(
-      (loser.json() as { error: { code: string } }).error.code,
-      "VERSION_CONFLICT",
-    );
+    assert.equal((loser.json() as { error: { code: string } }).error.code, "VERSION_CONFLICT");
 
     const winnerNickname =
       first.statusCode === 200
@@ -2375,7 +2239,10 @@ test("M1 concurrent receipt updates remain monotonic and read implies delivered"
         payload: { type: "delivered", throughSequence: 2 },
       }),
     ]);
-    assert.equal(responses.every((response) => response.statusCode === 200), true);
+    assert.equal(
+      responses.every((response) => response.statusCode === 200),
+      true,
+    );
 
     const current = await app.inject({
       method: "GET",
@@ -2394,6 +2261,8 @@ test("M1 concurrent receipt updates remain monotonic and read implies delivered"
       }
     ).conversation.receipts;
     assert.deepEqual(receipts, {
+      selfDeliveredThrough: 0,
+      selfReadThrough: 0,
       partnerDeliveredThrough: 3,
       partnerReadThrough: 3,
     });
@@ -2403,7 +2272,6 @@ test("M1 concurrent receipt updates remain monotonic and read implies delivered"
   }
 });
 
-
 test("M1 final termination serializes against send delete and reaction mutations", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -2411,12 +2279,7 @@ test("M1 final termination serializes against send delete and reaction mutations
     await reset(database);
     const alice = await register(app, database, "final_multi_alice");
     const bob = await register(app, database, "final_multi_bob");
-    const { partnershipId, conversationId } = await formPartnership(
-      app,
-      alice,
-      bob,
-      "final_multi",
-    );
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob, "final_multi");
 
     const breakup = await app.inject({
       method: "POST",
@@ -2446,30 +2309,16 @@ test("M1 final termination serializes against send delete and reaction mutations
     const reactionTargetId = (reactionTarget.json() as { messageId: string }).messageId;
 
     const [send, deletion, reaction] = await Promise.all([
-      sendMessage(
-        app,
-        bob,
-        conversationId,
-        "racing final termination",
-        "m1-final-multi-send",
-      ),
+      sendMessage(app, bob, conversationId, "racing final termination", "m1-final-multi-send"),
       app.inject({
         method: "DELETE",
-        url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + deleteTargetId,
+        url: "/api/v1/conversations/" + conversationId + "/messages/" + deleteTargetId,
         headers: mutationHeaders(alice.cookie, "m1-final-multi-delete"),
       }),
       app.inject({
         method: "PUT",
         url:
-          "/api/v1/conversations/"
-          + conversationId
-          + "/messages/"
-          + reactionTargetId
-          + "/reaction",
+          "/api/v1/conversations/" + conversationId + "/messages/" + reactionTargetId + "/reaction",
         headers: jsonHeaders(alice.cookie, "m1-final-multi-reaction"),
         payload: { emoji: "👍" },
       }),

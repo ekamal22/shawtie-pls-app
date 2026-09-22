@@ -777,7 +777,7 @@ BEGIN
 END;
 $$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE messages
@@ -791,7 +791,7 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
 INSERT INTO conversation_changes (
   conversation_id, change_sequence, change_type, message_id, content_version, created_at
