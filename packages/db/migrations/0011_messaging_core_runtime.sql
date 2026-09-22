@@ -42,20 +42,25 @@ ALTER TABLE messages
   ADD COLUMN content_version bigint NOT NULL DEFAULT 1,
   ADD COLUMN request_fingerprint bytea,
   ADD COLUMN request_fingerprint_version integer,
+  ADD COLUMN created_change_sequence bigint,
   ADD COLUMN last_change_sequence bigint;
 
 UPDATE messages
-SET last_change_sequence = server_sequence
-WHERE last_change_sequence IS NULL;
+SET created_change_sequence = server_sequence,
+    last_change_sequence = server_sequence
+WHERE created_change_sequence IS NULL OR last_change_sequence IS NULL;
 
 ALTER TABLE messages
+  ALTER COLUMN created_change_sequence SET NOT NULL,
   ALTER COLUMN last_change_sequence SET NOT NULL;
 
 ALTER TABLE messages
   ADD CONSTRAINT messages_content_version_positive
     CHECK (content_version > 0),
+  ADD CONSTRAINT messages_created_change_sequence_positive
+    CHECK (created_change_sequence > 0),
   ADD CONSTRAINT messages_last_change_sequence_positive
-    CHECK (last_change_sequence > 0),
+    CHECK (last_change_sequence >= created_change_sequence),
   ADD CONSTRAINT messages_request_fingerprint_pair
     CHECK (
       (request_fingerprint IS NULL AND request_fingerprint_version IS NULL)
