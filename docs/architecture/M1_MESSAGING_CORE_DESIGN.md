@@ -822,6 +822,30 @@ M1 browser behavior:
 
 No IndexedDB outbox is introduced in M1. That belongs to M2.
 
+### Pre-M2 outbox handling
+
+M1 persists content-free versioned invalidation events in the authoritative mutation transaction, but it does not attempt realtime delivery before M2.
+
+The M1 worker therefore registers a narrow validation sink for the M1 message event families:
+
+- `message.created`
+- `message.updated`
+- `message.deleted`
+- `message.reaction_changed`
+
+The worker claims only event types owned by its registry. This prevents the M1 registry from consuming or failing unrelated auth, lifecycle, or future feature outbox families.
+
+For M1 payload version 1, the sink:
+
+- verifies the conversation aggregate
+- verifies opaque conversation/message identifiers and cursor/version shape
+- rejects any unexpected payload field so message body, reaction content, nickname content, or other private content cannot silently enter durable transport metadata
+- marks a valid invalidation delivered without attempting WebSocket transport
+
+Unknown payload versions for a recognized M1 event family fail closed.
+
+The durable `conversation_changes` ledger remains the synchronization source of truth. M2 may replace the no-transport sink with realtime delivery without changing cursor correctness or requiring historical M1 invalidations to remain pending.
+
 ## Parallel R1 coordination
 
 M1 and R1 share the same base but must minimize merge conflicts.
