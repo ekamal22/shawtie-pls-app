@@ -653,10 +653,15 @@ test("M1 send fingerprint replay survives key rotation and fails closed without 
       "m1-rotation-send-idempotency-key",
     );
     assert.equal(first.statusCode, 201, first.body);
-    const firstBody = first.json() as {
+    const firstResponse = first.json() as {
       messageId: string;
       serverSequence: number;
       changeSequence: number;
+    };
+    const firstIdentity = {
+      messageId: firstResponse.messageId,
+      serverSequence: firstResponse.serverSequence,
+      changeSequence: firstResponse.changeSequence,
     };
 
     await app.close();
@@ -687,7 +692,7 @@ test("M1 send fingerprint replay survives key rotation and fails closed without 
         serverSequence: (replayWithRetainedKey.json() as { serverSequence: number }).serverSequence,
         changeSequence: (replayWithRetainedKey.json() as { changeSequence: number }).changeSequence,
       },
-      firstBody,
+      firstIdentity,
     );
 
     const rotatedAlice = await login(app, alice);
