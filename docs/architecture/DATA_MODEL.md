@@ -22,7 +22,7 @@ P1 migration `0008_partner_discovery_requests_runtime.sql` is implemented and ve
 
 Migration policy and verification commands are documented in `../database/MIGRATIONS.md`.
 
-M1 reserves forward-only migrations 0011 and 0012 on `feat/m1-messaging-core`. The refined design extends the existing conversation/message and breakup-process substrate with a separate durable mutation change sequence, a content-free conversation-change ledger, current-content versioning, keyed private-request fingerprints, compact receipt/nickname/presence/typing state, and module-owned messaging cleanup. M1 does not persist plaintext edit history. These M1 migrations are design targets until their source and disposable-PostgreSQL evidence are committed. R1 separately reserves migrations 0013 and 0014.
+M1 reserves forward-only migrations 0011 and 0012 on `feat/m1-messaging-core`. The refined design extends the existing conversation/message and breakup-process substrate with a separate durable mutation change sequence, a content-free conversation-change ledger, current-content versioning, keyed private-request fingerprints, compact receipt/nickname/presence/typing state, and module-owned messaging cleanup. M1 does not persist plaintext edit history. The 0011 and 0012 migration source is implemented on the M1 branch. Disposable-PostgreSQL execution evidence is still required before M1 can close. R1 separately reserves migrations 0013 and 0014.
 
 ## Identifier policy
 
