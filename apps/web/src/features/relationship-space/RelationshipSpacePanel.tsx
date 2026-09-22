@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiClientError } from "../../lib/api-client.ts";
+import { useM2Runtime } from "../../lib/realtime/runtime-context.tsx";
 import {
   createRelationshipItem,
   deleteRelationshipItem,
@@ -44,6 +45,8 @@ function messageFor(error: unknown): string {
   if (!(error instanceof ApiClientError)) return "Something went wrong.";
   const known: Record<string, string> = {
     AUTH_REQUIRED: "Please sign in again.",
+    OFFLINE_OPERATION_REQUIRES_CONNECTION:
+      "This relationship action requires an internet connection.",
     CURATION_ALREADY_EXISTS: "That curation already exists. Refresh and edit the saved version.",
     IDEMPOTENCY_KEY_REUSED: "That action changed. Try again.",
     INVALID_ITEM_LINK: "One selected relationship item is no longer available.",
@@ -65,6 +68,15 @@ function messageFor(error: unknown): string {
     VERSION_CONFLICT: "This changed on another device. Refresh and try again.",
   };
   return known[error.code] ?? error.code.replaceAll("_", " ").toLowerCase();
+}
+
+function queuedMutation(value: unknown): boolean {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "queued" in value &&
+    value.queued === true
+  );
 }
 
 function titleForKind(kind: RelationshipItemKind): string {
@@ -149,6 +161,7 @@ function ItemCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(
     readString(item.content, "title") ?? readString(item.preview, "title") ?? "",
@@ -194,11 +207,16 @@ function ItemCard({
       item.kind === "anniversary" ||
       item.kind === "reunion");
 
-  async function run(task: () => Promise<void>) {
+  async function run(task: () => Promise<unknown>) {
     setBusy(true);
     setError("");
+    setNotice("");
     try {
-      await task();
+      const result = await task();
+      if (queuedMutation(result)) {
+        setNotice("Change queued. Current authority will be rechecked before replay.");
+        return;
+      }
       await onChanged();
     } catch (caught) {
       setError(messageFor(caught));
@@ -209,7 +227,7 @@ function ItemCard({
 
   async function toggleStory() {
     await run(async () => {
-      await patchRelationshipItem(item.itemId, {
+      return patchRelationshipItem(item.itemId, {
         expectedVersion: item.version,
         storyIncluded: !item.storyIncluded,
       });
@@ -225,7 +243,7 @@ function ItemCard({
           ? "completed"
           : "someday";
     await run(async () => {
-      await patchRelationshipItem(item.itemId, {
+      return patchRelationshipItem(item.itemId, {
         expectedVersion: item.version,
         featureState: { type: "someday", state },
       });
@@ -234,14 +252,14 @@ function ItemCard({
 
   async function release() {
     await run(async () => {
-      await releaseRelationshipItem(item.itemId, item.version);
+      return releaseRelationshipItem(item.itemId, item.version);
     });
   }
 
   async function remove() {
     if (!window.confirm("Delete this relationship item?")) return;
     await run(async () => {
-      await deleteRelationshipItem(item.itemId, item.version);
+      return deleteRelationshipItem(item.itemId, item.version);
     });
   }
 
@@ -251,18 +269,19 @@ function ItemCard({
     if ("title" in nextContent) nextContent.title = draftTitle.trim();
     if (bodyKey) nextContent[bodyKey] = draftBody.trim() || null;
     await run(async () => {
-      await patchRelationshipItem(item.itemId, {
+      const result = await patchRelationshipItem(item.itemId, {
         expectedVersion: item.version,
         content: nextContent,
       });
       setEditing(false);
+      return result;
     });
   }
 
   async function saveReunionDate() {
     if (item.featureState?.type !== "reunion" || !draftReunionDate) return;
     await run(async () => {
-      await patchRelationshipItem(item.itemId, {
+      return patchRelationshipItem(item.itemId, {
         expectedVersion: item.version,
         featureState: {
           type: "reunion",
@@ -282,7 +301,7 @@ function ItemCard({
       return;
     }
     await run(async () => {
-      await patchRelationshipItem(item.itemId, {
+      return patchRelationshipItem(item.itemId, {
         expectedVersion: item.version,
         release: {
           mode: "scheduled",
@@ -439,6 +458,7 @@ function ItemCard({
       ) : null}
 
       {error ? <p className="banner error">{error}</p> : null}
+      {notice ? <p className="banner success">{notice}</p> : null}
 
       <div className="relationship-actions">
         {canEdit && !editing ? (
@@ -538,6 +558,7 @@ function CreateRelationshipItem({
   const [longitude, setLongitude] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const releaseKind = kind === "for_you" || kind === "future_us";
   const revealKind = kind === "surprise" || kind === "proposal";
@@ -719,8 +740,9 @@ function CreateRelationshipItem({
     event.preventDefault();
     setBusy(true);
     setError("");
+    setNotice("");
     try {
-      await createRelationshipItem(payload());
+      const result = await createRelationshipItem(payload());
       setTitle("");
       setText("");
       setNote("");
@@ -732,7 +754,11 @@ function CreateRelationshipItem({
       setUnlockAt("");
       setLatitude("");
       setLongitude("");
-      await onCreated();
+      if (queuedMutation(result)) {
+        setNotice("Relationship item queued. It will replay after authority is refreshed.");
+      } else {
+        await onCreated();
+      }
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -1035,6 +1061,7 @@ function CreateRelationshipItem({
       ) : null}
 
       {error ? <p className="banner error">{error}</p> : null}
+      {notice ? <p className="banner success">{notice}</p> : null}
 
       <button className="primary" disabled={busy || disabled}>
         {busy ? "Saving..." : "Add to Relationship Space"}
@@ -1049,6 +1076,7 @@ function CreateRelationshipItem({
 }
 
 export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
+  const runtime = useM2Runtime();
   const [home, setHome] = useState<RelationshipSpaceHome | null | undefined>(undefined);
   const [items, setItems] = useState<RelationshipItem[]>([]);
   const [filter, setFilter] = useState<RelationshipItemKind | "all" | "story">("all");
@@ -1080,11 +1108,27 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
     ]);
     setHome(homeResult.space);
     setItems(homeResult.space ? itemResult.items : []);
+
+    const partnershipId = runtime.realtime.scope.partnershipId;
+    if (partnershipId && homeResult.space) {
+      await (await runtime.database()).cacheRelationshipItems(
+        partnershipId,
+        itemResult.items,
+      );
+    }
   }
 
   useEffect(() => {
     void load().catch((caught) => setError(messageFor(caught)));
   }, [filter]);
+
+  useEffect(
+    () =>
+      runtime.registerSynchronizer("relationship-space", async () => {
+        await load();
+      }),
+    [filter, runtime],
+  );
 
   useEffect(() => {
     const refresh = () => void load().catch(() => undefined);
@@ -1100,11 +1144,19 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       if (document.visibilityState === "visible") refresh();
     };
 
+    const queued = () => {
+      setNotice("Relationship change queued. It will sync when authority allows.");
+      if (navigator.onLine) refresh();
+    };
     window.addEventListener("shawtie:partnership-changed", resetAndRefresh);
+    window.addEventListener("shawtie:relationship-changed", refresh);
+    window.addEventListener("shawtie:relationship-queue-changed", queued);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("shawtie:partnership-changed", resetAndRefresh);
+      window.removeEventListener("shawtie:relationship-changed", refresh);
+      window.removeEventListener("shawtie:relationship-queue-changed", queued);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisibility);
     };

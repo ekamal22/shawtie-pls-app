@@ -9,6 +9,10 @@ import {
 } from "@shawtie/contracts";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
+import {
+  useM2Runtime,
+  useM2SyncStatus,
+} from "../../lib/realtime/runtime-context.tsx";
 
 interface ConversationSummary {
   conversationId: string;
@@ -157,6 +161,8 @@ interface PendingSend {
 }
 
 export function MessagingPanel() {
+  const runtime = useM2Runtime();
+  const syncStatus = useM2SyncStatus();
   const [conversation, setConversation] = useState<ConversationSummary | null | undefined>(
     undefined,
   );
@@ -167,8 +173,11 @@ export function MessagingPanel() {
   const [selfNickname, setSelfNickname] = useState("");
   const [partnerNickname, setPartnerNickname] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sendStatus, setSendStatus] = useState<"sending" | "failed" | null>(null);
+  const [sendStatus, setSendStatus] = useState<
+    "sending" | "queued" | "failed" | null
+  >(null);
   const changeCursorRef = useRef(0);
   const lastTypingSentRef = useRef(0);
   const pendingSendRef = useRef<PendingSend | null>(null);
@@ -231,20 +240,42 @@ export function MessagingPanel() {
         "/messages?limit=" +
         M1_HISTORY_DEFAULT_LIMIT,
     );
+    const newest = page.newestSequence ?? 0;
+    const oldest = page.oldestSequence ?? newest;
+    const database = await runtime.database();
+    await database.commitMessagesAndSync({
+      partnershipId: summary.partnershipId,
+      conversationId: summary.conversationId,
+      messages: page.items,
+      sync: {
+        partnershipId: summary.partnershipId,
+        conversationId: summary.conversationId,
+        latestChangeSequence: summary.latestChangeSequence,
+        latestServerSequence: summary.latestServerSequence,
+        retainedHistoryStartSequence: oldest,
+        retainedHistoryEndSequence: newest,
+        pendingDeliveredThrough: summary.receipts.selfDeliveredThrough,
+        pendingReadThrough: summary.receipts.selfReadThrough,
+        lastSyncedAt: new Date().toISOString(),
+      },
+    });
     setMessages(page.items);
     setHasOlder(page.hasMore);
     changeCursorRef.current = summary.latestChangeSequence;
-    const newest = page.newestSequence ?? 0;
     await acknowledge(summary, newest);
-  }, [acknowledge, refreshConversation]);
+  }, [acknowledge, refreshConversation, runtime]);
 
   const syncChanges = useCallback(async () => {
     const summary = conversation;
-    if (!summary || document.visibilityState !== "visible") return;
+    if (!summary) {
+      return { latestChangeSequence: changeCursorRef.current };
+    }
 
+    const database = await runtime.database();
     let cursor = changeCursorRef.current;
     let highestLoadedSequence = messages.at(-1)?.serverSequence ?? 0;
-    for (let pageIndex = 0; pageIndex < 4; pageIndex += 1) {
+
+    for (let pageIndex = 0; pageIndex < 8; pageIndex += 1) {
       const result = await apiRequest<{
         items: ConversationChange[];
         latestChangeSequence: number;
@@ -258,21 +289,122 @@ export function MessagingPanel() {
           M1_CHANGE_DEFAULT_LIMIT,
       );
 
+      const canonical: Message[] = [];
       for (const change of result.items) {
-        const message = await refreshMessage(summary.conversationId, change.messageId);
-        highestLoadedSequence = Math.max(highestLoadedSequence, message.serverSequence);
+        canonical.push(
+          await apiRequest<Message>(
+            "/api/v1/conversations/" +
+              summary.conversationId +
+              "/messages/" +
+              change.messageId,
+          ),
+        );
         cursor = change.changeSequence;
+      }
+
+      if (canonical.length > 0) {
+        highestLoadedSequence = Math.max(
+          highestLoadedSequence,
+          ...canonical.map((message) => message.serverSequence),
+        );
+        const previous = await database.getConversationSync(
+          summary.partnershipId,
+          summary.conversationId,
+        );
+        await database.commitMessagesAndSync({
+          partnershipId: summary.partnershipId,
+          conversationId: summary.conversationId,
+          messages: canonical,
+          sync: {
+            partnershipId: summary.partnershipId,
+            conversationId: summary.conversationId,
+            latestChangeSequence: cursor,
+            latestServerSequence: Math.max(
+              previous?.latestServerSequence ?? 0,
+              highestLoadedSequence,
+            ),
+            retainedHistoryStartSequence:
+              previous?.retainedHistoryStartSequence ??
+              canonical.at(0)?.serverSequence ??
+              highestLoadedSequence,
+            retainedHistoryEndSequence: Math.max(
+              previous?.retainedHistoryEndSequence ?? 0,
+              highestLoadedSequence,
+            ),
+            pendingDeliveredThrough:
+              previous?.pendingDeliveredThrough ??
+              summary.receipts.selfDeliveredThrough,
+            pendingReadThrough:
+              previous?.pendingReadThrough ??
+              summary.receipts.selfReadThrough,
+            lastSyncedAt: new Date().toISOString(),
+          },
+        });
+        setMessages((current) => mergeMessages(current, canonical));
         changeCursorRef.current = cursor;
       }
 
       if (!result.hasMore) break;
     }
 
-    const refreshed = await refreshConversation();
+    let refreshed = await refreshConversation();
+    if (refreshed && refreshed.latestServerSequence > highestLoadedSequence) {
+      for (let pageIndex = 0; pageIndex < 8; pageIndex += 1) {
+        const page = await apiRequest<MessagePage>(
+          "/api/v1/conversations/" +
+            refreshed.conversationId +
+            "/messages?afterSequence=" +
+            highestLoadedSequence +
+            "&limit=" +
+            M1_HISTORY_DEFAULT_LIMIT,
+        );
+        if (page.items.length === 0) break;
+
+        highestLoadedSequence = page.newestSequence ?? highestLoadedSequence;
+        const previous = await database.getConversationSync(
+          refreshed.partnershipId,
+          refreshed.conversationId,
+        );
+        await database.commitMessagesAndSync({
+          partnershipId: refreshed.partnershipId,
+          conversationId: refreshed.conversationId,
+          messages: page.items,
+          sync: {
+            partnershipId: refreshed.partnershipId,
+            conversationId: refreshed.conversationId,
+            latestChangeSequence: changeCursorRef.current,
+            latestServerSequence: Math.max(
+              refreshed.latestServerSequence,
+              previous?.latestServerSequence ?? 0,
+            ),
+            retainedHistoryStartSequence:
+              previous?.retainedHistoryStartSequence ??
+              page.oldestSequence ??
+              highestLoadedSequence,
+            retainedHistoryEndSequence: Math.max(
+              previous?.retainedHistoryEndSequence ?? 0,
+              highestLoadedSequence,
+            ),
+            pendingDeliveredThrough:
+              previous?.pendingDeliveredThrough ??
+              refreshed.receipts.selfDeliveredThrough,
+            pendingReadThrough:
+              previous?.pendingReadThrough ??
+              refreshed.receipts.selfReadThrough,
+            lastSyncedAt: new Date().toISOString(),
+          },
+        });
+        setMessages((current) => mergeMessages(current, page.items));
+        if (!page.hasMore) break;
+      }
+      refreshed = await refreshConversation();
+    }
+
     if (refreshed) {
       await acknowledge(refreshed, highestLoadedSequence);
     }
-  }, [acknowledge, conversation, messages, refreshConversation, refreshMessage]);
+    return { latestChangeSequence: changeCursorRef.current };
+  }, [acknowledge, conversation, messages, refreshConversation, runtime]);
 
   const handleSyncFailure = useCallback(
     async (caught: unknown) => {
@@ -295,17 +427,34 @@ export function MessagingPanel() {
     void loadInitial().catch((caught) => setError(errorText(caught)));
   }, [loadInitial]);
 
+  useEffect(
+    () =>
+      runtime.registerSynchronizer("messaging", async () => {
+        return syncChanges();
+      }),
+    [runtime, syncChanges],
+  );
+
   useEffect(() => {
-    if (!conversation) return;
+    if (
+      !conversation ||
+      !navigator.onLine ||
+      syncStatus === "live" ||
+      syncStatus === "syncing" ||
+      syncStatus === "update-required"
+    ) {
+      return;
+    }
     const timer = window.setInterval(() => {
       void syncChanges().catch((caught) => void handleSyncFailure(caught));
     }, M1_VISIBLE_CHANGE_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [conversation, handleSyncFailure, syncChanges]);
+  }, [conversation, handleSyncFailure, syncChanges, syncStatus]);
 
   useEffect(() => {
     const beat = () => {
       if (document.visibilityState !== "visible") return;
+      if (runtime.sendPresenceHeartbeat()) return;
       void apiRequest("/api/v1/presence/heartbeat", {
         method: "POST",
         body: {},
@@ -314,7 +463,7 @@ export function MessagingPanel() {
     beat();
     const timer = window.setInterval(beat, M1_PRESENCE_HEARTBEAT_MIN_MS);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [runtime]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -324,6 +473,30 @@ export function MessagingPanel() {
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [handleSyncFailure, syncChanges]);
+
+  useEffect(() => {
+    const refreshTransient = () => {
+      void refreshConversation().catch(() => undefined);
+    };
+    const queueChanged = async () => {
+      if (!conversation) return;
+      const queue = await (await runtime.database()).listChatQueue(
+        conversation.partnershipId,
+      );
+      if (queue.length === 0 && sendStatus === "queued") {
+        setSendStatus(null);
+        setNotice("Queued message synced.");
+      }
+    };
+    window.addEventListener("shawtie:presence-changed", refreshTransient);
+    window.addEventListener("shawtie:typing-changed", refreshTransient);
+    window.addEventListener("shawtie:chat-queue-changed", queueChanged);
+    return () => {
+      window.removeEventListener("shawtie:presence-changed", refreshTransient);
+      window.removeEventListener("shawtie:typing-changed", refreshTransient);
+      window.removeEventListener("shawtie:chat-queue-changed", queueChanged);
+    };
+  }, [conversation, refreshConversation, runtime, sendStatus]);
 
   async function run(task: () => Promise<void>) {
     setBusy(true);
@@ -356,17 +529,35 @@ export function MessagingPanel() {
   async function send(event: FormEvent) {
     event.preventDefault();
     if (!conversation || !composer.trim()) return;
+
     const body = composer;
     const replyToMessageId = replyingTo?.messageId ?? null;
     const existing = pendingSendRef.current;
     const pending =
-      existing && existing.body === body && existing.replyToMessageId === replyToMessageId
+      existing &&
+      existing.body === body &&
+      existing.replyToMessageId === replyToMessageId
         ? existing
         : { key: idempotencyKey(), body, replyToMessageId };
     pendingSendRef.current = pending;
     setSendStatus("sending");
+    setNotice("");
 
     await run(async () => {
+      if (!navigator.onLine) {
+        await runtime.queueChat({
+          operationType: "message.send",
+          requestBody: { body, replyToMessageId },
+          idempotencyKey: pending.key,
+        });
+        pendingSendRef.current = null;
+        setSendStatus("queued");
+        setComposer("");
+        setReplyingTo(null);
+        setNotice("Message queued. It will send after connection and authority are restored.");
+        return;
+      }
+
       try {
         const created = await apiRequest<{
           messageId: string;
@@ -381,16 +572,39 @@ export function MessagingPanel() {
         });
 
         await refreshMessage(conversation.conversationId, created.messageId);
-        changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence);
+        changeCursorRef.current = Math.max(
+          changeCursorRef.current,
+          created.changeSequence,
+        );
         pendingSendRef.current = null;
         setSendStatus(null);
         setComposer("");
         setReplyingTo(null);
-        await apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
-          method: "POST",
-          body: { typing: false },
-        }).catch(() => undefined);
+        if (!runtime.sendTyping(false)) {
+          await apiRequest(
+            "/api/v1/conversations/" +
+              conversation.conversationId +
+              "/typing",
+            {
+              method: "POST",
+              body: { typing: false },
+            },
+          ).catch(() => undefined);
+        }
       } catch (caught) {
+        if (!(caught instanceof ApiClientError)) {
+          await runtime.queueChat({
+            operationType: "message.send",
+            requestBody: { body, replyToMessageId },
+            idempotencyKey: pending.key,
+          });
+          pendingSendRef.current = null;
+          setSendStatus("queued");
+          setComposer("");
+          setReplyingTo(null);
+          setNotice("Message queued after the network request failed.");
+          return;
+        }
         setSendStatus("failed");
         throw caught;
       }
@@ -407,6 +621,7 @@ export function MessagingPanel() {
     const now = Date.now();
     if (now - lastTypingSentRef.current < M1_TYPING_MIN_REFRESH_MS) return;
     lastTypingSentRef.current = now;
+    if (runtime.sendTyping(true)) return;
     void apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
       method: "POST",
       body: { typing: true },
@@ -417,13 +632,32 @@ export function MessagingPanel() {
     if (!conversation || !message.body) return;
     const body = window.prompt("Edit message", message.body);
     if (body === null || !body.trim() || body === message.body) return;
+    const key = idempotencyKey();
+
     await run(async () => {
+      if (!navigator.onLine) {
+        await runtime.queueChat({
+          operationType: "message.edit",
+          messageId: message.messageId,
+          requestBody: {
+            body,
+            expectedContentVersion: message.contentVersion,
+          },
+          expectedContentVersion: message.contentVersion,
+          idempotencyKey: key,
+        });
+        setNotice("Edit queued. Server version and edit-window rules will be rechecked.");
+        return;
+      }
       try {
         await apiRequest(
-          "/api/v1/conversations/" + conversation.conversationId + "/messages/" + message.messageId,
+          "/api/v1/conversations/" +
+            conversation.conversationId +
+            "/messages/" +
+            message.messageId,
           {
             method: "PATCH",
-            headers: { "idempotency-key": idempotencyKey() },
+            headers: { "idempotency-key": key },
             body: {
               body,
               expectedContentVersion: message.contentVersion,
@@ -431,11 +665,28 @@ export function MessagingPanel() {
           },
         );
       } catch (caught) {
+        if (!(caught instanceof ApiClientError)) {
+          await runtime.queueChat({
+            operationType: "message.edit",
+            messageId: message.messageId,
+            requestBody: {
+              body,
+              expectedContentVersion: message.contentVersion,
+            },
+            expectedContentVersion: message.contentVersion,
+            idempotencyKey: key,
+          });
+          setNotice("Edit queued after the network request failed.");
+          return;
+        }
         if (
-          caught instanceof ApiClientError &&
-          (caught.code === "VERSION_CONFLICT" || caught.code === "MESSAGE_DELETED")
+          caught.code === "VERSION_CONFLICT" ||
+          caught.code === "MESSAGE_DELETED"
         ) {
-          await refreshMessage(conversation.conversationId, message.messageId);
+          await refreshMessage(
+            conversation.conversationId,
+            message.messageId,
+          );
         }
         throw caught;
       }
@@ -445,18 +696,46 @@ export function MessagingPanel() {
 
   async function deleteMessage(message: Message) {
     if (!conversation || !window.confirm("Delete this message for both of you?")) return;
+    const key = idempotencyKey();
+
     await run(async () => {
+      if (!navigator.onLine) {
+        await runtime.queueChat({
+          operationType: "message.delete",
+          messageId: message.messageId,
+          requestBody: null,
+          idempotencyKey: key,
+        });
+        setNotice("Delete queued. Lifecycle rules will be rechecked before replay.");
+        return;
+      }
       try {
         await apiRequest(
-          "/api/v1/conversations/" + conversation.conversationId + "/messages/" + message.messageId,
+          "/api/v1/conversations/" +
+            conversation.conversationId +
+            "/messages/" +
+            message.messageId,
           {
             method: "DELETE",
-            headers: { "idempotency-key": idempotencyKey() },
+            headers: { "idempotency-key": key },
           },
         );
       } catch (caught) {
-        if (caught instanceof ApiClientError && caught.code === "MESSAGE_DELETED") {
-          await refreshMessage(conversation.conversationId, message.messageId);
+        if (!(caught instanceof ApiClientError)) {
+          await runtime.queueChat({
+            operationType: "message.delete",
+            messageId: message.messageId,
+            requestBody: null,
+            idempotencyKey: key,
+          });
+          setNotice("Delete queued after the network request failed.");
+          return;
+        }
+        if (caught.code === "MESSAGE_DELETED") {
+          await refreshMessage(
+            conversation.conversationId,
+            message.messageId,
+          );
         }
         throw caught;
       }
@@ -466,37 +745,87 @@ export function MessagingPanel() {
 
   async function react(message: Message, emoji: string) {
     if (!conversation) return;
+    const key = idempotencyKey();
     await run(async () => {
-      await apiRequest(
-        "/api/v1/conversations/" +
-          conversation.conversationId +
-          "/messages/" +
-          message.messageId +
-          "/reaction",
-        {
-          method: "PUT",
-          headers: { "idempotency-key": idempotencyKey() },
-          body: { emoji },
-        },
-      );
+      if (!navigator.onLine) {
+        await runtime.queueChat({
+          operationType: "reaction.set",
+          messageId: message.messageId,
+          requestBody: { emoji },
+          idempotencyKey: key,
+        });
+        setNotice("Reaction queued.");
+        return;
+      }
+      try {
+        await apiRequest(
+          "/api/v1/conversations/" +
+            conversation.conversationId +
+            "/messages/" +
+            message.messageId +
+            "/reaction",
+          {
+            method: "PUT",
+            headers: { "idempotency-key": key },
+            body: { emoji },
+          },
+        );
+      } catch (caught) {
+        if (!(caught instanceof ApiClientError)) {
+          await runtime.queueChat({
+            operationType: "reaction.set",
+            messageId: message.messageId,
+            requestBody: { emoji },
+            idempotencyKey: key,
+          });
+          setNotice("Reaction queued after the network request failed.");
+          return;
+        }
+        throw caught;
+      }
       await refreshMessage(conversation.conversationId, message.messageId);
     });
   }
 
   async function removeReaction(message: Message) {
     if (!conversation) return;
+    const key = idempotencyKey();
     await run(async () => {
-      await apiRequest(
-        "/api/v1/conversations/" +
-          conversation.conversationId +
-          "/messages/" +
-          message.messageId +
-          "/reaction",
-        {
-          method: "DELETE",
-          headers: { "idempotency-key": idempotencyKey() },
-        },
-      );
+      if (!navigator.onLine) {
+        await runtime.queueChat({
+          operationType: "reaction.remove",
+          messageId: message.messageId,
+          requestBody: null,
+          idempotencyKey: key,
+        });
+        setNotice("Reaction removal queued.");
+        return;
+      }
+      try {
+        await apiRequest(
+          "/api/v1/conversations/" +
+            conversation.conversationId +
+            "/messages/" +
+            message.messageId +
+            "/reaction",
+          {
+            method: "DELETE",
+            headers: { "idempotency-key": key },
+          },
+        );
+      } catch (caught) {
+        if (!(caught instanceof ApiClientError)) {
+          await runtime.queueChat({
+            operationType: "reaction.remove",
+            messageId: message.messageId,
+            requestBody: null,
+            idempotencyKey: key,
+          });
+          setNotice("Reaction removal queued after the network request failed.");
+          return;
+        }
+        throw caught;
+      }
       await refreshMessage(conversation.conversationId, message.messageId);
     });
   }
@@ -581,6 +910,7 @@ export function MessagingPanel() {
       </div>
 
       {error ? <p className="banner error">{error}</p> : null}
+      {notice ? <p className="banner success">{notice}</p> : null}
 
       <details className="nickname-settings">
         <summary>Chat nicknames</summary>
@@ -788,6 +1118,7 @@ export function MessagingPanel() {
           onChange={(event) => composerChanged(event.target.value)}
           onBlur={() => {
             if (!conversation.capabilities.typing) return;
+            if (runtime.sendTyping(false)) return;
             void apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
               method: "POST",
               body: { typing: false },
