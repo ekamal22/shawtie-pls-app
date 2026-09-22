@@ -435,20 +435,30 @@ export function MessagingPanel() {
     const body = window.prompt("Edit message", message.body);
     if (body === null || !body.trim() || body === message.body) return;
     await run(async () => {
-      await apiRequest(
-        "/api/v1/conversations/"
-          + conversation.conversationId
-          + "/messages/"
-          + message.messageId,
-        {
-          method: "PATCH",
-          headers: { "idempotency-key": idempotencyKey() },
-          body: {
-            body,
-            expectedContentVersion: message.contentVersion,
+      try {
+        await apiRequest(
+          "/api/v1/conversations/"
+            + conversation.conversationId
+            + "/messages/"
+            + message.messageId,
+          {
+            method: "PATCH",
+            headers: { "idempotency-key": idempotencyKey() },
+            body: {
+              body,
+              expectedContentVersion: message.contentVersion,
+            },
           },
-        },
-      );
+        );
+      } catch (caught) {
+        if (
+          caught instanceof ApiClientError
+          && (caught.code === "VERSION_CONFLICT" || caught.code === "MESSAGE_DELETED")
+        ) {
+          await refreshMessage(conversation.conversationId, message.messageId);
+        }
+        throw caught;
+      }
       await refreshMessage(conversation.conversationId, message.messageId);
     });
   }
@@ -456,16 +466,23 @@ export function MessagingPanel() {
   async function deleteMessage(message: Message) {
     if (!conversation || !window.confirm("Delete this message for both of you?")) return;
     await run(async () => {
-      await apiRequest(
-        "/api/v1/conversations/"
-          + conversation.conversationId
-          + "/messages/"
-          + message.messageId,
-        {
-          method: "DELETE",
-          headers: { "idempotency-key": idempotencyKey() },
-        },
-      );
+      try {
+        await apiRequest(
+          "/api/v1/conversations/"
+            + conversation.conversationId
+            + "/messages/"
+            + message.messageId,
+          {
+            method: "DELETE",
+            headers: { "idempotency-key": idempotencyKey() },
+          },
+        );
+      } catch (caught) {
+        if (caught instanceof ApiClientError && caught.code === "MESSAGE_DELETED") {
+          await refreshMessage(conversation.conversationId, message.messageId);
+        }
+        throw caught;
+      }
       await refreshMessage(conversation.conversationId, message.messageId);
     });
   }
@@ -515,20 +532,27 @@ export function MessagingPanel() {
     if (!conversation) return;
     const target = subject === "self" ? conversation.self : conversation.partner;
     await run(async () => {
-      await apiRequest(
-        "/api/v1/partnerships/"
-          + conversation.partnershipId
-          + "/nicknames/"
-          + target.accountId,
-        {
-          method: "PATCH",
-          headers: { "idempotency-key": idempotencyKey() },
-          body: {
-            nickname: nickname.trim() || null,
-            expectedVersion,
+      try {
+        await apiRequest(
+          "/api/v1/partnerships/"
+            + conversation.partnershipId
+            + "/nicknames/"
+            + target.accountId,
+          {
+            method: "PATCH",
+            headers: { "idempotency-key": idempotencyKey() },
+            body: {
+              nickname: nickname.trim() || null,
+              expectedVersion,
+            },
           },
-        },
-      );
+        );
+      } catch (caught) {
+        if (caught instanceof ApiClientError && caught.code === "VERSION_CONFLICT") {
+          await refreshConversation();
+        }
+        throw caught;
+      }
       if (subject === "self") {
         selfNicknameDirtyRef.current = false;
       } else {
