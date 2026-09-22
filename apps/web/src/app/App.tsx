@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
+import { MessagingPanel } from "../features/messaging/MessagingPanel.tsx";
 import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
 
@@ -517,6 +518,7 @@ function AccountScreen({
       {notice ? <p className="banner success">{notice}</p> : null}
 
       <PartnershipPanel />
+      <MessagingPanel />
       <PartnerRequestsPanel />
 
       <section className="panel">
