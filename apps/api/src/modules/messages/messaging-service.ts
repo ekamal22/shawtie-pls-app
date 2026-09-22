@@ -378,6 +378,16 @@ export class MessagingService {
           interactionMode,
           latestServerSequence: safeNumber(row.latestServerSequence),
           latestChangeSequence: safeNumber(row.latestChangeSequence),
+          breakup:
+            row.lifecycleState === "breakup_pending"
+              ? {
+                  initiatedAt: row.breakupInitiatedAt?.toISOString() ?? null,
+                  messageFreezeSequence:
+                    row.messageFreezeSequence === null
+                      ? null
+                      : safeNumber(row.messageFreezeSequence),
+                }
+              : null,
           self: {
             accountId: row.self.accountId,
             username: row.self.username,
