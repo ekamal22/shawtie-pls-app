@@ -1056,6 +1056,8 @@ Physical Android remains separate mandatory evidence.
 
 ## Physical Android acceptance
 
+The canonical design-time device procedure and evidence contract is `../testing/M3_ANDROID_ACCEPTANCE.md`. Its command names are planned interfaces until M3 implementation creates them.
+
 At minimum, the supported Android device must prove:
 
 1. choose, process, send, receive, and view an image
