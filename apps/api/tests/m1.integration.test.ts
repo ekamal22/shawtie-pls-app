@@ -2402,3 +2402,126 @@ test("M1 concurrent receipt updates remain monotonic and read implies delivered"
     await closeDatabasePool(database);
   }
 });
+
+
+test("M1 final termination serializes against send delete and reaction mutations", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "final_multi_alice");
+    const bob = await register(app, database, "final_multi_bob");
+    const { partnershipId, conversationId } = await formPartnership(
+      app,
+      alice,
+      bob,
+      "final_multi",
+    );
+
+    const breakup = await app.inject({
+      method: "POST",
+      url: "/api/v1/partnerships/" + partnershipId + "/breakup",
+      headers: mutationHeaders(alice.cookie, "m1-final-multi-breakup"),
+    });
+    assert.equal(breakup.statusCode, 200, breakup.body);
+
+    const deleteTarget = await sendMessage(
+      app,
+      alice,
+      conversationId,
+      "delete target after cutoff",
+      "m1-final-multi-delete-target",
+    );
+    const reactionTarget = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "reaction target after cutoff",
+      "m1-final-multi-reaction-target",
+    );
+    assert.equal(deleteTarget.statusCode, 201, deleteTarget.body);
+    assert.equal(reactionTarget.statusCode, 201, reactionTarget.body);
+
+    const deleteTargetId = (deleteTarget.json() as { messageId: string }).messageId;
+    const reactionTargetId = (reactionTarget.json() as { messageId: string }).messageId;
+
+    const [send, deletion, reaction] = await Promise.all([
+      sendMessage(
+        app,
+        bob,
+        conversationId,
+        "racing final termination",
+        "m1-final-multi-send",
+      ),
+      app.inject({
+        method: "DELETE",
+        url:
+          "/api/v1/conversations/"
+          + conversationId
+          + "/messages/"
+          + deleteTargetId,
+        headers: mutationHeaders(alice.cookie, "m1-final-multi-delete"),
+      }),
+      app.inject({
+        method: "PUT",
+        url:
+          "/api/v1/conversations/"
+          + conversationId
+          + "/messages/"
+          + reactionTargetId
+          + "/reaction",
+        headers: jsonHeaders(alice.cookie, "m1-final-multi-reaction"),
+        payload: { emoji: "👍" },
+      }),
+      withTransaction(database, async (transaction) => {
+        const now = await getTransactionTimestamp(transaction);
+        await lockAccounts(transaction, [alice.accountId, bob.accountId]);
+        const generation = await terminatePartnershipLifecycle(transaction, {
+          partnershipId,
+          reason: "breakup",
+          effectiveAt: now,
+        });
+        assert.ok(generation !== null);
+      }),
+    ]);
+
+    assert.ok(send.statusCode === 201 || send.statusCode === 404, send.body);
+    assert.ok(deletion.statusCode === 200 || deletion.statusCode === 404, deletion.body);
+    assert.ok(reaction.statusCode === 200 || reaction.statusCode === 404, reaction.body);
+
+    for (const response of [send, deletion, reaction]) {
+      if (response.statusCode === 404) {
+        assert.equal(
+          (response.json() as { error: { code: string } }).error.code,
+          "CONVERSATION_NOT_FOUND",
+        );
+      }
+    }
+
+    const lifecycle = await database.pool.query<{
+      lifecycle_state: string;
+      released_count: string;
+    }>(
+      "SELECT lifecycle_state, (SELECT count(*)::text FROM partnership_members WHERE partnership_id = $1 AND released_at IS NOT NULL) AS released_count FROM partnerships WHERE id = $1",
+      [partnershipId],
+    );
+    assert.equal(lifecycle.rows[0]?.lifecycle_state, "terminated");
+    assert.equal(lifecycle.rows[0]?.released_count, "2");
+
+    const after = await sendMessage(
+      app,
+      bob,
+      conversationId,
+      "must not send after termination",
+      "m1-final-multi-after",
+    );
+    assert.equal(after.statusCode, 404, after.body);
+    assert.equal(
+      (after.json() as { error: { code: string } }).error.code,
+      "CONVERSATION_NOT_FOUND",
+    );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
