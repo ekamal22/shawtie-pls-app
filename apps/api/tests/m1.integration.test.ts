@@ -882,6 +882,32 @@ test("M1 nickname presence typing and receipts are shared but privacy bounded", 
     assert.equal(nickname.statusCode, 200, nickname.body);
     assert.equal((nickname.json() as { version: number }).version, 2);
 
+    const nicknameVisibleToAlice = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/current",
+      headers: { cookie: alice.cookie },
+    });
+    assert.equal(nicknameVisibleToAlice.statusCode, 200, nicknameVisibleToAlice.body);
+    assert.equal(
+      (nicknameVisibleToAlice.json() as {
+        conversation: { partner: { nickname: string | null } };
+      }).conversation.partner.nickname,
+      "Bee",
+    );
+
+    const nicknameVisibleToBob = await app.inject({
+      method: "GET",
+      url: "/api/v1/conversations/current",
+      headers: { cookie: bob.cookie },
+    });
+    assert.equal(nicknameVisibleToBob.statusCode, 200, nicknameVisibleToBob.body);
+    assert.equal(
+      (nicknameVisibleToBob.json() as {
+        conversation: { self: { nickname: string | null } };
+      }).conversation.self.nickname,
+      "Bee",
+    );
+
     const staleNickname = await app.inject({
       method: "PATCH",
       url:
