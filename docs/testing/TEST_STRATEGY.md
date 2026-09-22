@@ -491,17 +491,21 @@ After protocol selection, include:
 - account deletion
 - future partnership cannot decrypt previous partnership content
 
-## Call tests
+## C1 Voice Calling tests
 
-Cover:
+C1 establishes the shared call core and must cover:
 
-- voice
-- video
+- authenticated partnership authorization
+- voice call initiation
+- microphone permission granted and denied paths
+- no camera permission required for voice-call closure
+- audio-only WebRTC negotiation
 - accept
 - reject
 - cancel
 - missed call
 - network interruption
+- signaling reconnect
 - TURN relay
 - relay over TCP or TLS fallback where supported
 - breakup_pending explicit acceptance
@@ -509,6 +513,28 @@ Cover:
 - short-lived TURN credential issuance
 - expired TURN credential rejection
 - relay-first path verification where supported
+- partnership-scoped voice call history
+- final-dissolution call-history deletion
+- physical Android voice calling
+
+## C2 Video Calling tests
+
+C2 extends the verified C1 core and must cover:
+
+- complete C1 voice regression remains green
+- video call initiation through the C1 signaling/state model
+- camera permission granted and denied paths
+- video-track negotiation
+- no second video-specific call-state authority
+- accept, reject, cancel, and missed behavior through the shared model
+- network interruption and signaling reconnect with video media
+- inherited TURN credential and relay-first behavior
+- breakup_pending explicit acceptance
+- account-deletion state rejection
+- partnership-scoped video call history
+- final-dissolution call-history deletion
+- Android camera/video foreground and background behavior
+- physical Android video calling
 
 ## Acceptance principle
 
