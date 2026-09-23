@@ -1340,7 +1340,7 @@ Status: PLANNED
 
 # C1: Voice Calling
 
-Status: DESIGN COMPLETE, IMPLEMENTATION NOT STARTED
+Status: DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION NOT STARTED
 
 Branch: `feat/c1-voice-calling`
 
@@ -1389,6 +1389,16 @@ Parallel M3 owns planned 0015/0016. Isolated C1 validation may reserve 0015/0016
 - physical Android acceptance
 
 C1 excludes video, group calls, screen sharing, call recording, voicemail, direct peer fallback, SFU/MCU, offline queued call initiation, and custom production E2EE.
+
+## Refined hardening decisions
+
+- formal state transition matrix defines actor/device/state/terminal outcomes
+- browser autoplay failure is recoverable UI state, not call failure
+- output routing defaults to browser/OS; optional `setSinkId()` remains local only
+- push subscriptions rotate/reconcile per authenticated device without duplicate active routing
+- operational create/transport/push switches fail closed and never enable direct ICE
+- TURN/signaling/push resource budgets are explicit and privacy-safe
+- M3 real 0015/0016 must be on main before C1 final integrated closure
 
 ## Acceptance gates
 
@@ -1457,6 +1467,11 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - [ ] C1 PostgreSQL/API/worker matrix passes
 - [ ] real-browser signaling/WebRTC acceptance passes
 - [ ] mandatory physical Android C1 acceptance passes
+- [ ] every legal/illegal durable state transition and exact terminal replay is tested
+- [ ] autoplay-blocked remote audio recovers with explicit user gesture without durable state mutation
+- [ ] push subscription replacement leaves only one active routing path per device
+- [ ] operational transport disable fails closed without direct ICE fallback
+- [ ] final integrated C1 closure runs only after real M3 0015/0016 are merged
 - [ ] full `npm run health` passes
 - [ ] `npm audit --audit-level=high` passes
 - [ ] no Unicode em dash is introduced in C1 repo docs/commits

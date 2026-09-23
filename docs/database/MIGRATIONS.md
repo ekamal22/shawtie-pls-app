@@ -275,7 +275,7 @@ SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
 
 No placeholder migration files and no copied M3 SQL are permitted.
 
-Final integrated C1 closure must run real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green.
+Final integrated C1 closure must run real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green. Therefore M3 must merge its real 0015/0016 migrations first; C1 then reconciles onto that mainline and removes reservation-only closure assumptions.
 
 `0017` refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, and call uniqueness.
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, IMPLEMENTATION NOT STARTED.**
+**DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION NOT STARTED.**
 
 Branch:
 
@@ -381,26 +381,40 @@ The model intentionally avoids storing a large state vocabulary when the termina
 
 ## State transitions
 
-~~~text
-                     +--> ended: rejected
-                     |
-ringing --accept--> accepted --media confirmed--> connected
-   |                    |                             |
-   +--> ended: missed   +--> ended: failed           +--> ended: completed
-   +--> ended: cancel   +--> ended: auth revoked     +--> ended: auth revoked
-   +--> ended: auth revoked
-~~~
+Canonical durable states are `ringing`, `accepted`, `connected`, and terminal `ended`.
 
-Every transition:
+| Current | Event | Authorized actor | Next | Terminal reason / note |
+| --- | --- | --- | --- | --- |
+| none | create | authenticated caller on current initiating device | ringing | caller device fixed; one-non-terminal-call invariant checked |
+| ringing | accept | callee account on first eligible device that wins row lock | accepted | winning callee device becomes fixed selected endpoint |
+| ringing | reject | callee account on an eligible current device | ended | `rejected`; rejection ends the call for all callee devices |
+| ringing | cancel | fixed caller device | ended | `cancelled` |
+| ringing | ring timeout | durable worker | ended | `missed`; fenced by expected version/generation |
+| ringing | lifecycle/device authorization loss | server lifecycle/revocation path | ended | bounded authorization/partnership terminal reason |
+| accepted | first endpoint-connected report | one selected endpoint | accepted | record endpoint timestamp once; no connectedAt yet |
+| accepted | second endpoint-connected report | other selected endpoint | connected | trusted `connectedAt`; set hard expiry |
+| accepted | end | either selected endpoint | ended | `completed`; duration remains absent if never connected |
+| accepted | fail | either selected endpoint | ended | `failed` with coarse category only |
+| accepted | connect timeout | durable worker | ended | `failed`; fenced by expected version/generation |
+| accepted | lifecycle/device authorization loss | server lifecycle/revocation path | ended | authorization/partnership terminal reason |
+| connected | end | either selected endpoint | ended | `completed` |
+| connected | fail | either selected endpoint | ended | `failed` |
+| connected | hard timeout | durable worker | ended | `failed`; prevents permanently stranded non-terminal call |
+| connected | lifecycle/device authorization loss | server lifecycle/revocation path | ended | authorization/partnership terminal reason |
+| ended | any mutation | none | ended | immutable terminal state; exact replay may return prior result |
+
+Every state-changing transition:
 
 - locks the call row
-- verifies current account and device
-- verifies partnership membership
-- evaluates current lifecycle capability
-- checks expectedVersion where the action is not an exact lost-response replay
-- writes authoritative server timestamps
-- increments version
-- writes a content-free outbox invalidation
+- verifies current account and, where required, selected device
+- verifies partnership membership/lifecycle authority
+- checks `expectedVersion` unless the request is an exact lost-response replay
+- uses trusted server time
+- increments call version exactly once for the committed transition
+- appends bounded call-event metadata where required
+- writes content-free `call.changed` outbox invalidation
+
+Timeout workers never infer authority from their payload alone. They reload the row and become no-ops when state/version/generation no longer matches.
 
 ## Connected evidence
 
@@ -502,6 +516,83 @@ Recommended audio constraints are hints, not authorization rules:
 Device permission denial is handled as a local failure and may terminate the call with a bounded generic reason.
 
 Raw local media device labels are not persisted by the server.
+
+## Browser audio playback and output routing
+
+C1 keeps remote audio rendering separate from call authority.
+
+Remote audio uses a dedicated audio element owned by the C1 call controller. The client attempts `play()` after canonical acceptance/connection setup.
+
+If browser autoplay policy rejects playback:
+
+- the durable call remains accepted/connected
+- the UI shows a clear `Tap to hear` recovery action
+- the next user gesture retries `play()`
+- autoplay failure is not reported as partner/network failure
+- no repeated permission/prompt loop is created
+
+Microphone mute is local transient state implemented by disabling the local audio track where supported. Mute/unmute is not durable history and is not sent through ordinary realtime.
+
+Audio output routing:
+
+- C1 relies on the browser/OS default route on platforms without explicit sink selection
+- `setSinkId()` may be offered only where supported and user-initiated
+- selected output device IDs/labels are never persisted server-side
+- lack of `setSinkId()` support is not a call failure
+
+## Operational feature controls
+
+C1 defines server-side operational controls that fail closed without weakening privacy:
+
+- `callCreateEnabled`: blocks new call creation while existing calls may continue
+- `callTransportEnabled`: blocks new acceptance, signaling upgrade, and TURN issuance/refresh; no direct-connect fallback is allowed
+- `callPushEnabled`: disables background Web Push delivery while foreground realtime calling remains available
+
+These are operator controls, not browser authority. Disabling a control never rewrites a call to another transport and never enables direct peer ICE.
+
+## Push subscription rotation and reconciliation
+
+Web Push subscription state is device-bound and replaceable.
+
+The browser reconciles its current PushSubscription:
+
+- after successful login/device registration
+- on application foreground/startup when notification permission is already granted
+- after a best-effort service-worker `pushsubscriptionchange` event where supported
+
+Replacement upserts the current endpoint/keys for the authenticated device and disables the superseded subscription transactionally.
+
+Provider permanent-invalid responses remove/disable the stored subscription idempotently.
+
+Do not repeatedly prompt after notification permission is denied. Foreground calling remains available through realtime v2.
+
+## TURN/signaling resource budgets
+
+Policy must bound provider abuse/cost without exposing call existence:
+
+- at most one active signaling socket per selected endpoint/call generation
+- bounded signaling reconnect rate/backoff
+- bounded signaling frame and ICE candidate rate/count
+- bounded TURN credential issuance/refresh frequency
+- short TURN credential TTL
+- per-account/device/partnership call-create/ring rate limits
+- bounded Web Push delivery attempts per authoritative incoming-call event
+
+Operational metrics may aggregate call outcomes, setup latency, signaling reconnects, TURN issuance/failure, push delivery category, and relay transport class. Never record SDP, raw ICE, peer IP, TURN secrets, push endpoint, device label, or partner identity in analytics.
+
+## Cross-milestone integration choreography
+
+C1 source work may proceed in parallel with M3, but C1 cannot perform final integrated closure or merge while 0015/0016 are only reservations.
+
+Required order:
+
+1. M3 lands real migrations 0015/0016 on main
+2. C1 reconciles onto that mainline without rewriting its own 0017/0018
+3. reservation-only C1 tests are replaced by the real contiguous migration chain
+4. C1 final closure runs 0001-0018 with `reserved=0`
+5. only after C1 source, browser, physical Android, and documentation closure merge may C2 implementation begin
+
+If M3 changes a seam C1 depends on, C1 adapts forward; it never copies or pins private M3 migration SQL.
 
 ## Candidate privacy enforcement
 
@@ -891,7 +982,8 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 - relay-only configuration
 - perfect negotiation
 - candidate buffering
-- audio element lifecycle
+- audio element lifecycle including autoplay-blocked `Tap to hear` recovery
+- default OS/browser output routing with optional local `setSinkId()` only where supported
 - mute control
 - connection state
 - safe teardown
@@ -907,7 +999,7 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 
 ### C1-G Web Push reachability
 
-- browser subscription lifecycle
+- browser subscription lifecycle, replacement, startup reconciliation, and best-effort `pushsubscriptionchange`
 - worker delivery
 - opaque incoming-call push
 - notification click routing
@@ -929,6 +1021,8 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 - network change
 - ICE restart
 - TURN expiry
+- operational call-create/transport/push controls
+- remote-audio autoplay recovery
 
 ### C1-I Closure harness and device acceptance
 
