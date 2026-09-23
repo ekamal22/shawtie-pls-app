@@ -92,6 +92,17 @@ function positiveInteger(raw: string | undefined, fallback: number, name: string
   return value;
 }
 
+function boundedPositiveInteger(
+  raw: string | undefined,
+  fallback: number,
+  name: string,
+  maximum: number,
+): number {
+  const value = positiveInteger(raw, fallback, name);
+  if (value > maximum) throw new Error(name + " must not exceed " + maximum);
+  return value;
+}
+
 function callingConfig(
   env: NodeJS.ProcessEnv,
   environment: ApiConfig["environment"],
@@ -115,12 +126,32 @@ function callingConfig(
   return {
     enabled,
     transportEnabled,
-    ringTimeoutMs: positiveInteger(env.C1_RING_TIMEOUT_MS, 60_000, "C1_RING_TIMEOUT_MS"),
-    connectTimeoutMs: positiveInteger(env.C1_CONNECT_TIMEOUT_MS, 120_000, "C1_CONNECT_TIMEOUT_MS"),
-    hardTimeoutMs: positiveInteger(env.C1_HARD_TIMEOUT_MS, 6 * 60 * 60_000, "C1_HARD_TIMEOUT_MS"),
+    ringTimeoutMs: boundedPositiveInteger(
+      env.C1_RING_TIMEOUT_MS,
+      60_000,
+      "C1_RING_TIMEOUT_MS",
+      5 * 60_000,
+    ),
+    connectTimeoutMs: boundedPositiveInteger(
+      env.C1_CONNECT_TIMEOUT_MS,
+      120_000,
+      "C1_CONNECT_TIMEOUT_MS",
+      10 * 60_000,
+    ),
+    hardTimeoutMs: boundedPositiveInteger(
+      env.C1_HARD_TIMEOUT_MS,
+      6 * 60 * 60_000,
+      "C1_HARD_TIMEOUT_MS",
+      24 * 60 * 60_000,
+    ),
     turnUrls,
     turnSharedSecret: env.C1_TURN_SHARED_SECRET ?? null,
-    turnCredentialTtlMs: positiveInteger(env.C1_TURN_CREDENTIAL_TTL_MS, 10 * 60_000, "C1_TURN_CREDENTIAL_TTL_MS"),
+    turnCredentialTtlMs: boundedPositiveInteger(
+      env.C1_TURN_CREDENTIAL_TTL_MS,
+      10 * 60_000,
+      "C1_TURN_CREDENTIAL_TTL_MS",
+      15 * 60_000,
+    ),
     pushVapidPublicKey: env.C1_PUSH_VAPID_PUBLIC_KEY ?? null,
   };
 }
