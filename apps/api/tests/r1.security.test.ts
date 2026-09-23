@@ -142,7 +142,12 @@ test("R1 server paths do not log private payloads or coordinates", async () => {
   assert.equal(combined.includes("logger.debug"), false);
   assert.equal(worker.includes("latitude"), false);
   assert.equal(worker.includes("longitude"), false);
-  assert.equal(worker.includes("payload: {"), false);
+  const realtimePayload = worker.match(/payload:\s*\{([\s\S]*?)\},\s*payloadVersion:/)?.[1];
+  assert.ok(realtimePayload);
+  const realtimePayloadKeys = [...realtimePayload.matchAll(/^\s*(\w+):/gm)]
+    .map((match) => match[1])
+    .sort();
+  assert.deepEqual(realtimePayloadKeys, ["itemId", "itemVersion", "partnershipId"]);
   assert.equal(service.includes("payload: {}"), true);
 });
 
