@@ -45,7 +45,7 @@ export function createPostgresNotificationListener(
     current.release(destroy);
   };
 
-  const onNotification = (message: { channel: string; payload?: string }) => {
+  const onNotification = (message: { channel: string; payload?: string | undefined }) => {
     if (message.channel !== channel || typeof message.payload !== "string") return;
     Promise.resolve(handlers.onPayload(message.payload)).catch((error: unknown) => {
       handlers.onError?.(error instanceof Error ? error : new Error("Notification handler failed"));
