@@ -893,13 +893,15 @@ function CreateRelationshipItem({
         referenceType: "media";
         referenceId: string;
         role: "attachment" | "voice_letter";
+        position: number;
       }> = [];
-      for (const draft of mediaDrafts) {
+      for (const [position, draft] of mediaDrafts.entries()) {
         const uploaded = await uploadMediaDraft(accountId, draft.draftId);
         references.push({
           referenceType: "media",
           referenceId: uploaded.media.mediaId,
           role: draft.role === "voice_letter" ? "voice_letter" : "attachment",
+          position,
         });
       }
 

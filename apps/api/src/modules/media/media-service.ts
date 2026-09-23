@@ -383,9 +383,6 @@ export class MediaService {
       if (media.uploadGeneration !== BigInt(input.expectedUploadGeneration)) {
         throw new ApiError(409, "VERSION_CONFLICT");
       }
-      if (media.uploadExpiresAt && media.uploadExpiresAt.getTime() > now.getTime()) {
-        throw new ApiError(409, "MEDIA_UPLOAD_GRANT_ACTIVE");
-      }
       const expiresAt = new Date(now.getTime() + this.#media.uploadRetentionMs);
       const generation = await refreshMediaUpload(
         transaction,

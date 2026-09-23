@@ -77,6 +77,11 @@ export async function putCiphertext(
     cache: "no-store",
     redirect: "error",
   });
+  // The upload grant is create-only. If the browser lost the successful PUT
+  // response, retrying the exact ciphertext returns 412. Treat that as a
+  // recoverable state and let /complete verify size + digest before the
+  // object becomes usable.
+  if (response.status === 412) return;
   if (!response.ok) throw new Error("MEDIA_STORAGE_UPLOAD_FAILED_" + response.status);
 }
 
