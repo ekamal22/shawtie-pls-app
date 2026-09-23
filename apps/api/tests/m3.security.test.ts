@@ -11,6 +11,11 @@ test("M3 media routes are authenticated and private no-store", async () => {
   assert.equal(routes.includes("requireAuthentication"), true);
   assert.equal(routes.includes('"cache-control", "private, no-store"'), true);
   assert.equal(routes.includes("idempotencyKey(request.headers)"), true);
+  assert.equal(routes.includes("consumeMediaRateLimit"), true);
+  assert.equal(routes.includes('"m3.media." + kind + ".account"'), true);
+  assert.equal(routes.includes('"m3.media." + kind + ".device"'), true);
+  assert.equal(routes.includes('"m3.media." + kind + ".network"'), true);
+  assert.equal(routes.includes('"rate-limit-key"'), true);
   assert.equal(routes.includes("console."), false);
   assert.equal(routes.includes("request.log"), false);
 });

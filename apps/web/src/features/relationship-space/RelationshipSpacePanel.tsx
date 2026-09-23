@@ -499,16 +499,28 @@ function ItemCard({
             <div className="media-draft-chip" key={draft.draftId}>
               <span>
                 {draft.role === "voice_letter" ? "Voice Letter" : draft.kind} ·{" "}
-                {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted
+                {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted · {draft.state}
               </span>
-              <button
-                type="button"
-                className="link compact"
-                disabled={busy || mediaBusy}
-                onClick={() => void removeMediaDraft(draft.draftId)}
-              >
-                remove
-              </button>
+              <span className="media-draft-actions">
+                {draft.state === "failed" ? (
+                  <button
+                    type="button"
+                    className="secondary compact"
+                    disabled={busy || mediaBusy || !navigator.onLine}
+                    onClick={() => void retryMediaDraft(draft.draftId)}
+                  >
+                    Retry upload
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="link compact"
+                  disabled={busy || mediaBusy}
+                  onClick={() => void removeMediaDraft(draft.draftId)}
+                >
+                  remove
+                </button>
+              </span>
             </div>
           ))}
         </div>
@@ -685,6 +697,22 @@ function CreateRelationshipItem({
           ? "Voice Letter prepared."
           : "Voice Letter encrypted locally. Connect before creating the relationship item.",
       );
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  async function retryMediaDraft(draftId: string) {
+    if (!navigator.onLine) return;
+    setMediaBusy(true);
+    setError("");
+    try {
+      await uploadMediaDraft(accountId, draftId);
+      await refreshMediaDrafts();
+      setNotice("Protected media upload is ready to bind.");
+    } catch (caught) {
+      await refreshMediaDrafts().catch(() => undefined);
+      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media retry failed.");
     } finally {
       setMediaBusy(false);
     }

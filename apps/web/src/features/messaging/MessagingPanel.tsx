@@ -258,6 +258,22 @@ export function MessagingPanel() {
     }
   }
 
+  async function retryDraft(draftId: string) {
+    if (!conversation || !navigator.onLine) return;
+    setMediaBusy(true);
+    setError("");
+    try {
+      await uploadMediaDraft(runtime.accountId, draftId);
+      await refreshMediaDrafts(conversation.partnershipId);
+      setNotice("Protected attachment upload is ready to bind.");
+    } catch (caught) {
+      await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
+      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media retry failed.");
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
   async function removeDraft(draftId: string) {
     if (!conversation) return;
     setMediaBusy(true);
@@ -1313,16 +1329,28 @@ export function MessagingPanel() {
           {mediaDrafts.map((draft) => (
             <div className="media-draft-chip" key={draft.draftId}>
               <span>
-                {draft.kind.replace("_", " ")} · {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted
+                {draft.kind.replace("_", " ")} · {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted · {draft.state}
               </span>
-              <button
-                type="button"
-                className="link compact"
-                disabled={mediaBusy || busy}
-                onClick={() => void removeDraft(draft.draftId)}
-              >
-                remove
-              </button>
+              <span className="media-draft-actions">
+                {draft.state === "failed" ? (
+                  <button
+                    type="button"
+                    className="secondary compact"
+                    disabled={mediaBusy || busy || !navigator.onLine}
+                    onClick={() => void retryDraft(draft.draftId)}
+                  >
+                    Retry upload
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="link compact"
+                  disabled={mediaBusy || busy}
+                  onClick={() => void removeDraft(draft.draftId)}
+                >
+                  remove
+                </button>
+              </span>
             </div>
           ))}
         </div>

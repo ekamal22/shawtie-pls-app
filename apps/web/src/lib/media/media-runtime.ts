@@ -16,6 +16,7 @@ import {
   deleteUnboundMedia,
   getCiphertext,
   putCiphertext,
+  refreshMediaUpload,
   requestMediaAccess,
 } from "./media-api.ts";
 import {
@@ -99,8 +100,7 @@ async function canvasBlob(
   return blob;
 }
 
-async function processImage(file: File): Promise<Blob> {
-  if (file.size > M3_IMAGE_SOURCE_MAX_BYTES) throw new Error("MEDIA_POLICY_VIOLATION");
+async function processImageOnMainThread(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   try {
     const scale = Math.min(1, M3_IMAGE_LONGEST_EDGE_MAX / Math.max(bitmap.width, bitmap.height));
@@ -113,6 +113,44 @@ async function processImage(file: File): Promise<Blob> {
   } finally {
     bitmap.close();
   }
+}
+
+async function processImage(file: File): Promise<Blob> {
+  if (file.size > M3_IMAGE_SOURCE_MAX_BYTES) throw new Error("MEDIA_POLICY_VIOLATION");
+
+  if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined") {
+    try {
+      const worker = new Worker(new URL("./image-worker.ts", import.meta.url), { type: "module" });
+      try {
+        return await new Promise<Blob>((resolve, reject) => {
+          const timer = window.setTimeout(() => reject(new Error("IMAGE_PROCESSING_TIMEOUT")), 20_000);
+          worker.onmessage = (event: MessageEvent<{ ok: boolean; blob?: Blob; error?: string }>) => {
+            window.clearTimeout(timer);
+            if (event.data.ok && event.data.blob) resolve(event.data.blob);
+            else reject(new Error(event.data.error ?? "IMAGE_PROCESSING_FAILED"));
+          };
+          worker.onerror = () => {
+            window.clearTimeout(timer);
+            reject(new Error("IMAGE_PROCESSING_WORKER_FAILED"));
+          };
+          worker.postMessage({
+            file,
+            maxEdge: M3_IMAGE_LONGEST_EDGE_MAX,
+            targetBytes: IMAGE_TARGET_BYTES,
+            maxBytes: M3_IMAGE_SOURCE_MAX_BYTES,
+          });
+        });
+      } finally {
+        worker.terminate();
+      }
+    } catch (caught) {
+      if (caught instanceof Error && caught.message === "MEDIA_POLICY_VIOLATION") throw caught;
+      // Older browsers may not expose OffscreenCanvas in workers. The fallback
+      // preserves the same metadata-stripping canvas re-encode semantics.
+    }
+  }
+
+  return processImageOnMainThread(file);
 }
 
 async function validateAndProcess(
@@ -191,20 +229,65 @@ export async function uploadMediaDraft(
 ): Promise<{ readonly draft: LocalMediaDraft; readonly media: MediaServerProjection }> {
   const draft = await loadMediaDraft(accountId, draftId);
   if (!draft) throw new Error("MEDIA_DRAFT_NOT_FOUND");
-  const uploading: LocalMediaDraft = { ...draft, state: "uploading", updatedAt: Date.now(), errorCode: null };
+
+  async function markReady(media: MediaServerProjection): Promise<{
+    readonly draft: LocalMediaDraft;
+    readonly media: MediaServerProjection;
+  }> {
+    const ready: LocalMediaDraft = {
+      ...draft,
+      mediaId: media.mediaId,
+      uploadGeneration: media.uploadGeneration,
+      state: "ready",
+      updatedAt: Date.now(),
+      errorCode: null,
+    };
+    await saveMediaDraft(ready);
+    return { draft: ready, media };
+  }
+
+  // Ambiguous network failures can happen after PUT or /complete succeeds.
+  // Probe canonical completion first for any draft that already has a server ID.
+  // If the object is missing/mismatched, rotate the grant and retry the exact
+  // persisted ciphertext below.
+  if (draft.mediaId && draft.uploadGeneration) {
+    try {
+      const completed = await completeMediaUpload(draft.mediaId, {
+        expectedUploadGeneration: draft.uploadGeneration,
+      });
+      return markReady(completed);
+    } catch {
+      // Continue into refresh/retry. Authorization and lifecycle failures will
+      // fail closed again when refresh is attempted.
+    }
+  }
+
+  const uploading: LocalMediaDraft = {
+    ...draft,
+    state: "uploading",
+    updatedAt: Date.now(),
+    errorCode: null,
+  };
   await saveMediaDraft(uploading);
+
   try {
-    const grant = await createMediaUpload(
-      {
-        kind: draft.kind,
-        formatCode: draft.formatCode,
-        ciphertextBytes: draft.ciphertextBytes,
-        ciphertextSha256: draft.ciphertextSha256,
-        cryptoProtocolVersion: draft.cryptoProtocolVersion,
-        durationSeconds: draft.durationSeconds,
-      },
-      draft.idempotencyKey,
-    );
+    const grant =
+      draft.mediaId && draft.uploadGeneration
+        ? await refreshMediaUpload(draft.mediaId, {
+            expectedUploadGeneration: draft.uploadGeneration,
+          })
+        : await createMediaUpload(
+            {
+              kind: draft.kind,
+              formatCode: draft.formatCode,
+              ciphertextBytes: draft.ciphertextBytes,
+              ciphertextSha256: draft.ciphertextSha256,
+              cryptoProtocolVersion: draft.cryptoProtocolVersion,
+              durationSeconds: draft.durationSeconds,
+            },
+            draft.idempotencyKey,
+          );
+
     const withServer: LocalMediaDraft = {
       ...uploading,
       mediaId: grant.mediaId,
@@ -213,27 +296,19 @@ export async function uploadMediaDraft(
     };
     await saveMediaDraft(withServer);
 
-    let media: MediaServerProjection;
     if (grant.state === "ready_unbound") {
-      media = grant;
-    } else {
-      await putCiphertext(grant, draft.ciphertext);
-      media = await completeMediaUpload(grant.mediaId, {
-        expectedUploadGeneration: grant.uploadGeneration,
-      });
+      return markReady(grant);
     }
-    const ready: LocalMediaDraft = {
-      ...withServer,
-      mediaId: media.mediaId,
-      uploadGeneration: media.uploadGeneration,
-      state: "ready",
-      updatedAt: Date.now(),
-    };
-    await saveMediaDraft(ready);
-    return { draft: ready, media };
+
+    await putCiphertext(grant, draft.ciphertext);
+    const media = await completeMediaUpload(grant.mediaId, {
+      expectedUploadGeneration: grant.uploadGeneration,
+    });
+    return markReady(media);
   } catch (error) {
+    const latest = await loadMediaDraft(accountId, draftId).catch(() => null);
     await saveMediaDraft({
-      ...uploading,
+      ...(latest ?? uploading),
       state: "failed",
       updatedAt: Date.now(),
       errorCode: error instanceof Error ? error.message.slice(0, 128) : "MEDIA_UPLOAD_FAILED",

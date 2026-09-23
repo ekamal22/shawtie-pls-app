@@ -55,11 +55,31 @@ test("M3 R1 media remains online-only under M2 replay safety policy", async () =
   assert.equal(relationship.includes("position,"), true);
 });
 
-test("M3 voice recorder releases microphone tracks on cancel/unmount", async () => {
+test("M3 voice recorder previews before send and releases microphone tracks", async () => {
   const recorder = await source("../src/features/media/VoiceRecorder.tsx");
   assert.equal(recorder.includes("getTracks().forEach((track) => track.stop())"), true);
-  assert.equal(recorder.includes("useEffect(() => cleanup, [])"), true);
+  assert.equal(recorder.includes('"preview"'), true);
+  assert.equal(recorder.includes("Preview before sending"), true);
+  assert.equal(recorder.includes("URL.createObjectURL"), true);
+  assert.equal(recorder.includes("URL.revokeObjectURL"), true);
   assert.equal(recorder.includes("10 * 60_000"), true);
+});
+
+test("M3 failed upload retry probes completion then rotates the grant", async () => {
+  const runtime = await source("../src/lib/media/media-runtime.ts");
+  const messaging = await source("../src/features/messaging/MessagingPanel.tsx");
+  assert.ok(runtime.indexOf("completeMediaUpload") < runtime.indexOf("refreshMediaUpload"));
+  assert.equal(runtime.includes("refreshMediaUpload(draft.mediaId"), true);
+  assert.equal(messaging.includes("Retry upload"), true);
+});
+
+test("M3 image re-encoding prefers a worker and keeps a metadata-stripping fallback", async () => {
+  const runtime = await source("../src/lib/media/media-runtime.ts");
+  const worker = await source("../src/lib/media/image-worker.ts");
+  assert.equal(runtime.includes('new Worker(new URL("./image-worker.ts"'), true);
+  assert.equal(worker.includes("OffscreenCanvas"), true);
+  assert.equal(worker.includes('type: "image/webp"'), true);
+  assert.equal(runtime.includes("processImageOnMainThread"), true);
 });
 
 test("M3 downloaded plaintext is short-lived and format revalidated", async () => {

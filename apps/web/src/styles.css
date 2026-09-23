@@ -837,3 +837,21 @@ button:disabled {
   border-top: 1px solid #eee8f0;
   padding-top: 10px;
 }
+
+
+.media-draft-actions,
+.voice-preview {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.voice-preview {
+  width: 100%;
+}
+
+.voice-preview audio {
+  min-width: min(280px, 100%);
+  flex: 1 1 280px;
+}
