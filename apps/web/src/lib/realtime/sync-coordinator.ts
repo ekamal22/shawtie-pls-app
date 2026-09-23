@@ -117,7 +117,15 @@ export class SyncCoordinator {
 
       let observedChangeSequence = 0;
       try {
-        for (const synchronizer of this.#reconcilers.values()) {
+        // Snapshot the registered synchronizers before iterating. A
+        // reconciler's own completion commonly triggers a React state update
+        // that causes its owning component to re-register itself (tear down
+        // and set up again) with a new closure under the same name. Iterating
+        // the live Map directly is vulnerable to that: Map iterators visit
+        // entries inserted during iteration, so a reconciler re-registering
+        // itself while this loop is still running caused this pass to revisit
+        // it indefinitely and never reach the replay phase below.
+        for (const synchronizer of [...this.#reconcilers.values()]) {
           const result = await synchronizer();
           if (this.#stopped) return;
           if (result?.latestChangeSequence !== undefined) {
@@ -131,7 +139,7 @@ export class SyncCoordinator {
 
         if (dirtyAfterReconcile || behindHint) continue;
 
-        for (const replayer of this.#replayers.values()) {
+        for (const replayer of [...this.#replayers.values()]) {
           await replayer();
           if (this.#stopped) return;
         }

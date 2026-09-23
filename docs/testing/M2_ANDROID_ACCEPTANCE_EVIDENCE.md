@@ -67,11 +67,88 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 2: background/suspend and recovery
 
-- Status: pending
+- SHA: `87f3a4009fc64776b9eb80c8d0a0564cbdeb7505`
+- UTC timestamp: 2026-09-23T08:02Z
+- Result: **PASS**
+- Setup: Alice foregrounded and connected, then sent to the background with
+  a real `KEYCODE_HOME` event through ADB (the Android launcher became the
+  foreground activity, confirmed via `dumpsys window`). While backgrounded,
+  the USB-forwarded local connection was removed with
+  `adb reverse --remove tcp:4174` to force a real loss of reachability, not
+  just a simulated offline flag.
+- Action: while Alice was backgrounded and disconnected, Bob sent a second
+  message through the real HTTP API.
+- Observed behavior: connectivity was restored
+  (`adb reverse tcp:4174 tcp:4174`) and Chrome was foregrounded again with a
+  real launcher intent (`monkey -c android.intent.category.LAUNCHER`),
+  resuming the same tab rather than opening a new one. Within 2 seconds the
+  app reconnected, resynced, and rendered the message that was sent while
+  backgrounded, with no duplicate of the scenario 1 message and no stale
+  state.
+- Evidence: `validation-logs/screenshots/scenario2-background-recovery.png`
 
 ### Scenario 3: offline message retry
 
-- Status: pending
+- SHA at defect discovery: `87f3a4009fc64776b9eb80c8d0a0564cbdeb7505`
+- SHA after fix: `ac70dd4` (`feat/m2-realtime-offline`), plus one additional
+  follow-up fix on top described below
+- UTC timestamp of final passing evidence: 2026-09-23T08:54Z
+- Result: **PASS** (after fixing three real production defects found by this
+  scenario)
+- Setup: Alice foregrounded, USB-forwarded connectivity removed with
+  `adb reverse --remove tcp:4174`, then a message was composed and sent
+  through the real chat UI (native input events into the message textarea
+  and a real click on Send, not a direct API call).
+- First observed behavior (defect): the message was correctly persisted into
+  the real IndexedDB `chatOutbox` store with `status: "queued"`. After
+  restoring connectivity, the queue did not drain: not after waiting past
+  the 60 second anti-entropy interval, not after a live message from the
+  partner was successfully delivered over the realtime socket, and not after
+  a full page reload. The message stayed stuck with `retryCount: 0` and no
+  claim ever attempted.
+- Root cause investigation found three compounding real defects in
+  `apps/web/src/lib/realtime/sync-coordinator.ts` and
+  `apps/web/src/features/messaging/MessagingPanel.tsx`:
+  1. `SyncCoordinator.stop()` permanently set an internal stopped flag with
+     no way to reset it, and cleared the registered offline-replay
+     replayer, which was only ever registered once in `M2Runtime`'s
+     constructor. Any stop-then-start cycle on the same runtime instance
+     (for example React StrictMode's development mount/cleanup/mount
+     double-invoke) left every future sync request a silent no-op forever.
+  2. The reconcile/replay pass loop had no error handling, so a single
+     thrown error silently aborted a sync pass with no retry scheduled.
+  3. The messaging reconciler unconditionally re-POSTed delivery/read
+     receipts on every pass. Acknowledging a receipt broadcasts a
+     `conversation.receipt_changed` realtime frame back to the acknowledging
+     client's own socket, which requested another sync pass that
+     acknowledged again, forever.
+  4. After fixing 1 to 3, physical retesting still failed to drain the
+     queue. Further investigation found a fourth, independent defect: the
+     messaging reconciler function's `useCallback` dependencies included
+     the `conversation`/`messages` state that the reconciler itself updates,
+     so completing one reconcile pass re-rendered the owning component and
+     caused it to unregister and re-register the same named synchronizer
+     with a new closure. `SyncCoordinator` iterated its registered
+     synchronizers directly off the live `Map`, and a `Map` iterator
+     revisits keys that are deleted and reinserted during iteration, so the
+     reconcile phase revisited the messaging reconciler indefinitely and
+     never reached the replay phase.
+- Fixes applied: added `SyncCoordinator.resume()` and had `M2Runtime.start()`
+  call it and re-register the offline-replay replayer on every start; wrapped
+  the reconcile/replay loop in a try/catch that schedules a backoff retry
+  instead of stranding work; made receipt acknowledgment only POST when it
+  actually advances past what the server has on record; and snapshotted the
+  reconcilers/replayers collections before iterating each pass so
+  registration churn during a pass cannot cause it to be revisited. Focused
+  regression tests were added to `apps/web/tests/m2.sync.test.ts` covering
+  the resume cycle, reconciler/replayer failure retry, and a reconciler that
+  re-registers itself mid-pass (this test hangs forever without the fix,
+  confirmed by reverting the fix locally and observing the test time out).
+- Final retest on the physical Redmi Note 9S: a fresh offline-queued message
+  drained automatically within 3 seconds of connectivity being restored,
+  with exactly one durable message created server-side (no duplicates) and
+  the UI converged to canonical state.
+- Evidence: `validation-logs/screenshots/scenario3-offline-retry-clean.png`
 
 ### Scenario 4: offline edit/delete/reaction authority replay
 

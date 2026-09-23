@@ -19,6 +19,44 @@ test("M2 coordinator closes the dirty-counter barrier before live", async () => 
   assert.equal(calls, 2);
 });
 
+test("M2 coordinator does not revisit a reconciler that re-registers itself mid-pass", async () => {
+  const coordinator = new SyncCoordinator();
+  let calls = 0;
+  let replayed = 0;
+  let unregister: (() => void) | null = null;
+
+  function registerMessaging() {
+    unregister = coordinator.register("messaging", async () => {
+      calls += 1;
+      // Simulate a React effect cleanup-then-rerun cycle: the reconciler's
+      // own completion triggers a state update, the owning component
+      // re-renders, its effect tears down the old registration and sets up
+      // a new one with a fresh closure under the same name, exactly as
+      // MessagingPanel's unstable useCallback deps did. Unregistering then
+      // registering (rather than merely overwriting) removes and reinserts
+      // the map key, which is what made a live Map iterator revisit it.
+      unregister?.();
+      registerMessaging();
+      return { latestChangeSequence: 1 };
+    });
+  }
+  registerMessaging();
+  coordinator.register(
+    "outbox",
+    async () => {
+      replayed += 1;
+    },
+    "replay",
+  );
+
+  coordinator.markDirty(1);
+  await coordinator.requestSync();
+
+  assert.equal(calls, 1, "a reconciler that re-registers itself must only run once per pass");
+  assert.equal(replayed, 1, "replay must still run once the reconcile pass completes");
+  assert.equal(coordinator.status, "live");
+});
+
 test("M2 coordinator runs replay only after a clean reconcile pass", async () => {
   const coordinator = new SyncCoordinator();
   const order: string[] = [];
