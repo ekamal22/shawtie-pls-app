@@ -50,6 +50,8 @@ export class CallMediaSession {
   #polite = false;
   #endpointReported = false;
   #restartAttempts = 0;
+  #turnRefreshTimer: number | null = null;
+  #turnRefreshPromise: Promise<void> | null = null;
   #muted = false;
 
   constructor(
@@ -92,6 +94,7 @@ export class CallMediaSession {
       ],
     });
     this.#peer = peer;
+    this.#scheduleTurnRefresh(turn.expiresAt);
 
     for (const track of this.localStream.getAudioTracks()) {
       peer.addTrack(track, this.localStream);
@@ -135,12 +138,7 @@ export class CallMediaSession {
       }
       if (state === "failed" && this.#restartAttempts < 3) {
         this.#restartAttempts += 1;
-        try {
-          peer.restartIce();
-          this.#send("signal.restart", {});
-        } catch {
-          this.callbacks.onError("Call network recovery failed.");
-        }
+        void this.#refreshTurnAndRestart(true);
       }
     });
 
@@ -172,6 +170,10 @@ export class CallMediaSession {
       window.clearTimeout(this.#reconnectTimer);
       this.#reconnectTimer = null;
     }
+    if (this.#turnRefreshTimer !== null) {
+      window.clearTimeout(this.#turnRefreshTimer);
+      this.#turnRefreshTimer = null;
+    }
     const socket = this.#socket;
     this.#socket = null;
     if (socket && socket.readyState < WebSocket.CLOSING) {
@@ -198,7 +200,9 @@ export class CallMediaSession {
       this.#reconnectAttempt = 0;
     });
     socket.addEventListener("message", (event) => {
-      void this.#onSignal(event.data);
+      void this.#onSignal(event.data).catch(() => {
+        this.callbacks.onError("Call signaling failed.");
+      });
     });
     socket.addEventListener("close", () => {
       if (this.#stopped || this.#socket !== socket) return;
@@ -306,8 +310,54 @@ export class CallMediaSession {
     }
 
     if (frame.type === "signal.restart") {
-      this.#peer.restartIce();
-      if (!this.#polite) await this.#negotiate();
+      await this.#refreshTurnAndRestart(false);
+    }
+  }
+
+  #scheduleTurnRefresh(expiresAt: string): void {
+    if (this.#turnRefreshTimer !== null) {
+      window.clearTimeout(this.#turnRefreshTimer);
+      this.#turnRefreshTimer = null;
+    }
+    const expiresAtMs = Date.parse(expiresAt);
+    if (!Number.isFinite(expiresAtMs)) return;
+    const remainingMs = expiresAtMs - Date.now();
+    if (remainingMs <= 0) return;
+    const delay = Math.max(1_000, Math.floor(remainingMs * 0.8));
+    this.#turnRefreshTimer = window.setTimeout(() => {
+      this.#turnRefreshTimer = null;
+      void this.#refreshTurnAndRestart(true);
+    }, delay);
+  }
+
+  async #refreshTurnAndRestart(announce: boolean): Promise<void> {
+    if (this.#turnRefreshPromise) return this.#turnRefreshPromise;
+    const task = (async () => {
+      const peer = this.#peer;
+      if (this.#stopped || !peer) return;
+      const turn = await fetchTurnCredentials(this.callId);
+      if (this.#stopped || this.#peer !== peer) return;
+      peer.setConfiguration({
+        iceTransportPolicy: "relay",
+        iceServers: [
+          {
+            urls: [...turn.urls],
+            username: turn.username,
+            credential: turn.credential,
+          },
+        ],
+      });
+      this.#scheduleTurnRefresh(turn.expiresAt);
+      peer.restartIce();
+      if (announce) this.#send("signal.restart", {});
+    })();
+    this.#turnRefreshPromise = task;
+    try {
+      await task;
+    } catch {
+      this.callbacks.onError("Call network recovery failed.");
+    } finally {
+      if (this.#turnRefreshPromise === task) this.#turnRefreshPromise = null;
     }
   }
 
