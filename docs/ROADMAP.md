@@ -418,7 +418,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 - caller device is fixed; first eligible callee device to accept wins
 - Web Push provides generic background wakeup; foreground calling works without push permission through realtime v2
 - PostgreSQL owns durable call state, version, selected endpoints, deadlines, and history
-- ring, connect, and hard timeout work is version/generation fenced
+- ring, connect, and hard timeout work is fenced by independent `deadline_generation`
 - signaling/WebRTC state remains transient
 - no Redis is introduced; multi-instance signaling requires verified call-ID affinity or a later ADR
 - S1 later reviews cryptographic endpoint identity binding

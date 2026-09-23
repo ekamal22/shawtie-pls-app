@@ -33,7 +33,7 @@ The signaling socket:
 - derives account and device from the session
 - derives partnership and call role from PostgreSQL
 - opens only after explicit call acceptance
-- authorizes only caller_device_id or accepted_callee_device_id
+- authorizes only the endpoint device resolved from the caller or accepted-callee `call_participants` role row
 - never persists SDP or ICE
 - never logs frame bodies
 - uses bounded frames and rate limits

@@ -287,7 +287,7 @@ Incoming call notification may reach every current authorized device for the cal
 
 Acceptance is serialized transactionally.
 
-The first eligible device to commit acceptance becomes accepted_callee_device_id.
+The first eligible device to commit acceptance atomically fills the callee participant's `endpoint_device_id`.
 
 Later acceptance attempts return call_already_answered.
 
@@ -495,12 +495,12 @@ The database remains the final serialization boundary.
 
 ## Signaling lifecycle
 
-The signaling socket may open only after accepted_callee_device_id is set.
+The signaling socket may open only after the callee participant's `endpoint_device_id` is selected.
 
 Upgrade authorization verifies that the current device is either:
 
-- caller_device_id for caller_account_id
-- accepted_callee_device_id for callee_account_id
+- caller participant `endpoint_device_id` for the caller account
+- callee participant `endpoint_device_id` for the callee account
 
 One call signaling connection per selected device is active at a time.
 

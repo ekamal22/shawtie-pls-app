@@ -34,7 +34,7 @@ The signaling WebSocket is accepted only when:
 - device is current
 - call exists in the current partnership
 - call is accepted or connected
-- current device is caller_device_id or accepted_callee_device_id
+- current device matches the selected `endpoint_device_id` on its caller/callee participant role row
 - the client offered exactly one WebSocket application subprotocol and it is `shawtie.call.v1`
 - the call route verifies the negotiated socket protocol is exactly `shawtie.call.v1`
 - connection and abuse policy allow the upgrade

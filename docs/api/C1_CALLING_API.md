@@ -88,7 +88,7 @@ Rules:
 
 - current account must belong to expectedPartnershipId
 - expectedPartnershipId is a stale-namespace guard, not authorization input
-- the current authenticated device becomes caller_device_id
+- the current authenticated device is persisted as the caller participant's fixed `endpoint_device_id`
 - server derives the callee account
 - current lifecycle must permit calling
 - no other non-terminal call may exist for the partnership
@@ -181,7 +181,7 @@ Rules:
 - current authenticated device must be active and eligible
 - call must still be ringing and unexpired
 - lifecycle capability is re-evaluated
-- accepted_callee_device_id is set atomically
+- the callee participant's `endpoint_device_id` is set atomically and only once
 - accepted_at uses trusted server time
 - version increments
 - ring-timeout work becomes stale through state/version checks
@@ -205,7 +205,7 @@ Request:
 }
 ~~~
 
-The server transitions the call to ended with terminalReason rejected.
+The server transitions the call to ended with internal terminal reason `rejected`; the public projection exposes outcome `rejected`.
 
 ## POST /api/v1/calls/:callId/cancel
 
