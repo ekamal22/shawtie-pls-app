@@ -1169,4 +1169,170 @@ BEGIN
 END;
 $$;
 
+-- C1 voice-calling invariants.
+INSERT INTO account_devices (
+  id, account_id, display_name, created_at
+) VALUES (
+  '70000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000002',
+  'Beta Device',
+  now()
+);
+
+INSERT INTO account_sessions (
+  id, account_id, device_id, token_verifier, created_at, expires_at, idle_expires_at
+) VALUES
+  (
+    '71100000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '70000000-0000-0000-0000-000000000001',
+    decode('11', 'hex'),
+    now(),
+    now() + interval '1 hour',
+    now() + interval '1 hour'
+  ),
+  (
+    '71100000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '70000000-0000-0000-0000-000000000002',
+    decode('12', 'hex'),
+    now(),
+    now() + interval '1 hour',
+    now() + interval '1 hour'
+  );
+
+INSERT INTO call_sessions (
+  id, partnership_id, initiated_by_account_id, call_type, status,
+  ring_expires_at, created_at, updated_at
+) VALUES (
+  '90000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'voice',
+  'ringing',
+  now() + interval '1 minute',
+  now(),
+  now()
+);
+
+INSERT INTO call_participants (
+  call_session_id, partnership_id, account_id, role,
+  endpoint_device_id, endpoint_session_id, accepted_at
+) VALUES
+  (
+    '90000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    'caller',
+    '70000000-0000-0000-0000-000000000001',
+    '71100000-0000-0000-0000-000000000001',
+    now()
+  ),
+  (
+    '90000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    'callee',
+    NULL,
+    NULL,
+    NULL
+  );
+
+SET CONSTRAINTS call_participants_exact_roles IMMEDIATE;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO call_sessions (
+      id, partnership_id, initiated_by_account_id, call_type, status,
+      ring_expires_at, created_at, updated_at
+    ) VALUES (
+      '90000000-0000-4000-8000-000000000002',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      'voice',
+      'ringing',
+      now() + interval '1 minute',
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected one non-terminal call per partnership violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO call_sessions (
+      id, partnership_id, initiated_by_account_id, call_type, status,
+      ended_at, created_at, updated_at
+    ) VALUES (
+      '90000000-0000-4000-8000-000000000003',
+      '20000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000001',
+      'voice',
+      'ended',
+      now(),
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected terminal call shape violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO push_subscriptions (
+      device_id, account_id, endpoint, p256dh, auth
+    ) VALUES (
+      '70000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      'https://push.example.test/mismatched',
+      'test-p256dh',
+      'test-auth'
+    );
+    RAISE EXCEPTION 'expected push device ownership violation';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$$;
+
+INSERT INTO call_events (
+  id, call_session_id, partnership_id, event_type, actor_account_id,
+  call_version, metadata_json, created_at
+) VALUES (
+  '90100000-0000-4000-8000-000000000001',
+  '90000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  'created',
+  '00000000-0000-0000-0000-000000000001',
+  1,
+  '{}'::jsonb,
+  now()
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE call_events
+    SET event_type = 'mutated'
+    WHERE id = '90100000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected call event append-only rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'call_events rows are append-only while retained' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
 ROLLBACK;
