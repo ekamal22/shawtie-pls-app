@@ -48,6 +48,7 @@ import {
   resetRateLimitBucket,
   revokeAllSessionsForAccount,
   revokeDevice,
+  revokePushSubscriptionForDevice,
   revokeSession,
   rotateDeviceHandle,
   rotateSessionToken,
@@ -606,6 +607,14 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       await revokeSession(transaction, auth.session.sessionId, now);
+      if (auth.session.deviceId) {
+        await revokePushSubscriptionForDevice(
+          transaction,
+          auth.session.deviceId,
+          auth.session.accountId,
+          now,
+        );
+      }
       await appendSecurityEvent(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,
@@ -1348,6 +1357,12 @@ export class AccountService {
       await this.#assertSession(transaction, auth);
       const revoked = await revokeDevice(transaction, auth.session.accountId, deviceId, now);
       if (!revoked) return null;
+      await revokePushSubscriptionForDevice(
+        transaction,
+        deviceId,
+        auth.session.accountId,
+        now,
+      );
       await appendSecurityEvent(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,

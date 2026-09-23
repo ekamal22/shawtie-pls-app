@@ -134,7 +134,10 @@ DECLARE
   caller_count integer;
   callee_count integer;
 BEGIN
-  target_call_id := COALESCE(NEW.call_session_id, OLD.call_session_id);
+  target_call_id := CASE
+    WHEN TG_OP = 'DELETE' THEN OLD.call_session_id
+    ELSE NEW.call_session_id
+  END;
 
   SELECT EXISTS(SELECT 1 FROM call_sessions WHERE id = target_call_id)
   INTO parent_exists;
@@ -156,7 +159,23 @@ BEGIN
       MESSAGE = 'call must contain exactly one caller and one callee';
   END IF;
 
-  RETURN COALESCE(NEW, OLD);
+  IF EXISTS (
+    SELECT 1
+    FROM call_participants participant
+    JOIN call_sessions session ON session.id = participant.call_session_id
+    WHERE participant.call_session_id = target_call_id
+      AND participant.role = 'caller'
+      AND (
+        participant.endpoint_device_id IS NULL
+        OR participant.account_id <> session.initiated_by_account_id
+      )
+  ) THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '23514',
+      MESSAGE = 'call caller participant must own the initiating endpoint';
+  END IF;
+
+  RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
 END;
 $$;
 

@@ -5,6 +5,7 @@ import {
   C1_REALTIME_SUBPROTOCOL,
   C1_SIGNALING_MAX_FRAME_BYTES,
   C1_SIGNALING_SUBPROTOCOL,
+  M2_REALTIME_MAX_FRAME_BYTES,
   M2_REALTIME_SUBPROTOCOL,
 } from "@shawtie/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
@@ -67,7 +68,7 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
   app.register(cookie);
   app.register(websocket, {
     options: {
-      maxPayload: C1_SIGNALING_MAX_FRAME_BYTES,
+      maxPayload: Math.max(C1_SIGNALING_MAX_FRAME_BYTES, M2_REALTIME_MAX_FRAME_BYTES),
       perMessageDeflate: false,
       handleProtocols(protocols) {
         if (protocols.size !== 1) return false;

@@ -450,7 +450,14 @@ export async function loadCallEndpointAuthorization(
        AND session.status IN ('accepted','connected')
        AND partnership.lifecycle_state IN ('active','breakup_pending')
        AND account.status='active'
-       AND device.revoked_at IS NULL`,
+       AND device.revoked_at IS NULL
+       AND NOT EXISTS (
+         SELECT 1
+         FROM call_participants other_participant
+         JOIN accounts other_account ON other_account.id=other_participant.account_id
+         WHERE other_participant.call_session_id=session.id
+           AND other_account.status <> 'active'
+       )`,
     [input.callId, input.accountId, input.deviceId],
   );
   const row = result.rows[0];
