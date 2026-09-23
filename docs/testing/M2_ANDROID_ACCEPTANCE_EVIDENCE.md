@@ -9,7 +9,7 @@ procedure and closure-rule document.
 
 All 14 of 14 mandatory physical Android scenarios are recorded PASS. Final
 physical acceptance SHA: `b83102f` on `feat/m2-realtime-offline`. Executing
-these scenarios found and fixed five real defects in the M2 realtime/offline
+these scenarios found and fixed seven real defects in the M2 realtime/offline
 implementation, each with a focused regression test, described in the
 scenario entries below and in that branch's commit history.
 
@@ -101,7 +101,7 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 - SHA after fix: `ac70dd4` (`feat/m2-realtime-offline`), plus one additional
   follow-up fix on top described below
 - UTC timestamp of final passing evidence: 2026-09-23T08:54Z
-- Result: **PASS** (after fixing three real production defects found by this
+- Result: **PASS** (after fixing four real production defects found by this
   scenario)
 - Setup: Alice foregrounded, USB-forwarded connectivity removed with
   `adb reverse --remove tcp:4174`, then a message was composed and sent

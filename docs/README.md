@@ -23,7 +23,7 @@ Frozen means implementation should proceed against the accepted baseline unless 
 
 ## Current implementation frontier
 
-M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`, not yet merged to `main`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed five real M2 defects not caught by the automated/local closure, each with a focused regression test.
+M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`, not yet merged to `main`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test.
 
 This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
 

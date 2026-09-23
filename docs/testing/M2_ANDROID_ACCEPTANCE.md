@@ -1,6 +1,6 @@
 # M2 Physical Android Acceptance
 
-Status: M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical-device scenarios have now been executed and passed on a physical Xiaomi Redmi Note 9S (Android 12), with recorded evidence in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. Executing these scenarios found and fixed five real M2 defects (see that document and the `feat/m2-realtime-offline` commit history ending at `b83102f`); M2 is DONE.
+Status: M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical-device scenarios have now been executed and passed on a physical Xiaomi Redmi Note 9S (Android 12), with recorded evidence in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. Executing these scenarios found and fixed seven real M2 defects (see that document and the `feat/m2-realtime-offline` commit history ending at `b83102f`); M2 is DONE.
 
 ## Purpose
 
@@ -99,7 +99,7 @@ M2 is DONE now that:
 - every mandatory physical Android scenario above has recorded passing evidence, in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - final evidence documentation is reconciled without overstating unexecuted checks
 
-Physical acceptance found and fixed five real defects in the M2 realtime/offline
+Physical acceptance found and fixed seven real defects in the M2 realtime/offline
 implementation that the prior automated/local closure did not catch (a
 sync coordinator that could never resume after being stopped and
 restarted, a receipt-acknowledgement realtime echo loop, a sync pass that

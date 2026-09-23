@@ -1118,7 +1118,7 @@ Realtime protocol:
 
 Design state:
 
-Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The canonical run applied migrations 0001 through 0014 with `reserved=0`, passed database invariants, passed the PostgreSQL/API/worker matrix 100/100 with `M2_LOCAL_POSTGRES_PASS`, passed real Chromium 7/7 with `M2_LOCAL_BROWSER_PASS`, passed full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, reported 0 vulnerabilities, passed diff and worktree hygiene, and ended with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android scenarios subsequently executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f` on `feat/m2-realtime-offline`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed five real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE; it has not yet been merged to `main`.
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The canonical run applied migrations 0001 through 0014 with `reserved=0`, passed database invariants, passed the PostgreSQL/API/worker matrix 100/100 with `M2_LOCAL_POSTGRES_PASS`, passed real Chromium 7/7 with `M2_LOCAL_BROWSER_PASS`, passed full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, reported 0 vulnerabilities, passed diff and worktree hygiene, and ended with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android scenarios subsequently executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f` on `feat/m2-realtime-offline`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE; it has not yet been merged to `main`.
 
 ## Scope
 
@@ -1162,7 +1162,7 @@ Implemented source currently includes:
 - strict `test:m2:closure` wrapper enforcing branch/SHA policy, `[skip ci]`, Unicode-em-dash exclusion, local acceptance, full health, audit, diff hygiene, and final worktree cleanliness
 - Android preflight/evidence harness plus `docs/testing/M2_ANDROID_ACCEPTANCE.md`
 
-Implementation and all feasible automated/local acceptance gates are verified at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. Physical Android acceptance remains mandatory, and M2 is not merge-ready until that final device gate closes.
+Implementation and all automated/local acceptance gates are verified at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. Physical Android acceptance subsequently passed 14/14 at `b83102f`; M2 is DONE and merge-ready when explicitly instructed, but has not yet been merged to `main`.
 
 ## Implementation sequence
 

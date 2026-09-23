@@ -82,7 +82,7 @@ npm run test:m2:closure
 
 That wrapper requires the exact `feat/m2-realtime-offline` branch and remote SHA, an initially clean worktree, `[skip ci]` on every M2 branch commit while hosted Actions capacity is intentionally conserved, no newly introduced Unicode em dash, the full `test:m2:local` Docker/PostgreSQL/API/worker/Chromium matrix, `npm run health`, `npm audit --audit-level=high`, `git diff --check`, and a clean final worktree. Passing that command closes the automated local gate only.
 
-All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed five real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE.
+All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE.
 
 ## Repository-health policy
 
