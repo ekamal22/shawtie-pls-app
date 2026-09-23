@@ -429,7 +429,20 @@ export class CallingService {
         return reserved.record.responseBody as CallProjection;
       }
 
-      if (call.state !== "ringing") throw new ApiError(409, "CALL_NOT_RINGING");
+      if (call.state !== "ringing") {
+        const participants = await loadCallParticipants(transaction, call.id);
+        const callee = participants.find((participant) => participant.role === "callee");
+        if (
+          callee?.endpointDeviceId
+          && (
+            callee.endpointDeviceId !== auth.session.deviceId
+            || callee.endpointSessionId !== auth.session.sessionId
+          )
+        ) {
+          throw new ApiError(409, "CALL_ANSWERED_ELSEWHERE");
+        }
+        throw new ApiError(409, "CALL_NOT_RINGING");
+      }
       if (call.version !== BigInt(input.expectedVersion)) throw new ApiError(409, "VERSION_CONFLICT");
       const connectExpiresAt = new Date(now.getTime() + this.calling.connectTimeoutMs);
       const accepted = await acceptCall(transaction, {

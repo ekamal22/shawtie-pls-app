@@ -277,7 +277,10 @@ export class CallMediaSession {
     }
 
     if (frame.type === "signal.ice_candidate") {
-      const candidate = { candidate: frame.payload.candidate };
+      const candidate: RTCIceCandidateInit = {
+        candidate: frame.payload.candidate,
+        sdpMLineIndex: 0,
+      };
       if (this.#peer.remoteDescription) {
         await this.#peer.addIceCandidate(candidate).catch((error) => {
           if (!this.#ignoreOffer) throw error;
