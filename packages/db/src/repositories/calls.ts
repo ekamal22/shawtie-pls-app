@@ -113,16 +113,21 @@ export async function insertCallSession(
     readonly now: Date;
     readonly ringExpiresAt: Date;
   },
-): Promise<CallSessionRecord> {
+): Promise<CallSessionRecord | null> {
   const result = await executor.query<CallSessionRow>(
     `INSERT INTO call_sessions (
        id, partnership_id, initiated_by_account_id, call_type, status,
        version, deadline_generation, ring_expires_at, created_at, updated_at
      )
      VALUES ($1,$2,$3,$4,'ringing',1,1,$5,$6,$6)
+     ON CONFLICT (partnership_id) WHERE status <> 'ended'
+     DO NOTHING
      RETURNING ${sessionColumns}`,
     [input.id, input.partnershipId, input.callerAccountId, input.kind, input.ringExpiresAt, input.now],
   );
+  const row = result.rows[0];
+  if (!row) return null;
+
   await executor.query(
     `INSERT INTO call_participants (
        call_session_id, partnership_id, account_id, role,
@@ -141,8 +146,6 @@ export async function insertCallSession(
       input.calleeAccountId,
     ],
   );
-  const row = result.rows[0];
-  if (!row) throw new Error("Call insert did not return row");
   return mapSession(row);
 }
 
