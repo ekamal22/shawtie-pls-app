@@ -416,7 +416,28 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 11: protected offline cold start
 
-- Status: pending
+- SHA: `26c080c` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T13:04Z
+- Result: **PASS**
+- Setup: signed Alice back into the real app on the physical phone and let
+  it load protected data (the Charlie partnership, one message,
+  relationship metadata), confirmed present in IndexedDB.
+- Action: performed a genuine cold start rather than a background/foreground
+  cycle, per the specific concern that Android can restore an existing live
+  DOM on simple backgrounding: ran `adb shell am force-stop
+  com.android.chrome` to fully kill the Chrome process (confirmed via
+  `dumpsys window` that the launcher, not Chrome, was foreground
+  afterward), removed the USB-forwarded connectivity
+  (`adb reverse --remove tcp:4174`), then launched a fresh Chrome process
+  directly to the app URL via `am start` while still offline.
+- Observed behavior: captured five rapid native `adb screencap` frames
+  immediately after the fresh launch. Every one showed only the locked
+  "Offline / Connect once so Shawtie pls can verify this private session
+  before opening locally cached content. / Try again" shell; no partnership,
+  message, or relationship content appeared even momentarily before it.
+  Restoring connectivity and pressing "Try again" correctly proceeded past
+  the lock once the session could be verified.
+- Evidence: `validation-logs/screenshots/scenario11-cold-start-locked.png`
 
 ### Scenario 12: service-worker update with queued work
 
