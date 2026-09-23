@@ -8,6 +8,7 @@ type Label =
   | "email-code-verifier"
   | "rate-limit-key"
   | "message-request-fingerprint"
+  | "media-request-fingerprint"
   | "r1-idempotency-fingerprint"
   | "r1-cursor-binding";
 

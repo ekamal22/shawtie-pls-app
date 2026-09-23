@@ -321,7 +321,7 @@ export async function insertMessage(
     readonly requestFingerprintVersion: number;
     readonly serverSequence: bigint;
     readonly changeSequence: bigint;
-    readonly body: string;
+    readonly body: string | null;
     readonly createdAt: Date;
   },
 ): Promise<void> {
@@ -456,6 +456,7 @@ interface MessageProjectionRow {
   reply_body_text: string | null;
   reply_deleted_at: Date | null;
   reactions: unknown;
+  attachments: unknown;
 }
 
 export interface MessageProjectionRowModel {
@@ -480,6 +481,15 @@ export interface MessageProjectionRowModel {
     readonly accountId: string;
     readonly emoji: string;
   }[];
+  readonly attachments: readonly {
+    readonly mediaId: string;
+    readonly kind: "image" | "video" | "file" | "voice";
+    readonly formatCode: string;
+    readonly role: "attachment" | "voice_message";
+    readonly position: number;
+    readonly ciphertextBytes: number;
+    readonly cryptoProtocolVersion: string;
+  }[];
 }
 
 function reactionList(value: unknown): readonly { accountId: string; emoji: string }[] {
@@ -489,6 +499,34 @@ function reactionList(value: unknown): readonly { accountId: string; emoji: stri
     const accountId = "accountId" in item ? item.accountId : null;
     const emoji = "emoji" in item ? item.emoji : null;
     return typeof accountId === "string" && typeof emoji === "string" ? [{ accountId, emoji }] : [];
+  });
+}
+
+function mediaAttachmentList(value: unknown): MessageProjectionRowModel["attachments"] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    if (
+      typeof row.mediaId !== "string" ||
+      !["image", "video", "file", "voice"].includes(String(row.kind)) ||
+      typeof row.formatCode !== "string" ||
+      !["attachment", "voice_message"].includes(String(row.role)) ||
+      typeof row.position !== "number" ||
+      typeof row.ciphertextBytes !== "number" ||
+      typeof row.cryptoProtocolVersion !== "string"
+    ) {
+      return [];
+    }
+    return [{
+      mediaId: row.mediaId,
+      kind: row.kind as "image" | "video" | "file" | "voice",
+      formatCode: row.formatCode,
+      role: row.role as "attachment" | "voice_message",
+      position: row.position,
+      ciphertextBytes: row.ciphertextBytes,
+      cryptoProtocolVersion: row.cryptoProtocolVersion,
+    }];
   });
 }
 
@@ -515,6 +553,7 @@ function mapMessageProjection(row: MessageProjectionRow): MessageProjectionRowMo
           }
         : null,
     reactions: row.deleted_at ? [] : reactionList(row.reactions),
+    attachments: row.deleted_at ? [] : mediaAttachmentList(row.attachments),
   };
 }
 
@@ -548,7 +587,29 @@ const messageProjectionSql = `
                AND reaction.emoji_text IS NOT NULL
            ),
            '[]'::jsonb
-         ) AS reactions
+         ) AS reactions,
+         COALESCE(
+           (
+             SELECT jsonb_agg(
+               jsonb_build_object(
+                 'mediaId', media.id,
+                 'kind', media.media_kind,
+                 'formatCode', media.format_code,
+                 'role', media.binding_role,
+                 'position', media.binding_position,
+                 'ciphertextBytes', media.ciphertext_size,
+                 'cryptoProtocolVersion', media.crypto_protocol_version
+               )
+               ORDER BY media.binding_position, media.id
+             )
+             FROM media_objects AS media
+             WHERE media.binding_type = 'message'
+               AND media.binding_id = message.id
+               AND media.state = 'bound'
+               AND media.deleted_at IS NULL
+           ),
+           '[]'::jsonb
+         ) AS attachments
   FROM messages AS message
   LEFT JOIN messages AS reply
     ON reply.id = message.reply_to_message_id

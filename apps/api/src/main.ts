@@ -1,11 +1,14 @@
 import { closeDatabasePool, createDatabasePool, databaseConfigFromEnv } from "@shawtie/db";
+import { S3MediaObjectStore, mediaStorageConfigFromEnv } from "@shawtie/media-storage";
 import { createApiApplication } from "./application.ts";
 import { apiConfigFromEnv } from "./config.ts";
 
 const database = createDatabasePool(databaseConfigFromEnv());
+const mediaStorageConfig = mediaStorageConfigFromEnv();
 const app = createApiApplication({
   database,
   config: apiConfigFromEnv(),
+  mediaObjectStore: mediaStorageConfig ? new S3MediaObjectStore(mediaStorageConfig) : null,
 });
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);

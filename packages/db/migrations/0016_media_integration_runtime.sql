@@ -54,3 +54,31 @@ CREATE INDEX media_objects_message_binding
 CREATE INDEX media_objects_relationship_binding
   ON media_objects (binding_id, binding_position, id)
   WHERE state = 'bound' AND binding_type = 'relationship_item';
+
+CREATE FUNCTION validate_m3_message_nonempty()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.deleted_at IS NULL
+     AND NEW.body_text IS NULL
+     AND NEW.ciphertext IS NULL
+     AND NOT EXISTS (
+       SELECT 1
+       FROM media_objects media
+       WHERE media.binding_type = 'message'
+         AND media.binding_id = NEW.id
+         AND media.state = 'bound'
+         AND media.deleted_at IS NULL
+     ) THEN
+    RAISE EXCEPTION 'active message must contain text/ciphertext or bound media';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE CONSTRAINT TRIGGER messages_m3_nonempty_at_commit
+AFTER INSERT OR UPDATE OF body_text, ciphertext, deleted_at ON messages
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION validate_m3_message_nonempty();

@@ -363,3 +363,15 @@ export async function listPartnershipMediaForDeletion(
   );
   return result.rows.map(mapMedia);
 }
+
+export async function deletePartnershipMediaObjectMetadata(
+  executor: QueryExecutor,
+  partnershipId: string,
+  mediaId: string,
+): Promise<boolean> {
+  const result = await executor.query(
+    "DELETE FROM media_objects WHERE partnership_id = $1 AND id = $2",
+    [partnershipId, mediaId],
+  );
+  return result.rowCount === 1;
+}

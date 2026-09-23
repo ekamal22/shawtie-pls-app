@@ -135,6 +135,7 @@ export class S3MediaObjectStore implements MediaObjectStore {
   }): Promise<MediaUploadGrant> {
     const requiredHeaders = {
       "content-type": "application/octet-stream",
+      "if-none-match": "*",
       "x-amz-meta-sha256": input.sha256,
     };
     const signed = this.#presign("PUT", input.objectKey, input.expiresAt, requiredHeaders);

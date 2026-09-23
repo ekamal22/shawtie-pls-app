@@ -292,6 +292,7 @@ export {
 export {
   bindMediaObject,
   deleteMediaObjectMetadata,
+  deletePartnershipMediaObjectMetadata,
   getMediaDeletionGeneration,
   getMediaUploadGeneration,
   insertMediaUpload,
