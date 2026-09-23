@@ -10,6 +10,7 @@ import {
   type DatabasePool,
 } from "@shawtie/db";
 import type { ApiConfig } from "../src/config.ts";
+import { M2_REALTIME_NOTIFY_CHANNEL } from "@shawtie/contracts";
 
 function requireDisposableDatabase(): DatabasePool {
   if (process.env.DB_TEST_CONFIRM !== "1") {
@@ -524,6 +525,79 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
     const items = history.json().items as Array<{ id: string; outcome: string | null }>;
     assert.equal(items[0]?.id, created.id);
     assert.equal(items[0]?.outcome, "completed");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("C1 call invalidation is delivered to realtime v2 but not M2 v1", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "rt_alice");
+    const bob = await register(app, database, "rt_bob");
+    const partnershipId = await formPartnership(app, alice, bob, "rt");
+    const created = await createVoiceCall(
+      app,
+      alice,
+      partnershipId,
+      "c1-create-rt-0001",
+    );
+
+    const v1 = await app.injectWS("/api/v1/realtime", {
+      headers: {
+        origin: config.appOrigin,
+        cookie: alice.cookie,
+        "sec-websocket-protocol": "shawtie.realtime.v1",
+      },
+    });
+    const v2 = await app.injectWS("/api/v1/realtime", {
+      headers: {
+        origin: config.appOrigin,
+        cookie: alice.cookie,
+        "sec-websocket-protocol": "shawtie.realtime.v2",
+      },
+    });
+    let v1SawCallChanged = false;
+    const onV1Message = (data: RawData) => {
+      try {
+        const frame = JSON.parse(data.toString()) as { type?: string };
+        if (frame.type === "call.changed") v1SawCallChanged = true;
+      } catch {
+        return;
+      }
+    };
+    v1.on("message", onV1Message);
+    try {
+      await waitForFrame(v1, "control.ready");
+      await waitForFrame(v2, "control.ready");
+
+      const eventId = "30000000-0000-4000-8000-000000000099";
+      const changed = waitForFrame(v2, "call.changed");
+      await database.pool.query("SELECT pg_notify($1, $2)", [
+        M2_REALTIME_NOTIFY_CHANNEL,
+        JSON.stringify({
+          v: 1,
+          kind: "call.changed",
+          scope: { partnershipId },
+          data: {
+            eventId,
+            callId: created.id,
+            version: created.version,
+          },
+        }),
+      ]);
+      const frame = await changed;
+      assert.equal((frame.payload as { callId: string }).callId, created.id);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      assert.equal(v1SawCallChanged, false);
+    } finally {
+      v1.off("message", onV1Message);
+      v1.terminate();
+      v2.terminate();
+    }
   } finally {
     await app.close();
     await closeDatabasePool(database);
