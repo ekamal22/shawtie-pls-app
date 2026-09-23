@@ -32,7 +32,15 @@ export class HmacTurnCredentialProvider implements TurnCredentialProvider {
     private readonly urls: readonly string[],
     private readonly sharedSecret: string,
     private readonly ttlMs: number,
-  ) {}
+  ) {
+    if (urls.length === 0 || urls.some((url) => !/^turns?:/i.test(url))) {
+      throw new Error("TURN_PROVIDER_URLS_INVALID");
+    }
+    if (!sharedSecret) throw new Error("TURN_PROVIDER_SECRET_REQUIRED");
+    if (!Number.isInteger(ttlMs) || ttlMs <= 0 || ttlMs > 15 * 60_000) {
+      throw new Error("TURN_PROVIDER_TTL_INVALID");
+    }
+  }
 
   async issue(input: {
     readonly accountId: string;
