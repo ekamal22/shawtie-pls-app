@@ -152,11 +152,66 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 4: offline edit/delete/reaction authority replay
 
-- Status: pending
+- SHA: `fc25c6c` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T09:02Z
+- Result: **PASS**
+- Setup: Alice disconnected (`adb reverse --remove tcp:4174`). Through the
+  real chat UI: reacted to Bob's message with a heart emoji, opened a
+  second Alice message's Edit control (a native `prompt()` dialog,
+  intercepted and answered through CDP `Page.handleJavaScriptDialog` rather
+  than a raw API call) and changed its text, and deleted a third own
+  message (a native `confirm()` dialog, likewise answered through CDP).
+  All three were confirmed queued in IndexedDB `chatOutbox` with the
+  correct operation types (`reaction.set`, `message.edit`,
+  `message.delete`) and, for the edit, `expectedContentVersion: 1`.
+- Conflict setup: while Alice's phone was still offline, a second Alice
+  session (simulating another device, driven directly against the real
+  API) edited the same message first, successfully bumping its
+  `contentVersion` to 2. This made the phone's queued edit's
+  `expectedContentVersion: 1` stale before it ever got a chance to replay.
+- Action: connectivity restored (`adb reverse tcp:4174 tcp:4174`).
+- Observed behavior: the reaction and delete replayed and drained
+  immediately. The stale edit was not blindly applied: the server rejected
+  it and the queued operation transitioned to
+  `status: "blocked", lastErrorCode: "VERSION_CONFLICT"` rather than being
+  retried forever or silently dropped. The real app UI surfaced this to the
+  user with an explicit notice ("Offline changes / message.edit /
+  VERSION_CONFLICT / Attempted text is still stored locally: ..." with
+  Retry/Discard actions). Server-side state confirmed correctness: the
+  reacted message carries Alice's heart reaction, the deleted message has
+  `body: null` and a `deletedAt` timestamp (no plaintext retained), and the
+  edited message's final content is the second device's edit
+  ("EDITED-BY-OTHER-DEVICE"), not the stale offline edit, proving the
+  authority/version recheck prevented an overwrite of newer canonical
+  state.
+- Evidence: `validation-logs/screenshots/scenario4-conflict-notice.png`
 
 ### Scenario 5: duplicate/out-of-order realtime hints
 
-- Status: pending
+- SHA: `fc25c6c` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T09:05Z
+- Result: **PASS**
+- Setup: a CDP `Page.addScriptToEvaluateOnNewDocument` script wrapped the
+  page's real `WebSocket` constructor before the app loaded, capturing a
+  reference to the genuine `RealtimeClient` socket (`/api/v1/realtime`)
+  without modifying any application source. This allowed dispatching real
+  `MessageEvent`s directly on the actual open socket, exercising the exact
+  same client-side frame-handling code the server's own frames use.
+- Action: Bob sent one real message (`changeSequence: 10`), which rendered
+  correctly once. The identical `message.changed` frame for that same
+  message was then dispatched a second time directly on the real socket
+  (a duplicate). A separate stale/out-of-order `message.changed` frame
+  referencing `changeSequence: 1` and a nonexistent message id was then
+  also dispatched.
+- Observed behavior: the marker text appeared exactly once in the DOM
+  before and after both injected frames (no duplicate product mutation from
+  the duplicate frame, and no regression or corruption from the stale
+  frame). The socket remained open and connected throughout, and no
+  browser console errors occurred. All injected frames were constructed
+  content-free (ids and sequence numbers only, matching the real M2
+  invalidation shape), consistent with the product's requirement that
+  realtime frames never carry private message bodies.
+- Evidence: `validation-logs/screenshots/scenario5-dedup.png`
 
 ### Scenario 6: PostgreSQL LISTEN reset
 
