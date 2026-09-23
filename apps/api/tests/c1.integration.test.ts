@@ -275,6 +275,51 @@ function waitForFrame(
   });
 }
 
+test("C1 simultaneous initiation creates exactly one non-terminal call", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "init_alice");
+    const bob = await register(app, database, "init_bob");
+    const partnershipId = await formPartnership(app, alice, bob, "init");
+
+    const [aliceCreate, bobCreate] = await Promise.all([
+      app.inject({
+        method: "POST",
+        url: "/api/v1/calls",
+        headers: jsonHeaders(alice.cookie, "c1-init-alice-0001"),
+        payload: { expectedPartnershipId: partnershipId, kind: "voice" },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/v1/calls",
+        headers: jsonHeaders(bob.cookie, "c1-init-bob-0001"),
+        payload: { expectedPartnershipId: partnershipId, kind: "voice" },
+      }),
+    ]);
+
+    const responses = [aliceCreate, bobCreate];
+    assert.equal(responses.filter((response) => response.statusCode === 201).length, 1);
+    assert.equal(responses.filter((response) => response.statusCode === 409).length, 1);
+    const loser = responses.find((response) => response.statusCode === 409);
+    assert.ok(loser);
+    assert.equal(
+      (loser.json() as { error: { code: string } }).error.code,
+      "CALL_IN_PROGRESS",
+    );
+
+    const count = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM call_sessions WHERE partnership_id=$1 AND status <> 'ended'",
+      [partnershipId],
+    );
+    assert.equal(count.rows[0]?.count, "1");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and history", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
