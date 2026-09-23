@@ -441,7 +441,48 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 12: service-worker update with queued work
 
-- Status: pending
+- SHA before fix: `e790c32`; SHA after fix: recorded in the commit that
+  follows this evidence update on `feat/m2-realtime-offline`
+- UTC timestamp: 2026-09-23T09:39Z
+- Result: **PASS** (after fixing one real defect)
+- Setup: made a trivial, harmless one-line change to `apps/web/public/sw.js`
+  (a comment, reverted before every commit) to produce a genuinely new
+  service-worker byte content, rebuilt, and called
+  `registration.update()` from the real page. The physical app correctly
+  reached a real waiting-worker state and showed the real "App update
+  available / Offline replay is paused while the app switches to a
+  compatible version." banner.
+- First observed behavior (defect): with the update banner visible and
+  **not yet acted on**, a message was composed and sent through the real
+  offline-queue UI while disconnected, then connectivity was restored.
+  The queued mutation drained and reached the real server within about a
+  second, while the banner was still visible and unclicked, directly
+  contradicting the banner's own claim that replay is paused. Reproduced
+  twice independently (once incidentally on a stale cached build from an
+  earlier scenario, then cleanly on a freshly confirmed build) with the
+  same result both times.
+- Root cause: `SyncCoordinator.markUpdateRequired()` was only ever called
+  from `activateWaitingM2ServiceWorker()`, itself only invoked from the
+  "Update and reload" button's `onClick` handler in `M2UpdateBanner`
+  (`apps/web/src/lib/realtime/runtime-context.tsx`). A waiting worker
+  detected earlier, while the banner is visible but the user has not yet
+  pressed the button, left the coordinator in its normal live state,
+  so replay proceeded through the outgoing (about to be superseded)
+  client version.
+- Fix applied: `M2UpdateBanner` now calls
+  `runtime.coordinator.markUpdateRequired()` as soon as its `waiting` state
+  becomes true, covering both a worker already waiting at mount and one
+  detected later, not only on the button click. A focused regression test
+  was added to `apps/web/tests/m2.browser.test.ts`.
+- Final retest on the physical Redmi Note 9S: with the fix in place and a
+  fresh waiting-worker state established, a message queued while offline
+  and reconnected stayed `status: "queued"` for the full observation
+  window while the update sat unactivated. After activating the update
+  (the physical device owner tapped "Update and reload" directly on the
+  phone once a scripted click did not register), the banner cleared, the
+  service worker reported no waiting worker, the queue drained, and the
+  message reached the server exactly once immediately afterward.
+- Evidence: `validation-logs/screenshots/scenario12-update-pause-fixed.png`
 
 ### Scenario 13: local persistence/quota failure
 

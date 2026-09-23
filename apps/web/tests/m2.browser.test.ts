@@ -242,3 +242,24 @@ test("M2 messaging panel recovers from a dissolved partnership through the coord
   assert.equal(registration.includes("CONVERSATION_NOT_FOUND"), true);
   assert.equal(registration.includes("handleSyncFailure(caught)"), true);
 });
+
+test("M2 update banner pauses replay as soon as an update is waiting, not only on click", async () => {
+  const runtime = await source("../src/lib/realtime/runtime-context.tsx");
+
+  // Physical Android acceptance found that the "App update available"
+  // banner claims "Offline replay is paused while the app switches to a
+  // compatible version" as soon as it appears, but markUpdateRequired()
+  // was only ever called from the button's onClick handler
+  // (activateWaitingM2ServiceWorker). A mutation queued while offline and
+  // replayed after reconnecting, before the user pressed the button, was
+  // confirmed on the physical device to reach the real server through the
+  // outgoing client version regardless. markUpdateRequired() must also run
+  // as soon as `waiting` becomes true, covering both a waiting worker
+  // already present at mount and one detected later.
+  const banner = runtime.slice(
+    runtime.indexOf("export function M2UpdateBanner()"),
+    runtime.indexOf("if (!waiting && status !== "),
+  );
+  assert.ok(banner.length > 0, "M2UpdateBanner body not found");
+  assert.equal(banner.includes("if (waiting) runtime.coordinator.markUpdateRequired();"), true);
+});

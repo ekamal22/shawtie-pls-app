@@ -388,6 +388,17 @@ export function M2UpdateBanner() {
     [],
   );
 
+  // A waiting service worker means an incompatible client/schema version is
+  // already installed and only needs the user to confirm activation. Offline
+  // replay must be paused from the moment that is known, not only once the
+  // user presses "Update and reload": activateWaitingM2ServiceWorker() used
+  // to be the only caller of markUpdateRequired(), so a queued mutation sent
+  // while the update banner was visible but not yet acted on would still
+  // replay through the outgoing (about to be superseded) client version.
+  useEffect(() => {
+    if (waiting) runtime.coordinator.markUpdateRequired();
+  }, [waiting, runtime]);
+
   if (!waiting && status !== "update-required") return null;
 
   return (
