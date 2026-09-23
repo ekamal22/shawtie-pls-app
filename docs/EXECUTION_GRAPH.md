@@ -51,7 +51,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
           M1 Messaging ✅    R1 Relationship Space ✅
                 |
                 v
-          M2 Realtime + Offline 🟡
+          M2 Realtime + Offline ✅
                 |
             +---+---+
             |       |
@@ -97,7 +97,7 @@ flowchart TD
     P3 --> M1["M1 Messaging Core ✅"]
     P3 --> R1["R1 Relationship Space ✅"]
 
-    M1 --> M2["M2 Realtime + Offline 🟡"]
+    M1 --> M2["M2 Realtime + Offline ✅"]
 
     M2 --> M3["M3 Media + Voice Messages ⚪"]
     M2 --> C1["C1 Voice + Video Calling ⚪"]
@@ -130,7 +130,7 @@ P3 ✅
    ->
 M1 ✅ + R1 ✅ merged to main
    ->
-M2 🟡 automated/local closure PASS, physical Android acceptance pending
+M2 ✅ DONE, not yet merged to main; automated/local closure PASS, physical Android acceptance 14/14 at `b83102f`
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -189,7 +189,7 @@ main @ 9f4237e
 
 M1 and R1 are merged and verified.
 M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented.
-M2 automated/local closure passed at `4bbffdf` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, audit, and git hygiene green. Mandatory physical Android scenario closure is the remaining gate.
+M2 automated/local closure passed at `4bbffdf` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`. M2 is DONE and not yet merged to `main`.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 M2 is expected to require no PostgreSQL migration and does not reserve 0015.
@@ -240,7 +240,7 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 
 ## Release path
 
-The shortest dependency path from the current verified mainline to stable release begins with the now-designed M2 milestone:
+The shortest dependency path from the current verified mainline to stable release begins with the now-DONE M2 milestone (not yet merged to `main`):
 
 ~~~text
 M1

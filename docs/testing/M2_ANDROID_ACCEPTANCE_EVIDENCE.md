@@ -5,6 +5,14 @@ Android scenarios defined in `docs/testing/M2_ANDROID_ACCEPTANCE.md`. It is the
 acceptance-evidence record; `M2_ANDROID_ACCEPTANCE.md` remains the canonical
 procedure and closure-rule document.
 
+## Result
+
+All 14 of 14 mandatory physical Android scenarios are recorded PASS. Final
+physical acceptance SHA: `b83102f` on `feat/m2-realtime-offline`. Executing
+these scenarios found and fixed five real defects in the M2 realtime/offline
+implementation, each with a focused regression test, described in the
+scenario entries below and in that branch's commit history.
+
 ## Test environment
 
 - Physical device: Xiaomi Redmi Note 9S, Android 12, API 31

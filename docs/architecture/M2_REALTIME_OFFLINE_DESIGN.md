@@ -29,7 +29,7 @@ M2 is the first milestone that requires physical Android acceptance.
 
 All M2-A through M2-I source slices and the automated closure surface are implemented at the pre-documentation source head `6e3c019371edd96a081c71ff178b6ee82f406566`. The latest source audit also closed revoked-session IndexedDB purge ordering, immediate account-routed partnership scope refresh for sockets connected before partnership formation, and accidental reconciliation/replay startup while the browser is offline. Real Chromium acceptance now exercises actual M2 runtime reconnect/replay with stable idempotency after simulated response loss, account isolation, final-partnership purge, protected cold-start locking, cross-tab claim fencing, and private-API cache exclusion. `npm run test:m2:closure` is implemented as the canonical automated local closure command.
 
-No known feature or architecture slice remains to be implemented. Any further M2 source change should be driven by failed local/device evidence or a newly discovered correctness issue. The milestone remains IN_PROGRESS until that evidence is executed and recorded.
+No known feature or architecture slice remains to be implemented. All 14 mandatory physical Android scenarios have executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f` on `feat/m2-realtime-offline`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed five real M2 defects not caught by the automated/local closure, each with a focused regression test. The milestone is DONE; any further M2 source change should be driven by a newly discovered correctness issue.
 
 ## Purpose
 
@@ -1799,7 +1799,7 @@ M2's contentContextKey exists only to make that migration explicit without inven
 
 M2 architecture and implementation sequencing are defined, and the source implementation is complete through `feat/m2-realtime-offline @ 6e3c019371edd96a081c71ff178b6ee82f406566`.
 
-The milestone remains IN_PROGRESS until the final source head passes `test:m2:local` (including real Chromium acceptance), full repository health, high-severity audit, and the mandatory physical Android matrix in `docs/testing/M2_ANDROID_ACCEPTANCE.md`.
+The milestone is DONE: the final source head passed `test:m2:local` (including real Chromium acceptance), full repository health, high-severity audit, and the mandatory physical Android matrix in `docs/testing/M2_ANDROID_ACCEPTANCE.md` (14/14, final SHA `b83102f`).
 
 Any implementation change that would:
 

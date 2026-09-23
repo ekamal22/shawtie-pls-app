@@ -23,7 +23,7 @@ Frozen means implementation should proceed against the accepted baseline unless 
 
 ## Current implementation frontier
 
-M2 Realtime and Offline Reliability is the active milestone on `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. The milestone remains IN_PROGRESS because mandatory physical Android acceptance has not been executed and is still required before final evidence reconciliation, DONE status, or merge.
+M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`, not yet merged to `main`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed five real M2 defects not caught by the automated/local closure, each with a focused regression test.
 
 This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
 
@@ -117,7 +117,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined, exhaustively validated, and merged into the current verified `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. The technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is IN_PROGRESS on `feat/m2-realtime-offline`, with automated/local closure green at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. That run passed the canonical 0001 through 0014 migrations with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene. Mandatory physical Android acceptance remains pending. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined, exhaustively validated, and merged into the current verified `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. The technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`, with automated/local closure green at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. That run passed the canonical 0001 through 0014 migrations with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene. All 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`; M2 is not yet merged to `main`. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

@@ -1,6 +1,6 @@
 # M2 Physical Android Acceptance
 
-Status: M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`. The Android preparation harness is implemented, but none of the 14 mandatory physical-device scenarios were executed. Physical Android evidence is still required before M2 can be marked DONE.
+Status: M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical-device scenarios have now been executed and passed on a physical Xiaomi Redmi Note 9S (Android 12), with recorded evidence in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. Executing these scenarios found and fixed five real M2 defects (see that document and the `feat/m2-realtime-offline` commit history ending at `b83102f`); M2 is DONE.
 
 ## Purpose
 
@@ -93,8 +93,19 @@ This removes the M2 ADB reverse and CDP forward rules.
 
 ## Closure rule
 
-M2 remains IN_PROGRESS until:
+M2 is DONE now that:
 
-- `npm run test:m2:closure` is green, currently anchored at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`, including `test:m2:local`, real Chromium acceptance, full repository health, audit, and git hygiene
-- every mandatory physical Android scenario above has recorded passing evidence
+- `npm run test:m2:closure` is green, anchored at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`, including `test:m2:local`, real Chromium acceptance, full repository health, audit, and git hygiene
+- every mandatory physical Android scenario above has recorded passing evidence, in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - final evidence documentation is reconciled without overstating unexecuted checks
+
+Physical acceptance found and fixed five real defects in the M2 realtime/offline
+implementation that the prior automated/local closure did not catch (a
+sync coordinator that could never resume after being stopped and
+restarted, a receipt-acknowledgement realtime echo loop, a sync pass that
+could be starved forever by a reconciler re-registering itself mid-pass, a
+messaging panel that did not recover from a dissolved partnership, and an
+update banner that did not actually pause replay before the user acted on
+it). See `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md` and the
+`feat/m2-realtime-offline` commit history for the fixes and their focused
+regression tests.

@@ -619,7 +619,7 @@ Physical Android acceptance is mandatory for M2. Use `docs/testing/M2_ANDROID_AC
 
 M2 does not close from simulated socket delivery alone. The authoritative acceptance catalog is in `../ROADMAP_EPICS.md`, and the detailed architecture is in `../architecture/M2_REALTIME_OFFLINE_DESIGN.md`.
 
-M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The canonical run passed migrations 0001 through 0014 with `reserved=0`, database invariants, the PostgreSQL/API/worker matrix 100/100, real Chromium 7/7, full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, a zero-vulnerability high-severity audit, and git hygiene. It ended with `M2_AUTOMATED_CLOSURE_PASS`. Physical Android acceptance remains unexecuted and mandatory, so M2 remains IN_PROGRESS.
+M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The canonical run passed migrations 0001 through 0014 with `reserved=0`, database invariants, the PostgreSQL/API/worker matrix 100/100, real Chromium 7/7, full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, a zero-vulnerability high-severity audit, and git hygiene. It ended with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android scenarios subsequently executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed five real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE.
 
 ## M1 Messaging Core verification
 
