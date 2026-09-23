@@ -221,11 +221,10 @@ export class ShawtieLocalDatabase {
     await transactionDone(tx);
     return values
       .sort((left, right) => left.serverSequence - right.serverSequence)
-      .map((cached) => {
-        const message = { ...cached } as Partial<CachedMessage>;
-        delete message.partnershipId;
-        delete message.contentContextKey;
-        return message as MessageProjection;
+      .map(({ partnershipId: cachedPartnershipId, contentContextKey, ...message }) => {
+        void cachedPartnershipId;
+        void contentContextKey;
+        return message;
       });
   }
 
