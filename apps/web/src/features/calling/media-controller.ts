@@ -268,8 +268,11 @@ export class CallMediaSession {
       if (this.#ignoreOffer) return;
 
       this.#isSettingRemoteAnswerPending = description.type === "answer";
-      await this.#peer.setRemoteDescription(description);
-      this.#isSettingRemoteAnswerPending = false;
+      try {
+        await this.#peer.setRemoteDescription(description);
+      } finally {
+        this.#isSettingRemoteAnswerPending = false;
+      }
       while (this.#pendingCandidates.length > 0) {
         const candidate = this.#pendingCandidates.shift();
         if (candidate) await this.#peer.addIceCandidate(candidate);
