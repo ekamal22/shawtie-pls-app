@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
 import { ApiClientError } from "../../lib/api-client.ts";
 import { useM2Runtime } from "../../lib/realtime/runtime-context.tsx";
 import {
@@ -13,6 +13,15 @@ import {
   releaseRelationshipItem,
 } from "./api.ts";
 import type { RelationshipItem, RelationshipItemKind, RelationshipSpaceHome } from "./model.ts";
+import { MediaAttachment } from "../media/MediaAttachment.tsx";
+import { VoiceRecorder } from "../media/VoiceRecorder.tsx";
+import {
+  discardMediaDraft,
+  prepareMediaDraft,
+  uploadMediaDraft,
+} from "../../lib/media/media-runtime.ts";
+import { listMediaDrafts } from "../../lib/media/media-local-db.ts";
+import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
 
 const KINDS: readonly { value: RelationshipItemKind; label: string }[] = [
   { value: "memory", label: "Memory" },
@@ -354,6 +363,21 @@ function ItemCard({
         </div>
       ) : null}
 
+      {item.references.some((reference) => reference.referenceType === "media") ? (
+        <div className="relationship-media-list">
+          {item.references
+            .filter((reference) => reference.referenceType === "media")
+            .map((reference) => (
+              <div key={reference.referenceId} className="relationship-media-reference">
+                {reference.role === "voice_letter" ? (
+                  <span className="relationship-kicker">Voice Letter</span>
+                ) : null}
+                <MediaAttachment mediaId={reference.referenceId} />
+              </div>
+            ))}
+        </div>
+      ) : null}
+
       {item.content ? (
         <p className="relationship-item-body">
           {readString(item.content, "body") ??
@@ -451,6 +475,45 @@ function ItemCard({
         </div>
       ) : null}
 
+      <div className="relationship-media-composer">
+        <label className="secondary compact media-picker-label">
+          Add protected media/file
+          <input
+            type="file"
+            multiple
+            hidden
+            disabled={busy || disabled || mediaBusy || !partnershipId}
+            accept="image/*,video/mp4,video/webm,application/pdf,text/plain,application/zip,.zip"
+            onChange={(event) => void prepareFiles(event)}
+          />
+        </label>
+        <VoiceRecorder
+          disabled={busy || disabled || mediaBusy || !partnershipId}
+          onReady={prepareVoiceLetter}
+        />
+      </div>
+
+      {mediaDrafts.length > 0 ? (
+        <div className="media-draft-list">
+          {mediaDrafts.map((draft) => (
+            <div className="media-draft-chip" key={draft.draftId}>
+              <span>
+                {draft.role === "voice_letter" ? "Voice Letter" : draft.kind} ·{" "}
+                {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted
+              </span>
+              <button
+                type="button"
+                className="link compact"
+                disabled={busy || mediaBusy}
+                onClick={() => void removeMediaDraft(draft.draftId)}
+              >
+                remove
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {error ? <p className="banner error">{error}</p> : null}
       {notice ? <p className="banner success">{notice}</p> : null}
 
@@ -523,9 +586,13 @@ function ItemCard({
 }
 
 function CreateRelationshipItem({
+  accountId,
+  partnershipId,
   disabled,
   onCreated,
 }: {
+  accountId: string;
+  partnershipId: string | null;
   disabled: boolean;
   onCreated: () => Promise<void>;
 }) {
@@ -553,6 +620,89 @@ function CreateRelationshipItem({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [mediaDrafts, setMediaDrafts] = useState<LocalMediaDraft[]>([]);
+  const [mediaBusy, setMediaBusy] = useState(false);
+
+  async function refreshMediaDrafts() {
+    if (!partnershipId) {
+      setMediaDrafts([]);
+      return;
+    }
+    setMediaDrafts(await listMediaDrafts(accountId, partnershipId, "relationship"));
+  }
+
+  async function prepareFiles(event: ChangeEvent<HTMLInputElement>) {
+    if (!partnershipId) return;
+    const files = [...(event.target.files ?? [])];
+    event.target.value = "";
+    if (files.length === 0) return;
+    if (mediaDrafts.length + files.length > 32) {
+      setError("A relationship item can contain at most 32 references.");
+      return;
+    }
+    setMediaBusy(true);
+    setError("");
+    try {
+      for (const file of files) {
+        await prepareMediaDraft({
+          accountId,
+          partnershipId,
+          ownerContext: "relationship",
+          source: file,
+          role: "attachment",
+        });
+      }
+      await refreshMediaDrafts();
+      setNotice(
+        navigator.onLine
+          ? "Protected attachment prepared."
+          : "Attachment encrypted locally. Connect before creating the relationship item.",
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media preparation failed.");
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  async function prepareVoiceLetter(blob: Blob, durationSeconds: number) {
+    if (!partnershipId) return;
+    setMediaBusy(true);
+    setError("");
+    try {
+      await prepareMediaDraft({
+        accountId,
+        partnershipId,
+        ownerContext: "relationship",
+        source: blob,
+        role: "voice_letter",
+        kind: "voice",
+        durationSeconds,
+      });
+      await refreshMediaDrafts();
+      setNotice(
+        navigator.onLine
+          ? "Voice Letter prepared."
+          : "Voice Letter encrypted locally. Connect before creating the relationship item.",
+      );
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  async function removeMediaDraft(draftId: string) {
+    setMediaBusy(true);
+    try {
+      await discardMediaDraft(accountId, draftId);
+      await refreshMediaDrafts();
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    void refreshMediaDrafts().catch(() => undefined);
+  }, [accountId, partnershipId]);
 
   const releaseKind = kind === "for_you" || kind === "future_us";
   const revealKind = kind === "surprise" || kind === "proposal";
@@ -736,21 +886,46 @@ function CreateRelationshipItem({
     setError("");
     setNotice("");
     try {
-      const result = await createRelationshipItem(payload());
-      setTitle("");
-      setText("");
-      setNote("");
-      setOccurrencePrecision("none");
-      setOccurrenceDate("");
-      setOccurrenceMonth("");
-      setOccurrenceYear("");
-      setConditionLabel("");
-      setUnlockAt("");
-      setLatitude("");
-      setLongitude("");
+      if (mediaDrafts.length > 0 && !navigator.onLine) {
+        throw new ApiClientError("OFFLINE_OPERATION_REQUIRES_CONNECTION", 0);
+      }
+      const references: Array<{
+        referenceType: "media";
+        referenceId: string;
+        role: "attachment" | "voice_letter";
+      }> = [];
+      for (const draft of mediaDrafts) {
+        const uploaded = await uploadMediaDraft(accountId, draft.draftId);
+        references.push({
+          referenceType: "media",
+          referenceId: uploaded.media.mediaId,
+          role: draft.role === "voice_letter" ? "voice_letter" : "attachment",
+        });
+      }
+
+      const basePayload = payload() as Record<string, unknown>;
+      const result = await createRelationshipItem({
+        ...basePayload,
+        references,
+      });
       if (queuedMutation(result)) {
         setNotice("Relationship item queued. It will replay after authority is refreshed.");
       } else {
+        for (const draft of mediaDrafts) {
+          await discardMediaDraft(accountId, draft.draftId, false);
+        }
+        setMediaDrafts([]);
+        setTitle("");
+        setText("");
+        setNote("");
+        setOccurrencePrecision("none");
+        setOccurrenceDate("");
+        setOccurrenceMonth("");
+        setOccurrenceYear("");
+        setConditionLabel("");
+        setUnlockAt("");
+        setLatitude("");
+        setLongitude("");
         await onCreated();
       }
     } catch (caught) {
@@ -1062,8 +1237,8 @@ function CreateRelationshipItem({
       </button>
 
       <p className="hint">
-        Voice Letters attach to relationship objects through the media milestone. R1 keeps their
-        visibility tied to the item they belong to.
+        Protected attachments and Voice Letters inherit this item's release visibility. Media
+        creation requires a connection; encrypted drafts remain local until upload succeeds.
       </p>
     </form>
   );

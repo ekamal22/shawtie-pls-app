@@ -4,6 +4,7 @@ import {
   type MessageProjection,
   type RelationshipItemProjection,
 } from "@shawtie/contracts";
+import { purgeMediaAccountData } from "../media/media-local-db.ts";
 
 const DATABASE_PREFIX = "shawtie-local-v1:";
 const LAST_ACCOUNT_KEY = "shawtie:last-account";
@@ -694,6 +695,7 @@ export async function purgeAccountLocalData(accountId: string): Promise<void> {
       // database handles; the delete request completes after those handles close.
     };
   });
+  await purgeMediaAccountData(accountId).catch(() => undefined);
   try {
     if (localStorage.getItem(LAST_ACCOUNT_KEY) === accountId) {
       localStorage.removeItem(LAST_ACCOUNT_KEY);

@@ -9,6 +9,7 @@ import {
 import { M2ReplayEngine } from "../offline/replay-engine.ts";
 import { RealtimeClient, type RealtimeScope } from "./realtime-client.ts";
 import { subscribeLocalLogout } from "../offline/account-control.ts";
+import { purgeMediaPartnershipData } from "../media/media-local-db.ts";
 import {
   activateWaitingM2ServiceWorker,
   hasWaitingM2ServiceWorker,
@@ -169,7 +170,10 @@ export class M2Runtime {
   async #scopeChanged(previous: RealtimeScope, next: RealtimeScope): Promise<void> {
     const database = await this.database();
     if (previous.partnershipId && previous.partnershipId !== next.partnershipId) {
-      await database.purgePartnership(previous.partnershipId);
+      await Promise.all([
+        database.purgePartnership(previous.partnershipId),
+        purgeMediaPartnershipData(this.accountId, previous.partnershipId),
+      ]);
       dispatch("shawtie:partnership-changed");
     }
     if (next.partnershipId && next.conversationId) {
@@ -198,7 +202,10 @@ export class M2Runtime {
         return;
       case "namespace.revoked": {
         const database = await this.database();
-        await database.purgePartnership(frame.payload.partnershipId);
+        await Promise.all([
+          database.purgePartnership(frame.payload.partnershipId),
+          purgeMediaPartnershipData(this.accountId, frame.payload.partnershipId),
+        ]);
         dispatch("shawtie:partnership-changed");
         return;
       }
