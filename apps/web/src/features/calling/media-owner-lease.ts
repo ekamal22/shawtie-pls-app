@@ -106,7 +106,7 @@ export class MediaOwnerLease {
         && current.ownerTabId === this.tabId
         && current.ownerGeneration === this.#generation
       ) {
-        store.delete(this.key);
+        store.put({ ...current, expiresAt: 0 });
       }
       await transactionDone(transaction);
     } finally {
