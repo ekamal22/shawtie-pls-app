@@ -8,15 +8,8 @@ import {
   M1_VISIBLE_CHANGE_POLL_MS,
 } from "@shawtie/contracts";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import {
-  ApiClientError,
-  ApiNetworkError,
-  apiRequest,
-} from "../../lib/api-client.ts";
-import {
-  useM2Runtime,
-  useM2SyncStatus,
-} from "../../lib/realtime/runtime-context.tsx";
+import { ApiClientError, ApiNetworkError, apiRequest } from "../../lib/api-client.ts";
+import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
 
 interface ConversationSummary {
   conversationId: string;
@@ -179,9 +172,7 @@ export function MessagingPanel() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sendStatus, setSendStatus] = useState<
-    "sending" | "queued" | "failed" | null
-  >(null);
+  const [sendStatus, setSendStatus] = useState<"sending" | "queued" | "failed" | null>(null);
   const changeCursorRef = useRef(0);
   const lastTypingSentRef = useRef(0);
   const pendingSendRef = useRef<PendingSend | null>(null);
@@ -224,34 +215,24 @@ export function MessagingPanel() {
         partnershipId: summary.partnershipId,
         conversationId: summary.conversationId,
         deliveredThrough: throughSequence,
-        readThrough:
-          document.visibilityState === "visible" ? throughSequence : 0,
+        readThrough: document.visibilityState === "visible" ? throughSequence : 0,
       });
 
-      const deliveredThrough = Math.max(
-        throughSequence,
-        pending?.pendingDeliveredThrough ?? 0,
-      );
+      const deliveredThrough = Math.max(throughSequence, pending?.pendingDeliveredThrough ?? 0);
       const readThrough = pending?.pendingReadThrough ?? 0;
 
       if (!navigator.onLine) return;
 
       try {
-        await apiRequest(
-          "/api/v1/conversations/" + summary.conversationId + "/receipt",
-          {
-            method: "POST",
-            body: { type: "delivered", throughSequence: deliveredThrough },
-          },
-        );
+        await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
+          method: "POST",
+          body: { type: "delivered", throughSequence: deliveredThrough },
+        });
         if (readThrough > 0) {
-          await apiRequest(
-            "/api/v1/conversations/" + summary.conversationId + "/receipt",
-            {
-              method: "POST",
-              body: { type: "read", throughSequence: readThrough },
-            },
-          );
+          await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
+            method: "POST",
+            body: { type: "read", throughSequence: readThrough },
+          });
         }
       } catch (error) {
         if (error instanceof ApiNetworkError) return;
@@ -329,10 +310,7 @@ export function MessagingPanel() {
       for (const change of result.items) {
         canonical.push(
           await apiRequest<Message>(
-            "/api/v1/conversations/" +
-              summary.conversationId +
-              "/messages/" +
-              change.messageId,
+            "/api/v1/conversations/" + summary.conversationId + "/messages/" + change.messageId,
           ),
         );
         cursor = change.changeSequence;
@@ -368,11 +346,8 @@ export function MessagingPanel() {
               highestLoadedSequence,
             ),
             pendingDeliveredThrough:
-              previous?.pendingDeliveredThrough ??
-              summary.receipts.selfDeliveredThrough,
-            pendingReadThrough:
-              previous?.pendingReadThrough ??
-              summary.receipts.selfReadThrough,
+              previous?.pendingDeliveredThrough ?? summary.receipts.selfDeliveredThrough,
+            pendingReadThrough: previous?.pendingReadThrough ?? summary.receipts.selfReadThrough,
             lastSyncedAt: new Date().toISOString(),
           },
         });
@@ -422,11 +397,8 @@ export function MessagingPanel() {
               highestLoadedSequence,
             ),
             pendingDeliveredThrough:
-              previous?.pendingDeliveredThrough ??
-              refreshed.receipts.selfDeliveredThrough,
-            pendingReadThrough:
-              previous?.pendingReadThrough ??
-              refreshed.receipts.selfReadThrough,
+              previous?.pendingDeliveredThrough ?? refreshed.receipts.selfDeliveredThrough,
+            pendingReadThrough: previous?.pendingReadThrough ?? refreshed.receipts.selfReadThrough,
             lastSyncedAt: new Date().toISOString(),
           },
         });
@@ -516,9 +488,7 @@ export function MessagingPanel() {
     };
     const queueChanged = async () => {
       if (!conversation) return;
-      const queue = await (await runtime.database()).listChatQueue(
-        conversation.partnershipId,
-      );
+      const queue = await (await runtime.database()).listChatQueue(conversation.partnershipId);
       if (queue.length === 0 && sendStatus === "queued") {
         setSendStatus(null);
         setNotice("Queued message synced.");
@@ -570,9 +540,7 @@ export function MessagingPanel() {
     const replyToMessageId = replyingTo?.messageId ?? null;
     const existing = pendingSendRef.current;
     const pending =
-      existing &&
-      existing.body === body &&
-      existing.replyToMessageId === replyToMessageId
+      existing && existing.body === body && existing.replyToMessageId === replyToMessageId
         ? existing
         : { key: idempotencyKey(), body, replyToMessageId };
     pendingSendRef.current = pending;
@@ -608,24 +576,16 @@ export function MessagingPanel() {
         });
 
         await refreshMessage(conversation.conversationId, created.messageId);
-        changeCursorRef.current = Math.max(
-          changeCursorRef.current,
-          created.changeSequence,
-        );
+        changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence);
         pendingSendRef.current = null;
         setSendStatus(null);
         setComposer("");
         setReplyingTo(null);
         if (!runtime.sendTyping(false)) {
-          await apiRequest(
-            "/api/v1/conversations/" +
-              conversation.conversationId +
-              "/typing",
-            {
-              method: "POST",
-              body: { typing: false },
-            },
-          ).catch(() => undefined);
+          await apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
+            method: "POST",
+            body: { typing: false },
+          }).catch(() => undefined);
         }
       } catch (caught) {
         if (!(caught instanceof ApiClientError)) {
@@ -687,10 +647,7 @@ export function MessagingPanel() {
       }
       try {
         await apiRequest(
-          "/api/v1/conversations/" +
-            conversation.conversationId +
-            "/messages/" +
-            message.messageId,
+          "/api/v1/conversations/" + conversation.conversationId + "/messages/" + message.messageId,
           {
             method: "PATCH",
             headers: { "idempotency-key": key },
@@ -715,14 +672,8 @@ export function MessagingPanel() {
           setNotice("Edit queued after the network request failed.");
           return;
         }
-        if (
-          caught.code === "VERSION_CONFLICT" ||
-          caught.code === "MESSAGE_DELETED"
-        ) {
-          await refreshMessage(
-            conversation.conversationId,
-            message.messageId,
-          );
+        if (caught.code === "VERSION_CONFLICT" || caught.code === "MESSAGE_DELETED") {
+          await refreshMessage(conversation.conversationId, message.messageId);
         }
         throw caught;
       }
@@ -747,10 +698,7 @@ export function MessagingPanel() {
       }
       try {
         await apiRequest(
-          "/api/v1/conversations/" +
-            conversation.conversationId +
-            "/messages/" +
-            message.messageId,
+          "/api/v1/conversations/" + conversation.conversationId + "/messages/" + message.messageId,
           {
             method: "DELETE",
             headers: { "idempotency-key": key },
@@ -768,10 +716,7 @@ export function MessagingPanel() {
           return;
         }
         if (caught.code === "MESSAGE_DELETED") {
-          await refreshMessage(
-            conversation.conversationId,
-            message.messageId,
-          );
+          await refreshMessage(conversation.conversationId, message.messageId);
         }
         throw caught;
       }

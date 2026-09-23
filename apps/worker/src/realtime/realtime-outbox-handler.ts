@@ -35,11 +35,7 @@ function uuid(value: unknown): string {
 }
 
 function nonNegative(value: unknown): number {
-  if (
-    typeof value !== "number" ||
-    !Number.isSafeInteger(value) ||
-    value < 0
-  ) {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
     throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
   }
   return value;
@@ -64,16 +60,10 @@ function accountIds(value: unknown): [string, string] {
   return parsed.sort() as [string, string];
 }
 
-function exactKeys(
-  payload: Record<string, unknown>,
-  keys: readonly string[],
-): void {
+function exactKeys(payload: Record<string, unknown>, keys: readonly string[]): void {
   const expected = [...keys].sort();
   const actual = Object.keys(payload).sort();
-  if (
-    actual.length !== expected.length ||
-    actual.some((key, index) => key !== expected[index])
-  ) {
+  if (actual.length !== expected.length || actual.some((key, index) => key !== expected[index])) {
     throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
   }
 }
@@ -82,16 +72,9 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
   const payload = record(event.payload);
 
   if (event.eventType === "m2.conversation.receipt_changed") {
-    exactKeys(payload, [
-      "conversationId",
-      "deliveredThrough",
-      "readThrough",
-    ]);
+    exactKeys(payload, ["conversationId", "deliveredThrough", "readThrough"]);
     const conversationId = uuid(payload.conversationId);
-    if (
-      event.aggregateType !== "conversation" ||
-      event.aggregateId !== conversationId
-    ) {
+    if (event.aggregateType !== "conversation" || event.aggregateId !== conversationId) {
       throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
     }
     return {
@@ -110,10 +93,7 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
   if (event.eventType === "m2.conversation.nickname_changed") {
     exactKeys(payload, ["partnershipId", "subjectAccountId", "version"]);
     const partnershipId = uuid(payload.partnershipId);
-    if (
-      event.aggregateType !== "partnership" ||
-      event.aggregateId !== partnershipId
-    ) {
+    if (event.aggregateType !== "partnership" || event.aggregateId !== partnershipId) {
       throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
     }
     return {
@@ -130,18 +110,10 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
   }
 
   if (event.eventType === "m2.partnership.changed") {
-    exactKeys(payload, [
-      "partnershipId",
-      "accountIds",
-      "generation",
-      "metadataVersion",
-    ]);
+    exactKeys(payload, ["partnershipId", "accountIds", "generation", "metadataVersion"]);
     const partnershipId = uuid(payload.partnershipId);
     const routedAccountIds = accountIds(payload.accountIds);
-    if (
-      event.aggregateType !== "partnership" ||
-      event.aggregateId !== partnershipId
-    ) {
+    if (event.aggregateType !== "partnership" || event.aggregateId !== partnershipId) {
       throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
     }
     return {
@@ -160,10 +132,7 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
   if (event.eventType === "m2.relationship.changed") {
     exactKeys(payload, ["partnershipId", "itemId", "itemVersion"]);
     const partnershipId = uuid(payload.partnershipId);
-    if (
-      event.aggregateType !== "partnership" ||
-      event.aggregateId !== partnershipId
-    ) {
+    if (event.aggregateType !== "partnership" || event.aggregateId !== partnershipId) {
       throw new PermanentWorkerError("INVALID_M2_REALTIME_OUTBOX_PAYLOAD");
     }
     return {
@@ -174,8 +143,7 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
         eventId: event.id,
         partnershipId,
         itemId: payload.itemId === null ? null : uuid(payload.itemId),
-        itemVersion:
-          payload.itemVersion === null ? null : positive(payload.itemVersion),
+        itemVersion: payload.itemVersion === null ? null : positive(payload.itemVersion),
       },
     };
   }
@@ -196,14 +164,12 @@ function notification(event: OutboxEvent): M2InternalRealtimeNotification {
 export function createM2RealtimeOutboxHandlers(
   publisher?: RealtimeInvalidationPublisher,
 ): readonly OutboxHandler[] {
-  return EVENT_TYPES.map(
-    (eventType: RealtimeEventType): OutboxHandler => ({
-      eventType,
-      payloadVersion: 1,
-      async deliver({ event }) {
-        const mapped = notification(event);
-        if (publisher) await publisher.publish(mapped);
-      },
-    }),
-  );
+  return EVENT_TYPES.map((eventType: RealtimeEventType): OutboxHandler => ({
+    eventType,
+    payloadVersion: 1,
+    async deliver({ event }) {
+      const mapped = notification(event);
+      if (publisher) await publisher.publish(mapped);
+    },
+  }));
 }

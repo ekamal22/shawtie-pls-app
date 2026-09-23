@@ -100,7 +100,6 @@ test("M2 worker rejects private fields before realtime publication", async () =>
   assert.equal(published, false);
 });
 
-
 function genericEvent(input: {
   eventType: string;
   aggregateType: string;

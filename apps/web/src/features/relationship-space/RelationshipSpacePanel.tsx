@@ -71,12 +71,7 @@ function messageFor(error: unknown): string {
 }
 
 function queuedMutation(value: unknown): boolean {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "queued" in value &&
-    value.queued === true
-  );
+  return value !== null && typeof value === "object" && "queued" in value && value.queued === true;
 }
 
 function titleForKind(kind: RelationshipItemKind): string {
@@ -1110,10 +1105,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
 
     const partnershipId = runtime.realtime.scope.partnershipId;
     if (partnershipId && homeResult.space) {
-      await (await runtime.database()).cacheRelationshipItems(
-        partnershipId,
-        itemResult.items,
-      );
+      await (await runtime.database()).cacheRelationshipItems(partnershipId, itemResult.items);
     }
   }
 

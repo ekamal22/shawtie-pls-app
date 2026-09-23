@@ -40,11 +40,7 @@ export interface OfflineQueueClaim {
 }
 
 export type ChatOperationType =
-  | "message.send"
-  | "message.edit"
-  | "message.delete"
-  | "reaction.set"
-  | "reaction.remove";
+  "message.send" | "message.edit" | "message.delete" | "reaction.set" | "reaction.remove";
 
 export interface ChatQueueOperation extends OfflineQueueClaim {
   readonly operationId: string;
@@ -151,10 +147,7 @@ function openDatabase(accountId: string): Promise<IDBDatabase> {
 }
 
 function queueRange(partnershipId: string): IDBKeyRange {
-  return IDBKeyRange.bound(
-    [partnershipId, 0],
-    [partnershipId, Number.MAX_SAFE_INTEGER],
-  );
+  return IDBKeyRange.bound([partnershipId, 0], [partnershipId, Number.MAX_SAFE_INTEGER]);
 }
 
 export class ShawtieLocalDatabase {
@@ -214,10 +207,7 @@ export class ShawtieLocalDatabase {
     return (value as ConversationSyncState | undefined) ?? null;
   }
 
-  async loadMessages(
-    partnershipId: string,
-    conversationId: string,
-  ): Promise<MessageProjection[]> {
+  async loadMessages(partnershipId: string, conversationId: string): Promise<MessageProjection[]> {
     const tx = this.#database.transaction(["messages"], "readonly");
     const index = tx.objectStore("messages").index("byConversationSequence");
     const values = (await requestResult(
@@ -231,7 +221,12 @@ export class ShawtieLocalDatabase {
     await transactionDone(tx);
     return values
       .sort((left, right) => left.serverSequence - right.serverSequence)
-      .map(({ partnershipId: _partnershipId, contentContextKey: _context, ...message }) => message);
+      .map((cached) => {
+        const message = { ...cached } as Partial<CachedMessage>;
+        delete message.partnershipId;
+        delete message.contentContextKey;
+        return message as MessageProjection;
+      });
   }
 
   async commitMessagesAndSync(input: {
@@ -260,22 +255,13 @@ export class ShawtieLocalDatabase {
     const cached = (await requestResult(
       messages.index("byConversationSequence").getAll(range),
     )) as CachedMessage[];
-    const excess = Math.max(
-      0,
-      cached.length - M2_MAX_CACHED_MESSAGES_PER_CONVERSATION,
-    );
+    const excess = Math.max(0, cached.length - M2_MAX_CACHED_MESSAGES_PER_CONVERSATION);
     for (const message of cached.slice(0, excess)) {
-      messages.delete([
-        input.partnershipId,
-        input.conversationId,
-        message.messageId,
-      ]);
+      messages.delete([input.partnershipId, input.conversationId, message.messageId]);
     }
     const retained = cached.slice(excess);
-    const retainedStart =
-      retained.at(0)?.serverSequence ?? input.sync.retainedHistoryStartSequence;
-    const retainedEnd =
-      retained.at(-1)?.serverSequence ?? input.sync.retainedHistoryEndSequence;
+    const retainedStart = retained.at(0)?.serverSequence ?? input.sync.retainedHistoryStartSequence;
+    const retainedEnd = retained.at(-1)?.serverSequence ?? input.sync.retainedHistoryEndSequence;
 
     tx.objectStore("conversationSync").put({
       ...input.sync,
@@ -297,10 +283,7 @@ export class ShawtieLocalDatabase {
     partnershipId: string,
     items: readonly RelationshipItemProjection[],
   ): Promise<void> {
-    const tx = this.#database.transaction(
-      ["relationshipItems", "relationshipMeta"],
-      "readwrite",
-    );
+    const tx = this.#database.transaction(["relationshipItems", "relationshipMeta"], "readwrite");
     const store = tx.objectStore("relationshipItems");
     for (const item of items) {
       store.put({
@@ -318,9 +301,7 @@ export class ShawtieLocalDatabase {
           Date.parse(right.updatedAt) - Date.parse(left.updatedAt) ||
           right.itemId.localeCompare(left.itemId),
       );
-    for (const item of partnershipItems.slice(
-      M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP,
-    )) {
+    for (const item of partnershipItems.slice(M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP)) {
       store.delete([partnershipId, item.itemId]);
     }
 
@@ -341,9 +322,7 @@ export class ShawtieLocalDatabase {
     const tx = this.#database.transaction(["conversationSync"], "readwrite");
     const store = tx.objectStore("conversationSync");
     const key = [input.partnershipId, input.conversationId];
-    const current = (await requestResult(store.get(key))) as
-      | ConversationSyncState
-      | undefined;
+    const current = (await requestResult(store.get(key))) as ConversationSyncState | undefined;
     if (!current) {
       tx.abort();
       return null;
@@ -351,14 +330,8 @@ export class ShawtieLocalDatabase {
 
     const next: ConversationSyncState = {
       ...current,
-      pendingDeliveredThrough: Math.max(
-        current.pendingDeliveredThrough,
-        input.deliveredThrough,
-      ),
-      pendingReadThrough: Math.max(
-        current.pendingReadThrough,
-        input.readThrough,
-      ),
+      pendingDeliveredThrough: Math.max(current.pendingDeliveredThrough, input.deliveredThrough),
+      pendingReadThrough: Math.max(current.pendingReadThrough, input.readThrough),
     };
     store.put(next);
     await transactionDone(tx);
@@ -448,13 +421,8 @@ export class ShawtieLocalDatabase {
     const tx = this.#database.transaction(["chatOutbox"], "readwrite");
     const store = tx.objectStore("chatOutbox");
     const current = (await requestResult(store.get(operation.operationId))) as
-      | ChatQueueOperation
-      | undefined;
-    if (
-      !current ||
-      current.claimOwner !== owner ||
-      current.claimGeneration !== claimGeneration
-    ) {
+      ChatQueueOperation | undefined;
+    if (!current || current.claimOwner !== owner || current.claimGeneration !== claimGeneration) {
       tx.abort();
       return false;
     }
@@ -466,9 +434,7 @@ export class ShawtieLocalDatabase {
   async retryChatOperation(operationId: string): Promise<boolean> {
     const tx = this.#database.transaction(["chatOutbox"], "readwrite");
     const store = tx.objectStore("chatOutbox");
-    const current = (await requestResult(store.get(operationId))) as
-      | ChatQueueOperation
-      | undefined;
+    const current = (await requestResult(store.get(operationId))) as ChatQueueOperation | undefined;
     if (!current) {
       tx.abort();
       return false;
@@ -503,13 +469,8 @@ export class ShawtieLocalDatabase {
     );
     const outbox = tx.objectStore("chatOutbox");
     const current = (await requestResult(outbox.get(operation.operationId))) as
-      | ChatQueueOperation
-      | undefined;
-    if (
-      !current ||
-      current.claimOwner !== owner ||
-      current.claimGeneration !== claimGeneration
-    ) {
+      ChatQueueOperation | undefined;
+    if (!current || current.claimOwner !== owner || current.claimGeneration !== claimGeneration) {
       tx.abort();
       return false;
     }
@@ -523,25 +484,14 @@ export class ShawtieLocalDatabase {
 
     const range = IDBKeyRange.bound(
       [operation.partnershipId, operation.conversationId, 0],
-      [
-        operation.partnershipId,
-        operation.conversationId,
-        Number.MAX_SAFE_INTEGER,
-      ],
+      [operation.partnershipId, operation.conversationId, Number.MAX_SAFE_INTEGER],
     );
     const cached = (await requestResult(
       messages.index("byConversationSequence").getAll(range),
     )) as CachedMessage[];
-    const excess = Math.max(
-      0,
-      cached.length - M2_MAX_CACHED_MESSAGES_PER_CONVERSATION,
-    );
+    const excess = Math.max(0, cached.length - M2_MAX_CACHED_MESSAGES_PER_CONVERSATION);
     for (const cachedMessage of cached.slice(0, excess)) {
-      messages.delete([
-        operation.partnershipId,
-        operation.conversationId,
-        cachedMessage.messageId,
-      ]);
+      messages.delete([operation.partnershipId, operation.conversationId, cachedMessage.messageId]);
     }
     const retained = cached.slice(excess);
 
@@ -557,20 +507,14 @@ export class ShawtieLocalDatabase {
         existing?.latestChangeSequence ?? 0,
         message.lastChangeSequence,
       ),
-      latestServerSequence: Math.max(
-        existing?.latestServerSequence ?? 0,
-        message.serverSequence,
-      ),
+      latestServerSequence: Math.max(existing?.latestServerSequence ?? 0, message.serverSequence),
       retainedHistoryStartSequence:
         retained.at(0)?.serverSequence ??
         existing?.retainedHistoryStartSequence ??
         message.serverSequence,
       retainedHistoryEndSequence:
         retained.at(-1)?.serverSequence ??
-        Math.max(
-          existing?.retainedHistoryEndSequence ?? 0,
-          message.serverSequence,
-        ),
+        Math.max(existing?.retainedHistoryEndSequence ?? 0, message.serverSequence),
       pendingDeliveredThrough: existing?.pendingDeliveredThrough ?? 0,
       pendingReadThrough: existing?.pendingReadThrough ?? 0,
       lastSyncedAt: new Date().toISOString(),
@@ -589,13 +533,8 @@ export class ShawtieLocalDatabase {
     const tx = this.#database.transaction(["chatOutbox"], "readwrite");
     const store = tx.objectStore("chatOutbox");
     const current = (await requestResult(store.get(operation.operationId))) as
-      | ChatQueueOperation
-      | undefined;
-    if (
-      !current ||
-      current.claimOwner !== owner ||
-      current.claimGeneration !== claimGeneration
-    ) {
+      ChatQueueOperation | undefined;
+    if (!current || current.claimOwner !== owner || current.claimGeneration !== claimGeneration) {
       tx.abort();
       return false;
     }
@@ -631,8 +570,7 @@ export class ShawtieLocalDatabase {
     const tx = this.#database.transaction(["relationshipOutbox"], "readwrite");
     const store = tx.objectStore("relationshipOutbox");
     const current = (await requestResult(store.get(operationId))) as
-      | RelationshipQueueOperation
-      | undefined;
+      RelationshipQueueOperation | undefined;
     if (
       !current ||
       current.status === "blocked" ||
@@ -662,13 +600,8 @@ export class ShawtieLocalDatabase {
     const tx = this.#database.transaction(["relationshipOutbox"], "readwrite");
     const store = tx.objectStore("relationshipOutbox");
     const current = (await requestResult(store.get(operation.operationId))) as
-      | RelationshipQueueOperation
-      | undefined;
-    if (
-      !current ||
-      current.claimOwner !== owner ||
-      current.claimGeneration !== claimGeneration
-    ) {
+      RelationshipQueueOperation | undefined;
+    if (!current || current.claimOwner !== owner || current.claimGeneration !== claimGeneration) {
       tx.abort();
       return false;
     }
@@ -681,8 +614,7 @@ export class ShawtieLocalDatabase {
     const tx = this.#database.transaction(["relationshipOutbox"], "readwrite");
     const store = tx.objectStore("relationshipOutbox");
     const current = (await requestResult(store.get(operationId))) as
-      | RelationshipQueueOperation
-      | undefined;
+      RelationshipQueueOperation | undefined;
     if (!current) {
       tx.abort();
       return false;
@@ -711,19 +643,11 @@ export class ShawtieLocalDatabase {
     claimGeneration: number,
     item: RelationshipItemProjection | null,
   ): Promise<boolean> {
-    const tx = this.#database.transaction(
-      ["relationshipOutbox", "relationshipItems"],
-      "readwrite",
-    );
+    const tx = this.#database.transaction(["relationshipOutbox", "relationshipItems"], "readwrite");
     const outbox = tx.objectStore("relationshipOutbox");
     const current = (await requestResult(outbox.get(operation.operationId))) as
-      | RelationshipQueueOperation
-      | undefined;
-    if (
-      !current ||
-      current.claimOwner !== owner ||
-      current.claimGeneration !== claimGeneration
-    ) {
+      RelationshipQueueOperation | undefined;
+    if (!current || current.claimOwner !== owner || current.claimGeneration !== claimGeneration) {
       tx.abort();
       return false;
     }
@@ -765,8 +689,7 @@ export async function purgeAccountLocalData(accountId: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const request = indexedDB.deleteDatabase(DATABASE_PREFIX + accountId);
     request.onsuccess = () => resolve();
-    request.onerror = () =>
-      reject(request.error ?? new Error("Unable to delete local database"));
+    request.onerror = () => reject(request.error ?? new Error("Unable to delete local database"));
     request.onblocked = () => {
       // Other Shawtie pls tabs receive the logout broadcast and close their
       // database handles; the delete request completes after those handles close.

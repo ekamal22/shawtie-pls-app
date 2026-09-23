@@ -1,12 +1,5 @@
-import type {
-  MessageProjection,
-  RelationshipItemProjection,
-} from "@shawtie/contracts";
-import {
-  ApiClientError,
-  ApiNetworkError,
-  apiRequest,
-} from "../api-client.ts";
+import type { MessageProjection, RelationshipItemProjection } from "@shawtie/contracts";
+import { ApiClientError, ApiNetworkError, apiRequest } from "../api-client.ts";
 import type {
   ChatQueueOperation,
   RelationshipQueueOperation,
@@ -59,21 +52,13 @@ function authenticationFailure(error: unknown): boolean {
 function safeRelationshipCreate(body: unknown): boolean {
   if (!isRecord(body)) return false;
   const release = body.release;
-  if (
-    release !== null &&
-    !(
-      isRecord(release) &&
-      release.mode === "immediate"
-    )
-  ) {
+  if (release !== null && !(isRecord(release) && release.mode === "immediate")) {
     return false;
   }
   const references = body.references;
   if (!Array.isArray(references)) return false;
   return references.every(
-    (reference) =>
-      isRecord(reference) &&
-      reference.referenceType === "message",
+    (reference) => isRecord(reference) && reference.referenceType === "message",
   );
 }
 
@@ -323,19 +308,15 @@ export class M2ReplayEngine {
   }
 
   async #executeChat(operation: ChatQueueOperation): Promise<MessageProjection | null> {
-    const base =
-      "/api/v1/conversations/" + operation.conversationId;
+    const base = "/api/v1/conversations/" + operation.conversationId;
     let messageId = operation.messageId;
 
     if (operation.operationType === "message.send") {
-      const created = await apiRequest<{ messageId: string }>(
-        base + "/messages",
-        {
-          method: "POST",
-          headers: { "idempotency-key": operation.idempotencyKey },
-          body: operation.requestBody,
-        },
-      );
+      const created = await apiRequest<{ messageId: string }>(base + "/messages", {
+        method: "POST",
+        headers: { "idempotency-key": operation.idempotencyKey },
+        body: operation.requestBody,
+      });
       messageId = created.messageId;
     } else if (!messageId) {
       throw new Error("Queued chat operation has no message ID");
@@ -369,9 +350,7 @@ export class M2ReplayEngine {
 
   async #replayRelationship(scope: RealtimeScope): Promise<void> {
     if (!scope.partnershipId) return;
-    const authority = await apiRequest<RelationshipAuthority>(
-      "/api/v1/relationship-space",
-    );
+    const authority = await apiRequest<RelationshipAuthority>("/api/v1/relationship-space");
     if (!authority.space) return;
 
     const database = await this.database();
@@ -434,14 +413,11 @@ export class M2ReplayEngine {
       if (!safeRelationshipCreate(operation.requestBody)) {
         throw new Error("Unsafe queued relationship create");
       }
-      const created = await apiRequest<{ itemId: string }>(
-        "/api/v1/relationship-space/items",
-        {
-          method: "POST",
-          headers: { "idempotency-key": operation.idempotencyKey },
-          body: operation.requestBody,
-        },
-      );
+      const created = await apiRequest<{ itemId: string }>("/api/v1/relationship-space/items", {
+        method: "POST",
+        headers: { "idempotency-key": operation.idempotencyKey },
+        body: operation.requestBody,
+      });
       return apiRequest<RelationshipItemProjection>(
         "/api/v1/relationship-space/items/" + created.itemId,
       );
@@ -453,27 +429,21 @@ export class M2ReplayEngine {
       if (!safeRelationshipPatch(operation.requestBody)) {
         throw new Error("Unsafe queued relationship patch");
       }
-      await apiRequest(
-        "/api/v1/relationship-space/items/" + operation.itemId,
-        {
-          method: "PATCH",
-          headers: { "idempotency-key": operation.idempotencyKey },
-          body: operation.requestBody,
-        },
-      );
+      await apiRequest("/api/v1/relationship-space/items/" + operation.itemId, {
+        method: "PATCH",
+        headers: { "idempotency-key": operation.idempotencyKey },
+        body: operation.requestBody,
+      });
       return apiRequest<RelationshipItemProjection>(
         "/api/v1/relationship-space/items/" + operation.itemId,
       );
     }
 
-    await apiRequest(
-      "/api/v1/relationship-space/items/" + operation.itemId,
-      {
-        method: "DELETE",
-        headers: { "idempotency-key": operation.idempotencyKey },
-        body: operation.requestBody,
-      },
-    );
+    await apiRequest("/api/v1/relationship-space/items/" + operation.itemId, {
+      method: "DELETE",
+      headers: { "idempotency-key": operation.idempotencyKey },
+      body: operation.requestBody,
+    });
     return null;
   }
 
@@ -508,12 +478,7 @@ export class M2ReplayEngine {
     const claimed =
       operation.claimOwner === this.#owner
         ? operation
-        : await database.claimChat(
-            operation.operationId,
-            this.#owner,
-            Date.now(),
-            CLAIM_LEASE_MS,
-          );
+        : await database.claimChat(operation.operationId, this.#owner, Date.now(), CLAIM_LEASE_MS);
     if (!claimed) return;
     await database.updateChat(
       {

@@ -1,7 +1,4 @@
-import {
-  M2_REALTIME_SUBPROTOCOL,
-  type M2RealtimeClientFrame,
-} from "@shawtie/contracts";
+import { M2_REALTIME_SUBPROTOCOL, type M2RealtimeClientFrame } from "@shawtie/contracts";
 import {
   consumeRateLimitBuckets,
   getTransactionTimestamp,
@@ -12,10 +9,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ApiConfig } from "../../config.ts";
 import { ApiError } from "../../lib/api-error.ts";
 import type { MessagingService } from "../messages/messaging-service.ts";
-import {
-  requireAuthentication,
-  type AuthContext,
-} from "../../plugins/authentication.ts";
+import { requireAuthentication, type AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import type {
   RealtimeClientFrameHandler,
@@ -35,40 +29,33 @@ async function consumeRealtimeConnectionRateLimit(
     readonly keys: AuthKeyRing;
   },
 ): Promise<void> {
-  const decision = await withTransaction(
-    dependencies.database,
-    async (transaction) => {
-      const now = await getTransactionTimestamp(transaction);
-      const subjects = [
-        {
-          scope: "m2.realtime.connect.account",
-          subject: "account\0" + auth.session.accountId,
-        },
-        {
-          scope: "m2.realtime.connect.network",
-          subject: "network\0" + request.ip,
-        },
-      ];
-      return consumeRateLimitBuckets(
-        transaction,
-        subjects.flatMap((item) =>
-          dependencies.keys.versions.map((version) => ({
-            scope: item.scope,
-            keyVersion: version,
-            keyHash: dependencies.keys.verifier(
-              "rate-limit-key",
-              item.subject,
-              version,
-            ),
-            windowMs: REALTIME_CONNECT_RATE_WINDOW_MS,
-            limit: REALTIME_CONNECT_RATE_LIMIT,
-            blockMs: REALTIME_CONNECT_RATE_WINDOW_MS,
-          })),
-        ),
-        now,
-      );
-    },
-  );
+  const decision = await withTransaction(dependencies.database, async (transaction) => {
+    const now = await getTransactionTimestamp(transaction);
+    const subjects = [
+      {
+        scope: "m2.realtime.connect.account",
+        subject: "account\0" + auth.session.accountId,
+      },
+      {
+        scope: "m2.realtime.connect.network",
+        subject: "network\0" + request.ip,
+      },
+    ];
+    return consumeRateLimitBuckets(
+      transaction,
+      subjects.flatMap((item) =>
+        dependencies.keys.versions.map((version) => ({
+          scope: item.scope,
+          keyVersion: version,
+          keyHash: dependencies.keys.verifier("rate-limit-key", item.subject, version),
+          windowMs: REALTIME_CONNECT_RATE_WINDOW_MS,
+          limit: REALTIME_CONNECT_RATE_LIMIT,
+          blockMs: REALTIME_CONNECT_RATE_WINDOW_MS,
+        })),
+      ),
+      now,
+    );
+  });
 
   if (!decision.allowed) {
     throw new ApiError(

@@ -5,12 +5,7 @@ export interface SynchronizerResult {
 export type Synchronizer = () => Promise<SynchronizerResult | void>;
 export type SynchronizerPhase = "reconcile" | "replay";
 
-export type SyncStatus =
-  | "idle"
-  | "syncing"
-  | "live"
-  | "offline"
-  | "update-required";
+export type SyncStatus = "idle" | "syncing" | "live" | "offline" | "update-required";
 
 export class SyncCoordinator {
   readonly #reconcilers = new Map<string, Synchronizer>();
@@ -105,17 +100,12 @@ export class SyncCoordinator {
         const result = await synchronizer();
         if (this.#stopped) return;
         if (result?.latestChangeSequence !== undefined) {
-          observedChangeSequence = Math.max(
-            observedChangeSequence,
-            result.latestChangeSequence,
-          );
+          observedChangeSequence = Math.max(observedChangeSequence, result.latestChangeSequence);
         }
       }
 
       const dirtyAfterReconcile = this.#dirtyCounter !== dirtyAtStart;
-      const behindHint =
-        targetChangeSequence > 0 &&
-        observedChangeSequence < targetChangeSequence;
+      const behindHint = targetChangeSequence > 0 && observedChangeSequence < targetChangeSequence;
 
       if (dirtyAfterReconcile || behindHint) continue;
 

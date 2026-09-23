@@ -25,11 +25,12 @@ function networkFallback(error: unknown): boolean {
   return !(error instanceof ApiClientError);
 }
 
-type RelationshipMutationSuccess<T> = [T] extends [void] ? { queued: false } : { queued: false } & T;
+type RelationshipMutationSuccess<T> = [T] extends [void]
+  ? { queued: false }
+  : { queued: false } & T;
 
 export type RelationshipMutationResult<T = void> =
-  | RelationshipMutationSuccess<T>
-  | { queued: true; operationId: string };
+  RelationshipMutationSuccess<T> | { queued: true; operationId: string };
 
 export function loadRelationshipHome(): Promise<RelationshipSpaceResponse> {
   return apiRequest("/api/v1/relationship-space");
@@ -54,9 +55,7 @@ export function listRelationshipItems(
   return apiRequest("/api/v1/relationship-space/items?" + query.toString());
 }
 
-export async function createRelationshipItem(
-  body: unknown,
-): Promise<
+export async function createRelationshipItem(body: unknown): Promise<
   RelationshipMutationResult<{
     itemId: string;
     version: number;
@@ -137,11 +136,7 @@ export async function deleteRelationshipItem(
 ): Promise<RelationshipMutationResult> {
   const key = mutationKey();
   const queue = async () => {
-    const operation = await runtimeOrThrow().queueRelationshipDelete(
-      itemId,
-      expectedVersion,
-      key,
-    );
+    const operation = await runtimeOrThrow().queueRelationshipDelete(itemId, expectedVersion, key);
     return { queued: true as const, operationId: operation.operationId };
   };
 

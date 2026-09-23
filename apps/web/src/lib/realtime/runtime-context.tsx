@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { M2RealtimeServerFrame } from "@shawtie/contracts";
 import {
   ShawtieLocalDatabase,
@@ -57,11 +50,7 @@ export class M2Runtime {
         void this.coordinator.requestSync();
       },
     );
-    this.coordinator.register(
-      "offline-replay",
-      async () => this.replay.replay(),
-      "replay",
-    );
+    this.coordinator.register("offline-replay", async () => this.replay.replay(), "replay");
   }
 
   async start(): Promise<void> {
@@ -116,10 +105,7 @@ export class M2Runtime {
     body: unknown,
     idempotencyKey?: string,
   ): Promise<RelationshipQueueOperation> {
-    const operation = await this.replay.enqueueRelationshipCreate(
-      body,
-      idempotencyKey,
-    );
+    const operation = await this.replay.enqueueRelationshipCreate(body, idempotencyKey);
     void this.coordinator.requestSync();
     return operation;
   }
@@ -129,38 +115,24 @@ export class M2Runtime {
     body: unknown,
     idempotencyKey?: string,
   ): Promise<RelationshipQueueOperation> {
-    const operation = await this.replay.enqueueRelationshipPatch(
-      itemId,
-      body,
-      idempotencyKey,
-    );
+    const operation = await this.replay.enqueueRelationshipPatch(itemId, body, idempotencyKey);
     void this.coordinator.requestSync();
     return operation;
   }
 
-  async retryQueuedOperation(
-    kind: "chat" | "relationship",
-    operationId: string,
-  ): Promise<void> {
+  async retryQueuedOperation(kind: "chat" | "relationship", operationId: string): Promise<void> {
     const database = await this.database();
     const retried =
       kind === "chat"
         ? await database.retryChatOperation(operationId)
         : await database.retryRelationshipOperation(operationId);
     if (!retried) return;
-    dispatch(
-      kind === "chat"
-        ? "shawtie:chat-queue-changed"
-        : "shawtie:relationship-queue-changed",
-    );
+    dispatch(kind === "chat" ? "shawtie:chat-queue-changed" : "shawtie:relationship-queue-changed");
     this.coordinator.markDirty();
     void this.coordinator.requestSync();
   }
 
-  async discardQueuedOperation(
-    kind: "chat" | "relationship",
-    operationId: string,
-  ): Promise<void> {
+  async discardQueuedOperation(kind: "chat" | "relationship", operationId: string): Promise<void> {
     const database = await this.database();
     if (kind === "chat") {
       await database.discardChatOperation(operationId);
@@ -193,23 +165,14 @@ export class M2Runtime {
     return this.realtime.sendTyping(typing);
   }
 
-  async #scopeChanged(
-    previous: RealtimeScope,
-    next: RealtimeScope,
-  ): Promise<void> {
+  async #scopeChanged(previous: RealtimeScope, next: RealtimeScope): Promise<void> {
     const database = await this.database();
-    if (
-      previous.partnershipId &&
-      previous.partnershipId !== next.partnershipId
-    ) {
+    if (previous.partnershipId && previous.partnershipId !== next.partnershipId) {
       await database.purgePartnership(previous.partnershipId);
       dispatch("shawtie:partnership-changed");
     }
     if (next.partnershipId && next.conversationId) {
-      await database.rememberNamespace(
-        next.partnershipId,
-        next.conversationId,
-      );
+      await database.rememberNamespace(next.partnershipId, next.conversationId);
     }
   }
 
@@ -274,9 +237,7 @@ export function M2RuntimeProvider({
     void runtime.start();
     const unsubscribeLogout = subscribeLocalLogout(accountId, () => {
       void runtime.stop().finally(() => {
-        window.dispatchEvent(
-          new CustomEvent("shawtie:local-logout", { detail: accountId }),
-        );
+        window.dispatchEvent(new CustomEvent("shawtie:local-logout", { detail: accountId }));
       });
     });
     return () => {
@@ -287,11 +248,7 @@ export function M2RuntimeProvider({
     };
   }, [accountId, runtime]);
 
-  return (
-    <RuntimeContext.Provider value={runtime}>
-      {children}
-    </RuntimeContext.Provider>
-  );
+  return <RuntimeContext.Provider value={runtime}>{children}</RuntimeContext.Provider>;
 }
 
 export function useM2Runtime(): M2Runtime {
@@ -302,16 +259,10 @@ export function useM2Runtime(): M2Runtime {
 
 export function useM2SyncStatus(): SyncStatus {
   const runtime = useM2Runtime();
-  const [status, setStatus] = useState<SyncStatus>(
-    runtime.coordinator.status,
-  );
-  useEffect(
-    () => runtime.coordinator.subscribe(setStatus),
-    [runtime],
-  );
+  const [status, setStatus] = useState<SyncStatus>(runtime.coordinator.status);
+  useEffect(() => runtime.coordinator.subscribe(setStatus), [runtime]);
   return status;
 }
-
 
 function attemptedText(value: unknown): string | null {
   if (
@@ -367,18 +318,12 @@ export function M2QueueStatus() {
   }, [runtime, syncStatus]);
 
   const blockedChat = chat.filter((operation) => operation.status === "blocked");
-  const blockedRelationship = relationship.filter(
-    (operation) => operation.status === "blocked",
-  );
+  const blockedRelationship = relationship.filter((operation) => operation.status === "blocked");
   const pendingCount =
     chat.filter((operation) => operation.status !== "blocked").length +
     relationship.filter((operation) => operation.status !== "blocked").length;
 
-  if (
-    blockedChat.length === 0 &&
-    blockedRelationship.length === 0 &&
-    pendingCount === 0
-  ) {
+  if (blockedChat.length === 0 && blockedRelationship.length === 0 && pendingCount === 0) {
     return null;
   }
 
@@ -391,40 +336,33 @@ export function M2QueueStatus() {
         </p>
       ) : null}
 
-      {[...blockedChat.map((operation) => ({ kind: "chat" as const, operation })),
+      {[
+        ...blockedChat.map((operation) => ({ kind: "chat" as const, operation })),
         ...blockedRelationship.map((operation) => ({
           kind: "relationship" as const,
           operation,
-        }))].map(({ kind, operation }) => {
-        const text =
-          kind === "chat" ? attemptedText(operation.requestBody) : null;
+        })),
+      ].map(({ kind, operation }) => {
+        const text = kind === "chat" ? attemptedText(operation.requestBody) : null;
         return (
           <article className="device" key={kind + ":" + operation.operationId}>
             <div className="stack">
               <strong>{operation.operationType}</strong>
-              <span className="hint">
-                {operation.lastErrorCode ?? "Server authority changed."}
-              </span>
+              <span className="hint">{operation.lastErrorCode ?? "Server authority changed."}</span>
               {text ? (
-                <p className="muted">
-                  Attempted text is still stored locally: {text}
-                </p>
+                <p className="muted">Attempted text is still stored locally: {text}</p>
               ) : null}
             </div>
             <div className="row">
               <button
                 className="secondary compact"
-                onClick={() =>
-                  void runtime.retryQueuedOperation(kind, operation.operationId)
-                }
+                onClick={() => void runtime.retryQueuedOperation(kind, operation.operationId)}
               >
                 Retry
               </button>
               <button
                 className="danger compact"
-                onClick={() =>
-                  void runtime.discardQueuedOperation(kind, operation.operationId)
-                }
+                onClick={() => void runtime.discardQueuedOperation(kind, operation.operationId)}
               >
                 Discard
               </button>

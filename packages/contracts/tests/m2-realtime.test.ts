@@ -27,10 +27,7 @@ const CONNECTION = "60000000-0000-4000-8000-000000000001";
 test("M2 protocol and local-schema constants are frozen at v1", () => {
   assert.equal(M2_REALTIME_PROTOCOL_VERSION, 1);
   assert.equal(M2_CLIENT_COMPATIBILITY_VERSION, 1);
-  assert.equal(
-    M2_CLIENT_PROTOCOL_HEADER,
-    "x-shawtie-client-protocol-version",
-  );
+  assert.equal(M2_CLIENT_PROTOCOL_HEADER, "x-shawtie-client-protocol-version");
   assert.equal(M2_LOCAL_SCHEMA_HEADER, "x-shawtie-local-schema-version");
   assert.equal(M2_REALTIME_SUBPROTOCOL, "shawtie.realtime.v1");
   assert.equal(M2_REALTIME_MAX_FRAME_BYTES, 4096);
@@ -150,7 +147,10 @@ test("M2 internal notification requires routing metadata without protected conte
       contentVersion: 3,
     },
   };
-  assert.equal(safeParseAtBoundary(m2InternalRealtimeNotificationSchema, notification).success, true);
+  assert.equal(
+    safeParseAtBoundary(m2InternalRealtimeNotificationSchema, notification).success,
+    true,
+  );
   assert.equal(
     safeParseAtBoundary(m2InternalRealtimeNotificationSchema, {
       ...notification,
@@ -166,10 +166,7 @@ test("M2 internal partnership invalidation carries only distinct account routing
     kind: "partnership.changed",
     scope: {
       partnershipId: PARTNERSHIP,
-      accountIds: [
-        ACCOUNT,
-        "10000000-0000-4000-8000-000000000002",
-      ],
+      accountIds: [ACCOUNT, "10000000-0000-4000-8000-000000000002"],
     },
     data: {
       eventId: EVENT,

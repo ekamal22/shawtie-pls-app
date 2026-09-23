@@ -52,7 +52,8 @@ function assertContentFreeInvalidation(event: OutboxEvent): asserts event is Out
     if (!allowedKeys.has(key)) throw new PermanentWorkerError("INVALID_M1_OUTBOX_PAYLOAD");
   }
 
-  const { conversationId, messageId, changeSequence, contentVersion, serverSequence } = event.payload;
+  const { conversationId, messageId, changeSequence, contentVersion, serverSequence } =
+    event.payload;
   if (
     !uuid(conversationId) ||
     !uuid(messageId) ||
@@ -131,5 +132,7 @@ export function createMessagingInvalidationHandler(
 export function createM1MessagingInvalidationHandlers(
   publisher?: RealtimeInvalidationPublisher,
 ): readonly OutboxHandler[] {
-  return M1_EVENT_TYPES.map((eventType) => createMessagingInvalidationHandler(eventType, publisher));
+  return M1_EVENT_TYPES.map((eventType) =>
+    createMessagingInvalidationHandler(eventType, publisher),
+  );
 }

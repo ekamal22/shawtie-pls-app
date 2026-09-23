@@ -52,9 +52,7 @@ export function subscribeM2UpdateWaiting(listener: () => void): () => void {
   return () => window.removeEventListener(UPDATE_EVENT, listener);
 }
 
-export function activateWaitingM2ServiceWorker(
-  coordinator: SyncCoordinator,
-): boolean {
+export function activateWaitingM2ServiceWorker(coordinator: SyncCoordinator): boolean {
   const waiting = waitingRegistration?.waiting;
   if (!waiting) return false;
   coordinator.markUpdateRequired();

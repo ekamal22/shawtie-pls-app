@@ -22,7 +22,7 @@ test("M2 IndexedDB namespaces and queue claims are partnership fenced", async ()
   const local = await source("../src/lib/offline/local-db.ts");
 
   assert.equal(local.includes('const DATABASE_PREFIX = "shawtie-local-v1:"'), true);
-  assert.equal(local.includes('M2_PRE_S1_CONTENT_CONTEXT'), true);
+  assert.equal(local.includes("M2_PRE_S1_CONTENT_CONTEXT"), true);
   assert.equal(local.includes("partnershipId"), true);
   assert.equal(local.includes("conversationId"), true);
   assert.equal(local.includes("claimGeneration"), true);
@@ -53,10 +53,12 @@ test("M2 service worker never caches private API and activates only by page comm
   assert.equal(worker.includes('event.data?.type === "M2_ACTIVATE_UPDATE"'), true);
   assert.equal(worker.includes('self.addEventListener("install", () =>'), true);
   assert.equal(
-    worker.slice(
-      worker.indexOf('self.addEventListener("install"'),
-      worker.indexOf('self.addEventListener("activate"'),
-    ).includes("skipWaiting"),
+    worker
+      .slice(
+        worker.indexOf('self.addEventListener("install"'),
+        worker.indexOf('self.addEventListener("activate"'),
+      )
+      .includes("skipWaiting"),
     false,
   );
   assert.equal(registration.includes("coordinator.markUpdateRequired()"), true);
@@ -68,12 +70,8 @@ test("M2 cold start locks cached plaintext until server session verification", a
   assert.equal(app.includes('"offline-locked"'), true);
   assert.equal(app.includes("/api/v1/auth/session"), true);
   assert.equal(app.includes("<M2RuntimeProvider"), true);
-  assert.ok(
-    app.indexOf('session === "offline-locked"') <
-      app.indexOf("<M2RuntimeProvider"),
-  );
+  assert.ok(app.indexOf('session === "offline-locked"') < app.indexOf("<M2RuntimeProvider"));
 });
-
 
 test("M2 cross-tab logout closes private local state before account purge", async () => {
   const control = await source("../src/lib/offline/account-control.ts");
@@ -98,11 +96,16 @@ test("M2 PWA manifest is installable without granting private Cache API access",
 
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.start_url, "/");
-  assert.equal(manifest.icons?.some((entry) => entry.src === "/icon.svg"), true);
-  assert.equal(manifest.icons?.some((entry) => entry.purpose?.includes("maskable")), true);
+  assert.equal(
+    manifest.icons?.some((entry) => entry.src === "/icon.svg"),
+    true,
+  );
+  assert.equal(
+    manifest.icons?.some((entry) => entry.purpose?.includes("maskable")),
+    true,
+  );
   assert.equal(icon.includes("<svg"), true);
 });
-
 
 test("M2 account switch and revoked session close IndexedDB before account purge", async () => {
   const app = await source("../src/app/App.tsx");
@@ -119,16 +122,11 @@ test("M2 account switch and revoked session close IndexedDB before account purge
       app.indexOf("await purgeAccountLocalData(signedOutAccountId)"),
   );
 
-  const revokedStart = app.indexOf(
-    "error instanceof ApiClientError && error.status === 401",
-  );
+  const revokedStart = app.indexOf("error instanceof ApiClientError && error.status === 401");
   const revokedEnd = app.indexOf("throw error;", revokedStart);
   const revokedBlock = app.slice(revokedStart, revokedEnd);
   assert.ok(revokedStart >= 0);
-  assert.equal(
-    revokedBlock.includes("broadcastLocalLogout(revokedAccountId)"),
-    true,
-  );
+  assert.equal(revokedBlock.includes("broadcastLocalLogout(revokedAccountId)"), true);
   assert.ok(
     revokedBlock.indexOf("await closeActiveM2Runtime(revokedAccountId)") <
       revokedBlock.indexOf("await purgeAccountLocalData(revokedAccountId)"),
@@ -154,7 +152,6 @@ test("M2 replay distinguishes network loss from invariant failures and wakes del
   assert.equal(replay.includes("dispose(): void"), true);
 });
 
-
 test("M2 blocked queues expose retry and discard conflict recovery", async () => {
   const local = await source("../src/lib/offline/local-db.ts");
   const runtime = await source("../src/lib/realtime/runtime-context.tsx");
@@ -171,7 +168,6 @@ test("M2 blocked queues expose retry and discard conflict recovery", async () =>
   assert.equal(app.includes("<M2QueueStatus />"), true);
 });
 
-
 test("M2 browser advertises HTTP compatibility and pauses replay on update-required", async () => {
   const client = await source("../src/lib/api-client.ts");
   const runtime = await source("../src/lib/realtime/runtime-context.tsx");
@@ -187,33 +183,21 @@ test("M2 browser advertises HTTP compatibility and pauses replay on update-requi
 test("M2 canonical caches are bounded without evicting offline queues", async () => {
   const local = await source("../src/lib/offline/local-db.ts");
 
-  assert.equal(
-    local.includes("M2_MAX_CACHED_MESSAGES_PER_CONVERSATION = 500"),
-    true,
-  );
-  assert.equal(
-    local.includes("M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP = 500"),
-    true,
-  );
+  assert.equal(local.includes("M2_MAX_CACHED_MESSAGES_PER_CONVERSATION = 500"), true);
+  assert.equal(local.includes("M2_MAX_CACHED_RELATIONSHIP_ITEMS_PER_PARTNERSHIP = 500"), true);
   assert.equal(local.includes("retainedHistoryStartSequence: retainedStart"), true);
   assert.equal(local.includes("partnershipItems.slice("), true);
-  assert.equal(
-    local.includes('const tx = this.#database.transaction(["chatOutbox"]'),
-    true,
-  );
+  assert.equal(local.includes('const tx = this.#database.transaction(["chatOutbox"]'), true);
 });
 
 test("M2 receipt high-water is persisted before HTTP acknowledgement", async () => {
   const local = await source("../src/lib/offline/local-db.ts");
-  const messaging = await source(
-    "../src/features/messaging/MessagingPanel.tsx",
-  );
+  const messaging = await source("../src/features/messaging/MessagingPanel.tsx");
 
   assert.equal(local.includes("advancePendingReceipts"), true);
   assert.equal(local.includes("pendingDeliveredThrough: Math.max("), true);
   assert.ok(
-    messaging.indexOf("advancePendingReceipts") <
-      messaging.indexOf('body: { type: "delivered"'),
+    messaging.indexOf("advancePendingReceipts") < messaging.indexOf('body: { type: "delivered"'),
   );
   assert.equal(messaging.includes("ApiNetworkError"), true);
   assert.equal(messaging.includes("pendingReadThrough"), true);

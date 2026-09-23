@@ -34,7 +34,14 @@ const pingPayloadSchema = z.object({ nonce: z.string().min(1).max(96) }).strict(
 const resyncPayloadSchema = z
   .object({
     scope: z.enum(["account", "partnership", "conversation", "relationship"]),
-    reason: z.enum(["gap", "backpressure", "scope_changed", "listener_reset", "anti_entropy", "unknown_state"]),
+    reason: z.enum([
+      "gap",
+      "backpressure",
+      "scope_changed",
+      "listener_reset",
+      "anti_entropy",
+      "unknown_state",
+    ]),
   })
   .strict();
 
@@ -147,7 +154,10 @@ const namespaceRevokedPayloadSchema = z
   })
   .strict();
 
-function serverFrame<TType extends string, TSchema extends z.ZodTypeAny>(type: TType, payload: TSchema) {
+function serverFrame<TType extends string, TSchema extends z.ZodTypeAny>(
+  type: TType,
+  payload: TSchema,
+) {
   return z
     .object({
       v: z.literal(M2_REALTIME_PROTOCOL_VERSION),
@@ -162,7 +172,10 @@ export const m2RealtimeServerFrameSchema = z.discriminatedUnion("type", [
   serverFrame("control.ping", pingPayloadSchema),
   serverFrame("control.resync_required", resyncPayloadSchema),
   serverFrame("control.update_required", updateRequiredPayloadSchema),
-  serverFrame("message.changed", z.union([messageCreatedPayloadSchema, messageMutationPayloadSchema])),
+  serverFrame(
+    "message.changed",
+    z.union([messageCreatedPayloadSchema, messageMutationPayloadSchema]),
+  ),
   serverFrame("conversation.receipt_changed", receiptPayloadSchema),
   serverFrame("conversation.nickname_changed", nicknamePayloadSchema),
   serverFrame("partnership.changed", partnershipPayloadSchema),
@@ -259,7 +272,10 @@ export function m2FrameByteLength(frame: unknown): number {
   return new TextEncoder().encode(JSON.stringify(frame)).byteLength;
 }
 
-export function assertM2RealtimeFrameSize(frame: unknown, maxBytes = M2_REALTIME_MAX_FRAME_BYTES): void {
+export function assertM2RealtimeFrameSize(
+  frame: unknown,
+  maxBytes = M2_REALTIME_MAX_FRAME_BYTES,
+): void {
   if (m2FrameByteLength(frame) > maxBytes) {
     throw new Error("M2_REALTIME_FRAME_TOO_LARGE");
   }

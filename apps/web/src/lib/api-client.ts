@@ -33,10 +33,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const method = options.method ?? "GET";
   const headers = new Headers(options.headers);
-  headers.set(
-    M2_CLIENT_PROTOCOL_HEADER,
-    String(M2_CLIENT_COMPATIBILITY_VERSION),
-  );
+  headers.set(M2_CLIENT_PROTOCOL_HEADER, String(M2_CLIENT_COMPATIBILITY_VERSION));
   headers.set(M2_LOCAL_SCHEMA_HEADER, String(M2_LOCAL_SCHEMA_VERSION));
   if (method !== "GET") {
     headers.set("x-shawtie-csrf", "1");
@@ -67,8 +64,7 @@ export async function apiRequest<T>(
         ? payload.error.code
         : "REQUEST_FAILED";
     const retryAfter = response.headers.get("retry-after");
-    const retryAfterSeconds =
-      retryAfter && /^\d+$/.test(retryAfter) ? Number(retryAfter) : null;
+    const retryAfterSeconds = retryAfter && /^\d+$/.test(retryAfter) ? Number(retryAfter) : null;
     if (code === "CLIENT_UPDATE_REQUIRED") {
       window.dispatchEvent(new CustomEvent("shawtie:update-required"));
     }

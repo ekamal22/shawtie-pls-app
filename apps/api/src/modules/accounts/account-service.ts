@@ -1148,10 +1148,7 @@ export class AccountService {
         metadata: { generation: Number(generation) },
         at: now,
       });
-      await queueRealtimeAccountSecurityChanged(
-        transaction,
-        auth.session.accountId,
-      );
+      await queueRealtimeAccountSecurityChanged(transaction, auth.session.accountId);
       const profile = await getAccountProfile(transaction, auth.session.accountId);
       if (profile) {
         await this.#queueSecurityEmail(
@@ -1358,10 +1355,7 @@ export class AccountService {
         eventType: "device_revoked",
         at: now,
       });
-      await queueRealtimeAccountSecurityChanged(
-        transaction,
-        auth.session.accountId,
-      );
+      await queueRealtimeAccountSecurityChanged(transaction, auth.session.accountId);
       return { currentDeviceRevoked: auth.session.deviceId === deviceId };
     });
     if (!result) throw new ApiError(404, "DEVICE_NOT_FOUND");

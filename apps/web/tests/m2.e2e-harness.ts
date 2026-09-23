@@ -117,27 +117,14 @@ const api = {
   async list(partnershipId: string) {
     return requireDatabase().listChatQueue(partnershipId);
   },
-  async claim(
-    operationId: string,
-    owner: string,
-    now: number,
-    leaseMs: number,
-  ) {
+  async claim(operationId: string, owner: string, now: number, leaseMs: number) {
     return requireDatabase().claimChat(operationId, owner, now, leaseMs);
   },
-  async complete(
-    operationId: string,
-    owner: string,
-    generation: number,
-  ) {
+  async complete(operationId: string, owner: string, generation: number) {
     const queued = await requireDatabase().listChatQueue(PARTNERSHIP_ID);
     const current = queued.find((item) => item.operationId === operationId);
     if (!current) throw new Error("Harness queued operation is missing");
-    return requireDatabase().completeChatWithoutProjection(
-      current,
-      owner,
-      generation,
-    );
+    return requireDatabase().completeChatWithoutProjection(current, owner, generation);
   },
   async startRuntime(accountId: string) {
     if (runtime) {
@@ -147,15 +134,10 @@ const api = {
     }
     runtimeReconcileLog.length = 0;
     runtime = new M2Runtime(accountId);
-    unregisterRuntimeProbe = runtime.registerSynchronizer(
-      "m2-e2e-canonical-probe",
-      async () => {
-        runtimeReconcileLog.push("reconcile");
-        return apiRequest<{ latestChangeSequence: number }>(
-          "/api/v1/m2-e2e-reconcile",
-        );
-      },
-    );
+    unregisterRuntimeProbe = runtime.registerSynchronizer("m2-e2e-canonical-probe", async () => {
+      runtimeReconcileLog.push("reconcile");
+      return apiRequest<{ latestChangeSequence: number }>("/api/v1/m2-e2e-reconcile");
+    });
     await runtime.start();
   },
   async stopRuntime() {

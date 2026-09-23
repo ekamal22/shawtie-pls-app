@@ -112,36 +112,6 @@ async function latestRegistrationCode(
   );
 }
 
-async function latestAccountRecoveryCode(
-  database: DatabasePool,
-  accountId: string,
-): Promise<string> {
-  const result = await database.pool.query<{
-    id: string;
-    purpose: string;
-    challenge_nonce: Buffer;
-    verifier_key_version: number;
-  }>(
-    `SELECT id, purpose, challenge_nonce, verifier_key_version
-     FROM email_verifications
-     WHERE account_id = $1
-       AND purpose = 'account_recovery'
-       AND consumed_at IS NULL
-       AND superseded_at IS NULL
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [accountId],
-  );
-  const row = result.rows[0];
-  if (!row) throw new Error("Missing account recovery challenge");
-  return new AuthKeyRing(config.authKeys).deriveEmailCode(
-    row.id,
-    row.purpose,
-    row.challenge_nonce,
-    row.verifier_key_version,
-  );
-}
-
 async function register(app: App, database: DatabasePool, suffix: string): Promise<TestAccount> {
   const username = "m1_" + suffix;
   const password = "very secure M1 password " + suffix;
@@ -174,21 +144,6 @@ async function register(app: App, database: DatabasePool, suffix: string): Promi
     username,
     password,
   };
-}
-
-async function login(app: App, account: TestAccount): Promise<TestAccount> {
-  const response = await app.inject({
-    method: "POST",
-    url: "/api/v1/auth/login",
-    headers: jsonHeaders(),
-    payload: {
-      identifier: account.username,
-      password: account.password,
-      deviceName: "M1 Recovery Browser",
-    },
-  });
-  assert.equal(response.statusCode, 200, response.body);
-  return { ...account, cookie: cookieHeader(response) };
 }
 
 async function formPartnership(
@@ -251,18 +206,6 @@ async function sendMessage(
   });
 }
 
-async function reauthenticate(app: App, account: TestAccount): Promise<string> {
-  const response = await app.inject({
-    method: "POST",
-    url: "/api/v1/auth/reauthenticate",
-    headers: jsonHeaders(account.cookie),
-    payload: { password: account.password },
-  });
-  assert.equal(response.statusCode, 200, response.body);
-  return cookieHeader(response);
-}
-
-
 function waitForFrame(
   socket: WebSocket,
   type: string,
@@ -281,12 +224,7 @@ function waitForFrame(
       } catch {
         return;
       }
-      if (
-        frame !== null &&
-        typeof frame === "object" &&
-        "type" in frame &&
-        frame.type === type
-      ) {
+      if (frame !== null && typeof frame === "object" && "type" in frame && frame.type === type) {
         clearTimeout(timeout);
         socket.off("message", onMessage);
         resolve(frame as Record<string, unknown>);
@@ -379,22 +317,20 @@ test("M2 websocket rejects a foreign Origin before connection authorization", as
     await reset(database);
     const alice = await register(app, database, "m2origin");
 
-    await assert.rejects(
-      () =>
-        app.injectWS("/api/v1/realtime", {
-          headers: {
-            origin: "https://evil.example",
-            cookie: alice.cookie,
-            "sec-websocket-protocol": "shawtie.realtime.v1",
-          },
-        }),
+    await assert.rejects(() =>
+      app.injectWS("/api/v1/realtime", {
+        headers: {
+          origin: "https://evil.example",
+          cookie: alice.cookie,
+          "sec-websocket-protocol": "shawtie.realtime.v1",
+        },
+      }),
     );
   } finally {
     await app.close();
     await closeDatabasePool(database);
   }
 });
-
 
 test("M2 product mutations append content-free durable realtime outbox records", async () => {
   const database = requireDisposableDatabase();
@@ -425,11 +361,7 @@ test("M2 product mutations append content-free durable realtime outbox records",
     const nicknameSentinel = "Private nickname sentinel";
     const nickname = await app.inject({
       method: "PATCH",
-      url:
-        "/api/v1/partnerships/" +
-        formed.partnershipId +
-        "/nicknames/" +
-        bob.accountId,
+      url: "/api/v1/partnerships/" + formed.partnershipId + "/nicknames/" + bob.accountId,
       headers: jsonHeaders(alice.cookie, "m2-outbox-nickname-0001"),
       payload: { nickname: nicknameSentinel, expectedVersion: 1 },
     });
@@ -473,9 +405,7 @@ test("M2 product mutations append content-free durable realtime outbox records",
     const nicknameEvent = rows.rows.find(
       (row) => row.event_type === "m2.conversation.nickname_changed",
     );
-    const relationshipEvent = rows.rows.find(
-      (row) => row.event_type === "m2.relationship.changed",
-    );
+    const relationshipEvent = rows.rows.find((row) => row.event_type === "m2.relationship.changed");
 
     assert.ok(receiptEvent);
     assert.ok(nicknameEvent);
@@ -494,10 +424,7 @@ test("M2 product mutations append content-free durable realtime outbox records",
 
     const relationshipPayload = relationshipEvent.payload as Record<string, unknown>;
     assert.equal(relationshipPayload.partnershipId, formed.partnershipId);
-    assert.equal(
-      relationshipPayload.itemId,
-      (relationship.json() as { itemId: string }).itemId,
-    );
+    assert.equal(relationshipPayload.itemId, (relationship.json() as { itemId: string }).itemId);
     assert.equal(relationshipPayload.itemVersion, 1);
 
     const serialized = JSON.stringify(rows.rows);
@@ -625,10 +552,9 @@ test("M2 partnership changed hint immediately revalidates and closes stale socke
 
       const metadata = await database.pool.query<{
         metadata_version: string | number | bigint;
-      }>(
-        "SELECT version AS metadata_version FROM partnerships WHERE id = $1",
-        [formed.partnershipId],
-      );
+      }>("SELECT version AS metadata_version FROM partnerships WHERE id = $1", [
+        formed.partnershipId,
+      ]);
       const metadataVersion = Number(metadata.rows[0]?.metadata_version);
       assert.equal(Number.isSafeInteger(metadataVersion), true);
       assert.equal(metadataVersion > 0, true);
@@ -666,7 +592,6 @@ test("M2 partnership changed hint immediately revalidates and closes stale socke
   }
 });
 
-
 test("M2 advertised HTTP compatibility fails closed before authentication", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -696,10 +621,7 @@ test("M2 advertised HTTP compatibility fails closed before authentication", asyn
       },
     });
     assert.equal(compatible.statusCode, 401, compatible.body);
-    assert.equal(
-      (compatible.json() as { error: { code: string } }).error.code,
-      "AUTH_REQUIRED",
-    );
+    assert.equal((compatible.json() as { error: { code: string } }).error.code, "AUTH_REQUIRED");
   } finally {
     await app.close();
     await closeDatabasePool(database);

@@ -130,11 +130,7 @@ export class RealtimeClient {
     });
   }
 
-  async #handleMessage(
-    socket: WebSocket,
-    generation: number,
-    raw: unknown,
-  ): Promise<void> {
+  async #handleMessage(socket: WebSocket, generation: number, raw: unknown): Promise<void> {
     if (typeof raw !== "string") {
       socket.close(1003, "Text frames required");
       return;
@@ -229,15 +225,9 @@ export class RealtimeClient {
 
   #scheduleReconnect(): void {
     if (this.#stopped || this.#reconnectTimer !== null || !navigator.onLine) return;
-    const base = Math.min(
-      30_000,
-      1_000 * 2 ** Math.min(this.#reconnectAttempt, 5),
-    );
-    const delay =
-      document.visibilityState === "visible" ? base : Math.max(base, 15_000);
-    const jitter = Math.floor(
-      Math.random() * Math.min(1_000, Math.max(1, delay / 5)),
-    );
+    const base = Math.min(30_000, 1_000 * 2 ** Math.min(this.#reconnectAttempt, 5));
+    const delay = document.visibilityState === "visible" ? base : Math.max(base, 15_000);
+    const jitter = Math.floor(Math.random() * Math.min(1_000, Math.max(1, delay / 5)));
     this.#reconnectAttempt += 1;
     this.#reconnectTimer = window.setTimeout(() => {
       this.#reconnectTimer = null;

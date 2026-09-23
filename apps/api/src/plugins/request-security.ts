@@ -43,7 +43,6 @@ export function installMutationSecurity(app: FastifyInstance, config: ApiConfig)
   });
 }
 
-
 function headerValue(value: string | string[] | undefined): string | null {
   if (typeof value === "string") return value;
   if (Array.isArray(value) && value.length === 1) return value[0] ?? null;
@@ -54,12 +53,8 @@ export function installM2Compatibility(app: FastifyInstance): void {
   app.addHook("onRequest", async (request) => {
     if (!request.url.startsWith("/api/v1/")) return;
 
-    const clientProtocol = headerValue(
-      request.headers[M2_CLIENT_PROTOCOL_HEADER],
-    );
-    const localSchema = headerValue(
-      request.headers[M2_LOCAL_SCHEMA_HEADER],
-    );
+    const clientProtocol = headerValue(request.headers[M2_CLIENT_PROTOCOL_HEADER]);
+    const localSchema = headerValue(request.headers[M2_LOCAL_SCHEMA_HEADER]);
 
     // Headerless callers remain compatible with the verified pre-M2 HTTP API.
     // Once either M2 compatibility header is advertised, both must match.
@@ -69,11 +64,7 @@ export function installM2Compatibility(app: FastifyInstance): void {
       clientProtocol !== String(M2_CLIENT_COMPATIBILITY_VERSION) ||
       localSchema !== String(M2_LOCAL_SCHEMA_VERSION)
     ) {
-      throw new ApiError(
-        426,
-        "CLIENT_UPDATE_REQUIRED",
-        "CLIENT_UPDATE_REQUIRED",
-      );
+      throw new ApiError(426, "CLIENT_UPDATE_REQUIRED", "CLIENT_UPDATE_REQUIRED");
     }
   });
 }

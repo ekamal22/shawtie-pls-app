@@ -24,7 +24,7 @@ test("M2 websocket registration is authenticated, origin-bound, and content-free
   assert.equal(application.includes("registerRealtimeRoutes(realtimeApp"), true);
   assert.equal(application.includes("perMessageDeflate: false"), true);
   assert.equal(application.includes("M2_REALTIME_MAX_FRAME_BYTES"), true);
-  assert.equal(routes.includes('request.headers.origin !== dependencies.config.appOrigin'), true);
+  assert.equal(routes.includes("request.headers.origin !== dependencies.config.appOrigin"), true);
   assert.equal(routes.includes("requireAuthentication("), true);
   assert.equal(routes.includes("M2_REALTIME_SUBPROTOCOL"), true);
   assert.equal(routes.includes("subscribe"), false);
@@ -68,7 +68,6 @@ test("M2 LISTEN reset and worker publication remain correctness hints", async ()
   assert.equal(workerMain.includes("createDefaultOutboxHandlers(database)"), true);
 });
 
-
 test("M2 cross-feature durable invalidations cover interaction, lifecycle, R1, and security changes", async () => {
   const messaging = await readFile(
     new URL("../src/modules/messages/messaging-service.ts", import.meta.url),
@@ -101,7 +100,6 @@ test("M2 cross-feature durable invalidations cover interaction, lifecycle, R1, a
   assert.equal(workerHandler.includes("privateNote"), false);
 });
 
-
 test("M2 realtime applies durable connection and per-socket frame rate limits", async () => {
   const routes = await readFile(
     new URL("../src/modules/realtime/routes.ts", import.meta.url),
@@ -121,16 +119,12 @@ test("M2 realtime applies durable connection and per-socket frame rate limits", 
   assert.equal(hub.includes('"Rate limited"'), true);
 });
 
-
 test("M2 advertised HTTP compatibility versions fail closed on mismatch", async () => {
   const security = await readFile(
     new URL("../src/plugins/request-security.ts", import.meta.url),
     "utf8",
   );
-  const application = await readFile(
-    new URL("../src/application.ts", import.meta.url),
-    "utf8",
-  );
+  const application = await readFile(new URL("../src/application.ts", import.meta.url), "utf8");
 
   assert.equal(security.includes("installM2Compatibility"), true);
   assert.equal(security.includes("M2_CLIENT_PROTOCOL_HEADER"), true);

@@ -1,10 +1,7 @@
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import websocket from "@fastify/websocket";
-import {
-  M2_REALTIME_MAX_FRAME_BYTES,
-  M2_REALTIME_SUBPROTOCOL,
-} from "@shawtie/contracts";
+import { M2_REALTIME_MAX_FRAME_BYTES, M2_REALTIME_SUBPROTOCOL } from "@shawtie/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
 import {
   loadCurrentConversationReadModel,
@@ -36,10 +33,7 @@ import { registerPartnershipRoutes } from "./modules/partnerships/routes.ts";
 import { RelationshipSpaceService } from "./modules/relationship-space/relationship-space-service.ts";
 import { registerRelationshipSpaceRoutes } from "./modules/relationship-space/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
-import {
-  installM2Compatibility,
-  installMutationSecurity,
-} from "./plugins/request-security.ts";
+import { installM2Compatibility, installMutationSecurity } from "./plugins/request-security.ts";
 import { AuthKeyRing } from "./security/auth-key-ring.ts";
 import { PasswordHasher } from "./security/password-hasher.ts";
 

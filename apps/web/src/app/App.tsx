@@ -740,9 +740,7 @@ function AccountScreen({
 }
 
 export function App() {
-  const [session, setSession] = useState<
-    Session | null | undefined | "offline-locked"
-  >(undefined);
+  const [session, setSession] = useState<Session | null | undefined | "offline-locked">(undefined);
 
   async function refreshSession() {
     try {
@@ -810,15 +808,10 @@ export function App() {
         <section className="panel">
           <h1>Offline</h1>
           <p>
-            Connect once so Shawtie pls can verify this private session before
-            opening locally cached content.
+            Connect once so Shawtie pls can verify this private session before opening locally
+            cached content.
           </p>
-          <button
-            className="primary"
-            onClick={() =>
-              void refreshSession().catch(() => undefined)
-            }
-          >
+          <button className="primary" onClick={() => void refreshSession().catch(() => undefined)}>
             Try again
           </button>
         </section>

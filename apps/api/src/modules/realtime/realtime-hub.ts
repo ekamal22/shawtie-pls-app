@@ -75,8 +75,7 @@ function safeNumber(value: bigint): number {
 
 function sameIdentity(a: ScopeSnapshot, connection: ConnectionState): boolean {
   return (
-    a.partnershipId === connection.partnershipId &&
-    a.conversationId === connection.conversationId
+    a.partnershipId === connection.partnershipId && a.conversationId === connection.conversationId
   );
 }
 
@@ -139,14 +138,11 @@ export class RealtimeHub {
   dispatch(notification: M2InternalRealtimeNotification): void {
     switch (notification.kind) {
       case "message.changed":
-        this.#sendTo(
-          this.#byConversation.get(notification.scope.conversationId),
-          {
-            v: M2_REALTIME_PROTOCOL_VERSION,
-            type: "message.changed",
-            payload: notification.data,
-          },
-        );
+        this.#sendTo(this.#byConversation.get(notification.scope.conversationId), {
+          v: M2_REALTIME_PROTOCOL_VERSION,
+          type: "message.changed",
+          payload: notification.data,
+        });
         return;
       case "conversation.receipt_changed":
         this.#sendTo(this.#byConversation.get(notification.scope.conversationId), {

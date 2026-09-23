@@ -64,10 +64,7 @@ import {
   type TypingStateInput,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
-import {
-  queueRealtimeNicknameChanged,
-  queueRealtimeReceiptChanged,
-} from "../realtime/outbox.ts";
+import { queueRealtimeNicknameChanged, queueRealtimeReceiptChanged } from "../realtime/outbox.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 

@@ -1,8 +1,5 @@
 import { randomUUID } from "node:crypto";
-import {
-  insertOutboxEvent,
-  type QueryExecutor,
-} from "@shawtie/db";
+import { insertOutboxEvent, type QueryExecutor } from "@shawtie/db";
 
 function safeVersion(value: bigint): number {
   const number = Number(value);
@@ -69,10 +66,7 @@ export async function queueRealtimePartnershipChanged(
     metadataVersion: bigint;
   },
 ): Promise<void> {
-  if (
-    input.accountIds.length !== 2 ||
-    new Set(input.accountIds).size !== 2
-  ) {
+  if (input.accountIds.length !== 2 || new Set(input.accountIds).size !== 2) {
     throw new Error("Realtime partnership routing requires exactly two distinct accounts");
   }
   const id = randomUUID();
@@ -111,8 +105,7 @@ export async function queueRealtimeRelationshipChanged(
     payload: {
       partnershipId: input.partnershipId,
       itemId: input.itemId,
-      itemVersion:
-        input.itemVersion === null ? null : safeVersion(input.itemVersion),
+      itemVersion: input.itemVersion === null ? null : safeVersion(input.itemVersion),
     },
     payloadVersion: 1,
   });
