@@ -612,7 +612,7 @@ test("M2 partnership changed hint immediately revalidates and closes stale socke
     try {
       await waitForFrame(socket, "control.ready");
 
-      const generation = await withTransaction(database.pool, async (transaction) => {
+      const generation = await withTransaction(database, async (transaction) => {
         await lockAccounts(transaction, [alice.accountId, bob.accountId]);
         const now = await getTransactionTimestamp(transaction);
         return terminatePartnershipLifecycle(transaction, {
