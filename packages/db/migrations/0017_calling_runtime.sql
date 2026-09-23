@@ -126,10 +126,12 @@ ALTER TABLE call_participants
     REFERENCES partnership_members(partnership_id, account_id),
   ADD CONSTRAINT call_participants_endpoint_device_fk
     FOREIGN KEY (endpoint_device_id, account_id)
-    REFERENCES account_devices(id, account_id),
+    REFERENCES account_devices(id, account_id)
+    ON DELETE SET NULL (endpoint_device_id),
   ADD CONSTRAINT call_participants_endpoint_session_fk
     FOREIGN KEY (endpoint_session_id, account_id, endpoint_device_id)
-    REFERENCES account_sessions(id, account_id, device_id),
+    REFERENCES account_sessions(id, account_id, device_id)
+    ON DELETE SET NULL (endpoint_session_id),
   ADD CONSTRAINT call_participants_role_valid
     CHECK (role IN ('caller', 'callee'));
 
