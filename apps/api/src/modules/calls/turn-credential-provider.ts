@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 
 export interface TurnCredential {
   readonly urls: readonly string[];
@@ -41,7 +41,11 @@ export class HmacTurnCredentialProvider implements TurnCredentialProvider {
   }): Promise<TurnCredential> {
     const expiresAt = new Date(input.now.getTime() + this.ttlMs);
     const expirySeconds = Math.floor(expiresAt.getTime() / 1000);
-    const username = `${expirySeconds}:${input.accountId}:${input.callId}`;
+    const opaqueSubject = createHash("sha256")
+      .update(input.accountId + "\0" + input.callId)
+      .digest("base64url")
+      .slice(0, 32);
+    const username = `${expirySeconds}:${opaqueSubject}`;
     const credential = createHmac("sha1", this.sharedSecret)
       .update(username)
       .digest("base64");
