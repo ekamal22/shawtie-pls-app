@@ -2,7 +2,7 @@
 
 ## Status
 
-Procedure defined. Execution begins only after M3 automated/local closure is green.
+Procedure and device preflight harness are implemented. Execution begins only after M3 automated/local closure is green.
 
 M3 is not DONE until all 20 mandatory physical scenarios pass on a supported physical Android device and committed evidence records the exact tested SHA.
 
@@ -51,4 +51,4 @@ Never commit real private media, cookies, signed URLs, key material, secrets, or
 
 ## Closure
 
-After 18/18 PASS, commit `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`, reconcile repo-wide M3 status, record final physical SHA, verify raw artifacts/secrets are uncommitted, verify local/remote SHA parity, and only then mark M3 DONE.
+After 20/20 PASS, commit `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`, reconcile repo-wide M3 status, record final physical SHA, verify raw artifacts/secrets are uncommitted, verify local/remote SHA parity, and only then mark M3 DONE.

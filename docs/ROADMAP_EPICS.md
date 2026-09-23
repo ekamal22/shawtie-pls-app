@@ -1306,7 +1306,7 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: DESIGN COMPLETE, IMPLEMENTATION NOT STARTED
+Status: SOURCE IMPLEMENTATION COMPLETE; AUTOMATED/LOCAL AND PHYSICAL CLOSURE PENDING
 
 Branch: `feat/m3-media-voice`
 
@@ -1460,6 +1460,25 @@ M3 does not own production E2EE key distribution, device crypto enrollment/recov
 - physical Android 18/18
 - diff/worktree hygiene
 - local/remote SHA parity
+
+## Current source implementation state
+
+Source implementation is complete at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`.
+
+Committed implementation includes:
+
+- M3-A contracts/domain and server policy
+- M3-B real migrations 0015/0016 plus DB invariants
+- M3-C dependency-free S3-compatible private object-store adapter and real MinIO smoke
+- M3-D upload/create/refresh/complete/cancel, idempotency, rate limits, operational controls, and abandoned-upload cleanup
+- M3-E authoritative M1/R1 read authorization and short-lived grants
+- M3-F M1 text+attachments, media-only, and voice-only binding
+- M3-G concrete R1 media resolver, Voice Letters, replacement/delete cleanup, and visibility inheritance
+- M3-H encrypted browser drafts, worker-backed image processing, video/file selection, true voice preview, retry/cancel, safe rendering, and whole-object recovery
+- M3-I lifecycle deletion, partnership media deletion target, service-worker exclusion, fail-closed local purge, and M2 namespace integration
+- M3-J contract/domain/security/PostgreSQL/worker/object-store/real-Chromium/local-closure/device-preflight harnesses
+
+The committed closure harness has not been executed in this environment. All execution-dependent acceptance gates below therefore remain unchecked. M3 becomes DONE only after `npm run test:m3:closure` and all 20 physical Android scenarios pass with committed evidence.
 
 ## Acceptance gates
 

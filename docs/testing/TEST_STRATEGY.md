@@ -493,6 +493,8 @@ After protocol selection, include:
 
 ## M3 Media and Voice Messages verification
 
+Source implementation and the closure harness are committed through `afc73baf`, but this document does not claim that the M3 automated/local or physical suites have executed. Canonical commands now include `test:m3:contracts`, `test:m3:storage`, `test:m3:storage:integration`, `test:m3:browser`, `test:m3:browser:e2e`, `test:m3:security`, `test:m3:postgres`, `test:m3:local`, `test:m3:closure`, and the device prepare/cleanup commands.
+
 M3 has a dedicated closure matrix because media correctness spans browser processing, private object storage, lifecycle authorization, M1/R1 atomic binding, durable cleanup, IndexedDB draft persistence, service-worker exclusion, and physical-device camera/microphone behavior.
 
 Canonical design: `../architecture/M3_MEDIA_VOICE_DESIGN.md`.
@@ -518,7 +520,7 @@ npm run test:m3:device:cleanup
 
 Automated/local evidence must prove migrations 0001-0016 with no reservation, media state/binding invariants, opaque/private object storage, upload/completion idempotency, cross-partnership denial, M1/R1 atomic binding, Voice Letter container visibility, lifecycle denial, deletion retry, no protected media in logs/outbox/cache, IndexedDB storage-failure behavior, and real Chromium media/service-worker behavior.
 
-Physical Android acceptance is mandatory and contains 18 scenarios. Desktop automation cannot close M3.
+Physical Android acceptance is mandatory and contains 20 scenarios. Desktop automation cannot close M3.
 
 Critical race coverage includes upload-complete vs lifecycle change, bind vs dissolution, upload expiry vs message send, double bind, delete vs access grant, R1 release/delete vs media access, object-delete crash recovery, device revocation during upload, completion replay, and two-tab stale finalization.
 ## Call tests

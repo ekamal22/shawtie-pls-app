@@ -227,3 +227,28 @@ PROJECT_STATE and ROADMAP_EPICS must distinguish:
 - GitHub Actions validated
 - integration validated
 - release validated
+
+
+## M3 local closure
+
+M3 source and verification harnesses are implemented on `feat/m3-media-voice`.
+
+Canonical commands:
+
+```text
+npm run test:m3:contracts
+npm run test:m3:storage
+npm run test:m3:storage:integration
+npm run test:m3:browser
+npm run test:m3:browser:e2e
+npm run test:m3:security
+npm run test:m3:postgres
+npm run test:m3:local
+npm run test:m3:closure
+npm run test:m3:device:prepare
+npm run test:m3:device:cleanup
+```
+
+`test:m3:local` provisions disposable PostgreSQL and private MinIO, then runs the M3 PostgreSQL/API/worker, real object-store, and real Chromium layers. `test:m3:closure` additionally enforces branch/SHA parity, `[skip ci]` history, no introduced Unicode em dash, full repository health, high-severity dependency audit, diff hygiene, and clean-worktree status.
+
+These commands are committed but are not recorded as executed evidence yet. Physical Android acceptance remains a separate mandatory 20-scenario gate.

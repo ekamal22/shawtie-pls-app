@@ -2,7 +2,7 @@
 
 ## Status
 
-**Design complete. Second-pass hardened. Implementation not started.**
+**Design/source implementation complete at `afc73baf`; automated/local and physical closure pending execution.**
 
 Branch: `feat/m3-media-voice`
 Required base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`

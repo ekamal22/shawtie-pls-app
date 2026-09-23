@@ -2,7 +2,7 @@
 
 ## Status and base
 
-**Status:** DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION NOT STARTED
+**Status:** SOURCE IMPLEMENTATION COMPLETE at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`; AUTOMATED/LOCAL AND PHYSICAL CLOSURE PENDING
 **Branch:** `feat/m3-media-voice`
 **Required base:** `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
@@ -14,6 +14,12 @@ M3 depends on the completed M2 realtime/offline substrate.
 M3 owns chat images, short videos, selected files, chat voice messages, Relationship Space media attachments, R1 Voice Letter binary media, encrypted object-storage transport, upload/retrieval authorization, media deletion, abandoned-upload cleanup, and physical Android media acceptance.
 
 M3 does not own general message E2EE, partnership cryptographic epochs, device enrollment, cryptographic recovery, voice calls, video calls, push notifications, server-side plaintext transcoding, or call recording.
+
+## Implemented source boundary
+
+The M3 source implementation is committed on `feat/m3-media-voice` through `afc73baf`. It includes real migrations 0015/0016, media contracts/domain/repository, private S3-compatible object storage, API/worker lifecycle integration, M1/R1 binding, encrypted browser drafts, worker-backed image re-encoding, voice preview/playback, whole-object retry, rate limits/feature controls, deletion/purge behavior, and the full local/Chromium/Android closure harness.
+
+This is not executed closure evidence. M3 remains IN_PROGRESS until the committed automated/local closure succeeds and all 20 mandatory physical Android scenarios pass with committed evidence.
 
 ## Existing boundaries M3 must preserve
 
