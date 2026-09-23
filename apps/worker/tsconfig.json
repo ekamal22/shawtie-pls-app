@@ -6,15 +6,22 @@
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "disableSourceOfProjectReferenceRedirect": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
   "references": [
     {
       "path": "../../packages/domain"
     },
     {
+      "path": "../../packages/contracts"
+    },
+    {
       "path": "../../packages/db"
     }
   ],
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }
