@@ -21,7 +21,7 @@ Accepted call ADRs:
 
 ## Authority
 
-PostgreSQL owns durable call identity, partnership scope, selected endpoint devices, call state/version, trusted timestamps, terminal outcome, timeout fencing, and history.
+PostgreSQL owns durable call identity, partnership scope, participant-role endpoint devices, call state/version, independent deadline generation, trusted timestamps, internal terminal cause, and history.
 
 HTTP owns durable user call actions.
 
@@ -33,7 +33,7 @@ WebRTC owns transient endpoint media state.
 
 TURN credentials authorize bounded relay use but are never partnership authorization.
 
-Web Push is a generic wakeup hint, not call authority.
+Web Push is a generic `call_state_changed` reconciliation hint, not call authority.
 
 ## Consent boundary
 
@@ -47,6 +47,8 @@ Before explicit callee acceptance:
 - no remote media session begins
 
 Every call during `breakup_pending` still requires fresh explicit acceptance exactly like active-state calls.
+
+Caller microphone access begins only from the explicit Call gesture. Callee microphone access begins only from the explicit Accept gesture. Pre-acquired tracks stop if authoritative create/accept fails or loses a race. C1 never requests camera permission.
 
 ## Media path
 
@@ -64,25 +66,27 @@ callee browser
 
 C1 uses `iceTransportPolicy: relay` with no direct fallback.
 
-SDP is candidate-free and the signaling server forwards only parsed `typ relay` trickle candidates.
+SDP is candidate-free, contains exactly one audio media section, and cannot negotiate video or data channels. The signaling server forwards only parsed privacy-safe `typ relay` trickle candidates and rejects related/base-address forms that disclose a non-relay peer address.
 
 TURN should support UDP and, where deployed, TCP/TLS fallbacks for restrictive networks.
 
-TURN provider secrets never enter the PWA. Credentials are short-lived and issued only to the two selected endpoint devices of one accepted non-terminal call.
+TURN provider secrets never enter the PWA. Credentials are short-lived and issued only to the two selected endpoint devices of one accepted non-terminal call. Authorization loss denies refresh immediately; any already-issued allocation is a bounded residual network window until teardown/provider expiry.
 
 ## Multi-device model
 
 The initiating device is the fixed caller endpoint.
 
-All currently authorized callee devices may ring, but the first eligible device to commit acceptance becomes the sole callee endpoint. Later accepts, signaling upgrades, and TURN requests from other callee devices fail.
+Endpoint role/device authority lives on `call_participants`, not duplicated `call_sessions` columns. All currently authorized callee devices may ring, but first committed acceptance fills the sole callee participant endpoint. Later accepts, signaling upgrades, and TURN requests from other callee devices fail.
 
 C1 does not implement device handoff.
+
+For one selected device, only one browser tab owns microphone, peer connection, signaling, and endpoint-connected reporting. A persisted local owner generation fences stale tab callbacks; server endpoint authorization remains the backstop.
 
 ## Reachability
 
 Foreground incoming calls use realtime v2 plus canonical HTTP fetch.
 
-Background reachability uses a minimal reusable Web Push substrate. Payloads are generic and contain no caller identity or call ID; notification click validates the session and fetches `/api/v1/calls/current`.
+Background reachability uses a minimal reusable Web Push substrate. Every generic `call_state_changed` delivery reconciles `/api/v1/calls/current`; only canonical incoming/ringing state may show the generic notification, and later canonical state dismisses stale ringing UI. Payloads contain no caller identity, call ID, or terminal state.
 
 If notifications are denied or Web Push is unsupported, foreground calling remains available while background reachability is explicitly degraded.
 
@@ -94,7 +98,7 @@ Server-generated deadlines bound:
 - accepted-but-never-connected negotiation
 - stranded long-running non-terminal calls
 
-Scheduled finalizers are version/generation fenced.
+Scheduled finalizers use independent `deadline_generation` rather than call `version`. A first endpoint-connected attestation does not advance the generation, so accepted-call connect timeout remains live until the second endpoint connects or another authoritative transition replaces it.
 
 Signaling loss alone does not end a healthy media path. If renegotiation is required, endpoints reconnect into a fresh transient signaling generation and may perform relay-only ICE restart.
 
@@ -112,7 +116,7 @@ S1 must review how call endpoint identity and DTLS fingerprints are bound to par
 
 ## Call history
 
-History is partnership-scoped and records only bounded metadata required by the PRD, including voice/video kind, direction, trusted timestamps/duration when connected, and terminal outcome.
+History is partnership-scoped and records only bounded metadata required by the PRD, including voice/video kind, direction, trusted timestamps/duration after both endpoints attest connected, and a privacy-safe public outcome. Internal session/device/deletion/lifecycle terminal causes are not exposed verbatim.
 
 Final dissolution deletes call history through the existing partnership deletion architecture.
 

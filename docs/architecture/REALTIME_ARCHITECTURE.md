@@ -161,6 +161,10 @@ SDP, ICE, TURN credentials, device labels, IP/network data, and call-control mut
 
 After explicit call acceptance, C1 uses the separate authenticated `shawtie.call.v1` WebSocket at `/api/v1/calls/:callId/signal` for transient WebRTC negotiation.
 
+The existing Fastify WebSocket plugin is a shared transport seam, not a shared application protocol. C1 changes global negotiation to an explicit single-protocol allowlist and every route rechecks the exact negotiated protocol it owns. If transport `maxPayload` rises for signaling SDP, M2 v1/v2 still enforce the existing 4 KiB application-frame ceiling before JSON interpretation.
+
+For realtime v2, `call.changed` increments the normal dirty counter and current-call HTTP reconciliation participates in initial sync, reconnect repair, listener-reset repair, and visible anti-entropy.
+
 Signaling data is never persisted or logged. SDP is candidate-free and trickle candidates are parsed and restricted to relay candidates before forwarding.
 
 The signaling WebSocket does not carry call media.

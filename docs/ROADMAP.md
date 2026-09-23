@@ -62,7 +62,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
-| 8 C1 Voice Calling | DESIGN COMPLETE, SECOND-PASS HARDENED, implementation not started | M2 | Yes, mandatory |
+| 8 C1 Voice Calling | DESIGN COMPLETE, THIRD-PASS HARDENED, implementation not started | M2 | Yes, mandatory |
 | 9 C2 Video Calling | PLANNED | C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -90,9 +90,10 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M2 is merged at `main @ b6183158`; C1 voice-calling design is complete on `feat/c1-voice-calling` from current `main @ 54b8659a`; implementation may begin from that verified mainline
-6. keep C2 video separate and dependent on verified C1 voice-call substrate
-6. keep V1 hosted verification separate until Actions capacity returns
+5. M2 is merged at `main @ b6183158`; C1 third-pass voice-calling design is complete on `feat/c1-voice-calling` from current `main @ 54b8659a`; implementation may begin from that verified mainline
+6. implement C1 against the concrete module map and shared WebSocket seam in the canonical C1 design
+7. keep C2 video separate and dependent on verified C1 voice-call substrate
+8. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
@@ -380,7 +381,7 @@ M3 must prove size limits, private storage, authorization, signed-access expiry,
 
 # Milestone 8: C1 Voice Calling
 
-Status: DESIGN COMPLETE, SECOND-PASS HARDENED, implementation not started.
+Status: DESIGN COMPLETE, THIRD-PASS HARDENED, implementation not started.
 
 Branch: `feat/c1-voice-calling`.
 
@@ -428,19 +429,19 @@ C1 owns `0017_calling_runtime.sql` and `0018_push_runtime.sql`. Parallel M3 owns
 
 ## Implementation slices
 
-1. C1-A domain/contracts, call states, terminal reasons, capability rules, policy
-2. C1-B 0017/0018 persistence, selected-device invariants, timeouts, push subscriptions, deletion integration
-3. C1-C durable HTTP call API and canonical history/current projections
-4. C1-D realtime v2 invalidation and dedicated signaling transport
-5. C1-E browser audio engine, microphone, mute, perfect negotiation, relay-only candidate handling
-6. C1-F multi-device first-accept-wins and selected-endpoint enforcement
-7. C1-G Web Push incoming-call reachability
-8. C1-H reconnect, ICE restart, process loss, lifecycle/revocation/timeouts
+1. C1-A domain/contracts, participant-role endpoint authority, public/internal outcome mapping, capability rules
+2. C1-B 0017/0018 persistence, independent deadline generation, timeout work, push subscriptions, deletion integration
+3. C1-C durable HTTP API, versionless endpoint-connected attestation, canonical history/current projections
+4. C1-D realtime v2 dirty-barrier integration, shared WebSocket upgrade-policy refactor, dedicated signaling
+5. C1-E browser audio engine, explicit microphone consent, same-device tab ownership, voice-only SDP, relay-only candidates
+6. C1-F multi-device first-accept-wins, selected-endpoint enforcement, multi-tab takeover fencing
+7. C1-G order-independent call_state_changed push reconciliation and stale-notification dismissal
+8. C1-H reconnect, ICE restart, process loss, TURN residual-lifetime bounds, lifecycle/revocation/timeouts
 9. C1-I automated/local closure and mandatory physical Android acceptance
 
 ## Closure boundary
 
-C1 must prove partnership/device authorization, no auto-answer, no pre-accept negotiation, first-accept-wins, realtime-v2 compatibility, candidate-free SDP, relay-only media, TURN expiry/fallback, push stale-state safety, lifecycle revocation, bounded stale-call cleanup, call-history isolation/deletion, signaling recovery, and physical Android voice calls.
+C1 must prove partnership/device authorization, normalized participant endpoint authority, no auto-answer, no pre-accept negotiation, first-accept-wins, versionless endpoint-connected convergence, deadline-generation fencing, realtime-v2 dirty-barrier repair, single-tab media ownership per device, voice-only candidate-free SDP, privacy-safe relay candidates, bounded TURN post-revocation lifetime, order-independent push reconciliation, privacy-safe public outcomes, lifecycle revocation, call-history isolation/deletion, signaling recovery, and physical Android voice calls.
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 

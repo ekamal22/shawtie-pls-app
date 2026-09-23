@@ -173,4 +173,6 @@ C1 introduces two independently versioned protocols.
 
 The service-worker/client compatibility gate must prevent stale application code from being treated as C1-capable after the server enables realtime v2.
 
+The shared WebSocket server does not implicitly negotiate across protocol families. A connection offers exactly one application subprotocol; the global handler rejects unknown or multiple offers; the route verifies the exact protocol it owns. Realtime v1/v2 keep the 4 KiB M2 application-frame limit even if the transport ceiling increases for `shawtie.call.v1` SDP.
+
 C1 durable scheduled/outbox payloads remain independently versioned and unknown payload versions fail closed.

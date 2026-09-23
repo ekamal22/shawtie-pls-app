@@ -1340,7 +1340,7 @@ Status: PLANNED
 
 # C1: Voice Calling
 
-Status: DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION NOT STARTED
+Status: DESIGN COMPLETE, THIRD-PASS HARDENED, IMPLEMENTATION NOT STARTED
 
 Branch: `feat/c1-voice-calling`
 
@@ -1375,15 +1375,17 @@ Parallel M3 owns planned 0015/0016. Isolated C1 validation may reserve 0015/0016
 - missed and connect timeout
 - bounded hard stale-call timeout
 - first-accept-wins multi-device ringing
-- fixed caller endpoint
-- `shawtie.realtime.v2` call invalidation
+- fixed caller endpoint with participant-row authority
+- independent deadline-generation timeout fencing
+- same-device single media-owner tab with generation-fenced takeover
+- `shawtie.realtime.v2` call invalidation integrated with M2 dirty barrier and anti-entropy
 - dedicated `shawtie.call.v1` signaling
-- audio-only WebRTC
-- candidate-free SDP
-- server-validated relay-only ICE candidates
+- voice-only WebRTC with exactly one audio media section
+- candidate-free SDP with video/data-channel rejection
+- server-validated privacy-safe relay-only ICE candidates
 - relay-only TURN path
 - short-lived TURN credentials
-- Web Push background incoming-call reachability
+- order-independent `call_state_changed` Web Push background reconciliation
 - reconnect, signaling generation fencing, ICE restart
 - breakup/account-deletion/session/device-revocation/dissolution integration
 - physical Android acceptance
@@ -1392,7 +1394,18 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 
 ## Refined hardening decisions
 
-- formal state transition matrix defines actor/device/state/terminal outcomes
+- participant rows are the sole durable caller/callee endpoint authority; no duplicate call-session endpoint columns
+- independent `deadline_generation` fences ring/connect/hard timeout work
+- endpoint-connected is monotonic and versionless; concurrent endpoint reports converge and first report cannot invalidate connect timeout
+- same-device multi-tab media ownership is generation-fenced locally; server selected-device authorization remains the backstop
+- C1 signaling accepts exactly one audio media section and rejects video/data-channel SDP
+- relay-only validation rejects direct candidate types and privacy-unsafe related/base-address leakage
+- shared Fastify WebSocket negotiation separates realtime v1/v2 and call v1 without weakening M2's 4 KiB app-frame bound
+- generic `call_state_changed` push reconciles canonical state and dismisses stale/reordered ringing notifications
+- `call.changed` participates in M2 dirty barrier and visible anti-entropy
+- raw internal security/lifecycle terminal reasons map to bounded public outcomes
+- already-issued TURN allocation lifetime is a documented bounded residual window after app authorization revocation
+- caller/callee microphone capture is tied to explicit local gestures; camera remains disabled in C1
 - browser autoplay failure is recoverable UI state, not call failure
 - output routing defaults to browser/OS; optional `setSinkId()` remains local only
 - push subscriptions rotate/reconcile per authenticated device without duplicate active routing
@@ -1408,6 +1421,7 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - [ ] existing foundation call tables are refined rather than replaced by a second aggregate
 - [ ] one non-terminal call per partnership is database-enforced
 - [ ] exactly one caller and one callee role are enforced per call
+- [ ] `call_participants` is the sole endpoint role/device authority and no duplicate endpoint columns are added to `call_sessions`
 - [ ] caller endpoint device is fixed at initiation
 - [ ] first eligible callee device to commit acceptance wins
 - [ ] non-winning callee devices cannot signal or obtain TURN credentials
@@ -1421,8 +1435,10 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - [ ] final dissolution removes call/signaling/TURN authority synchronously before cleanup
 - [ ] selected-device revocation prevents signaling reconnect and TURN refresh
 - [ ] random/foreign/old-partnership call IDs fail privacy-safely
+- [ ] ring/connect/hard work is fenced by independent `deadline_generation`, not mutable call version
 - [ ] ring timeout is durable and stale-safe
-- [ ] accepted-but-never-connected timeout is durable and stale-safe
+- [ ] accepted-but-never-connected timeout remains live after only one endpoint-connected attestation
+- [ ] endpoint-connected has no expectedVersion and concurrent endpoint reports converge
 - [ ] hard stale-call timeout prevents permanent partnership call blockage
 - [ ] connectedAt is recorded only after both selected endpoints report connected
 - [ ] call duration uses trusted server timestamps
@@ -1438,13 +1454,16 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - [ ] stale signaling generation cannot mutate current negotiation state
 - [ ] SDP is never persisted or logged
 - [ ] SDP forwarded by C1 contains no ICE candidate lines
+- [ ] C1 SDP contains exactly one audio media section and rejects video/application/data-channel/extra media sections
 - [ ] ICE candidate strings are never persisted or logged
 - [ ] server rejects host, srflx, prflx, malformed, and unknown candidate types
-- [ ] only parsed `typ relay` candidates are forwarded
+- [ ] server rejects privacy-unsafe relay related/base-address leakage
+- [ ] only parsed privacy-safe `typ relay` candidates are forwarded
 - [ ] RTCPeerConnection uses `iceTransportPolicy: relay`
 - [ ] TURN outage never downgrades to direct peer connectivity
 - [ ] TURN credentials are short-lived and never persist in IndexedDB/cache/logs
 - [ ] TURN issuance/refresh rechecks current selected-device and lifecycle authorization
+- [ ] authorization loss denies later TURN refresh and any already-issued allocation is bounded by configured provider lifetime
 - [ ] TURN/UDP works where available
 - [ ] TURN/TCP or TURN/TLS fallback works where deployed
 - [ ] signaling disconnect alone does not end healthy media
@@ -1452,15 +1471,23 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - [ ] perfect-negotiation glare handling passes
 - [ ] candidate-before-description buffering is generation-safe
 - [ ] relay-only ICE restart after network change is safe
-- [ ] Web Push payload contains no caller identity, call ID, partnership ID, SDP, ICE, or TURN data
+- [ ] Web Push payload is generic `call_state_changed` and contains no caller identity, call ID, partnership ID, terminal state, SDP, ICE, or TURN data
+- [ ] delayed/duplicate/reordered pushes reconcile canonical state and cannot resurrect stale ringing UI
+- [ ] terminal/current reconciliation dismisses the generic ringing notification
 - [ ] push notification click never auto-accepts and fetches canonical current call
 - [ ] push routing requires current device/account authorization, not merely a stored subscription
 - [ ] explicit logout/device revocation/account lockout stops future call push routing
 - [ ] stale push cannot resurrect rejected/cancelled/missed/terminated call
 - [ ] foreground calls still work when push permission is denied
+- [ ] `call.changed` enters M2 dirty barrier and deliberately missed hint repairs through visible anti-entropy
+- [ ] same-device tabs prove one media/signaling owner and generation-fenced takeover
+- [ ] Call/Accept gestures gate microphone capture and failed/raced commands stop pre-acquired tracks
+- [ ] camera access is disabled and video/data-channel negotiation fails closed
 - [ ] microphone permission denial is safe and creates no hidden media path
 - [ ] mute/unmute remains local transient state and is not sensitive durable history
 - [ ] call audio is never proxied or recorded by application servers
+- [ ] internal session/device/account-deletion/lifecycle terminal causes are not exposed verbatim in public history/projections
+- [ ] shared WebSocket negotiation rejects zero/multiple/cross-family offers and preserves M2's 4 KiB application limit
 - [ ] provider/signaling errors are privacy-safe and bounded
 - [ ] call create/signaling/TURN/push paths have abuse/rate bounds
 - [ ] full C1 contracts/domain/security suites pass
