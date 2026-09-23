@@ -486,7 +486,30 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 13: local persistence/quota failure
 
-- Status: pending
+- SHA: `437a5dd` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T13:18Z
+- Result: **PASS**
+- Setup: a CDP `Page.addScriptToEvaluateOnNewDocument` script patched the
+  real `IDBObjectStore.prototype.add` so that any write to the production
+  `chatOutbox` object store specifically throws a `QuotaExceededError`
+  `DOMException`, leaving every other store and all other application code
+  untouched, then reloaded so the patch was active before the app's own
+  scripts ran. This exercises the genuine `enqueueChat()` /
+  `transactionDone()` persistence path rather than a fake replacement.
+- Action: disconnected the phone and attempted to send a message through
+  the real chat UI while the induced persistence failure was active.
+- Observed behavior: no `chatOutbox` row was created (confirmed empty
+  immediately after the attempt), the UI showed an honest
+  "Messaging request failed." banner rather than any queued-success
+  notice, and the marker text was not written into any local state. A
+  reload afterward (which naturally cleared the page-scoped CDP patch)
+  confirmed the outbox stayed empty and no phantom queued item resurfaced.
+  A follow-up check against the real server confirmed the message was
+  never created there either. The composer's own busy label did stay on
+  "Sending..." rather than resetting to an actionable retry state, a minor
+  known rough edge, but the critical acceptance boundary held: the UI never
+  claimed an unpersisted mutation was safely queued.
+- Evidence: `validation-logs/screenshots/scenario13-persistence-failure-clean.png`
 
 ### Scenario 14: two-tab claim fencing
 
