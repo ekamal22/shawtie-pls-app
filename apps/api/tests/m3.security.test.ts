@@ -65,3 +65,14 @@ test("M3 service worker cannot cache API/private responses", async () => {
   assert.equal(worker.includes('url.pathname.startsWith("/api/")'), true);
   assert.equal(worker.includes("no-store|private"), true);
 });
+
+
+test("M3 media operational controls remain server-side and fail closed", async () => {
+  const config = await source("../src/config.ts");
+  const service = await source("../src/modules/media/media-service.ts");
+  assert.equal(config.includes("MEDIA_UPLOAD_INITIATION_ENABLED"), true);
+  assert.equal(config.includes("MEDIA_BINDING_ENABLED"), true);
+  assert.equal(config.includes("MEDIA_DOWNLOAD_GRANT_ENABLED"), true);
+  assert.equal(service.includes("MEDIA_UPLOAD_DISABLED"), true);
+  assert.equal(service.includes("MEDIA_DOWNLOAD_DISABLED"), true);
+});

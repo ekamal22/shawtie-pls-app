@@ -122,8 +122,7 @@ export async function purgeMediaAccountData(accountId: string): Promise<void> {
     const request = indexedDB.deleteDatabase(PREFIX + accountId);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Unable to delete media database"));
-    request.onblocked = () => {
-      // Operations open the database only for one transaction, so another tab should release quickly.
-    };
+    request.onblocked = () =>
+      reject(new Error("Media database purge is blocked by another tab"));
   });
 }

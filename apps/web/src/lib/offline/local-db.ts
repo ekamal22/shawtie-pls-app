@@ -695,7 +695,7 @@ export async function purgeAccountLocalData(accountId: string): Promise<void> {
       // database handles; the delete request completes after those handles close.
     };
   });
-  await purgeMediaAccountData(accountId).catch(() => undefined);
+  await purgeMediaAccountData(accountId);
   try {
     if (localStorage.getItem(LAST_ACCOUNT_KEY) === accountId) {
       localStorage.removeItem(LAST_ACCOUNT_KEY);

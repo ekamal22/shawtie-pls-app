@@ -96,3 +96,12 @@ test("M3 create-only upload retry proceeds to server-side completion verificatio
   assert.equal(api.includes("response.status === 412"), true);
   assert.equal(api.includes("MEDIA_STORAGE_UPLOAD_FAILED_"), true);
 });
+
+
+test("M3 account purge fails closed instead of swallowing media-database deletion errors", async () => {
+  const local = await source("../src/lib/offline/local-db.ts");
+  const mediaLocal = await source("../src/lib/media/media-local-db.ts");
+  assert.equal(local.includes("await purgeMediaAccountData(accountId);"), true);
+  assert.equal(local.includes("purgeMediaAccountData(accountId).catch"), false);
+  assert.equal(mediaLocal.includes("Media database purge is blocked by another tab"), true);
+});
