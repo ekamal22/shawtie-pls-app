@@ -18,15 +18,17 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(routes.includes("CALL_SIGNAL_ORIGIN_REJECTED"), true);
   assert.equal(routes.includes("offered.length !== 1"), true);
   assert.equal(routes.includes("sessionId: auth.session.sessionId"), true);
-  assert.equal(hub.includes('media[0]?.startsWith("m=audio ")'), true);
-  assert.equal(hub.includes('/^m=(video|application) /im'), true);
-  assert.equal(hub.includes('toLowerCase() !== "relay"'), true);
-  assert.equal(hub.includes('toLowerCase() === "raddr"'), true);
+  assert.equal(hub.includes('/^m=audio\\s/i'), true);
+  assert.equal(hub.includes('media.length === 1'), true);
+  assert.equal(hub.includes('candidateType !== "relay"'), true);
+  assert.equal(hub.includes('token.toLowerCase() === "raddr"'), true);
   assert.equal(hub.includes('foundation.startsWith("candidate:")'), true);
   assert.equal(hub.includes("4_294_967_295n"), true);
   assert.equal(hub.includes("fromGeneration"), true);
   assert.equal(hub.includes("source.generation !== item.fromGeneration"), true);
   assert.equal(hub.includes("sessionId: session.sessionId"), true);
+  assert.equal(hub.includes("const valid = await this.#revalidate(state)"), true);
+  assert.equal(hub.includes("session.sessionId !== state.auth.session.sessionId"), true);
   assert.equal(hub.includes("endpoint_session_id=$4"), false);
   assert.equal(repository.includes("endpoint_session.revoked_at IS NULL"), true);
   assert.equal(repository.includes("endpoint_session.idle_expires_at"), true);
@@ -43,6 +45,13 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   );
   assert.equal(migration.includes("ON DELETE SET NULL (endpoint_session_id)"), true);
   assert.equal(migration.includes("ON DELETE SET NULL (endpoint_device_id)"), true);
+});
+
+test("C1 TURN credentials avoid raw account and call identifiers", async () => {
+  const provider = await source("../src/modules/calls/turn-credential-provider.ts");
+  assert.equal(provider.includes('createHash("sha256")'), true);
+  assert.equal(provider.includes('input.accountId + "\\0" + input.callId'), true);
+  assert.equal(provider.includes('${input.accountId}:${input.callId}'), false);
 });
 
 test("C1 durable authority never stores SDP, ICE, TURN secrets, or public raw terminal causes", async () => {
