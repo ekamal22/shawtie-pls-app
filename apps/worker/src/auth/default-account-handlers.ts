@@ -10,6 +10,7 @@ import { partnershipBreakupDeadlineReminderHandler } from "../partnerships/break
 import { createPartnershipRelationalDeletionHandler } from "../partnerships/partnership-relational-deletion-handler.ts";
 import { createPartnershipCryptoDeletionHandler } from "../partnerships/partnership-crypto-deletion-handler.ts";
 import { relationshipItemReleaseHandler } from "../relationship-space/relationship-item-release-handler.ts";
+import { createC1CallTimeoutHandlers } from "../calls/call-timeout-handler.ts";
 
 export function createDefaultScheduledHandlers(): ScheduledActionHandlerRegistry {
   const registry = new ScheduledActionHandlerRegistry();
@@ -19,6 +20,7 @@ export function createDefaultScheduledHandlers(): ScheduledActionHandlerRegistry
   registry.register(partnershipBreakupFinalizeHandler);
   registry.register(partnershipBreakupDeadlineReminderHandler);
   registry.register(relationshipItemReleaseHandler);
+  for (const handler of createC1CallTimeoutHandlers()) registry.register(handler);
   return registry;
 }
 
