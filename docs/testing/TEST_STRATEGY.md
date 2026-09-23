@@ -552,9 +552,18 @@ Isolated C1 database validation may reserve only M3-owned 0015/0016. Final integ
 
 ## C2 video-calling tests
 
-C2 must reuse the verified C1 call authority, signaling protocol, TURN policy, push substrate, and deletion model.
+Canonical sources:
 
-Additional coverage includes explicit camera permission, no hidden video activation, local/remote rendering, camera on/off, front/back switching where supported, generation-safe video renegotiation, bandwidth/network transitions, and physical Android video acceptance.
+- `../architecture/C2_VIDEO_CALLING_DESIGN.md`
+- `../api/C2_VIDEO_CALLING_API.md`
+- `../api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`
+- `C2_ANDROID_ACCEPTANCE.md`
+
+C2 implementation begins only after verified C1 closure/merge.
+
+Coverage must include video-kind policy, no pre-accept capture, stable video transceiver, one/both-camera-off continuity, generation-fenced camera acquisition, repeated on/off/switch leak tests, camera permission denial, unexpected track end, stop-on-background privacy, no silent foreground reacquisition, candidate-free SDP inheritance, relay-only candidate enforcement, TURN fail-closed, signaling reconnect/process loss, Wi-Fi/mobile ICE restart, C1-only update-required behavior, lifecycle/revocation teardown, privacy/log scans, C1 voice regression, and mandatory physical Android video acceptance.
+
+C2 expects no migration. If final C1 requires a later schema extension, the closure harness must run the then-current real contiguous migration chain with no speculative reservation.
 
 ## Acceptance principle
 

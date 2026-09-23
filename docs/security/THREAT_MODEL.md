@@ -1300,3 +1300,33 @@ Evidence:
 - accept/reject/cancel/timeout races
 - two callee devices accepting concurrently
 - stale timeout after newer transition
+
+## C2 video-calling threat additions
+
+### C2-T1: Camera starts without current local consent
+
+Controls: no pre-accept capture; explicit local video intent; browser permission; selected-endpoint recheck; no remote camera activation.
+
+### C2-T2: Stale getUserMedia result reactivates camera after off/background/end/revocation
+
+Controls: monotonic in-memory `cameraGeneration`; stale results immediately stop returned tracks and never attach them.
+
+### C2-T3: Hidden/background camera capture continues unexpectedly
+
+Controls: hidden/background state proactively detaches and stops local video; foreground requires explicit re-enable.
+
+### C2-T4: Camera hardware metadata leaks to server/provider
+
+Controls: labels/device IDs/facing/permission state remain local; no server inventory; no logs/analytics persistence.
+
+### C2-T5: Video creates direct peer-IP exposure
+
+Controls: inherit candidate-free SDP, server relay-candidate validation, relay-only ICE policy, TURN fail-closed.
+
+### C2-T6: Old client silently downgrades video to voice
+
+Controls: durable `kind = video` remains authoritative; C1-only client shows update-required; no server reinterpretation.
+
+### C2-T7: Repeated camera operations leak tracks/resources
+
+Controls: one current local video track, superseded-track stop, stable transceiver, idempotent cleanup, physical leak/thermal testing.

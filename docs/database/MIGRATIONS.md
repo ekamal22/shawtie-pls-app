@@ -283,6 +283,13 @@ Final integrated C1 closure must run real migrations 0001 through 0018 in order 
 
 No C2 migration is reserved by C1 design.
 
+## C2 migration boundary
+
+C2 Video Calling is expected to require no PostgreSQL migration and reserves no migration number.
+
+C2 depends on final verified C1 owning the call runtime schema. C2 must not alter C1 migrations 0017/0018.
+
+If implementation evidence proves an additional durable schema change necessary, use the next forward-only migration number from the then-current integrated mainline and document why the existing C1 forward-compatible call kind is insufficient.
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.

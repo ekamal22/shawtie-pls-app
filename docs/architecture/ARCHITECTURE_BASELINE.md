@@ -163,3 +163,5 @@ Architecture Baseline 1.0 remains the historical frozen baseline. Accepted ADRs 
 - ADR-014 refines baseline item 16 from relay-first to relay-only for C1 voice calling. C1 must fail closed when TURN relay is unavailable rather than silently use a direct peer path.
 
 C2 inherits these C1 call-platform refinements unless a later accepted ADR changes them.
+
+- ADR-015 defines C2 camera/transceiver privacy: one stable video transceiver, local-only camera state, generation-fenced async camera work, and stop-on-background capture.

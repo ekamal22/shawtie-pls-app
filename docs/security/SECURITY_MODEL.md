@@ -363,3 +363,18 @@ Canonical C1 design: `../architecture/C1_VOICE_CALLING_DESIGN.md`.
 - random, foreign, old-partnership, and non-selected-device call access fails privacy-safely
 - account deletion, selected-device revocation, and final dissolution remove future signaling/TURN/call authority
 - C1 does not claim S1 endpoint cryptographic identity authentication; stable sensitive-use review remains required
+
+## C2 video-calling security boundary
+
+- C2 reuses verified C1 durable call, selected-device, signaling, TURN, push, lifecycle, and deletion authority
+- no camera capture before canonical acceptance and explicit local video intent
+- remote peer cannot activate local camera
+- `cameraGeneration` fences stale asynchronous capture/switch work
+- hidden/backgrounded app stops local camera capture and foreground return does not silently reacquire it
+- camera labels, device IDs, facing preference, permission state, frames, resolution, and RTP stats are not durable server data
+- video SDP remains candidate-free; signaling forwards only parsed relay candidates
+- `iceTransportPolicy: relay` remains mandatory and TURN failure never downgrades to direct peer connectivity
+- C2 adds no camera-state frame to realtime or `shawtie.call.v1`
+- C1-only clients show update-required rather than silently answering video as voice
+- built-in recording remains absent
+- S1 endpoint-identity review remains required before sensitive stable use

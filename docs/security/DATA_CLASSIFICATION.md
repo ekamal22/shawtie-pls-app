@@ -311,3 +311,16 @@ Update this matrix when:
 | Call audio plaintext | HIGHLY_SENSITIVE | Never | Never | Endpoints only; TURN relays encrypted packets | End of call |
 
 SDP must be candidate-free in C1. Candidate IP/network text must never be retained as test evidence.
+
+## C2 video additions
+
+| Data | Classification | Server storage | Logs | Provider exposure | Retention |
+| --- | --- | --- | --- | --- | --- |
+| Captured video frames | HIGHLY_SENSITIVE transient | Never | Never | Remote endpoint; TURN relays encrypted packets | End of live transport |
+| Camera device ID/label | SENSITIVE local metadata | Never | Never | Never required | Current local call only |
+| Facing preference | SENSITIVE local transient | Never | Never | No | Current local call only |
+| Camera permission state | SENSITIVE local transient | Never | Never | Browser/OS only | Local browser policy |
+| Negotiated resolution/frame rate | SENSITIVE operational transient | No normal account storage | Avoid per-account logging | Peer/TURN may infer traffic | Call/session only |
+| RTP/video stats | SENSITIVE operational transient | No normal account storage | Bounded aggregate diagnostics only | Browser/TURN infrastructure | Bounded operational use |
+
+Camera hardware identifiers and captured frames must never become ordinary analytics dimensions.

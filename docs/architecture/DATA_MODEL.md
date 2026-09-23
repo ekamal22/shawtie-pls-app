@@ -555,6 +555,27 @@ C1 migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions fo
 
 C2 later reuses this call model and enables `video`; it does not create separate video-call history.
 
+## C2 video data-model boundary
+
+C2 is expected to add no durable table or column.
+
+The verified C1 call aggregate already owns call identity, `kind`, selected endpoint devices, state/version, trusted timestamps, terminal reason, and partnership-scoped history.
+
+`kind = video` means the call is video-capable. It does not persist:
+
+- camera on/off
+- camera device ID or label
+- facing mode
+- camera permission result
+- resolution/frame rate
+- codec choice
+- sender/receiver state
+- RTP statistics
+- background/foreground state
+
+These values are transient browser/WebRTC state.
+
+C2 reserves no migration number. If final C1 runtime cannot safely represent video kind, C2 must add the next forward-only migration from the then-current mainline.
 ## Media
 
 Logical media metadata should reference random object identifiers, not user filenames.

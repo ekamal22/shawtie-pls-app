@@ -1464,32 +1464,111 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 
 # C2: Video Calling
 
-Status: PLANNED
+Status: DESIGN COMPLETE, IMPLEMENTATION BLOCKED ON VERIFIED C1 CLOSURE
 
-Depends on verified C1.
+Design branch: `feat/c2-video-calling`
+
+Design parent: `feat/c1-voice-calling @ 489661e3ac85400cc353a0ea673854c62f057030`
+
+Architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`
+
+API/compatibility: `docs/api/C2_VIDEO_CALLING_API.md`
+
+Signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`
+
+Physical Android: `docs/testing/C2_ANDROID_ACCEPTANCE.md`
+
+Accepted ADR: ADR-015 Stable Video Transceiver and Camera Privacy
+
+C2 source implementation may begin only after C1 is implemented, physically verified, and merged. Before implementation, the C2 branch must be reconciled with that verified C1 mainline.
 
 ## Scope
 
-- enable `video` over C1 call authority/history/signaling
-- explicit camera permission/activation
+- enable durable call `kind = video` over verified C1 authority/history
+- explicit video-call initiation and acceptance UX
+- one stable video transceiver per video call
 - local/remote video rendering
-- camera enable/disable
-- front/back camera switching where supported
-- video track renegotiation via C1 perfect negotiation
-- bandwidth/network adaptation
+- camera on/off
+- front/rear switching where supported
+- generation-fenced camera acquisition/switch
+- proactive stop-on-background camera privacy
+- no silent foreground camera reacquisition
+- audio-first degradation under constrained network
+- relay-only video over C1 TURN/signaling
+- C1-only update-required compatibility
 - physical Android video acceptance
+
+C2 excludes voice-to-video mid-call upgrade, group calls, screen sharing, server video processing, SFU/MCU, recording, virtual backgrounds, beauty filters, server camera inventory, background camera capture, and direct peer fallback.
 
 ## Acceptance gates
 
-- [ ] C2 reuses C1 call authority, selected-device model, history, signaling, TURN, push, and deletion behavior
-- [ ] no camera track starts without explicit user action and permission
-- [ ] raw camera labels/device metadata are not persisted server-side
-- [ ] relay-only candidate privacy remains enforced
-- [ ] video renegotiation is generation-safe
-- [ ] camera switching is safe on supported Android device
-- [ ] breakup/account-deletion/final-dissolution behavior matches C1
-- [ ] video browser tests pass
-- [ ] physical Android video calls pass
+- [ ] C2 implementation starts only after verified C1 is merged
+- [ ] C2 reuses C1 call authority, selected-device model, history, realtime v2 invalidation, `shawtie.call.v1`, TURN, push, lifecycle, and deletion behavior
+- [ ] C2 reserves no migration number and rewrites no C1 migration
+- [ ] if a schema change is proven necessary, it is a new forward-only migration from the then-current integrated mainline
+- [ ] video call creation keeps the existing C1 one-non-terminal-call invariant
+- [ ] creating/ringing a video call does not open camera or microphone capture
+- [ ] incoming UI identifies the call as video before acceptance
+- [ ] no camera track starts without explicit local video intent and browser permission
+- [ ] remote peer cannot activate local camera
+- [ ] `kind = video` means video-capable durable intent, not server-authoritative camera-on state
+- [ ] a video-kind call may continue with one or both cameras off without durable downgrade to voice
+- [ ] one stable `sendrecv` video transceiver is used for the call lifetime
+- [ ] routine camera off/on/switch does not create new durable call mutations
+- [ ] camera off detaches/stops the local track and releases hardware where browser behavior permits
+- [ ] repeated camera on/off does not accumulate live tracks
+- [ ] `cameraGeneration` fences stale `getUserMedia()` and camera-switch results
+- [ ] stale acquisition cannot reactivate camera after camera-off
+- [ ] stale acquisition cannot reactivate camera after backgrounding
+- [ ] stale acquisition cannot reactivate camera after call end or authorization revocation
+- [ ] camera switching uses the existing sender and does not unnecessarily disturb audio
+- [ ] switch failure never silently selects a surprising camera
+- [ ] camera device labels and IDs remain local/transient and are never persisted or sent to API/signaling/logs/analytics
+- [ ] camera-facing preference is not durable server or IndexedDB state
+- [ ] negotiated resolution/frame rate/codec/RTP stats are not normal durable account metadata
+- [ ] local preview is muted, clearly local, and never server-captured
+- [ ] remote video is not mirrored by default
+- [ ] missing remote frames are not falsely interpreted as deliberate partner camera-off intent
+- [ ] unexpected local camera track end does not silently reacquire camera
+- [ ] background/hidden state proactively stops local camera
+- [ ] foreground return refreshes canonical call authority and keeps camera off until explicit local re-enable
+- [ ] orientation changes do not mutate durable call state or force renegotiation loops
+- [ ] audio remains usable when video is unavailable or intentionally off
+- [ ] WebRTC congestion control may reduce video while preserving audio-first behavior
+- [ ] no direct peer fallback occurs under video network degradation
+- [ ] video uses the same short-lived selected-endpoint TURN credentials as voice
+- [ ] TURN/UDP video path passes
+- [ ] TURN/TCP or TURN/TLS fallback passes where deployed
+- [ ] TURN unavailable fails closed without direct ICE
+- [ ] C2 reuses candidate-free SDP from C1
+- [ ] signaling server still rejects host/srflx/prflx/malformed candidates and forwards only relay candidates
+- [ ] C2 adds no camera-state frame to `shawtie.call.v1`
+- [ ] if implementation requires a new signaling frame/semantic, a reviewed `shawtie.call.v2` is introduced instead of mutating v1
+- [ ] camera on/off/switch never enters realtime v2
+- [ ] signaling reconnect does not end healthy video solely because the socket changed
+- [ ] process-loss recovery preserves C1 canonical authority
+- [ ] relay-only ICE restart after Wi-Fi/mobile transition is safe
+- [ ] C1-only client shows update-required and never silently answers video as voice
+- [ ] another compatible callee device may still win acceptance
+- [ ] no detailed camera/browser hardware inventory is persisted server-side
+- [ ] breakup_pending still requires fresh explicit acceptance
+- [ ] account-deletion overlay ends video-call authority through C1 and stops local tracks
+- [ ] selected-device/session revocation stops local camera/microphone and prevents signaling/TURN continuation
+- [ ] final dissolution closes call/signaling/TURN authority and stops/detaches all local video state
+- [ ] future partnership cannot access old video-call history/state
+- [ ] service worker never obtains camera/microphone access or caches call/video state as a media substitute
+- [ ] no captured frames, camera identifiers, SDP, ICE, TURN credentials, or peer IPs appear in logs/analytics/persistence
+- [ ] built-in recording remains absent
+- [ ] S1 endpoint-authentication handoff remains explicit
+- [ ] C2 browser capability matrix passes
+- [ ] C1 voice calling regression suite remains green
+- [ ] mandatory physical Android C2 acceptance passes
+- [ ] repeated camera cycles show no obvious track/resource leak
+- [ ] battery/thermal behavior has no obvious runaway regression in sustained synthetic physical testing
+- [ ] full `npm run health` passes
+- [ ] `npm audit --audit-level=high` passes
+- [ ] no Unicode em dash is introduced in C2 repo docs/commits
+- [ ] diff/worktree hygiene and local/remote SHA parity pass
 
 # R1: Relationship Space
 

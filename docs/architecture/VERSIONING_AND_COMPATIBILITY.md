@@ -174,3 +174,18 @@ C1 introduces two independently versioned protocols.
 The service-worker/client compatibility gate must prevent stale application code from being treated as C1-capable after the server enables realtime v2.
 
 C1 durable scheduled/outbox payloads remain independently versioned and unknown payload versions fail closed.
+
+## C2 video compatibility
+
+C2 does not change the HTTP namespace, ordinary realtime protocol, or accepted-call signaling protocol in the initial design.
+
+- `shawtie.realtime.v2` remains the content-free canonical call refresh transport
+- `shawtie.call.v1` remains the transient description/candidate transport
+- video SDP remains candidate-free
+- relay-only trickle candidate semantics are unchanged
+
+A C1-only client may parse a canonical call projection whose `kind` is `video`, but it must not attempt to answer/signaling as voice. It shows update-required for the video feature while another compatible device may answer.
+
+C2 v1 deliberately adds no camera-state signaling frame. If implementation requires a new application frame or incompatible semantic, introduce a reviewed `shawtie.call.v2` rather than mutating v1.
+
+No compatibility mechanism may silently downgrade a durable video call to voice.

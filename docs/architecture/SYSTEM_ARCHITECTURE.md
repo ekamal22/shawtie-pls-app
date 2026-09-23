@@ -402,6 +402,22 @@ C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or vide
 
 Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refines the frozen relay-first baseline to relay-only for C1.
 
+## C2 video-calling design
+
+C2 is a video extension of the verified C1 call platform, not a new service boundary.
+
+- C1 durable call/session/history authority remains unchanged
+- `kind = video` identifies a video-capable durable call, not camera-on state
+- one stable video transceiver exists after accepted-call negotiation
+- camera tracks/device identifiers/facing state remain browser-local
+- generation-fenced camera operations prevent stale async capture from reactivating video
+- hidden/backgrounded state stops local camera capture
+- C2 reuses `shawtie.realtime.v2` refresh hints and `shawtie.call.v1` signaling
+- candidate-free SDP and relay-only candidate validation remain mandatory
+- no C2 database migration is expected or reserved
+- C2 implementation is blocked until verified C1 is merged
+
+See `C2_VIDEO_CALLING_DESIGN.md` and ADR-015.
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

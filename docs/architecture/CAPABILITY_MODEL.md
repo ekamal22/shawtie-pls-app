@@ -141,6 +141,21 @@ These predicates consume trusted call state, authenticated account/device identi
 
 Call optimistic `expectedVersion`, first-accept-wins row locking, and timeout generations are concurrency controls after capability approval, not browser-provided permissions.
 
+## C2 video refinement
+
+C2 does not add a second lifecycle call capability. Starting a video call uses the same authoritative `start_call` lifecycle eligibility as voice plus C2 feature policy.
+
+Camera activation is not a server partnership capability. It requires:
+
+- a currently accepted/connected authorized call
+- the current device remains the selected endpoint
+- explicit local video intent
+- browser camera permission
+- visible/foreground local privacy state
+
+The remote peer, browser UI state, or server cannot activate a local camera.
+
+Camera `cameraGeneration` fencing is local concurrency/privacy control, not authorization data.
 ## UI use
 
 The client may receive a server-derived capability snapshot for presentation.

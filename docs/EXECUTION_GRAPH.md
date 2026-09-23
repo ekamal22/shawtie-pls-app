@@ -104,7 +104,7 @@ flowchart TD
 
     M2 --> M3["M3 Media + Voice Messages ⚪"]
     M2 --> C1["C1 Voice Calling ⚪"]
-    C1 --> C2["C2 Video Calling ⚪"]
+    C1 --> C2["C2 Video Calling ⚪ design complete"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
     C2 --> S1
@@ -217,7 +217,7 @@ The current C1 design branch is:
 feat/c1-voice-calling
 ~~~
 
-C1 design is complete; implementation has not started. C2 remains separate and depends on verified C1.
+C1 design is complete; implementation has not started. C2 design is also complete on `feat/c2-video-calling`, but C2 source implementation remains blocked until verified C1 is merged.
 
 The completed parallel milestone branches remain historical:
 
@@ -267,3 +267,7 @@ V1 remains a separate verification track and must be complete before R2 closes.
 ## C1 design checkpoint
 
 `feat/c1-voice-calling` is created from `main @ 54b8659a`. It contains the voice-only call architecture, HTTP API, dedicated signaling protocol, accepted signaling/relay-only ADRs, and physical Android procedure. Parallel M3 design owns planned migrations 0015/0016; C1 owns planned 0017/0018 and may use migration reservations only for isolated branch validation.
+
+## C2 design checkpoint
+
+`feat/c2-video-calling` is based on C1 design checkpoint `489661e3`. It defines the video-only extension, stable video transceiver, generation-fenced local camera controller, stop-on-background privacy, C1-only update-required behavior, and mandatory Android video acceptance. It is a design checkpoint only; runtime implementation must first reconcile onto the final verified C1 mainline.

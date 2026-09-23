@@ -10,6 +10,8 @@ M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`. Autom
 
 C1 Voice Calling architecture and implementation design is complete on `feat/c1-voice-calling`, created from merged-M2 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. Implementation has not started. Canonical design: `docs/architecture/C1_VOICE_CALLING_DESIGN.md`; API: `docs/api/C1_CALLING_API.md`; signaling: `docs/api/C1_SIGNALING_PROTOCOL.md`; physical Android procedure: `docs/testing/C1_ANDROID_ACCEPTANCE.md`. ADR-013 adopts a dedicated accepted-call signaling transport and ADR-014 refines C1 from relay-first to relay-only TURN privacy. C1 owns planned migrations 0017/0018 while parallel M3 owns planned 0015/0016; isolated C1 validation may reserve 0015/0016, but final integration requires real 0001-0018 with `reserved=0`. C2 remains a separate video-calling milestone after C1.
 
+C2 Video Calling architecture and implementation design is complete on `feat/c2-video-calling`, based on C1 design checkpoint `489661e3`. C2 implementation remains blocked until C1 is implemented, physically verified, and merged. Canonical design: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`; API/compatibility: `docs/api/C2_VIDEO_CALLING_API.md`; signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`; physical Android procedure: `docs/testing/C2_ANDROID_ACCEPTANCE.md`. ADR-015 adopts one stable video transceiver, local-only camera state, generation-fenced camera operations, and stop-on-background camera privacy. C2 expects no database migration and reserves no migration number.
+
 ## Product definition
 
 The product rules are defined in:
@@ -129,7 +131,7 @@ Current epic status:
 - R1 Relationship Space: DONE. Source head `9bc9ba4` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. R1 owns migrations 0013 and 0014. Canonical 0001 through 0014 migrations run without reservations, `test:r1:local` passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the real same-partnership M1 message-reference seam is positively verified without copying message plaintext, and full repository health plus audit are green.
 - M2 Realtime and Offline Reliability: DONE on `feat/m2-realtime-offline`. The canonical automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene green. All 14 mandatory physical Android acceptance scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects, each with a focused regression test. M2 is merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`.
 - C1 Voice Calling: DESIGN COMPLETE on `feat/c1-voice-calling`; implementation not started. Dedicated `shawtie.call.v1`, negotiated `shawtie.realtime.v2`, relay-only TURN, Web Push reachability, multi-device first-accept-wins, lifecycle/deletion integration, migrations 0017/0018, and physical Android acceptance are fully designed.
-- C2 Video Calling: PLANNED after verified C1.
+- C2 Video Calling: DESIGN COMPLETE on `feat/c2-video-calling`; implementation blocked until verified C1 closure/merge.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -178,7 +180,7 @@ M2 Realtime and Offline Reliability was created from documentation-correct `main
 2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
 3. preserve M1 `server_sequence` as immutable message-history order and `change_sequence` as durable mutation-synchronization order
 4. C1 design is complete on `feat/c1-voice-calling`; implementation may begin from current verified M2 mainline while preserving parallel M3 migration ownership
-5. keep C2 video separate and dependent on verified C1 voice calling
+5. C2 design is complete on `feat/c2-video-calling`; implementation remains blocked until verified C1 voice calling is closed and merged
 5. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy

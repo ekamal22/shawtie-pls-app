@@ -116,6 +116,24 @@ History is partnership-scoped and records only bounded metadata required by the 
 
 Final dissolution deletes call history through the existing partnership deletion architecture.
 
-## C2
+## C2 video extension
 
-C2 enables `video` creation and adds camera permission, camera switching, video track/rendering policy, bandwidth behavior, and video-specific physical acceptance without creating a second call-state/history/signaling model.
+Canonical C2 design: `C2_VIDEO_CALLING_DESIGN.md`.
+
+Canonical C2 API/compatibility: `../api/C2_VIDEO_CALLING_API.md`.
+
+Canonical signaling compatibility: `../api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`.
+
+Accepted C2 ADR: `../adr/ADR-015-stable-video-transceiver-and-camera-privacy.md`.
+
+C2 enables `video` creation over the verified C1 substrate without creating a second call authority, signaling transport, TURN policy, push system, or history model.
+
+A video-kind call has one stable `sendrecv` video transceiver. Camera state is local/transient, not durable call state.
+
+Camera capture starts only after canonical acceptance plus explicit local video intent and browser permission. Backgrounding stops local camera capture, and foreground return never silently reacquires it.
+
+C2 reuses candidate-free SDP, relay-only ICE candidate validation, `iceTransportPolicy: relay`, short-lived TURN credentials, selected-device authorization, realtime v2 invalidation, and `shawtie.call.v1`.
+
+C2 v1 adds no camera-state signaling frame. If one proves necessary, a reviewed signaling protocol version change is required.
+
+C1-only clients show update-required for a video call and never silently reinterpret it as voice.

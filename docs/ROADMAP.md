@@ -63,7 +63,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice Calling | DESIGN COMPLETE, implementation not started | M2 | Yes, mandatory |
-| 9 C2 Video Calling | PLANNED | C1 | Yes, mandatory |
+| 9 C2 Video Calling | DESIGN COMPLETE, implementation blocked on verified C1 | C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -91,7 +91,7 @@ Next:
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
 5. M2 is merged at `main @ b6183158`; C1 voice-calling design is complete on `feat/c1-voice-calling` from current `main @ 54b8659a`; implementation may begin from that verified mainline
-6. keep C2 video separate and dependent on verified C1 voice-call substrate
+6. C2 design is complete on `feat/c2-video-calling` from C1 design checkpoint `489661e3`; implementation remains blocked until C1 is implemented, physically verified, and merged
 6. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -446,35 +446,67 @@ C1 must prove partnership/device authorization, no auto-answer, no pre-accept ne
 
 # Milestone 9: C2 Video Calling
 
-Status: PLANNED.
+Status: DESIGN COMPLETE, implementation blocked until verified C1 is merged.
 
-Depends on verified C1.
+Design branch: `feat/c2-video-calling`.
+
+Design parent: `feat/c1-voice-calling @ 489661e3ac85400cc353a0ea673854c62f057030`.
+
+Canonical architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`.
+
+Canonical API/compatibility contract: `docs/api/C2_VIDEO_CALLING_API.md`.
+
+Canonical signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`.
+
+Physical Android procedure: `docs/testing/C2_ANDROID_ACCEPTANCE.md`.
+
+Accepted ADR: `docs/adr/ADR-015-stable-video-transceiver-and-camera-privacy.md`.
 
 ## Goal
 
-Add video to the verified C1 call substrate without creating a second call authority, signaling protocol, TURN policy, push system, or history model.
+Add explicit private one-to-one video to the verified C1 call substrate without creating a second call authority, signaling transport, TURN policy, push system, history model, or durable camera-state system.
 
-## Core scope
+## Core architecture
 
-- enable `video` kind over the existing call aggregate
-- camera permission and explicit activation
-- local/remote rendering
-- camera on/off
-- front/back camera switching where supported
-- video transceiver renegotiation through C1 perfect negotiation
-- video bandwidth/network behavior
-- video-specific background/foreground handling
-- physical Android video acceptance
+- durable call kind `video` reuses C1 HTTP authority/history
+- one stable `sendrecv` video transceiver exists for a video call after acceptance
+- camera sender track may be absent while audio and receiving video continue
+- camera acquisition requires explicit local video intent plus browser permission
+- no camera capture before canonical call acceptance
+- in-memory `cameraGeneration` fences stale asynchronous acquisition/switch results
+- routine camera on/off/switch uses the existing video sender and `replaceTrack()` where supported
+- camera labels, device IDs, facing choice, camera-on state, negotiated resolution, and RTP stats are not durable server state
+- hidden/backgrounded app proactively stops local camera capture
+- foreground return never silently reacquires camera
+- `shawtie.call.v1` is reused with candidate-free SDP and server-validated relay-only trickle candidates
+- realtime v2 remains only a content-free canonical refresh channel and never carries camera state
+- no new application camera-state signaling frame is added in C2 v1
+- C1-only clients show update-required for video calls and never silently answer them as voice
+- relay-only TURN remains mandatory and failure never downgrades to direct peer connectivity
+- S1 later reviews endpoint cryptographic identity binding for both audio and video
+
+## Persistence/migration rule
+
+C2 is expected to require no PostgreSQL migration and reserves no migration number. If final verified C1 cannot safely represent `kind = video`, C2 must use the next forward-only migration on the then-current integrated mainline rather than rewriting C1.
+
+## Implementation slices
+
+1. C2-A enable video call contracts/policy and compatibility gating
+2. C2-B stable video-transceiver engine and remote rendering
+3. C2-C generation-fenced local camera controller
+4. C2-D camera switching and local device privacy
+5. C2-E mobile visibility/orientation/network hardening
+6. C2-F security/lifecycle/compatibility hardening
+7. C2-G browser/integration closure with C1 voice regressions green
+8. C2-H mandatory physical Android video acceptance and documentation closure
 
 ## Closure boundary
 
-C2 must prove no hidden camera activation, permission safety, relay-only transport, signaling compatibility, camera switching, lifecycle parity with C1, and real physical-device video calls.
+C2 must prove explicit camera consent, no pre-accept capture, stale camera-operation fencing, stop-on-background privacy, no silent foreground reacquisition, stable audio during camera changes, C1-only update-required compatibility, candidate-free SDP, relay-only video transport, no durable camera metadata, lifecycle/revocation cleanup, real physical Android video calls, and full C1 voice regression safety.
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
 # Milestone 10: S1 E2EE and Cryptographic Recovery
-
-# Milestone 9: S1 E2EE and Cryptographic Recovery
 
 Status: PLANNED.
 
