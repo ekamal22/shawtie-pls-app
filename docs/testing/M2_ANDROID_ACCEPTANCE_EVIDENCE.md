@@ -215,11 +215,76 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 6: PostgreSQL LISTEN reset
 
-- Status: pending
+- SHA: `fc25c6c` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T09:07Z
+- Result: **PASS**
+- Setup: identified the API's own PostgreSQL `LISTEN "shawtie_realtime_v1"`
+  backend connection via `pg_stat_activity` on the disposable database
+  (matched to the running API process by its connection start time),
+  distinct from the connection pool used for ordinary queries. Alice's
+  physical Android WebSocket remained connected throughout.
+- Action: ran `SELECT pg_terminate_backend(<pid>)` against only that one
+  LISTEN connection, forcing the API's internal notification listener to
+  error out and reconnect, without touching the API process, the HTTP
+  server, or Alice's WebSocket connection.
+- Observed behavior: the API's listener reconnected (its internal
+  generation counter advanced past 1) and broadcast a content-free
+  `{"v":1,"type":"control.resync_required","payload":{"scope":"account","reason":"listener_reset"}}`
+  frame to Alice's still-open socket. This forced a full canonical
+  reconciliation pass, observed as real HTTP calls to
+  `/api/v1/relationship-space`, `/api/v1/relationship-space/items`,
+  `/api/v1/conversations/:id/changes`, `/api/v1/conversations/current`, and
+  `/api/v1/auth/session`, all within about 300ms of the reset. The Android
+  browser session and WebSocket were never dropped, and the app remained
+  fully functional afterward, confirming the listener-reset path forces
+  reconciliation rather than silently continuing with potentially missed
+  invalidations.
+- Evidence: `validation-logs/screenshots/scenario6-listener-reset.png`
 
 ### Scenario 7: breakup while offline
 
-- Status: pending
+- SHA before fix: `fc25c6c`; SHA after fix: recorded in the commit that
+  follows this evidence update on `feat/m2-realtime-offline`
+- UTC timestamp: 2026-09-23T09:09Z
+- Result: **PASS** (after fixing one real defect)
+- Setup: Alice disconnected (`adb reverse --remove tcp:4174`) and, through
+  the real chat UI, queued an edit (via the native `Edit` prompt, answered
+  through CDP) on a message she had sent before the breakup, with
+  `expectedContentVersion` matching its pre-breakup version.
+- Action: while Alice remained offline, Bob initiated breakup through the
+  real `POST /api/v1/partnerships/:id/breakup` endpoint
+  (`lifecycleState` became `breakup_pending`, partnership `generation`
+  advanced to 2). Connectivity was then restored.
+- Observed behavior (mutation authority): the queued edit was not blindly
+  applied. It transitioned to
+  `status: "blocked", lastErrorCode: "PRE_BREAKUP_MESSAGE_LOCKED"`, the
+  server-side message content was confirmed unchanged, and the real app UI
+  surfaced the block with a Retry/Discard notice, correctly reflecting
+  M1/P3's rule that pre-breakup messages cannot be edited once the
+  partnership enters `breakup_pending`.
+- First observed behavior (defect): the Partnership panel did not reflect
+  the new breakup state after reconnecting. It kept showing the stale
+  pre-breakup view (an active-looking "Start breakup" affordance) alongside
+  a generic "Something went wrong." error banner, and only recovered after
+  an unrelated `window` `focus` event was dispatched. Root cause:
+  `PartnershipPanel` refreshed only on mount, on a `partnership-changed`
+  realtime event (which requires having been connected at broadcast time),
+  or on window focus; a plain reconnect triggered none of those, and a
+  transient failed load during the reconnect burst left a generic error
+  banner that was never cleared by a later successful load.
+- Fix applied: registered `PartnershipPanel`'s refresh as a reconcile-phase
+  synchronizer with the same `SyncCoordinator` the messaging and
+  relationship-space panels already use, so it participates in the
+  resilient, auto-retrying resync pass on every reconnect; and cleared the
+  error state on a successful load so a transient failure does not leave a
+  permanently stale banner. A focused regression test was added to
+  `apps/web/tests/m2.browser.test.ts` asserting the registration and the
+  error-clearing order.
+- Final retest on the physical Redmi Note 9S: after rebuilding and
+  reloading, the Partnership panel correctly showed "Breakup in progress"
+  with the real initiator, timestamp, and final deadline immediately on
+  reconnect, with no error banner and no manual focus event required.
+- Evidence: `validation-logs/screenshots/scenario7-breakup-offline.png`
 
 ### Scenario 8: final dissolution while offline
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
+import { useM2Runtime } from "../../lib/realtime/runtime-context.tsx";
 import { NotificationsPanel } from "../notifications/NotificationsPanel.tsx";
 import { FormerPartnershipsPanel } from "./FormerPartnershipsPanel.tsx";
 
@@ -63,6 +64,7 @@ function deadlineLabel(value: string): string {
 }
 
 export function PartnershipPanel() {
+  const runtime = useM2Runtime();
   const [partnership, setPartnership] = useState<CurrentPartnership | null | undefined>(undefined);
   const [relationshipStartDate, setRelationshipStartDate] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,6 +77,7 @@ export function PartnershipPanel() {
     );
     setPartnership(response.partnership);
     setRelationshipStartDate(response.partnership?.relationshipStartDate ?? "");
+    setError("");
     window.dispatchEvent(
       new CustomEvent("shawtie:partnership-mode", {
         detail: { occupied: Boolean(response.partnership) },
@@ -94,6 +97,14 @@ export function PartnershipPanel() {
       window.removeEventListener("focus", onPartnershipChanged);
     };
   }, []);
+
+  useEffect(
+    () =>
+      runtime.registerSynchronizer("partnership", async () => {
+        await load();
+      }),
+    [runtime],
+  );
 
   useEffect(() => {
     if (!partnership?.breakup) return;

@@ -202,3 +202,21 @@ test("M2 receipt high-water is persisted before HTTP acknowledgement", async () 
   assert.equal(messaging.includes("ApiNetworkError"), true);
   assert.equal(messaging.includes("pendingReadThrough"), true);
 });
+
+test("M2 partnership panel resyncs through the coordinator and clears stale errors", async () => {
+  const partnership = await source("../src/features/partnership/PartnershipPanel.tsx");
+
+  // Physical Android acceptance found that a breakup initiated by the other
+  // account while this device was offline left the panel showing stale
+  // pre-breakup state and a generic error banner after reconnecting, because
+  // it only refreshed on mount, on a partnership-changed realtime event, or
+  // on window focus, none of which fire on a plain reconnect. It must also
+  // participate in the coordinator's resync pass so a reconnect reliably
+  // refreshes it, and a later successful load must clear a previous error.
+  assert.equal(partnership.includes("useM2Runtime"), true);
+  assert.equal(partnership.includes('runtime.registerSynchronizer("partnership"'), true);
+  assert.ok(
+    partnership.indexOf('setError("");') < partnership.indexOf("shawtie:partnership-mode"),
+    "load() must clear a previous error before dispatching partnership-mode",
+  );
+});
