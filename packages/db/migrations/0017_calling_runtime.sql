@@ -106,6 +106,14 @@ SET
 FROM call_sessions AS session
 WHERE session.id = participant.call_session_id;
 
+ALTER TABLE account_devices
+  ADD CONSTRAINT account_devices_id_account_unique
+  UNIQUE (id, account_id);
+
+ALTER TABLE account_sessions
+  ADD CONSTRAINT account_sessions_endpoint_identity_unique
+  UNIQUE (id, account_id, device_id);
+
 ALTER TABLE call_participants
   ALTER COLUMN partnership_id SET NOT NULL,
   ALTER COLUMN role SET NOT NULL,
@@ -120,8 +128,8 @@ ALTER TABLE call_participants
     FOREIGN KEY (endpoint_device_id, account_id)
     REFERENCES account_devices(id, account_id),
   ADD CONSTRAINT call_participants_endpoint_session_fk
-    FOREIGN KEY (endpoint_session_id)
-    REFERENCES account_sessions(id)
+    FOREIGN KEY (endpoint_session_id, account_id, endpoint_device_id)
+    REFERENCES account_sessions(id, account_id, device_id)
     ON DELETE SET NULL,
   ADD CONSTRAINT call_participants_role_valid
     CHECK (role IN ('caller', 'callee'));

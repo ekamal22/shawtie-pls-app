@@ -251,6 +251,7 @@ export class CallSignalingHub {
         callId: state.callId,
         accountId: session.accountId,
         deviceId: state.deviceId,
+        sessionId: session.sessionId,
       });
       if (!authorization || authorization.role !== state.role) {
         this.#close(state, 1008, "Authorization changed");
