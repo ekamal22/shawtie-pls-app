@@ -14,6 +14,14 @@ export async function upsertPushSubscription(
   input: PushSubscriptionRecord & { readonly now: Date },
 ): Promise<void> {
   await executor.query(
+    `UPDATE push_subscriptions
+     SET revoked_at=$3, updated_at=$3
+     WHERE endpoint=$1
+       AND device_id<>$2
+       AND revoked_at IS NULL`,
+    [input.endpoint, input.deviceId, input.now],
+  );
+  await executor.query(
     `INSERT INTO push_subscriptions (
        device_id, account_id, endpoint, p256dh, auth, expiration_time_ms,
        created_at, updated_at, revoked_at, failure_count
