@@ -1271,7 +1271,7 @@ BEGIN
       ended_at, created_at, updated_at
     ) VALUES (
       '90000000-0000-4000-8000-000000000003',
-      '20000000-0000-0000-0000-000000000002',
+      '20000000-0000-0000-0000-000000000001',
       '00000000-0000-0000-0000-000000000001',
       'voice',
       'ended',
@@ -1286,7 +1286,23 @@ BEGIN
 END;
 $$;
 
-DO $$
+DO $
+BEGIN
+  BEGIN
+    UPDATE call_participants
+    SET
+      endpoint_device_id = '70000000-0000-0000-0000-000000000001',
+      endpoint_session_id = '71100000-0000-0000-0000-000000000001'
+    WHERE call_session_id = '90000000-0000-4000-8000-000000000001'
+      AND role = 'callee';
+    RAISE EXCEPTION 'expected selected endpoint ownership violation';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$;
+
+DO $
 BEGIN
   BEGIN
     INSERT INTO push_subscriptions (
