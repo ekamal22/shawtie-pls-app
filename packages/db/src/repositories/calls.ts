@@ -218,12 +218,12 @@ export async function acceptCall(
 ): Promise<CallSessionRecord | null> {
   const selected = await executor.query(
     `UPDATE call_participants
-     SET endpoint_device_id=$4, accepted_at=COALESCE(accepted_at,$5)
+     SET endpoint_device_id=$3, accepted_at=COALESCE(accepted_at,$4)
      WHERE call_session_id=$1
        AND account_id=$2
        AND role='callee'
-       AND (endpoint_device_id IS NULL OR endpoint_device_id=$4)`,
-    [input.callId, input.calleeAccountId, "callee", input.deviceId, input.now],
+       AND (endpoint_device_id IS NULL OR endpoint_device_id=$3)`,
+    [input.callId, input.calleeAccountId, input.deviceId, input.now],
   );
   if (selected.rowCount !== 1) return null;
   const result = await executor.query<CallSessionRow>(
@@ -231,12 +231,12 @@ export async function acceptCall(
      SET status='accepted',
          version=version+1,
          deadline_generation=deadline_generation+1,
-         accepted_at=COALESCE(accepted_at,$4),
-         connect_expires_at=$5,
-         updated_at=$4
+         accepted_at=COALESCE(accepted_at,$3),
+         connect_expires_at=$4,
+         updated_at=$3
      WHERE id=$1 AND status='ringing' AND version=$2
      RETURNING ${sessionColumns}`,
-    [input.callId, input.expectedVersion.toString(), input.calleeAccountId, input.now, input.connectExpiresAt],
+    [input.callId, input.expectedVersion.toString(), input.now, input.connectExpiresAt],
   );
   return result.rows[0] ? mapSession(result.rows[0]) : null;
 }

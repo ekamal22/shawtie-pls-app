@@ -22,6 +22,22 @@ SET
     WHEN status IN ('rejected', 'cancelled', 'missed') THEN 'ended'
     ELSE status
   END,
+  ring_expires_at = CASE
+    WHEN status = 'ringing' THEN created_at + interval '1 minute'
+    ELSE NULL
+  END,
+  accepted_at = CASE
+    WHEN status = 'accepted' THEN COALESCE(started_at, created_at)
+    ELSE NULL
+  END,
+  connect_expires_at = CASE
+    WHEN status = 'accepted' THEN COALESCE(started_at, created_at) + interval '2 minutes'
+    ELSE NULL
+  END,
+  ended_at = CASE
+    WHEN status IN ('rejected', 'cancelled', 'missed', 'ended') THEN COALESCE(ended_at, created_at)
+    ELSE ended_at
+  END,
   updated_at = created_at;
 
 ALTER TABLE call_sessions
@@ -60,6 +76,10 @@ ALTER TABLE call_sessions
       OR (status = 'accepted' AND connect_expires_at IS NOT NULL)
       OR status IN ('connected', 'ended')
     );
+
+ALTER TABLE call_sessions
+  ADD CONSTRAINT call_sessions_id_partnership_unique
+  UNIQUE (id, partnership_id);
 
 CREATE UNIQUE INDEX call_sessions_one_nonterminal_per_partnership
   ON call_sessions (partnership_id)
