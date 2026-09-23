@@ -33,6 +33,8 @@ test("C1 browser keeps one local media owner and relay-only audio", async () => 
   assert.equal(media.includes("stripCandidates"), true);
   assert.equal(media.includes("/\\btyp relay\\b/i"), true);
   assert.equal(media.includes("reportEndpointConnected"), true);
+  assert.equal(media.includes("#pendingEndOfCandidates"), true);
+  assert.equal(media.includes("this.#pendingEndOfCandidates = true"), true);
 });
 
 test("C1 microphone and notification permissions stay on explicit user paths", async () => {
