@@ -299,7 +299,7 @@ export async function recordEndpointConnected(
 ): Promise<{ readonly call: CallSessionRecord; readonly transitioned: boolean } | null> {
   const marked = await executor.query(
     `UPDATE call_participants
-     SET connected_at=COALESCE(connected_at,$4)
+     SET connected_at=COALESCE(connected_at,$5)
      WHERE call_session_id=$1
        AND account_id=$2
        AND endpoint_device_id=$3
