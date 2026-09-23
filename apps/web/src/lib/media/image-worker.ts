@@ -29,10 +29,7 @@ self.onmessage = (event: MessageEvent<ImageWorkerRequest>) => {
     let bitmap: ImageBitmap | null = null;
     try {
       bitmap = await createImageBitmap(event.data.file);
-      const scale = Math.min(
-        1,
-        event.data.maxEdge / Math.max(bitmap.width, bitmap.height),
-      );
+      const scale = Math.min(1, event.data.maxEdge / Math.max(bitmap.width, bitmap.height));
       const width = Math.max(1, Math.round(bitmap.width * scale));
       const height = Math.max(1, Math.round(bitmap.height * scale));
       let output = await encode(bitmap, width, height, 0.86);

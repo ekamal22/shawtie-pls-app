@@ -34,7 +34,10 @@ function open(accountId: string): Promise<IDBDatabase> {
   });
 }
 
-async function usingDatabase<T>(accountId: string, task: (database: IDBDatabase) => Promise<T>): Promise<T> {
+async function usingDatabase<T>(
+  accountId: string,
+  task: (database: IDBDatabase) => Promise<T>,
+): Promise<T> {
   const database = await open(accountId);
   try {
     return await task(database);
@@ -58,8 +61,7 @@ export async function loadMediaDraft(
   return usingDatabase(accountId, async (database) => {
     const tx = database.transaction(["uploadDrafts"], "readonly");
     const value = (await requestResult(tx.objectStore("uploadDrafts").get(draftId))) as
-      | LocalMediaDraft
-      | undefined;
+      LocalMediaDraft | undefined;
     await transactionDone(tx);
     return value ?? null;
   });
@@ -76,12 +78,7 @@ export async function listMediaDrafts(
       tx
         .objectStore("uploadDrafts")
         .index("byPartnershipCreated")
-        .getAll(
-          IDBKeyRange.bound(
-            [partnershipId, 0],
-            [partnershipId, Number.MAX_SAFE_INTEGER],
-          ),
-        ),
+        .getAll(IDBKeyRange.bound([partnershipId, 0], [partnershipId, Number.MAX_SAFE_INTEGER])),
     )) as LocalMediaDraft[];
     await transactionDone(tx);
     return values
@@ -122,7 +119,6 @@ export async function purgeMediaAccountData(accountId: string): Promise<void> {
     const request = indexedDB.deleteDatabase(PREFIX + accountId);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("Unable to delete media database"));
-    request.onblocked = () =>
-      reject(new Error("Media database purge is blocked by another tab"));
+    request.onblocked = () => reject(new Error("Media database purge is blocked by another tab"));
   });
 }

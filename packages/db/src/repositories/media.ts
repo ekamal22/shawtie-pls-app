@@ -116,10 +116,19 @@ export async function insertMediaUpload(
        deletion_generation, created_at
      ) VALUES ($1,$2,$3,$4,$5,$6,$7,'uploading',$8,$9,$10,$11,1,$12,1,$13)`,
     [
-      input.id, input.partnershipId, input.uploaderAccountId, input.uploaderDeviceId,
-      input.storageObjectKey, input.mediaKind, input.formatCode, input.ciphertextSize.toString(),
-      input.ciphertextSha256, input.cryptoProtocolVersion, input.durationSeconds,
-      input.uploadExpiresAt, input.createdAt,
+      input.id,
+      input.partnershipId,
+      input.uploaderAccountId,
+      input.uploaderDeviceId,
+      input.storageObjectKey,
+      input.mediaKind,
+      input.formatCode,
+      input.ciphertextSize.toString(),
+      input.ciphertextSha256,
+      input.cryptoProtocolVersion,
+      input.durationSeconds,
+      input.uploadExpiresAt,
+      input.createdAt,
     ],
   );
 }
@@ -259,7 +268,10 @@ export async function markBoundMediaDeletionPending(
   bindingId: string,
   deletedAt: Date,
 ): Promise<readonly { mediaId: string; generation: bigint }[]> {
-  const result = await executor.query<{ id: string; deletion_generation: string | number | bigint }>(
+  const result = await executor.query<{
+    id: string;
+    deletion_generation: string | number | bigint;
+  }>(
     `UPDATE media_objects
      SET state = 'deletion_pending',
          deleted_at = $3,
@@ -271,7 +283,10 @@ export async function markBoundMediaDeletionPending(
      RETURNING id, deletion_generation`,
     [bindingType, bindingId, deletedAt],
   );
-  return result.rows.map((row) => ({ mediaId: row.id, generation: BigInt(row.deletion_generation) }));
+  return result.rows.map((row) => ({
+    mediaId: row.id,
+    generation: BigInt(row.deletion_generation),
+  }));
 }
 
 export async function listBoundMediaForContainer(

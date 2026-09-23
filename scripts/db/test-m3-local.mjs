@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 
 const postgresImage = process.env.SHAWTIE_TEST_POSTGRES_IMAGE ?? "postgres:16-alpine";
-const minioImage = process.env.SHAWTIE_TEST_MINIO_IMAGE ?? "minio/minio:latest";
-const mcImage = process.env.SHAWTIE_TEST_MINIO_MC_IMAGE ?? "minio/mc:latest";
+const minioImage = process.env.SHAWTIE_TEST_MINIO_IMAGE ?? "quay.io/minio/minio:latest";
+const mcImage = process.env.SHAWTIE_TEST_MINIO_MC_IMAGE ?? "quay.io/minio/mc:latest";
 const suffix = process.pid;
 const network = "shawtie-m3-net-" + suffix;
 const postgres = "shawtie-m3-postgres-" + suffix;

@@ -48,7 +48,9 @@ test("M3 chat queues only small binding mutation after upload, never a Blob", as
 
 test("M3 R1 media remains online-only under M2 replay safety policy", async () => {
   const replay = await source("../src/lib/offline/replay-engine.ts");
-  const relationship = await source("../src/features/relationship-space/RelationshipSpacePanel.tsx");
+  const relationship = await source(
+    "../src/features/relationship-space/RelationshipSpacePanel.tsx",
+  );
   assert.equal(replay.includes('reference.referenceType === "message"'), true);
   assert.equal(relationship.includes("OFFLINE_OPERATION_REQUIRES_CONNECTION"), true);
   assert.equal(relationship.includes('role: "voice_letter"'), true);
@@ -96,7 +98,6 @@ test("M3 create-only upload retry proceeds to server-side completion verificatio
   assert.equal(api.includes("response.status === 412"), true);
   assert.equal(api.includes("MEDIA_STORAGE_UPLOAD_FAILED_"), true);
 });
-
 
 test("M3 account purge fails closed instead of swallowing media-database deletion errors", async () => {
   const local = await source("../src/lib/offline/local-db.ts");

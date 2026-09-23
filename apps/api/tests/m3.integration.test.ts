@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { MediaObjectStore, MediaUploadGrant, MediaDownloadGrant } from "@shawtie/media-storage";
+import type {
+  MediaObjectStore,
+  MediaUploadGrant,
+  MediaDownloadGrant,
+} from "@shawtie/media-storage";
 import {
   closeDatabasePool,
   createDatabasePool,
   databaseConfigFromEnv,
+  getTransactionTimestamp,
+  lockAccounts,
+  terminatePartnershipLifecycle,
   type DatabasePool,
+  withTransaction,
 } from "@shawtie/db";
 import { createApiApplication } from "../src/application.ts";
 import { AuthKeyRing } from "../src/security/auth-key-ring.ts";
@@ -148,7 +156,8 @@ async function register(app: App, database: DatabasePool, suffix: string): Promi
     },
   });
   assert.equal(start.statusCode, 200, start.body);
-  const registrationIntentId = (start.json() as { registrationIntentId: string }).registrationIntentId;
+  const registrationIntentId = (start.json() as { registrationIntentId: string })
+    .registrationIntentId;
   const code = await registrationCode(database, registrationIntentId);
   const verify = await app.inject({
     method: "POST",
@@ -185,7 +194,11 @@ async function formPartnership(
   const accepted = await app.inject({
     method: "POST",
     url: "/api/v1/partner-requests/" + requestId + "/accept",
-    headers: headers(bob.cookie),
+    headers: {
+      origin: config.appOrigin,
+      "x-shawtie-csrf": "1",
+      cookie: bob.cookie,
+    },
   });
   assert.equal(accepted.statusCode, 200, accepted.body);
   const partnershipId = (accepted.json() as { partnershipId: string }).partnershipId;
@@ -195,9 +208,11 @@ async function formPartnership(
     headers: { cookie: alice.cookie },
   });
   assert.equal(current.statusCode, 200, current.body);
-  const conversationId = (current.json() as {
-    conversation: { conversationId: string };
-  }).conversation.conversationId;
+  const conversationId = (
+    current.json() as {
+      conversation: { conversationId: string };
+    }
+  ).conversation.conversationId;
   return { partnershipId, conversationId };
 }
 
@@ -259,6 +274,79 @@ async function readyMedia(
   return body.mediaId;
 }
 
+test("M3 upload idempotency replay cannot cross into a future partnership", async () => {
+  const database = requireDisposableDatabase();
+  const store = new FakeMediaStore();
+  const app = createApiApplication({ database, config, mediaObjectStore: store });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "future_a");
+    const bob = await register(app, database, "future_b");
+    const carol = await register(app, database, "future_c");
+    const first = await formPartnership(app, alice, bob, "future_first");
+    const idempotencyKey = "m3-future-upload-0001";
+    const payload = {
+      kind: "image" as const,
+      formatCode: "webp" as const,
+      ciphertextBytes: 128,
+      ciphertextSha256: "c".repeat(64),
+      cryptoProtocolVersion: "m3-test-aes-gcm-v1",
+      durationSeconds: null,
+    };
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/media/uploads",
+      headers: headers(alice.cookie, idempotencyKey),
+      payload,
+    });
+    assert.equal(created.statusCode, 201, created.body);
+    const firstMedia = created.json() as { mediaId: string; uploadUrl: string };
+    assert.equal(typeof firstMedia.uploadUrl, "string");
+
+    await withTransaction(database, async (transaction) => {
+      const now = await getTransactionTimestamp(transaction);
+      await lockAccounts(transaction, [alice.accountId, bob.accountId]);
+      const generation = await terminatePartnershipLifecycle(transaction, {
+        partnershipId: first.partnershipId,
+        reason: "breakup",
+        effectiveAt: now,
+      });
+      assert.ok(generation !== null);
+    });
+
+    const second = await formPartnership(app, alice, carol, "future_second");
+    assert.notEqual(second.partnershipId, first.partnershipId);
+    const grantsBeforeReplay = new Map(store.grants);
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/media/uploads",
+      headers: headers(alice.cookie, idempotencyKey),
+      payload,
+    });
+    assert.equal(replay.statusCode, 409, replay.body);
+    assert.equal(
+      (replay.json() as { error: { code: string } }).error.code,
+      "IDEMPOTENCY_KEY_REUSED",
+    );
+    assert.equal(replay.body.includes(firstMedia.mediaId), false);
+    assert.deepEqual(store.grants, grantsBeforeReplay);
+
+    const persisted = await database.pool.query<{
+      partnership_id: string;
+      storage_object_key: string;
+    }>("SELECT partnership_id, storage_object_key FROM media_objects WHERE id = $1", [
+      firstMedia.mediaId,
+    ]);
+    assert.equal(persisted.rows[0]?.partnership_id, first.partnershipId);
+    assert.equal(replay.body.includes(persisted.rows[0]?.storage_object_key ?? ""), false);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("M3 upload binds atomically to M1 and message deletion revokes partner access", async () => {
   const database = requireDisposableDatabase();
   const store = new FakeMediaStore();
@@ -295,8 +383,12 @@ test("M3 upload binds atomically to M1 and message deletion revokes partner acce
       headers: { cookie: bob.cookie },
     });
     assert.equal(projected.statusCode, 200, projected.body);
-    const attachments = (projected.json() as { attachments: Array<{ mediaId: string }> }).attachments;
-    assert.deepEqual(attachments.map((entry) => entry.mediaId), [mediaId]);
+    const attachments = (projected.json() as { attachments: Array<{ mediaId: string }> })
+      .attachments;
+    assert.deepEqual(
+      attachments.map((entry) => entry.mediaId),
+      [mediaId],
+    );
 
     const partnerAccess = await app.inject({
       method: "GET",
@@ -320,7 +412,12 @@ test("M3 upload binds atomically to M1 and message deletion revokes partner acce
     const deleted = await app.inject({
       method: "DELETE",
       url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
-      headers: headers(alice.cookie, "m3-message-delete-0001"),
+      headers: {
+        origin: config.appOrigin,
+        "x-shawtie-csrf": "1",
+        cookie: alice.cookie,
+        "idempotency-key": "m3-message-delete-0001",
+      },
     });
     assert.equal(deleted.statusCode, 200, deleted.body);
 

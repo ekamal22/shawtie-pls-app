@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import type { MediaDownloadGrant, MediaObjectStore, MediaUploadGrant } from "@shawtie/media-storage";
+import type {
+  MediaDownloadGrant,
+  MediaObjectStore,
+  MediaUploadGrant,
+} from "@shawtie/media-storage";
 import {
   closeDatabasePool,
   createDatabasePool,
@@ -32,7 +36,11 @@ class FakeMediaStore implements MediaObjectStore {
     readonly sha256: string;
     readonly expiresAt: Date;
   }): Promise<MediaUploadGrant> {
-    return { url: "https://invalid/" + input.objectKey, expiresAt: input.expiresAt, requiredHeaders: {} };
+    return {
+      url: "https://invalid/" + input.objectKey,
+      expiresAt: input.expiresAt,
+      requiredHeaders: {},
+    };
   }
   async verifyObject(): Promise<boolean> {
     return true;
@@ -133,17 +141,12 @@ async function media(
 }
 
 async function scheduled(database: DatabasePool, store: MediaObjectStore): Promise<number> {
-  return runScheduledBatch(
-    database,
-    "m3-worker",
-    createDefaultScheduledHandlers(store),
-    {
-      batchSize: 20,
-      concurrency: 1,
-      leaseMs: 60_000,
-      retryPolicy: defaultRetryPolicy,
-    },
-  );
+  return runScheduledBatch(database, "m3-worker", createDefaultScheduledHandlers(store), {
+    batchSize: 20,
+    concurrency: 1,
+    leaseMs: 60_000,
+    retryPolicy: defaultRetryPolicy,
+  });
 }
 
 test("M3 abandoned upload expiry deletes ciphertext and metadata", async () => {
@@ -255,11 +258,13 @@ test("M3 partnership deletion target removes every object before metadata", asyn
       subjectId: partnershipId,
       reason: "breakup_dissolution",
       accessRevokedAt: now,
-      targets: [{
-        id: randomUUID(),
-        targetType: "partnership_media_objects",
-        targetKey: partnershipId,
-      }],
+      targets: [
+        {
+          id: randomUUID(),
+          targetType: "partnership_media_objects",
+          targetKey: partnershipId,
+        },
+      ],
     });
 
     const processed = await runDeletionBatch(

@@ -586,12 +586,19 @@ export async function replaceRelationshipFeatureState(
   );
 }
 
-export interface RelationshipReferenceRecord {
-  readonly referenceType: "message" | "media";
-  readonly referenceId: string;
-  readonly role: "source" | "attachment" | "voice_letter";
-  readonly position: number;
-}
+export type RelationshipReferenceRecord =
+  | {
+      readonly referenceType: "message";
+      readonly referenceId: string;
+      readonly role: "source";
+      readonly position: number;
+    }
+  | {
+      readonly referenceType: "media";
+      readonly referenceId: string;
+      readonly role: "attachment" | "voice_letter";
+      readonly position: number;
+    };
 
 export async function loadRelationshipReferences(
   executor: QueryExecutor,
@@ -599,9 +606,9 @@ export async function loadRelationshipReferences(
   itemId: string,
 ): Promise<readonly RelationshipReferenceRecord[]> {
   const result = await executor.query<{
-    reference_type: RelationshipReferenceRecord["referenceType"];
+    reference_type: "message" | "media";
     reference_id: string;
-    role: RelationshipReferenceRecord["role"];
+    role: "source" | "attachment" | "voice_letter";
     position: number;
   }>(
     `SELECT reference_type, reference_id, role, position
@@ -610,12 +617,28 @@ export async function loadRelationshipReferences(
      ORDER BY role, position, reference_id`,
     [partnershipId, itemId],
   );
-  return result.rows.map((row) => ({
-    referenceType: row.reference_type,
-    referenceId: row.reference_id,
-    role: row.role,
-    position: row.position,
-  }));
+  return result.rows.map((row) => {
+    if (row.reference_type === "message" && row.role === "source") {
+      return {
+        referenceType: row.reference_type,
+        referenceId: row.reference_id,
+        role: row.role,
+        position: row.position,
+      };
+    }
+    if (
+      row.reference_type === "media" &&
+      (row.role === "attachment" || row.role === "voice_letter")
+    ) {
+      return {
+        referenceType: row.reference_type,
+        referenceId: row.reference_id,
+        role: row.role,
+        position: row.position,
+      };
+    }
+    throw new Error("RELATIONSHIP_REFERENCE_RECORD_INVALID");
+  });
 }
 
 export async function replaceRelationshipReferences(

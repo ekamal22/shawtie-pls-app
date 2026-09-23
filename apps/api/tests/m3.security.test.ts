@@ -22,10 +22,7 @@ test("M3 media routes are authenticated and private no-store", async () => {
 
 test("M3 upload idempotency replay is fenced to the current partnership", async () => {
   const service = await source("../src/modules/media/media-service.ts");
-  assert.equal(
-    service.includes("existing.partnershipId !== lifecycle.partnershipId"),
-    true,
-  );
+  assert.equal(service.includes("existing.partnershipId !== lifecycle.partnershipId"), true);
 });
 
 test("M3 production rejects synthetic crypto protocol and server never accepts keys", async () => {
@@ -41,7 +38,9 @@ test("M3 production rejects synthetic crypto protocol and server never accepts k
 test("M3 media object keys are opaque and invalidations contain no media payload", async () => {
   const service = await source("../src/modules/media/media-service.ts");
   const messaging = await source("../src/modules/messages/messaging-service.ts");
-  const relationship = await source("../src/modules/relationship-space/relationship-space-service.ts");
+  const relationship = await source(
+    "../src/modules/relationship-space/relationship-space-service.ts",
+  );
   assert.equal(service.includes('"media/v1/" + randomBytes(24).toString("hex")'), true);
 
   const messageInvalidation = messaging.slice(
@@ -61,19 +60,18 @@ test("M3 deletion removes object before partnership media metadata", async () =>
   const relational = await source(
     "../../worker/src/partnerships/partnership-relational-deletion-handler.ts",
   );
-  assert.ok(handlers.indexOf("await store.deleteObject") < handlers.indexOf("deletePartnershipMediaObjectMetadata"));
+  assert.ok(
+    handlers.indexOf("await store.deleteObject") <
+      handlers.indexOf("deletePartnershipMediaObjectMetadata"),
+  );
   assert.equal(relational.includes("media_objects"), false);
 });
 
 test("M3 service worker cannot cache API/private responses", async () => {
-  const worker = await readFile(
-    new URL("../../web/public/sw.js", import.meta.url),
-    "utf8",
-  );
+  const worker = await readFile(new URL("../../web/public/sw.js", import.meta.url), "utf8");
   assert.equal(worker.includes('url.pathname.startsWith("/api/")'), true);
   assert.equal(worker.includes("no-store|private"), true);
 });
-
 
 test("M3 media operational controls remain server-side and fail closed", async () => {
   const config = await source("../src/config.ts");

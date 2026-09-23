@@ -19,11 +19,7 @@ import {
   refreshMediaUpload,
   requestMediaAccess,
 } from "./media-api.ts";
-import {
-  deleteMediaDraft,
-  loadMediaDraft,
-  saveMediaDraft,
-} from "./media-local-db.ts";
+import { deleteMediaDraft, loadMediaDraft, saveMediaDraft } from "./media-local-db.ts";
 import type { LocalMediaDraft, MediaServerProjection } from "./media-types.ts";
 
 const IMAGE_TARGET_BYTES = 2 * 1024 * 1024;
@@ -123,8 +119,13 @@ async function processImage(file: File): Promise<Blob> {
       const worker = new Worker(new URL("./image-worker.ts", import.meta.url), { type: "module" });
       try {
         return await new Promise<Blob>((resolve, reject) => {
-          const timer = window.setTimeout(() => reject(new Error("IMAGE_PROCESSING_TIMEOUT")), 20_000);
-          worker.onmessage = (event: MessageEvent<{ ok: boolean; blob?: Blob; error?: string }>) => {
+          const timer = window.setTimeout(
+            () => reject(new Error("IMAGE_PROCESSING_TIMEOUT")),
+            20_000,
+          );
+          worker.onmessage = (
+            event: MessageEvent<{ ok: boolean; blob?: Blob; error?: string }>,
+          ) => {
             window.clearTimeout(timer);
             if (event.data.ok && event.data.blob) resolve(event.data.blob);
             else reject(new Error(event.data.error ?? "IMAGE_PROCESSING_FAILED"));
@@ -157,7 +158,12 @@ async function validateAndProcess(
   source: File | Blob,
   forcedKind?: MediaKind,
   knownDurationSeconds?: number | null,
-): Promise<{ blob: Blob; kind: MediaKind; formatCode: MediaFormatCode; durationSeconds: number | null }> {
+): Promise<{
+  blob: Blob;
+  kind: MediaKind;
+  formatCode: MediaFormatCode;
+  durationSeconds: number | null;
+}> {
   const kind = forcedKind ?? kindForFile(source as File);
   if (kind === "image") {
     if (!(source instanceof File)) throw new Error("IMAGE_SOURCE_INVALID");
@@ -177,7 +183,12 @@ async function validateAndProcess(
     return { blob: source, kind, formatCode: formatForFile(source, kind), durationSeconds };
   }
   if (source.size > M3_FILE_MAX_BYTES) throw new Error("MEDIA_POLICY_VIOLATION");
-  return { blob: source, kind: "file", formatCode: formatForFile(source, "file"), durationSeconds: null };
+  return {
+    blob: source,
+    kind: "file",
+    formatCode: formatForFile(source, "file"),
+    durationSeconds: null,
+  };
 }
 
 export async function prepareMediaDraft(input: {
@@ -190,7 +201,10 @@ export async function prepareMediaDraft(input: {
   readonly durationSeconds?: number | null;
 }): Promise<LocalMediaDraft> {
   const prepared = await validateAndProcess(input.source, input.kind, input.durationSeconds);
-  if ((input.role === "voice_message" || input.role === "voice_letter") && prepared.kind !== "voice") {
+  if (
+    (input.role === "voice_message" || input.role === "voice_letter") &&
+    prepared.kind !== "voice"
+  ) {
     throw new Error("MEDIA_ROLE_INVALID");
   }
   if (input.role === "attachment" && prepared.kind === "voice") {
@@ -229,13 +243,14 @@ export async function uploadMediaDraft(
 ): Promise<{ readonly draft: LocalMediaDraft; readonly media: MediaServerProjection }> {
   const draft = await loadMediaDraft(accountId, draftId);
   if (!draft) throw new Error("MEDIA_DRAFT_NOT_FOUND");
+  const persistedDraft = draft;
 
   async function markReady(media: MediaServerProjection): Promise<{
     readonly draft: LocalMediaDraft;
     readonly media: MediaServerProjection;
   }> {
     const ready: LocalMediaDraft = {
-      ...draft,
+      ...persistedDraft,
       mediaId: media.mediaId,
       uploadGeneration: media.uploadGeneration,
       state: "ready",
@@ -334,32 +349,35 @@ function hasPrefix(bytes: Uint8Array, prefix: readonly number[]): boolean {
 }
 
 function validateMagic(blob: Blob, kind: MediaKind, format: MediaFormatCode): Promise<void> {
-  return blob.slice(0, 16).arrayBuffer().then((buffer) => {
-    const bytes = new Uint8Array(buffer);
-    const ok =
-      format === "jpeg"
-        ? hasPrefix(bytes, [0xff, 0xd8, 0xff])
-        : format === "png"
-          ? hasPrefix(bytes, [0x89, 0x50, 0x4e, 0x47])
-          : format === "webp"
-            ? String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
-              String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
-            : format === "avif" || format === "mp4" || format === "m4a"
-              ? String.fromCharCode(...bytes.slice(4, 8)) === "ftyp"
-              : format === "webm_video" || format === "webm_opus"
-                ? hasPrefix(bytes, [0x1a, 0x45, 0xdf, 0xa3])
-                : format === "ogg_opus"
-                  ? String.fromCharCode(...bytes.slice(0, 4)) === "OggS"
-                  : format === "pdf"
-                    ? String.fromCharCode(...bytes.slice(0, 4)) === "%PDF"
-                    : format === "zip"
-                      ? hasPrefix(bytes, [0x50, 0x4b])
-                      : true;
-    if (!ok) throw new Error("MEDIA_DECRYPTED_FORMAT_MISMATCH");
-    if (kind === "voice" && !["webm_opus", "ogg_opus", "m4a"].includes(format)) {
-      throw new Error("MEDIA_DECRYPTED_FORMAT_MISMATCH");
-    }
-  });
+  return blob
+    .slice(0, 16)
+    .arrayBuffer()
+    .then((buffer) => {
+      const bytes = new Uint8Array(buffer);
+      const ok =
+        format === "jpeg"
+          ? hasPrefix(bytes, [0xff, 0xd8, 0xff])
+          : format === "png"
+            ? hasPrefix(bytes, [0x89, 0x50, 0x4e, 0x47])
+            : format === "webp"
+              ? String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+                String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
+              : format === "avif" || format === "mp4" || format === "m4a"
+                ? String.fromCharCode(...bytes.slice(4, 8)) === "ftyp"
+                : format === "webm_video" || format === "webm_opus"
+                  ? hasPrefix(bytes, [0x1a, 0x45, 0xdf, 0xa3])
+                  : format === "ogg_opus"
+                    ? String.fromCharCode(...bytes.slice(0, 4)) === "OggS"
+                    : format === "pdf"
+                      ? String.fromCharCode(...bytes.slice(0, 4)) === "%PDF"
+                      : format === "zip"
+                        ? hasPrefix(bytes, [0x50, 0x4b])
+                        : true;
+      if (!ok) throw new Error("MEDIA_DECRYPTED_FORMAT_MISMATCH");
+      if (kind === "voice" && !["webm_opus", "ogg_opus", "m4a"].includes(format)) {
+        throw new Error("MEDIA_DECRYPTED_FORMAT_MISMATCH");
+      }
+    });
 }
 
 export function mimeForFormat(format: MediaFormatCode): string {

@@ -50,7 +50,11 @@ const uuid = z.string().uuid();
 const generation = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const bytes = z.number().int().min(1).max(M3_VIDEO_CIPHERTEXT_MAX_BYTES);
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
-const cryptoProtocol = z.string().min(1).max(64).regex(/^[a-zA-Z0-9._-]+$/);
+const cryptoProtocol = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-zA-Z0-9._-]+$/);
 
 export const mediaIdParamsSchema = z.object({ mediaId: uuid }).strict();
 
@@ -61,7 +65,13 @@ export const mediaUploadCreateSchema = z
     ciphertextBytes: bytes,
     ciphertextSha256: digest,
     cryptoProtocolVersion: cryptoProtocol,
-    durationSeconds: z.number().int().min(1).max(M3_VOICE_MAX_DURATION_SECONDS).nullable().default(null),
+    durationSeconds: z
+      .number()
+      .int()
+      .min(1)
+      .max(M3_VOICE_MAX_DURATION_SECONDS)
+      .nullable()
+      .default(null),
   })
   .strict()
   .superRefine((value, context) => {
@@ -99,7 +109,11 @@ export const messageMediaAttachmentInputSchema = z
   .object({
     mediaId: uuid,
     role: z.enum(["attachment", "voice_message"]),
-    position: z.number().int().min(0).max(M3_ATTACHMENTS_PER_MESSAGE_MAX - 1),
+    position: z
+      .number()
+      .int()
+      .min(0)
+      .max(M3_ATTACHMENTS_PER_MESSAGE_MAX - 1),
   })
   .strict();
 

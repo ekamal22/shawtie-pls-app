@@ -475,57 +475,6 @@ function ItemCard({
         </div>
       ) : null}
 
-      <div className="relationship-media-composer">
-        <label className="secondary compact media-picker-label">
-          Add protected media/file
-          <input
-            type="file"
-            multiple
-            hidden
-            disabled={busy || disabled || mediaBusy || !partnershipId}
-            accept="image/*,video/mp4,video/webm,application/pdf,text/plain,application/zip,.zip"
-            onChange={(event) => void prepareFiles(event)}
-          />
-        </label>
-        <VoiceRecorder
-          disabled={busy || disabled || mediaBusy || !partnershipId}
-          onReady={prepareVoiceLetter}
-        />
-      </div>
-
-      {mediaDrafts.length > 0 ? (
-        <div className="media-draft-list">
-          {mediaDrafts.map((draft) => (
-            <div className="media-draft-chip" key={draft.draftId}>
-              <span>
-                {draft.role === "voice_letter" ? "Voice Letter" : draft.kind} ·{" "}
-                {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted · {draft.state}
-              </span>
-              <span className="media-draft-actions">
-                {draft.state === "failed" ? (
-                  <button
-                    type="button"
-                    className="secondary compact"
-                    disabled={busy || mediaBusy || !navigator.onLine}
-                    onClick={() => void retryMediaDraft(draft.draftId)}
-                  >
-                    Retry upload
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="link compact"
-                  disabled={busy || mediaBusy}
-                  onClick={() => void removeMediaDraft(draft.draftId)}
-                >
-                  remove
-                </button>
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
       {error ? <p className="banner error">{error}</p> : null}
       {notice ? <p className="banner success">{notice}</p> : null}
 
@@ -671,7 +620,11 @@ function CreateRelationshipItem({
           : "Attachment encrypted locally. Connect before creating the relationship item.",
       );
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media preparation failed.");
+      setError(
+        caught instanceof Error
+          ? caught.message.replaceAll("_", " ").toLowerCase()
+          : "Media preparation failed.",
+      );
     } finally {
       setMediaBusy(false);
     }
@@ -712,7 +665,11 @@ function CreateRelationshipItem({
       setNotice("Protected media upload is ready to bind.");
     } catch (caught) {
       await refreshMediaDrafts().catch(() => undefined);
-      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media retry failed.");
+      setError(
+        caught instanceof Error
+          ? caught.message.replaceAll("_", " ").toLowerCase()
+          : "Media retry failed.",
+      );
     } finally {
       setMediaBusy(false);
     }
@@ -1259,6 +1216,57 @@ function CreateRelationshipItem({
         </label>
       ) : null}
 
+      <div className="relationship-media-composer">
+        <label className="secondary compact media-picker-label">
+          Add protected media/file
+          <input
+            type="file"
+            multiple
+            hidden
+            disabled={busy || disabled || mediaBusy || !partnershipId}
+            accept="image/*,video/mp4,video/webm,application/pdf,text/plain,application/zip,.zip"
+            onChange={(event) => void prepareFiles(event)}
+          />
+        </label>
+        <VoiceRecorder
+          disabled={busy || disabled || mediaBusy || !partnershipId}
+          onReady={prepareVoiceLetter}
+        />
+      </div>
+
+      {mediaDrafts.length > 0 ? (
+        <div className="media-draft-list">
+          {mediaDrafts.map((draft) => (
+            <div className="media-draft-chip" key={draft.draftId}>
+              <span>
+                {draft.role === "voice_letter" ? "Voice Letter" : draft.kind} ·{" "}
+                {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted · {draft.state}
+              </span>
+              <span className="media-draft-actions">
+                {draft.state === "failed" ? (
+                  <button
+                    type="button"
+                    className="secondary compact"
+                    disabled={busy || mediaBusy || !navigator.onLine}
+                    onClick={() => void retryMediaDraft(draft.draftId)}
+                  >
+                    Retry upload
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="link compact"
+                  disabled={busy || mediaBusy}
+                  onClick={() => void removeMediaDraft(draft.draftId)}
+                >
+                  remove
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {error ? <p className="banner error">{error}</p> : null}
       {notice ? <p className="banner success">{notice}</p> : null}
 
@@ -1735,6 +1743,8 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       </div>
 
       <CreateRelationshipItem
+        accountId={accountId}
+        partnershipId={runtime.realtime.scope.partnershipId}
         disabled={!home.capabilities.create}
         onCreated={() => refresh("Added to Relationship Space.")}
       />

@@ -196,11 +196,11 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
         if (media.state === "ready_unbound" && media.bindingId === null) return true;
         return Boolean(
           input.ownerItemId &&
-            media.state === "bound" &&
-            media.bindingType === "relationship_item" &&
-            media.bindingId === input.ownerItemId &&
-            media.bindingRole === input.role &&
-            media.bindingPosition === input.position,
+          media.state === "bound" &&
+          media.bindingType === "relationship_item" &&
+          media.bindingId === input.ownerItemId &&
+          media.bindingRole === input.role &&
+          media.bindingPosition === input.position,
         );
       },
       async bind(executor, input) {

@@ -93,7 +93,10 @@ test("M3 message attachment positions are unique and capped", () => {
     messageSendSchema.safeParse({
       body: null,
       replyToMessageId: null,
-      attachments: [...attachments, { mediaId: crypto.randomUUID(), role: "attachment", position: 0 }],
+      attachments: [
+        ...attachments,
+        { mediaId: crypto.randomUUID(), role: "attachment", position: 0 },
+      ],
     }).success,
     false,
   );

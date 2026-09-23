@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { M3_ATTACHMENTS_PER_MESSAGE_MAX, mediaAttachmentProjectionSchema, messageMediaAttachmentInputSchema } from "../media/media.ts";
+import {
+  M3_ATTACHMENTS_PER_MESSAGE_MAX,
+  mediaAttachmentProjectionSchema,
+  messageMediaAttachmentInputSchema,
+} from "../media/media.ts";
 
 export const M1_MESSAGE_MAX_UTF8_BYTES = 8_192;
 export const M1_MESSAGE_MAX_CHARACTERS = 4_000;
@@ -50,7 +54,10 @@ export const messageSendSchema = z
   .object({
     body: messageBodySchema.nullable().optional().default(null),
     replyToMessageId: uuid.nullable().optional().default(null),
-    attachments: z.array(messageMediaAttachmentInputSchema).max(M3_ATTACHMENTS_PER_MESSAGE_MAX).default([]),
+    attachments: z
+      .array(messageMediaAttachmentInputSchema)
+      .max(M3_ATTACHMENTS_PER_MESSAGE_MAX)
+      .default([]),
   })
   .strict()
   .superRefine((value, context) => {

@@ -1,5 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
-import type { MediaDownloadGrant, MediaObjectStore, MediaUploadGrant } from "./index.ts";
+import type { MediaDownloadGrant, MediaObjectStore, MediaUploadGrant } from "./types.ts";
 
 export interface S3MediaStorageConfig {
   readonly endpoint: string;
@@ -23,8 +23,9 @@ function amzDate(value: Date): { date: string; timestamp: string } {
 }
 
 function encode(value: string): string {
-  return encodeURIComponent(value).replace(/[!'()*]/g, (char) =>
-    "%" + char.charCodeAt(0).toString(16).toUpperCase(),
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (char) => "%" + char.charCodeAt(0).toString(16).toUpperCase(),
   );
 }
 
@@ -46,7 +47,11 @@ export function mediaStorageConfigFromEnv(
     throw new Error("MEDIA_S3_* configuration must be supplied completely");
   }
   const parsed = new URL(endpoint as string);
-  if (parsed.protocol !== "https:" && parsed.hostname !== "127.0.0.1" && parsed.hostname !== "localhost") {
+  if (
+    parsed.protocol !== "https:" &&
+    parsed.hostname !== "127.0.0.1" &&
+    parsed.hostname !== "localhost"
+  ) {
     throw new Error("MEDIA_S3_ENDPOINT must use HTTPS outside loopback");
   }
   return {
@@ -72,7 +77,10 @@ export class S3MediaObjectStore implements MediaObjectStore {
     extraHeaders: Readonly<Record<string, string>> = {},
   ): { url: string; headers: Readonly<Record<string, string>> } {
     const now = new Date();
-    const seconds = Math.max(1, Math.min(3600, Math.floor((expiresAt.getTime() - now.getTime()) / 1000)));
+    const seconds = Math.max(
+      1,
+      Math.min(3600, Math.floor((expiresAt.getTime() - now.getTime()) / 1000)),
+    );
     const { date, timestamp } = amzDate(now);
     const endpoint = new URL(this.#config.endpoint);
     const path = objectPath(this.#config.bucket, objectKey);
@@ -161,7 +169,10 @@ export class S3MediaObjectStore implements MediaObjectStore {
     readonly objectKey: string;
     readonly expiresAt: Date;
   }): Promise<MediaDownloadGrant> {
-    return { url: this.#presign("GET", input.objectKey, input.expiresAt).url, expiresAt: input.expiresAt };
+    return {
+      url: this.#presign("GET", input.objectKey, input.expiresAt).url,
+      expiresAt: input.expiresAt,
+    };
   }
 
   async deleteObject(objectKey: string): Promise<void> {

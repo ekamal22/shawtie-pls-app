@@ -786,7 +786,9 @@ export class RelationshipSpaceService {
       readonly role: string;
       readonly position: number;
     }) =>
-      [reference.referenceType, reference.referenceId, reference.role, reference.position].join(":");
+      [reference.referenceType, reference.referenceId, reference.role, reference.position].join(
+        ":",
+      );
     const currentKeys = new Set(current.map(key));
     const nextKeys = new Set(next.map(key));
 

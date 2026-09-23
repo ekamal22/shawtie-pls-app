@@ -86,7 +86,8 @@ function parsePartnerRequestMode(
 function parsePositiveInteger(raw: string | undefined, fallback: number, name: string): number {
   if (raw === undefined) return fallback;
   const parsed = Number.parseInt(raw, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) throw new Error(name + " must be a positive integer");
+  if (!Number.isInteger(parsed) || parsed <= 0)
+    throw new Error(name + " must be a positive integer");
   return parsed;
 }
 
@@ -98,15 +99,17 @@ function flag(raw: string | undefined, fallback = true): boolean {
 }
 
 export function resolveMediaApiConfig(config: ApiConfig): MediaApiConfig {
-  return config.media ?? {
-    uploadInitiationEnabled: true,
-    bindingEnabled: true,
-    downloadGrantEnabled: true,
-    uploadGrantTtlMs: 5 * 60_000,
-    downloadGrantTtlMs: 60_000,
-    uploadRetentionMs: 15 * 60_000,
-    unboundRetentionMs: 24 * 60 * 60_000,
-  };
+  return (
+    config.media ?? {
+      uploadInitiationEnabled: true,
+      bindingEnabled: true,
+      downloadGrantEnabled: true,
+      uploadGrantTtlMs: 5 * 60_000,
+      downloadGrantTtlMs: 60_000,
+      uploadRetentionMs: 15 * 60_000,
+      unboundRetentionMs: 24 * 60 * 60_000,
+    }
+  );
 }
 
 export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -127,10 +130,26 @@ export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfi
       uploadInitiationEnabled: flag(env.MEDIA_UPLOAD_INITIATION_ENABLED),
       bindingEnabled: flag(env.MEDIA_BINDING_ENABLED),
       downloadGrantEnabled: flag(env.MEDIA_DOWNLOAD_GRANT_ENABLED),
-      uploadGrantTtlMs: parsePositiveInteger(env.MEDIA_UPLOAD_GRANT_TTL_MS, 5 * 60_000, "MEDIA_UPLOAD_GRANT_TTL_MS"),
-      downloadGrantTtlMs: parsePositiveInteger(env.MEDIA_DOWNLOAD_GRANT_TTL_MS, 60_000, "MEDIA_DOWNLOAD_GRANT_TTL_MS"),
-      uploadRetentionMs: parsePositiveInteger(env.MEDIA_UPLOAD_RETENTION_MS, 15 * 60_000, "MEDIA_UPLOAD_RETENTION_MS"),
-      unboundRetentionMs: parsePositiveInteger(env.MEDIA_UNBOUND_RETENTION_MS, 24 * 60 * 60_000, "MEDIA_UNBOUND_RETENTION_MS"),
+      uploadGrantTtlMs: parsePositiveInteger(
+        env.MEDIA_UPLOAD_GRANT_TTL_MS,
+        5 * 60_000,
+        "MEDIA_UPLOAD_GRANT_TTL_MS",
+      ),
+      downloadGrantTtlMs: parsePositiveInteger(
+        env.MEDIA_DOWNLOAD_GRANT_TTL_MS,
+        60_000,
+        "MEDIA_DOWNLOAD_GRANT_TTL_MS",
+      ),
+      uploadRetentionMs: parsePositiveInteger(
+        env.MEDIA_UPLOAD_RETENTION_MS,
+        15 * 60_000,
+        "MEDIA_UPLOAD_RETENTION_MS",
+      ),
+      unboundRetentionMs: parsePositiveInteger(
+        env.MEDIA_UNBOUND_RETENTION_MS,
+        24 * 60 * 60_000,
+        "MEDIA_UNBOUND_RETENTION_MS",
+      ),
     },
   };
 }

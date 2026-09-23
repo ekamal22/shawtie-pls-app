@@ -1195,7 +1195,7 @@ INSERT INTO media_objects (
   now()
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE media_objects
@@ -1209,7 +1209,7 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
 UPDATE media_objects
 SET state = 'bound',
@@ -1220,7 +1220,7 @@ SET state = 'bound',
     upload_expires_at = NULL
 WHERE id = '81000000-0000-4000-8000-000000000001';
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE media_objects
@@ -1234,7 +1234,7 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
 INSERT INTO media_objects (
   id, partnership_id, uploader_account_id, storage_object_key,
@@ -1259,7 +1259,7 @@ INSERT INTO media_objects (
   now()
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE media_objects
@@ -1278,9 +1278,9 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE media_objects
@@ -1296,9 +1296,9 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_trigger
@@ -1319,6 +1319,6 @@ BEGIN
     RAISE EXCEPTION 'missing M3 binding uniqueness index';
   END IF;
 END;
-$;
+$$;
 
 ROLLBACK;

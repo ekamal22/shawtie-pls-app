@@ -90,7 +90,7 @@ interface Message {
     accountId: string;
     emoji: string;
   }>;
-  attachments?: MediaAttachmentProjection[];
+  attachments: MediaAttachmentProjection[];
 }
 
 interface MessagePage {
@@ -216,13 +216,16 @@ export function MessagingPanel() {
     return result.conversation;
   }, []);
 
-  const refreshMediaDrafts = useCallback(async (partnershipId: string | null) => {
-    if (!partnershipId) {
-      setMediaDrafts([]);
-      return;
-    }
-    setMediaDrafts(await listMediaDrafts(runtime.accountId, partnershipId, "chat"));
-  }, [runtime.accountId]);
+  const refreshMediaDrafts = useCallback(
+    async (partnershipId: string | null) => {
+      if (!partnershipId) {
+        setMediaDrafts([]);
+        return;
+      }
+      setMediaDrafts(await listMediaDrafts(runtime.accountId, partnershipId, "chat"));
+    },
+    [runtime.accountId],
+  );
 
   async function prepareFiles(event: ChangeEvent<HTMLInputElement>) {
     if (!conversation) return;
@@ -252,7 +255,11 @@ export function MessagingPanel() {
           : "Attachment encrypted and saved locally. Connect to upload and send it.",
       );
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media preparation failed.");
+      setError(
+        caught instanceof Error
+          ? caught.message.replaceAll("_", " ").toLowerCase()
+          : "Media preparation failed.",
+      );
     } finally {
       setMediaBusy(false);
     }
@@ -268,7 +275,11 @@ export function MessagingPanel() {
       setNotice("Protected attachment upload is ready to bind.");
     } catch (caught) {
       await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
-      setError(caught instanceof Error ? caught.message.replaceAll("_", " ").toLowerCase() : "Media retry failed.");
+      setError(
+        caught instanceof Error
+          ? caught.message.replaceAll("_", " ").toLowerCase()
+          : "Media retry failed.",
+      );
     } finally {
       setMediaBusy(false);
     }
@@ -285,7 +296,9 @@ export function MessagingPanel() {
     }
   }
 
-  async function uploadDrafts(): Promise<Array<{ mediaId: string; role: "attachment"; position: number }>> {
+  async function uploadDrafts(): Promise<
+    Array<{ mediaId: string; role: "attachment"; position: number }>
+  > {
     const uploaded: Array<{ mediaId: string; role: "attachment"; position: number }> = [];
     for (const [position, draft] of mediaDrafts.entries()) {
       const result = await uploadMediaDraft(runtime.accountId, draft.draftId);
@@ -318,7 +331,9 @@ export function MessagingPanel() {
       const requestBody = {
         body: null,
         replyToMessageId: replyingTo?.messageId ?? null,
-        attachments: [{ mediaId: uploaded.media.mediaId, role: "voice_message" as const, position: 0 }],
+        attachments: [
+          { mediaId: uploaded.media.mediaId, role: "voice_message" as const, position: 0 },
+        ],
       };
       try {
         const created = await apiRequest<{ messageId: string; changeSequence: number }>(
@@ -825,10 +840,7 @@ export function MessagingPanel() {
 
   function composerChanged(value: string) {
     setComposer(value);
-    if (
-      pendingSendRef.current &&
-      pendingSendRef.current.body !== (value.trim() ? value : null)
-    ) {
+    if (pendingSendRef.current && pendingSendRef.current.body !== (value.trim() ? value : null)) {
       pendingSendRef.current = null;
       setSendStatus(null);
     }
@@ -1329,7 +1341,8 @@ export function MessagingPanel() {
           {mediaDrafts.map((draft) => (
             <div className="media-draft-chip" key={draft.draftId}>
               <span>
-                {draft.kind.replace("_", " ")} · {Math.ceil(draft.ciphertextBytes / 1024)} KB encrypted · {draft.state}
+                {draft.kind.replace("_", " ")} · {Math.ceil(draft.ciphertextBytes / 1024)} KB
+                encrypted · {draft.state}
               </span>
               <span className="media-draft-actions">
                 {draft.state === "failed" ? (

@@ -27,10 +27,7 @@ import {
   type CapabilityContext,
   type PartnershipState,
 } from "@shawtie/domain";
-import type {
-  MediaUploadCreateInput,
-  MediaUploadGenerationInput,
-} from "@shawtie/contracts";
+import type { MediaUploadCreateInput, MediaUploadGenerationInput } from "@shawtie/contracts";
 import type { MediaObjectStore } from "@shawtie/media-storage";
 import { ApiError } from "../../lib/api-error.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
@@ -112,7 +109,11 @@ function fullRelationshipItemVisible(
   },
   actorAccountId: string,
 ): boolean {
-  return item.releaseMode === null || item.releasedAt !== null || item.creatorAccountId === actorAccountId;
+  return (
+    item.releaseMode === null ||
+    item.releasedAt !== null ||
+    item.creatorAccountId === actorAccountId
+  );
 }
 
 function projection(media: MediaObjectRecord) {
@@ -227,10 +228,7 @@ export class MediaService {
     }
     const store = this.#requireStore();
     const grantExpiresAt = new Date(
-      Math.min(
-        media.uploadExpiresAt.getTime(),
-        now.getTime() + this.#media.uploadGrantTtlMs,
-      ),
+      Math.min(media.uploadExpiresAt.getTime(), now.getTime() + this.#media.uploadGrantTtlMs),
     );
     const grant = await store.createUploadGrant({
       objectKey: media.storageObjectKey,
@@ -273,11 +271,7 @@ export class MediaService {
 
     const media = await withTransaction(this.#database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
-      const lifecycle = await this.#lockWritableLifecycle(
-        transaction,
-        auth.session.accountId,
-        now,
-      );
+      const lifecycle = await this.#lockWritableLifecycle(transaction, auth.session.accountId, now);
       const reservation = await reserveLifecycleIdempotency(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,

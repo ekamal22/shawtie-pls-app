@@ -1,10 +1,8 @@
 const TEST_PROTOCOL = "m3-test-aes-gcm-v1";
 const MAGIC = new TextEncoder().encode("M3T1");
 const TEST_KEY = new Uint8Array([
-  0x4d, 0x33, 0x2d, 0x73, 0x79, 0x6e, 0x74, 0x68,
-  0x65, 0x74, 0x69, 0x63, 0x2d, 0x6d, 0x65, 0x64,
-  0x69, 0x61, 0x2d, 0x6b, 0x65, 0x79, 0x2d, 0x76,
-  0x31, 0x2d, 0x6f, 0x6e, 0x6c, 0x79, 0x21, 0x21,
+  0x4d, 0x33, 0x2d, 0x73, 0x79, 0x6e, 0x74, 0x68, 0x65, 0x74, 0x69, 0x63, 0x2d, 0x6d, 0x65, 0x64,
+  0x69, 0x61, 0x2d, 0x6b, 0x65, 0x79, 0x2d, 0x76, 0x31, 0x2d, 0x6f, 0x6e, 0x6c, 0x79, 0x21, 0x21,
 ]);
 
 interface ViteEnv {
@@ -35,9 +33,9 @@ async function key(): Promise<CryptoKey> {
   ]);
 }
 
-function concat(...parts: readonly Uint8Array[]): Uint8Array {
+function concat(...parts: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
   const length = parts.reduce((total, part) => total + part.byteLength, 0);
-  const output = new Uint8Array(length);
+  const output = new Uint8Array(new ArrayBuffer(length));
   let offset = 0;
   for (const part of parts) {
     output.set(part, offset);
@@ -65,10 +63,7 @@ export async function encryptMedia(plaintext: Blob): Promise<{
   };
 }
 
-export async function decryptMedia(
-  ciphertext: Blob,
-  protocolVersion: string,
-): Promise<Blob> {
+export async function decryptMedia(ciphertext: Blob, protocolVersion: string): Promise<Blob> {
   if (protocolVersion !== TEST_PROTOCOL || !mediaCryptoAvailable()) {
     throw new Error("Protected media requires the S1 production crypto adapter");
   }

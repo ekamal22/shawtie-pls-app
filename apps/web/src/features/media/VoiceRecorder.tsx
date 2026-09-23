@@ -7,9 +7,9 @@ export function VoiceRecorder({
   disabled?: boolean;
   onReady: (blob: Blob, durationSeconds: number) => Promise<void> | void;
 }) {
-  const [state, setState] = useState<
-    "idle" | "requesting" | "recording" | "preview" | "sending"
-  >("idle");
+  const [state, setState] = useState<"idle" | "requesting" | "recording" | "preview" | "sending">(
+    "idle",
+  );
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<{
     readonly blob: Blob;
@@ -138,7 +138,12 @@ export function VoiceRecorder({
   return (
     <div className="voice-recorder">
       {state === "idle" ? (
-        <button type="button" className="secondary compact" disabled={disabled} onClick={() => void start()}>
+        <button
+          type="button"
+          className="secondary compact"
+          disabled={disabled}
+          onClick={() => void start()}
+        >
           Record voice
         </button>
       ) : null}
@@ -146,18 +151,29 @@ export function VoiceRecorder({
       {state === "recording" ? (
         <>
           <span className="hint">Recording...</span>
-          <button type="button" className="secondary compact" onClick={stop}>Stop</button>
-          <button type="button" className="link compact" onClick={cancelRecording}>Cancel</button>
+          <button type="button" className="secondary compact" onClick={stop}>
+            Stop
+          </button>
+          <button type="button" className="link compact" onClick={cancelRecording}>
+            Cancel
+          </button>
         </>
       ) : null}
       {state === "preview" && preview ? (
         <div className="voice-preview">
           <audio controls preload="metadata" src={preview.url} />
           <span className="hint">Preview before sending · {preview.durationSeconds}s</span>
-          <button type="button" className="primary compact" disabled={disabled} onClick={() => void sendPreview()}>
+          <button
+            type="button"
+            className="primary compact"
+            disabled={disabled}
+            onClick={() => void sendPreview()}
+          >
             Send voice
           </button>
-          <button type="button" className="link compact" onClick={reset}>Discard</button>
+          <button type="button" className="link compact" onClick={reset}>
+            Discard
+          </button>
         </div>
       ) : null}
       {state === "sending" ? <span className="hint">Preparing protected voice...</span> : null}

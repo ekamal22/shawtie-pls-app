@@ -518,15 +518,17 @@ function mediaAttachmentList(value: unknown): MessageProjectionRowModel["attachm
     ) {
       return [];
     }
-    return [{
-      mediaId: row.mediaId,
-      kind: row.kind as "image" | "video" | "file" | "voice",
-      formatCode: row.formatCode,
-      role: row.role as "attachment" | "voice_message",
-      position: row.position,
-      ciphertextBytes: row.ciphertextBytes,
-      cryptoProtocolVersion: row.cryptoProtocolVersion,
-    }];
+    return [
+      {
+        mediaId: row.mediaId,
+        kind: row.kind as "image" | "video" | "file" | "voice",
+        formatCode: row.formatCode,
+        role: row.role as "attachment" | "voice_message",
+        position: row.position,
+        ciphertextBytes: row.ciphertextBytes,
+        cryptoProtocolVersion: row.cryptoProtocolVersion,
+      },
+    ];
   });
 }
 

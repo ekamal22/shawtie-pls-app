@@ -5,9 +5,19 @@ import type { MediaServerProjection } from "../../lib/media/media-types.ts";
 
 function fileName(media: MediaServerProjection): string {
   const extension: Record<string, string> = {
-    jpeg: "jpg", png: "png", webp: "webp", avif: "avif",
-    mp4: "mp4", webm_video: "webm", pdf: "pdf", text: "txt", zip: "zip",
-    binary: "bin", webm_opus: "webm", ogg_opus: "ogg", m4a: "m4a",
+    jpeg: "jpg",
+    png: "png",
+    webp: "webp",
+    avif: "avif",
+    mp4: "mp4",
+    webm_video: "webm",
+    pdf: "pdf",
+    text: "txt",
+    zip: "zip",
+    binary: "bin",
+    webm_opus: "webm",
+    ogg_opus: "ogg",
+    m4a: "m4a",
   };
   return "attachment." + (extension[media.formatCode] ?? "bin");
 }
@@ -70,7 +80,9 @@ export function MediaAttachment({
     return <img className="media-image" src={loaded.url} alt="Shared attachment" />;
   }
   if (kind === "video") {
-    return <video className="media-video" src={loaded.url} controls playsInline preload="metadata" />;
+    return (
+      <video className="media-video" src={loaded.url} controls playsInline preload="metadata" />
+    );
   }
   if (kind === "voice") {
     return <audio className="media-audio" src={loaded.url} controls preload="metadata" />;

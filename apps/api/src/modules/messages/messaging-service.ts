@@ -486,7 +486,7 @@ export class MessagingService {
             editedAt: row.editedAt?.toISOString() ?? null,
             deletedAt: row.deletedAt?.toISOString() ?? null,
             reactions: row.reactions,
-          attachments: row.attachments,
+            attachments: row.attachments,
           })),
           hasMore,
           oldestSequence: visible[0] ? safeNumber(visible[0].serverSequence) : null,
@@ -598,7 +598,14 @@ export class MessagingService {
 
         if (input.attachments.length > 0) {
           if (!this.mediaBindingEnabled) throw new ApiError(503, "MEDIA_BINDING_DISABLED");
-          this.#assertCapability(auth, lifecycle, now, null, "send_media" as MessageMutationCapability, false);
+          this.#assertCapability(
+            auth,
+            lifecycle,
+            now,
+            null,
+            "send_media" as MessageMutationCapability,
+            false,
+          );
         }
 
         if (
@@ -651,7 +658,9 @@ export class MessagingService {
           body: input.body,
           createdAt: now,
         });
-        for (const attachment of [...input.attachments].sort((left, right) => left.position - right.position)) {
+        for (const attachment of [...input.attachments].sort(
+          (left, right) => left.position - right.position,
+        )) {
           const bound = await bindMediaObject(transaction, {
             mediaId: attachment.mediaId,
             bindingType: "message",
