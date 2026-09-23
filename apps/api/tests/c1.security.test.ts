@@ -30,13 +30,19 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(hub.includes("endpoint_session_id=$4"), false);
   assert.equal(repository.includes("endpoint_session.revoked_at IS NULL"), true);
   assert.equal(repository.includes("endpoint_session.idle_expires_at"), true);
+  const baseRelationalMigration = await source(
+    "../../../packages/db/migrations/0005_relational_integrity.sql",
+  );
   const migration = await source("../../../packages/db/migrations/0017_calling_runtime.sql");
-  assert.equal(migration.includes("account_devices_id_account_unique"), true);
+  assert.equal(baseRelationalMigration.includes("account_devices_id_account_unique"), true);
+  assert.equal(migration.includes("account_devices_id_account_unique"), false);
   assert.equal(migration.includes("account_sessions_endpoint_identity_unique"), true);
   assert.equal(
     migration.includes("FOREIGN KEY (endpoint_session_id, account_id, endpoint_device_id)"),
     true,
   );
+  assert.equal(migration.includes("ON DELETE SET NULL (endpoint_session_id)"), true);
+  assert.equal(migration.includes("ON DELETE SET NULL (endpoint_device_id)"), true);
 });
 
 test("C1 durable authority never stores SDP, ICE, TURN secrets, or public raw terminal causes", async () => {
