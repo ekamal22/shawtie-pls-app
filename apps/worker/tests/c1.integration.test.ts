@@ -227,6 +227,89 @@ test("C1 first endpoint attestation preserves accepted timeout generation", asyn
   }
 });
 
+test("C1 connected hard expiry is deadline-generation fenced", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const wallNow = new Date();
+    const createdAt = new Date(wallNow.getTime() - 3 * 60 * 60_000);
+    const acceptedAt = new Date(wallNow.getTime() - 2 * 60 * 60_000);
+    const firstConnectedAt = new Date(wallNow.getTime() - 95 * 60_000);
+    const secondConnectedAt = new Date(wallNow.getTime() - 90 * 60_000);
+    const hardExpiresAt = new Date(wallNow.getTime() - 60_000);
+    const data = await fixture(database, createdAt);
+
+    const ringing = await insertCallSession(database.pool, {
+      id: randomUUID(),
+      partnershipId: data.partnershipId,
+      callerAccountId: data.alice.accountId,
+      callerDeviceId: data.alice.deviceId,
+      callerSessionId: data.alice.sessionId,
+      calleeAccountId: data.bob.accountId,
+      kind: "voice",
+      now: createdAt,
+      ringExpiresAt: new Date(createdAt.getTime() + 60_000),
+    });
+    assert.ok(ringing);
+
+    const accepted = await acceptCall(database.pool, {
+      callId: ringing.id,
+      expectedVersion: 1n,
+      calleeAccountId: data.bob.accountId,
+      deviceId: data.bob.deviceId,
+      sessionId: data.bob.sessionId,
+      now: acceptedAt,
+      connectExpiresAt: new Date(acceptedAt.getTime() + 10 * 60_000),
+    });
+    assert.ok(accepted);
+
+    const first = await recordEndpointConnected(database.pool, {
+      callId: ringing.id,
+      accountId: data.alice.accountId,
+      deviceId: data.alice.deviceId,
+      sessionId: data.alice.sessionId,
+      now: firstConnectedAt,
+      hardExpiresAt,
+    });
+    assert.ok(first);
+    assert.equal(first.transitioned, false);
+
+    const second = await recordEndpointConnected(database.pool, {
+      callId: ringing.id,
+      accountId: data.bob.accountId,
+      deviceId: data.bob.deviceId,
+      sessionId: data.bob.sessionId,
+      now: secondConnectedAt,
+      hardExpiresAt,
+    });
+    assert.ok(second);
+    assert.equal(second.transitioned, true);
+    assert.equal(second.call.state, "connected");
+    assert.equal(second.call.version, 3n);
+    assert.equal(second.call.deadlineGeneration, 3n);
+
+    await insertScheduledAction(database.pool, {
+      id: randomUUID(),
+      actionType: "c1.call.connected_timeout",
+      aggregateType: "call",
+      aggregateId: ringing.id,
+      executeAt: hardExpiresAt,
+      expectedGeneration: 3n,
+      deduplicationKey: "c1-worker-hard:" + ringing.id,
+      payload: { callId: ringing.id, expectedState: "connected" },
+      payloadVersion: 1,
+    });
+
+    assert.equal(await runScheduled(database, "c1-hard-timeout"), 1);
+    const ended = await loadCall(database.pool, ringing.id, data.partnershipId);
+    assert.equal(ended?.state, "ended");
+    assert.equal(ended?.terminalReason, "failed");
+    assert.equal(ended?.deadlineGeneration, 4n);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
 test("C1 revoked push endpoint can be safely rebound without duplicate active routing", async () => {
   const database = requireDisposableDatabase();
   try {
