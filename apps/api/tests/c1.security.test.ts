@@ -22,6 +22,10 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(hub.includes('/^m=(video|application) /im'), true);
   assert.equal(hub.includes('toLowerCase() !== "relay"'), true);
   assert.equal(hub.includes('toLowerCase() === "raddr"'), true);
+  assert.equal(hub.includes('foundation.startsWith("candidate:")'), true);
+  assert.equal(hub.includes("4_294_967_295n"), true);
+  assert.equal(hub.includes("fromGeneration"), true);
+  assert.equal(hub.includes("source.generation !== item.fromGeneration"), true);
   assert.equal(hub.includes("sessionId: session.sessionId"), true);
   assert.equal(hub.includes("endpoint_session_id=$4"), false);
   assert.equal(repository.includes("endpoint_session.revoked_at IS NULL"), true);
