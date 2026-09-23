@@ -316,6 +316,7 @@ export class CallingService {
         now,
         ringExpiresAt,
       });
+      if (!call) throw new ApiError(409, "CALL_IN_PROGRESS");
       await appendCallEvent(transaction, {
         id: randomUUID(),
         callId: call.id,
