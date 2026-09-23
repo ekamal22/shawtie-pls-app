@@ -624,6 +624,10 @@ The frame is only an invalidation hint. It contains no call state, caller/callee
 
 The browser fetches canonical call state over HTTP after receiving it.
 
-Server rollout may support v1 and v2 simultaneously. C1 UI is disabled for a connection that negotiated only v1. This avoids silently changing the closed M2 v1 transport schema.
+For v2, `call.changed` increments M2's dirty counter; initial/reconnect/listener-reset sync reads `GET /api/v1/calls/current`; visible anti-entropy reconciles current call; invalidation during sync forces another pass before live mode. Missed/duplicate/reordered hints remain safe because HTTP/PostgreSQL is authoritative.
+
+Server rollout may support v1 and v2 simultaneously. C1 UI is disabled for a connection that negotiated only v1.
+
+The shared WebSocket transport may use a larger global max for C1 SDP, but realtime v1/v2 remain capped by `M2_REALTIME_MAX_FRAME_BYTES` at 4 KiB before JSON interpretation. Global and route-level protocol checks prevent call signaling from being accepted as ordinary realtime.
 
 Call signaling itself remains prohibited on ordinary realtime and uses `shawtie.call.v1` only after explicit acceptance.

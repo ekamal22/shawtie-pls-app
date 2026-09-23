@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. SECOND-PASS HARDENED. IMPLEMENTATION NOT STARTED.
+DESIGN COMPLETE. THIRD-PASS HARDENED. IMPLEMENTATION NOT STARTED.
 
 Branch: `feat/c1-voice-calling`
 
@@ -53,7 +53,7 @@ A canonical call projection contains only authorized metadata:
   "acceptedAt": null,
   "connectedAt": null,
   "endedAt": null,
-  "terminalReason": null,
+  "outcome": null,
   "isThisDeviceSelectedEndpoint": false
 }
 ~~~
@@ -61,6 +61,10 @@ A canonical call projection contains only authorized metadata:
 The API does not return the other partner's device ID.
 
 The API does not return SDP, ICE, IP addresses, TURN credentials, push endpoints, or media device labels in call projections.
+
+`outcome` is a privacy-safe public value such as `rejected`, `cancelled`, `missed`, `completed`, `failed`, or generic `unavailable`. Internal session/device/account-deletion/partnership terminal causes are never returned verbatim.
+
+Selected endpoints resolve through `call_participants.role` and `endpoint_device_id`; there are no duplicate caller/callee endpoint-device columns on `call_sessions`.
 
 ## POST /api/v1/calls
 
@@ -149,7 +153,7 @@ Suggested item fields:
 - initiatedAt
 - connectedAt
 - endedAt
-- terminalReason
+- privacy-safe outcome
 - durationSeconds only when connectedAt and endedAt are both authoritative
 
 No device/network/signaling fields appear in history.
@@ -238,7 +242,7 @@ Clients never submit these timestamps.
 Each scheduled finalizer is fenced by expected call version/generation and becomes a no-op after a newer transition.
 ## POST /api/v1/calls/:callId/endpoint-connected
 
-Record that the current selected endpoint reached WebRTC connectionState connected.
+Record monotonic selected-endpoint attestation of WebRTC `connectionState === "connected"`.
 
 Headers:
 
@@ -247,21 +251,14 @@ Headers:
 Request:
 
 ~~~json
-{
-  "expectedVersion": 5
-}
+{}
 ~~~
 
-Rules:
+`expectedVersion` is intentionally not required because caller/callee may report concurrently from the same accepted version.
 
-- call must be accepted or connected
-- current device must be one of the two selected call endpoints
-- server writes the current endpoint connected timestamp at most once
-- when both endpoint timestamps exist before `connect_expires_at`, state becomes connected and `connectedAt` is trusted server time; the server also sets a bounded `hard_expires_at` operational ceiling
-- duplicate same-device report is an exact no-op/replay
-- this endpoint never accepts a client timestamp
+Under the call row lock, participant `connected_at` is written at most once. The first distinct report leaves aggregate state, call `version`, and `deadline_generation` unchanged. The second distinct report transitions to connected, sets aggregate `connectedAt`, increments call version once, advances `deadline_generation`, and schedules hard expiry. Duplicate same-device reports are no-ops. Client timestamps are never accepted.
 
-The server does not infer successful media from SDP exchange alone.
+This is endpoint attestation, not cryptographic proof of audible media.
 
 ## POST /api/v1/calls/:callId/end
 
@@ -320,7 +317,7 @@ Authorization requires:
 - current device
 - current partnership
 - accepted non-terminal call
-- current device is caller_device_id or accepted_callee_device_id
+- current device resolves through the caller/callee participant role row as one of the two selected endpoints
 - lifecycle still permits continuation
 - issuance rate limit permits request
 
@@ -343,6 +340,8 @@ Response:
 Response headers include Cache-Control: private, no-store.
 
 The credential is never written to IndexedDB or application logs.
+
+Authorization loss denies later TURN issue/refresh immediately. An already issued credential/allocation may survive only for the provider's bounded configured lifetime.
 
 ## Signaling upgrade
 
@@ -403,30 +402,18 @@ Explicit logout/device revocation/account lockout must stop future push routing 
 
 ## Web Push payload
 
-Incoming-call payload v1 is intentionally generic:
-
 ~~~json
 {
   "v": 1,
-  "type": "incoming_call"
+  "type": "call_state_changed"
 }
 ~~~
 
-No caller name, username, partnership ID, call ID, SDP, ICE, TURN credential, message/media content, or lifecycle reason is sent to the push provider.
+No caller identity, call ID, partnership ID, terminal state, SDP, ICE, TURN data, or lifecycle reason is sent to the provider.
 
-Foreground calling remains available without notification permission through realtime v2. Background reachability is degraded when Web Push is unavailable or denied.
+Each delivery causes a same-origin credentialed no-store `GET /api/v1/calls/current` under a bounded timeout. Canonical incoming/ringing shows or replaces one generic notification; any other state closes it. Fetch/auth failure exposes no accept/reject action and does not claim a call is ringing. Delayed, duplicate, or reordered pushes therefore converge on canonical state.
 
-## Notification click behavior
-
-A push notification is never treated as proof that a call is still ringing.
-
-On click:
-
-1. open or focus the trusted PWA
-2. validate current session
-3. GET /api/v1/calls/current
-4. show incoming-call UI only if canonical state is still ringing for the current account
-5. otherwise discard the stale push
+Notification click opens/focuses the PWA, validates session, fetches current call again, and never auto-accepts.
 
 ## Realtime invalidation
 
@@ -435,6 +422,8 @@ C1 introduces `shawtie.realtime.v2`, preserving all M2 v1 frames and adding a co
 C1 calling UI is enabled only after v2 negotiation. Realtime v1 remains supported during rollout and is not silently changed.
 
 The frame is only a refresh hint; canonical state comes from HTTP.
+
+For v2, `call.changed` increments the M2 dirty counter. Initial sync, reconnect repair, listener-reset repair, and visible anti-entropy include `GET /api/v1/calls/current`; invalidation during sync forces another pass before live mode.
 
 ## Operational availability policy
 
@@ -445,6 +434,12 @@ Server policy may independently disable new call creation, call transport (accep
 - push-disabled suppresses background wakeup only; foreground realtime remains available
 
 None of these controls permit direct ICE fallback or reinterpret a voice call through another transport.
+
+## Local media consent contract
+
+Caller microphone capture starts only from explicit Call gesture; callee capture only from explicit Accept gesture. A pre-acquired track is stopped if authoritative create/accept fails or loses a race. Signaling/TURN remain unavailable before durable acceptance. C1 never requests camera access. Permissions Policy keeps camera disabled until C2.
+
+Only the current generation-fenced media-owner tab may capture, signal, own the peer connection, or report endpoint-connected.
 
 ## Browser audio playback contract
 

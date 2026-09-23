@@ -519,41 +519,23 @@ The full R1 design is canonical in `R1_RELATIONSHIP_SPACE_DESIGN.md`.
 
 ## Calls
 
-C1 refines the existing `call_sessions`, `call_participants`, and `call_events` tables created by the foundation migrations. It does not create a second call aggregate.
+C1 refines existing `call_sessions`, `call_participants`, and `call_events`; it does not create a second aggregate.
 
-C1 migration `0017_calling_runtime.sql` adds authoritative call runtime state including:
+`call_sessions` owns aggregate fields including `version`, independent `deadline_generation`, ring/connect/hard deadlines, aggregate `connected_at`, `ended_at`, and internal `terminal_reason`.
 
-```text
-call_sessions
-- version
-- ring_expires_at
-- connect_expires_at
-- connected_at
-- terminal_reason
-- hard_expires_at
-- updated_at
+`call_participants` owns exactly two role rows and is the sole durable endpoint authority: caller/callee `role`, account, `endpoint_device_id`, `accepted_at`, `connected_at`, and `left_at`. Caller endpoint is fixed at creation; callee endpoint is selected once by first successful acceptance. Existing `initiated_by_account_id` must agree with the caller participant. No duplicate caller/callee endpoint columns are added to `call_sessions`.
 
-call_participants
-- role
-- endpoint_device_id
-- accepted_at
-- connected_at
-- left_at
-```
+Constraints enforce one non-terminal call per partnership, one caller/callee role, initiator consistency, device ownership, fixed caller endpoint, and first-accept-wins callee selection.
 
-The caller device is fixed when the call is created. The callee endpoint is selected transactionally by first successful accept.
+States are `ringing`, `accepted`, `connected`, and terminal `ended`. Internal terminal reasons map to a smaller privacy-safe public outcome vocabulary.
 
-Database constraints/indexes enforce at most one non-terminal call per partnership and at most one caller/callee participant role per call. Selected endpoint device/account integrity is enforced with database-backed ownership checks where the device schema permits composite foreign keys.
+`deadline_generation` is independent from call `version`. Ring/connect/hard-expiry work checks it. The first endpoint-connected attestation does not advance it, so connect timeout remains valid until both endpoints attest or another authoritative transition replaces the deadline.
 
-Canonical durable states are `ringing`, `accepted`, `connected`, and terminal `ended`; `terminal_reason` records `rejected`, `cancelled`, `missed`, `completed`, `failed`, `authorization_revoked`, `partnership_terminated`, `account_deletion`, or another bounded reviewed reason.
+`call_events` never stores SDP, ICE, TURN credentials, device labels, raw provider errors, or audio. History is partnership-scoped and deleted at final dissolution.
 
-`call_events` stores only bounded transition metadata and never SDP, ICE, TURN credentials, device labels, or call audio.
+Migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions for generic `call_state_changed` reachability. Push capability data is sensitive and never public/logged.
 
-Call history is partnership-scoped and deleted at final dissolution.
-
-C1 migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions for generic incoming-call reachability. Push capability URLs and subscription keys are sensitive operational capability data and are never logs or public projections.
-
-C2 later reuses this call model and enables `video`; it does not create separate video-call history.
+C2 later enables video over the same call model.
 
 ## Media
 
