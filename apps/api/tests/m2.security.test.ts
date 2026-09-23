@@ -17,7 +17,10 @@ test("M2 websocket registration is authenticated, origin-bound, and content-free
     "utf8",
   );
 
-  assert.ok(application.indexOf("app.register(websocket") < application.indexOf("registerRealtimeRoutes"));
+  assert.ok(
+    application.indexOf("app.register(websocket") <
+      application.indexOf("registerRealtimeRoutes(app"),
+  );
   assert.equal(application.includes("perMessageDeflate: false"), true);
   assert.equal(application.includes("M2_REALTIME_MAX_FRAME_BYTES"), true);
   assert.equal(routes.includes('request.headers.origin !== dependencies.config.appOrigin'), true);
@@ -134,6 +137,6 @@ test("M2 advertised HTTP compatibility versions fail closed on mismatch", async 
   assert.equal(security.includes('"CLIENT_UPDATE_REQUIRED"'), true);
   assert.ok(
     application.indexOf("installM2Compatibility(app)") <
-      application.indexOf("registerAccountRoutes"),
+      application.indexOf("registerAccountRoutes(app"),
   );
 });
