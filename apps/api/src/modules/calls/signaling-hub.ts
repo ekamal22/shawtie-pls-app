@@ -72,9 +72,18 @@ function validateRelayCandidate(candidate: string): boolean {
   return true;
 }
 
+interface PendingSignal {
+  readonly fromRole: "caller" | "callee";
+  readonly frame: Extract<
+    C1SignalServerFrame,
+    { type: "signal.description" | "signal.ice_candidate" | "signal.end_of_candidates" | "signal.restart" }
+  >;
+}
+
 export class CallSignalingHub {
   readonly #connections = new Map<string, ConnectionState>();
   readonly #generations = new Map<string, number>();
+  readonly #pendingByCall = new Map<string, PendingSignal[]>();
   readonly #maintenance: ReturnType<typeof setInterval>;
 
   constructor(
@@ -143,6 +152,7 @@ export class CallSignalingHub {
       generation,
       payload: { polite: state.role === "callee" },
     });
+    this.#flushPending(state);
   }
 
   close(): void {
@@ -210,7 +220,18 @@ export class CallSignalingHub {
     }
 
     const peer = this.#peer(state);
-    if (peer) this.#send(peer, parsed.data);
+    if (peer) {
+      this.#send(peer, { ...parsed.data, generation: peer.generation });
+      return;
+    }
+
+    const pending = this.#pendingByCall.get(state.callId) ?? [];
+    if (pending.length >= 128) {
+      this.#close(state, 1013, "Peer signaling backlog exceeded");
+      return;
+    }
+    pending.push({ fromRole: state.role, frame: parsed.data });
+    this.#pendingByCall.set(state.callId, pending);
   }
 
   async #revalidate(state: ConnectionState): Promise<boolean> {
@@ -242,6 +263,24 @@ export class CallSignalingHub {
       return false;
     } finally {
       state.revalidating = false;
+    }
+  }
+
+  #flushPending(state: ConnectionState): void {
+    const pending = this.#pendingByCall.get(state.callId);
+    if (!pending || pending.length === 0) return;
+    const remaining: PendingSignal[] = [];
+    for (const item of pending) {
+      if (item.fromRole === state.role) {
+        remaining.push(item);
+        continue;
+      }
+      this.#send(state, { ...item.frame, generation: state.generation });
+    }
+    if (remaining.length === 0) {
+      this.#pendingByCall.delete(state.callId);
+    } else {
+      this.#pendingByCall.set(state.callId, remaining);
     }
   }
 
@@ -285,5 +324,9 @@ export class CallSignalingHub {
     if (this.#connections.get(state.key) === state) {
       this.#connections.delete(state.key);
     }
+    const hasCallConnection = [...this.#connections.values()].some(
+      (candidate) => candidate.callId === state.callId,
+    );
+    if (!hasCallConnection) this.#pendingByCall.delete(state.callId);
   }
 }
