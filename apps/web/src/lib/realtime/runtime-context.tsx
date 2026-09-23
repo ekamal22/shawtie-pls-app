@@ -50,10 +50,11 @@ export class M2Runtime {
         void this.coordinator.requestSync();
       },
     );
-    this.coordinator.register("offline-replay", async () => this.replay.replay(), "replay");
   }
 
   async start(): Promise<void> {
+    this.coordinator.resume();
+    this.coordinator.register("offline-replay", async () => this.replay.replay(), "replay");
     if (!this.#databasePromise) {
       this.#databasePromise = ShawtieLocalDatabase.open(this.accountId);
     }

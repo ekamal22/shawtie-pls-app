@@ -223,12 +223,22 @@ export function MessagingPanel() {
 
       if (!navigator.onLine) return;
 
+      // Only POST a receipt when it actually advances past what the server
+      // already has on record. Posting unconditionally on every reconcile
+      // pass caused a self-sustaining loop: acknowledging a receipt emits a
+      // conversation.receipt_changed realtime frame back to every connection
+      // on the conversation, including the acknowledging client's own
+      // socket, which marked the sync coordinator dirty and requested
+      // another reconcile pass that acknowledged again, forever, starving
+      // the offline-replay phase of a clean pass to run in.
       try {
-        await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
-          method: "POST",
-          body: { type: "delivered", throughSequence: deliveredThrough },
-        });
-        if (readThrough > 0) {
+        if (deliveredThrough > summary.receipts.selfDeliveredThrough) {
+          await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
+            method: "POST",
+            body: { type: "delivered", throughSequence: deliveredThrough },
+          });
+        }
+        if (readThrough > 0 && readThrough > summary.receipts.selfReadThrough) {
           await apiRequest("/api/v1/conversations/" + summary.conversationId + "/receipt", {
             method: "POST",
             body: { type: "read", throughSequence: readThrough },

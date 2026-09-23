@@ -99,6 +99,114 @@ test("M2 coordinator does not reconcile or replay while the browser is offline",
   }
 });
 
+test("M2 coordinator retries after a reconciler throws instead of stranding queued replay", async () => {
+  const coordinator = new SyncCoordinator();
+  let reconcileAttempts = 0;
+  let replayed = 0;
+
+  coordinator.register("messages", async () => {
+    reconcileAttempts += 1;
+    if (reconcileAttempts === 1) {
+      throw new Error("simulated transient network failure");
+    }
+    return { latestChangeSequence: 1 };
+  });
+  coordinator.register(
+    "outbox",
+    async () => {
+      replayed += 1;
+    },
+    "replay",
+  );
+
+  coordinator.markDirty(1);
+  await coordinator.requestSync();
+
+  // The first pass failed inside the reconciler and must not leave the
+  // coordinator permanently stuck: it schedules its own retry.
+  assert.equal(reconcileAttempts, 1);
+  assert.equal(replayed, 0);
+
+  await new Promise<void>((resolve) => {
+    const interval = setInterval(() => {
+      if (coordinator.status === "live") {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 25);
+  });
+
+  assert.equal(reconcileAttempts, 2);
+  assert.equal(replayed, 1);
+  assert.equal(coordinator.status, "live");
+
+  await coordinator.stop();
+});
+
+test("M2 coordinator retries after a replayer throws instead of stranding queued replay", async () => {
+  const coordinator = new SyncCoordinator();
+  let replayAttempts = 0;
+
+  coordinator.register("messages", async () => ({ latestChangeSequence: 1 }));
+  coordinator.register(
+    "outbox",
+    async () => {
+      replayAttempts += 1;
+      if (replayAttempts === 1) {
+        throw new Error("simulated transient network failure");
+      }
+    },
+    "replay",
+  );
+
+  coordinator.markDirty(1);
+  await coordinator.requestSync();
+
+  assert.equal(replayAttempts, 1);
+  assert.notEqual(coordinator.status, "live");
+
+  await new Promise<void>((resolve) => {
+    const interval = setInterval(() => {
+      if (coordinator.status === "live") {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 25);
+  });
+
+  assert.equal(replayAttempts, 2);
+  assert.equal(coordinator.status, "live");
+
+  await coordinator.stop();
+});
+
+test("M2 coordinator stays inert after stop until resume is called", async () => {
+  const coordinator = new SyncCoordinator();
+  let calls = 0;
+  coordinator.register("messages", async () => {
+    calls += 1;
+    return { latestChangeSequence: 1 };
+  });
+
+  await coordinator.stop();
+
+  coordinator.markDirty(1);
+  await coordinator.requestSync();
+  assert.equal(calls, 0, "requestSync must stay a no-op after stop without resume");
+  assert.equal(coordinator.status, "idle");
+
+  coordinator.register("messages", async () => {
+    calls += 1;
+    return { latestChangeSequence: 1 };
+  });
+  coordinator.resume();
+  coordinator.markDirty(1);
+  await coordinator.requestSync();
+
+  assert.equal(calls, 1, "requestSync must run again once resume is called");
+  assert.equal(coordinator.status, "live");
+});
+
 test("M2 coordinator stop waits for active sync and refuses queued reruns", async () => {
   const coordinator = new SyncCoordinator();
   let calls = 0;
