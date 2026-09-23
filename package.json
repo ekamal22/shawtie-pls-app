@@ -19,7 +19,7 @@
     "test": "npm run test:domain && npm run test:contracts && npm run test:api-unit && npm run test:worker",
     "test:domain": "node --test packages/domain/tests/*.test.ts",
     "test:contracts": "node --test packages/contracts/tests/*.test.ts",
-    "test:worker": "node --test apps/worker/tests/runtime.test.ts apps/worker/tests/a1.worker.test.ts apps/worker/tests/m2.realtime.test.ts",
+    "test:worker": "node --test apps/worker/tests/runtime.test.ts apps/worker/tests/a1.worker.test.ts apps/worker/tests/m2.realtime.test.ts apps/worker/tests/c1.worker.test.ts",
     "test:f2:postgres": "npm run db:test:invariants && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/worker && node --test --test-concurrency=1 packages/testkit/tests/*.integration.test.ts apps/worker/tests/*.integration.test.ts",
     "test:f2:local": "node scripts/db/test-f2-local.mjs",
     "health:repo": "node scripts/ci/repository-health.mjs",
@@ -28,7 +28,7 @@
     "db:migrations:check": "node scripts/db/check-migrations.mjs",
     "db:migrate": "node scripts/db/migrate.mjs",
     "db:test:invariants": "node scripts/db/test-invariants.mjs",
-    "test:api-unit": "node --test apps/api/tests/a1.security.test.ts apps/api/tests/p1.security.test.ts apps/api/tests/p2.security.test.ts apps/api/tests/p3.security.test.ts apps/api/tests/m1.security.test.ts apps/api/tests/r1.security.test.ts apps/api/tests/m2.security.test.ts",
+    "test:api-unit": "node --test apps/api/tests/a1.security.test.ts apps/api/tests/p1.security.test.ts apps/api/tests/p2.security.test.ts apps/api/tests/p3.security.test.ts apps/api/tests/m1.security.test.ts apps/api/tests/r1.security.test.ts apps/api/tests/m2.security.test.ts apps/api/tests/c1.security.test.ts",
     "test:accounts": "node --test packages/domain/tests/accounts.test.ts packages/contracts/tests/accounts.test.ts apps/api/tests/a1.security.test.ts apps/worker/tests/a1.worker.test.ts",
     "test:a1:postgres": "npm run db:test:invariants && npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && node --test --test-concurrency=1 apps/api/tests/a1.integration.test.ts apps/api/tests/a1.acceptance.integration.test.ts apps/worker/tests/a1.integration.test.ts",
     "test:a1:api": "npm run test:a1:postgres",
@@ -69,7 +69,8 @@
     "test:m2:install-browser": "playwright install chromium",
     "test:m2:device:prepare": "node scripts/device/m2-android-acceptance.mjs",
     "test:m2:device:cleanup": "node scripts/device/m2-android-acceptance.mjs --cleanup",
-    "test:m2:closure": "node scripts/ci/test-m2-closure.mjs"
+    "test:m2:closure": "node scripts/ci/test-m2-closure.mjs",
+    "test:c1": "node --test packages/domain/tests/calling.test.ts packages/contracts/tests/calling.test.ts apps/api/tests/c1.security.test.ts apps/web/tests/c1.browser.test.ts apps/worker/tests/c1.worker.test.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
