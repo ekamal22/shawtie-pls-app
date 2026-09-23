@@ -124,6 +124,7 @@ test("C1 ringing timeout finalizes missed exactly once and emits invalidations",
       now: createdAt,
       ringExpiresAt,
     });
+    assert.ok(call);
     await insertScheduledAction(database.pool, {
       id: randomUUID(),
       actionType: "c1.call.ringing_timeout",
@@ -177,6 +178,7 @@ test("C1 first endpoint attestation preserves accepted timeout generation", asyn
       now: createdAt,
       ringExpiresAt: new Date(createdAt.getTime() + 60_000),
     });
+    assert.ok(ringing);
     const accepted = await acceptCall(database.pool, {
       callId: ringing.id,
       expectedVersion: 1n,
