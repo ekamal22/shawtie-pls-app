@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the active milestone; implementation is complete and acceptance closure is pending.
+`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the active milestone. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`; mandatory physical Android acceptance is still pending.
 
 Completed milestones:
 
@@ -59,7 +59,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | --- | --- | --- | --- |
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
-| 6 M2 Realtime and Offline Reliability | IN_PROGRESS, source implementation complete; validation and device closure pending | M1 + R1 merged mainline | Yes |
+| 6 M2 Realtime and Offline Reliability | IN_PROGRESS, automated/local closure PASS; physical Android acceptance pending | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
@@ -86,7 +86,7 @@ Next:
 
 1. preserve the M1 runtime closure anchor `aa40a2c` and R1 source history `9bc9ba4`
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
-3. execute `npm run test:m2:closure` from a clean checkout at the current M2 implementation head
+3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. execute and record the mandatory physical Android scenarios
 5. fix only evidence-backed regressions, then reconcile final M2 evidence/docs and merge when every closure gate is green
 6. keep V1 hosted verification separate until Actions capacity returns
@@ -218,7 +218,7 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: IN_PROGRESS, IMPLEMENTATION COMPLETE. Refined architecture and protocol design, runtime implementation, reliability hardening, browser acceptance automation, local closure orchestration, and Android preflight tooling are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`. The latest source closes revoked-session purge ordering, account-routed partnership scope refresh, and offline sync-start gaps, and expands real Chromium acceptance for reconnect/replay idempotency, account isolation, partnership purge, and protected cold-start behavior. `npm run test:m2:closure` now composes branch-policy checks, `test:m2:local`, full health, audit, diff hygiene, and final worktree cleanliness. Executed local closure and physical Android scenario evidence are pending, so the milestone is not yet DONE or merge-ready.
+Status: IN_PROGRESS, AUTOMATED/LOCAL CLOSURE PASS; PHYSICAL ANDROID ACCEPTANCE PENDING. `npm run test:m2:closure` passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The run applied migrations 0001 through 0014 from zero with `reserved=0`, passed database invariants, passed the PostgreSQL/API/worker matrix 100/100, passed real Chromium 7/7, passed full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, reported 0 vulnerabilities at the high audit level, and ended with `M2_AUTOMATED_CLOSURE_PASS`. Mandatory physical Android scenario evidence is still required, so M2 is not yet DONE or merge-ready.
 
 Architecture:
 

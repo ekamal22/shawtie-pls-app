@@ -130,7 +130,7 @@ P3 ✅
    ->
 M1 ✅ + R1 ✅ merged to main
    ->
-M2 🟡 source implementation complete, validation/device closure pending
+M2 🟡 automated/local closure PASS, physical Android acceptance pending
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -188,8 +188,8 @@ main @ 9f4237e
   +--> feat/m2-realtime-offline
 
 M1 and R1 are merged and verified.
-M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented through source anchor `6e3c019`.
-M2 feature implementation is complete. Executed automated closure and mandatory physical-device scenario closure are the active work; further source changes should be evidence-driven.
+M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented.
+M2 automated/local closure passed at `4bbffdf` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, audit, and git hygiene green. Mandatory physical Android scenario closure is the remaining gate.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
 M2 is expected to require no PostgreSQL migration and does not reserve 0015.

@@ -1,6 +1,6 @@
 # M2 Physical Android Acceptance
 
-Status: M2 feature implementation and automated closure tooling are complete through `6e3c019371edd96a081c71ff178b6ee82f406566`. The Android preparation harness is implemented, but executed physical-device evidence is still required before M2 can be marked DONE.
+Status: M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`. The Android preparation harness is implemented, but none of the 14 mandatory physical-device scenarios were executed. Physical Android evidence is still required before M2 can be marked DONE.
 
 ## Purpose
 
@@ -95,6 +95,6 @@ This removes the M2 ADB reverse and CDP forward rules.
 
 M2 remains IN_PROGRESS until:
 
-- `npm run test:m2:closure` is green on the exact current M2 branch head, which includes `test:m2:local`, real Chromium acceptance, full repository health, audit, and git hygiene
+- `npm run test:m2:closure` is green, currently anchored at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`, including `test:m2:local`, real Chromium acceptance, full repository health, audit, and git hygiene
 - every mandatory physical Android scenario above has recorded passing evidence
 - final evidence documentation is reconciled without overstating unexecuted checks

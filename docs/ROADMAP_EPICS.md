@@ -1098,7 +1098,7 @@ M1 is DONE at 18/18 acceptance gates, has passed combined integration validation
 
 # M2: Realtime and Offline Reliability
 
-Status: IN_PROGRESS, IMPLEMENTATION COMPLETE; ACCEPTANCE CLOSURE PENDING
+Status: IN_PROGRESS, AUTOMATED/LOCAL CLOSURE PASS; PHYSICAL ANDROID ACCEPTANCE PENDING
 
 Branch:
 
@@ -1118,7 +1118,7 @@ Realtime protocol:
 
 Design state:
 
-Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Source implementation for M2-A through M2-I is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`. The latest hardening closes three production correctness gaps found during source audit: revoked-session local purge ordering, immediate account-routed partnership scope refresh for sockets that were connected before pairing, and prevention of reconciliation/replay start while the browser is offline. Browser acceptance now covers real runtime reconnect/replay with stable idempotency after a simulated lost response, account-local IndexedDB isolation, final-partnership purge, stronger protected cold-start locking, cross-tab claim fencing, and private-API Cache API exclusion. The automated `test:m2:closure` command adds exact-branch/SHA policy, `[skip ci]` and Unicode-em-dash checks, the Docker/PostgreSQL/API/worker/Chromium local matrix, full repository health, high-severity audit, diff hygiene, and final worktree cleanliness. Final local execution and mandatory physical Android scenario evidence remain pending.
+Refined architecture, protocol, failure behavior, local schema, offline queue policy, implementation slices, and closure evidence are defined. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The canonical run applied migrations 0001 through 0014 with `reserved=0`, passed database invariants, passed the PostgreSQL/API/worker matrix 100/100 with `M2_LOCAL_POSTGRES_PASS`, passed real Chromium 7/7 with `M2_LOCAL_BROWSER_PASS`, passed full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, reported 0 vulnerabilities, passed diff and worktree hygiene, and ended with `M2_AUTOMATED_CLOSURE_PASS`. Physical Android acceptance remains mandatory and was not executed, so M2 remains IN_PROGRESS and is not merge-ready.
 
 ## Scope
 
@@ -1162,7 +1162,7 @@ Implemented source currently includes:
 - strict `test:m2:closure` wrapper enforcing branch/SHA policy, `[skip ci]`, Unicode-em-dash exclusion, local acceptance, full health, audit, diff hygiene, and final worktree cleanliness
 - Android preflight/evidence harness plus `docs/testing/M2_ANDROID_ACCEPTANCE.md`
 
-Implementation is complete, but none of the acceptance gates below are considered passed until executed evidence is recorded from the current branch head. Physical Android acceptance remains mandatory, and M2 is not merge-ready until those gates close.
+Implementation and all feasible automated/local acceptance gates are verified at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. Physical Android acceptance remains mandatory, and M2 is not merge-ready until that final device gate closes.
 
 ## Implementation sequence
 
@@ -1262,47 +1262,47 @@ Implementation is complete, but none of the acceptance gates below are considere
 
 ## Acceptance gates
 
-- [ ] WebSocket authenticates with the existing server-managed session and exact trusted Origin
-- [ ] client cannot subscribe to arbitrary account, partnership, conversation, message, or R1 scopes
-- [ ] unsupported critical realtime protocol versions fail closed
-- [ ] internal NOTIFY and browser realtime frames contain no protected content
-- [ ] realtime frame size and rate limits are enforced
-- [ ] stale or revoked sessions cannot retain realtime authorization
-- [ ] duplicate realtime delivery is safe
-- [ ] out-of-order realtime delivery is safe
-- [ ] missed realtime delivery is repaired through canonical HTTP state
-- [ ] `change_sequence` repairs sends, edits, deletes, and reactions without being replaced by `server_sequence`
-- [ ] `server_sequence` repairs required history gaps without becoming mutation synchronization order
-- [ ] local cursor advancement is atomic with corresponding canonical projection persistence
-- [ ] PostgreSQL NOTIFY loss or listener restart does not break correctness
-- [ ] offline message send survives reload and replays with the same idempotency key
-- [ ] queued edits preserve `expectedContentVersion` and cannot extend the 30-minute edit window
-- [ ] queued mutation is blocked or rejected when authoritative lifecycle changed while offline
-- [ ] R1 offline replay is limited to an explicit safe operation whitelist
-- [ ] recipient-open, creator-reveal, and scheduled-release transitions remain online and server-authoritative
-- [ ] IndexedDB is partitioned by account, partnership, conversation, and explicit content context
-- [ ] pre-S1 local persistence does not invent fake encryption or crypto epochs
-- [ ] explicit logout, account switch, or observed revocation cannot expose previous account local plaintext
-- [ ] final dissolution removes old partnership UI state before replay and purges the old local namespace
-- [ ] a future partnership cannot render or replay previous-partnership cache or queue entries
-- [ ] service worker never caches private/no-store API responses
-- [ ] incompatible service-worker/client/local-schema state fails closed before mutation replay
-- [ ] multi-tab duplicate realtime delivery and duplicate offline replay remain correctness-safe
-- [ ] reconnect, offline, service-worker, and IndexedDB browser automation passes
-- [ ] full `npm run health` and high-severity dependency audit pass
+- [x] WebSocket authenticates with the existing server-managed session and exact trusted Origin
+- [x] client cannot subscribe to arbitrary account, partnership, conversation, message, or R1 scopes
+- [x] unsupported critical realtime protocol versions fail closed
+- [x] internal NOTIFY and browser realtime frames contain no protected content
+- [x] realtime frame size and rate limits are enforced
+- [x] stale or revoked sessions cannot retain realtime authorization
+- [x] duplicate realtime delivery is safe
+- [x] out-of-order realtime delivery is safe
+- [x] missed realtime delivery is repaired through canonical HTTP state
+- [x] `change_sequence` repairs sends, edits, deletes, and reactions without being replaced by `server_sequence`
+- [x] `server_sequence` repairs required history gaps without becoming mutation synchronization order
+- [x] local cursor advancement is atomic with corresponding canonical projection persistence
+- [x] PostgreSQL NOTIFY loss or listener restart does not break correctness
+- [x] offline message send survives reload and replays with the same idempotency key
+- [x] queued edits preserve `expectedContentVersion` and cannot extend the 30-minute edit window
+- [x] queued mutation is blocked or rejected when authoritative lifecycle changed while offline
+- [x] R1 offline replay is limited to an explicit safe operation whitelist
+- [x] recipient-open, creator-reveal, and scheduled-release transitions remain online and server-authoritative
+- [x] IndexedDB is partitioned by account, partnership, conversation, and explicit content context
+- [x] pre-S1 local persistence does not invent fake encryption or crypto epochs
+- [x] explicit logout, account switch, or observed revocation cannot expose previous account local plaintext
+- [x] final dissolution removes old partnership UI state before replay and purges the old local namespace
+- [x] a future partnership cannot render or replay previous-partnership cache or queue entries
+- [x] service worker never caches private/no-store API responses
+- [x] incompatible service-worker/client/local-schema state fails closed before mutation replay
+- [x] multi-tab duplicate realtime delivery and duplicate offline replay remain correctness-safe
+- [x] reconnect, offline, service-worker, and IndexedDB browser automation passes
+- [x] full `npm run health` and high-severity dependency audit pass
 - [ ] physical Android M2 acceptance passes
-- [ ] socket enters live only after the dirty-counter/high-water synchronization barrier closes without a concurrent invalidation
-- [ ] partnership/conversation scope identity is immutable for one socket lifetime and scope identity change forces reconnect
-- [ ] late callbacks from an older browser connection generation cannot mutate current sync state
-- [ ] PostgreSQL LISTEN loss/reconnect forces canonical resynchronization for local sockets
-- [ ] visible-page anti-entropy repairs silent missed hints even while WebSocket transport appears healthy
-- [ ] multi-tab queue replay uses claim-generation fencing so a stale tab cannot remove or overwrite a newer claim
-- [ ] pre-S1 cold-start offline mode does not expose protected IndexedDB plaintext before server-session validation
-- [ ] IndexedDB quota/storage failure cannot be represented as successful queueing and unsent operations are never silently evicted
-- [ ] binary WebSocket application frames are rejected and per-message compression is disabled
-- [ ] R1 offline queue enforcement matches the exact M2 version-1 endpoint/payload whitelist
-- [ ] local queue completion is fenced and canonical state is persisted before the queue record is removed
-- [ ] PostgreSQL NOTIFY publication is committed before its durable outbox claim is acknowledged delivered
+- [x] socket enters live only after the dirty-counter/high-water synchronization barrier closes without a concurrent invalidation
+- [x] partnership/conversation scope identity is immutable for one socket lifetime and scope identity change forces reconnect
+- [x] late callbacks from an older browser connection generation cannot mutate current sync state
+- [x] PostgreSQL LISTEN loss/reconnect forces canonical resynchronization for local sockets
+- [x] visible-page anti-entropy repairs silent missed hints even while WebSocket transport appears healthy
+- [x] multi-tab queue replay uses claim-generation fencing so a stale tab cannot remove or overwrite a newer claim
+- [x] pre-S1 cold-start offline mode does not expose protected IndexedDB plaintext before server-session validation
+- [x] IndexedDB quota/storage failure cannot be represented as successful queueing and unsent operations are never silently evicted
+- [x] binary WebSocket application frames are rejected and per-message compression is disabled
+- [x] R1 offline queue enforcement matches the exact M2 version-1 endpoint/payload whitelist
+- [x] local queue completion is fenced and canonical state is persisted before the queue record is removed
+- [x] PostgreSQL NOTIFY publication is committed before its durable outbox claim is acknowledged delivered
 
 # M3: Media and Voice Messages
 
