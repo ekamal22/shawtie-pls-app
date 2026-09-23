@@ -176,6 +176,27 @@ Where infrastructure permits forcing UDP failure:
 - call ends or fails with bounded generic state
 - device label is not sent to server
 
+### Remote audio autoplay recovery
+
+- force/instrument one remote audio `play()` rejection
+- call remains canonical and connected
+- UI shows explicit tap-to-hear recovery
+- user gesture starts remote audio without creating a new call transition
+
+### Push subscription replacement
+
+- register push for the physical device
+- replace/rotate the subscription through the same authenticated device
+- verify the old subscription no longer causes duplicate ringing
+- verify the current subscription still opens canonical call state without auto-accept
+
+### Transport kill-switch fail-closed
+
+- in disposable configuration disable C1 transport while preserving the app
+- new accept/signaling/TURN authorization fails honestly
+- no host/srflx/direct fallback establishes media
+- re-enable transport and verify a fresh call can proceed
+
 ## Privacy assertions
 
 Verify:
@@ -190,4 +211,4 @@ Verify:
 
 ## Closure marker
 
-C1_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above has documented evidence, the exact tested SHA is recorded, sensitive signaling/TURN/push material is absent from committed artifacts, and local/remote SHA parity is verified.
+C1_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above, including autoplay recovery, push replacement, and transport fail-closed behavior, has documented evidence, the exact tested SHA is recorded, sensitive signaling/TURN/push material is absent from committed artifacts, and local/remote SHA parity is verified.

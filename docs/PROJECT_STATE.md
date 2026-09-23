@@ -10,7 +10,7 @@ M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`. Autom
 
 C1 Voice Calling architecture and implementation design is complete on `feat/c1-voice-calling`, created from merged-M2 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. Implementation has not started. Canonical design: `docs/architecture/C1_VOICE_CALLING_DESIGN.md`; API: `docs/api/C1_CALLING_API.md`; signaling: `docs/api/C1_SIGNALING_PROTOCOL.md`; physical Android procedure: `docs/testing/C1_ANDROID_ACCEPTANCE.md`. ADR-013 adopts a dedicated accepted-call signaling transport and ADR-014 refines C1 from relay-first to relay-only TURN privacy. C1 owns planned migrations 0017/0018 while parallel M3 owns planned 0015/0016; isolated C1 validation may reserve 0015/0016, but final integration requires real 0001-0018 with `reserved=0`. C2 remains a separate video-calling milestone after C1.
 
-C2 Video Calling architecture and implementation design is complete on `feat/c2-video-calling`, based on C1 design checkpoint `489661e3`. C2 implementation remains blocked until C1 is implemented, physically verified, and merged. Canonical design: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`; API/compatibility: `docs/api/C2_VIDEO_CALLING_API.md`; signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`; physical Android procedure: `docs/testing/C2_ANDROID_ACCEPTANCE.md`. ADR-015 adopts one stable video transceiver, local-only camera state, generation-fenced camera operations, and stop-on-background camera privacy. C2 expects no database migration and reserves no migration number.
+C2 Video Calling architecture and implementation design is complete and second-pass hardened on `feat/c2-video-calling`, content-reconciled to hardened C1 design checkpoint `6a416a51`. C2 implementation remains blocked until C1 is implemented, physically verified, and merged. Canonical design: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`; API/compatibility: `docs/api/C2_VIDEO_CALLING_API.md`; signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`; physical Android procedure: `docs/testing/C2_ANDROID_ACCEPTANCE.md`. ADR-015 adopts one stable video transceiver, local-only camera state, generation-fenced camera operations, and stop-on-background camera privacy. C2 expects no database migration and reserves no migration number.
 
 ## Product definition
 
@@ -180,7 +180,7 @@ M2 Realtime and Offline Reliability was created from documentation-correct `main
 2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
 3. preserve M1 `server_sequence` as immutable message-history order and `change_sequence` as durable mutation-synchronization order
 4. C1 design is complete on `feat/c1-voice-calling`; implementation may begin from current verified M2 mainline while preserving parallel M3 migration ownership
-5. C2 design is complete on `feat/c2-video-calling`; implementation remains blocked until verified C1 voice calling is closed and merged
+5. C2 design is complete and hardened on `feat/c2-video-calling`; before source work, recreate/rebase it onto final verified C1 mainline after C1 physical closure/merge
 5. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy

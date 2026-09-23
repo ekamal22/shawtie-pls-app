@@ -4,7 +4,7 @@
 
 DESIGN COMPLETE. Execute only after C1 closure is verified and C2 automated/local closure is green.
 
-C2 requires verified C1 voice calling and physical Android video acceptance. Design branch: `feat/c2-video-calling`, based on C1 design checkpoint `489661e3`; runtime implementation must be reconciled onto the final verified C1 mainline first.
+C2 requires verified C1 voice calling and physical Android video acceptance. Design branch: `feat/c2-video-calling`, content-reconciled to hardened C1 design checkpoint `6a416a51`; runtime implementation must be recreated/rebased onto the final verified C1 mainline first.
 
 At least one endpoint must be the supported Redmi Android device. Final public-release acceptance should include mobile-to-mobile video when two physical mobile endpoints are available.
 
@@ -254,6 +254,32 @@ Where a C1-only build can be exercised:
 - does not silently answer as voice
 - another compatible device can still answer if available
 
+### Camera constraint fallback
+
+- force the preferred 720p constraint tier to fail with an overconstraint condition
+- verify the client falls through deterministically to lower tiers without a second permission prompt
+- verify permission denial stops immediately and does not cycle constraints
+
+### Remote video autoplay recovery
+
+- force/instrument the muted remote video element `play()` to reject once
+- C1 remote audio continues
+- UI offers tap-to-show-video recovery
+- user gesture restores video without durable call mutation
+
+### Wake-lock lifecycle where supported
+
+- with visible active video, acquire screen wake lock if the device/browser supports it
+- background/hidden releases it
+- foreground may reacquire only while video remains active
+- wake-lock failure does not affect call state
+
+### Resource downshift
+
+- simulate/supply sustained CPU-limitation stats in a disposable browser harness and confirm one-tier downshift with cooldown
+- verify audio continues and no direct ICE/privacy downgrade occurs
+- verify the app never auto-turns camera back on after a resource-related track end
+
 ## Privacy assertions
 
 Verify through first-party test instrumentation:
@@ -287,4 +313,4 @@ During a sustained synthetic call:
 
 ## Closure marker
 
-C2_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above has documented evidence, C1 voice regressions remain green, the exact tested SHA is recorded, sensitive video/signaling/TURN/device material is absent from committed artifacts, and local/remote SHA parity is verified.
+C2_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above, including constraint fallback, video autoplay recovery, wake-lock lifecycle where supported, and resource downshift behavior, has documented evidence, C1 voice regressions remain green, the exact tested SHA is recorded, sensitive video/signaling/TURN/device material is absent from committed artifacts, and local/remote SHA parity is verified.

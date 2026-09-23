@@ -2,11 +2,11 @@
 
 ## Status
 
-DESIGN COMPLETE. IMPLEMENTATION BLOCKED UNTIL VERIFIED C1 IS MERGED.
+DESIGN COMPLETE. SECOND-PASS HARDENED. IMPLEMENTATION BLOCKED UNTIL VERIFIED C1 IS MERGED.
 
 Design branch: `feat/c2-video-calling`
 
-Design parent: `feat/c1-voice-calling @ 489661e3ac85400cc353a0ea673854c62f057030`
+Design parent: `feat/c1-voice-calling @ 6a416a51ee76743ae7d7810ed14a58a0e9f12fdf`
 
 Architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`
 
@@ -242,3 +242,21 @@ No API mutation represents camera background state. When the C2 browser becomes 
 ## No voice downgrade
 
 The server never rewrites a durable `video` call into `voice` because one endpoint lacks camera permission, has camera off, or runs an incompatible client. A video-kind call may continue audio-only transiently while retaining `kind = video` in durable authority/history.
+
+## Video operational policy
+
+Server/deployment policy may disable new video-call creation without disabling C1 voice calls.
+
+A C2 client may also receive deployment policy that disables camera capture/reacquisition. In that state a durable video-kind call may continue audio-only, but the client must not reinterpret history/kind as voice.
+
+Policy disable never enables direct ICE or alternate signaling.
+
+## Local rendering contract
+
+C2 remote audio remains owned by the C1 audio element. Remote video uses a separate muted video-only element so video autoplay failure cannot silence audio.
+
+Camera constraint tier, facing preference, wake-lock status, remote-video mute timer, and resource-downshift state are local only and are not accepted by this API.
+
+## Implementation-line rule
+
+This design branch is not the runtime implementation base. Before source implementation, C2 must be recreated/rebased onto the final merged/verified C1 mainline and the API compatibility assumptions rechecked.

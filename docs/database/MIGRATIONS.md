@@ -285,7 +285,7 @@ No C2 migration is reserved by C1 design.
 
 ## C2 migration boundary
 
-C2 Video Calling is expected to require no PostgreSQL migration and reserves no migration number.
+C2 Video Calling is expected to require no PostgreSQL migration and reserves no migration number. Its current design branch is content-reconciled to hardened C1 design, but source implementation must start from the final merged C1 mainline after real M3 0015/0016 plus C1 0017/0018 integration is closed.
 
 C2 depends on final verified C1 owning the call runtime schema. C2 must not alter C1 migrations 0017/0018.
 

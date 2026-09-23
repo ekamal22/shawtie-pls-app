@@ -1464,11 +1464,11 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 
 # C2: Video Calling
 
-Status: DESIGN COMPLETE, IMPLEMENTATION BLOCKED ON VERIFIED C1 CLOSURE
+Status: DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION BLOCKED ON VERIFIED C1 CLOSURE
 
 Design branch: `feat/c2-video-calling`
 
-Design parent: `feat/c1-voice-calling @ 489661e3ac85400cc353a0ea673854c62f057030`
+C1 design dependency: `feat/c1-voice-calling @ 6a416a51ee76743ae7d7810ed14a58a0e9f12fdf` (content-reconciled; runtime implementation must still rebase/create from final merged C1)
 
 Architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`
 
@@ -1499,6 +1499,16 @@ C2 source implementation may begin only after C1 is implemented, physically veri
 - physical Android video acceptance
 
 C2 excludes voice-to-video mid-call upgrade, group calls, screen sharing, server video processing, SFU/MCU, recording, virtual backgrounds, beauty filters, server camera inventory, background camera capture, and direct peer fallback.
+
+## Refined hardening decisions
+
+- deterministic camera constraint fallback ladder stops on permission/security failure
+- remote audio remains C1-owned and separate from muted video-only rendering
+- remote-video mute uses a grace/hysteresis state instead of inferring partner intent
+- optional Screen Wake Lock is progressive enhancement only
+- sustained CPU/resource pressure may downshift capture one-way with bounded sampling/cooldown; it never auto-disables audio or weakens privacy
+- C2 video-create/capture operational controls fail closed while C1 voice remains independently available
+- source implementation must recreate/rebase onto final verified C1 mainline
 
 ## Acceptance gates
 

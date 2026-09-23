@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. IMPLEMENTATION NOT STARTED.
+DESIGN COMPLETE. SECOND-PASS HARDENED. IMPLEMENTATION NOT STARTED.
 
 Branch: `feat/c1-voice-calling`
 
@@ -436,6 +436,28 @@ C1 calling UI is enabled only after v2 negotiation. Realtime v1 remains supporte
 
 The frame is only a refresh hint; canonical state comes from HTTP.
 
+## Operational availability policy
+
+Server policy may independently disable new call creation, call transport (accept/signaling/TURN), or background push.
+
+- create-disabled returns a bounded service-unavailable/calling-unavailable result for new calls
+- transport-disabled denies new accept, signaling upgrade, and TURN issue/refresh
+- push-disabled suppresses background wakeup only; foreground realtime remains available
+
+None of these controls permit direct ICE fallback or reinterpret a voice call through another transport.
+
+## Browser audio playback contract
+
+Remote audio autoplay success is not a server state transition. If `HTMLMediaElement.play()` is rejected by browser policy, the client keeps canonical call state intact and presents an explicit user-gesture playback recovery action.
+
+Audio sink selection is optional local UX only where browser `setSinkId()` support exists. Output device identifiers are never part of this API.
+
+## Push subscription reconciliation
+
+`POST /api/v1/push/subscriptions` is an authenticated device-level upsert/replace operation. A device may replace an old endpoint/key tuple without creating duplicate active routing.
+
+Clients should reconcile an already-granted browser subscription on startup/foreground and after best-effort `pushsubscriptionchange`. Permission denial is not retried through repeated prompts.
+
 ## Cache policy
 
 Private call API responses use Cache-Control: private, no-store.
@@ -456,7 +478,7 @@ Provider failures return bounded stable application codes rather than raw provid
 
 ## Rate limits
 
-Implementation must define bounded limits for:
+Implementation must define bounded, privacy-safe limits for:
 
 - call create
 - call accept/reject/cancel/end
@@ -465,6 +487,9 @@ Implementation must define bounded limits for:
 - signaling upgrades
 - signaling frames
 - ICE candidates
+- signaling reconnect attempts
+- TURN credential refresh frequency
+- push deliveries per authoritative incoming-call event
 
 ## C2 compatibility
 

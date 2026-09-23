@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE. IMPLEMENTATION BLOCKED UNTIL C1 IS IMPLEMENTED, PHYSICALLY VERIFIED, AND MERGED.**
+**DESIGN COMPLETE, SECOND-PASS HARDENED. IMPLEMENTATION BLOCKED UNTIL C1 IS IMPLEMENTED, PHYSICALLY VERIFIED, AND MERGED.**
 
 Design branch:
 
@@ -10,13 +10,13 @@ Design branch:
 
 Design parent:
 
-`feat/c1-voice-calling @ 489661e3ac85400cc353a0ea673854c62f057030`
+`feat/c1-voice-calling @ 6a416a51ee76743ae7d7810ed14a58a0e9f12fdf`
 
 Current verified runtime base beneath C1:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-This branch is a design checkpoint, not yet a valid runtime implementation base. Before C2 source implementation begins, this branch must be reconciled with the final verified C1 mainline. C2 must never implement around unverified C1 behavior.
+This branch is a design checkpoint, not yet a valid runtime implementation base. It was originally forked from the earlier C1 design checkpoint and has now been content-reconciled to hardened C1 design `6a416a51`. Before C2 source implementation begins, create/rebase the implementation line from the final verified C1 mainline. C2 must never implement around unverified C1 behavior.
 
 Canonical API/compatibility contract:
 
@@ -374,6 +374,89 @@ Do not fail a video call merely because 720p is unavailable.
 The browser may select lower resolution or frame rate.
 
 C2 does not require 1080p.
+
+## Camera constraint fallback ladder
+
+C2 uses a deterministic local capture fallback ladder instead of repeatedly guessing constraints.
+
+Initial user-facing capture attempts:
+
+1. tier A: width ideal/max 1280, height ideal/max 720, frameRate ideal 24/max 30
+2. tier B: width ideal/max 960, height ideal/max 540, frameRate ideal 24/max 30
+3. tier C: width ideal/max 640, height ideal/max 480, frameRate ideal 20/max 24
+4. tier D: camera with facing preference only and no resolution/frame-rate ceiling beyond browser defaults
+
+For rear-camera switching, use `facingMode: { ideal: "environment" }`; for front, `facingMode: { ideal: "user" }`. C2 does not persist exact device IDs.
+
+Fallback rules:
+
+- `OverconstrainedError` may fall to the next tier
+- missing requested facing camera may relax the facing preference once
+- `NotAllowedError`/permission denial stops immediately and never cycles through more prompts
+- security/insecure-context errors stop immediately
+- stale-generation results are stopped/discarded before any sender/preview attachment
+
+The chosen tier is local transient state. It is not server metadata or analytics identity.
+
+## Remote audio/video rendering separation
+
+C2 preserves the C1 remote audio element as the sole normal remote-audio renderer.
+
+The C2 remote video element receives a video-only MediaStream/track, is `muted`, `playsInline`, and may request autoplay. Therefore a video autoplay failure cannot silence the call's remote audio.
+
+If muted video `play()` is still rejected:
+
+- keep C1 remote audio playing
+- show an explicit `Tap to show video` recovery action
+- retry video playback on the next user gesture
+- do not mutate durable call state
+
+Local preview is also muted and video-only.
+
+## Remote video availability hysteresis
+
+WebRTC video `mute` can be transient during network/decoder changes and must not be interpreted immediately as partner intent.
+
+Initial UI policy:
+
+- on remote track `mute`, start a 1000 ms grace timer
+- if `unmute` or a decoded frame arrives before expiry, keep current UI
+- after the grace period, show neutral `Video temporarily unavailable`
+- on `unmute`, restore rendering after the next playable/decoded frame where browser APIs permit
+- never label this state as `partner turned camera off` without an authoritative local protocol signal, which C2 v1 intentionally does not have
+
+## Screen wake lock
+
+Screen Wake Lock is optional progressive enhancement only.
+
+When supported, the client may request a screen wake lock while the document is visible and a connected video call is actively rendering local or remote video.
+
+Release the wake lock on hidden/background, call end, or when no video is active. Failure to acquire/reacquire wake lock is never a call or authorization failure.
+
+## Resource and thermal degradation
+
+C2 relies primarily on browser/WebRTC congestion and encoder control.
+
+Optional app-level downshift is one-way within a call and may occur only when standardized stats show sustained CPU/resource pressure:
+
+- sample at a bounded interval, initially about every 5 seconds
+- require three consecutive samples indicating CPU limitation or severely reduced outbound frame production before stepping down one capture tier
+- enforce at least a 30-second cooldown between app-driven downshifts
+- never automatically increase capture tier during the same call
+- never automatically turn the camera off solely because of heuristic quality metrics
+
+If the camera track ends or capture can no longer be maintained, stop video honestly and preserve C1 audio where possible. The user may explicitly restart camera.
+
+Per-account raw stats/history are not persisted. Only bounded aggregate operational metrics are permitted.
+
+## C2 operational controls
+
+C2 defines fail-closed feature controls:
+
+- `videoCallCreateEnabled`: blocks new `kind = video` creation while C1 voice remains available
+- `videoCaptureEnabled`: prevents new/reacquired local camera capture in C2-capable clients; existing video-kind calls may remain audio-only
+
+These controls never rewrite durable `kind = video` to voice and never relax C1 relay-only/signaling privacy.
 
 ## Network adaptation
 
@@ -782,13 +865,19 @@ Battery and thermal behavior are part of Android acceptance.
 ### C2-G Browser and integration closure
 
 - browser capability matrix
+- deterministic camera constraint fallback ladder and permission-stop semantics
+- separate C1 audio renderer plus muted video-only remote renderer
+- remote-video mute/unmute hysteresis
+- optional wake-lock lifecycle where supported
+- bounded resource-pressure downshift behavior
 - camera permission denial
 - repeated on/off/switch leak tests
 - stale `getUserMedia()` completion fencing
 - signaling restart/reconnect with video
 - video-off audio-only continuity in a video-kind call
 - no new protocol/database authority regressions
-- C1 voice regression remains green
+- C2 operational video-create/capture controls fail closed without affecting C1 voice privacy
+- hardened C1 voice regression remains green
 
 ### C2-H Physical Android acceptance and documentation closure
 
@@ -825,6 +914,10 @@ C2 is DONE only when:
 - orientation changes do not corrupt call state
 - lifecycle termination stops camera and tears down video
 - C1-only clients fail with update-required behavior and never silently answer a video call as voice
+- camera constraint fallback does not repeat permission prompts
+- remote video autoplay failure never silences C1 remote audio
+- resource downshift never automatically enables direct transport or disables audio
+- implementation branch is recreated/rebased from final verified C1 mainline rather than this design-only ancestry
 - physical Android video acceptance passes
 - full health and dependency audit pass
 
