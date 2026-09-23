@@ -35,6 +35,11 @@ test("C1 browser keeps one local media owner and relay-only audio", async () => 
   assert.equal(media.includes("reportEndpointConnected"), true);
   assert.equal(media.includes("#pendingEndOfCandidates"), true);
   assert.equal(media.includes("this.#pendingEndOfCandidates = true"), true);
+  assert.equal(media.includes("#scheduleTurnRefresh"), true);
+  assert.equal(media.includes("#refreshTurnAndRestart"), true);
+  assert.equal(media.includes("peer.setConfiguration"), true);
+  assert.equal(media.includes("fetchTurnCredentials(this.callId)"), true);
+  assert.equal(media.includes("this.#isSettingRemoteAnswerPending = false"), true);
 });
 
 test("C1 microphone and notification permissions stay on explicit user paths", async () => {
@@ -51,4 +56,11 @@ test("C1 microphone and notification permissions stay on explicit user paths", a
   assert.equal(worker.includes('fetch("/api/v1/calls/current"'), true);
   assert.equal(worker.includes("notificationclick"), true);
   assert.equal(worker.includes("/accept"), false);
+});
+
+
+test("C1 local browser host disables camera and scopes microphone to self", async () => {
+  const vite = await source("../vite.config.ts");
+  assert.equal(vite.includes('"Permissions-Policy": "camera=(), microphone=(self)"'), true);
+  assert.equal(vite.includes("headers: c1PermissionHeaders"), true);
 });
