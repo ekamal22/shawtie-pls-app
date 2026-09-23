@@ -42,7 +42,7 @@ import type {
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
-import type { ApiConfig } from "../../config.ts";
+import { resolveCallingConfig, type ApiConfig, type CallingConfig } from "../../config.ts";
 import type { TurnCredentialProvider } from "./turn-credential-provider.ts";
 
 const IDEMPOTENCY_RETENTION_MS = 24 * 60 * 60_000;
@@ -111,11 +111,15 @@ function parseHistoryCursor(raw: string | undefined): { createdAt: Date; id: str
 }
 
 export class CallingService {
+  private readonly calling: CallingConfig;
+
   constructor(
     readonly database: DatabasePool,
-    private readonly config: ApiConfig,
+    config: ApiConfig,
     private readonly turnProvider: TurnCredentialProvider,
-  ) {}
+  ) {
+    this.calling = resolveCallingConfig(config);
+  }
 
   async #lockedLifecycle(
     transaction: QueryExecutor,
@@ -272,7 +276,7 @@ export class CallingService {
     input: CallCreateInput,
     idempotencyKey: string,
   ): Promise<CallProjection> {
-    if (!this.config.calling.enabled) throw new ApiError(503, "CALLING_UNAVAILABLE");
+    if (!this.calling.enabled) throw new ApiError(503, "CALLING_UNAVAILABLE");
     if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     if (input.kind === "video") throw new ApiError(409, "FEATURE_NOT_AVAILABLE");
 
@@ -300,7 +304,7 @@ export class CallingService {
       const existing = await loadCurrentCall(transaction, lifecycle.partnershipId);
       if (existing) throw new ApiError(409, "CALL_IN_PROGRESS");
 
-      const ringExpiresAt = new Date(now.getTime() + this.config.calling.ringTimeoutMs);
+      const ringExpiresAt = new Date(now.getTime() + this.calling.ringTimeoutMs);
       const call = await insertCallSession(transaction, {
         id: randomUUID(),
         partnershipId: lifecycle.partnershipId,
@@ -400,7 +404,7 @@ export class CallingService {
     input: CallVersionMutationInput,
     idempotencyKey: string,
   ): Promise<CallProjection> {
-    if (!this.config.calling.transportEnabled) throw new ApiError(503, "CALL_TRANSPORT_UNAVAILABLE");
+    if (!this.calling.transportEnabled) throw new ApiError(503, "CALL_TRANSPORT_UNAVAILABLE");
     if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
@@ -426,7 +430,7 @@ export class CallingService {
 
       if (call.state !== "ringing") throw new ApiError(409, "CALL_NOT_RINGING");
       if (call.version !== BigInt(input.expectedVersion)) throw new ApiError(409, "VERSION_CONFLICT");
-      const connectExpiresAt = new Date(now.getTime() + this.config.calling.connectTimeoutMs);
+      const connectExpiresAt = new Date(now.getTime() + this.calling.connectTimeoutMs);
       const accepted = await acceptCall(transaction, {
         callId: call.id,
         expectedVersion: call.version,
@@ -587,7 +591,7 @@ export class CallingService {
       if (!["accepted", "connected"].includes(call.state)) {
         throw new ApiError(409, "CALL_ACTION_NOT_ALLOWED");
       }
-      const hardExpiresAt = new Date(now.getTime() + this.config.calling.hardTimeoutMs);
+      const hardExpiresAt = new Date(now.getTime() + this.calling.hardTimeoutMs);
       const result = await recordEndpointConnected(transaction, {
         callId: call.id,
         accountId: auth.session.accountId,
@@ -625,7 +629,7 @@ export class CallingService {
   }
 
   async turn(auth: AuthContext, callId: string) {
-    if (!this.config.calling.transportEnabled || !this.turnProvider.available) {
+    if (!this.calling.transportEnabled || !this.turnProvider.available) {
       throw new ApiError(503, "CALL_TRANSPORT_UNAVAILABLE");
     }
     if (!auth.session.deviceId) throw new ApiError(404, "CALL_NOT_FOUND");

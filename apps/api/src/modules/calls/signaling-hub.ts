@@ -75,11 +75,19 @@ function validateRelayCandidate(candidate: string): boolean {
 export class CallSignalingHub {
   readonly #connections = new Map<string, ConnectionState>();
   readonly #generations = new Map<string, number>();
+  readonly #maintenance: ReturnType<typeof setInterval>;
 
   constructor(
     private readonly database: DatabasePool,
     private readonly keys: AuthKeyRing,
-  ) {}
+  ) {
+    this.#maintenance = setInterval(() => {
+      for (const state of [...this.#connections.values()]) {
+        void this.#revalidate(state);
+      }
+    }, REVALIDATE_MS);
+    this.#maintenance.unref?.();
+  }
 
   accept(
     socket: WebSocket,
@@ -138,6 +146,7 @@ export class CallSignalingHub {
   }
 
   close(): void {
+    clearInterval(this.#maintenance);
     for (const state of [...this.#connections.values()]) {
       this.#close(state, 1001, "Server shutdown");
     }

@@ -17,7 +17,7 @@ import {
   withTransaction,
   type DatabasePool,
 } from "@shawtie/db";
-import type { ApiConfig } from "../../config.ts";
+import { resolveCallingConfig, type ApiConfig } from "../../config.ts";
 import { ApiError } from "../../lib/api-error.ts";
 import {
   requireAuthentication,
@@ -103,6 +103,8 @@ async function rateLimit(
 }
 
 export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies): void {
+  const calling = resolveCallingConfig(deps.config);
+
   app.get("/api/v1/calls/current", async (request, reply) => {
     const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
     privateNoStore(reply);
@@ -164,8 +166,8 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
     await requireAuthentication(request, deps.database, deps.config, deps.keys);
     privateNoStore(reply);
     return {
-      enabled: Boolean(deps.config.calling.pushVapidPublicKey),
-      applicationServerKey: deps.config.calling.pushVapidPublicKey,
+      enabled: Boolean(calling.pushVapidPublicKey),
+      applicationServerKey: calling.pushVapidPublicKey,
     };
   });
 
@@ -195,7 +197,7 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
     {
       websocket: true,
       preValidation: async (request) => {
-        if (!deps.config.calling.transportEnabled) {
+        if (!calling.transportEnabled) {
           throw new ApiError(503, "CALL_TRANSPORT_UNAVAILABLE");
         }
         if (request.headers.origin !== deps.config.appOrigin) {

@@ -1,15 +1,27 @@
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import websocket from "@fastify/websocket";
-import { M2_REALTIME_MAX_FRAME_BYTES, M2_REALTIME_SUBPROTOCOL } from "@shawtie/contracts";
+import {
+  C1_REALTIME_SUBPROTOCOL,
+  C1_SIGNALING_MAX_FRAME_BYTES,
+  C1_SIGNALING_SUBPROTOCOL,
+  M2_REALTIME_SUBPROTOCOL,
+} from "@shawtie/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
 import {
   loadCurrentConversationReadModel,
   messageExistsInConversation,
   type DatabasePool,
 } from "@shawtie/db";
-import type { ApiConfig } from "./config.ts";
+import { resolveCallingConfig, type ApiConfig } from "./config.ts";
 import { AccountService } from "./modules/accounts/account-service.ts";
+import { CallingService } from "./modules/calls/calling-service.ts";
+import { registerCallingRoutes } from "./modules/calls/routes.ts";
+import { CallSignalingHub } from "./modules/calls/signaling-hub.ts";
+import {
+  DisabledTurnCredentialProvider,
+  HmacTurnCredentialProvider,
+} from "./modules/calls/turn-credential-provider.ts";
 import {
   PartnerRequestService,
   type PartnershipFormationCoordinator,
@@ -55,10 +67,16 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
   app.register(cookie);
   app.register(websocket, {
     options: {
-      maxPayload: M2_REALTIME_MAX_FRAME_BYTES,
+      maxPayload: C1_SIGNALING_MAX_FRAME_BYTES,
       perMessageDeflate: false,
       handleProtocols(protocols) {
-        return protocols.has(M2_REALTIME_SUBPROTOCOL) ? M2_REALTIME_SUBPROTOCOL : false;
+        if (protocols.size !== 1) return false;
+        const [protocol] = [...protocols];
+        return protocol === M2_REALTIME_SUBPROTOCOL
+          || protocol === C1_REALTIME_SUBPROTOCOL
+          || protocol === C1_SIGNALING_SUBPROTOCOL
+          ? protocol
+          : false;
       },
     },
   });
@@ -135,6 +153,34 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
   app.addHook("onClose", async () => {
     await realtimeListener.stop();
     realtimeHub.close();
+  });
+
+  const callingConfig = resolveCallingConfig(dependencies.config);
+  const turnProvider =
+    callingConfig.turnUrls.length > 0 && callingConfig.turnSharedSecret
+      ? new HmacTurnCredentialProvider(
+          callingConfig.turnUrls,
+          callingConfig.turnSharedSecret,
+          callingConfig.turnCredentialTtlMs,
+        )
+      : new DisabledTurnCredentialProvider();
+  const callingService = new CallingService(
+    dependencies.database,
+    dependencies.config,
+    turnProvider,
+  );
+  const callSignalingHub = new CallSignalingHub(dependencies.database, keys);
+  app.register(async function callingRoutes(callingApp) {
+    registerCallingRoutes(callingApp, {
+      database: dependencies.database,
+      config: dependencies.config,
+      keys,
+      service: callingService,
+      signalingHub: callSignalingHub,
+    });
+  });
+  app.addHook("onClose", async () => {
+    callSignalingHub.close();
   });
 
   const relationshipSpaceService = new RelationshipSpaceService(dependencies.database, keys, {

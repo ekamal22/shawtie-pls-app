@@ -24,7 +24,7 @@ export interface ApiConfig {
   readonly trustedProxy: false | string[];
   readonly authKeys: AuthKeyConfig;
   readonly partnerRequestMode?: PartnerRequestMode;
-  readonly calling: CallingConfig;
+  readonly calling?: CallingConfig;
 }
 
 function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): AuthKeyConfig {
@@ -122,6 +122,20 @@ function callingConfig(
     turnSharedSecret: env.C1_TURN_SHARED_SECRET ?? null,
     turnCredentialTtlMs: positiveInteger(env.C1_TURN_CREDENTIAL_TTL_MS, 10 * 60_000, "C1_TURN_CREDENTIAL_TTL_MS"),
     pushVapidPublicKey: env.C1_PUSH_VAPID_PUBLIC_KEY ?? null,
+  };
+}
+
+export function resolveCallingConfig(config: ApiConfig): CallingConfig {
+  return config.calling ?? {
+    enabled: config.environment !== "production",
+    transportEnabled: config.environment !== "production",
+    ringTimeoutMs: 60_000,
+    connectTimeoutMs: 120_000,
+    hardTimeoutMs: 6 * 60 * 60_000,
+    turnUrls: [],
+    turnSharedSecret: null,
+    turnCredentialTtlMs: 10 * 60_000,
+    pushVapidPublicKey: null,
   };
 }
 
