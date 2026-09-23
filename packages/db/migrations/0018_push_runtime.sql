@@ -21,8 +21,9 @@ CREATE TABLE push_subscriptions (
   CONSTRAINT push_subscriptions_failure_count_nonnegative CHECK (failure_count >= 0)
 );
 
-CREATE UNIQUE INDEX push_subscriptions_endpoint_unique
-  ON push_subscriptions (endpoint);
+CREATE UNIQUE INDEX push_subscriptions_active_endpoint_unique
+  ON push_subscriptions (endpoint)
+  WHERE revoked_at IS NULL;
 
 CREATE INDEX push_subscriptions_account_active
   ON push_subscriptions (account_id, device_id)
