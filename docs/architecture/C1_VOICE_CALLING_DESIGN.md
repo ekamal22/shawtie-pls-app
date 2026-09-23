@@ -315,7 +315,7 @@ C1 keeps one durable endpoint model. `call_sessions` owns aggregate call state, 
 - caller: initiating account plus fixed initiating `endpoint_device_id`
 - callee: partner account plus nullable `endpoint_device_id` until first successful acceptance
 
-The existing `call_sessions.initiated_by_account_id` remains compatibility/initiator metadata and must match the caller participant account. C1 does not add duplicate `caller_account_id`, `callee_account_id`, `caller_device_id`, or `accepted_callee_device_id` columns to `call_sessions`.
+The existing `call_sessions.initiated_by_account_id` remains compatibility/initiator metadata and must match the caller participant account. C1 does not add duplicate caller/callee account or endpoint-device authority columns to `call_sessions`.
 
 Every endpoint authorization query resolves through the participant role row and current account-device ownership.
 
