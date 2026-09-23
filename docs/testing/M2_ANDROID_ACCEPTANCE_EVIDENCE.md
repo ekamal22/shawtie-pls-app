@@ -513,4 +513,37 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 14: two-tab claim fencing
 
-- Status: pending
+- SHA: `1cf46fd` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T13:23Z
+- Result: **PASS**
+- Setup: opened a genuine second tab on the physical Redmi's real Chrome
+  (via CDP `Target.createTarget`, not a simulated context), sharing the
+  same authenticated origin and the same IndexedDB database as the first
+  tab, matching the requirement that this execute on physical Android
+  Chrome. A temporary, reverted debug hook exposed the real `M2Runtime`
+  instance in each tab so the test could call the actual production
+  `ShawtieLocalDatabase.claimChat` / `completeChatWithMessage` functions
+  directly with controlled timing, rather than replacing them with a fake
+  implementation, exactly as permitted for constructing this race.
+- Action, all using the real production functions: queued one message
+  through tab A's real `runtime.queueChat()`. Tab A claimed it
+  (`claimGeneration` 0 -> 1). The row's `claimExpiresAt` was set into the
+  past directly in IndexedDB to simulate the real ~60 second lease
+  expiring without waiting. Tab B then claimed the same row through its
+  own `claimChat` call (`claimGeneration` 1 -> 2, new owner). Tab B sent
+  the real message through the production API and completed the operation
+  through the real `completeChatWithMessage` with generation 2 (succeeded,
+  row deleted). Tab A then attempted to complete the same operation with
+  its outdated generation 1 claim and a distinct fake message payload.
+- Observed behavior: Tab A's stale completion call correctly returned
+  `false` and made no change (a real Chrome background-tab throttling
+  artifact was hit and ruled out first: an unrelated hang on a
+  backgrounded tab resolved immediately once that tab was brought to the
+  foreground via `Target.activateTarget`, confirming it was Android
+  Chrome's own tab-visibility throttling rather than a queue defect).
+  The real server recorded the message exactly once
+  (`serverSequence: 5`). Both tabs' IndexedDB `messages` stores were read
+  independently afterward and are byte-identical: five real messages, no
+  trace of the stale tab's fake duplicate payload. `chatOutbox` was empty
+  in both tabs, confirming no queue corruption survived the race.
+- Evidence: `validation-logs/screenshots/scenario14-two-tab-fencing.png`
