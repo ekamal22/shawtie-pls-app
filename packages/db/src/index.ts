@@ -288,3 +288,5 @@ export {
   type RelationshipReferenceRecord,
   type RelationshipReleaseMode,
 } from "./repositories/relationship-space.ts";
+export * from "./repositories/calls.ts";
+export * from "./repositories/push-subscriptions.ts";
