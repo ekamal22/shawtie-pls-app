@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline` and not yet merged. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`; all 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`.
+`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and fast-forward merged to `main @ b6183158` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`; all 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`.
 
 Completed milestones:
 
@@ -26,7 +26,7 @@ Completed milestones:
 | 3 P2 Partnership Formation | DONE | 11/11 gates |
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
-| 6 M2 Realtime and Offline Reliability | DONE, not yet merged | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
+| 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
 | V1 Hosted CI Verification | BLOCKED | separate track until GitHub Actions capacity returns |
 
 P3 closure evidence remains:
@@ -60,7 +60,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | --- | --- | --- | --- |
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
-| 6 M2 Realtime and Offline Reliability | DONE, not yet merged to main; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
+| 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
@@ -89,7 +89,7 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. merge `feat/m2-realtime-offline` to `main` when instructed, then begin M3/C1 only from that verified mainline
+5. M2 is merged at `main @ b6183158`; begin M3/C1 only from that verified mainline or a descendant
 6. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -219,7 +219,7 @@ R1 is DONE only after data-model, versioning, lifecycle, deletion, privacy, cros
 
 # Milestone 6: M2 Realtime and Offline Reliability
 
-Status: DONE, not yet merged to `main`. `npm run test:m2:closure` passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The run applied migrations 0001 through 0014 from zero with `reserved=0`, passed database invariants, passed the PostgreSQL/API/worker matrix 100/100, passed real Chromium 7/7, passed full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, reported 0 vulnerabilities at the high audit level, and ended with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test.
+Status: DONE, fast-forward merged to `main @ b6183158`. `npm run test:m2:closure` passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. The run applied migrations 0001 through 0014 from zero with `reserved=0`, passed database invariants, passed the PostgreSQL/API/worker matrix 100/100, passed real Chromium 7/7, passed full health with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, reported 0 vulnerabilities at the high audit level, and ended with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test.
 
 Architecture:
 
