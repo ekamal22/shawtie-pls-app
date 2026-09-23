@@ -380,6 +380,24 @@ M2 introduces no Redis and is expected to require no new PostgreSQL migration.
 
 M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
 
+## M3 media and voice-message design
+
+The concrete M3 design is `M3_MEDIA_VOICE_DESIGN.md` with HTTP/storage contract `../api/M3_MEDIA_API.md`.
+
+M3 preserves PostgreSQL/M1/R1/M2/P3 authority rather than adding a parallel media authority:
+
+- the browser validates/processes and encrypts media before upload
+- private object storage receives ciphertext under opaque random keys
+- the API issues short-lived signed grants only after current lifecycle/partnership authorization
+- `media_objects` is refined into the authoritative media identity/state/binding aggregate
+- one media object binds once to one M1 message or R1 relationship item
+- M1/R1 container visibility controls media visibility
+- existing M1/R1 realtime invalidations trigger canonical media refetch
+- P3/F2 deletion manifests gain module-owned media-object cleanup
+- M3 local binary state is separate encrypted draft state, not M2 chat-outbox payload
+- S1 remains the owner of reviewed production attachment-key distribution
+
+M3 plans forward-only migrations 0015 and 0016. Implementation has not started.
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

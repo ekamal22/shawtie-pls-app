@@ -258,6 +258,20 @@ If implementation evidence proves that new durable server schema is required, th
 
 IndexedDB local schema versions are client schema and are not PostgreSQL migration numbers.
 
+## M3 migration ownership
+
+M3 Media and Voice Messages owns the next two forward-only PostgreSQL migrations:
+
+- `0015_media_runtime.sql`
+- `0016_media_integration_runtime.sql`
+
+`0015` refines the existing `media_objects` aggregate with media kind/format, upload state, uploader device, ciphertext digest, upload generation/expiry, ready time, one-time binding fields, and deletion generation.
+
+`0016` owns M1/R1 integration hardening: media-only message support where required, container attachment indexes, immutable binding invariants, and media cleanup lookup paths.
+
+M3 must not modify M1-owned 0011/0012 or R1-owned 0013/0014. The M3 closure harness must apply real migrations 0001 through 0016 from zero with `reserved=0` and all database invariants green.
+
+No C1/C2 migration number is reserved by this design.
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.

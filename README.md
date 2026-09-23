@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified combined technical baseline is `5db7a94183bca153d142389d7188e3887653a9ec`, with the completed M1/R1 baseline contained in `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`: migrations 0001 through 0014 with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene, ending with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, with recorded evidence at `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md` and final physical acceptance SHA `b83102f`; that acceptance run found and fixed seven real M2 defects, each with a focused regression test. Hosted GitHub Actions verification remains separate under V1.
+The verified combined technical baseline is `5db7a94183bca153d142389d7188e3887653a9ec`, with the completed M1/R1 baseline contained in `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`: migrations 0001 through 0014 with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene, ending with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, with recorded evidence at `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md` and final physical acceptance SHA `b83102f`; that acceptance run found and fixed seven real M2 defects, each with a focused regression test. Hosted GitHub Actions verification remains separate under V1. M3 Media and Voice Messages now has a completed architecture/API/physical-acceptance design on `feat/m3-media-voice`; implementation has not started.
 
 ## Product direction
 
@@ -48,6 +48,9 @@ Start with:
 - `docs/architecture/M1_MESSAGING_CORE_DESIGN.md` for the refined M1 Messaging Core architecture and implementation plan
 - `docs/api/M1_MESSAGING_API.md` for the implemented M1 HTTP and synchronization contract
 - `docs/architecture/M2_REALTIME_OFFLINE_DESIGN.md` for the implemented M2 realtime/offline architecture and closure boundary
+- `docs/architecture/M3_MEDIA_VOICE_DESIGN.md` for the completed M3 media/voice architecture and implementation plan
+- `docs/api/M3_MEDIA_API.md` for the designed M3 upload, retrieval, storage, and binding contract
+- `docs/testing/M3_ANDROID_ACCEPTANCE.md` for the mandatory future M3 physical Android acceptance procedure
 - `docs/api/M2_REALTIME_PROTOCOL.md` for the M2 WebSocket protocol and invalidation contract
 - `docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md` for the completed R1 architecture and implementation design
 - `docs/api/R1_RELATIONSHIP_SPACE_API.md` for the implemented R1 HTTP contract

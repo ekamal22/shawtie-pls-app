@@ -57,6 +57,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             |       |
             v       v
        M3 Media ⚪  C1 Calling ⚪
+M3 design status: `feat/m3-media-voice` contains the completed architecture/API/device-acceptance design from `main @ 54b8659a`; implementation has not started. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
             |       |
             +---+---+
                 |

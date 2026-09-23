@@ -1306,34 +1306,195 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: PLANNED
+Status: DESIGN COMPLETE, IMPLEMENTATION NOT STARTED
+
+Branch: `feat/m3-media-voice`
+
+Base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
+
+Architecture: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
+
+API/storage contract: `docs/api/M3_MEDIA_API.md`
+
+Physical Android procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`
+
+Migration ownership:
+
+- `0015_media_runtime.sql`
+- `0016_media_integration_runtime.sql`
+
+M3 preserves M1 authoritative message order/change order, R1 container visibility, M2 canonical realtime/offline reconciliation, P3 lifecycle authority, and F2 durable cleanup. It refines the existing `media_objects` aggregate rather than introducing a second media identity system.
 
 ## Scope
 
-- image upload
-- video upload
-- general file upload
-- voice-message recording
-- client-side media processing
+- images
+- short videos
+- selected files
+- chat voice messages
+- Relationship Space attachments
+- R1 Voice Letter media
+- client-side preparation and ciphertext-only upload
 - private object storage
-- signed access
-- attachment authorization
-- encrypted-media boundary
+- opaque keys
+- short-lived signed upload/download grants
+- one-time authoritative binding
+- abandoned-upload cleanup
+- message/R1 deletion cleanup
+- partnership media deletion-manifest target
+- encrypted local media drafts
+- physical Android acceptance
+
+M3 does not own production E2EE key distribution, device crypto enrollment/recovery, calls, push notifications, server-side plaintext transcoding, or call recording.
+
+## Refined architecture decisions
+
+- protected media plaintext never reaches API/object storage
+- S1 owns the reviewed production media-key envelope; M3 exposes only a high-level crypto port and may use an impossible-to-enable-in-production test adapter for synthetic fixtures
+- one media object binds exactly once to one `message` or `relationship_item`
+- unbound media is uploader-only
+- a known media ID is never an authorization grant
+- message-bound access follows current M1 container visibility
+- R1-bound access follows current R1 release/open/reveal visibility
+- Voice Letter is media role `voice_letter`, not a standalone R1 item
+- object store is provider-neutral and never owns product authorization
+- signed URLs are short-lived bearer capabilities and never enter durable product projections/logs/cache
+- realtime uses existing content-free M1/R1 invalidations and canonical HTTP refetch
+- binary media never enters the M2 chat outbox
+- container deletion revokes new access before physical object cleanup
+- final dissolution adds `partnership_media_objects` to the P3 deletion manifest
+- object deletion is idempotent; missing object on retry is success
+- original filenames are not server metadata in M3 v1
+- active content is never rendered from arbitrary decrypted HTML/SVG
+
+## Product limits
+
+- image source <= 10 MB; re-encode/resize to <= 4096 px longest side, target about 2 MB where practical
+- video <= 50 MB and <= 120 seconds
+- selected file <= 25 MB
+- voice <= 15 MB and <= 600 seconds
+- <= 10 attachments per message
+
+## Implementation sequence
+
+### M3-A Contracts and domain
+- media kinds/formats/policy contracts
+- upload/binding state machine
+- media projections
+- message attachment extension
+- Voice Letter role validation
+- deletion/lifecycle rules
+
+### M3-B Migrations 0015/0016
+- refine `media_objects`
+- uploader device, state, digest, generation, expiry, ready time
+- immutable binding type/id/role/position
+- M1 media-only message support
+- indexes and invariants
+- canonical migrations 0001 through 0016 with no reservation
+
+### M3-C Object storage
+- `MediaObjectStore` abstraction
+- signed upload/download grants
+- object verification/checksum
+- idempotent delete
+- realistic private local test adapter
+
+### M3-D Upload API
+- policy
+- initiate
+- refresh
+- complete
+- cancel
+- abandoned-upload expiry
+- rate limits
+- replay/idempotency
+
+### M3-E Retrieval authorization
+- uploader-only unbound access
+- M1/R1 container access
+- lifecycle re-evaluation
+- short-lived signed download grants
+
+### M3-F M1 integration
+- text plus attachments
+- attachment-only messages
+- voice-only messages
+- atomic message/media binding
+- unchanged `server_sequence`/`change_sequence` semantics
+- message delete revokes media
+
+### M3-G R1 integration
+- concrete M3 media resolver
+- atomic relationship-item media binding
+- Voice Letter
+- release visibility inheritance
+- replacement/delete cleanup
+
+### M3-H Browser
+- image/video/file picker
+- image processing worker
+- voice recorder/preview/playback
+- progress/retry/cancel
+- safe decrypted rendering
+
+### M3-I Lifecycle/deletion/local storage
+- breakup and account-deletion rules
+- final dissolution
+- `partnership_media_objects` handler
+- `m3.media_delete` and `m3.media_upload_expire`
+- encrypted local draft store
+- logout/account-switch/revocation/dissolution purge
+- service-worker exclusion
+
+### M3-J Closure
+- contracts/security/PostgreSQL/object-store/browser/real-Chromium
+- full health and dependency audit
+- physical Android 18/18
+- diff/worktree hygiene
+- local/remote SHA parity
 
 ## Acceptance gates
 
-- [ ] configured attachment limits are enforced
-- [ ] client-side image processing follows product limits
-- [ ] object keys are opaque and do not contain private filenames
-- [ ] storage objects are private
-- [ ] signed access is short-lived and partnership-authorized
-- [ ] attachment IDs cannot cross partnership boundaries
-- [ ] unauthorized object retrieval fails
-- [ ] encrypted-media path is compatible with stable-release E2EE
-- [ ] media is included in deletion manifests
-- [ ] final dissolution removes media access immediately
-- [ ] storage cleanup retries safely
-- [ ] physical Android media and voice-message flows pass
+- [ ] migrations 0001 through 0016 apply from zero with `reserved=0`
+- [ ] database invariants cover media state, partnership scope, and immutable one-time binding
+- [ ] server-controlled PRD media limits are enforced
+- [ ] client image processing strips ordinary metadata through re-encoding and respects dimension policy
+- [ ] object keys are opaque and contain no user/container/private filename data
+- [ ] object storage is private
+- [ ] API/object store never receives media plaintext
+- [ ] production configuration cannot enable the M3 test-only crypto adapter
+- [ ] upload grants are short-lived and exact-scope
+- [ ] completion proves object existence and expected size/checksum where supported
+- [ ] completion retry is idempotent
+- [ ] abandoned uploads clean up safely after crash/lost response
+- [ ] unbound media is uploader-only
+- [ ] same-partnership membership alone does not expose unbound media
+- [ ] a media object cannot bind twice or cross visibility domains
+- [ ] message attachments bind atomically with M1 message creation
+- [ ] media-only messages preserve M1 ordering/change semantics
+- [ ] voice message shape is exactly constrained
+- [ ] M1 edit does not silently replace attachments
+- [ ] message deletion immediately denies new attachment grants
+- [ ] R1 media references require the concrete M3 resolver
+- [ ] Voice Letter requires voice media and inherits containing-item visibility
+- [ ] unreleased/hidden R1 media cannot be fetched through media ID
+- [ ] breakup_pending allows new chat media exactly as the PRD requires
+- [ ] R1 remains view-only during breakup
+- [ ] account-deletion overlay blocks new media writes
+- [ ] final dissolution denies new media access synchronously
+- [ ] `partnership_media_objects` deletion target is created and retry-safe
+- [ ] worker crash after object deletion is safe to replay
+- [ ] future partnership cannot access/rebind old media
+- [ ] M3 local drafts are encrypted and namespace-purged on logout/account switch/revocation/dissolution
+- [ ] IndexedDB quota failure cannot be represented as safely queued media
+- [ ] service worker never caches signed media URLs, authorized media responses, or decrypted media
+- [ ] realtime/outbox/logging excludes signed URLs, plaintext, filenames, ciphertext bodies, and key material
+- [ ] safe client rendering rejects active untrusted content
+- [ ] all 18 physical Android scenarios pass
+- [ ] full `npm run health` and `npm audit --audit-level=high` pass
+- [ ] branch/worktree/diff hygiene and local/remote SHA parity pass
+
+M3 remains IN_PROGRESS once source implementation starts and becomes DONE only after automated/local and physical Android closure are both green.
 
 # C1: Voice and Video Calling
 

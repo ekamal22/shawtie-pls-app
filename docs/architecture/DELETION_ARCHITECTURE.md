@@ -213,6 +213,26 @@ User item deletion hard-deletes preview, main content, child state, references, 
 
 If R1 introduces storage outside the relationship-item relational tree, the deletion manifest and retry-safe handlers must be extended before R1 can close.
 
+## M3 media deletion integration
+
+M3 does not create a second partnership deletion workflow.
+
+After M3, the P3 dissolution manifest includes a module-owned `partnership_media_objects` target in addition to relational and crypto-state targets. The current relational cleanup must not delete `media_objects` metadata before object cleanup has enough information to locate and delete ciphertext.
+
+Security ordering is:
+
+1. P3 terminates partnership and revokes authorization synchronously
+2. no new media access/upload/bind grant is issued
+3. `partnership_media_objects` durable cleanup deletes private object-store ciphertext idempotently
+4. media metadata is removed after its object is deleted or already absent
+
+Missing object on retry is success. A worker crash after object deletion but before row deletion must replay safely. Storage-provider outage leaves the manifest incomplete while access remains revoked.
+
+Individual message/R1 media deletion may use generation-fenced `m3.media_delete` scheduled work. Abandoned upload cleanup uses `m3.media_upload_expire`. These do not replace the partnership deletion manifest.
+
+Final dissolution, logout, account switch, and device/session revocation also purge M3 local encrypted-draft namespaces when the client observes the authoritative state.
+
+See `M3_MEDIA_VOICE_DESIGN.md` for the full binding and cleanup model.
 ## Failure behavior
 
 If a deletion target fails:

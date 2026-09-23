@@ -25,6 +25,8 @@ Frozen means implementation should proceed against the accepted baseline unless 
 
 M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test.
 
+M3 Media and Voice Messages design is complete on `feat/m3-media-voice` from `main @ 54b8659a`. Implementation has not started. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
+
 This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
 
 Governance:
@@ -70,6 +72,8 @@ The selected architecture is:
 - `api/M1_MESSAGING_API.md`
 - `architecture/M2_REALTIME_OFFLINE_DESIGN.md`
 - `api/M2_REALTIME_PROTOCOL.md`
+- `architecture/M3_MEDIA_VOICE_DESIGN.md`
+- `api/M3_MEDIA_API.md`
 - `architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
 - `api/R1_RELATIONSHIP_SPACE_API.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
@@ -90,6 +94,7 @@ The selected architecture is:
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
 - `testing/M2_ANDROID_ACCEPTANCE.md`
+- `testing/M3_ANDROID_ACCEPTANCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 

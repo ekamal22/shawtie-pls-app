@@ -196,3 +196,15 @@ The UI must distinguish:
 - read
 
 A locally queued message must not be represented as delivered.
+
+## M3 media handoff
+
+M3 does not place binary media in the M2 chat or R1 mutation outboxes. Media uses a separate account-bound local encrypted-draft store. Plaintext media drafts are never persisted.
+
+Uploads require network access, but an encrypted local draft may survive temporary loss if IndexedDB persistence succeeds. Quota/storage failure must not be represented as successful queueing.
+
+Service worker remains app-shell/static only and must not cache signed media URLs, authorized media responses, ciphertext downloads requiring current authorization, or decrypted media.
+
+Logout, account switch, device/session revocation, final dissolution, and future-partnership transition purge the relevant M3 local namespace together with the existing M2 privacy boundary.
+
+See `M3_MEDIA_VOICE_DESIGN.md`.

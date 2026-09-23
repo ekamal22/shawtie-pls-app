@@ -61,7 +61,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
+| 7 M3 Media and Voice Messages | DESIGN COMPLETE, implementation not started | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
 | 10 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -89,7 +89,7 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M2 is merged at `main @ b6183158`; begin M3/C1 only from that verified mainline or a descendant
+5. M2 is merged at `main @ b6183158`; M3 design is complete on `feat/m3-media-voice` from current `main @ 54b8659a`; implementation may begin from that verified mainline
 6. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -348,31 +348,53 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: PLANNED.
+Status: DESIGN COMPLETE, implementation not started.
+
+Branch: `feat/m3-media-voice`.
 
 Depends on verified M2.
 
+Canonical architecture: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
+
+Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`.
+
+Physical Android procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`.
+
+Migration ownership: `0015_media_runtime.sql` and `0016_media_integration_runtime.sql`.
+
 ## Goal
 
-Add private media and recorded voice while preserving partnership authorization, deletion, and future E2EE compatibility.
+Add private images, short video, selected files, chat voice messages, Relationship Space media attachments, and Voice Letters without creating a second message system, relationship system, realtime authority, deletion workflow, or unreviewed production cryptographic protocol.
 
-## Core scope
+## Core architecture
 
-- images
-- short video
-- selected files
-- voice messages
-- client-side media preparation
-- private object storage
-- opaque object keys
-- short-lived signed access
-- attachment authorization
-- deletion-manifest integration
-- E2EE-compatible media path
+- client-side media validation/processing before encryption
+- ciphertext-only private object storage
+- opaque object keys and short-lived signed upload/download grants
+- PostgreSQL media identity and one-time container binding
+- M1 atomic attachment binding and unchanged sequence semantics
+- R1 media resolver and Voice Letter visibility inherited from the containing item
+- M2 canonical invalidation/refetch instead of media-content WebSocket frames
+- P3/F2 durable object deletion with authorization revoked before physical cleanup
+- separate encrypted local media-draft state, never binary reuse of M2 chat outbox
+- S1 remains owner of reviewed production media-key distribution
+
+## Implementation slices
+
+1. M3-A contracts/domain and server-controlled media policy
+2. M3-B migrations 0015/0016 plus database invariants
+3. M3-C provider-neutral private object-store adapter
+4. M3-D upload/refresh/complete/cancel and abandoned-upload cleanup
+5. M3-E download authorization and short-lived access grants
+6. M3-F M1 attachments, media-only messages, and voice messages
+7. M3-G R1 media resolver and Voice Letter integration
+8. M3-H browser media/voice UX and safe rendering
+9. M3-I lifecycle, deletion, local storage, and service-worker hardening
+10. M3-J automated/local closure plus mandatory physical Android acceptance
 
 ## Closure boundary
 
-M3 must prove size limits, private storage, authorization, signed-access expiry, cross-partnership denial, deletion behavior, cleanup retry, and physical Android media flows.
+M3 must prove PRD size/duration limits, private ciphertext storage, short-lived grant expiry, one-time binding, cross-partnership denial, Voice Letter container visibility, immediate access revocation on container/lifecycle deletion, retry-safe object cleanup, future-partnership isolation, service-worker exclusion, and all 18 physical Android scenarios.
 
 **REDMI PHONE REQUIRED: YES.**
 
