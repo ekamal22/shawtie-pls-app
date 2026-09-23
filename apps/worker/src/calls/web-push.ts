@@ -14,6 +14,8 @@ export interface WebPushConfig {
   readonly privateKey: string;
 }
 
+const WEB_PUSH_REQUEST_TIMEOUT_MS = 10_000;
+
 function base64url(value: Buffer): string {
   return value.toString("base64url");
 }
@@ -150,18 +152,30 @@ export async function sendWebPush(
     subscription,
     Buffer.from(JSON.stringify(payload), "utf8"),
   );
-  const response = await fetch(subscription.endpoint, {
-    method: "POST",
-    signal,
-    headers: {
-      authorization: vapidAuthorization(subscription.endpoint, config, now),
-      "content-encoding": "aes128gcm",
-      "content-type": "application/octet-stream",
-      ttl: "60",
-      urgency: "high",
-    },
-    body,
-  });
+  const requestController = new AbortController();
+  const timeout = setTimeout(() => requestController.abort(), WEB_PUSH_REQUEST_TIMEOUT_MS);
+  const abortFromWorker = () => requestController.abort(signal.reason);
+  if (signal.aborted) abortFromWorker();
+  else signal.addEventListener("abort", abortFromWorker, { once: true });
+
+  let response: Response;
+  try {
+    response = await fetch(subscription.endpoint, {
+      method: "POST",
+      signal: requestController.signal,
+      headers: {
+        authorization: vapidAuthorization(subscription.endpoint, config, now),
+        "content-encoding": "aes128gcm",
+        "content-type": "application/octet-stream",
+        ttl: "60",
+        urgency: "high",
+      },
+      body,
+    });
+  } finally {
+    clearTimeout(timeout);
+    signal.removeEventListener("abort", abortFromWorker);
+  }
   if (response.status === 404 || response.status === 410) {
     return { delivered: false, gone: true };
   }
