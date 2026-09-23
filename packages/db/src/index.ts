@@ -288,3 +288,26 @@ export {
   type RelationshipReferenceRecord,
   type RelationshipReleaseMode,
 } from "./repositories/relationship-space.ts";
+
+export {
+  bindMediaObject,
+  deleteMediaObjectMetadata,
+  getMediaDeletionGeneration,
+  getMediaUploadGeneration,
+  insertMediaUpload,
+  listBoundMediaForContainer,
+  listPartnershipMediaForDeletion,
+  loadMediaForDeletion,
+  loadMediaObject,
+  lockMediaObject,
+  lockMediaObjectsForBinding,
+  markBoundMediaDeletionPending,
+  markMediaDeletionPending,
+  markMediaReady,
+  refreshMediaUpload,
+  type MediaBindingRole,
+  type MediaBindingType,
+  type MediaKind,
+  type MediaObjectRecord,
+  type MediaState,
+} from "./repositories/media.ts";

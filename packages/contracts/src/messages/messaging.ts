@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { M3_ATTACHMENTS_PER_MESSAGE_MAX, mediaAttachmentProjectionSchema, messageMediaAttachmentInputSchema } from "../media/media.ts";
 
 export const M1_MESSAGE_MAX_UTF8_BYTES = 8_192;
 export const M1_MESSAGE_MAX_CHARACTERS = 4_000;
@@ -45,10 +46,36 @@ export const messageBodySchema = boundedUtf8(M1_MESSAGE_MAX_UTF8_BYTES)
   .transform((value) => value.trim())
   .pipe(z.string().min(1).max(M1_MESSAGE_MAX_CHARACTERS));
 
-export const messageSendSchema = z.object({
-  body: messageBodySchema,
-  replyToMessageId: uuid.nullable().optional().default(null),
-});
+export const messageSendSchema = z
+  .object({
+    body: messageBodySchema.nullable().optional().default(null),
+    replyToMessageId: uuid.nullable().optional().default(null),
+    attachments: z.array(messageMediaAttachmentInputSchema).max(M3_ATTACHMENTS_PER_MESSAGE_MAX).default([]),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.body === null && value.attachments.length === 0) {
+      context.addIssue({ code: "custom", message: "message cannot be empty" });
+    }
+    const positions = new Set<number>();
+    for (const attachment of value.attachments) {
+      if (positions.has(attachment.position)) {
+        context.addIssue({ code: "custom", message: "attachment positions must be unique" });
+        break;
+      }
+      positions.add(attachment.position);
+    }
+    const voice = value.attachments.filter((attachment) => attachment.role === "voice_message");
+    if (
+      voice.length > 0 &&
+      (voice.length !== 1 || value.attachments.length !== 1 || value.body !== null)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "voice message must be one voice attachment with no text",
+      });
+    }
+  });
 
 export const messageEditSchema = z.object({
   body: messageBodySchema,
@@ -134,6 +161,7 @@ export const messageProjectionSchema = z.object({
       emoji: reactionEmojiSchema,
     }),
   ),
+  attachments: z.array(mediaAttachmentProjectionSchema).max(M3_ATTACHMENTS_PER_MESSAGE_MAX),
 });
 
 export const conversationChangeSchema = z.object({

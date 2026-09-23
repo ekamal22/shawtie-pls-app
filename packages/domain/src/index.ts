@@ -18,3 +18,11 @@ export type { AccountRuleDenialCode, RuleDecision, UsernameValue } from "./accou
 
 export * from "./relationship-space/types.ts";
 export * from "./relationship-space/rules.ts";
+
+export {
+  mediaBindingAllowed,
+  mediaFormatAllowed,
+  mediaRoleAllowed,
+  type MediaFormatCode,
+  type MediaKind,
+} from "./media/rules.ts";
