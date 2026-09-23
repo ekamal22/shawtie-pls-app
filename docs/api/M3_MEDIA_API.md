@@ -2,7 +2,7 @@
 
 ## Status
 
-**Design complete. Implementation not started.**
+**Design complete. Second-pass hardened. Implementation not started.**
 
 Branch: `feat/m3-media-voice`
 Required base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
@@ -79,7 +79,7 @@ Signed upload URL and required signing headers must never enter routine logs.
 
 ## POST /api/v1/media/:mediaId/refresh-upload
 
-Refreshes only the current uploader's still-authorized `uploading` object. It cannot change media identity, partnership, object key, or revive bound/deleting media. Refresh is generation-fenced.
+Refreshes only the current uploader's still-authorized `uploading` object. It cannot change media identity, partnership, object key, expected ciphertext bytes, digest, crypto protocol version, or revive bound/deleting media. Refresh is generation-fenced.
 
 ## POST /api/v1/media/:mediaId/complete
 
@@ -135,6 +135,47 @@ Binding commits in the same transaction as the R1 reference. Removing/replacing 
 
 Object keys are random opaque values and do not encode account, partnership, container, filename, or MIME information.
 
+## Whole-object transfer contract
+
+M3 v1 uses whole-object ciphertext transfer only.
+
+Upload:
+
+- one media ID maps to one expected ciphertext length and digest
+- retry uses a refreshed signed whole-object PUT for the same object key
+- `refresh-upload` may rotate grant/generation but cannot change expected ciphertext bytes/digest/protocol metadata
+- changing encrypted bytes requires cancel/new media ID
+- multipart/resumable upload sessions are out of scope for M3 v1
+
+Download:
+
+- `access` grants the whole ciphertext object
+- HTTP range playback is not part of the M3 v1 contract
+- client fetches/decrypts the whole object before rendering/playing/downloading
+- a future chunk/range protocol requires reviewed cryptographic framing and explicit versioning
+
+## Object-store/CORS requirements
+
+The production provider adapter must verify deployment configuration for private objects, exact trusted-origin CORS, required methods/headers only, short-lived grants, opaque keys, and no public listing/read.
+
+Protected object responses should use no-store/private cache behavior where provider controls allow it. The application service worker must not cache provider signed URLs or decrypted output.
+
+## Operational feature controls
+
+Server-side operational controls may independently disable:
+
+- new upload initiation/refresh
+- new media binding
+- new download-grant issuance
+
+Disabled/provider-unavailable behavior returns bounded service-unavailable/media-unavailable errors and never falls back to plaintext upload/download through the API.
+
+## Crypto-adapter compatibility
+
+The M3 API never receives or stores recipient media keys/key envelopes. `cryptoProtocolVersion` is metadata only.
+
+Test-only crypto protocol versions must be rejected by production configuration. S1 later supplies production media-key/envelope handling in the protected M1/R1 container representation without changing M3 object authorization semantics.
+
 ## Lifecycle semantics
 
 - active: normal upload/bind/access
@@ -155,6 +196,10 @@ M3 creates no media-content WebSocket channel. M1 `message.created` and R1 `rela
 Realtime/outbox payloads must never contain signed URLs, filenames, plaintext, ciphertext bytes, or decryption material.
 
 Service worker must never cache signed media URLs, authorized media responses, or decrypted media.
+
+## Provider outage semantics
+
+Storage-provider errors never cause an API plaintext-proxy fallback or public-object fallback. New upload/download operations fail closed with bounded retryable errors. Existing M1/R1 projections may display temporary media-unavailable state. Deletion jobs remain durable/retryable.
 
 ## Logging
 

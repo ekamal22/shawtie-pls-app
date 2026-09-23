@@ -8,7 +8,7 @@ Foundation implementation and the first two parallel product-substrate milestone
 
 M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`: migrations 0001 through 0014 apply from zero with `reserved=0`, database invariants pass, the PostgreSQL/API/worker matrix passes 100/100 with `M2_LOCAL_POSTGRES_PASS`, real Chromium passes 7/7 with `M2_LOCAL_BROWSER_PASS`, full health passes with Domain 60/60, Contracts 36/36, API unit/security 49/49, and Worker 9/9, the high-severity audit reports 0 vulnerabilities, and `M2_AUTOMATED_CLOSURE_PASS` is recorded. All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S (Android 12), recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`, final physical acceptance SHA `b83102f` on `feat/m2-realtime-offline`. That physical run found and fixed seven real defects in the M2 realtime/offline implementation not caught by the automated/local closure, each with a focused regression test; see the evidence document and the branch's commit history. M2 is merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`.
 
-M3 Media and Voice Messages architecture and implementation design is complete on `feat/m3-media-voice`, created from merged-M2 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. Implementation has not started. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`. Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`. Physical Android closure procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`. M3 owns planned migrations 0015 and 0016, one-time media binding, signed ciphertext transport, M1/R1 media integration, durable object cleanup, and encrypted local media drafts while S1 remains the owner of reviewed production media-key distribution.
+M3 Media and Voice Messages architecture and implementation design is complete and second-pass hardened on `feat/m3-media-voice`, created from merged-M2 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. Implementation has not started. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`. Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`. Physical Android closure procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`. M3 owns planned migrations 0015 and 0016, one-time media binding, signed ciphertext transport, M1/R1 media integration, durable object cleanup, and encrypted local media drafts while S1 remains the owner of reviewed production media-key distribution.
 
 ## Product definition
 
@@ -176,7 +176,8 @@ M2 Realtime and Offline Reliability was created from documentation-correct `main
 1. preserve M1 ownership of migrations 0011 and 0012 and R1 ownership of migrations 0013 and 0014
 2. preserve the verified P3 lifecycle, capability, authorization-revocation, cooldown, blocking, notification, and deletion boundaries
 3. preserve M1 `server_sequence` as immutable message-history order and `change_sequence` as durable mutation-synchronization order
-4. M3 design is complete on `feat/m3-media-voice`; begin implementation only from the verified M2 mainline boundary and preserve the documented M1/R1/M2/P3 ownership seams
+4. M3 design is complete and hardened on `feat/m3-media-voice`; implement/close real 0015/0016 from the verified M2 mainline, and merge those real migrations before C1 final integrated closure
+5. C1 may develop in parallel only through migration reservations; no placeholder M3 migrations are permitted
 5. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy

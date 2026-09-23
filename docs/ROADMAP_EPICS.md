@@ -1348,6 +1348,14 @@ M3 does not own production E2EE key distribution, device crypto enrollment/recov
 
 ## Refined architecture decisions
 
+- M3 v1 uses whole-object ciphertext PUT/GET; no multipart upload or range-decrypt contract
+- interrupted retry reuses identical encrypted draft bytes/digest; changed ciphertext requires a new media ID
+- signed provider access is exact-origin/private and never falls back through plaintext API proxy
+- server-side upload/binding/download feature controls fail closed during provider incidents
+- production rejects test-only crypto protocol versions; S1 owns key envelopes inside protected M1/R1 content
+- M3 real 0015/0016 must merge before C1 final integrated closure
+
+
 - protected media plaintext never reaches API/object storage
 - S1 owns the reviewed production media-key envelope; M3 exposes only a high-level crypto port and may use an impossible-to-enable-in-production test adapter for synthetic fixtures
 - one media object binds exactly once to one `message` or `relationship_item`
@@ -1490,7 +1498,7 @@ M3 does not own production E2EE key distribution, device crypto enrollment/recov
 - [ ] service worker never caches signed media URLs, authorized media responses, or decrypted media
 - [ ] realtime/outbox/logging excludes signed URLs, plaintext, filenames, ciphertext bodies, and key material
 - [ ] safe client rendering rejects active untrusted content
-- [ ] all 18 physical Android scenarios pass
+- [ ] all 20 physical Android scenarios pass
 - [ ] full `npm run health` and `npm audit --audit-level=high` pass
 - [ ] branch/worktree/diff hygiene and local/remote SHA parity pass
 

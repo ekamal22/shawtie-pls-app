@@ -2,7 +2,7 @@
 
 ## Status and base
 
-**Status:** DESIGN COMPLETE, IMPLEMENTATION NOT STARTED
+**Status:** DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION NOT STARTED
 **Branch:** `feat/m3-media-voice`
 **Required base:** `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
@@ -375,6 +375,115 @@ unboundUploadRetentionSeconds
 
 Client policy is advisory. API policy is authoritative.
 
+## Transfer and playback semantics
+
+M3 v1 deliberately uses whole-object ciphertext transfer.
+
+Upload behavior:
+
+- one signed whole-object PUT per media object
+- no multipart/resumable upload protocol in M3 v1
+- `refresh-upload` issues a new short-lived grant for the same media ID/object key and increments upload generation
+- refresh cannot change `ciphertextBytes`, `ciphertextSha256`, `cryptoProtocolVersion`, or media kind
+- an interrupted retry reuses the exact persisted encrypted draft bytes
+- if the encrypted draft is no longer available or its digest changes, cancel the old media object and create a new media ID
+- a partial/failed provider object is never considered usable until `complete` verifies the current whole object
+
+This keeps the M3 transport simple and prevents a pre-S1 ad hoc chunk-authentication format. The current product cap is 50 MB, so whole-object retry is acceptable for the first stable implementation.
+
+Download/playback behavior:
+
+- M3 v1 grants one whole ciphertext object
+- browser fetches the complete ciphertext before decrypting
+- decrypted output becomes a short-lived in-memory/Blob URL for image/audio/video rendering or file download
+- M3 v1 does not promise HTTP range playback or resumable encrypted download
+- voice/video UI must expose honest loading state rather than pretending media is streamable before decryption completes
+- memory/allocation failure is a local media failure and never falls back to plaintext server proxying
+
+Future range/resumable encrypted playback requires a reviewed chunk-authenticated media framing owned by S1 or a later accepted ADR. It must not be inferred from ordinary HTTP range support.
+
+## Object-store HTTP and CORS policy
+
+Private object storage must be configured with:
+
+- no public bucket/container listing
+- no anonymous object reads
+- opaque object keys
+- exact trusted application origins only, never wildcard credentialed CORS
+- only the methods required by the adapter, normally PUT/GET/HEAD/DELETE through signed/provider calls
+- only required signed/request headers
+- `Content-Type: application/octet-stream` for protected ciphertext where practical
+- no-store/private cache behavior on signed protected downloads where provider controls allow it
+- bounded signed-grant TTL
+- provider-side object size/checksum verification where supported
+
+The application API must never proxy plaintext media as a fallback for a CORS, storage-provider, or signed-URL failure.
+
+## Provider outage and feature controls
+
+M3 defines independent server-side operational controls:
+
+- `mediaUploadInitiationEnabled`: block new upload creation and refresh without affecting existing text messaging
+- `mediaBindingEnabled`: block new attachment/Voice Letter binding while preserving reads of already-bound media
+- `mediaDownloadGrantEnabled`: block new signed download grants
+
+These controls are operational safety switches, not authorization inputs from the browser.
+
+Provider outage behavior is fail-closed:
+
+- no plaintext/API-proxy fallback
+- no public object URL fallback
+- no conversion of failed upload into a queued/sent message
+- existing M1/R1 metadata may render a temporary media-unavailable state
+- durable deletion work remains retryable until provider access returns
+
+## Operational budgets and observability
+
+Server policy must bound media abuse and cost with account/device/partnership/IP-aware controls appropriate to the existing abuse model.
+
+Privacy-safe operational metrics may include aggregate counts/bytes/latency by media kind, provider operation, outcome category, retry count, cleanup backlog, and storage error category.
+
+Do not emit original filename, signed URL, object body, plaintext metadata, ciphertext body, key material, partner identity, or relationship content into metrics.
+
+Alertable conditions include:
+
+- sustained upload-completion failure
+- download-grant provider errors
+- deletion backlog age
+- abandoned-upload cleanup backlog
+- unexpected storage-byte growth relative to bound media metadata
+- rate-limit/abuse spikes
+
+## S1 crypto handoff contract
+
+M3 transport treats cryptography as a versioned client boundary.
+
+`MediaCryptoPort` must expose enough information for the browser to produce/consume ciphertext, but the M3 HTTP/storage API receives only ciphertext bytes, byte length, digest, media metadata, and `cryptoProtocolVersion`.
+
+M3 does not persist media keys or recipient key envelopes in `media_objects`.
+
+Before S1, synthetic tests may use a test-only adapter. Production configuration must reject test-only protocol versions.
+
+After S1:
+
+- S1 owns media-key generation/distribution and any encrypted attachment descriptor/key envelope
+- the envelope belongs inside the S1-protected M1/R1 container representation, not object-store metadata
+- M3 continues transporting opaque ciphertext with the same media identity/storage lifecycle
+- changing the ciphertext framing or enabling chunked/range decryption requires a reviewed protocol version and compatibility tests
+
+## Cross-milestone integration choreography
+
+M3 and C1 may implement in parallel, but migration ownership creates a strict integration order:
+
+1. M3 implements and closes real migrations 0015 and 0016 from the verified M2 mainline
+2. C1 may develop independently using the documented reservation mechanism for 0015/0016
+3. M3 must merge its real 0015/0016 migrations before C1 final integrated closure
+4. C1 must then reconcile/rebase/merge onto the mainline containing real 0015/0016
+5. C1 final closure runs the real contiguous 0001-0018 chain with `reserved=0`
+6. C2 remains blocked until verified C1 is merged
+
+No branch may fabricate placeholder M3 migrations to satisfy C1 numbering.
+
 ## Implementation sequence
 
 ### M3-A Contracts and domain
@@ -451,7 +560,7 @@ npm run test:m3:device:cleanup
 
 ## Physical Android acceptance
 
-M3 is not DONE from desktop automation alone. `docs/testing/M3_ANDROID_ACCEPTANCE.md` defines 18 mandatory physical scenarios covering image/video/file/voice flows, permission denial, backgrounding, network failure, lost finalize response, local quota failure, breakup/account-deletion/final-dissolution races, signed URL TTL behavior, later-partnership isolation, device revocation, Voice Letter visibility, service-worker safety, and two-tab fencing.
+M3 is not DONE from desktop automation alone. `docs/testing/M3_ANDROID_ACCEPTANCE.md` defines 20 mandatory physical scenarios covering image/video/file/voice flows, permission denial, backgrounding, network failure, lost finalize response, local quota failure, breakup/account-deletion/final-dissolution races, signed URL TTL behavior, later-partnership isolation, device revocation, Voice Letter visibility, service-worker safety, and two-tab fencing.
 
 ## Closure gates
 
@@ -475,6 +584,9 @@ M3 is DONE only after all of the following are green:
 - future partnership cannot access old media
 - service worker never caches protected media
 - plaintext/decryption material never enters logs/events/outbox
+- v1 whole-object retry/download semantics are verified and no multipart/range crypto behavior is silently introduced
+- provider outage/feature-control behavior fails closed without plaintext/API proxy fallback
+- M3 merges real 0015/0016 before C1 final integrated closure
 - physical Android matrix passes
 - full repository health and high-severity dependency audit pass
 - diff/worktree hygiene and local/remote SHA parity pass

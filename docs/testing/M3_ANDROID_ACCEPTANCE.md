@@ -4,7 +4,7 @@
 
 Procedure defined. Execution begins only after M3 automated/local closure is green.
 
-M3 is not DONE until every mandatory physical scenario passes on a supported physical Android device and committed evidence records the exact tested SHA.
+M3 is not DONE until all 20 mandatory physical scenarios pass on a supported physical Android device and committed evidence records the exact tested SHA.
 
 Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
 Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`
@@ -45,6 +45,9 @@ Never commit real private media, cookies, signed URLs, key material, secrets, or
 16. R1 Voice Letter visibility: media cannot be fetched before containing item visibility permits it, then becomes accessible after release/open.
 17. Service-worker update: no signed URL, authorized media response, or decrypted media enters Cache API; M2 update safety remains intact.
 18. Two-tab safety: stale generation/claim work cannot finalize/bind over newer ownership; durable result is exactly once.
+
+19. Whole-object retry identity: interrupt a near-limit encrypted video/file upload, refresh the grant, retry the exact encrypted draft, verify the ciphertext digest is unchanged and only one media object/message becomes authoritative.
+20. Provider outage/degraded mode: make the object store unavailable, verify new media operation fails honestly, no API/plaintext fallback occurs, text messaging remains usable, and existing metadata renders media unavailable without claiming deletion or delivery.
 
 ## Closure
 

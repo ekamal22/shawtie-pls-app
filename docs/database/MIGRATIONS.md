@@ -271,7 +271,7 @@ M3 Media and Voice Messages owns the next two forward-only PostgreSQL migrations
 
 M3 must not modify M1-owned 0011/0012 or R1-owned 0013/0014. The M3 closure harness must apply real migrations 0001 through 0016 from zero with `reserved=0` and all database invariants green.
 
-No C1/C2 migration number is reserved by this design.
+C1 separately designs ownership of 0017/0018. M3 must merge real 0015/0016 before C1 final integrated closure. Isolated C1 work may reserve 0015/0016 through the documented reservation mechanism, but no placeholder M3 SQL is permitted.
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.
