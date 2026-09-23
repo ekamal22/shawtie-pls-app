@@ -86,12 +86,18 @@ export class RealtimeHub {
   readonly #byPartnership = new Map<string, Set<string>>();
   readonly #byConversation = new Map<string, Set<string>>();
   readonly #maintenance: ReturnType<typeof setInterval>;
+  private readonly database: DatabasePool;
+  private readonly keys: AuthKeyRing;
+  private readonly handleTransientFrame: RealtimeClientFrameHandler;
 
   constructor(
-    private readonly database: DatabasePool,
-    private readonly keys: AuthKeyRing,
-    private readonly handleTransientFrame: RealtimeClientFrameHandler,
+    database: DatabasePool,
+    keys: AuthKeyRing,
+    handleTransientFrame: RealtimeClientFrameHandler,
   ) {
+    this.database = database;
+    this.keys = keys;
+    this.handleTransientFrame = handleTransientFrame;
     this.#maintenance = setInterval(() => {
       void this.#runMaintenance();
     }, MAINTENANCE_INTERVAL_MS);

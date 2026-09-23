@@ -10,7 +10,11 @@ import {
 import type { DatabasePool } from "@shawtie/db";
 
 export class RealtimeTransientPublisher {
-  constructor(private readonly database: DatabasePool) {}
+  private readonly database: DatabasePool;
+
+  constructor(database: DatabasePool) {
+    this.database = database;
+  }
 
   async publish(notification: M2InternalRealtimeNotification): Promise<void> {
     const parsed = m2InternalRealtimeNotificationSchema.safeParse(notification);
