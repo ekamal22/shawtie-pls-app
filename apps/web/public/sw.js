@@ -11,7 +11,7 @@ function cacheableResponse(response) {
 }
 
 self.addEventListener("install", () => {
-  // Activation is explicitly coordinated by the page. No skipWaiting here.
+  // Activation is explicitly coordinated by the page rather than during install.
 });
 
 self.addEventListener("activate", (event) => {
