@@ -106,10 +106,6 @@ SET
 FROM call_sessions AS session
 WHERE session.id = participant.call_session_id;
 
-ALTER TABLE account_devices
-  ADD CONSTRAINT account_devices_id_account_unique
-  UNIQUE (id, account_id);
-
 ALTER TABLE account_sessions
   ADD CONSTRAINT account_sessions_endpoint_identity_unique
   UNIQUE (id, account_id, device_id);
