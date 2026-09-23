@@ -16,6 +16,8 @@ import {
   insertScheduledAction,
   loadCall,
   recordEndpointConnected,
+  revokePushSubscriptionForDevice,
+  upsertPushSubscription,
   type DatabasePool,
 } from "@shawtie/db";
 import { createDefaultScheduledHandlers } from "../src/auth/default-account-handlers.ts";
@@ -218,6 +220,58 @@ test("C1 first endpoint attestation preserves accepted timeout generation", asyn
     assert.equal(ended?.state, "ended");
     assert.equal(ended?.terminalReason, "failed");
     assert.equal(ended?.deadlineGeneration, 3n);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+test("C1 revoked push endpoint can be safely rebound without duplicate active routing", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await reset(database);
+    const at = new Date();
+    const data = await fixture(database, at);
+    const endpoint = "https://push.example.test/c1-rebind";
+
+    await upsertPushSubscription(database.pool, {
+      deviceId: data.alice.deviceId,
+      accountId: data.alice.accountId,
+      endpoint,
+      p256dh: "alice-p256dh",
+      auth: "alice-auth-secret",
+      expirationTimeMs: null,
+      now: at,
+    });
+    await revokePushSubscriptionForDevice(
+      database.pool,
+      data.alice.deviceId,
+      data.alice.accountId,
+      new Date(at.getTime() + 1_000),
+    );
+    await upsertPushSubscription(database.pool, {
+      deviceId: data.bob.deviceId,
+      accountId: data.bob.accountId,
+      endpoint,
+      p256dh: "bob-p256dh",
+      auth: "bob-auth-secret",
+      expirationTimeMs: null,
+      now: new Date(at.getTime() + 2_000),
+    });
+
+    const rows = await database.pool.query<{
+      device_id: string;
+      account_id: string;
+      revoked_at: Date | null;
+    }>(
+      "SELECT device_id, account_id, revoked_at FROM push_subscriptions WHERE endpoint=$1 ORDER BY created_at",
+      [endpoint],
+    );
+    assert.equal(rows.rowCount, 2);
+    assert.equal(rows.rows.filter((row) => row.revoked_at === null).length, 1);
+    assert.equal(
+      rows.rows.find((row) => row.revoked_at === null)?.device_id,
+      data.bob.deviceId,
+    );
   } finally {
     await closeDatabasePool(database);
   }
