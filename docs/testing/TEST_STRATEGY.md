@@ -517,34 +517,49 @@ Coverage must include:
 
 - one non-terminal call per partnership under simultaneous initiation
 - first-accept-wins with two callee devices
-- fixed caller endpoint and selected-device integrity
+- fixed caller endpoint and participant rows as sole endpoint-role/device authority
 - create/accept/reject/cancel/end lost-response idempotency
-- expectedVersion races
-- ring/connect/hard timeout generation fencing
+- expectedVersion races for aggregate commands
+- endpoint-connected without expectedVersion, including concurrent caller/callee reports
+- first endpoint-connected report does not invalidate accepted-call connect timeout
+- independent deadline_generation fencing for ring/connect/hard timeout work
 - active/breakup/account-deletion/terminated lifecycle behavior
 - selected-device and session revocation
 - future-partnership call-history isolation
 - final-dissolution history cleanup
 - realtime v1/v2 negotiation and `call.changed` content minimization
+- call.changed dirty-counter barrier race and visible anti-entropy repair after deliberately suppressed hint
 - stale v1 client not treated as C1-capable
 - exact Origin/session/device/call authorization on `shawtie.call.v1`
 - unaccepted/random/foreign/non-winning-device signaling denial
 - binary/oversized/unknown/stale-generation signaling denial
+- shared WebSocket zero/multiple/cross-family subprotocol rejection
+- M2 4 KiB application-frame rejection remains intact after signaling integration
 - SDP candidate-line rejection
+- exactly-one-audio SDP enforcement and video/data-channel rejection
 - host/srflx/prflx/malformed candidate rejection
+- privacy-unsafe relay related/base-address rejection
 - relay-only candidate forwarding
 - SDP/ICE/TURN/push capability absence from persistence and logs
 - perfect-negotiation glare handling
 - candidate-before-description buffering
 - signaling reconnect and process-loss recovery
+- same-device two-tab single media owner and generation-fenced owner failover
+- stale old-owner callbacks cannot capture/send/report after takeover
 - relay-only ICE restart after network change
 - pre-accept TURN denial
 - TURN expiry and authorization refresh
+- post-revocation TURN refresh denial plus bounded existing allocation lifetime
 - TURN/UDP plus TCP/TLS fallback where deployed
-- generic push payload fixture review
+- generic call_state_changed push payload fixture review
+- delayed/duplicate/reordered push convergence and stale-notification dismissal
 - stale push suppression after terminal call
 - logged-out/revoked-device push routing denial
 - push-denied foreground calling through realtime v2
+- caller Call-gesture and callee Accept-gesture microphone acquisition
+- failed/raced create or accept stops pre-acquired tracks
+- camera permission is never requested in C1
+- public outcome mapping hides internal session/device/deletion/lifecycle causes
 - microphone permission denial and teardown
 - physical Android voice-call acceptance
 

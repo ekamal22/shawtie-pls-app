@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. Execute only after automated/local C1 closure is green.
+DESIGN COMPLETE, THIRD-PASS HARDENED. Execute only after automated/local C1 closure is green.
 
 C1 requires physical-device acceptance. The canonical design branch is `feat/c1-voice-calling` from `main @ 54b8659a`.
 
@@ -65,10 +65,13 @@ Never store raw SDP, candidate strings, peer IP addresses, or TURN credentials a
 ### Background push
 
 - suspend or close foreground PWA where platform permits
-- incoming push wakes service worker
-- generic call notification is displayed
-- notification click opens app
-- canonical call state is fetched before actionable ringing state
+- incoming generic `call_state_changed` push wakes service worker
+- service worker fetches canonical current call before actionable ringing state
+- incoming/ringing shows or replaces one generic notification
+- later cancelled/rejected/missed/answered state closes stale notification after canonical reconciliation
+- deliberately delay/reorder duplicate state pushes and prove canonical state wins
+- notification click fetches canonical call again before actions
+- no push action auto-accepts
 
 ### First accept wins
 
@@ -77,6 +80,14 @@ Never store raw SDP, candidate strings, peer IP addresses, or TURN credentials a
 - first committed accept wins
 - second device receives answered/superseded state
 - second device cannot signal or receive TURN credentials
+
+### Same-device multi-tab ownership
+
+- open two tabs/windows for the same selected endpoint where browser permits
+- only one tab owns microphone, peer connection, signaling, and endpoint-connected reporting
+- observer does not trigger second microphone prompt or signaling thrash
+- close/crash owner, wait for bounded lease expiry, then prove one observer can take over
+- stale callbacks from old owner generation cannot regain media/signaling ownership
 
 ### Wi-Fi to mobile network change
 
@@ -90,15 +101,19 @@ Never store raw SDP, candidate strings, peer IP addresses, or TURN credentials a
 
 - C1-capable build negotiates `shawtie.realtime.v2`
 - foreground incoming call arrives through content-free `call.changed`
+- suppress one call.changed while visible and prove anti-entropy repairs state
+- inject call.changed during canonical sync and prove dirty barrier repeats before live mode
 - a deliberately v1-only client is not treated as C1-capable
 - stale service-worker/app code cannot silently interpret the new frame
 
-### Candidate privacy enforcement
+### Candidate and SDP privacy enforcement
 
-- capture signaling diagnostics without storing raw candidate values
-- SDP frames contain no candidate lines
+- capture diagnostics without storing raw candidate values
+- SDP contains no candidate lines and exactly one audio media section
+- injected video or application/data-channel SDP is rejected
 - relay candidates are accepted
-- deliberately injected host/srflx candidate is rejected before peer forwarding
+- injected host/srflx candidate is rejected before peer forwarding
+- injected privacy-unsafe relay related/base-address form is rejected
 - no direct connectivity fallback occurs
 
 ### TURN UDP
@@ -151,14 +166,18 @@ Where infrastructure permits forcing UDP failure:
 
 - terminate partnership during ringing and during connected call
 - signaling authorization is removed
-- new TURN credentials fail
+- new TURN credentials and refresh fail immediately
+- honest client tears down media immediately after canonical revoked/terminal state
+- with accelerated provider policy, prove already-issued TURN allocation cannot outlive documented residual bound
 - old call state becomes inaccessible after cleanup
 - local UI purges current-partnership call state
 
 ### Accepted but never connected
 
-- accept a call but prevent negotiation from reaching both-endpoint connected
-- connect timeout finalizes the call safely
+- accept a call but prevent both endpoints from reaching connected
+- allow exactly one endpoint to report connected
+- prove first report does not invalidate accepted-call connect timeout
+- connect timeout finalizes safely
 - stale connect-timeout job cannot end a later successful call
 
 ### Hard stale-call bound
@@ -168,11 +187,13 @@ Where infrastructure permits forcing UDP failure:
 - new call is no longer blocked
 - stale timeout cannot resurrect or mutate a newer call
 
-### Permission denial
+### Permission and local-consent boundary
 
-- deny microphone
-- app does not crash
-- no hidden fallback
+- caller microphone prompt occurs only from explicit Call gesture
+- callee microphone prompt occurs only from explicit Accept gesture
+- deny microphone and prove no crash/hidden fallback
+- force create/accept race failure after local acquisition and prove track stops
+- verify camera permission is never requested in C1
 - call ends or fails with bounded generic state
 - device label is not sent to server
 
@@ -207,8 +228,9 @@ Verify:
 - no application log contains TURN credential
 - no push log contains endpoint capability URL
 - no direct peer candidate is selected
+- public call history/projection does not expose raw internal session/device/deletion/lifecycle cause
 - provider failure does not expose raw internal error text to UI
 
 ## Closure marker
 
-C1_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above, including autoplay recovery, push replacement, and transport fail-closed behavior, has documented evidence, the exact tested SHA is recorded, sensitive signaling/TURN/push material is absent from committed artifacts, and local/remote SHA parity is verified.
+C1_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above, including multi-tab ownership, anti-entropy repair, autoplay recovery, push reorder/replacement, timeout fencing, and transport fail-closed behavior, has documented evidence, the exact tested SHA is recorded, sensitive signaling/TURN/push material is absent from committed artifacts, and local/remote SHA parity is verified.

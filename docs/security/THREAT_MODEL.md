@@ -905,16 +905,23 @@ Impact: High
 Controls:
 
 - short-lived TURN credentials
-- authenticated issuance
-- call capability checks
-- rate limits
-- credential expiry
+- authenticated issuance only for accepted selected endpoints
+- current call/device/lifecycle authorization rechecked on issue and refresh
+- bounded credential issuance and refresh rates
+- bounded provider allocation lifetime
+- no direct-connect fallback when relay is unavailable
+- best-effort allocation revoke only where a provider supports it
+
+Residual risk:
+
+Application authorization can be revoked synchronously, but an already issued credential or relay allocation may remain usable until client teardown or provider expiry. C1 treats provider lifetime as an explicit bounded residual network window rather than claiming instant network-layer revocation.
 
 Verification:
 
 - expired TURN credential tests
-- unauthorized issuance tests
-- load monitoring
+- unauthorized and post-revocation refresh denial
+- accelerated provider allocation-lifetime test
+- load/cost monitoring
 
 ### T23: Direct WebRTC exposes peer IP address
 
@@ -922,14 +929,43 @@ Impact: High for privacy
 
 Controls:
 
-- relay-first TURN policy
-- document any fallback that permits direct connectivity
-- do not claim IP anonymity if direct mode exists
+- C1 uses `iceTransportPolicy: relay` with no direct fallback
+- SDP is candidate-free
+- signaling accepts only parsed `typ relay` trickle candidates
+- host, srflx, prflx, malformed, and unknown candidate types fail closed
+- relay candidate forms exposing a non-relay related/base address fail closed
+- raw candidates and parsed peer addresses are never persisted or logged
+
+Residual risk:
+
+TURN infrastructure, access networks, and network observers still see endpoint/relay connection metadata and timing. Relay-only prevents the partner from receiving a direct peer network path through the application protocol; it does not provide anonymity from the relay operator.
 
 Verification:
 
-- physical-device call test
-- ICE candidate inspection where practical
+- signaling validator tests
+- physical selected-pair inspection without committing raw candidate/IP evidence
+- forced TURN outage proves no direct fallback
+
+### T23A: C1 signaling smuggles non-voice media or cross-protocol payloads
+
+Impact: High
+
+Controls:
+
+- C1 SDP permits exactly one audio media section
+- video and application/data-channel media sections are rejected
+- candidate and end-of-candidates lines are rejected in SDP
+- shared WebSocket negotiation accepts exactly one known application subprotocol
+- realtime and call routes verify the exact negotiated protocol they own
+- M2's 4 KiB application-frame limit remains active even if transport ceiling rises for SDP
+- C1 browser Permissions Policy keeps camera disabled until C2
+
+Verification:
+
+- malicious video SDP rejection
+- malicious data-channel SDP rejection
+- multi-protocol and cross-family WebSocket offer rejection
+- oversize M2 frame remains rejected after C1 integration
 
 ### T24: Network observer infers relationship activity from metadata
 
@@ -940,7 +976,7 @@ Controls:
 - encrypted transport
 - metadata minimization
 - minimal push payloads
-- relay-first calls
+- relay-only calls for C1
 
 Residual risk:
 

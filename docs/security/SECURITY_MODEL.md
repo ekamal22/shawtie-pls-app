@@ -353,13 +353,16 @@ Canonical C1 design: `../architecture/C1_VOICE_CALLING_DESIGN.md`.
 - durable call authority remains in PostgreSQL and authenticated HTTP
 - calls never auto-answer and signaling/TURN are unavailable before explicit acceptance
 - M2 v1 remains unchanged; C1 uses negotiated `shawtie.realtime.v2` only for content-free `call.changed` invalidation
-- SDP/ICE use dedicated `shawtie.call.v1` only for the fixed caller device and first accepted callee device
-- SDP is candidate-free and the signaling server accepts only parsed relay candidates
+- SDP/ICE use dedicated `shawtie.call.v1` only for the fixed caller participant device and first accepted callee participant device
+- participant rows are the sole durable endpoint-role/device authority
+- SDP is candidate-free, voice-only, and the signaling server accepts only parsed privacy-safe relay candidates; video, data-channel, and non-relay related/base-address leakage fail closed
 - SDP, ICE, TURN credentials, raw push capability data, and media device labels are never persisted or logged
 - `iceTransportPolicy: relay` is mandatory and failure to obtain TURN does not downgrade to direct peer connectivity
-- TURN credentials are short-lived and current call/device/lifecycle authorization is rechecked on every issuance
-- push payloads are generic wakeup hints, never caller identity or call authority, and never auto-accept
+- TURN credentials are short-lived and current call/device/lifecycle authorization is rechecked on every issuance; post-revocation refresh is denied and already-issued allocation lifetime is explicitly bounded
+- push payloads are generic `call_state_changed` reconciliation hints, never caller identity or call authority; service worker fetches canonical state before showing or retaining actionable ringing UI
 - push routing requires current account/device authorization; stale subscriptions alone do not authorize delivery
 - random, foreign, old-partnership, and non-selected-device call access fails privacy-safely
+- one generation-fenced browser tab owns media/signaling for a selected device; local lease is not server authority
+- internal session/device/deletion/lifecycle terminal causes map to bounded public outcomes
 - account deletion, selected-device revocation, and final dissolution remove future signaling/TURN/call authority
 - C1 does not claim S1 endpoint cryptographic identity authentication; stable sensitive-use review remains required
