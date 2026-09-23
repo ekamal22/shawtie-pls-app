@@ -37,6 +37,7 @@ export class CallMediaSession {
   readonly #lease: MediaOwnerLease;
   readonly #remoteAudio = new Audio();
   readonly #pendingCandidates: RTCIceCandidateInit[] = [];
+  #pendingEndOfCandidates = false;
   #peer: RTCPeerConnection | null = null;
   #socket: WebSocket | null = null;
   #signalingGeneration = 0;
@@ -269,6 +270,10 @@ export class CallMediaSession {
         const candidate = this.#pendingCandidates.shift();
         if (candidate) await this.#peer.addIceCandidate(candidate);
       }
+      if (this.#pendingEndOfCandidates) {
+        this.#pendingEndOfCandidates = false;
+        await this.#peer.addIceCandidate(null).catch(() => undefined);
+      }
       if (description.type === "offer") {
         await this.#peer.setLocalDescription();
         this.#sendDescription();
@@ -294,6 +299,8 @@ export class CallMediaSession {
     if (frame.type === "signal.end_of_candidates") {
       if (this.#peer.remoteDescription) {
         await this.#peer.addIceCandidate(null).catch(() => undefined);
+      } else {
+        this.#pendingEndOfCandidates = true;
       }
       return;
     }
