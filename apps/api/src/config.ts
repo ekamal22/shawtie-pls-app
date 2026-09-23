@@ -118,6 +118,9 @@ function callingConfig(
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+  if (turnUrls.some((url) => !/^turns?:/i.test(url))) {
+    throw new Error("C1_TURN_URLS must contain only turn: or turns: URLs");
+  }
   if (environment === "production" && enabled && transportEnabled) {
     if (turnUrls.length === 0 || !env.C1_TURN_SHARED_SECRET) {
       throw new Error("C1 relay-only production calling requires C1_TURN_URLS and C1_TURN_SHARED_SECRET");
