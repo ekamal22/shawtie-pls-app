@@ -61,7 +61,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | DESIGN COMPLETE, implementation not started | M2 | Yes |
+| 7 M3 Media and Voice Messages | DESIGN COMPLETE, SECOND-PASS HARDENED, implementation not started | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
 | 10 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -348,7 +348,7 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: DESIGN COMPLETE, implementation not started.
+Status: DESIGN COMPLETE, SECOND-PASS HARDENED, implementation not started.
 
 Branch: `feat/m3-media-voice`.
 
