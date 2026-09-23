@@ -1,10 +1,14 @@
 import { randomUUID } from "node:crypto";
 import {
+  C1_REALTIME_SUBPROTOCOL,
   M2_REALTIME_MAX_FRAME_BYTES,
   M2_REALTIME_PROTOCOL_VERSION,
+  M2_REALTIME_SUBPROTOCOL,
   assertM2RealtimeFrameSize,
+  c1RealtimeServerFrameSchema,
   m2RealtimeClientFrameSchema,
   m2RealtimeServerFrameSchema,
+  type C1RealtimeServerFrame,
   type M2InternalRealtimeNotification,
   type M2RealtimeClientFrame,
   type M2RealtimeServerFrame,
@@ -36,6 +40,7 @@ export interface RealtimeConnectionContext {
   readonly deviceId: string | null;
   readonly partnershipId: string | null;
   readonly conversationId: string | null;
+  readonly subprotocol: typeof M2_REALTIME_SUBPROTOCOL | typeof C1_REALTIME_SUBPROTOCOL;
 }
 
 export type RealtimeClientFrameHandler = (
@@ -103,7 +108,11 @@ export class RealtimeHub {
     this.#maintenance.unref?.();
   }
 
-  accept(socket: WebSocket, auth: AuthContext): void {
+  accept(
+    socket: WebSocket,
+    auth: AuthContext,
+    subprotocol: typeof M2_REALTIME_SUBPROTOCOL | typeof C1_REALTIME_SUBPROTOCOL,
+  ): void {
     const state: ConnectionState = {
       connectionId: randomUUID(),
       socket,
@@ -112,6 +121,7 @@ export class RealtimeHub {
       deviceId: auth.session.deviceId,
       partnershipId: null,
       conversationId: null,
+      subprotocol,
       lastPongAt: Date.now(),
       lastPingAt: 0,
       lastPingNonce: null,
@@ -209,6 +219,18 @@ export class RealtimeHub {
             payload: { online: notification.data.online },
           },
           notification.data.actorAccountId,
+        );
+        return;
+      case "call.changed":
+        this.#sendTo(
+          this.#byPartnership.get(notification.scope.partnershipId),
+          {
+            v: M2_REALTIME_PROTOCOL_VERSION,
+            type: "call.changed",
+            payload: notification.data,
+          },
+          undefined,
+          C1_REALTIME_SUBPROTOCOL,
         );
         return;
       case "typing.changed":
@@ -439,20 +461,25 @@ export class RealtimeHub {
 
   #sendTo(
     ids: Set<string> | undefined,
-    frame: M2RealtimeServerFrame,
+    frame: C1RealtimeServerFrame,
     exceptAccountId?: string,
+    requiredSubprotocol?: typeof C1_REALTIME_SUBPROTOCOL,
   ): void {
     if (!ids) return;
     for (const id of [...ids]) {
       const connection = this.#connections.get(id);
       if (!connection || connection.accountId === exceptAccountId) continue;
+      if (requiredSubprotocol && connection.subprotocol !== requiredSubprotocol) continue;
       this.#send(connection, frame);
     }
   }
 
-  #send(connection: ConnectionState, frame: M2RealtimeServerFrame): void {
+  #send(connection: ConnectionState, frame: C1RealtimeServerFrame): void {
     if (connection.socket.readyState !== 1) return;
-    const parsed = m2RealtimeServerFrameSchema.safeParse(frame);
+    const parsed =
+      connection.subprotocol === C1_REALTIME_SUBPROTOCOL
+        ? c1RealtimeServerFrameSchema.safeParse(frame)
+        : m2RealtimeServerFrameSchema.safeParse(frame);
     if (!parsed.success) {
       this.#close(connection, 1011, "Invalid server frame");
       return;

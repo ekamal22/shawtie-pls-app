@@ -1,4 +1,8 @@
-import { M2_REALTIME_SUBPROTOCOL, type M2RealtimeClientFrame } from "@shawtie/contracts";
+import {
+  C1_REALTIME_SUBPROTOCOL,
+  M2_REALTIME_SUBPROTOCOL,
+  type M2RealtimeClientFrame,
+} from "@shawtie/contracts";
 import {
   consumeRateLimitBuckets,
   getTransactionTimestamp,
@@ -156,7 +160,11 @@ export function registerRealtimeRoutes(
         if (request.headers.origin !== dependencies.config.appOrigin) {
           throw new ApiError(403, "REALTIME_ORIGIN_REJECTED");
         }
-        if (!offeredProtocols(request).includes(M2_REALTIME_SUBPROTOCOL)) {
+        const offered = offeredProtocols(request);
+        if (
+          offered.length !== 1
+          || (offered[0] !== M2_REALTIME_SUBPROTOCOL && offered[0] !== C1_REALTIME_SUBPROTOCOL)
+        ) {
           throw new ApiError(400, "REALTIME_PROTOCOL_REQUIRED");
         }
         const auth = await requireAuthentication(
@@ -176,7 +184,14 @@ export function registerRealtimeRoutes(
         socket.close(1008, "Authentication required");
         return;
       }
-      dependencies.hub.accept(socket, auth);
+      if (
+        socket.protocol !== M2_REALTIME_SUBPROTOCOL
+        && socket.protocol !== C1_REALTIME_SUBPROTOCOL
+      ) {
+        socket.close(1002, "Unexpected realtime protocol");
+        return;
+      }
+      dependencies.hub.accept(socket, auth, socket.protocol);
     },
   );
 }

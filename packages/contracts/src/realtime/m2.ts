@@ -5,6 +5,7 @@ export const M2_CLIENT_COMPATIBILITY_VERSION = 1 as const;
 export const M2_CLIENT_PROTOCOL_HEADER = "x-shawtie-client-protocol-version" as const;
 export const M2_LOCAL_SCHEMA_HEADER = "x-shawtie-local-schema-version" as const;
 export const M2_REALTIME_SUBPROTOCOL = "shawtie.realtime.v1" as const;
+export const C1_REALTIME_SUBPROTOCOL = "shawtie.realtime.v2" as const;
 export const M2_REALTIME_NOTIFY_CHANNEL = "shawtie_realtime_v1" as const;
 export const M2_REALTIME_MAX_FRAME_BYTES = 4 * 1024;
 export const M2_INTERNAL_NOTIFY_MAX_BYTES = 2 * 1024;
@@ -120,6 +121,14 @@ const relationshipPayloadSchema = z
 
 const accountSecurityPayloadSchema = z.object({ eventId: uuidSchema }).strict();
 
+const callChangedPayloadSchema = z
+  .object({
+    eventId: uuidSchema,
+    callId: uuidSchema,
+    version: positiveSequenceSchema,
+  })
+  .strict();
+
 const internalPresencePayloadSchema = z
   .object({
     eventId: uuidSchema,
@@ -139,14 +148,9 @@ const internalTypingPayloadSchema = z
   .strict();
 
 const presencePayloadSchema = z.object({ online: z.boolean() }).strict();
-
 const typingPayloadSchema = z
-  .object({
-    typing: z.boolean(),
-    expiresAt: timestampSchema.nullable(),
-  })
+  .object({ typing: z.boolean(), expiresAt: timestampSchema.nullable() })
   .strict();
-
 const namespaceRevokedPayloadSchema = z
   .object({
     partnershipId: uuidSchema,
@@ -186,6 +190,16 @@ export const m2RealtimeServerFrameSchema = z.discriminatedUnion("type", [
   serverFrame("namespace.revoked", namespaceRevokedPayloadSchema),
 ]);
 
+export const c1RealtimeCallChangedFrameSchema = serverFrame(
+  "call.changed",
+  callChangedPayloadSchema,
+);
+
+export const c1RealtimeServerFrameSchema = z.union([
+  m2RealtimeServerFrameSchema,
+  c1RealtimeCallChangedFrameSchema,
+]);
+
 export const m2RealtimeClientFrameSchema = z.discriminatedUnion("type", [
   serverFrame("control.pong", pingPayloadSchema),
   serverFrame("presence.heartbeat", z.object({}).strict()),
@@ -222,10 +236,7 @@ export const m2InternalRealtimeNotificationSchema = z.discriminatedUnion("kind",
       v: z.literal(M2_REALTIME_PROTOCOL_VERSION),
       kind: z.literal("partnership.changed"),
       scope: z
-        .object({
-          partnershipId: uuidSchema,
-          accountIds: partnershipAccountIdsSchema,
-        })
+        .object({ partnershipId: uuidSchema, accountIds: partnershipAccountIdsSchema })
         .strict(),
       data: partnershipPayloadSchema,
     })
@@ -262,9 +273,18 @@ export const m2InternalRealtimeNotificationSchema = z.discriminatedUnion("kind",
       data: internalTypingPayloadSchema,
     })
     .strict(),
+  z
+    .object({
+      v: z.literal(M2_REALTIME_PROTOCOL_VERSION),
+      kind: z.literal("call.changed"),
+      scope: z.object({ partnershipId: uuidSchema }).strict(),
+      data: callChangedPayloadSchema,
+    })
+    .strict(),
 ]);
 
 export type M2RealtimeServerFrame = z.infer<typeof m2RealtimeServerFrameSchema>;
+export type C1RealtimeServerFrame = z.infer<typeof c1RealtimeServerFrameSchema>;
 export type M2RealtimeClientFrame = z.infer<typeof m2RealtimeClientFrameSchema>;
 export type M2InternalRealtimeNotification = z.infer<typeof m2InternalRealtimeNotificationSchema>;
 
