@@ -63,7 +63,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
 | 8 C1 Voice Calling | DESIGN COMPLETE, implementation not started | M2 | Yes, mandatory |
-| 9 C2 Video Calling | DESIGN COMPLETE, implementation blocked on verified C1 | C1 | Yes, mandatory |
+| 9 C2 Video Calling | DESIGN COMPLETE, SECOND-PASS HARDENED, implementation blocked on verified C1 | C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -446,7 +446,7 @@ C1 must prove partnership/device authorization, no auto-answer, no pre-accept ne
 
 # Milestone 9: C2 Video Calling
 
-Status: DESIGN COMPLETE, implementation blocked until verified C1 is merged.
+Status: DESIGN COMPLETE, SECOND-PASS HARDENED, implementation blocked until verified C1 is merged.
 
 Design branch: `feat/c2-video-calling`.
 
