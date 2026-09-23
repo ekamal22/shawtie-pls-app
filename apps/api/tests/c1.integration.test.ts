@@ -275,6 +275,28 @@ function waitForFrame(
   });
 }
 
+function waitForClose(
+  socket: WebSocket,
+  timeoutMs = 5_000,
+): Promise<{ code: number; reason: string }> {
+  return new Promise((resolve, reject) => {
+    if (socket.readyState === 3) {
+      resolve({ code: 1006, reason: "already closed" });
+      return;
+    }
+    const timeout = setTimeout(() => {
+      socket.off("close", onClose);
+      reject(new Error("Timed out waiting for C1 signaling close"));
+    }, timeoutMs);
+    function onClose(code: number, reason: Buffer) {
+      clearTimeout(timeout);
+      resolve({ code, reason: reason.toString("utf8") });
+    }
+    socket.once("close", onClose);
+  });
+}
+
+
 test("C1 simultaneous initiation creates exactly one non-terminal call", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
@@ -502,6 +524,118 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
     const items = history.json().items as Array<{ id: string; outcome: string | null }>;
     assert.equal(items[0]?.id, created.id);
     assert.equal(items[0]?.outcome, "completed");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("C1 signaling fails closed for hostile frames and non-voice media", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "signal_alice");
+    const bob = await register(app, database, "signal_bob");
+    const partnershipId = await formPartnership(app, alice, bob, "signal");
+    const created = await createVoiceCall(
+      app,
+      alice,
+      partnershipId,
+      "c1-create-signal-0001",
+    );
+    const accepted = await action(
+      app,
+      bob,
+      created.id,
+      "accept",
+      created.version,
+      "c1-accept-signal-0001",
+    );
+    assert.equal(accepted.statusCode, 200, accepted.body);
+
+    async function callerSocket(): Promise<{ socket: WebSocket; generation: number }> {
+      const socket = await app.injectWS(
+        "/api/v1/calls/" + created.id + "/signal",
+        {
+          headers: {
+            origin: config.appOrigin,
+            cookie: alice.cookie,
+            "sec-websocket-protocol": "shawtie.call.v1",
+          },
+        },
+      );
+      const ready = await waitForFrame(socket, "control.ready");
+      assert.equal((ready.payload as { polite: boolean }).polite, false);
+      return { socket, generation: ready.generation as number };
+    }
+
+    {
+      const { socket } = await callerSocket();
+      const closed = waitForClose(socket);
+      socket.send(Buffer.from("binary is forbidden", "utf8"));
+      assert.equal((await closed).code, 1003);
+    }
+
+    {
+      const { socket } = await callerSocket();
+      const closed = waitForClose(socket);
+      socket.send("x".repeat(64 * 1024 + 1));
+      assert.equal((await closed).code, 1009);
+    }
+
+    {
+      const { socket, generation } = await callerSocket();
+      const closed = waitForClose(socket);
+      socket.send(
+        JSON.stringify({
+          v: 1,
+          type: "signal.unknown",
+          generation,
+          payload: {},
+        }),
+      );
+      assert.equal((await closed).code, 1008);
+    }
+
+    for (const sdp of [
+      "v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n",
+      "v=0\r\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n",
+      "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n",
+      "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=candidate:1 1 udp 1 192.0.2.1 5000 typ host\r\n",
+    ]) {
+      const { socket, generation } = await callerSocket();
+      const closed = waitForClose(socket);
+      socket.send(
+        JSON.stringify({
+          v: 1,
+          type: "signal.description",
+          generation,
+          payload: { descriptionType: "offer", sdp },
+        }),
+      );
+      assert.equal((await closed).code, 1008);
+    }
+
+    for (const candidate of [
+      "candidate:1 1 udp 2122260223 192.168.1.10 54321 typ host",
+      "candidate:2 1 udp 1686052607 203.0.113.10 3478 typ srflx",
+      "candidate:3 1 udp 1677730815 198.51.100.10 40000 typ prflx",
+      "candidate:4 1 udp 1677729535 203.0.113.20 50000 typ relay raddr 192.168.1.10 rport 54321",
+      "not-a-candidate",
+    ]) {
+      const { socket, generation } = await callerSocket();
+      const closed = waitForClose(socket);
+      socket.send(
+        JSON.stringify({
+          v: 1,
+          type: "signal.ice_candidate",
+          generation,
+          payload: { candidate },
+        }),
+      );
+      assert.equal((await closed).code, 1008);
+    }
   } finally {
     await app.close();
     await closeDatabasePool(database);
