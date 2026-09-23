@@ -62,7 +62,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
-| 8 C1 Voice Calling | DESIGN COMPLETE, implementation not started | M2 | Yes, mandatory |
+| 8 C1 Voice Calling | DESIGN COMPLETE, SECOND-PASS HARDENED, implementation not started | M2 | Yes, mandatory |
 | 9 C2 Video Calling | PLANNED | C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -380,7 +380,7 @@ M3 must prove size limits, private storage, authorization, signed-access expiry,
 
 # Milestone 8: C1 Voice Calling
 
-Status: DESIGN COMPLETE, implementation not started.
+Status: DESIGN COMPLETE, SECOND-PASS HARDENED, implementation not started.
 
 Branch: `feat/c1-voice-calling`.
 
