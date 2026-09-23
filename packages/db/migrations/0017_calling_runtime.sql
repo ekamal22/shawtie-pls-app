@@ -92,6 +92,7 @@ ALTER TABLE call_participants
   ADD COLUMN partnership_id uuid,
   ADD COLUMN role text,
   ADD COLUMN endpoint_device_id uuid,
+  ADD COLUMN endpoint_session_id uuid,
   ADD COLUMN accepted_at timestamptz,
   ADD COLUMN connected_at timestamptz;
 
@@ -118,6 +119,10 @@ ALTER TABLE call_participants
   ADD CONSTRAINT call_participants_endpoint_device_fk
     FOREIGN KEY (endpoint_device_id, account_id)
     REFERENCES account_devices(id, account_id),
+  ADD CONSTRAINT call_participants_endpoint_session_fk
+    FOREIGN KEY (endpoint_session_id)
+    REFERENCES account_sessions(id)
+    ON DELETE SET NULL,
   ADD CONSTRAINT call_participants_role_valid
     CHECK (role IN ('caller', 'callee'));
 
@@ -167,12 +172,43 @@ BEGIN
       AND participant.role = 'caller'
       AND (
         participant.endpoint_device_id IS NULL
+        OR participant.endpoint_session_id IS NULL
         OR participant.account_id <> session.initiated_by_account_id
+        OR NOT EXISTS (
+          SELECT 1
+          FROM account_sessions endpoint_session
+          WHERE endpoint_session.id = participant.endpoint_session_id
+            AND endpoint_session.account_id = participant.account_id
+            AND endpoint_session.device_id = participant.endpoint_device_id
+        )
       )
   ) THEN
     RAISE EXCEPTION USING
       ERRCODE = '23514',
       MESSAGE = 'call caller participant must own the initiating endpoint';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM call_participants participant
+    JOIN call_sessions session ON session.id = participant.call_session_id
+    WHERE participant.call_session_id = target_call_id
+      AND session.status IN ('accepted', 'connected')
+      AND (
+        participant.endpoint_device_id IS NULL
+        OR participant.endpoint_session_id IS NULL
+        OR NOT EXISTS (
+          SELECT 1
+          FROM account_sessions endpoint_session
+          WHERE endpoint_session.id = participant.endpoint_session_id
+            AND endpoint_session.account_id = participant.account_id
+            AND endpoint_session.device_id = participant.endpoint_device_id
+        )
+      )
+  ) THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '23514',
+      MESSAGE = 'accepted call participants must own selected endpoint sessions';
   END IF;
 
   RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;

@@ -215,6 +215,7 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
           callId: params.callId,
           accountId: auth.session.accountId,
           deviceId: auth.session.deviceId,
+          sessionId: auth.session.sessionId,
         });
         if (!authorization) throw new ApiError(404, "CALL_NOT_FOUND");
         authenticated.set(request, {

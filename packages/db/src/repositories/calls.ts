@@ -55,6 +55,7 @@ export interface CallParticipantRecord {
   readonly accountId: string;
   readonly role: "caller" | "callee";
   readonly endpointDeviceId: string | null;
+  readonly endpointSessionId: string | null;
   readonly acceptedAt: Date | null;
   readonly connectedAt: Date | null;
 }
@@ -63,6 +64,7 @@ interface CallParticipantRow {
   account_id: string;
   role: "caller" | "callee";
   endpoint_device_id: string | null;
+  endpoint_session_id: string | null;
   accepted_at: Date | null;
   connected_at: Date | null;
 }
@@ -105,6 +107,7 @@ export async function insertCallSession(
     readonly partnershipId: string;
     readonly callerAccountId: string;
     readonly callerDeviceId: string;
+    readonly callerSessionId: string;
     readonly calleeAccountId: string;
     readonly kind: CallKind;
     readonly now: Date;
@@ -122,16 +125,18 @@ export async function insertCallSession(
   );
   await executor.query(
     `INSERT INTO call_participants (
-       call_session_id, partnership_id, account_id, role, endpoint_device_id, accepted_at
+       call_session_id, partnership_id, account_id, role,
+       endpoint_device_id, endpoint_session_id, accepted_at
      )
      VALUES
-       ($1,$2,$3,'caller',$4,$5),
-       ($1,$2,$6,'callee',NULL,NULL)`,
+       ($1,$2,$3,'caller',$4,$5,$6),
+       ($1,$2,$7,'callee',NULL,NULL,NULL)`,
     [
       input.id,
       input.partnershipId,
       input.callerAccountId,
       input.callerDeviceId,
+      input.callerSessionId,
       input.now,
       input.calleeAccountId,
     ],
@@ -190,7 +195,7 @@ export async function loadCallParticipants(
   callId: string,
 ): Promise<readonly CallParticipantRecord[]> {
   const result = await executor.query<CallParticipantRow>(
-    `SELECT account_id, role, endpoint_device_id, accepted_at, connected_at
+    `SELECT account_id, role, endpoint_device_id, endpoint_session_id, accepted_at, connected_at
      FROM call_participants
      WHERE call_session_id=$1
      ORDER BY role DESC`,
@@ -200,6 +205,7 @@ export async function loadCallParticipants(
     accountId: row.account_id,
     role: row.role,
     endpointDeviceId: row.endpoint_device_id,
+    endpointSessionId: row.endpoint_session_id,
     acceptedAt: row.accepted_at,
     connectedAt: row.connected_at,
   }));
@@ -212,18 +218,24 @@ export async function acceptCall(
     readonly expectedVersion: bigint;
     readonly calleeAccountId: string;
     readonly deviceId: string;
+    readonly sessionId: string;
     readonly now: Date;
     readonly connectExpiresAt: Date;
   },
 ): Promise<CallSessionRecord | null> {
   const selected = await executor.query(
     `UPDATE call_participants
-     SET endpoint_device_id=$3, accepted_at=COALESCE(accepted_at,$4)
+     SET endpoint_device_id=$3,
+         endpoint_session_id=$4,
+         accepted_at=COALESCE(accepted_at,$5)
      WHERE call_session_id=$1
        AND account_id=$2
        AND role='callee'
-       AND (endpoint_device_id IS NULL OR endpoint_device_id=$3)`,
-    [input.callId, input.calleeAccountId, input.deviceId, input.now],
+       AND (
+         endpoint_device_id IS NULL
+         OR (endpoint_device_id=$3 AND endpoint_session_id=$4)
+       )`,
+    [input.callId, input.calleeAccountId, input.deviceId, input.sessionId, input.now],
   );
   if (selected.rowCount !== 1) return null;
   const result = await executor.query<CallSessionRow>(
@@ -280,6 +292,7 @@ export async function recordEndpointConnected(
     readonly callId: string;
     readonly accountId: string;
     readonly deviceId: string;
+    readonly sessionId: string;
     readonly now: Date;
     readonly hardExpiresAt: Date;
   },
@@ -290,8 +303,9 @@ export async function recordEndpointConnected(
      WHERE call_session_id=$1
        AND account_id=$2
        AND endpoint_device_id=$3
+       AND endpoint_session_id=$4
        AND role IN ('caller','callee')`,
-    [input.callId, input.accountId, input.deviceId, input.now],
+    [input.callId, input.accountId, input.deviceId, input.sessionId, input.now],
   );
   if (marked.rowCount !== 1) return null;
 
@@ -420,7 +434,12 @@ export async function listCallHistory(
 
 export async function loadCallEndpointAuthorization(
   executor: QueryExecutor,
-  input: { readonly callId: string; readonly accountId: string; readonly deviceId: string },
+  input: {
+    readonly callId: string;
+    readonly accountId: string;
+    readonly deviceId: string;
+    readonly sessionId: string;
+  },
 ): Promise<{
   readonly partnershipId: string;
   readonly state: CallState;
@@ -444,13 +463,21 @@ export async function loadCallEndpointAuthorization(
      JOIN account_devices AS device
        ON device.id=participant.endpoint_device_id
       AND device.account_id=participant.account_id
+     JOIN account_sessions AS endpoint_session
+       ON endpoint_session.id=participant.endpoint_session_id
+      AND endpoint_session.account_id=participant.account_id
+      AND endpoint_session.device_id=participant.endpoint_device_id
      WHERE session.id=$1
        AND participant.account_id=$2
        AND participant.endpoint_device_id=$3
+       AND participant.endpoint_session_id=$4
        AND session.status IN ('accepted','connected')
        AND partnership.lifecycle_state IN ('active','breakup_pending')
        AND account.status='active'
        AND device.revoked_at IS NULL
+       AND endpoint_session.revoked_at IS NULL
+       AND endpoint_session.expires_at > clock_timestamp()
+       AND endpoint_session.idle_expires_at > clock_timestamp()
        AND NOT EXISTS (
          SELECT 1
          FROM call_participants other_participant
@@ -458,7 +485,7 @@ export async function loadCallEndpointAuthorization(
          WHERE other_participant.call_session_id=session.id
            AND other_account.status <> 'active'
        )`,
-    [input.callId, input.accountId, input.deviceId],
+    [input.callId, input.accountId, input.deviceId, input.sessionId],
   );
   const row = result.rows[0];
   return row
@@ -481,4 +508,87 @@ export async function loadCallDeadlineGeneration(
   );
   const row = result.rows[0];
   return row ? asBigInt(row.deadline_generation) : 0n;
+}
+
+
+export async function terminalizeCallsByEndpointSession(
+  executor: QueryExecutor,
+  input: {
+    readonly sessionId: string;
+    readonly reason: "session_revoked";
+    readonly now: Date;
+  },
+): Promise<readonly CallSessionRecord[]> {
+  const result = await executor.query<CallSessionRow>(
+    `UPDATE call_sessions AS session
+     SET status='ended',
+         version=session.version+1,
+         deadline_generation=session.deadline_generation+1,
+         ended_at=$3,
+         terminal_reason=$2,
+         updated_at=$3
+     WHERE session.status <> 'ended'
+       AND EXISTS (
+         SELECT 1
+         FROM call_participants participant
+         WHERE participant.call_session_id=session.id
+           AND participant.endpoint_session_id=$1
+       )
+     RETURNING ${sessionColumns}`,
+    [input.sessionId, input.reason, input.now],
+  );
+  return result.rows.map(mapSession);
+}
+
+export async function terminalizeCallsByEndpointDevice(
+  executor: QueryExecutor,
+  input: {
+    readonly deviceId: string;
+    readonly reason: "authorization_revoked";
+    readonly now: Date;
+  },
+): Promise<readonly CallSessionRecord[]> {
+  const result = await executor.query<CallSessionRow>(
+    `UPDATE call_sessions AS session
+     SET status='ended',
+         version=session.version+1,
+         deadline_generation=session.deadline_generation+1,
+         ended_at=$3,
+         terminal_reason=$2,
+         updated_at=$3
+     WHERE session.status <> 'ended'
+       AND EXISTS (
+         SELECT 1
+         FROM call_participants participant
+         WHERE participant.call_session_id=session.id
+           AND participant.endpoint_device_id=$1
+       )
+     RETURNING ${sessionColumns}`,
+    [input.deviceId, input.reason, input.now],
+  );
+  return result.rows.map(mapSession);
+}
+
+export async function terminalizeCurrentCallForPartnership(
+  executor: QueryExecutor,
+  input: {
+    readonly partnershipId: string;
+    readonly reason: "account_deletion" | "partnership_terminated";
+    readonly now: Date;
+  },
+): Promise<CallSessionRecord | null> {
+  const result = await executor.query<CallSessionRow>(
+    `UPDATE call_sessions
+     SET status='ended',
+         version=version+1,
+         deadline_generation=deadline_generation+1,
+         ended_at=$3,
+         terminal_reason=$2,
+         updated_at=$3
+     WHERE partnership_id=$1
+       AND status <> 'ended'
+     RETURNING ${sessionColumns}`,
+    [input.partnershipId, input.reason, input.now],
+  );
+  return result.rows[0] ? mapSession(result.rows[0]) : null;
 }

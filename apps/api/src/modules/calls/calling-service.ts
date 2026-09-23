@@ -310,6 +310,7 @@ export class CallingService {
         partnershipId: lifecycle.partnershipId,
         callerAccountId: auth.session.accountId,
         callerDeviceId: auth.session.deviceId,
+        callerSessionId: auth.session.sessionId,
         calleeAccountId: otherAccountId,
         kind: "voice",
         now,
@@ -436,6 +437,7 @@ export class CallingService {
         expectedVersion: call.version,
         calleeAccountId: auth.session.accountId,
         deviceId: auth.session.deviceId,
+        sessionId: auth.session.sessionId,
         now,
         connectExpiresAt,
       });
@@ -513,6 +515,7 @@ export class CallingService {
         if (
           !mine
           || mine.endpointDeviceId !== auth.session.deviceId
+          || mine.endpointSessionId !== auth.session.sessionId
           || !["accepted", "connected"].includes(call.state)
         ) {
           throw new ApiError(409, "CALL_ACTION_NOT_ALLOWED");
@@ -596,6 +599,7 @@ export class CallingService {
         callId: call.id,
         accountId: auth.session.accountId,
         deviceId: auth.session.deviceId,
+        sessionId: auth.session.sessionId,
         now,
         hardExpiresAt,
       });
@@ -637,6 +641,7 @@ export class CallingService {
       callId,
       accountId: auth.session.accountId,
       deviceId: auth.session.deviceId,
+      sessionId: auth.session.sessionId,
     });
     if (!authorization) throw new ApiError(404, "CALL_NOT_FOUND");
     const now = await getTransactionTimestamp(this.database.pool);
