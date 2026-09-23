@@ -19,7 +19,7 @@ The concrete M2 implementation is defined in:
 - `M2_REALTIME_OFFLINE_DESIGN.md`
 - `../api/M2_REALTIME_PROTOCOL.md`
 
-Implementation status: M2 realtime source is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; executed local and physical-device closure are pending.
+Implementation status: M2 realtime/offline closure is complete and merged. C1 design adds an explicitly negotiated realtime v2 call invalidation without reopening M2 v1 semantics.
 
 M2 uses the official Fastify WebSocket integration, the existing HttpOnly session cookie, exact trusted-Origin validation, server-derived scope, and one dedicated PostgreSQL LISTEN connection per API process.
 
@@ -151,18 +151,21 @@ At final dissolution:
 - pending local operations are invalidated
 - clients are instructed to purge the partnership namespace
 
-## Call signaling
+## C1 call realtime and signaling
 
-WebSocket signaling carries:
+M2 `shawtie.realtime.v1` remains the closed content-free protocol that shipped with M2.
 
-- call offers
-- call answers
-- ICE candidates where applicable
-- ringing state
-- accept or reject
-- end state
+C1 introduces `shawtie.realtime.v2`, which preserves v1 behavior and adds only `call.changed` containing opaque call identity/version information required to trigger canonical HTTP refresh. Existing frame schema versions remain independent from the negotiated WebSocket subprotocol version.
 
-The WebSocket does not carry call media.
+SDP, ICE, TURN credentials, device labels, IP/network data, and call-control mutations never enter the ordinary realtime channel.
+
+After explicit call acceptance, C1 uses the separate authenticated `shawtie.call.v1` WebSocket at `/api/v1/calls/:callId/signal` for transient WebRTC negotiation.
+
+Signaling data is never persisted or logged. SDP is candidate-free and trickle candidates are parsed and restricted to relay candidates before forwarding.
+
+The signaling WebSocket does not carry call media.
+
+See `C1_VOICE_CALLING_DESIGN.md` and `../api/C1_SIGNALING_PROTOCOL.md`.
 
 ## Push minimization
 

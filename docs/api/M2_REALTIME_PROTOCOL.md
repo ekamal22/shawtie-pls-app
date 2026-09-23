@@ -600,3 +600,30 @@ Protocol tests must include:
 - healthy-socket anti-entropy repairs a deliberately missed hint
 - session revocation while connected
 - final dissolution while connected
+
+## C1 realtime v2 extension
+
+M2 `shawtie.realtime.v1` remains unchanged.
+
+C1 introduces `shawtie.realtime.v2` as an explicitly negotiated transport successor. A v2 client understands every v1 frame and one additional content-free server frame. The frame schema version is independent of the WebSocket subprotocol version, so the first `call.changed` schema is still `v: 1`:
+
+~~~json
+{
+  "v": 1,
+  "type": "call.changed",
+  "payload": {
+    "eventId": "uuid",
+    "partnershipId": "uuid",
+    "callId": "uuid",
+    "callVersion": 4
+  }
+}
+~~~
+
+The frame is only an invalidation hint. It contains no call state, caller/callee name, SDP, ICE, TURN secret, device/network data, or media metadata.
+
+The browser fetches canonical call state over HTTP after receiving it.
+
+Server rollout may support v1 and v2 simultaneously. C1 UI is disabled for a connection that negotiated only v1. This avoids silently changing the closed M2 v1 transport schema.
+
+Call signaling itself remains prohibited on ordinary realtime and uses `shawtie.call.v1` only after explicit acceptance.

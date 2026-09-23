@@ -1,0 +1,377 @@
+# C1 Call Signaling Protocol
+
+## Status
+
+DESIGN COMPLETE. IMPLEMENTATION NOT STARTED.
+
+Branch: `feat/c1-voice-calling`
+
+Required base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
+
+Protocol identifier:
+
+shawtie.call.v1
+
+Endpoint:
+
+/api/v1/calls/:callId/signal
+
+Purpose:
+
+Transient WebRTC negotiation for one already-accepted call.
+
+Durable call actions stay on HTTP.
+
+M2 realtime stays content-free and does not carry SDP or ICE.
+
+## Security boundary
+
+The signaling WebSocket is accepted only when:
+
+- Origin exactly matches the trusted application origin
+- existing HttpOnly session cookie is present and valid
+- session is not expired or revoked
+- device is current
+- call exists in the current partnership
+- call is accepted or connected
+- current device is caller_device_id or accepted_callee_device_id
+- requested subprotocol is exactly shawtie.call.v1
+- connection and abuse policy allow the upgrade
+- per-message compression is disabled
+
+The callId path parameter is lookup input only. It is not authorization.
+
+## Transport properties
+
+- text JSON application frames only
+- binary application frames rejected
+- per-message compression disabled
+- strict closed runtime schemas
+- bounded frame sizes
+- bounded frame rate
+- bounded ICE candidate count
+- no application-frame logging
+- privacy-safe close reasons
+- one active signaling socket per call and selected device
+
+Initial whole-frame ceiling: 65536 bytes. Initial SDP payload ceiling: 49152 bytes. Initial ICE candidate ceiling: 256 candidates per signaling generation. These are server policy values and may be reduced without changing the protocol.
+
+## Envelope
+
+Every frame has v, type, and a closed type-specific payload.
+
+Unknown critical types fail the signaling generation.
+
+Raw frame bodies are never logged.
+
+## Server-derived connection context
+
+The server binds each socket to:
+
+- connectionId
+- callId
+- callVersion observed at upgrade
+- accountId
+- deviceId
+- role: caller or callee
+- signalingGeneration
+- connectedAt
+
+The browser does not choose a target account or device.
+
+## Signaling generation
+
+signalingGeneration fences transient negotiation state.
+
+It is not a database capability token.
+
+When a newer socket supersedes an older socket for either endpoint, the hub begins a new signaling generation and invalidates stale frame callbacks.
+
+If one endpoint reconnect requires a new generation, the server notifies or closes the peer signaling socket so both sides converge on the same generation.
+
+A process restart loses in-memory generations. Both clients reconnect and establish a fresh generation from durable call authority.
+
+## control.ready
+
+Server to client:
+
+~~~json
+{
+  "v": 1,
+  "type": "control.ready",
+  "payload": {
+    "connectionId": "uuid",
+    "callId": "uuid",
+    "callVersion": 6,
+    "role": "caller",
+    "signalingGeneration": "opaque-string",
+    "peerPresent": false
+  }
+}
+~~~
+
+Receiving ready does not mean media is connected.
+
+## control.peer_joined
+
+Server to client:
+
+~~~json
+{
+  "v": 1,
+  "type": "control.peer_joined",
+  "payload": {
+    "signalingGeneration": "opaque-string"
+  }
+}
+~~~
+
+The caller may create the initial offer after the accepted callee endpoint has joined the same generation.
+
+## control.peer_left
+
+Server to client:
+
+~~~json
+{
+  "v": 1,
+  "type": "control.peer_left",
+  "payload": {
+    "signalingGeneration": "opaque-string",
+    "reason": "reconnect|socket_closed|authorization_changed"
+  }
+}
+~~~
+
+The client refreshes canonical call state before deciding whether the call ended.
+
+## Candidate privacy rule
+
+C1 enforces relay-only candidate privacy at both client and server.
+
+SDP descriptions are candidate-free:
+
+- before transmission, the client removes `a=candidate:` and `a=end-of-candidates` lines
+- the server rejects any `signal.description` payload containing ICE candidate lines
+- ICE candidates are transported only through `signal.ice_candidate`
+- the server parses each candidate and accepts only `typ relay`
+- host, srflx, prflx, malformed, or unknown candidate types fail the signaling generation
+
+This is defense in depth above `iceTransportPolicy: "relay"` and prevents a stale or modified client from smuggling a direct candidate through SDP.
+## signal.description
+
+Bidirectional forwarded frame:
+
+~~~json
+{
+  "v": 1,
+  "type": "signal.description",
+  "payload": {
+    "signalingGeneration": "opaque-string",
+    "descriptionType": "offer",
+    "sdp": "..."
+  }
+}
+~~~
+
+descriptionType is offer or answer.
+
+SDP is transient, never persisted, never logged, contains no ICE candidate lines, and is forwarded only to the authorized peer.
+
+## signal.ice_candidate
+
+Bidirectional forwarded frame:
+
+~~~json
+{
+  "v": 1,
+  "type": "signal.ice_candidate",
+  "payload": {
+    "signalingGeneration": "opaque-string",
+    "candidate": {
+      "candidate": "candidate:...",
+      "sdpMid": "0",
+      "sdpMLineIndex": 0,
+      "usernameFragment": "optional"
+    }
+  }
+}
+~~~
+
+Candidates are transient and never persisted or logged.
+
+Count and byte limits apply. The server parses the candidate grammar sufficiently to require `typ relay`; all non-relay candidate types are rejected before forwarding.
+
+The browser is configured relay-only.
+
+## signal.ice_complete
+
+Bidirectional:
+
+~~~json
+{
+  "v": 1,
+  "type": "signal.ice_complete",
+  "payload": {
+    "signalingGeneration": "opaque-string"
+  }
+}
+~~~
+
+## control.resignal_required
+
+Server to client:
+
+~~~json
+{
+  "v": 1,
+  "type": "control.resignal_required",
+  "payload": {
+    "signalingGeneration": "opaque-string",
+    "reason": "peer_reconnected|hub_reset|ice_restart|unknown_state"
+  }
+}
+~~~
+
+Clients discard stale pending negotiation work and use the perfect-negotiation flow for the new generation.
+
+## control.call_ended
+
+Server to client:
+
+~~~json
+{
+  "v": 1,
+  "type": "control.call_ended",
+  "payload": {
+    "callVersion": 9
+  }
+}
+~~~
+
+The browser fetches canonical call state over HTTP and the socket closes.
+
+## Perfect negotiation rules
+
+C1 uses the perfect-negotiation pattern.
+
+Initial deterministic roles:
+
+- callee is polite
+- caller is impolite
+
+The implementation must handle simultaneous negotiationneeded events and ICE restarts without invalid signaling state.
+
+## Candidate buffering
+
+An ICE candidate can arrive before the corresponding remote description is installed.
+
+The client buffers candidates per signaling generation until the remote description is ready.
+
+Buffered candidates from an old generation are discarded.
+
+## ICE restart
+
+Either selected endpoint may detect relay failure or a network transition.
+
+Recovery flow:
+
+1. confirm canonical call remains non-terminal
+2. obtain fresh TURN credentials when needed
+3. ensure signaling socket is current
+4. establish a fresh signaling generation if required
+5. perform offer with ICE restart
+6. apply perfect-negotiation collision handling
+7. fail closed if relay connectivity cannot be restored
+
+The browser does not remove iceTransportPolicy relay during recovery.
+
+## Durable and transient boundaries
+
+Durable HTTP owns initiate, accept, reject, cancel, endpoint connected reports, end, call timeout, call history, and lifecycle termination.
+
+Transient signaling owns SDP, ICE candidates, peer signaling presence, and negotiation restart hints.
+
+A signaling frame can never accept, reject, cancel, or end a call by itself.
+
+## Reconnect semantics
+
+If signaling is lost while media is healthy, the call does not end solely because the socket changed.
+
+If media needs negotiation, both endpoints reconnect into a fresh signaling generation.
+
+If an API process restarts, durable call state remains and both endpoints rebuild transient signaling state.
+
+## Multi-instance routing
+
+The initial design does not add Redis.
+
+When more than one API instance serves signaling, infrastructure must route the same callId signaling path to the same API instance for both endpoints.
+
+This is an operational affinity requirement, not authorization.
+
+If reliable affinity is unavailable, a shared signaling transport requires a new ADR.
+
+PostgreSQL NOTIFY is not used for SDP.
+
+## Backpressure and rate limits
+
+Bound:
+
+- signaling upgrades
+- descriptions per generation
+- ICE candidates per generation
+- total bytes per generation
+- reconnect attempts
+- ping/pong abuse
+
+Excessive frames fail closed without revealing foreign-call state.
+
+## Logging
+
+Allowed:
+
+- opaque connection ID
+- bounded first-party call reference where policy permits
+- frame type
+- byte count
+- generic validation category
+- close category
+
+Forbidden:
+
+- SDP
+- ICE candidate text
+- parsed candidate IP
+- TURN credential
+- push subscription endpoint
+- media device label
+- raw WebSocket frame
+
+## Compatibility
+
+`shawtie.call.v1` versions independently from both `shawtie.realtime.v1` and `shawtie.realtime.v2`.
+
+C2 should reuse v1 if video is compatible.
+
+S1 call-authentication changes must be versioned and reviewed rather than silently changing v1 semantics.
+
+## Test obligations
+
+Test:
+
+- foreign and random call upgrade denial
+- unaccepted call cannot signal
+- non-winning callee device cannot signal
+- revoked device cannot reconnect
+- wrong Origin and subprotocol denial
+- binary and oversized frame denial
+- stale generation denial
+- SDP and ICE absent from persistence and logs
+- rate and candidate limits
+- perfect-negotiation collision
+- candidate-before-description buffering
+- signaling reconnect with live media
+- process-loss reconnect
+- ICE restart after network change
+- call termination closes signaling

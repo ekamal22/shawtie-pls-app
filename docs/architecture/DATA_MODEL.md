@@ -519,17 +519,41 @@ The full R1 design is canonical in `R1_RELATIONSHIP_SPACE_DESIGN.md`.
 
 ## Calls
 
-Logical tables:
+C1 refines the existing `call_sessions`, `call_participants`, and `call_events` tables created by the foundation migrations. It does not create a second call aggregate.
+
+C1 migration `0017_calling_runtime.sql` adds authoritative call runtime state including:
 
 ```text
 call_sessions
+- version
+- ring_expires_at
+- connect_expires_at
+- connected_at
+- terminal_reason
+- hard_expires_at
+- updated_at
+
 call_participants
-call_events
+- role
+- endpoint_device_id
+- accepted_at
+- connected_at
+- left_at
 ```
 
-Call history is partnership-scoped and follows partnership deletion rules.
+The caller device is fixed when the call is created. The callee endpoint is selected transactionally by first successful accept.
 
-Persist only the metadata required for call state and history.
+Database constraints/indexes enforce at most one non-terminal call per partnership and at most one caller/callee participant role per call. Selected endpoint device/account integrity is enforced with database-backed ownership checks where the device schema permits composite foreign keys.
+
+Canonical durable states are `ringing`, `accepted`, `connected`, and terminal `ended`; `terminal_reason` records `rejected`, `cancelled`, `missed`, `completed`, `failed`, `authorization_revoked`, `partnership_terminated`, `account_deletion`, or another bounded reviewed reason.
+
+`call_events` stores only bounded transition metadata and never SDP, ICE, TURN credentials, device labels, or call audio.
+
+Call history is partnership-scoped and deleted at final dissolution.
+
+C1 migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions for generic incoming-call reachability. Push capability URLs and subscription keys are sensitive operational capability data and are never logs or public projections.
+
+C2 later reuses this call model and enables `video`; it does not create separate video-call history.
 
 ## Media
 

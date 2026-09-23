@@ -213,6 +213,20 @@ User item deletion hard-deletes preview, main content, child state, references, 
 
 If R1 introduces storage outside the relationship-item relational tree, the deletion manifest and retry-safe handlers must be extended before R1 can close.
 
+## C1 call deletion integration
+
+C1 does not create a second partnership deletion workflow.
+
+Final dissolution first terminates current call authority synchronously: no new accept, signaling upgrade, TURN credential, push routing, or call mutation is authorized for the old partnership.
+
+The existing partnership relational cleanup then deletes `call_sessions`, `call_participants`, and `call_events` with the rest of partnership relational content.
+
+Web Push subscriptions are account/device capability records rather than partnership history. Final dissolution stops routing for the terminated partnership but does not delete an otherwise valid account/device subscription. Account deletion or device revocation disables/removes the relevant subscription.
+
+A future partnership must never expose old call IDs or history.
+
+Connected/ringing call teardown must not wait for asynchronous relational deletion to revoke authorization.
+
 ## Failure behavior
 
 If a deletion target fails:

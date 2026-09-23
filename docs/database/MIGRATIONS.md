@@ -258,6 +258,31 @@ If implementation evidence proves that new durable server schema is required, th
 
 IndexedDB local schema versions are client schema and are not PostgreSQL migration numbers.
 
+## C1 migration ownership and parallel M3 coordination
+
+Parallel M3 design owns planned migrations 0015 and 0016.
+
+C1 Voice Calling owns:
+
+- `0017_calling_runtime.sql`
+- `0018_push_runtime.sql`
+
+While M3 migrations are not yet present on the isolated C1 branch, C1 database tests may use the repository's existing reservation mechanism:
+
+```text
+SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
+```
+
+No placeholder migration files and no copied M3 SQL are permitted.
+
+Final integrated C1 closure must run real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green.
+
+`0017` refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, and call uniqueness.
+
+`0018` adds reusable device-bound Web Push subscription persistence and call push-routing indexes.
+
+No C2 migration is reserved by C1 design.
+
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.

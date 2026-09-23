@@ -380,6 +380,28 @@ M2 introduces no Redis and is expected to require no new PostgreSQL migration.
 
 M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
 
+## C1 voice-calling design
+
+The concrete C1 design is `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`.
+
+C1 preserves the modular monolith and PostgreSQL authority while adding:
+
+- refined durable state in the existing call tables
+- authenticated HTTP for every durable call mutation
+- explicit `shawtie.realtime.v2` negotiation for content-free `call.changed` invalidation while M2 v1 remains unchanged
+- dedicated accepted-call `shawtie.call.v1` signaling for transient SDP/ICE
+- fixed caller endpoint and first-accept-wins callee endpoint
+- relay-only TURN with short-lived credentials
+- candidate-free SDP and server-validated relay-only trickle candidates
+- generic Web Push background wakeup bound to current account/device authorization
+- durable ring/connect/hard timeout fencing
+- C1 migrations 0017/0018 coordinated with parallel M3 0015/0016
+- physical Android acceptance
+
+C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 later enables video over the same verified call substrate.
+
+Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refines the frozen relay-first baseline to relay-only for C1.
+
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

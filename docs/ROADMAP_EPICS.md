@@ -73,10 +73,13 @@ M2 Realtime and Offline
     +---+---+
     |       |
     v       v
-M3 Media  C1 Calling
-    |       |
-    +---+---+
-        v
+M3 Media  C1 Voice Calling
+    |            |
+    |            v
+    |      C2 Video Calling
+    |            |
+    +------+-----+
+           v
 S1 E2EE and Crypto Recovery
         |
         v
@@ -1335,39 +1338,158 @@ Status: PLANNED
 - [ ] storage cleanup retries safely
 - [ ] physical Android media and voice-message flows pass
 
-# C1: Voice and Video Calling
+# C1: Voice Calling
 
-Status: PLANNED
+Status: DESIGN COMPLETE, IMPLEMENTATION NOT STARTED
+
+Branch: `feat/c1-voice-calling`
+
+Base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
+
+Architecture: `docs/architecture/C1_VOICE_CALLING_DESIGN.md`
+
+API: `docs/api/C1_CALLING_API.md`
+
+Signaling: `docs/api/C1_SIGNALING_PROTOCOL.md`
+
+Physical Android: `docs/testing/C1_ANDROID_ACCEPTANCE.md`
+
+Accepted ADRs:
+
+- ADR-013 Dedicated Call Signaling Transport
+- ADR-014 Relay-Only Call Network Privacy
+
+Migration ownership:
+
+- `0017_calling_runtime.sql`
+- `0018_push_runtime.sql`
+
+Parallel M3 owns planned 0015/0016. Isolated C1 validation may reserve 0015/0016 through `SHAWTIE_MIGRATION_RESERVATIONS`; final integrated closure requires the real 0001-0018 chain with `reserved=0`.
 
 ## Scope
 
-- call signaling
-- voice calls
-- video calls
-- accept
-- reject
-- cancel
-- missed state
-- call history
-- TURN credential issuance
-- relay-first privacy
-- breakup call consent
+- one-to-one voice calls only
+- durable call authority/history
+- create/current/detail/history
+- explicit accept/reject/cancel/end
+- missed and connect timeout
+- bounded hard stale-call timeout
+- first-accept-wins multi-device ringing
+- fixed caller endpoint
+- `shawtie.realtime.v2` call invalidation
+- dedicated `shawtie.call.v1` signaling
+- audio-only WebRTC
+- candidate-free SDP
+- server-validated relay-only ICE candidates
+- relay-only TURN path
+- short-lived TURN credentials
+- Web Push background incoming-call reachability
+- reconnect, signaling generation fencing, ICE restart
+- breakup/account-deletion/session/device-revocation/dissolution integration
+- physical Android acceptance
+
+C1 excludes video, group calls, screen sharing, call recording, voicemail, direct peer fallback, SFU/MCU, offline queued call initiation, and custom production E2EE.
 
 ## Acceptance gates
 
-- [ ] calls require authenticated partnership authorization
+- [ ] implementation starts from verified merged-M2 mainline or descendant
+- [ ] isolated C1 tests reserve only M3-owned 0015/0016 and do not copy/create placeholder M3 migrations
+- [ ] final integrated migrations 0001 through 0018 pass with `reserved=0`
+- [ ] existing foundation call tables are refined rather than replaced by a second aggregate
+- [ ] one non-terminal call per partnership is database-enforced
+- [ ] exactly one caller and one callee role are enforced per call
+- [ ] caller endpoint device is fixed at initiation
+- [ ] first eligible callee device to commit acceptance wins
+- [ ] non-winning callee devices cannot signal or obtain TURN credentials
+- [ ] simultaneous initiation cannot create two non-terminal calls
+- [ ] durable mutations use idempotency and expectedVersion where races require it
 - [ ] calls never auto-answer
-- [ ] breakup_pending calls require explicit acceptance for every call
-- [ ] short-lived TURN credentials are issued only after authorization
-- [ ] permanent TURN credentials are not embedded in the client
-- [ ] expired TURN credentials fail
-- [ ] relay-first behavior is verified where supported
-- [ ] TURN/TCP or TURN/TLS fallback is tested where supported
+- [ ] no signaling socket is authorized before explicit acceptance
+- [ ] no TURN credential is issued before explicit acceptance
+- [ ] breakup_pending requires fresh explicit acceptance for every new call
+- [ ] account-deletion view-only state denies new calling and terminates current call authority
+- [ ] final dissolution removes call/signaling/TURN authority synchronously before cleanup
+- [ ] selected-device revocation prevents signaling reconnect and TURN refresh
+- [ ] random/foreign/old-partnership call IDs fail privacy-safely
+- [ ] ring timeout is durable and stale-safe
+- [ ] accepted-but-never-connected timeout is durable and stale-safe
+- [ ] hard stale-call timeout prevents permanent partnership call blockage
+- [ ] connectedAt is recorded only after both selected endpoints report connected
+- [ ] call duration uses trusted server timestamps
 - [ ] call history is partnership-scoped
-- [ ] call history is deleted at final dissolution
-- [ ] account-deletion view-only state disables calling
-- [ ] call interruption and reconnect behavior is safe
-- [ ] physical-device voice and video tests pass
+- [ ] final dissolution deletes call history
+- [ ] future partnership cannot access old call IDs/history
+- [ ] M2 `shawtie.realtime.v1` remains unchanged
+- [ ] C1-capable client negotiates `shawtie.realtime.v2` before calling UI is enabled
+- [ ] `call.changed` contains only opaque ID/version refresh metadata
+- [ ] stale v1 app/service-worker code is never treated as C1-capable
+- [ ] `shawtie.call.v1` enforces exact Origin, current session/device, accepted call, and selected endpoint
+- [ ] binary/oversized/unknown signaling frames fail closed
+- [ ] stale signaling generation cannot mutate current negotiation state
+- [ ] SDP is never persisted or logged
+- [ ] SDP forwarded by C1 contains no ICE candidate lines
+- [ ] ICE candidate strings are never persisted or logged
+- [ ] server rejects host, srflx, prflx, malformed, and unknown candidate types
+- [ ] only parsed `typ relay` candidates are forwarded
+- [ ] RTCPeerConnection uses `iceTransportPolicy: relay`
+- [ ] TURN outage never downgrades to direct peer connectivity
+- [ ] TURN credentials are short-lived and never persist in IndexedDB/cache/logs
+- [ ] TURN issuance/refresh rechecks current selected-device and lifecycle authorization
+- [ ] TURN/UDP works where available
+- [ ] TURN/TCP or TURN/TLS fallback works where deployed
+- [ ] signaling disconnect alone does not end healthy media
+- [ ] signaling process loss can recover from canonical call authority
+- [ ] perfect-negotiation glare handling passes
+- [ ] candidate-before-description buffering is generation-safe
+- [ ] relay-only ICE restart after network change is safe
+- [ ] Web Push payload contains no caller identity, call ID, partnership ID, SDP, ICE, or TURN data
+- [ ] push notification click never auto-accepts and fetches canonical current call
+- [ ] push routing requires current device/account authorization, not merely a stored subscription
+- [ ] explicit logout/device revocation/account lockout stops future call push routing
+- [ ] stale push cannot resurrect rejected/cancelled/missed/terminated call
+- [ ] foreground calls still work when push permission is denied
+- [ ] microphone permission denial is safe and creates no hidden media path
+- [ ] mute/unmute remains local transient state and is not sensitive durable history
+- [ ] call audio is never proxied or recorded by application servers
+- [ ] provider/signaling errors are privacy-safe and bounded
+- [ ] call create/signaling/TURN/push paths have abuse/rate bounds
+- [ ] full C1 contracts/domain/security suites pass
+- [ ] C1 PostgreSQL/API/worker matrix passes
+- [ ] real-browser signaling/WebRTC acceptance passes
+- [ ] mandatory physical Android C1 acceptance passes
+- [ ] full `npm run health` passes
+- [ ] `npm audit --audit-level=high` passes
+- [ ] no Unicode em dash is introduced in C1 repo docs/commits
+- [ ] diff/worktree hygiene and local/remote SHA parity pass
+
+# C2: Video Calling
+
+Status: PLANNED
+
+Depends on verified C1.
+
+## Scope
+
+- enable `video` over C1 call authority/history/signaling
+- explicit camera permission/activation
+- local/remote video rendering
+- camera enable/disable
+- front/back camera switching where supported
+- video track renegotiation via C1 perfect negotiation
+- bandwidth/network adaptation
+- physical Android video acceptance
+
+## Acceptance gates
+
+- [ ] C2 reuses C1 call authority, selected-device model, history, signaling, TURN, push, and deletion behavior
+- [ ] no camera track starts without explicit user action and permission
+- [ ] raw camera labels/device metadata are not persisted server-side
+- [ ] relay-only candidate privacy remains enforced
+- [ ] video renegotiation is generation-safe
+- [ ] camera switching is safe on supported Android device
+- [ ] breakup/account-deletion/final-dissolution behavior matches C1
+- [ ] video browser tests pass
+- [ ] physical Android video calls pass
 
 # R1: Relationship Space
 
@@ -1676,6 +1798,8 @@ Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3
 # S1: E2EE and Cryptographic Recovery
 
 Status: PLANNED
+
+Depends on verified M3, C1 Voice Calling, and C2 Video Calling.
 
 ## Scope
 

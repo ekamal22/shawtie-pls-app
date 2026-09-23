@@ -296,3 +296,18 @@ Update this matrix when:
 - data export is implemented
 - backup policy changes
 - legal retention requirements become applicable
+
+## C1 voice-calling additions
+
+| Data | Classification | Server storage | Logs | Provider exposure | Deletion/expiry |
+| --- | --- | --- | --- | --- | --- |
+| Call history/state metadata | SENSITIVE | Partnership-scoped PostgreSQL | Opaque IDs and bounded categories only | Hosting/database provider | Final dissolution/account deletion path |
+| SDP | SENSITIVE transient | Never | Never | Authorized peer only through signaling | Drop after forwarding/socket generation |
+| ICE candidate | SENSITIVE transient | Never | Never raw candidate/IP | Authorized peer; TURN/WebRTC infra as required | Drop after forwarding/socket generation |
+| TURN temporary credential | SECRET while valid | Never durable | Never | Selected endpoint and TURN provider | Short expiry |
+| TURN provider secret | SECRET | Server secret store only | Never | TURN credential issuer only | Rotate/revoke operationally |
+| Web Push endpoint/p256dh/auth | SENSITIVE capability material | Device-bound PostgreSQL | Never raw | Push provider necessarily receives delivery data | Unsubscribe/provider invalidation/device or account deletion |
+| Incoming-call push payload | SENSITIVE minimal event | No payload history required | Event type only | Push provider | Delivery completion |
+| Call audio plaintext | HIGHLY_SENSITIVE | Never | Never | Endpoints only; TURN relays encrypted packets | End of call |
+
+SDP must be candidate-free in C1. Candidate IP/network text must never be retained as test evidence.

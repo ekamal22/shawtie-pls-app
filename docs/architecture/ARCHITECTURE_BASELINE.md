@@ -154,3 +154,12 @@ Implementation reviews should ask:
 - does it require migration or compatibility handling?
 
 If any answer implies structural change, follow architecture governance before continuing.
+
+## C1 accepted refinements
+
+Architecture Baseline 1.0 remains the historical frozen baseline. Accepted ADRs may refine it without rewriting the original numbered decisions.
+
+- ADR-013 isolates accepted-call SDP/ICE into dedicated `shawtie.call.v1` and keeps M2 realtime content-free.
+- ADR-014 refines baseline item 16 from relay-first to relay-only for C1 voice calling. C1 must fail closed when TURN relay is unavailable rather than silently use a direct peer path.
+
+C2 inherits these C1 call-platform refinements unless a later accepted ADR changes them.

@@ -162,3 +162,15 @@ Compatibility testing must include:
 - unknown outbox payload version fails closed
 - unknown R1 content schema version fails closed
 - preview/main payload-role mismatch fails closed after S1
+
+## C1 call compatibility
+
+C1 introduces two independently versioned protocols.
+
+`shawtie.realtime.v2` preserves the M2 v1 semantics and adds the content-free `call.changed` server invalidation. Server rollout supports v1 and v2 during transition. A browser that negotiated only v1 is not C1-capable and the call UI must remain disabled rather than silently receiving an unknown v1 frame.
+
+`shawtie.call.v1` is the transient accepted-call signaling protocol. SDP/ICE semantic changes that old call clients cannot safely ignore require a new call-signaling version.
+
+The service-worker/client compatibility gate must prevent stale application code from being treated as C1-capable after the server enables realtime v2.
+
+C1 durable scheduled/outbox payloads remain independently versioned and unknown payload versions fail closed.

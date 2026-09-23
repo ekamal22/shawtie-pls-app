@@ -1203,3 +1203,100 @@ Re-run or update the threat model when any of the following occurs:
 - cryptographic recovery changes
 - deferred post-stable call recording enters implementation
 - major infrastructure provider changes
+
+## C1 voice-calling threat additions
+
+### C1-T1: Direct WebRTC candidate leaks peer network address
+
+Impact: High
+
+Controls:
+
+- relay-only ICE policy
+- candidate-free SDP
+- signaling server parses and forwards only `typ relay` trickle candidates
+- no silent direct fallback
+- TURN UDP plus TCP/TLS fallback where deployed
+
+Evidence:
+
+- signaling protocol negative tests for host/srflx/prflx candidates
+- physical selected-candidate-pair inspection without storing raw IP evidence
+- forced TURN-unavailable failure test
+
+### C1-T2: Signaling payload leaks SDP/ICE/network metadata
+
+Impact: High
+
+Controls:
+
+- dedicated `shawtie.call.v1` accepted-call transport
+- exact Origin/session/device/call authorization
+- selected-endpoint-only signaling
+- bounded frames/candidates
+- no persistence or body logging
+- signaling generation fencing
+
+Evidence:
+
+- random/foreign/unaccepted/non-winning-device upgrade denial
+- log/database fixture scans proving absence of SDP and candidate text
+- stale-generation and process-reconnect tests
+
+### C1-T3: TURN credential theft or abuse
+
+Impact: High
+
+Controls:
+
+- no permanent credential in client
+- short-lived per-authorized-endpoint issuance
+- provider secret server-side only
+- call/device/lifecycle checks on every issuance
+- account/device/call rate and cost controls
+- no IndexedDB/cache/log persistence
+
+Evidence:
+
+- pre-accept, foreign-device, revoked-device, expired-call issuance denial
+- expiry and refresh tests
+- provider quota/abuse tests
+
+### C1-T4: Stale Web Push capability leaks call activity or triggers action
+
+Impact: Medium to High
+
+Controls:
+
+- generic payload without caller identity or call ID
+- routing requires current device/account authorization
+- notification click only opens app and fetches canonical `/calls/current`
+- no auto-accept action
+- explicit logout/device revocation/account lockout stops routing
+- provider permanent failure disables subscription idempotently
+
+Evidence:
+
+- stale push after reject/cancel/missed/final dissolution
+- logged-out/revoked device routing denial
+- payload fixture review
+
+### C1-T5: Crossed calls or multi-device races create multiple active sessions
+
+Impact: Medium
+
+Controls:
+
+- one non-terminal call per partnership database invariant
+- deterministic call-row serialization
+- fixed caller device
+- first-accept-wins callee endpoint
+- expectedVersion plus idempotency
+- ring/connect/hard timeout generation fencing
+
+Evidence:
+
+- simultaneous initiation
+- accept/reject/cancel/timeout races
+- two callee devices accepting concurrently
+- stale timeout after newer transition

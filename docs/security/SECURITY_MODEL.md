@@ -345,3 +345,21 @@ Required M2 security rules:
 Before S1, M2 local protected content remains development plaintext. Explicit logout, account switch, or observed revocation therefore purges the authorization-bound local protected state. M2 must not invent fake ciphertext or fake cryptographic epochs.
 
 PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notification must not weaken authorization or synchronization correctness because canonical HTTP/PostgreSQL reconciliation remains authoritative. LISTEN loss/reconnect forces connected local clients to resynchronize, and visible clients run low-frequency canonical anti-entropy to bound recovery from silent hint loss. NOTIFY publication is committed before the corresponding durable outbox claim is acknowledged delivered.
+
+## C1 voice-calling security boundary
+
+Canonical C1 design: `../architecture/C1_VOICE_CALLING_DESIGN.md`.
+
+- durable call authority remains in PostgreSQL and authenticated HTTP
+- calls never auto-answer and signaling/TURN are unavailable before explicit acceptance
+- M2 v1 remains unchanged; C1 uses negotiated `shawtie.realtime.v2` only for content-free `call.changed` invalidation
+- SDP/ICE use dedicated `shawtie.call.v1` only for the fixed caller device and first accepted callee device
+- SDP is candidate-free and the signaling server accepts only parsed relay candidates
+- SDP, ICE, TURN credentials, raw push capability data, and media device labels are never persisted or logged
+- `iceTransportPolicy: relay` is mandatory and failure to obtain TURN does not downgrade to direct peer connectivity
+- TURN credentials are short-lived and current call/device/lifecycle authorization is rechecked on every issuance
+- push payloads are generic wakeup hints, never caller identity or call authority, and never auto-accept
+- push routing requires current account/device authorization; stale subscriptions alone do not authorize delivery
+- random, foreign, old-partnership, and non-selected-device call access fails privacy-safely
+- account deletion, selected-device revocation, and final dissolution remove future signaling/TURN/call authority
+- C1 does not claim S1 endpoint cryptographic identity authentication; stable sensitive-use review remains required

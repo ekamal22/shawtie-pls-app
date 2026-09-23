@@ -121,6 +121,26 @@ Former-partner blocking is allowed only from a terminated source partnership and
 
 M1 refines the messaging capability inputs without changing relationship-object rules. For message mutation during `breakup_pending`, the authoritative design uses the message's immutable `serverSequence` against the breakup process `messageFreezeSequence`; trusted timestamp comparison remains only a legacy fallback for breakup rows that predate the cutoff. Messaging-specific helpers may be factored around the shared lifecycle guards so M1 and parallel feature work do not duplicate or rewrite each other's feature semantics. Optimistic `expectedContentVersion` checks are repository/API concurrency guards after capability approval, not client-provided authorization.
 
+## C1 calling refinement
+
+C1 continues to use the central `start_call` partnership capability as the lifecycle gate for initiating a new call.
+
+Important distinction: every call requires explicit recipient acceptance in every lifecycle where calls are allowed. The existing `callRequiresExplicitBreakupAcceptance` helper expresses the extra product emphasis during `breakup_pending`; a false value must never be interpreted as permission to auto-answer in active state.
+
+C1-A adds pure call-state predicates around authoritative call/device state for:
+
+- whether the current selected caller endpoint may continue
+- whether the current callee device may accept
+- whether signaling may open
+- whether TURN credentials may be issued
+- whether a terminal transition is valid
+
+These predicates consume trusted call state, authenticated account/device identity, current partnership lifecycle, and server time. Browser state is never authorization.
+
+`account_deletion_pending` and terminated partnership states deny new calling. Final dissolution and selected-device revocation remove continuation authorization even if WebRTC transport has not yet noticed.
+
+Call optimistic `expectedVersion`, first-accept-wins row locking, and timeout generations are concurrency controls after capability approval, not browser-provided permissions.
+
 ## UI use
 
 The client may receive a server-derived capability snapshot for presentation.

@@ -491,24 +491,70 @@ After protocol selection, include:
 - account deletion
 - future partnership cannot decrypt previous partnership content
 
-## Call tests
+## C1 voice-calling tests
 
-Cover:
+Canonical sources:
 
-- voice
-- video
-- accept
-- reject
-- cancel
-- missed call
-- network interruption
-- TURN relay
-- relay over TCP or TLS fallback where supported
-- breakup_pending explicit acceptance
-- account-deletion state rejection
-- short-lived TURN credential issuance
-- expired TURN credential rejection
-- relay-first path verification where supported
+- `../architecture/C1_VOICE_CALLING_DESIGN.md`
+- `../api/C1_CALLING_API.md`
+- `../api/C1_SIGNALING_PROTOCOL.md`
+- `C1_ANDROID_ACCEPTANCE.md`
+
+Planned C1 command surface:
+
+```text
+npm run test:c1
+npm run test:c1:security
+npm run test:c1:postgres
+npm run test:c1:browser
+npm run test:c1:local
+npm run test:c1:closure
+npm run test:c1:device:prepare
+npm run test:c1:device:cleanup
+```
+
+Coverage must include:
+
+- one non-terminal call per partnership under simultaneous initiation
+- first-accept-wins with two callee devices
+- fixed caller endpoint and selected-device integrity
+- create/accept/reject/cancel/end lost-response idempotency
+- expectedVersion races
+- ring/connect/hard timeout generation fencing
+- active/breakup/account-deletion/terminated lifecycle behavior
+- selected-device and session revocation
+- future-partnership call-history isolation
+- final-dissolution history cleanup
+- realtime v1/v2 negotiation and `call.changed` content minimization
+- stale v1 client not treated as C1-capable
+- exact Origin/session/device/call authorization on `shawtie.call.v1`
+- unaccepted/random/foreign/non-winning-device signaling denial
+- binary/oversized/unknown/stale-generation signaling denial
+- SDP candidate-line rejection
+- host/srflx/prflx/malformed candidate rejection
+- relay-only candidate forwarding
+- SDP/ICE/TURN/push capability absence from persistence and logs
+- perfect-negotiation glare handling
+- candidate-before-description buffering
+- signaling reconnect and process-loss recovery
+- relay-only ICE restart after network change
+- pre-accept TURN denial
+- TURN expiry and authorization refresh
+- TURN/UDP plus TCP/TLS fallback where deployed
+- generic push payload fixture review
+- stale push suppression after terminal call
+- logged-out/revoked-device push routing denial
+- push-denied foreground calling through realtime v2
+- microphone permission denial and teardown
+- physical Android voice-call acceptance
+
+Isolated C1 database validation may reserve only M3-owned 0015/0016. Final integrated C1 closure requires real migrations 0001 through 0018 with `reserved=0`.
+
+## C2 video-calling tests
+
+C2 must reuse the verified C1 call authority, signaling protocol, TURN policy, push substrate, and deletion model.
+
+Additional coverage includes explicit camera permission, no hidden video activation, local/remote rendering, camera on/off, front/back switching where supported, generation-safe video renegotiation, bandwidth/network transitions, and physical Android video acceptance.
 
 ## Acceptance principle
 

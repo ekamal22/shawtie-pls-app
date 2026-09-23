@@ -27,6 +27,8 @@ Accepted ADRs are authoritative for architecture decisions.
 - ADR-009: Explicit Versioning and Trusted PWA Origin
 - ADR-010: PostgreSQL First Without Redis
 - ADR-011: Architecture Freeze and Change Control
+- ADR-013: Dedicated Call Signaling Transport
+- ADR-014: Relay-Only Call Network Privacy
 
 ## Creating a new ADR
 

@@ -1,150 +1,121 @@
 # Call Architecture
 
-## Scope
+## Milestone split
 
-Voice and video calls are part of MVP.
+C1 implements voice calling only.
 
-Built-in call recording is deferred beyond the first stable release and beyond the initial post-stable maturity period.
+C2 later adds video on top of the verified C1 call authority, signaling, TURN, push, history, and lifecycle substrate.
 
-## Transport
+Built-in call recording remains deferred beyond stable release.
 
-Use WebRTC for media.
+Canonical C1 design: `C1_VOICE_CALLING_DESIGN.md`.
 
-Use the authenticated WebSocket channel for call signaling.
+Canonical C1 API: `../api/C1_CALLING_API.md`.
 
-## Media path
+Canonical signaling protocol: `../api/C1_SIGNALING_PROTOCOL.md`.
 
-Preferred privacy behavior:
+Accepted call ADRs:
 
-```text
-caller
-  |
-encrypted WebRTC
-  |
-TURN relay
-  |
-encrypted WebRTC
-  |
-callee
-```
+- `../adr/ADR-013-call-signaling-transport.md`
+- `../adr/ADR-014-relay-only-call-privacy.md`
 
-Use relay-first behavior where supported to reduce direct peer IP exposure.
+## Authority
 
-TURN should support practical fallbacks such as:
+PostgreSQL owns durable call identity, partnership scope, selected endpoint devices, call state/version, trusted timestamps, terminal outcome, timeout fencing, and history.
 
-- UDP
-- TCP
-- TLS on port 443
+HTTP owns durable user call actions.
 
-The final provider choice may be self-hosted or managed.
+`shawtie.realtime.v2` adds only a content-free `call.changed` refresh hint.
 
-## TURN credentials
+`shawtie.call.v1` is a separate authenticated transient WebSocket for accepted-call SDP/ICE negotiation.
 
-TURN credentials must be short-lived.
+WebRTC owns transient endpoint media state.
 
-The PWA must never contain a permanent TURN username and password.
+TURN credentials authorize bounded relay use but are never partnership authorization.
 
-The authenticated API issues temporary TURN credentials only after:
+Web Push is a generic wakeup hint, not call authority.
 
-- validating the caller session
-- validating partnership membership
-- evaluating call capability
-- applying signaling and abuse rate limits
-
-Expired credentials cannot be refreshed without new authorization.
-
-## Encryption
-
-WebRTC transport encryption is required.
-
-The E2EE architecture must ensure the selected call design does not expose plaintext call media to application servers or media relay infrastructure.
-
-If a future architecture introduces an SFU, the encryption model must be reviewed again before deployment.
-
-## Signaling
-
-Persist or transmit only what is needed for call state.
-
-Logical states include:
-
-```text
-ringing
-accepted
-connected
-ended
-missed
-rejected
-cancelled
-failed
-```
-
-## Partnership authorization
-
-A call may be initiated only inside an authorized partnership.
-
-During `breakup_pending`, every call still requires explicit acceptance by the other partner before media begins.
+## Consent boundary
 
 Calls never auto-answer.
 
-During account-deletion recovery from an active partnership, calls are disabled because the partnership is view-only and one account has no access.
+Before explicit callee acceptance:
+
+- no signaling socket is authorized
+- no SDP or ICE is exchanged
+- no TURN credential is issued
+- no remote media session begins
+
+Every call during `breakup_pending` still requires fresh explicit acceptance exactly like active-state calls.
+
+## Media path
+
+```text
+caller browser
+   |
+WebRTC DTLS/SRTP
+   |
+TURN relay
+   |
+WebRTC DTLS/SRTP
+   |
+callee browser
+```
+
+C1 uses `iceTransportPolicy: relay` with no direct fallback.
+
+SDP is candidate-free and the signaling server forwards only parsed `typ relay` trickle candidates.
+
+TURN should support UDP and, where deployed, TCP/TLS fallbacks for restrictive networks.
+
+TURN provider secrets never enter the PWA. Credentials are short-lived and issued only to the two selected endpoint devices of one accepted non-terminal call.
+
+## Multi-device model
+
+The initiating device is the fixed caller endpoint.
+
+All currently authorized callee devices may ring, but the first eligible device to commit acceptance becomes the sole callee endpoint. Later accepts, signaling upgrades, and TURN requests from other callee devices fail.
+
+C1 does not implement device handoff.
+
+## Reachability
+
+Foreground incoming calls use realtime v2 plus canonical HTTP fetch.
+
+Background reachability uses a minimal reusable Web Push substrate. Payloads are generic and contain no caller identity or call ID; notification click validates the session and fetches `/api/v1/calls/current`.
+
+If notifications are denied or Web Push is unsupported, foreground calling remains available while background reachability is explicitly degraded.
+
+## Failure and timeout model
+
+Server-generated deadlines bound:
+
+- ringing
+- accepted-but-never-connected negotiation
+- stranded long-running non-terminal calls
+
+Scheduled finalizers are version/generation fenced.
+
+Signaling loss alone does not end a healthy media path. If renegotiation is required, endpoints reconnect into a fresh transient signaling generation and may perform relay-only ICE restart.
+
+## Scale-out
+
+C1 does not add Redis.
+
+The initial deployment may run one signaling API replica. Multiple replicas require verified call-ID affinity so both selected endpoints land on the same signaling process. A shared signaling broker requires a later ADR.
+
+## Cryptographic boundary
+
+WebRTC transport encryption is required, but C1 does not claim the full S1 endpoint-identity/E2EE model.
+
+S1 must review how call endpoint identity and DTLS fingerprints are bound to partnership cryptographic identity before sensitive stable-release use. C1 adds no custom media cipher.
 
 ## Call history
 
-Store partnership-scoped metadata:
+History is partnership-scoped and records only bounded metadata required by the PRD, including voice/video kind, direction, trusted timestamps/duration when connected, and terminal outcome.
 
-- voice or video
-- incoming or outgoing
-- start time
-- end time or duration
-- missed status
-- partnership ID
+Final dissolution deletes call history through the existing partnership deletion architecture.
 
-Call history is deleted with the partnership.
+## C2
 
-## Network privacy
-
-TURN relay reduces peer IP exposure but the relay necessarily observes connection metadata.
-
-The privacy policy and E2EE documentation must distinguish encrypted call content from network metadata.
-
-## Relay policy
-
-Relay-first behavior is preferred for privacy.
-
-If the implementation ever permits direct peer connectivity, the privacy impact must be documented explicitly and user expectations must not imply that peer IP addresses are always hidden.
-
-## Failure handling
-
-The client must handle:
-
-- denied microphone or camera permission
-- unavailable TURN
-- network change
-- signaling reconnect
-- unanswered call
-- call rejection
-- peer disconnect
-- app backgrounding where browser behavior permits
-
-## Deferred post-stable call recording
-
-Call recording is not an automatic post-release milestone.
-
-Before implementation, post-stable production evidence must justify the storage and bandwidth cost, retention model, deletion and backup-expiry obligations, legal and privacy burden, user demand, and E2EE-compatible recording architecture.
-
-The chosen design may be cloud-hosted, quota-limited, paid, local-only, audio-only, short-retention export, or omitted entirely if the economics or privacy model are not acceptable.
-
-Call recording remains outside MVP and stable release.
-
-Future recording requires:
-
-- explicit consent from both participants for every recording session
-- clear recording indicator
-- E2EE-compatible recording design
-- both-partner access
-- partnership-scoped authorization
-- deletion at final partnership dissolution
-- deletion when permanent account deletion destroys partnership data
-- separate privacy, legal, security, retention, export, and consent review
-
-Consent from a previous recording session must never carry over automatically.
+C2 enables `video` creation and adds camera permission, camera switching, video track/rendering policy, bandwidth behavior, and video-specific physical acceptance without creating a second call-state/history/signaling model.
