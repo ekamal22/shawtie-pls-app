@@ -20,6 +20,14 @@ test("M3 media routes are authenticated and private no-store", async () => {
   assert.equal(routes.includes("request.log"), false);
 });
 
+test("M3 upload idempotency replay is fenced to the current partnership", async () => {
+  const service = await source("../src/modules/media/media-service.ts");
+  assert.equal(
+    service.includes("existing.partnershipId !== lifecycle.partnershipId"),
+    true,
+  );
+});
+
 test("M3 production rejects synthetic crypto protocol and server never accepts keys", async () => {
   const service = await source("../src/modules/media/media-service.ts");
   const contracts = await source("../../../packages/contracts/src/media/media.ts");
