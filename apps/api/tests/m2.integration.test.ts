@@ -626,7 +626,7 @@ test("M2 partnership changed hint immediately revalidates and closes stale socke
       const metadata = await database.pool.query<{
         metadata_version: string | number | bigint;
       }>(
-        "SELECT metadata_version FROM partnerships WHERE id = $1",
+        "SELECT version AS metadata_version FROM partnerships WHERE id = $1",
         [formed.partnershipId],
       );
       const metadataVersion = Number(metadata.rows[0]?.metadata_version);
