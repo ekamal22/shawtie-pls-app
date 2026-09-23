@@ -21,6 +21,7 @@ export class SyncCoordinator {
   #highestHintedChangeSequence = 0;
   #running: Promise<void> | null = null;
   #rerun = false;
+  #stopped = false;
 
   get status(): SyncStatus {
     return this.#status;
@@ -63,6 +64,7 @@ export class SyncCoordinator {
   }
 
   requestSync(): Promise<void> {
+    if (this.#stopped) return Promise.resolve();
     if (this.#status === "update-required") return Promise.resolve();
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       this.markOffline();
@@ -74,7 +76,7 @@ export class SyncCoordinator {
     }
     this.#running = this.#run().finally(() => {
       this.#running = null;
-      if (this.#rerun) {
+      if (!this.#stopped && this.#rerun) {
         this.#rerun = false;
         void this.requestSync();
       }
@@ -82,8 +84,18 @@ export class SyncCoordinator {
     return this.#running;
   }
 
+  async stop(): Promise<void> {
+    this.#stopped = true;
+    this.#rerun = false;
+    this.#reconcilers.clear();
+    this.#replayers.clear();
+    await this.#running?.catch(() => undefined);
+    this.#listeners.clear();
+  }
+
   async #run(): Promise<void> {
     for (let pass = 0; pass < 8; pass += 1) {
+      if (this.#stopped) return;
       const dirtyAtStart = this.#dirtyCounter;
       const targetChangeSequence = this.#highestHintedChangeSequence;
       this.#setStatus("syncing");
@@ -91,6 +103,7 @@ export class SyncCoordinator {
       let observedChangeSequence = 0;
       for (const synchronizer of this.#reconcilers.values()) {
         const result = await synchronizer();
+        if (this.#stopped) return;
         if (result?.latestChangeSequence !== undefined) {
           observedChangeSequence = Math.max(
             observedChangeSequence,
@@ -108,6 +121,7 @@ export class SyncCoordinator {
 
       for (const replayer of this.#replayers.values()) {
         await replayer();
+        if (this.#stopped) return;
       }
 
       const dirtiedDuringPass = this.#dirtyCounter !== dirtyAtStart;

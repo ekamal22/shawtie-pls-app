@@ -79,8 +79,10 @@ export class M2Runtime {
   async stop(): Promise<void> {
     this.realtime.stop();
     this.replay.dispose();
+    await this.coordinator.stop();
     const database = await this.#databasePromise?.catch(() => null);
     database?.close();
+    this.#databasePromise = null;
   }
 
   database(): Promise<ShawtieLocalDatabase> {

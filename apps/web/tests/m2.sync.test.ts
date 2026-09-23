@@ -98,3 +98,28 @@ test("M2 coordinator does not reconcile or replay while the browser is offline",
     }
   }
 });
+
+test("M2 coordinator stop waits for active sync and refuses queued reruns", async () => {
+  const coordinator = new SyncCoordinator();
+  let calls = 0;
+  let release: (() => void) | null = null;
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  coordinator.register("messages", async () => {
+    calls += 1;
+    await blocked;
+  });
+
+  const running = coordinator.requestSync();
+  coordinator.markDirty();
+  void coordinator.requestSync();
+  const stopping = coordinator.stop();
+  release?.();
+  await Promise.all([running, stopping]);
+
+  coordinator.markDirty();
+  await coordinator.requestSync();
+  assert.equal(calls, 1);
+});
