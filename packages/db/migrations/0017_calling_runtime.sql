@@ -171,21 +171,26 @@ BEGIN
     WHERE participant.call_session_id = target_call_id
       AND participant.role = 'caller'
       AND (
-        participant.endpoint_device_id IS NULL
-        OR participant.endpoint_session_id IS NULL
-        OR participant.account_id <> session.initiated_by_account_id
-        OR NOT EXISTS (
-          SELECT 1
-          FROM account_sessions endpoint_session
-          WHERE endpoint_session.id = participant.endpoint_session_id
-            AND endpoint_session.account_id = participant.account_id
-            AND endpoint_session.device_id = participant.endpoint_device_id
+        participant.account_id <> session.initiated_by_account_id
+        OR (
+          session.status <> 'ended'
+          AND (
+            participant.endpoint_device_id IS NULL
+            OR participant.endpoint_session_id IS NULL
+            OR NOT EXISTS (
+              SELECT 1
+              FROM account_sessions endpoint_session
+              WHERE endpoint_session.id = participant.endpoint_session_id
+                AND endpoint_session.account_id = participant.account_id
+                AND endpoint_session.device_id = participant.endpoint_device_id
+            )
+          )
         )
       )
   ) THEN
     RAISE EXCEPTION USING
       ERRCODE = '23514',
-      MESSAGE = 'call caller participant must own the initiating endpoint';
+      MESSAGE = 'call caller participant must match the initiator and own the live endpoint';
   END IF;
 
   IF EXISTS (
