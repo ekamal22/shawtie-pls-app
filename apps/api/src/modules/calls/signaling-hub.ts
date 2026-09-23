@@ -35,7 +35,7 @@ interface ConnectionState {
   frameWindowStartedAt: number;
   frameWindowCount: number;
   lastValidatedAt: number;
-  revalidating: boolean;
+  revalidationPromise: Promise<boolean> | null;
 }
 
 function frameBytes(frame: unknown): number {
@@ -161,7 +161,7 @@ export class CallSignalingHub {
       frameWindowStartedAt: Date.now(),
       frameWindowCount: 0,
       lastValidatedAt: Date.now(),
-      revalidating: false,
+      revalidationPromise: null,
     };
     this.#connections.set(key, state);
     socket.on("message", (data, isBinary) => {
@@ -209,10 +209,8 @@ export class CallSignalingHub {
       return;
     }
 
-    if (now - state.lastValidatedAt >= REVALIDATE_MS) {
-      const valid = await this.#revalidate(state);
-      if (!valid) return;
-    }
+    const valid = await this.#revalidate(state);
+    if (!valid || this.#connections.get(state.key) !== state) return;
 
     let raw: unknown;
     try {
@@ -264,35 +262,46 @@ export class CallSignalingHub {
   }
 
   async #revalidate(state: ConnectionState): Promise<boolean> {
-    if (state.revalidating) return true;
-    state.revalidating = true;
+    if (state.revalidationPromise) return state.revalidationPromise;
+
+    const task = (async (): Promise<boolean> => {
+      try {
+        const session = await authenticateSessionToken(
+          state.auth.rawToken,
+          this.database,
+          this.keys,
+        );
+        if (
+          session.accountId !== state.auth.session.accountId
+          || session.deviceId !== state.deviceId
+          || session.sessionId !== state.auth.session.sessionId
+        ) {
+          this.#close(state, 1008, "Authorization changed");
+          return false;
+        }
+        const authorization = await loadCallEndpointAuthorization(this.database.pool, {
+          callId: state.callId,
+          accountId: session.accountId,
+          deviceId: state.deviceId,
+          sessionId: session.sessionId,
+        });
+        if (!authorization || authorization.role !== state.role) {
+          this.#close(state, 1008, "Authorization changed");
+          return false;
+        }
+        state.lastValidatedAt = Date.now();
+        return true;
+      } catch {
+        this.#close(state, 1008, "Authorization expired");
+        return false;
+      }
+    })();
+
+    state.revalidationPromise = task;
     try {
-      const session = await authenticateSessionToken(
-        state.auth.rawToken,
-        this.database,
-        this.keys,
-      );
-      if (session.accountId !== state.auth.session.accountId || session.deviceId !== state.deviceId) {
-        this.#close(state, 1008, "Authorization changed");
-        return false;
-      }
-      const authorization = await loadCallEndpointAuthorization(this.database.pool, {
-        callId: state.callId,
-        accountId: session.accountId,
-        deviceId: state.deviceId,
-        sessionId: session.sessionId,
-      });
-      if (!authorization || authorization.role !== state.role) {
-        this.#close(state, 1008, "Authorization changed");
-        return false;
-      }
-      state.lastValidatedAt = Date.now();
-      return true;
-    } catch {
-      this.#close(state, 1008, "Authorization expired");
-      return false;
+      return await task;
     } finally {
-      state.revalidating = false;
+      if (state.revalidationPromise === task) state.revalidationPromise = null;
     }
   }
 
