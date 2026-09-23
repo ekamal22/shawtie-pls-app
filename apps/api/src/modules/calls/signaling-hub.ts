@@ -43,37 +43,61 @@ function frameBytes(frame: unknown): number {
 }
 
 function validateDescription(sdp: string): boolean {
-  if (/^a=(candidate:|end-of-candidates)/im.test(sdp)) return false;
-  const media = sdp
-    .split(/\r?\n/)
-    .filter((line) => line.startsWith("m="));
-  return (
-    media.length === 1
-    && media[0]?.startsWith("m=audio ") === true
-    && !/^m=(video|application) /im.test(sdp)
-  );
+  const lines = sdp.split(/\\r?\\n/).map((line) => line.trim());
+  if (lines.some((line) => /^a=(candidate:|end-of-candidates)/i.test(line))) return false;
+  const media = lines.filter((line) => line.startsWith("m="));
+  return media.length === 1 && /^m=audio\\s/i.test(media[0] ?? "");
 }
 
 function validateRelayCandidate(candidate: string): boolean {
-  const tokens = candidate.trim().split(/\s+/);
-  const typIndex = tokens.findIndex((token) => token.toLowerCase() === "typ");
-  if (typIndex < 0 || tokens[typIndex + 1]?.toLowerCase() !== "relay") return false;
+  const tokens = candidate.trim().split(/\\s+/);
+  if (tokens.length < 8) return false;
 
-  const relatedAddressIndex = tokens.findIndex((token) => token.toLowerCase() === "raddr");
-  if (relatedAddressIndex >= 0) {
-    const related = tokens[relatedAddressIndex + 1];
-    if (related && !["0.0.0.0", "::", "0"].includes(related)) return false;
+  const foundation = tokens[0] ?? "";
+  const component = tokens[1] ?? "";
+  const transport = (tokens[2] ?? "").toLowerCase();
+  const priority = tokens[3] ?? "";
+  const address = tokens[4] ?? "";
+  const port = tokens[5] ?? "";
+  const typ = (tokens[6] ?? "").toLowerCase();
+  const candidateType = (tokens[7] ?? "").toLowerCase();
+
+  if (!foundation.startsWith("candidate:") || foundation.length <= "candidate:".length) return false;
+  if (!/^[12]$/.test(component)) return false;
+  if (transport !== "udp" && transport !== "tcp") return false;
+  if (!/^\\d+$/.test(priority) || BigInt(priority) > 4_294_967_295n) return false;
+  if (!address) return false;
+  if (!/^\\d+$/.test(port)) return false;
+  const portNumber = Number(port);
+  if (!Number.isInteger(portNumber) || portNumber < 1 || portNumber > 65_535) return false;
+  if (typ !== "typ" || candidateType !== "relay") return false;
+
+  const extensions = tokens.slice(8);
+  if (extensions.some((token) => token.toLowerCase() === "typ")) return false;
+
+  const raddrIndexes = extensions
+    .map((token, index) => (token.toLowerCase() === "raddr" ? index : -1))
+    .filter((index) => index >= 0);
+  const rportIndexes = extensions
+    .map((token, index) => (token.toLowerCase() === "rport" ? index : -1))
+    .filter((index) => index >= 0);
+  if (raddrIndexes.length > 1 || rportIndexes.length > 1) return false;
+
+  if (raddrIndexes.length === 1) {
+    const related = extensions[(raddrIndexes[0] ?? -1) + 1]?.toLowerCase();
+    if (!related || !["0.0.0.0", "::", "0", "0:0:0:0:0:0:0:0"].includes(related)) return false;
   }
-  const relatedPortIndex = tokens.findIndex((token) => token.toLowerCase() === "rport");
-  if (relatedPortIndex >= 0) {
-    const port = tokens[relatedPortIndex + 1];
-    if (port && port !== "0") return false;
+  if (rportIndexes.length === 1) {
+    const relatedPort = extensions[(rportIndexes[0] ?? -1) + 1];
+    if (!relatedPort || relatedPort !== "0") return false;
   }
   return true;
 }
 
 interface PendingSignal {
   readonly fromRole: "caller" | "callee";
+  readonly fromKey: string;
+  readonly fromGeneration: number;
   readonly frame: Extract<
     C1SignalServerFrame,
     { type: "signal.description" | "signal.ice_candidate" | "signal.end_of_candidates" | "signal.restart" }
@@ -230,7 +254,12 @@ export class CallSignalingHub {
       this.#close(state, 1013, "Peer signaling backlog exceeded");
       return;
     }
-    pending.push({ fromRole: state.role, frame: parsed.data });
+    pending.push({
+      fromRole: state.role,
+      fromKey: state.key,
+      fromGeneration: state.generation,
+      frame: parsed.data,
+    });
     this.#pendingByCall.set(state.callId, pending);
   }
 
@@ -276,6 +305,8 @@ export class CallSignalingHub {
         remaining.push(item);
         continue;
       }
+      const source = this.#connections.get(item.fromKey);
+      if (!source || source.generation !== item.fromGeneration) continue;
       this.#send(state, { ...item.frame, generation: state.generation });
     }
     if (remaining.length === 0) {
@@ -324,6 +355,14 @@ export class CallSignalingHub {
   #remove(state: ConnectionState): void {
     if (this.#connections.get(state.key) === state) {
       this.#connections.delete(state.key);
+    }
+    const pending = this.#pendingByCall.get(state.callId);
+    if (pending) {
+      const retained = pending.filter(
+        (item) => item.fromKey !== state.key || item.fromGeneration !== state.generation,
+      );
+      if (retained.length === 0) this.#pendingByCall.delete(state.callId);
+      else this.#pendingByCall.set(state.callId, retained);
     }
     const hasCallConnection = [...this.#connections.values()].some(
       (candidate) => candidate.callId === state.callId,
