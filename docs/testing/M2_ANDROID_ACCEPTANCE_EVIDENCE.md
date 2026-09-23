@@ -354,7 +354,35 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 9: later-partnership isolation
 
-- Status: pending
+- SHA: `83331de` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T09:30Z
+- Result: **PASS**
+- Setup: after scenario 8's real dissolution, Alice's real 3-month
+  post-breakup `account_partner_eligibility` cooldown row was accelerated
+  by moving its `created_at` back (recomputing `eligible_at` from the same
+  snapshot, preserving the exact-equality check constraint) rather than
+  deleting or bypassing the eligibility check. Alice then formed a genuine
+  new partnership with the third synthetic account, `m2_android_charlie`,
+  through the real partner-request/accept API.
+- Action: Charlie sent one real message in the new conversation, then
+  Alice's already-running physical Android session was reconnected to pick
+  up the new partnership.
+- Observed behavior (visible): the UI showed only the new partnership with
+  Charlie as active, the new message, and an empty Relationship Space
+  ("Nothing here yet."). The dissolved Bob partnership correctly appears
+  only under Former Partnerships (an intentional, documented P3 feature for
+  blocking purposes, not a leak) with no old messages or relationship
+  content rendered anywhere.
+- Observed behavior (physical storage, not just visible rendering): queried
+  every row in all seven protected IndexedDB stores directly and searched
+  their serialized contents for the old (dissolved) partnership id. It
+  appears in zero rows across all stores. All populated stores
+  (`namespaceMeta`, `conversationSync`, `messages`, `relationshipMeta`,
+  each with exactly one row) contain only the new partnership id, and the
+  outbox stores are empty, confirming no dormant old-partnership data or
+  queued work survives in the account's local storage after later
+  pairing.
+- Evidence: `validation-logs/screenshots/scenario9-later-partnership-isolation.png`
 
 ### Scenario 10: device/session revocation
 
