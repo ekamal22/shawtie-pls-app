@@ -19,8 +19,9 @@ test("M2 websocket registration is authenticated, origin-bound, and content-free
 
   assert.ok(
     application.indexOf("app.register(websocket") <
-      application.indexOf("registerRealtimeRoutes(app"),
+      application.indexOf("app.register(async function realtimeRoutes"),
   );
+  assert.equal(application.includes("registerRealtimeRoutes(realtimeApp"), true);
   assert.equal(application.includes("perMessageDeflate: false"), true);
   assert.equal(application.includes("M2_REALTIME_MAX_FRAME_BYTES"), true);
   assert.equal(routes.includes('request.headers.origin !== dependencies.config.appOrigin'), true);

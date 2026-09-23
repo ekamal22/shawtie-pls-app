@@ -127,11 +127,13 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     createRealtimeClientFrameHandler(messagingService, realtimePublisher),
   );
   const realtimeListener = new RealtimeListener(dependencies.database, realtimeHub);
-  registerRealtimeRoutes(app, {
-    database: dependencies.database,
-    config: dependencies.config,
-    keys,
-    hub: realtimeHub,
+  app.register(async function realtimeRoutes(realtimeApp) {
+    registerRealtimeRoutes(realtimeApp, {
+      database: dependencies.database,
+      config: dependencies.config,
+      keys,
+      hub: realtimeHub,
+    });
   });
   app.addHook("onReady", async () => {
     await realtimeListener.start();
