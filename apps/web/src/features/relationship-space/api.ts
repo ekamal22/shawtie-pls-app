@@ -25,8 +25,10 @@ function networkFallback(error: unknown): boolean {
   return !(error instanceof ApiClientError);
 }
 
-export type RelationshipMutationResult<T> =
-  | ({ queued: false } & T)
+type RelationshipMutationSuccess<T> = [T] extends [void] ? { queued: false } : { queued: false } & T;
+
+export type RelationshipMutationResult<T = void> =
+  | RelationshipMutationSuccess<T>
   | { queued: true; operationId: string };
 
 export function loadRelationshipHome(): Promise<RelationshipSpaceResponse> {
@@ -132,7 +134,7 @@ export async function patchRelationshipItem(
 export async function deleteRelationshipItem(
   itemId: string,
   expectedVersion: number,
-): Promise<RelationshipMutationResult<Record<string, never>>> {
+): Promise<RelationshipMutationResult> {
   const key = mutationKey();
   const queue = async () => {
     const operation = await runtimeOrThrow().queueRelationshipDelete(

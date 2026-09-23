@@ -131,12 +131,11 @@ function itemTitle(item: RelationshipItem): string {
 
 function occurrenceLabel(item: RelationshipItem): string | null {
   const value = item.occurrence;
-  if (!value || value.precision === "unknown" || value.year === null) return null;
+  if (!value || value.precision === "unknown") return null;
   if (value.precision === "year") return String(value.year);
-  if (value.month === null) return String(value.year);
   const month = String(value.month).padStart(2, "0");
   if (value.precision === "month") return value.year + "-" + month;
-  return value.year + "-" + month + "-" + String(value.day ?? 1).padStart(2, "0");
+  return value.year + "-" + month + "-" + String(value.day).padStart(2, "0");
 }
 
 function durationLabel(home: RelationshipSpaceHome): string {
