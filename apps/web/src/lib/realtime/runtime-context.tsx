@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { M2RealtimeServerFrame } from "@shawtie/contracts";
+import type { C1RealtimeServerFrame } from "@shawtie/contracts";
 import {
   ShawtieLocalDatabase,
   requestPersistentLocalStorage,
@@ -177,7 +177,7 @@ export class M2Runtime {
     }
   }
 
-  async #frame(frame: M2RealtimeServerFrame): Promise<void> {
+  async #frame(frame: C1RealtimeServerFrame): Promise<void> {
     switch (frame.type) {
       case "partnership.changed":
         dispatch("shawtie:partnership-changed", frame.payload);
@@ -204,6 +204,9 @@ export class M2Runtime {
       }
       case "account.security_changed":
         dispatch("shawtie:security-changed");
+        return;
+      case "call.changed":
+        dispatch("shawtie:call-changed", frame.payload);
         return;
       default:
         return;

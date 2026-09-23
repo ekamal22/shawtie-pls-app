@@ -1,8 +1,8 @@
 import {
-  M2_REALTIME_SUBPROTOCOL,
-  m2RealtimeServerFrameSchema,
+  C1_REALTIME_SUBPROTOCOL,
+  c1RealtimeServerFrameSchema,
+  type C1RealtimeServerFrame,
   type M2RealtimeClientFrame,
-  type M2RealtimeServerFrame,
 } from "@shawtie/contracts";
 import type { SyncCoordinator } from "./sync-coordinator.ts";
 
@@ -15,7 +15,7 @@ export interface RealtimeScope {
 
 export interface RealtimeClientCallbacks {
   onScopeChange(previous: RealtimeScope, next: RealtimeScope): Promise<void> | void;
-  onFrame(frame: M2RealtimeServerFrame): Promise<void> | void;
+  onFrame(frame: C1RealtimeServerFrame): Promise<void> | void;
 }
 
 export class RealtimeClient {
@@ -104,7 +104,7 @@ export class RealtimeClient {
     const generation = ++this.#generation;
     const url = new URL("/api/v1/realtime", window.location.href);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    const socket = new WebSocket(url, M2_REALTIME_SUBPROTOCOL);
+    const socket = new WebSocket(url, C1_REALTIME_SUBPROTOCOL);
     this.#socket = socket;
 
     socket.addEventListener("open", () => {
@@ -144,7 +144,7 @@ export class RealtimeClient {
       return;
     }
 
-    const parsed = m2RealtimeServerFrameSchema.safeParse(rawFrame);
+    const parsed = c1RealtimeServerFrameSchema.safeParse(rawFrame);
     if (!parsed.success) {
       socket.close(1008, "Invalid realtime frame");
       return;
@@ -194,6 +194,13 @@ export class RealtimeClient {
 
     if (frame.type === "message.changed") {
       this.coordinator.markDirty(frame.payload.changeSequence);
+      await this.callbacks.onFrame(frame);
+      await this.coordinator.requestSync();
+      return;
+    }
+
+    if (frame.type === "call.changed") {
+      this.coordinator.markDirty();
       await this.callbacks.onFrame(frame);
       await this.coordinator.requestSync();
       return;
