@@ -386,7 +386,33 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 10: device/session revocation
 
-- Status: pending
+- SHA: `f1bafcf` (`feat/m2-realtime-offline`)
+- UTC timestamp: 2026-09-23T13:02Z
+- Result: **PASS**
+- Setup: confirmed the physical phone's own device row (`displayName:
+  "Browser"`, matching the device id the phone itself reports under
+  Settings) via `GET /api/v1/me/devices` from a second, independent Alice
+  session. Confirmed beforehand that the phone's account IndexedDB database
+  (`shawtie-local-v1:<accountId>`) existed via `indexedDB.databases()`.
+- Action: called the real `DELETE /api/v1/me/devices/:deviceId` endpoint
+  from the second session, targeting the phone's device id, while watching
+  the phone's live WebSocket and network traffic.
+- Observed behavior, verified independently rather than inferred from any
+  single signal per the specific risks flagged for this scenario:
+  - the phone's socket received a real content-free
+    `{"type":"account.security_changed"}` frame, then closed
+  - the next requests from the phone (`/api/v1/auth/session`,
+    `/api/v1/partnerships/current`) both returned `401`
+  - `indexedDB.databases()` on the phone afterward returned an **empty
+    list** - the account's local database was actually deleted, not merely
+    emptied or left behind after a best-effort purge failure
+  - the authenticated UI fully disappeared and the real sign-in screen
+    rendered
+  - a fresh, independent fetch to `/api/v1/auth/session` with the phone's
+    still-present cookies returned `401 AUTH_REQUIRED`, confirming the
+    revoked session cannot regain authority merely by making another
+    request or reconnecting
+- Evidence: `validation-logs/screenshots/scenario10-revoked-login-screen.png`
 
 ### Scenario 11: protected offline cold start
 
