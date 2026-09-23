@@ -220,3 +220,25 @@ test("M2 partnership panel resyncs through the coordinator and clears stale erro
     "load() must clear a previous error before dispatching partnership-mode",
   );
 });
+
+test("M2 messaging panel recovers from a dissolved partnership through the coordinator", async () => {
+  const messaging = await source("../src/features/messaging/MessagingPanel.tsx");
+
+  // Physical Android acceptance found that after the partnership was
+  // dissolved while this device was offline, the coordinator-registered
+  // "messaging" reconciler kept calling syncChanges() with the stale
+  // conversationId, got CONVERSATION_NOT_FOUND from the server on every
+  // pass, and just let it propagate into an endless coordinator retry. Only
+  // the separate polling-interval error handler routed that specific error
+  // through handleSyncFailure() -> loadInitial() to clear the stale
+  // conversation/messages state, but that interval never runs while a pass
+  // keeps failing. The old conversation's messages and composer stayed
+  // visibly stuck on screen indefinitely after reconnecting.
+  const registration = messaging.slice(
+    messaging.indexOf('runtime.registerSynchronizer("messaging"'),
+    messaging.indexOf("[runtime, syncChanges, handleSyncFailure]"),
+  );
+  assert.ok(registration.length > 0, "messaging synchronizer registration not found");
+  assert.equal(registration.includes("CONVERSATION_NOT_FOUND"), true);
+  assert.equal(registration.includes("handleSyncFailure(caught)"), true);
+});

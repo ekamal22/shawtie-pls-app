@@ -448,9 +448,25 @@ export function MessagingPanel() {
   useEffect(
     () =>
       runtime.registerSynchronizer("messaging", async () => {
-        return syncChanges();
+        try {
+          return await syncChanges();
+        } catch (caught) {
+          // A dissolved partnership leaves this component still holding the
+          // old conversationId, so the coordinator's reconcile pass starts
+          // getting CONVERSATION_NOT_FOUND from the server. Only the
+          // separate polling-interval error handler used to route that case
+          // through loadInitial() to clear the stale conversation/messages
+          // state; the coordinator-registered reconciler just let it
+          // propagate into an endless retry, leaving the dissolved
+          // partnership's messages visibly stuck on screen after reconnect.
+          if (caught instanceof ApiClientError && caught.code === "CONVERSATION_NOT_FOUND") {
+            await handleSyncFailure(caught);
+            return;
+          }
+          throw caught;
+        }
       }),
-    [runtime, syncChanges],
+    [runtime, syncChanges, handleSyncFailure],
   );
 
   useEffect(() => {

@@ -288,7 +288,69 @@ document. Raw screenshots and JSON evidence live under `validation-logs/`
 
 ### Scenario 8: final dissolution while offline
 
-- Status: pending
+- SHA before fix: `d87d7c8`; SHA after fix: recorded in the commit that
+  follows this evidence update on `feat/m2-realtime-offline`
+- UTC timestamp: 2026-09-23T09:24Z
+- Result: **PASS** (after fixing one real defect and one test-harness
+  timestamp-precision issue)
+- Setup: Alice disconnected and, through the real UI, queued a new message
+  send while offline (a stale mutation whose authority is fully revoked by
+  termination, not merely restricted like scenario 7's edit). Verified
+  IndexedDB row counts across all seven protected stores beforehand
+  (`namespaceMeta:1, conversationSync:1, messages:7, relationshipItems:0,
+  relationshipMeta:1, chatOutbox:1, relationshipOutbox:0`).
+- Action: advanced the real `breakup_processes` row's `initiated_at` (not
+  `final_deadline` directly, which is a generated-equivalent column
+  enforced by an exact-equality `CHECK` constraint tied to `initiated_at`)
+  seven days into the past and made the real `partnership_breakup_finalize`
+  `scheduled_actions` row due, then let the actual running worker claim and
+  execute it on its normal poll loop. Did not delete or hand-edit
+  partnership rows directly.
+- Test-harness defect found and fixed in the test SQL itself, not
+  production code: the first attempt used raw `now()`, which has
+  microsecond precision, but the API always produces millisecond-precision
+  timestamps, so when the worker read back `final_deadline` and wrote it
+  as `dissolved_at`, the sub-millisecond remainder was lost in the
+  Node/pg round trip and the write violated the exact-equality
+  `breakup_processes_dissolve_timing` check constraint
+  (confirmed by temporarily adding one diagnostic `console.error` in
+  `apps/worker/src/scheduled/scheduled-consumer.ts`, capturing the real
+  constraint-violation error, then reverting that diagnostic change
+  entirely). Re-running with `date_trunc('milliseconds', ...)` on the
+  snapshot timestamp let the real worker finalize successfully on its next
+  poll, with `scheduled_actions.status` ending `completed`.
+- Observed behavior (server): `partnerships.lifecycle_state` became
+  `terminated`; `GET /api/v1/partnerships/current` returned
+  `{"partnership": null}` for both accounts; the dissolved conversation's
+  own `GET .../messages` returned `404 CONVERSATION_NOT_FOUND` even to the
+  former partner, and the stale queued message was never created
+  server-side.
+- Observed behavior (client, before fix): after reconnecting, IndexedDB was
+  correctly and fully purged across all seven stores (all row counts
+  dropped to 0, confirming the queued stale message never replayed), the
+  Partnership panel correctly showed "No active partnership yet." with the
+  dissolved relationship under Former Partnerships. However, the Messaging
+  panel kept showing the entire old conversation (all prior scenario
+  messages, the edit/delete from scenario 4, a "Send failed" banner) and an
+  active composer, because its coordinator-registered "messaging"
+  reconciler kept receiving `CONVERSATION_NOT_FOUND` from the server (the
+  stale `conversationId` still held in component state) and let it
+  propagate into the coordinator's generic retry loop forever, never
+  reaching the existing `CONVERSATION_NOT_FOUND` recovery path
+  (`handleSyncFailure` -> `loadInitial()`) that only the separate,
+  rarely-active polling-interval error handler used.
+- Fix applied: the coordinator-registered "messaging" synchronizer in
+  `apps/web/src/features/messaging/MessagingPanel.tsx` now catches
+  `CONVERSATION_NOT_FOUND` specifically and routes it through the same
+  `handleSyncFailure` recovery path the polling interval already used,
+  clearing the stale conversation/messages state. A focused regression
+  test was added to `apps/web/tests/m2.browser.test.ts`.
+- Final retest on the physical Redmi Note 9S: after rebuilding and
+  reloading, the Messages panel correctly shows "Your private conversation
+  appears after a partnership is formed." with no trace of the dissolved
+  conversation, alongside the already-correct Partnership/Former
+  Partnerships views and the fully purged IndexedDB stores.
+- Evidence: `validation-logs/screenshots/scenario8-dissolution-clean.png`
 
 ### Scenario 9: later-partnership isolation
 
