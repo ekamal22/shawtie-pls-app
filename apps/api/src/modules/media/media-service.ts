@@ -309,7 +309,11 @@ export class MediaService {
         const existingId = mediaIdFromResponse(reservation.responseBody);
         if (!existingId) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED");
         const existing = await loadMediaObject(transaction, existingId);
-        if (!existing || existing.uploaderAccountId !== auth.session.accountId) {
+        if (
+          !existing ||
+          existing.uploaderAccountId !== auth.session.accountId ||
+          existing.partnershipId !== lifecycle.partnershipId
+        ) {
           throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED");
         }
         return { media: existing, now };
