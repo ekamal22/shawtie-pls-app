@@ -10,6 +10,8 @@ import {
   markOpenBreakupSuperseded,
   resolveExpiredPartnerEligibility,
   terminatePartnershipLifecycle,
+  terminalizeCurrentCallForPartnership,
+  loadCallParticipants,
   type LockedPartnershipLifecycle,
   type QueryExecutor,
 } from "@shawtie/db";
@@ -33,6 +35,49 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
   const { transaction, lifecycle } = input;
   if (lifecycle.memberIds.length !== 2) {
     throw new Error("Partnership dissolution requires exactly two historical members");
+  }
+
+  const terminatedCall = await terminalizeCurrentCallForPartnership(transaction, {
+    partnershipId: lifecycle.partnershipId,
+    reason: "partnership_terminated",
+    now: input.effectiveAt,
+  });
+  if (terminatedCall) {
+    const participants = await loadCallParticipants(transaction, terminatedCall.id);
+    const accountIds = participants.map((participant) => participant.accountId).sort();
+    const callVersion = Number(terminatedCall.version);
+    if (
+      accountIds.length !== 2
+      || accountIds[0] === accountIds[1]
+      || !Number.isSafeInteger(callVersion)
+      || callVersion <= 0
+    ) {
+      throw new Error("Invalid call state during partnership dissolution");
+    }
+    await insertOutboxEvent(transaction, {
+      id: randomUUID(),
+      eventType: "c1.call.changed",
+      aggregateType: "call",
+      aggregateId: terminatedCall.id,
+      deduplicationKey:
+        "c1:call-changed:" + terminatedCall.id + ":" + callVersion,
+      payload: {
+        partnershipId: terminatedCall.partnershipId,
+        callId: terminatedCall.id,
+        version: callVersion,
+      },
+      payloadVersion: 1,
+    });
+    await insertOutboxEvent(transaction, {
+      id: randomUUID(),
+      eventType: "c1.call.push",
+      aggregateType: "call",
+      aggregateId: terminatedCall.id,
+      deduplicationKey:
+        "c1:call-push:" + terminatedCall.id + ":" + callVersion,
+      payload: { accountIds },
+      payloadVersion: 1,
+    });
   }
 
   const generation = await terminatePartnershipLifecycle(transaction, {
