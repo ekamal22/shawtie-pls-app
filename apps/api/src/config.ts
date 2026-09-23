@@ -5,6 +5,18 @@ export interface AuthKeyConfig {
 
 export type PartnerRequestMode = "disabled" | "request_only_test" | "paired";
 
+export interface CallingConfig {
+  readonly enabled: boolean;
+  readonly transportEnabled: boolean;
+  readonly ringTimeoutMs: number;
+  readonly connectTimeoutMs: number;
+  readonly hardTimeoutMs: number;
+  readonly turnUrls: readonly string[];
+  readonly turnSharedSecret: string | null;
+  readonly turnCredentialTtlMs: number;
+  readonly pushVapidPublicKey: string | null;
+}
+
 export interface ApiConfig {
   readonly environment: "development" | "test" | "production";
   readonly appOrigin: string;
@@ -12,6 +24,7 @@ export interface ApiConfig {
   readonly trustedProxy: false | string[];
   readonly authKeys: AuthKeyConfig;
   readonly partnerRequestMode?: PartnerRequestMode;
+  readonly calling: CallingConfig;
 }
 
 function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): AuthKeyConfig {
@@ -72,6 +85,46 @@ function parsePartnerRequestMode(
   return mode;
 }
 
+function positiveInteger(raw: string | undefined, fallback: number, name: string): number {
+  if (!raw) return fallback;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isInteger(value) || value <= 0) throw new Error(name + " must be a positive integer");
+  return value;
+}
+
+function callingConfig(
+  env: NodeJS.ProcessEnv,
+  environment: ApiConfig["environment"],
+): CallingConfig {
+  const defaultEnabled = environment === "production" ? false : true;
+  const enabled = env.C1_CALLING_ENABLED === undefined
+    ? defaultEnabled
+    : env.C1_CALLING_ENABLED === "1";
+  const transportEnabled = env.C1_TRANSPORT_ENABLED === undefined
+    ? defaultEnabled
+    : env.C1_TRANSPORT_ENABLED === "1";
+  const turnUrls = (env.C1_TURN_URLS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (environment === "production" && enabled && transportEnabled) {
+    if (turnUrls.length === 0 || !env.C1_TURN_SHARED_SECRET) {
+      throw new Error("C1 relay-only production calling requires C1_TURN_URLS and C1_TURN_SHARED_SECRET");
+    }
+  }
+  return {
+    enabled,
+    transportEnabled,
+    ringTimeoutMs: positiveInteger(env.C1_RING_TIMEOUT_MS, 60_000, "C1_RING_TIMEOUT_MS"),
+    connectTimeoutMs: positiveInteger(env.C1_CONNECT_TIMEOUT_MS, 120_000, "C1_CONNECT_TIMEOUT_MS"),
+    hardTimeoutMs: positiveInteger(env.C1_HARD_TIMEOUT_MS, 6 * 60 * 60_000, "C1_HARD_TIMEOUT_MS"),
+    turnUrls,
+    turnSharedSecret: env.C1_TURN_SHARED_SECRET ?? null,
+    turnCredentialTtlMs: positiveInteger(env.C1_TURN_CREDENTIAL_TTL_MS, 10 * 60_000, "C1_TURN_CREDENTIAL_TTL_MS"),
+    pushVapidPublicKey: env.C1_PUSH_VAPID_PUBLIC_KEY ?? null,
+  };
+}
+
 export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const environment =
     env.NODE_ENV === "production" ? "production" : env.NODE_ENV === "test" ? "test" : "development";
@@ -86,5 +139,6 @@ export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfi
     trustedProxy: parseTrustedProxy(env.TRUSTED_PROXY),
     authKeys: parseAuthKeys(env.AUTH_HMAC_KEYS, env.AUTH_HMAC_ACTIVE_VERSION),
     partnerRequestMode: parsePartnerRequestMode(env.PARTNER_REQUEST_MODE, environment),
+    calling: callingConfig(env, environment),
   };
 }
