@@ -1040,18 +1040,16 @@ export class AccountService {
         throw new ApiError(409, "ACCOUNT_LOCKED");
       }
 
-      if (currentPartnership) {
-        const lifecycle = await lockPartnershipLifecycle(
-          transaction,
-          currentPartnership.partnershipId,
-        );
-        if (
-          !lifecycle ||
-          lifecycle.lifecycleState === "terminated" ||
-          !lifecycle.memberIds.includes(auth.session.accountId)
-        ) {
-          throw new ApiError(409, "ACCOUNT_LOCKED");
-        }
+      const currentLifecycle = currentPartnership
+        ? await lockPartnershipLifecycle(transaction, currentPartnership.partnershipId)
+        : null;
+      if (
+        currentPartnership &&
+        (!currentLifecycle ||
+          currentLifecycle.lifecycleState === "terminated" ||
+          !currentLifecycle.memberIds.includes(auth.session.accountId))
+      ) {
+        throw new ApiError(409, "ACCOUNT_LOCKED");
       }
 
       const currentGeneration = await getAccountDeletionGeneration(
@@ -1089,10 +1087,14 @@ export class AccountService {
           aggregateVersion: currentPartnership.generation,
           metadata: { generation: Number(generation), status: "deletion_pending" },
         });
+        if (!currentLifecycle) {
+          throw new Error("Partnership lifecycle missing during account deletion");
+        }
         await queueRealtimePartnershipChanged(transaction, {
           partnershipId: currentPartnership.partnershipId,
-          generation: lifecycle.generation,
-          metadataVersion: lifecycle.metadataVersion,
+          accountIds: currentLifecycle.memberIds,
+          generation: currentLifecycle.generation,
+          metadataVersion: currentLifecycle.metadataVersion,
         });
 
         await insertAccountNotification(transaction, {
@@ -1301,6 +1303,7 @@ export class AccountService {
         if (recoveredLifecycle) {
           await queueRealtimePartnershipChanged(transaction, {
             partnershipId: currentPartnership.partnershipId,
+            accountIds: recoveredLifecycle.memberIds,
             generation: recoveredLifecycle.generation,
             metadataVersion: recoveredLifecycle.metadataVersion,
           });
