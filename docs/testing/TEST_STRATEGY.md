@@ -512,7 +512,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. Full relay-path WebRTC and Android behavior still require the documented environment and physical acceptance procedure.
+The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. The canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`: C1 fast tests 20/20, PostgreSQL/API/worker 111/111, real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene passed, ending with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Full relay-path WebRTC and Android behavior still require the documented environment and physical acceptance procedure.
 
 Coverage must include:
 

@@ -72,7 +72,7 @@ The exhaustive sweep passed 40/40 gates on one exact local/remote SHA. It includ
 
 ## C1 implementation verification status
 
-C1 source implementation is complete on `feat/c1-voice-calling`, but no automated/local C1 closure PASS is claimed yet. The branch provides:
+C1 source implementation and automated/local closure are complete on `feat/c1-voice-calling`. The branch provides:
 
 ```text
 npm run test:c1
@@ -84,7 +84,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-`test:c1:closure` requires the disposable PostgreSQL path, the focused real-Chromium C1 browser harness, full repository health, high-severity audit, git hygiene, and the documented 0015/0016 migration reservations. Mandatory physical Android acceptance remains separate. Final integrated C1 closure cannot run until the real M3 migrations 0015/0016 are merged and the canonical 0001-0018 chain passes with `reserved=0`.
+`test:c1:closure` passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. The run passed C1 fast tests 20/20, database invariants, the PostgreSQL/API/worker matrix 111/111 with only M3-owned 0015/0016 reserved, focused real-Chromium 2/2, full repository health with Domain 63/63, Contracts 40/40, API unit/security 54/54, and Worker 11/11, the high-severity audit with 0 vulnerabilities, and git hygiene/local-remote parity. It ended with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance remains separate and has not run. Final integrated C1 closure cannot run until the real M3 migrations 0015/0016 are merged and the canonical 0001-0018 chain passes with `reserved=0`.
 
 ## M2 automated closure status
 

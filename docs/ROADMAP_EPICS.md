@@ -1340,7 +1340,7 @@ Status: IN_PROGRESS. SOURCE IMPLEMENTATION COMPLETE ON `feat/m3-media-voice @ 30
 
 # C1: Voice Calling
 
-Status: IN_PROGRESS. SOURCE IMPLEMENTATION COMPLETE ON BRANCH; AUTOMATED, PHYSICAL, AND FINAL INTEGRATED CLOSURE PENDING
+Status: IN_PROGRESS. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH; PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING
 
 Branch: `feat/c1-voice-calling`
 
@@ -1419,12 +1419,12 @@ Source implementation is present for C1-A through C1-I. The branch now contains 
 
 Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
-No execution result is inferred from source presence. The gates below remain open until their required commands or physical procedures are actually executed. Final integrated migration closure remains blocked on real M3 0015/0016.
+Canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. The run passed C1 fast tests 20/20, database invariants, the PostgreSQL/API/worker matrix 111/111 with only M3-owned 0015/0016 reserved, real Chromium 2/2, full health with Domain 63/63, Contracts 40/40, API unit/security 54/54, and Worker 11/11, a zero-vulnerability high-severity audit, and git hygiene/local-remote parity. It ended with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance and final integrated migration closure with real M3 0015/0016 and `reserved=0` remain open, so C1 is not DONE.
 
 ## Acceptance gates
 
-- [ ] implementation starts from verified merged-M2 mainline or descendant
-- [ ] isolated C1 tests reserve only M3-owned 0015/0016 and do not copy/create placeholder M3 migrations
+- [x] implementation starts from verified merged-M2 mainline or descendant
+- [x] isolated C1 tests reserve only M3-owned 0015/0016 and do not copy/create placeholder M3 migrations
 - [ ] final integrated migrations 0001 through 0018 pass with `reserved=0`
 - [ ] existing foundation call tables are refined rather than replaced by a second aggregate
 - [ ] one non-terminal call per partnership is database-enforced
@@ -1498,9 +1498,9 @@ No execution result is inferred from source presence. The gates below remain ope
 - [ ] shared WebSocket negotiation rejects zero/multiple/cross-family offers and preserves M2's 4 KiB application limit
 - [ ] provider/signaling errors are privacy-safe and bounded
 - [ ] call create/signaling/TURN/push paths have abuse/rate bounds
-- [ ] full C1 contracts/domain/security suites pass
-- [ ] C1 PostgreSQL/API/worker matrix passes
-- [ ] focused real-Chromium C1 ownership/Permissions-Policy harness passes
+- [x] full C1 contracts/domain/security suites pass
+- [x] C1 PostgreSQL/API/worker matrix passes
+- [x] focused real-Chromium C1 ownership/Permissions-Policy harness passes
 - [ ] real-browser signaling/WebRTC acceptance passes where a real relay path is available
 - [ ] mandatory physical Android C1 acceptance passes
 - [ ] every legal/illegal durable state transition and exact terminal replay is tested
@@ -1508,10 +1508,10 @@ No execution result is inferred from source presence. The gates below remain ope
 - [ ] push subscription replacement leaves only one active routing path per device
 - [ ] operational transport disable fails closed without direct ICE fallback
 - [ ] final integrated C1 closure runs only after real M3 0015/0016 are merged
-- [ ] full `npm run health` passes
-- [ ] `npm audit --audit-level=high` passes
-- [ ] no Unicode em dash is introduced in C1 repo docs/commits
-- [ ] diff/worktree hygiene and local/remote SHA parity pass
+- [x] full `npm run health` passes
+- [x] `npm audit --audit-level=high` passes
+- [x] no Unicode em dash is introduced in C1 repo docs/commits
+- [x] diff/worktree hygiene and local/remote SHA parity pass
 
 # C2: Video Calling
 

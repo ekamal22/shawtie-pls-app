@@ -136,7 +136,7 @@ M1 ✅ + R1 ✅ merged to main
    ->
 M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical Android acceptance 14/14 at `b83102f`
    ->
-C1 🟡 source implementation complete on `feat/c1-voice-calling`; automated/local closure, Redmi acceptance, and final M3-integrated closure pending
+C1 🟡 source implementation and automated/local closure complete at `439b09f`; Redmi acceptance and final M3-integrated closure pending
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -195,7 +195,7 @@ main @ 54b8659
 
 M1 and R1 are merged and verified.
 M2 is DONE and merged. Its automated/local closure and all 14 mandatory Android scenarios are green.
-C1 source implementation is complete on its branch. Automated/local closure, mandatory Redmi acceptance, and final integrated migration closure are still open.
+C1 source implementation and automated/local closure are complete at `439b09f`. Mandatory Redmi acceptance and final integrated migration closure are still open.
 M3 remains unmerged; its real migrations 0015/0016 stay owned by M3. C1 owns implemented migrations 0017/0018 and uses only the documented 0015/0016 reservation mechanism for isolated branch validation.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
@@ -219,7 +219,7 @@ The current C1 implementation branch is:
 feat/c1-voice-calling
 ~~~
 
-C1 source implementation is complete, but C1 is not DONE until automated/local closure, mandatory physical Android acceptance, and final integrated 0001-0018 validation with real M3 migrations are green. C2 remains separate and depends on verified C1.
+C1 source implementation and automated/local closure are complete, but C1 is not DONE until mandatory physical Android acceptance and final integrated 0001-0018 validation with real M3 migrations are green. C2 remains separate and depends on verified C1.
 
 The completed parallel milestone branches remain historical:
 

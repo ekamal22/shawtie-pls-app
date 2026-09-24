@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, SOURCE IMPLEMENTATION COMPLETE ON BRANCH, VERIFICATION PENDING.**
+**DESIGN COMPLETE, SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH, PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING.**
 
 Branch:
 
@@ -12,7 +12,7 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Automated closure still requires execution, mandatory physical Android acceptance is still open, and final integrated closure still waits for real M3 migrations 0015/0016.
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`, ending with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance is still open, and final integrated closure still waits for real M3 migrations 0015/0016 and `reserved=0` validation.
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
@@ -1117,7 +1117,7 @@ npm run health
 npm audit --audit-level=high
 ~~~
 
-The commands and harnesses are present in source. Their presence is not a PASS claim: automated/local closure still requires execution, physical Android acceptance is still mandatory, and final integrated migration closure still waits for real M3 0015/0016 on main.
+The canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`: C1 fast tests 20/20, PostgreSQL/API/worker 111/111, real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene passed with only M3-owned 0015/0016 reserved. Physical Android acceptance is still mandatory, and final integrated migration closure still waits for real M3 0015/0016 on main and `reserved=0` validation.
 
 ## Acceptance boundary
 
