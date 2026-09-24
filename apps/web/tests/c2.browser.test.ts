@@ -47,12 +47,16 @@ test("C2 camera controller owns replacement, switching, background stop and loca
 
   assert.equal(camera.includes("this.sender.replaceTrack(track)"), true);
   assert.equal(camera.includes("this.sender.replaceTrack(null)"), true);
-  assert.equal(camera.includes('facingMode: { exact: facingMode }'), true);
+  assert.equal(camera.includes("exactFacing ? { exact: facingMode } : { ideal: facingMode }"), true);
+  assert.equal(camera.includes("return this.enable(next, true)"), true);
+  assert.equal(camera.includes("async #hasAuthority()"), true);
   assert.equal(camera.includes('error.name !== "OverconstrainedError"'), true);
   assert.equal(media.includes('document.visibilityState === "hidden"'), true);
   assert.equal(media.includes("this.#camera?.disable()"), true);
   assert.equal(media.includes("onLocalVideoStream"), true);
   assert.equal(media.includes("onRemoteVideoStream"), true);
+  assert.equal(media.includes('event.track.addEventListener("mute"'), true);
+  assert.equal(media.includes('event.track.addEventListener("unmute"'), true);
 });
 
 test("C2 product UI exposes explicit video consent and camera-off acceptance", async () => {

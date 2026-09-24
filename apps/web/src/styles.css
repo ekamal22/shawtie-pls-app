@@ -919,7 +919,6 @@ button:disabled {
 .local-video {
   display: block;
   object-fit: cover;
-  transform: scaleX(-1);
 }
 
 .local-video-placeholder {

@@ -12,20 +12,24 @@ function stopStream(stream: MediaStream | null): void {
   stream?.getTracks().forEach((track) => track.stop());
 }
 
-function preferredConstraints(facingMode: CameraFacingMode): readonly MediaTrackConstraints[] {
+function preferredConstraints(
+  facingMode: CameraFacingMode,
+  exactFacing: boolean,
+): readonly MediaTrackConstraints[] {
+  const facingModeConstraint = exactFacing ? { exact: facingMode } : { ideal: facingMode };
   return [
     {
-      facingMode: { exact: facingMode },
+      facingMode: facingModeConstraint,
       width: { ideal: 1280, max: 1280 },
       height: { ideal: 720, max: 720 },
       frameRate: { ideal: 24, max: 30 },
     },
     {
-      facingMode: { exact: facingMode },
+      facingMode: facingModeConstraint,
       frameRate: { ideal: 24, max: 30 },
     },
     {
-      facingMode: { exact: facingMode },
+      facingMode: facingModeConstraint,
       frameRate: { max: 30 },
     },
   ];
@@ -55,19 +59,22 @@ export class CameraController {
     return this.#stream;
   }
 
-  async enable(facingMode: CameraFacingMode = this.#facingMode): Promise<boolean> {
+  async enable(
+    facingMode: CameraFacingMode = this.#facingMode,
+    exactFacing = false,
+  ): Promise<boolean> {
     if (this.#stopped) return false;
     const generation = ++this.#generation;
     this.#setState(this.#stream ? "switching" : "acquiring");
 
-    if (!(await this.callbacks.verifyAuthority()) || generation !== this.#generation || this.#stopped) {
+    if (!(await this.#hasAuthority()) || generation !== this.#generation || this.#stopped) {
       this.#setState(this.#stream ? "on" : "off");
       return false;
     }
 
     let acquired: MediaStream | null = null;
     let lastError: unknown = null;
-    for (const constraints of preferredConstraints(facingMode)) {
+    for (const constraints of preferredConstraints(facingMode, exactFacing)) {
       try {
         acquired = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
         break;
@@ -90,12 +97,12 @@ export class CameraController {
     }
 
     const track = acquired.getVideoTracks()[0] ?? null;
-    if (
-      !track ||
-      generation !== this.#generation ||
-      this.#stopped ||
-      !(await this.callbacks.verifyAuthority())
-    ) {
+    const authorized =
+      track !== null &&
+      generation === this.#generation &&
+      !this.#stopped &&
+      (await this.#hasAuthority());
+    if (!authorized || !track) {
       stopStream(acquired);
       if (generation === this.#generation && !this.#stopped) this.#setState("off");
       return false;
@@ -150,7 +157,7 @@ export class CameraController {
     if (this.#stopped) return false;
     const next: CameraFacingMode = this.#facingMode === "user" ? "environment" : "user";
     await this.disable();
-    return this.enable(next);
+    return this.enable(next, true);
   }
 
   async invalidate(): Promise<void> {
@@ -168,6 +175,14 @@ export class CameraController {
     stopStream(previous);
     this.callbacks.onLocalStream(null);
     this.#setState("off");
+  }
+
+  async #hasAuthority(): Promise<boolean> {
+    try {
+      return await this.callbacks.verifyAuthority();
+    } catch {
+      return false;
+    }
   }
 
   #setState(state: CameraState): void {

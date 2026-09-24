@@ -155,6 +155,17 @@ export class CallMediaSession {
         const stream = new MediaStream([event.track]);
         this.#remoteVideoStream = stream;
         this.callbacks.onRemoteVideoStream?.(stream);
+        const clearRemoteVideo = () => {
+          if (this.#remoteVideoStream === stream) {
+            this.callbacks.onRemoteVideoStream?.(null);
+          }
+        };
+        event.track.addEventListener("mute", clearRemoteVideo);
+        event.track.addEventListener("unmute", () => {
+          if (this.#remoteVideoStream === stream) {
+            this.callbacks.onRemoteVideoStream?.(stream);
+          }
+        });
         event.track.addEventListener(
           "ended",
           () => {
