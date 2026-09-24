@@ -1169,6 +1169,159 @@ BEGIN
 END;
 $$;
 
+
+-- M3 media invariants.
+INSERT INTO media_objects (
+  id, partnership_id, uploader_account_id, uploader_device_id, storage_object_key,
+  ciphertext_size, crypto_protocol_version, media_kind, format_code, state,
+  ciphertext_sha256, upload_generation, upload_expires_at, ready_at,
+  deletion_generation, created_at
+) VALUES (
+  '81000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '70000000-0000-0000-0000-000000000001',
+  'media/v1/invariant-a',
+  128,
+  'm3-test-aes-gcm-v1',
+  'image',
+  'webp',
+  'ready_unbound',
+  repeat('a', 64),
+  1,
+  now() + interval '1 day',
+  now(),
+  1,
+  now()
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET storage_object_key = 'media/v1/changed'
+    WHERE id = '81000000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected immutable media payload identity rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'media object identity and encrypted payload metadata are immutable' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+UPDATE media_objects
+SET state = 'bound',
+    binding_type = 'relationship_item',
+    binding_id = '80000000-0000-4000-8000-000000000001',
+    binding_role = 'attachment',
+    binding_position = 0,
+    upload_expires_at = NULL
+WHERE id = '81000000-0000-4000-8000-000000000001';
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET binding_position = 1
+    WHERE id = '81000000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected immutable media binding rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'media binding identity is immutable after bind' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+INSERT INTO media_objects (
+  id, partnership_id, uploader_account_id, storage_object_key,
+  ciphertext_size, crypto_protocol_version, media_kind, format_code, state,
+  ciphertext_sha256, upload_generation, upload_expires_at, ready_at,
+  deletion_generation, created_at
+) VALUES (
+  '81000000-0000-4000-8000-000000000002',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'media/v1/invariant-b',
+  128,
+  'm3-test-aes-gcm-v1',
+  'image',
+  'webp',
+  'ready_unbound',
+  repeat('b', 64),
+  1,
+  now() + interval '1 day',
+  now(),
+  1,
+  now()
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET state = 'bound',
+        binding_type = 'relationship_item',
+        binding_id = '80000000-0000-4000-8000-000000000004',
+        binding_role = 'attachment',
+        binding_position = 0,
+        upload_expires_at = NULL
+    WHERE id = '81000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'expected cross-partnership media binding rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'media binding target must exist in the same partnership' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET state = 'bound',
+        binding_type = 'relationship_item',
+        binding_id = '80000000-0000-4000-8000-000000000001',
+        binding_role = 'attachment',
+        binding_position = 0,
+        upload_expires_at = NULL
+    WHERE id = '81000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'expected media binding position uniqueness rejection';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'media_objects_identity_immutable' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing M3 immutable media trigger';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'media_objects_binding_target' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing M3 binding target trigger';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE indexname = 'media_objects_binding_position_unique'
+  ) THEN
+    RAISE EXCEPTION 'missing M3 binding uniqueness index';
+  END IF;
+END;
+$$;
+
+
 -- C1 voice-calling invariants.
 INSERT INTO account_devices (
   id, account_id, display_name, created_at
@@ -1240,7 +1393,7 @@ INSERT INTO call_participants (
 
 SET CONSTRAINTS call_participants_exact_roles IMMEDIATE;
 
-DO $$
+DO $
 BEGIN
   BEGIN
     INSERT INTO call_sessions (
@@ -1261,9 +1414,9 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$$;
+$;
 
-DO $$
+DO $
 BEGIN
   BEGIN
     INSERT INTO call_sessions (
@@ -1284,9 +1437,9 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$$;
+$;
 
-DO $$
+DO $
 BEGIN
   BEGIN
     UPDATE call_participants
@@ -1300,9 +1453,9 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$$;
+$;
 
-DO $$
+DO $
 BEGIN
   BEGIN
     INSERT INTO push_subscriptions (
@@ -1322,7 +1475,7 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$$;
+$;
 
 INSERT INTO call_events (
   id, call_session_id, partnership_id, event_type, actor_account_id,
@@ -1338,7 +1491,7 @@ INSERT INTO call_events (
   now()
 );
 
-DO $$
+DO $
 BEGIN
   BEGIN
     UPDATE call_events
@@ -1352,6 +1505,6 @@ BEGIN
       END IF;
   END;
 END;
-$$;
+$;
 
 ROLLBACK;
