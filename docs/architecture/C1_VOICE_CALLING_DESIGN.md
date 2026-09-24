@@ -16,7 +16,7 @@ Prior design branch `design/c1-voice-calling` is historical input only and is no
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
-M3 may proceed in parallel. The current M3 design branch `feat/m3-media-voice @ 4553be22` owns planned migrations 0015 and 0016. C1 owns planned migrations 0017 and 0018. Isolated C1 database validation uses the repository's proven reservation mechanism `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` rather than copying or fabricating M3 SQL. Final integrated C1 closure must run the real contiguous 0001 through 0018 chain with `reserved=0`.
+M3 proceeded in parallel. The current M3 implementation branch `feat/m3-media-voice @ 305891f` owns implemented but unmerged migrations 0015 and 0016. C1 owns implemented migrations 0017 and 0018. Isolated C1 database validation uses the repository's proven reservation mechanism `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` rather than copying or fabricating M3 SQL. Final integrated C1 closure must run the real contiguous 0001 through 0018 chain with `reserved=0`.
 
 Canonical API contract: `docs/api/C1_CALLING_API.md`.
 
@@ -794,17 +794,20 @@ C1 adds reusable push subscription persistence associated with account and devic
 
 A subscription record stores:
 
-- opaque ID
+- device_id as the durable row identity
 - account_id
-- device_id
 - endpoint capability URL
+- keyed endpoint fingerprint
+- endpoint fingerprint key version
 - p256dh key
 - auth key
 - expiration time when provided
 - created_at
+- updated_at
 - last_success_at
+- last_failure_at
 - failure_count
-- disabled_at
+- revoked_at
 
 Subscription endpoint and keys are SENSITIVE.
 
@@ -907,7 +910,7 @@ C1 owns two forward-only migration numbers coordinated with parallel M3 ownershi
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-M3 owns 0015 and 0016 on its parallel design/implementation path.
+M3 owns implemented 0015 and 0016 on its still-unmerged parallel implementation branch.
 
 Before the real M3 migrations are integrated, isolated C1 database tests may set:
 
@@ -933,7 +936,7 @@ with `reserved=0`.
 
 Refine the existing `call_sessions`, `call_participants`, and `call_events` foundations rather than creating a second call model.
 
-Planned durable additions include:
+Implemented durable additions include:
 
 - call `version`
 - independent `deadline_generation`
@@ -960,17 +963,17 @@ Add reusable device-bound Web Push subscription persistence for incoming-call re
 
 Persist only the capability data required by Web Push:
 
-- opaque subscription ID
 - account ID
-- device ID
+- device ID, which is the row identity
 - endpoint capability URL
-- keyed endpoint fingerprint for uniqueness
+- keyed endpoint fingerprint for active-route uniqueness
+- endpoint fingerprint key version
 - p256dh key
 - auth key
 - provider expiration when present
-- created/updated/last-success timestamps
+- created/updated/last-success/last-failure timestamps
 - failure count
-- disabled timestamp
+- revoked timestamp
 
 Subscription capability data is SENSITIVE/SECRET-like operational material and is never logged.
 
@@ -994,9 +997,9 @@ apps/web/public/sw.js                 add canonical call-state push reconciliati
 
 Pure rules stay in domain, wire schemas in contracts, transaction-aware SQL in db, HTTP/signaling orchestration in API, durable timeout/push side effects in the existing worker, and media/tab ownership in web. No provider SDK enters domain packages.
 
-The current `apps/api/src/application.ts` WebSocket registration is a known integration seam and must be refactored before C1 signaling is considered implemented.
+The shared `apps/api/src/application.ts` WebSocket registration seam is implemented with explicit protocol-family negotiation, route-level exact-protocol rechecks, compression disabled, and M2's application-level 4 KiB frame bound preserved.
 
-## Planned implementation slices
+## Implemented source slices
 
 ### C1-A Domain and contracts
 
@@ -1100,20 +1103,21 @@ The current `apps/api/src/application.ts` WebSocket registration is a known inte
 
 ### C1-I Closure harness and device acceptance
 
-Planned command surface:
+Implemented command surface:
 
 ~~~text
 npm run test:c1
-npm run test:c1:security
 npm run test:c1:postgres
-npm run test:c1:browser
 npm run test:c1:local
+npm run test:c1:browser:e2e
 npm run test:c1:closure
+npm run test:c1:device:prepare
+npm run test:c1:device:cleanup
 npm run health
 npm audit --audit-level=high
 ~~~
 
-These are design targets until implemented.
+The commands and harnesses are present in source. Their presence is not a PASS claim: automated/local closure still requires execution, physical Android acceptance is still mandatory, and final integrated migration closure still waits for real M3 0015/0016 on main.
 
 ## Acceptance boundary
 
@@ -1147,7 +1151,7 @@ C1 is DONE only when:
 - full repository health passes
 - high-severity dependency audit passes
 
-C1 design completion is not C1 implementation completion.
+C1 source implementation completion is not C1 acceptance completion or DONE.
 
 ## C2 handoff
 
