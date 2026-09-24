@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for C1 design. This refines Architecture Baseline 1.0 relay-first behavior to relay-only for C1 voice calling.
+Accepted and implemented for C1 on `feat/c1-voice-calling`. This refines Architecture Baseline 1.0 relay-first behavior to relay-only for C1 voice calling. Automated and physical relay-path verification remain open.
 
 ## Context
 
