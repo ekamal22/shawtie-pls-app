@@ -255,7 +255,7 @@ Make the verified M1 and R1 experience resilient across realtime delivery, mobil
 - M2 introduces no Redis
 - M2 is expected to require no PostgreSQL migration; migration 0015 is not pre-reserved
 
-## Implementation slices
+## Implemented source slices
 
 ### M2-A Protocol, contracts, and compatibility
 
@@ -417,6 +417,8 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 - TURN credentials are short-lived and selected-device authorized
 - caller device is fixed; first eligible callee device to accept wins
 - Web Push provides generic background wakeup; foreground calling works without push permission through realtime v2
+- push persistence stores a keyed endpoint fingerprint and key version alongside the sensitive endpoint capability for active-route uniqueness
+- selected endpoints can report only bounded coarse failure categories through the implemented `/fail` mutation
 - PostgreSQL owns durable call state, version, selected endpoints, deadlines, and history
 - ring, connect, and hard timeout work is fenced by independent `deadline_generation`
 - signaling/WebRTC state remains transient
@@ -425,7 +427,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 
 ## Migration coordination
 
-C1 owns `0017_calling_runtime.sql` and `0018_push_runtime.sql`. Parallel M3 owns planned 0015/0016. Isolated C1 validation may use `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; final integrated closure must run real 0001-0018 with `reserved=0`.
+C1 owns implemented `0017_calling_runtime.sql` and `0018_push_runtime.sql`. Parallel M3 owns implemented but unmerged 0015/0016 at `feat/m3-media-voice @ 305891f`. Isolated C1 validation may use `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; final integrated closure must run the real 0001-0018 chain with `reserved=0`.
 
 ## Implementation slices
 
@@ -437,7 +439,7 @@ C1 owns `0017_calling_runtime.sql` and `0018_push_runtime.sql`. Parallel M3 owns
 6. C1-F multi-device first-accept-wins, selected-endpoint enforcement, multi-tab takeover fencing
 7. C1-G order-independent call_state_changed push reconciliation and stale-notification dismissal
 8. C1-H reconnect, ICE restart, process loss, TURN residual-lifetime bounds, lifecycle/revocation/timeouts
-9. C1-I automated/local closure and mandatory physical Android acceptance
+9. C1-I local/PostgreSQL closure runners, real-Chromium ownership harness, Android preflight, and mandatory physical Android acceptance procedure
 
 ## Closure boundary
 
