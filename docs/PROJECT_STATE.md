@@ -129,7 +129,7 @@ Current epic status:
 - R1 Relationship Space: DONE. Source head `9bc9ba4` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. R1 owns migrations 0013 and 0014. Canonical 0001 through 0014 migrations run without reservations, `test:r1:local` passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the real same-partnership M1 message-reference seam is positively verified without copying message plaintext, and full repository health plus audit are green.
 - M2 Realtime and Offline Reliability: DONE on `feat/m2-realtime-offline`. The canonical automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene green. All 14 mandatory physical Android acceptance scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects, each with a focused regression test. M2 is merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`.
 - M3 Media and Voice Messages: DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`; automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`.
-- C1 Voice Calling: DONE on `feat/c1-voice-calling` and ready to merge, but still unmerged. The first real-migration integrated closure passed at `9b5c255`; the physical run passed 25/25 on the Redmi Note 9S; a focused follow-up found and fixed one stale media-owner defect at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where `npm run test:c1:closure` re-passed with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio were then physically confirmed. All C1 acceptance evidence is complete in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+- C1 Voice Calling: DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. Final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0` after the stale media-owner fix. Redmi Note 9S acceptance passed 25/25, and rejected-notification cleanup, stale-owner fencing, and audible bidirectional audio are physically confirmed.
 - C2 Video Calling: PLANNED after verified C1.
 - all other pre-release implementation epics not listed above: PLANNED
 
@@ -151,7 +151,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `main` -> verified post-M2 mainline at `54b8659a101dcaeb6ff1e0b7caee76921c5b9919`, containing completed M1/R1 and merged M2
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
-- `feat/c1-voice-calling` -> C1 DONE and merge-ready, unmerged; final executable baseline `b29aaa1`; real migrations 0001 through 0018 pass with `reserved=0`; Redmi Note 9S acceptance 25/25 and all focused follow-up evidence are complete
+- `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
 - C2 Video Calling -> PLANNED separately after verified C1
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
@@ -184,7 +184,7 @@ M2 Realtime and Offline Reliability was created from documentation-correct `main
 4. preserve merged M3 and its real migrations 0015/0016
 5. preserve the final C1 executable baseline and integrated closure at `b29aaa1`, which re-passed real migrations 0001 through 0018 with `reserved=0` after the stale media-owner fix
 6. C1 mandatory physical Android voice-call acceptance on the Redmi Note 9S is complete (25/25); preserve its evidence
-7. merge C1 (ready to merge, all physical evidence complete) only on an explicit merge instruction; keep C2 Video Calling separate and not started until then
+7. C1 is merged; begin C2 only from the verified post-C1 mainline and keep C2 video-specific scope separate
 8. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy

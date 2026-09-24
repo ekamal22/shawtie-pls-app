@@ -1604,7 +1604,7 @@ Source implementation is present for C1-A through C1-I. The branch now contains 
 
 Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
-The isolated automated/local closure passed at `439b09f` using only documented 0015/0016 reservations. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25. A focused follow-up found one stale media-owner defect, fixed at `b29aaa1`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, C1 real Chromium 5/5, and integrated PostgreSQL/API/worker 111/111. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed. C1 is DONE and merge-ready, but unmerged.
+The isolated automated/local closure passed at `439b09f` using only documented 0015/0016 reservations. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25. A focused follow-up found one stale media-owner defect, fixed at `b29aaa1`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, C1 real Chromium 5/5, and integrated PostgreSQL/API/worker 111/111. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 ## Acceptance gates
 

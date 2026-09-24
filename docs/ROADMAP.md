@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The current C1 merge base is `main @ 20f701f3471fbd8dd4c0cd16ca9a4aa96ccd675d`. M2 and M3 are DONE and merged. C1 Voice Calling is DONE and ready to merge on `feat/c1-voice-calling`, but remains unmerged. The first real-migration closure passed at `9b5c255`; a later physical gap check found one stale media-owner defect, fixed at `b29aaa1`, where the full integrated closure re-passed with `reserved=0`. Redmi Note 9S acceptance is 25/25 and the rejected-notification, stale-owner and audible bidirectional-audio follow-ups are complete.
+The verified mainline now includes C1 at `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. M2, M3, and C1 are DONE and merged. C1's final executable baseline is `b29aaa1`, where the integrated closure re-passed with `reserved=0` after the stale media-owner fix. Redmi Note 9S acceptance is 25/25 and rejected-notification cleanup, stale-owner fencing, and audible bidirectional audio are complete.
 
 Completed milestones:
 
@@ -62,7 +62,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
-| 8 C1 Voice Calling | DONE and ready to merge on `feat/c1-voice-calling` (unmerged): final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
+| 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
 | 9 C2 Video Calling | PLANNED | verified C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -93,7 +93,7 @@ Next:
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
 5. M3 is complete on `feat/m3-media-voice`, Android 20/20 at `ee59850`, and merged to `main @ 1d3535f`
 6. C1 final executable baseline is `b29aaa1`; integrated closure re-passed with `reserved=0`, Redmi acceptance 25/25 and all focused physical follow-ups are complete
-7. keep C2 video separate until verified C1 is merged
+7. C1 is merged; C2 Video Calling is now the next planned implementation milestone
 8. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -404,7 +404,7 @@ M3 must prove PRD size/duration limits, private ciphertext storage, short-lived 
 
 # Milestone 8: C1 Voice Calling
 
-Status: DONE and ready to merge on `feat/c1-voice-calling`; not merged. Final executable baseline is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the integrated closure re-passed after the stale media-owner fix. Redmi Note 9S acceptance passed 25/25, and all focused follow-up evidence including rejected-notification cleanup, stale-owner fencing and audible bidirectional audio is complete.
+Status: DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. Final executable baseline is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the integrated closure re-passed after the stale media-owner fix. Redmi Note 9S acceptance passed 25/25, and all focused follow-up evidence including rejected-notification cleanup, stale-owner fencing and audible bidirectional audio is complete.
 
 Depends on verified M2. C1 source work proceeded in parallel with M3 using only the documented reservations for M3-owned migrations 0015/0016.
 
@@ -425,7 +425,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 - full health PASS
 - high-severity audit: 0 vulnerabilities
 - mandatory physical Android voice-call acceptance PASS 25/25 on the Redmi Note 9S, plus PASS for rejected-notification cleanup, stale-owner fencing after the `b29aaa1` fix, and audible bidirectional audio
-- C1 remains unmerged
+- C1 is merged to main at `d44c595`
 
 ## Next sequence
 
@@ -433,7 +433,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 2. preserve the final executable baseline and integrated closure re-pass at `b29aaa1` with `reserved=0`
 3. preserve completed C1 Redmi Note 9S acceptance and focused follow-up evidence
 4. preserve the stale media-owner defect fix and regression coverage at `b29aaa1`
-5. all C1 gates are closed; merge C1 only on an explicit merge instruction
+5. C1 is merged; start C2 only from the verified post-C1 mainline
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 

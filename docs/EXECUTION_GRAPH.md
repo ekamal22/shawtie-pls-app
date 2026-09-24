@@ -136,7 +136,7 @@ M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical
    ->
 M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
    +
-C1 ✅ DONE on `feat/c1-voice-calling`; latest integrated closure re-passed at `b29aaa1` after the stale media-owner fix; Redmi acceptance 25/25 plus rejected-notification, stale-owner and audible bidirectional-audio follow-ups complete; ready to merge, unmerged
+C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; integrated closure re-passed with `reserved=0`; Redmi 25/25 plus rejected-notification, stale-owner and audible bidirectional-audio follow-ups complete
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -151,7 +151,7 @@ Verified branch: `feat/m3-media-voice`.
 
 Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
 
-M3 real migrations 0015/0016 are on `main`, and C1 final integrated `reserved=0` closure is complete. C1 physical Android acceptance then passed 25/25 on the Redmi Note 9S at `9cbc2f8`. The next dependency action is independent verification and an explicit merge decision for C1; C2 is not started.
+M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C1 final integrated `reserved=0` closure and mandatory Redmi Note 9S acceptance are complete. C1 is merged at `d44c595`; C2 is the next planned call milestone.
 
 ## Earlier completed milestone detail
 
@@ -203,7 +203,7 @@ main @ 54b8659
   |
   +--> feat/m3-media-voice      DONE, Android 20/20, merged to main @ 1d3535f
   |
-  +--> feat/c1-voice-calling   C1 DONE; latest integrated closure `b29aaa1`; all Redmi physical evidence complete; ready to merge, unmerged
+  +--> feat/c1-voice-calling   historical completed branch; merged to main @ d44c595
 
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
@@ -229,7 +229,7 @@ The completed M3 milestone branch remains preserved as history:
 feat/m3-media-voice
 ~~~
 
-The completed but unmerged call branch is `feat/c1-voice-calling`. Its final executable baseline is `b29aaa1`, with all physical evidence complete and an explicit merge decision remaining.
+The completed C1 implementation branch `feat/c1-voice-calling` is historical after fast-forward merge to `main @ d44c595`. Final executable baseline: `b29aaa1`; all physical evidence complete.
 
 The completed parallel milestone branches remain historical:
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented on `feat/c1-voice-calling`. The latest executable baseline is `b29aaa1`, where integrated closure re-passed after the stale media-owner fix. Mandatory Redmi Note 9S acceptance and all focused follow-up evidence are complete. C1 is DONE and merge-ready, but unmerged.
+Accepted and implemented. Final executable baseline `b29aaa1` passed the integrated closure after the stale media-owner fix; mandatory Redmi Note 9S acceptance and all focused follow-up evidence are complete. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 ## Context
 
