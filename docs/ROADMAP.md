@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-23.
+Refreshed: 2026-09-24.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and fast-forward merged to `main @ b6183158` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`; all 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`.
+The current verified post-M2 mainline is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. M2 Realtime and Offline Reliability is DONE and merged. M3 Media and Voice Messages is DONE on `feat/m3-media-voice`: automated closure is green, physical Android acceptance is 20/20 at final code SHA `ee59850`, and explicit merge review is the next M3 action. C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling`, canonical closure `439b09f`, but still requires real-M3 integration, final 0001-0018 `reserved=0` closure, and mandatory physical Android acceptance.
 
 Completed milestones:
 
@@ -62,9 +62,10 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | DONE on `feat/m3-media-voice`; physical Android acceptance 20/20 at `ee59850`; not merged | M2 | Yes |
-| 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
-| 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
-| 10 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
+| 8 C1 Voice Calling | IN_PROGRESS, source implementation and automated/local closure complete at `439b09f`; integration and physical acceptance pending | M2, with final integration after M3 | Yes, mandatory |
+| 9 C2 Video Calling | PLANNED | verified C1 | Yes, mandatory |
+| 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
+| 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
@@ -74,11 +75,12 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The next verified-mainline work is:
 
 ```text
-main @ 9f4237e
-M1 + R1 merged
-        |
-        v
-feat/m2-realtime-offline
+main @ 54b8659
+   |             |
+   v             v
+M3 ✅           C1 🟡
+20/20 Android   local closure PASS
+ready to merge  waits for real 0015/0016
 ```
 
 M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, documentation-closed at `d7d95a6`, and are now on `main`.
@@ -89,8 +91,10 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M2 is merged at `main @ b6183158`; M3 is complete on `feat/m3-media-voice` with automated closure green and the 20-scenario Android matrix passed at `ee59850`; merge to `main` awaits an explicit decision
-6. keep V1 hosted verification separate until Actions capacity returns
+5. M3 is complete on `feat/m3-media-voice` with automated closure green and Android 20/20 at `ee59850`; explicitly merge it to `main`
+6. reconcile `feat/c1-voice-calling` onto the merged M3 mainline, run final 0001-0018 closure with `reserved=0`, then execute mandatory C1 Redmi acceptance
+7. keep C2 video separate until verified C1 is merged
+8. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 

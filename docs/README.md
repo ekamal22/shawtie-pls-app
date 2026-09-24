@@ -27,7 +27,7 @@ M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward
 
 M3 Media and Voice Messages is complete on `feat/m3-media-voice` (created from merged-M2 `main @ 54b8659a`) and is not yet merged to `main`. The implementation includes migrations 0015/0016, media contracts/repositories, private S3-compatible object storage, API/worker integration, M1/R1 binding, encrypted browser drafts, image/video/file/voice flows, and cleanup. Automated closure passed and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S, final physical acceptance code SHA `ee59850`, recorded in `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed three real defects, each with a regression test. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
 
-This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
+For still-open milestones, implementation-complete does not mean acceptance-complete or DONE. M3 is now an exception because both automated/local and physical acceptance are closed; it remains unmerged only pending the explicit merge decision.
 
 Governance:
 
@@ -123,7 +123,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined, exhaustively validated, and merged into the current verified `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. The technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`, with automated/local closure green at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. That run passed the canonical 0001 through 0014 migrations with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene. All 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The current verified post-M2 mainline is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. M3 Media and Voice Messages is DONE on `feat/m3-media-voice`: automated closure is green, all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`, and the branch is ready for explicit merge review. C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling @ 7b154a1`, with canonical closure at `439b09f` using only the documented 0015/0016 reservations. After M3 merges its real 0015/0016, C1 must reconcile, pass final 0001-0018 `reserved=0` closure, and complete mandatory physical Android acceptance. C2 Video Calling remains a separate later milestone. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

@@ -56,7 +56,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             +---+---+
             |       |
             v       v
-       M3 Media ✅  C1 Calling ⚪
+       M3 Media ✅  C1 Voice 🟡
 M3 status: DONE on `feat/m3-media-voice` (created from `main @ 54b8659a`): automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`; merge is an explicit human decision. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
             |       |
             +---+---+
@@ -101,10 +101,11 @@ flowchart TD
     M1 --> M2["M2 Realtime + Offline ✅"]
 
     M2 --> M3["M3 Media + Voice Messages ✅"]
-    M2 --> C1["C1 Voice + Video Calling ⚪"]
+    M2 --> C1["C1 Voice Calling 🟡"]
+    C1 --> C2["C2 Video Calling ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
-    C1 --> S1
+    C2 --> S1
 
     S1 --> R2["R2 Public Readiness ⚪"]
     V1["V1 Hosted CI Verification 🔒"] -. required before close .-> R2
@@ -132,6 +133,10 @@ P3 ✅
 M1 ✅ + R1 ✅ merged to main
    ->
 M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical Android acceptance 14/14 at `b83102f`
+   ->
+M3 ✅ DONE on `feat/m3-media-voice`; Android 20/20 at `ee59850`; ready for explicit merge
+   +
+C1 🟡 source + automated/local closure complete at `439b09f`; final M3-integrated closure and Redmi acceptance pending
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -139,6 +144,16 @@ P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is 
 M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source head `b29b095`. R1 source head `9bc9ba4` is also DONE. Both are source-integrated at `01fa182` and exhaustively validated together on `integration/m1-r1 @ 5db7a94`; canonical migrations, full health, audit, and git hygiene are green.
 
 ## Most recently completed milestone
+
+### M3 Media and Voice Messages
+
+Verified branch: `feat/m3-media-voice`.
+
+Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`; documentation head is `822e6d8`. M3 is complete but intentionally unmerged pending explicit merge approval.
+
+The next dependency action is to merge M3 real migrations 0015/0016 to `main`, then reconcile C1 and run its final `reserved=0` closure before C1 physical acceptance.
+
+## Earlier completed milestone detail
 
 ### M1 Messaging Core
 
@@ -208,11 +223,13 @@ From P2 onward:
 
 The legacy `feat/m1-executable-foundation` branch is historical and is not the M1 Messaging Core branch.
 
-The current milestone branch is:
+The current completed-but-unmerged milestone branch is:
 
 ~~~text
-feat/m2-realtime-offline
+feat/m3-media-voice
 ~~~
+
+The parallel in-progress call branch is `feat/c1-voice-calling`.
 
 The completed parallel milestone branches remain historical:
 
@@ -235,7 +252,8 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 | R1 Relationship Space | No for core closure |
 | M2 Realtime + Offline | Yes |
 | M3 Media + Voice Messages | Yes |
-| C1 Voice + Video Calling | Yes, mandatory |
+| C1 Voice Calling | Yes, mandatory |
+| C2 Video Calling | Yes, mandatory |
 | S1 E2EE + Crypto Recovery | Yes, mandatory |
 | R2 Public Readiness | Yes, final acceptance |
 
@@ -246,7 +264,7 @@ The shortest dependency path from the current verified mainline to stable releas
 ~~~text
 M1
  -> M2
- -> M3/C1
+ -> M3 + C1 Voice -> C2
  -> S1
  -> R2
  -> Stable Release

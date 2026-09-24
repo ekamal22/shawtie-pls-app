@@ -1523,39 +1523,35 @@ The closure harness was executed: `npm run test:m3:closure` passed at `305891f` 
 
 M3 is DONE: automated/local and physical Android closure are both green. It has not been merged to `main`; that requires an explicit decision.
 
-# C1: Voice and Video Calling
+# C1: Voice Calling
 
-Status: PLANNED
+Status: IN_PROGRESS on `feat/c1-voice-calling`. Source implementation and automated/local closure are complete. Canonical closure passed at `439b09f`; documentation head is `7b154a1`. C1 remains unmerged.
 
-## Scope
+C1 was implemented in parallel with M3 using only the documented reservations for M3-owned migrations 0015/0016. Now that M3 physical acceptance is closed, the required next sequence is: merge M3, reconcile C1 onto the mainline containing real 0015/0016, run canonical migrations 0001 through 0018 with `reserved=0`, then execute mandatory physical Android voice-call acceptance.
 
-- call signaling
-- voice calls
-- video calls
-- accept
-- reject
-- cancel
-- missed state
-- call history
-- TURN credential issuance
-- relay-first privacy
-- breakup call consent
+Current gate summary:
 
-## Acceptance gates
+- [x] source implementation complete on `feat/c1-voice-calling`
+- [x] isolated automated/local closure passed with only 0015/0016 reserved
+- [x] focused C1 tests 20/20
+- [x] PostgreSQL/API/worker matrix 111/111
+- [x] database invariants pass in isolated C1 closure
+- [x] real Chromium C1 harness 2/2
+- [x] full health and high-severity audit pass
+- [ ] M3 real 0015/0016 merged to `main`
+- [ ] C1 reconciled onto the real-M3 mainline
+- [ ] canonical 0001 through 0018 migration chain passes with `reserved=0`
+- [ ] mandatory physical Android C1 acceptance passes
+- [ ] post-device regression closure remains green
+- [ ] C1 merged to `main`
 
-- [ ] calls require authenticated partnership authorization
-- [ ] calls never auto-answer
-- [ ] breakup_pending calls require explicit acceptance for every call
-- [ ] short-lived TURN credentials are issued only after authorization
-- [ ] permanent TURN credentials are not embedded in the client
-- [ ] expired TURN credentials fail
-- [ ] relay-first behavior is verified where supported
-- [ ] TURN/TCP or TURN/TLS fallback is tested where supported
-- [ ] call history is partnership-scoped
-- [ ] call history is deleted at final dissolution
-- [ ] account-deletion view-only state disables calling
-- [ ] call interruption and reconnect behavior is safe
-- [ ] physical-device voice and video tests pass
+Detailed C1 architecture, API, signaling, security, and physical acceptance documents currently live on `feat/c1-voice-calling` and will become mainline documentation when C1 merges.
+
+# C2: Video Calling
+
+Status: PLANNED.
+
+C2 is intentionally separate from C1. It reuses the verified C1 call authority, signaling, TURN, push, lifecycle, and deletion substrate and adds camera/video-specific behavior only after C1 is fully verified and merged.
 
 # R1: Relationship Space
 
