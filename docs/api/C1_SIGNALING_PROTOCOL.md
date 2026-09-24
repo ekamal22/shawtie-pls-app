@@ -16,7 +16,7 @@ Endpoint:
 
 /api/v1/calls/:callId/signal
 
-Final integrated automated/local signaling verification passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Physical relay-path and Android acceptance remain open.
+The first real-migration integrated signaling verification passed at `9b5c255`; after the stale media-owner fix, the full integrated closure re-passed at `b29aaa1` with `reserved=0`. Physical relay-path and Android acceptance are complete, including stale-owner generation fencing. C1 is DONE and merge-ready, but unmerged.
 
 Purpose:
 

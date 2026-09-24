@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented on `feat/c1-voice-calling`. Final integrated automated/local verification passed at `9b5c255`, and mandatory physical Android acceptance passed 25/25 on the Redmi Note 9S.
+Accepted and implemented on `feat/c1-voice-calling`. The latest executable baseline is `b29aaa1`, where integrated closure re-passed after the stale media-owner fix. Mandatory Redmi Note 9S acceptance and all focused follow-up evidence are complete. C1 is DONE and merge-ready, but unmerged.
 
 ## Context
 

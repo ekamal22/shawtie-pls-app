@@ -12,7 +12,7 @@ Architecture: `docs/architecture/C1_VOICE_CALLING_DESIGN.md`
 
 Signaling: `docs/api/C1_SIGNALING_PROTOCOL.md`
 
-Final integrated automated/local contract and integration verification passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance passed 25/25 on the Redmi Note 9S.
+The first real-migration integrated contract and integration closure passed at `9b5c255`; after the stale media-owner fix, the full integrated closure re-passed at `b29aaa1` with `reserved=0`. Mandatory Redmi Note 9S acceptance and all focused follow-up evidence, including audible bidirectional audio, are complete. C1 is DONE and merge-ready, but unmerged.
 
 This contract is subordinate to the PRD and C1 architecture design.
 

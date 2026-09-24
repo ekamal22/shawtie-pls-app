@@ -1525,7 +1525,7 @@ M3 is DONE: automated/local and physical Android closure are both green, and the
 
 # C1: Voice Calling
 
-Status: IN_PROGRESS. SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE; PHYSICAL ACCEPTANCE PENDING
+Status: DONE AND READY TO MERGE, UNMERGED. SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ACCEPTANCE COMPLETE.
 
 Branch: `feat/c1-voice-calling`
 
@@ -1604,7 +1604,7 @@ Source implementation is present for C1-A through C1-I. The branch now contains 
 
 Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
-The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` using only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, the integrated PostgreSQL/API/worker matrix 111/111, C1 real Chromium 2/2, full health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, M3 browser unit 13/13, a zero-vulnerability high-severity audit, and git hygiene. Mandatory physical Android acceptance then passed 25/25 on the Redmi Note 9S at `9cbc2f8` (no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there; evidence in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`), so C1 is DONE on `feat/c1-voice-calling` and is not merged.
+The isolated automated/local closure passed at `439b09f` using only documented 0015/0016 reservations. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25. A focused follow-up found one stale media-owner defect, fixed at `b29aaa1`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, C1 real Chromium 5/5, and integrated PostgreSQL/API/worker 111/111. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed. C1 is DONE and merge-ready, but unmerged.
 
 ## Acceptance gates
 
