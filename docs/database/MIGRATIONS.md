@@ -275,7 +275,7 @@ SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
 
 No placeholder migration files and no copied M3 SQL are permitted.
 
-Final integrated C1 closure must run real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green. Therefore M3 must merge its real 0015/0016 migrations first; C1 then reconciles onto that mainline and removes reservation-only closure assumptions.
+Isolated C1 automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved, database invariants green, and no placeholder 0015/0016 files. Final integrated C1 closure must still run the real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green. Therefore M3 must merge its real 0015/0016 migrations first; C1 then reconciles onto that mainline and removes reservation-only closure assumptions.
 
 `0017` is implemented and refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, call uniqueness, endpoint-session binding, and legacy-call terminalization.
 

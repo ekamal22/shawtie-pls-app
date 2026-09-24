@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-23.
+Refreshed: 2026-09-24.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and fast-forward merged to `main @ b6183158` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`; all 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`.
+The current verified post-M2 mainline for parallel M3/C1 work is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. The M1/R1 exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and merged, with automated/local closure at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` and all 14 mandatory physical Android scenarios passed at final acceptance SHA `b83102f`. C1 automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`; the documentation-closed C1 branch head is `3483a458af6bc727675f56c6520e2b38dfd7aea2`.
 
 Completed milestones:
 
@@ -61,7 +61,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
+| 7 M3 Media and Voice Messages | IN_PROGRESS, source implementation complete at `305891f`; physical acceptance and merge pending | M2 | Yes |
 | 8 C1 Voice Calling | IN_PROGRESS, source implementation and automated/local closure complete at `439b09f`; physical and final integrated closure pending | M2 | Yes, mandatory |
 | 9 C2 Video Calling | PLANNED | C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
@@ -75,11 +75,12 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The next verified-mainline work is:
 
 ```text
-main @ 9f4237e
-M1 + R1 merged
-        |
-        v
-feat/m2-realtime-offline
+main @ 54b8659
+   |             |
+   v             v
+M3 🟡           C1 🟡
+source          source + automated/local closure
+complete        PASS @ 439b09f
 ```
 
 M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, documentation-closed at `d7d95a6`, and are now on `main`.
@@ -91,7 +92,7 @@ Next:
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
 5. preserve the C1 automated/local closure anchor `439b09f` and its green 0015/0016 reservation evidence
-6. perform mandatory C1 Android acceptance, then run final integrated closure after real M3 0015/0016 merge
+6. next C1 gates are mandatory physical Android acceptance and, after M3 merges real 0015/0016, final integrated 0001-0018 closure with `reserved=0`
 7. keep C2 video separate and dependent on verified C1 voice-call substrate
 8. keep V1 hosted verification separate until Actions capacity returns
 
@@ -400,7 +401,7 @@ Accepted ADRs:
 - `docs/adr/ADR-013-call-signaling-transport.md`
 - `docs/adr/ADR-014-relay-only-call-privacy.md`
 
-Depends on verified M2 and may implement in parallel with M3.
+Depends on verified M2. C1 source implementation and automated/local closure were completed in parallel with M3; final integrated closure still waits for M3.
 
 ## Goal
 

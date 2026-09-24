@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. SOURCE IMPLEMENTATION COMPLETE ON BRANCH. VERIFICATION PENDING.
+DESIGN COMPLETE. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH. PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING.
 
 Branch: `feat/c1-voice-calling`
 
@@ -15,6 +15,8 @@ shawtie.call.v1
 Endpoint:
 
 /api/v1/calls/:callId/signal
+
+Automated/local signaling verification passed at `439b09f551512ea79a16e8f3d047a32b9a722203` as part of `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Physical relay-path/Android acceptance and final integrated migration closure remain open.
 
 Purpose:
 
