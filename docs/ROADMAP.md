@@ -351,7 +351,7 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: PLANNED.
+Status: IN_PROGRESS. Source implementation complete on `feat/m3-media-voice @ 305891f`; physical Android acceptance and merge remain pending.
 
 Depends on verified M2.
 
