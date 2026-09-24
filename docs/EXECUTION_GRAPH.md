@@ -145,34 +145,32 @@ M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source
 
 ## Most recently completed milestone
 
-### M1 Messaging Core
+### M2 Realtime and Offline Reliability
 
 Verified closure branch:
 
 ~~~text
-feat/m1-messaging-core
+feat/m2-realtime-offline
 ~~~
 
-Verified closure commit:
+Automated/local closure anchor:
 
 ~~~text
-aa40a2cc74e8efb08bcefdbe3ae40e306cabe288
+4bbffdfbcd70bd4160e50c52bb14048cf3339dc0
 ~~~
 
 Verified implementation state:
 
-1. M1-A through M1-H are implemented and locally verified
-2. migrations 0001 through 0012 apply from zero
+1. M2 runtime, offline queue, service worker, realtime protocol, anti-entropy, and browser integration are implemented
+2. migrations 0001 through 0014 pass with `reserved=0`
 3. database invariants pass
-4. M1 security passes 17/17
-5. the disposable PostgreSQL/API/worker matrix passes 64/64 with `M1_LOCAL_POSTGRES_PASS`
-6. P1, P2, P3, and A1 regression surfaces remain green
-7. full repository health passes with Domain 51/51, Contracts 22/22, API unit/security 31/31, and Worker 4/4
-8. `npm audit --audit-level=high` reports 0 vulnerabilities and `git diff --check` passes
+4. the PostgreSQL/API/worker matrix passes 100/100
+5. the real Chromium suite passes 7/7
+6. full repository health, high-severity audit, and git hygiene are green
+7. all 14 mandatory physical Android scenarios passed on the Xiaomi Redmi Note 9S
+8. final physical acceptance is recorded at `b83102f`
 
-M1 is closed at 18/18 gates and the combined M1/R1 integration is exhaustively green at `5db7a94`. The documentation-closed integration is merged to `main @ d7d95a6`, so M2 may now branch from the verified mainline.
-
-M1 preserves verified migrations 0001 through 0010 and owns only migrations 0011 and 0012.
+M2 is DONE and fast-forward merged to `main @ b6183158`. C1 and M3 branch from the verified post-M2 mainline.
 
 ## Milestone branch flow
 
