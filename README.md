@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified combined technical baseline is `5db7a94183bca153d142389d7188e3887653a9ec`, with the completed M1/R1 baseline contained in `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`: migrations 0001 through 0014 with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene, ending with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, with recorded evidence at `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md` and final physical acceptance SHA `b83102f`; that acceptance run found and fixed seven real M2 defects, each with a focused regression test. Hosted GitHub Actions verification remains separate under V1. C1 Voice Calling source implementation and automated/local closure are complete on `feat/c1-voice-calling`. The canonical closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with M3-owned migrations 0015/0016 reserved, C1 fast tests 20/20, PostgreSQL/API/worker 111/111, real Chromium 2/2, full health, a zero-vulnerability high-severity audit, and git hygiene, ending with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. C1 is not DONE: mandatory physical Android acceptance remains open, and final integrated closure waits for the real M3 migrations 0015/0016 and `reserved=0` validation.
+The verified combined technical baseline is `5db7a94183bca153d142389d7188e3887653a9ec`, with the completed M1/R1 baseline contained in `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. Architecture Baseline 1.0 is frozen; F0, F1, F2, A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space are DONE with executed local evidence. M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`: migrations 0001 through 0014 with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene, ending with `M2_AUTOMATED_CLOSURE_PASS`. All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, with recorded evidence at `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md` and final physical acceptance SHA `b83102f`; that acceptance run found and fixed seven real M2 defects, each with a focused regression test. Hosted GitHub Actions verification remains separate under V1. M3 Media and Voice Messages source implementation, automated/local verification, and mandatory physical Android acceptance are complete on `feat/m3-media-voice` (final physical acceptance code SHA `ee59850`, initial tested SHA `305891f`). Automated closure passed at `305891f` before device work, and its every step passed again after the physical fixes. The 20 mandatory physical scenarios all passed on a physical Xiaomi Redmi Note 9S, with evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. That run found and fixed three real defects, each with a regression test. M3 is DONE and fast-forward merged to `main` at anchor `1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling @ 7b154a1`; its canonical closure passed at `439b09f` with only M3-owned 0015/0016 reserved. C1 has now been reconciled onto the mainline containing the real 0015/0016 migrations. Final 0001-0018 validation with `reserved=0` and mandatory physical Android acceptance remain open before C1 can merge. C2 Video Calling remains separate and blocked on verified C1.
 
 ## Product direction
 
@@ -31,7 +31,7 @@ The selected architecture is:
 - partnership-scoped local storage
 - client-side encrypted media
 - WebSockets for realtime synchronization and call signaling
-- WebRTC with relay-only TURN for C1 voice calling; C2 video reuses the verified call substrate
+- WebRTC with relay-first TURN support
 - reviewed E2EE with per-device and per-partnership cryptographic state
 
 ## Documentation
@@ -48,10 +48,9 @@ Start with:
 - `docs/architecture/M1_MESSAGING_CORE_DESIGN.md` for the refined M1 Messaging Core architecture and implementation plan
 - `docs/api/M1_MESSAGING_API.md` for the implemented M1 HTTP and synchronization contract
 - `docs/architecture/M2_REALTIME_OFFLINE_DESIGN.md` for the implemented M2 realtime/offline architecture and closure boundary
-- `docs/architecture/C1_VOICE_CALLING_DESIGN.md` for the completed C1 voice-call architecture and implemented source slices
-- `docs/api/C1_CALLING_API.md` for the C1 durable HTTP call contract
-- `docs/api/C1_SIGNALING_PROTOCOL.md` for the dedicated accepted-call WebRTC signaling protocol
-- `docs/testing/C1_ANDROID_ACCEPTANCE.md` for mandatory physical Android voice-call acceptance
+- `docs/architecture/M3_MEDIA_VOICE_DESIGN.md` for the completed M3 media/voice architecture and implementation plan
+- `docs/api/M3_MEDIA_API.md` for the implemented M3 upload, retrieval, storage, and binding contract
+- `docs/testing/M3_ANDROID_ACCEPTANCE.md` for the M3 physical Android acceptance procedure (20 of 20 executed; evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`)
 - `docs/api/M2_REALTIME_PROTOCOL.md` for the M2 WebSocket protocol and invalidation contract
 - `docs/architecture/R1_RELATIONSHIP_SPACE_DESIGN.md` for the completed R1 architecture and implementation design
 - `docs/api/R1_RELATIONSHIP_SPACE_API.md` for the implemented R1 HTTP contract

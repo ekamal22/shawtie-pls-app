@@ -73,13 +73,10 @@ M2 Realtime and Offline
     +---+---+
     |       |
     v       v
-M3 Media  C1 Voice Calling
-    |            |
-    |            v
-    |      C2 Video Calling
-    |            |
-    +------+-----+
-           v
+M3 Media  C1 Calling
+    |       |
+    +---+---+
+        v
 S1 E2EE and Crypto Recovery
         |
         v
@@ -1309,38 +1306,226 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: IN_PROGRESS. SOURCE IMPLEMENTATION COMPLETE ON `feat/m3-media-voice @ 305891f`; PHYSICAL AND MERGE CLOSURE PENDING
+Status: DONE. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850`. Not yet merged to `main`.
+
+Branch: `feat/m3-media-voice`
+
+Base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
+
+Architecture: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
+
+API/storage contract: `docs/api/M3_MEDIA_API.md`
+
+Physical Android procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`
+
+Migration ownership:
+
+- `0015_media_runtime.sql`
+- `0016_media_integration_runtime.sql`
+
+M3 preserves M1 authoritative message order/change order, R1 container visibility, M2 canonical realtime/offline reconciliation, P3 lifecycle authority, and F2 durable cleanup. It refines the existing `media_objects` aggregate rather than introducing a second media identity system.
 
 ## Scope
 
-- image upload
-- video upload
-- general file upload
-- voice-message recording
-- client-side media processing
+- images
+- short videos
+- selected files
+- chat voice messages
+- Relationship Space attachments
+- R1 Voice Letter media
+- client-side preparation and ciphertext-only upload
 - private object storage
-- signed access
-- attachment authorization
-- encrypted-media boundary
+- opaque keys
+- short-lived signed upload/download grants
+- one-time authoritative binding
+- abandoned-upload cleanup
+- message/R1 deletion cleanup
+- partnership media deletion-manifest target
+- encrypted local media drafts
+- physical Android acceptance
+
+M3 does not own production E2EE key distribution, device crypto enrollment/recovery, calls, push notifications, server-side plaintext transcoding, or call recording.
+
+## Refined architecture decisions
+
+- M3 v1 uses whole-object ciphertext PUT/GET; no multipart upload or range-decrypt contract
+- interrupted retry reuses identical encrypted draft bytes/digest; changed ciphertext requires a new media ID
+- signed provider access is exact-origin/private and never falls back through plaintext API proxy
+- server-side upload/binding/download feature controls fail closed during provider incidents
+- production rejects test-only crypto protocol versions; S1 owns key envelopes inside protected M1/R1 content
+- M3 real 0015/0016 must merge before C1 final integrated closure
+
+
+- protected media plaintext never reaches API/object storage
+- S1 owns the reviewed production media-key envelope; M3 exposes only a high-level crypto port and may use an impossible-to-enable-in-production test adapter for synthetic fixtures
+- one media object binds exactly once to one `message` or `relationship_item`
+- unbound media is uploader-only
+- a known media ID is never an authorization grant
+- message-bound access follows current M1 container visibility
+- R1-bound access follows current R1 release/open/reveal visibility
+- Voice Letter is media role `voice_letter`, not a standalone R1 item
+- object store is provider-neutral and never owns product authorization
+- signed URLs are short-lived bearer capabilities and never enter durable product projections/logs/cache
+- realtime uses existing content-free M1/R1 invalidations and canonical HTTP refetch
+- binary media never enters the M2 chat outbox
+- container deletion revokes new access before physical object cleanup
+- final dissolution adds `partnership_media_objects` to the P3 deletion manifest
+- object deletion is idempotent; missing object on retry is success
+- original filenames are not server metadata in M3 v1
+- active content is never rendered from arbitrary decrypted HTML/SVG
+
+## Product limits
+
+- image source <= 10 MB; re-encode/resize to <= 4096 px longest side, target about 2 MB where practical
+- video <= 50 MB and <= 120 seconds
+- selected file <= 25 MB
+- voice <= 15 MB and <= 600 seconds
+- <= 10 attachments per message
+
+## Implementation sequence
+
+### M3-A Contracts and domain
+- media kinds/formats/policy contracts
+- upload/binding state machine
+- media projections
+- message attachment extension
+- Voice Letter role validation
+- deletion/lifecycle rules
+
+### M3-B Migrations 0015/0016
+- refine `media_objects`
+- uploader device, state, digest, generation, expiry, ready time
+- immutable binding type/id/role/position
+- M1 media-only message support
+- indexes and invariants
+- canonical migrations 0001 through 0016 with no reservation
+
+### M3-C Object storage
+- `MediaObjectStore` abstraction
+- signed upload/download grants
+- object verification/checksum
+- idempotent delete
+- realistic private local test adapter
+
+### M3-D Upload API
+- policy
+- initiate
+- refresh
+- complete
+- cancel
+- abandoned-upload expiry
+- rate limits
+- replay/idempotency
+
+### M3-E Retrieval authorization
+- uploader-only unbound access
+- M1/R1 container access
+- lifecycle re-evaluation
+- short-lived signed download grants
+
+### M3-F M1 integration
+- text plus attachments
+- attachment-only messages
+- voice-only messages
+- atomic message/media binding
+- unchanged `server_sequence`/`change_sequence` semantics
+- message delete revokes media
+
+### M3-G R1 integration
+- concrete M3 media resolver
+- atomic relationship-item media binding
+- Voice Letter
+- release visibility inheritance
+- replacement/delete cleanup
+
+### M3-H Browser
+- image/video/file picker
+- image processing worker
+- voice recorder/preview/playback
+- progress/retry/cancel
+- safe decrypted rendering
+
+### M3-I Lifecycle/deletion/local storage
+- breakup and account-deletion rules
+- final dissolution
+- `partnership_media_objects` handler
+- `m3.media_delete` and `m3.media_upload_expire`
+- encrypted local draft store
+- logout/account-switch/revocation/dissolution purge
+- service-worker exclusion
+
+### M3-J Closure
+- contracts/security/PostgreSQL/object-store/browser/real-Chromium
+- full health and dependency audit
+- physical Android 20/20
+- diff/worktree hygiene
+- local/remote SHA parity
+
+## Current source implementation state
+
+Source implementation is complete at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`.
+
+Committed implementation includes:
+
+- M3-A contracts/domain and server policy
+- M3-B real migrations 0015/0016 plus DB invariants
+- M3-C dependency-free S3-compatible private object-store adapter and real MinIO smoke
+- M3-D upload/create/refresh/complete/cancel, idempotency, rate limits, operational controls, and abandoned-upload cleanup
+- M3-E authoritative M1/R1 read authorization and short-lived grants
+- M3-F M1 text+attachments, media-only, and voice-only binding
+- M3-G concrete R1 media resolver, Voice Letters, replacement/delete cleanup, and visibility inheritance
+- M3-H encrypted browser drafts, worker-backed image processing, video/file selection, true voice preview, retry/cancel, safe rendering, and whole-object recovery
+- M3-I lifecycle deletion, partnership media deletion target, service-worker exclusion, fail-closed local purge, and M2 namespace integration
+- M3-J contract/domain/security/PostgreSQL/worker/object-store/real-Chromium/local-closure/device-preflight harnesses
+
+The closure harness was executed: `npm run test:m3:closure` passed at `305891f` and every step passed again after the physical fixes, and all 20 physical Android scenarios passed on a Xiaomi Redmi Note 9S with committed evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. The physical run found and fixed three real defects (commits `98b4c90` and `ee59850`), each with a regression test. All acceptance gates below are therefore closed.
 
 ## Acceptance gates
 
-- [ ] configured attachment limits are enforced
-- [ ] client-side image processing follows product limits
-- [ ] object keys are opaque and do not contain private filenames
-- [ ] storage objects are private
-- [ ] signed access is short-lived and partnership-authorized
-- [ ] attachment IDs cannot cross partnership boundaries
-- [ ] unauthorized object retrieval fails
-- [ ] encrypted-media path is compatible with stable-release E2EE
-- [ ] media is included in deletion manifests
-- [ ] final dissolution removes media access immediately
-- [ ] storage cleanup retries safely
-- [ ] physical Android media and voice-message flows pass
+- [x] migrations 0001 through 0016 apply from zero with `reserved=0`
+- [x] database invariants cover media state, partnership scope, and immutable one-time binding
+- [x] server-controlled PRD media limits are enforced
+- [x] client image processing strips ordinary metadata through re-encoding and respects dimension policy
+- [x] object keys are opaque and contain no user/container/private filename data
+- [x] object storage is private
+- [x] API/object store never receives media plaintext
+- [x] production configuration cannot enable the M3 test-only crypto adapter
+- [x] upload grants are short-lived and exact-scope
+- [x] completion proves object existence and expected size/checksum where supported
+- [x] completion retry is idempotent
+- [x] abandoned uploads clean up safely after crash/lost response
+- [x] unbound media is uploader-only
+- [x] same-partnership membership alone does not expose unbound media
+- [x] a media object cannot bind twice or cross visibility domains
+- [x] message attachments bind atomically with M1 message creation
+- [x] media-only messages preserve M1 ordering/change semantics
+- [x] voice message shape is exactly constrained
+- [x] M1 edit does not silently replace attachments
+- [x] message deletion immediately denies new attachment grants
+- [x] R1 media references require the concrete M3 resolver
+- [x] Voice Letter requires voice media and inherits containing-item visibility
+- [x] unreleased/hidden R1 media cannot be fetched through media ID
+- [x] breakup_pending allows new chat media exactly as the PRD requires
+- [x] R1 remains view-only during breakup
+- [x] account-deletion overlay blocks new media writes
+- [x] final dissolution denies new media access synchronously
+- [x] `partnership_media_objects` deletion target is created and retry-safe
+- [x] worker crash after object deletion is safe to replay
+- [x] future partnership cannot access/rebind old media
+- [x] M3 local drafts are encrypted and namespace-purged on logout/account switch/revocation/dissolution
+- [x] IndexedDB quota failure cannot be represented as safely queued media
+- [x] service worker never caches signed media URLs, authorized media responses, or decrypted media
+- [x] realtime/outbox/logging excludes signed URLs, plaintext, filenames, ciphertext bodies, and key material
+- [x] safe client rendering rejects active untrusted content
+- [x] all 20 physical Android scenarios pass
+- [x] full `npm run health` and `npm audit --audit-level=high` pass
+- [x] branch/worktree/diff hygiene and local/remote SHA parity pass
+
+M3 is DONE: automated/local and physical Android closure are both green, and the milestone was fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`.
 
 # C1: Voice Calling
 
-Status: IN_PROGRESS. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH; PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING
+Status: IN_PROGRESS. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE; RECONCILED ONTO MERGED M3; FINAL INTEGRATED CLOSURE AND PHYSICAL ACCEPTANCE PENDING
 
 Branch: `feat/c1-voice-calling`
 
@@ -1364,7 +1549,7 @@ Migration ownership:
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-Parallel M3 owns implemented but unmerged 0015/0016 at `feat/m3-media-voice @ 305891f`. Isolated C1 validation may reserve 0015/0016 through `SHAWTIE_MIGRATION_RESERVATIONS`; final integrated closure requires the real 0001-0018 chain with `reserved=0`.
+M3 owns real merged migrations 0015/0016 on main. The earlier isolated C1 closure used `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; after reconciliation, final integrated closure must use the real 0001-0018 chain with `reserved=0`.
 
 ## Scope
 
@@ -1419,12 +1604,13 @@ Source implementation is present for C1-A through C1-I. The branch now contains 
 
 Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
-Canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. The run passed C1 fast tests 20/20, database invariants, the PostgreSQL/API/worker matrix 111/111 with only M3-owned 0015/0016 reserved, real Chromium 2/2, full health with Domain 63/63, Contracts 40/40, API unit/security 54/54, and Worker 11/11, a zero-vulnerability high-severity audit, and git hygiene/local-remote parity. It ended with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance and final integrated migration closure with real M3 0015/0016 and `reserved=0` remain open, so C1 is not DONE.
+Canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. The run passed C1 fast tests 20/20, database invariants, the PostgreSQL/API/worker matrix 111/111 with only M3-owned 0015/0016 reserved, real Chromium 2/2, full health with Domain 63/63, Contracts 40/40, API unit/security 54/54, and Worker 11/11, a zero-vulnerability high-severity audit, and git hygiene/local-remote parity. It ended with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. C1 is reconciled onto real M3 0015/0016. Mandatory physical Android acceptance and final integrated migration closure with `reserved=0` remain open, so C1 is not DONE.
 
 ## Acceptance gates
 
 - [x] implementation starts from verified merged-M2 mainline or descendant
-- [x] isolated C1 tests reserve only M3-owned 0015/0016 and do not copy/create placeholder M3 migrations
+- [x] isolated C1 tests reserved only M3-owned 0015/0016 and did not copy/create placeholder M3 migrations
+- [x] real M3 migrations 0015/0016 are merged to main and reconciled into C1
 - [ ] final integrated migrations 0001 through 0018 pass with `reserved=0`
 - [ ] existing foundation call tables are refined rather than replaced by a second aggregate
 - [ ] one non-terminal call per partnership is database-enforced
@@ -1515,32 +1701,9 @@ Canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a7
 
 # C2: Video Calling
 
-Status: PLANNED
+Status: PLANNED.
 
-Depends on verified C1.
-
-## Scope
-
-- enable `video` over C1 call authority/history/signaling
-- explicit camera permission/activation
-- local/remote video rendering
-- camera enable/disable
-- front/back camera switching where supported
-- video track renegotiation via C1 perfect negotiation
-- bandwidth/network adaptation
-- physical Android video acceptance
-
-## Acceptance gates
-
-- [ ] C2 reuses C1 call authority, selected-device model, history, signaling, TURN, push, and deletion behavior
-- [ ] no camera track starts without explicit user action and permission
-- [ ] raw camera labels/device metadata are not persisted server-side
-- [ ] relay-only candidate privacy remains enforced
-- [ ] video renegotiation is generation-safe
-- [ ] camera switching is safe on supported Android device
-- [ ] breakup/account-deletion/final-dissolution behavior matches C1
-- [ ] video browser tests pass
-- [ ] physical Android video calls pass
+C2 is intentionally separate from C1. It reuses the verified C1 call authority, signaling, TURN, push, lifecycle, and deletion substrate and adds camera/video-specific behavior only after C1 is fully verified and merged.
 
 # R1: Relationship Space
 
@@ -1849,8 +2012,6 @@ Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3
 # S1: E2EE and Cryptographic Recovery
 
 Status: PLANNED
-
-Depends on verified M3, C1 Voice Calling, and C2 Video Calling.
 
 ## Scope
 
