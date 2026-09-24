@@ -286,7 +286,7 @@ If the call never reached connected state, history does not invent a duration.
 
 ## POST /api/v1/calls/:callId/fail
 
-Optional implementation endpoint for a selected endpoint to report an unrecoverable setup failure.
+Implemented endpoint for a selected endpoint to report an unrecoverable setup or transport failure.
 
 Headers:
 
