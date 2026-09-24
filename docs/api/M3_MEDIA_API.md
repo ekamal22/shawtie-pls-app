@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented and closed: automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`.**
+**Implemented, closed, and merged: automated closure green, physical Android acceptance 20/20 at final code SHA `ee59850`, fast-forward merged to `main @ 1d3535f`.**
 
 Branch: `feat/m3-media-voice`
 Required base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
