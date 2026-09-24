@@ -38,10 +38,10 @@ import {
   type CallAcceptMutationInput,
   type CallCreateInput,
   type CallFailureMutationInput,
-  CallHistoryQuery,
-  CallProjection,
-  CallVersionMutationInput,
-  PushSubscriptionInput,
+  type CallHistoryQuery,
+  type CallProjection,
+  type CallVersionMutationInput,
+  type PushSubscriptionInput,
 } from "@shawtie/contracts";
 import { ApiError } from "../../lib/api-error.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";

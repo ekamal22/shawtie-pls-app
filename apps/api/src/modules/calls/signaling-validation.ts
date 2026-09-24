@@ -5,6 +5,18 @@ export function validateCallDescription(sdp: string): boolean {
   return media.length === 1 && /^m=audio\s/i.test(media[0] ?? "");
 }
 
+export function validateVideoCallDescription(sdp: string): boolean {
+  const lines = sdp.split(/\r?\n/).map((line) => line.trim());
+  if (lines.length > 1024) return false;
+  if (lines.some((line) => /^a=(candidate:|end-of-candidates)/i.test(line))) return false;
+  const media = lines.filter((line) => line.startsWith("m="));
+  return (
+    media.length === 2 &&
+    /^m=audio\s/i.test(media[0] ?? "") &&
+    /^m=video\s/i.test(media[1] ?? "")
+  );
+}
+
 export function validateCallRelayCandidate(candidate: string): boolean {
   const tokens = candidate.trim().split(/\s+/);
   if (tokens.length < 8) return false;

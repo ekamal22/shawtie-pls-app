@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import {
   C1_SIGNALING_SUBPROTOCOL,
+  C2_SIGNALING_SUBPROTOCOL,
   callAcceptMutationSchema,
   callCreateSchema,
   callEndpointConnectedSchema,
@@ -226,7 +227,12 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
     {
       auth: AuthContext;
       callId: string;
-      authorization: { partnershipId: string; role: "caller" | "callee" };
+      authorization: {
+        partnershipId: string;
+        kind: "voice" | "video";
+        role: "caller" | "callee";
+        protocol: typeof C1_SIGNALING_SUBPROTOCOL | typeof C2_SIGNALING_SUBPROTOCOL;
+      };
     }
   >();
 
@@ -242,7 +248,11 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
           throw new ApiError(403, "CALL_SIGNAL_ORIGIN_REJECTED");
         }
         const offered = offeredProtocols(request);
-        if (offered.length !== 1 || offered[0] !== C1_SIGNALING_SUBPROTOCOL) {
+        if (
+          offered.length !== 1 ||
+          (offered[0] !== C1_SIGNALING_SUBPROTOCOL &&
+            offered[0] !== C2_SIGNALING_SUBPROTOCOL)
+        ) {
           throw new ApiError(400, "CALL_SIGNAL_PROTOCOL_REQUIRED");
         }
         const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
@@ -256,12 +266,19 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
           sessionId: auth.session.sessionId,
         });
         if (!authorization) throw new ApiError(404, "CALL_NOT_FOUND");
+        const protocol =
+          authorization.kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL;
+        if (offered[0] !== protocol) {
+          throw new ApiError(400, "CALL_SIGNAL_PROTOCOL_REQUIRED");
+        }
         authenticated.set(request, {
           auth,
           callId: params.callId,
           authorization: {
             partnershipId: authorization.partnershipId,
+            kind: authorization.kind,
             role: authorization.role,
+            protocol,
           },
         });
       },
@@ -269,7 +286,7 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
     (socket, request) => {
       const context = authenticated.get(request);
       authenticated.delete(request);
-      if (!context || socket.protocol !== C1_SIGNALING_SUBPROTOCOL) {
+      if (!context || socket.protocol !== context.authorization.protocol) {
         socket.close(1008, "Call signaling authorization required");
         return;
       }

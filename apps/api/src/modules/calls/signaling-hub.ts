@@ -3,24 +3,39 @@ import {
   C1_SIGNALING_MAX_CANDIDATES,
   C1_SIGNALING_MAX_FRAME_BYTES,
   C1_SIGNALING_PROTOCOL_VERSION,
+  C1_SIGNALING_SUBPROTOCOL,
+  C2_SIGNALING_MAX_CANDIDATES,
+  C2_SIGNALING_MAX_FRAME_BYTES,
+  C2_SIGNALING_PROTOCOL_VERSION,
+  C2_SIGNALING_SUBPROTOCOL,
   c1SignalClientFrameSchema,
   c1SignalServerFrameSchema,
-  type C1SignalServerFrame,
+  c2SignalClientFrameSchema,
+  c2SignalServerFrameSchema,
 } from "@shawtie/contracts";
 import { loadCallEndpointAuthorization, type DatabasePool } from "@shawtie/db";
 import type { RawData, WebSocket } from "ws";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import { authenticateSessionToken } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
-import { validateCallDescription, validateCallRelayCandidate } from "./signaling-validation.ts";
+import {
+  validateCallDescription,
+  validateCallRelayCandidate,
+  validateVideoCallDescription,
+} from "./signaling-validation.ts";
 
 const MAX_BUFFERED_BYTES = 256 * 1024;
 const MAX_FRAMES_PER_MINUTE = 360;
 const REVALIDATE_MS = 30_000;
 
+type CallKind = "voice" | "video";
+type CallProtocol = typeof C1_SIGNALING_SUBPROTOCOL | typeof C2_SIGNALING_SUBPROTOCOL;
+
 interface EndpointAuthorization {
   readonly partnershipId: string;
+  readonly kind: CallKind;
   readonly role: "caller" | "callee";
+  readonly protocol: CallProtocol;
 }
 
 interface ConnectionState {
@@ -30,6 +45,8 @@ interface ConnectionState {
   readonly socket: WebSocket;
   readonly auth: AuthContext;
   readonly deviceId: string;
+  readonly kind: CallKind;
+  readonly protocol: CallProtocol;
   readonly role: "caller" | "callee";
   readonly generation: number;
   candidateCount: number;
@@ -39,24 +56,34 @@ interface ConnectionState {
   revalidationPromise: Promise<boolean> | null;
 }
 
-function frameBytes(frame: unknown): number {
-  return new TextEncoder().encode(JSON.stringify(frame)).byteLength;
-}
-
 interface PendingSignal {
   readonly fromRole: "caller" | "callee";
   readonly fromKey: string;
   readonly fromGeneration: number;
-  readonly frame: Extract<
-    C1SignalServerFrame,
-    {
-      type:
-        | "signal.description"
-        | "signal.ice_candidate"
-        | "signal.end_of_candidates"
-        | "signal.restart";
-    }
-  >;
+  readonly protocol: CallProtocol;
+  readonly frame: unknown;
+}
+
+function frameBytes(frame: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(frame)).byteLength;
+}
+
+function protocolVersion(state: ConnectionState): 1 | 2 {
+  return state.protocol === C2_SIGNALING_SUBPROTOCOL
+    ? C2_SIGNALING_PROTOCOL_VERSION
+    : C1_SIGNALING_PROTOCOL_VERSION;
+}
+
+function maxFrameBytes(state: ConnectionState): number {
+  return state.protocol === C2_SIGNALING_SUBPROTOCOL
+    ? C2_SIGNALING_MAX_FRAME_BYTES
+    : C1_SIGNALING_MAX_FRAME_BYTES;
+}
+
+function maxCandidates(state: ConnectionState): number {
+  return state.protocol === C2_SIGNALING_SUBPROTOCOL
+    ? C2_SIGNALING_MAX_CANDIDATES
+    : C1_SIGNALING_MAX_CANDIDATES;
 }
 
 export class CallSignalingHub {
@@ -96,7 +123,7 @@ export class CallSignalingHub {
 
     if (old) {
       this.#send(old, {
-        v: C1_SIGNALING_PROTOCOL_VERSION,
+        v: protocolVersion(old),
         type: "control.superseded",
         generation: old.generation,
         payload: {},
@@ -111,6 +138,8 @@ export class CallSignalingHub {
       socket,
       auth,
       deviceId,
+      kind: authorization.kind,
+      protocol: authorization.protocol,
       role: authorization.role,
       generation,
       candidateCount: 0,
@@ -127,7 +156,7 @@ export class CallSignalingHub {
     socket.on("error", () => this.#remove(state));
 
     this.#send(state, {
-      v: C1_SIGNALING_PROTOCOL_VERSION,
+      v: protocolVersion(state),
       type: "control.ready",
       generation,
       payload: { polite: state.role === "callee" },
@@ -149,7 +178,7 @@ export class CallSignalingHub {
       return;
     }
     const text = data.toString();
-    if (Buffer.byteLength(text, "utf8") > C1_SIGNALING_MAX_FRAME_BYTES) {
+    if (Buffer.byteLength(text, "utf8") > maxFrameBytes(state)) {
       this.#close(state, 1009, "Frame too large");
       return;
     }
@@ -175,24 +204,31 @@ export class CallSignalingHub {
       this.#close(state, 1008, "Invalid JSON");
       return;
     }
-    const parsed = c1SignalClientFrameSchema.safeParse(raw);
+
+    const parsed =
+      state.protocol === C2_SIGNALING_SUBPROTOCOL
+        ? c2SignalClientFrameSchema.safeParse(raw)
+        : c1SignalClientFrameSchema.safeParse(raw);
     if (!parsed.success || parsed.data.generation !== state.generation) {
       this.#close(state, 1008, "Invalid signaling frame");
       return;
     }
 
-    if (
-      parsed.data.type === "signal.description" &&
-      !validateCallDescription(parsed.data.payload.sdp)
-    ) {
-      this.#close(state, 1008, "Invalid SDP");
-      return;
+    if (parsed.data.type === "signal.description") {
+      const validDescription =
+        state.kind === "video"
+          ? validateVideoCallDescription(parsed.data.payload.sdp)
+          : validateCallDescription(parsed.data.payload.sdp);
+      if (!validDescription) {
+        this.#close(state, 1008, "Invalid SDP");
+        return;
+      }
     }
 
     if (parsed.data.type === "signal.ice_candidate") {
       state.candidateCount += 1;
       if (
-        state.candidateCount > C1_SIGNALING_MAX_CANDIDATES ||
+        state.candidateCount > maxCandidates(state) ||
         !validateCallRelayCandidate(parsed.data.payload.candidate)
       ) {
         this.#close(state, 1008, "Invalid ICE candidate");
@@ -215,6 +251,7 @@ export class CallSignalingHub {
       fromRole: state.role,
       fromKey: state.key,
       fromGeneration: state.generation,
+      protocol: state.protocol,
       frame: parsed.data,
     });
     this.#pendingByCall.set(state.callId, pending);
@@ -244,7 +281,11 @@ export class CallSignalingHub {
           deviceId: state.deviceId,
           sessionId: session.sessionId,
         });
-        if (!authorization || authorization.role !== state.role) {
+        if (
+          !authorization ||
+          authorization.role !== state.role ||
+          authorization.kind !== state.kind
+        ) {
           this.#close(state, 1008, "Authorization changed");
           return false;
         }
@@ -274,8 +315,14 @@ export class CallSignalingHub {
         continue;
       }
       const source = this.#connections.get(item.fromKey);
-      if (!source || source.generation !== item.fromGeneration) continue;
-      this.#send(state, { ...item.frame, generation: state.generation });
+      if (
+        !source ||
+        source.generation !== item.fromGeneration ||
+        item.protocol !== state.protocol
+      ) {
+        continue;
+      }
+      if (!this.#forwardPending(state, item.frame)) continue;
     }
     if (remaining.length === 0) {
       this.#pendingByCall.delete(state.callId);
@@ -284,12 +331,20 @@ export class CallSignalingHub {
     }
   }
 
+  #forwardPending(state: ConnectionState, frame: unknown): boolean {
+    if (!frame || typeof frame !== "object") return false;
+    this.#send(state, { ...(frame as Record<string, unknown>), generation: state.generation });
+    return true;
+  }
+
   #peer(state: ConnectionState): ConnectionState | null {
     for (const candidate of this.#connections.values()) {
       if (
         candidate.callId === state.callId &&
         candidate.deviceId !== state.deviceId &&
-        candidate.role !== state.role
+        candidate.role !== state.role &&
+        candidate.kind === state.kind &&
+        candidate.protocol === state.protocol
       ) {
         return candidate;
       }
@@ -297,10 +352,13 @@ export class CallSignalingHub {
     return null;
   }
 
-  #send(state: ConnectionState, frame: C1SignalServerFrame): void {
+  #send(state: ConnectionState, frame: unknown): void {
     if (state.socket.readyState !== 1) return;
-    const parsed = c1SignalServerFrameSchema.safeParse(frame);
-    if (!parsed.success || frameBytes(parsed.data) > C1_SIGNALING_MAX_FRAME_BYTES) {
+    const parsed =
+      state.protocol === C2_SIGNALING_SUBPROTOCOL
+        ? c2SignalServerFrameSchema.safeParse(frame)
+        : c1SignalServerFrameSchema.safeParse(frame);
+    if (!parsed.success || frameBytes(parsed.data) > maxFrameBytes(state)) {
       this.#close(state, 1011, "Invalid server frame");
       return;
     }
