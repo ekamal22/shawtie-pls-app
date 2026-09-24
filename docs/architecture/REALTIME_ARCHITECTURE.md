@@ -19,7 +19,7 @@ The concrete M2 implementation is defined in:
 - `M2_REALTIME_OFFLINE_DESIGN.md`
 - `../api/M2_REALTIME_PROTOCOL.md`
 
-Implementation status: M2 realtime/offline closure is complete and merged. C1 uses negotiated realtime v2 without reopening M2 v1 semantics. After a physical stale-owner race exposed a media-owner/signaling takeover defect, the fix at `b29aaa1` added shared lease verification and the full integrated closure re-passed. Redmi Note 9S realtime, signaling-interruption, stale-owner and overall physical acceptance evidence are complete. C1 is DONE and merge-ready, but unmerged.
+Implementation status: M2 realtime/offline closure is complete and merged. C1 uses negotiated realtime v2 without reopening M2 v1 semantics. After a physical stale-owner race exposed a media-owner/signaling takeover defect, the fix at `b29aaa1` added shared lease verification and the full integrated closure re-passed. Redmi Note 9S realtime, signaling-interruption, stale-owner and overall physical acceptance evidence are complete. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 M2 uses the official Fastify WebSocket integration, the existing HttpOnly session cookie, exact trusted-Origin validation, server-derived scope, and one dedicated PostgreSQL LISTEN connection per API process.
 

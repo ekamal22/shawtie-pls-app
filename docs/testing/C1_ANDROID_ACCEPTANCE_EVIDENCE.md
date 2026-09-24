@@ -31,7 +31,7 @@ was then confirmed by ear on the fixed build (see "Follow-up: audible audio
 confirmation"). All physical acceptance evidence is now complete.
 
 The final documentation and evidence HEAD is the tip of `feat/c1-voice-calling`
-after the evidence commit, which contains only documentation. C1 is not merged
+after the evidence commit, which contains only documentation. C1 was subsequently fast-forward merged to `main @ d44c595`
 to `main`.
 
 ## Test environment
@@ -553,5 +553,5 @@ including the follow-up results (rejected-call notification cleanup,
 stale-owner fencing with its fix, and audible bidirectional audio). The final
 executable SHA is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, whose integrated
 closure passed with `reserved=0`. No physical acceptance evidence remains
-open, so C1 is DONE on the branch and is ready to merge. It has not been
+open, so C1 is DONE. It was subsequently fast-forward merged to `main @ d44c595`
 merged to `main`, and C2 has not been started.

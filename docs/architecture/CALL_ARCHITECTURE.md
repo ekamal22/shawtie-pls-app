@@ -2,7 +2,7 @@
 
 ## Milestone split
 
-C1 source implementation is complete on `feat/c1-voice-calling`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 is DONE and merge-ready, but unmerged. C1 implements voice calling only.
+C1 source implementation is complete and fast-forward merged to `main @ d44c595`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 implements voice calling only.
 
 C2 later adds video on top of the verified C1 call authority, signaling, TURN, push, history, and lifecycle substrate.
 

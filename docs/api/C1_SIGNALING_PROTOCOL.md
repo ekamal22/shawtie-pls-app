@@ -16,7 +16,7 @@ Endpoint:
 
 /api/v1/calls/:callId/signal
 
-The first real-migration integrated signaling verification passed at `9b5c255`; after the stale media-owner fix, the full integrated closure re-passed at `b29aaa1` with `reserved=0`. Physical relay-path and Android acceptance are complete, including stale-owner generation fencing. C1 is DONE and merge-ready, but unmerged.
+The first real-migration integrated signaling verification passed at `9b5c255`; after the stale media-owner fix, the full integrated closure re-passed at `b29aaa1` with `reserved=0`. Physical relay-path and Android acceptance are complete, including stale-owner generation fencing. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 Purpose:
 

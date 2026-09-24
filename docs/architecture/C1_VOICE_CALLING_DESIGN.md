@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ANDROID ACCEPTANCE COMPLETE ON BRANCH. C1 IS DONE ON THE BRANCH AND UNMERGED.**
+**DESIGN COMPLETE, SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ANDROID ACCEPTANCE COMPLETE. C1 IS DONE AND MERGED TO `main @ d44c595`.**
 
 Branch:
 
@@ -12,7 +12,7 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is complete. Isolated closure passed at `439b09f`. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25; a focused gap check then found one stale media-owner defect, fixed at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the full integrated closure re-passed with `reserved=0`. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are all physically confirmed. C1 is DONE and merge-ready, but unmerged.
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is complete. Isolated closure passed at `439b09f`. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25; a focused gap check then found one stale media-owner defect, fixed at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the full integrated closure re-passed with `reserved=0`. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are all physically confirmed. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
@@ -622,7 +622,7 @@ Operational metrics may aggregate call outcomes, setup latency, signaling reconn
 
 ## Cross-milestone integration choreography
 
-C1 source work proceeded in parallel with M3. M3 is now merged, C1 is reconciled, and final integrated closure is complete. Mandatory physical acceptance has now closed; all physical evidence is complete and C1 is ready to merge on an explicit merge decision.
+C1 source work proceeded in parallel with M3. M3 and C1 are now both merged. Final integrated closure and physical acceptance are complete, and C2 may build on the verified post-C1 mainline.
 
 Required order:
 

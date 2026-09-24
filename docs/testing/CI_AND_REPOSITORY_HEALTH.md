@@ -104,7 +104,7 @@ All 14 mandatory physical Android acceptance scenarios have since executed and p
 
 M3 Media and Voice Messages is DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`.
 
-C1 Voice Calling is DONE and merge-ready on `feat/c1-voice-calling`, but unmerged. Its final executable baseline is `b29aaa1`, where integrated closure re-passed after the stale media-owner fix. Redmi Note 9S acceptance 25/25 and all focused physical follow-up evidence are complete.
+C1 Voice Calling is DONE and fast-forward merged to `main @ d44c595`. Its final executable baseline is `b29aaa1`, where integrated closure re-passed after the stale media-owner fix. Redmi Note 9S acceptance 25/25 and all focused physical follow-up evidence are complete.
 
 ## Repository-health policy
 

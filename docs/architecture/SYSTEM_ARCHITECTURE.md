@@ -400,7 +400,7 @@ M3 preserves PostgreSQL/M1/R1/M2/P3 authority rather than adding a parallel medi
 M3 owns implemented migrations 0015 and 0016 and is DONE and merged to main after automated/local and physical Android acceptance.
 ## C1 voice-calling implementation
 
-The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 is DONE and merge-ready, but unmerged.
+The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 C1 preserves the modular monolith and PostgreSQL authority while adding:
 

@@ -544,7 +544,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. The first real-migration integrated closure passed at `9b5c255`. A physical stale-owner gap then exposed one real media-owner defect; the fix at `b29aaa1` added lease verification and raised the real-Chromium suite to 5/5. The full integrated closure re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, integrated PostgreSQL/API/worker 111/111, retained M3 gates, full health, audit and git hygiene. Redmi Note 9S acceptance is complete at 25/25, and rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed.
+The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. The first real-migration integrated closure passed at `9b5c255`. A physical stale-owner gap then exposed one real media-owner defect; the fix at `b29aaa1` added lease verification and raised the real-Chromium suite to 5/5. The full integrated closure re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, integrated PostgreSQL/API/worker 111/111, retained M3 gates, full health, audit and git hygiene. Redmi Note 9S acceptance is complete at 25/25, and rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed. C1 is DONE and merged to `main @ d44c595`.
 
 Coverage must include:
 
