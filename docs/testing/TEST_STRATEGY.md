@@ -500,18 +500,19 @@ Canonical sources:
 - `../api/C1_SIGNALING_PROTOCOL.md`
 - `C1_ANDROID_ACCEPTANCE.md`
 
-Planned C1 command surface:
+Implemented C1 command surface:
 
 ```text
 npm run test:c1
-npm run test:c1:security
 npm run test:c1:postgres
-npm run test:c1:browser
 npm run test:c1:local
+npm run test:c1:browser:e2e
 npm run test:c1:closure
 npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
+
+The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. Full relay-path WebRTC and Android behavior still require the documented environment and physical acceptance procedure.
 
 Coverage must include:
 
@@ -540,11 +541,11 @@ Coverage must include:
 - host/srflx/prflx/malformed candidate rejection
 - privacy-unsafe relay related/base-address rejection
 - relay-only candidate forwarding
-- SDP/ICE/TURN/push capability absence from persistence and logs
+- SDP/ICE/TURN/push capability absence from logs, with raw push capability storage limited to the device-bound subscription table and keyed endpoint fingerprint stored for uniqueness
 - perfect-negotiation glare handling
 - candidate-before-description buffering
 - signaling reconnect and process-loss recovery
-- same-device two-tab single media owner and generation-fenced owner failover
+- same-device two-tab single media owner and generation-fenced owner failover, including the real-Chromium C1 ownership harness
 - stale old-owner callbacks cannot capture/send/report after takeover
 - relay-only ICE restart after network change
 - pre-accept TURN denial
