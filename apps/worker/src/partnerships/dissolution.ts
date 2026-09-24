@@ -162,6 +162,11 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
       },
       {
         id: randomUUID(),
+        targetType: "partnership_media_objects",
+        targetKey: lifecycle.partnershipId,
+      },
+      {
+        id: randomUUID(),
         targetType: "partnership_crypto_state",
         targetKey: lifecycle.partnershipId,
       },

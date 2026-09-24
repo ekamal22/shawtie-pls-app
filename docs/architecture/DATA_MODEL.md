@@ -539,24 +539,52 @@ C2 later enables video over the same call model.
 
 ## Media
 
-Logical media metadata should reference random object identifiers, not user filenames.
+M3 refines the existing `media_objects` table. It does not create a second media aggregate.
 
-Representative fields:
+Existing identity/storage fields include:
 
 ```text
-media_objects
-- id
-- partnership_id
-- uploader_account_id
-- storage_object_key
-- ciphertext_size
-- created_at
-- deleted_at
+id
+partnership_id
+uploader_account_id
+storage_object_key
+ciphertext_size
+crypto_protocol_version
+created_at
+deleted_at
 ```
 
-The object store contains ciphertext.
+M3 migration 0015 adds state/binding runtime fields equivalent to:
 
-Access to signed object URLs still requires authenticated partnership authorization.
+```text
+media_kind
+format_code
+state
+uploader_device_id
+ciphertext_sha256
+upload_generation
+upload_expires_at
+ready_at
+binding_type
+binding_id
+binding_role
+binding_position
+deletion_generation
+```
+
+States are `uploading`, `ready_unbound`, `bound`, `deletion_pending`, and `failed`.
+
+One media object binds exactly once to one `message` or `relationship_item`. Binding identity, role, and position are immutable after bind. This prevents the same object from crossing M1/R1 visibility domains.
+
+Unbound media is uploader-only. Bound media visibility is inherited from its authoritative M1/R1 container.
+
+Object keys are random opaque identifiers and never contain private filenames or account/partnership/container identity. Object storage contains ciphertext only.
+
+Signed object access remains short-lived and requires current authenticated authorization on every new grant.
+
+M3 migration 0016 owns integration hardening for message media projections, media-only message support, binding/index invariants, and cleanup lookup paths.
+
+The full design is `M3_MEDIA_VOICE_DESIGN.md` and the contract is `../api/M3_MEDIA_API.md`.
 
 ## Durable operations
 
