@@ -169,6 +169,7 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     dependencies.database,
     dependencies.config,
     turnProvider,
+    keys,
   );
   const callSignalingHub = new CallSignalingHub(dependencies.database, keys);
   app.register(async function callingRoutes(callingApp) {
