@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+﻿import { randomBytes, randomUUID } from "node:crypto";
 import {
   completeLifecycleIdempotency,
   getTransactionTimestamp,
@@ -422,11 +422,18 @@ export class MediaService {
     if (snapshot.uploadGeneration !== BigInt(input.expectedUploadGeneration)) {
       throw new ApiError(409, "VERSION_CONFLICT");
     }
-    const verified = await store.verifyObject({
-      objectKey: snapshot.storageObjectKey,
-      expectedBytes: snapshot.ciphertextSize,
-      sha256: snapshot.ciphertextSha256,
-    });
+    let verified: boolean;
+    try {
+      verified = await store.verifyObject({
+        objectKey: snapshot.storageObjectKey,
+        expectedBytes: snapshot.ciphertextSize,
+        sha256: snapshot.ciphertextSha256,
+      });
+    } catch {
+      // Provider outage or transport failure: fail closed and honestly, without
+      // marking the object usable. The upload stays retryable.
+      throw new ApiError(503, "MEDIA_UNAVAILABLE");
+    }
     if (!verified) throw new ApiError(409, "MEDIA_OBJECT_MISMATCH");
 
     return withTransaction(this.#database, async (transaction) => {

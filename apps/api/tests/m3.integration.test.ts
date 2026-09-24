@@ -33,6 +33,7 @@ function requireDisposableDatabase(): DatabasePool {
 class FakeMediaStore implements MediaObjectStore {
   readonly grants = new Map<string, string>();
   readonly deleted: string[] = [];
+  failVerification = false;
 
   async createUploadGrant(input: {
     readonly objectKey: string;
@@ -56,6 +57,7 @@ class FakeMediaStore implements MediaObjectStore {
     readonly expectedBytes: bigint;
     readonly sha256: string;
   }): Promise<boolean> {
+    if (this.failVerification) throw new Error("MEDIA_STORAGE_HEAD_FAILED_503");
     return input.expectedBytes > 0n && this.grants.get(input.objectKey) === input.sha256;
   }
 
@@ -556,6 +558,62 @@ test("M3 unbound media is uploader-only and refresh rotates generation", async (
       (refreshed.json() as { uploadGeneration: number }).uploadGeneration,
       media.uploadGeneration + 1,
     );
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("M3 provider outage during completion fails closed as MEDIA_UNAVAILABLE and stays retryable", async () => {
+  const database = requireDisposableDatabase();
+  const store = new FakeMediaStore();
+  const app = createApiApplication({ database, config, mediaObjectStore: store });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "outage_a");
+    const bob = await register(app, database, "outage_b");
+    await formPartnership(app, alice, bob, "outage");
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/media/uploads",
+      headers: headers(alice.cookie, "m3-outage-upload-0001"),
+      payload: {
+        kind: "image",
+        formatCode: "webp",
+        ciphertextBytes: 128,
+        ciphertextSha256: "c".repeat(64),
+        cryptoProtocolVersion: "m3-test-aes-gcm-v1",
+        durationSeconds: null,
+      },
+    });
+    assert.equal(created.statusCode, 201, created.body);
+    const media = created.json() as { mediaId: string; uploadGeneration: number };
+
+    store.failVerification = true;
+    const outage = await app.inject({
+      method: "POST",
+      url: "/api/v1/media/" + media.mediaId + "/complete",
+      headers: headers(alice.cookie),
+      payload: { expectedUploadGeneration: media.uploadGeneration },
+    });
+    assert.equal(outage.statusCode, 503, outage.body);
+    assert.equal((outage.json() as { error: { code: string } }).error.code, "MEDIA_UNAVAILABLE");
+    const stillUploading = await database.pool.query<{ state: string }>(
+      "SELECT state FROM media_objects WHERE id = $1",
+      [media.mediaId],
+    );
+    assert.equal(stillUploading.rows[0]?.state, "uploading");
+
+    store.failVerification = false;
+    const recovered = await app.inject({
+      method: "POST",
+      url: "/api/v1/media/" + media.mediaId + "/complete",
+      headers: headers(alice.cookie),
+      payload: { expectedUploadGeneration: media.uploadGeneration },
+    });
+    assert.equal(recovered.statusCode, 200, recovered.body);
+    assert.equal((recovered.json() as { state: string }).state, "ready_unbound");
   } finally {
     await app.close();
     await closeDatabasePool(database);
