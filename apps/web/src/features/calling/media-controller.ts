@@ -89,7 +89,7 @@ export class CallMediaSession {
     }
 
     const turn = await fetchTurnCredentials(this.callId);
-    if (this.#stopped) return;
+    if (!(await this.#stillOwner())) return;
     const peer = new RTCPeerConnection({
       iceTransportPolicy: "relay",
       iceServers: [
@@ -201,6 +201,25 @@ export class CallMediaSession {
     this.callbacks.onState("stopped");
   }
 
+  /**
+   * Work that started under an earlier lease generation can complete after another
+   * tab has taken over. The heartbeat and the takeover hint are not ordered against
+   * that completion, so the lease record itself is checked before media or signaling
+   * state is created. A superseded owner stops and never opens a signaling socket that
+   * would displace the current owner.
+   */
+  async #stillOwner(): Promise<boolean> {
+    if (this.#stopped) return false;
+    const owned = await this.#lease.verifyOwnership();
+    if (this.#stopped) return false;
+    if (!owned) {
+      this.callbacks.onOwnershipLost();
+      await this.stop();
+      return false;
+    }
+    return true;
+  }
+
   #stopTracks(): void {
     for (const track of this.localStream.getTracks()) track.stop();
   }
@@ -242,7 +261,12 @@ export class CallMediaSession {
     this.#reconnectAttempt += 1;
     this.#reconnectTimer = window.setTimeout(() => {
       this.#reconnectTimer = null;
-      this.#connectSignaling();
+      void this.#stillOwner().then(
+        (owned) => {
+          if (owned) this.#connectSignaling();
+        },
+        () => this.#scheduleReconnect(),
+      );
     }, delay);
   }
 
@@ -362,6 +386,7 @@ export class CallMediaSession {
       if (this.#stopped || !peer) return;
       const turn = await fetchTurnCredentials(this.callId);
       if (this.#stopped || this.#peer !== peer) return;
+      if (!(await this.#stillOwner()) || this.#peer !== peer) return;
       peer.setConfiguration({
         iceTransportPolicy: "relay",
         iceServers: [

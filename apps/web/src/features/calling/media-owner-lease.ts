@@ -105,6 +105,16 @@ export class MediaOwnerLease {
     }, HEARTBEAT_MS);
   }
 
+  /**
+   * Confirms against the shared lease record that this instance still holds its
+   * generation. Asynchronous work that began under an earlier generation must call
+   * this before it creates media or signaling state, because the heartbeat and the
+   * takeover hint can both arrive after that work has already completed.
+   */
+  async verifyOwnership(): Promise<boolean> {
+    return this.#renew();
+  }
+
   stopHeartbeat(): void {
     if (this.#heartbeat !== null) {
       window.clearInterval(this.#heartbeat);

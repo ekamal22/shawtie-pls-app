@@ -76,3 +76,18 @@ test("C1 local browser host disables camera and scopes microphone to self", asyn
   assert.equal(vite.includes('"Permissions-Policy": "camera=(), microphone=(self)"'), true);
   assert.equal(vite.includes("headers: c1PermissionHeaders"), true);
 });
+
+test("C1 browser verifies lease ownership before stale asynchronous work creates media", async () => {
+  const lease = await source("../src/features/calling/media-owner-lease.ts");
+  const media = await source("../src/features/calling/media-controller.ts");
+
+  assert.equal(lease.includes("async verifyOwnership()"), true);
+  assert.equal(media.includes("async #stillOwner()"), true);
+  assert.equal(media.includes("if (!(await this.#stillOwner())) return;"), true);
+  assert.equal(media.includes("this.#lease.verifyOwnership()"), true);
+  assert.equal(media.includes("if (owned) this.#connectSignaling();"), true);
+  assert.equal(
+    media.includes("if (!(await this.#stillOwner()) || this.#peer !== peer) return;"),
+    true,
+  );
+});
