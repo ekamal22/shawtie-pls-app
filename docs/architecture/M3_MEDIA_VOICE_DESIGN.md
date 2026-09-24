@@ -2,7 +2,7 @@
 
 ## Status and base
 
-**Status:** DONE on `feat/m3-media-voice`: source complete at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`, automated closure green, physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`.
+**Status:** DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`: source complete at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`, automated closure green, physical Android acceptance 20/20 at final code SHA `ee59850`.
 **Branch:** `feat/m3-media-voice`
 **Required base:** `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
