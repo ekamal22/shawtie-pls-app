@@ -36,3 +36,9 @@ export { runScheduledBatch } from "./scheduled/scheduled-consumer.ts";
 export { runDeletionBatch } from "./deletion/deletion-consumer.ts";
 
 export { createM1MessagingInvalidationHandlers } from "./messages/messaging-invalidation-handler.ts";
+
+export {
+  createMediaDeleteScheduledHandler,
+  createMediaUploadExpireScheduledHandler,
+  createPartnershipMediaDeletionHandler,
+} from "./media/media-handlers.ts";

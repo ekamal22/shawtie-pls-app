@@ -15,17 +15,19 @@ const packageByPrefix = new Map([
   ["packages/crypto/", "@shawtie/crypto"],
   ["packages/ui/", "@shawtie/ui"],
   ["packages/testkit/", "@shawtie/testkit"],
+  ["packages/media-storage/", "@shawtie/media-storage"],
 ]);
 const allowedWorkspaceDependencies = new Map([
   ["@shawtie/web", new Set(["@shawtie/contracts", "@shawtie/crypto", "@shawtie/ui"])],
-  ["@shawtie/api", new Set(["@shawtie/domain", "@shawtie/contracts", "@shawtie/db", "@shawtie/crypto"])],
-  ["@shawtie/worker", new Set(["@shawtie/domain", "@shawtie/contracts", "@shawtie/db"])],
+  ["@shawtie/api", new Set(["@shawtie/domain", "@shawtie/contracts", "@shawtie/db", "@shawtie/crypto", "@shawtie/media-storage"])],
+  ["@shawtie/worker", new Set(["@shawtie/domain", "@shawtie/contracts", "@shawtie/db", "@shawtie/media-storage"])],
   ["@shawtie/domain", new Set()],
   ["@shawtie/contracts", new Set()],
   ["@shawtie/db", new Set()],
   ["@shawtie/crypto", new Set()],
   ["@shawtie/ui", new Set()],
   ["@shawtie/testkit", new Set(["@shawtie/domain", "@shawtie/contracts", "@shawtie/db", "@shawtie/crypto"])],
+  ["@shawtie/media-storage", new Set()],
 ]);
 
 const failures = [];

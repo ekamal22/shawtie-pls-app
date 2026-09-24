@@ -34,6 +34,7 @@ import {
   type QueryExecutor,
   type RelationshipFeatureState,
   type RelationshipItemRecord,
+  type RelationshipReferenceRecord,
 } from "@shawtie/db";
 import {
   anniversaryDateForYear,
@@ -82,13 +83,40 @@ export interface RelationshipReferenceResolver {
       readonly partnershipId: string;
       readonly actorAccountId: string;
       readonly referenceId: string;
+      readonly role: RelationshipReferenceInput["role"];
+      readonly position: number;
+      readonly ownerItemId: string | null;
     },
   ): Promise<boolean>;
 }
 
+export interface RelationshipMediaReferenceResolver extends RelationshipReferenceResolver {
+  bind(
+    executor: QueryExecutor,
+    input: {
+      readonly partnershipId: string;
+      readonly actorAccountId: string;
+      readonly itemId: string;
+      readonly referenceId: string;
+      readonly role: "attachment" | "voice_letter";
+      readonly position: number;
+      readonly at: Date;
+    },
+  ): Promise<boolean>;
+  revoke(
+    executor: QueryExecutor,
+    input: {
+      readonly partnershipId: string;
+      readonly itemId: string;
+      readonly referenceId: string;
+      readonly at: Date;
+    },
+  ): Promise<void>;
+}
+
 export interface RelationshipSpaceServiceOptions {
   readonly messageReferenceResolver?: RelationshipReferenceResolver;
-  readonly mediaReferenceResolver?: RelationshipReferenceResolver;
+  readonly mediaReferenceResolver?: RelationshipMediaReferenceResolver;
 }
 
 interface MutationReservation {
@@ -697,6 +725,7 @@ export class RelationshipSpaceService {
     partnershipId: string,
     actorAccountId: string,
     references: readonly RelationshipReferenceInput[],
+    ownerItemId: string | null,
   ): Promise<void> {
     for (const reference of references) {
       const resolver =
@@ -708,9 +737,82 @@ export class RelationshipSpaceService {
         partnershipId,
         actorAccountId,
         referenceId: reference.referenceId,
+        role: reference.role,
+        position: reference.position,
+        ownerItemId,
       });
       if (!allowed) throw new ApiError(422, "INVALID_REFERENCE");
     }
+  }
+
+  async #bindNewMediaReferences(
+    transaction: QueryExecutor,
+    partnershipId: string,
+    actorAccountId: string,
+    itemId: string,
+    references: readonly RelationshipReferenceInput[],
+    at: Date,
+  ): Promise<void> {
+    const resolver = this.options.mediaReferenceResolver;
+    for (const reference of references) {
+      if (reference.referenceType !== "media") continue;
+      if (!resolver) throw new ApiError(409, "REFERENCE_TYPE_UNAVAILABLE");
+      const bound = await resolver.bind(transaction, {
+        partnershipId,
+        actorAccountId,
+        itemId,
+        referenceId: reference.referenceId,
+        role: reference.role,
+        position: reference.position,
+        at,
+      });
+      if (!bound) throw new ApiError(409, "MEDIA_ALREADY_BOUND");
+    }
+  }
+
+  async #reconcileMediaReferences(
+    transaction: QueryExecutor,
+    partnershipId: string,
+    actorAccountId: string,
+    itemId: string,
+    current: readonly RelationshipReferenceRecord[],
+    next: readonly RelationshipReferenceInput[],
+    at: Date,
+  ): Promise<void> {
+    const resolver = this.options.mediaReferenceResolver;
+    const key = (reference: {
+      readonly referenceType: string;
+      readonly referenceId: string;
+      readonly role: string;
+      readonly position: number;
+    }) =>
+      [reference.referenceType, reference.referenceId, reference.role, reference.position].join(
+        ":",
+      );
+    const currentKeys = new Set(current.map(key));
+    const nextKeys = new Set(next.map(key));
+
+    for (const reference of current) {
+      if (reference.referenceType !== "media" || nextKeys.has(key(reference))) continue;
+      if (!resolver) throw new ApiError(409, "REFERENCE_TYPE_UNAVAILABLE");
+      await resolver.revoke(transaction, {
+        partnershipId,
+        itemId,
+        referenceId: reference.referenceId,
+        at,
+      });
+    }
+    const additions = next.filter(
+      (reference) => reference.referenceType === "media" && !currentKeys.has(key(reference)),
+    );
+    await this.#bindNewMediaReferences(
+      transaction,
+      partnershipId,
+      actorAccountId,
+      itemId,
+      additions,
+      at,
+    );
   }
 
   async #validateLockedLinks(
@@ -1109,6 +1211,7 @@ export class RelationshipSpaceService {
         lifecycle.partnershipId,
         auth.session.accountId,
         input.references,
+        null,
       );
 
       const targetIds = [...new Set(input.links.map((link) => link.targetItemId))].sort();
@@ -1157,6 +1260,14 @@ export class RelationshipSpaceService {
         createdAt: now,
       });
 
+      await this.#bindNewMediaReferences(
+        transaction,
+        lifecycle.partnershipId,
+        auth.session.accountId,
+        itemId,
+        input.references,
+        now,
+      );
       await replaceRelationshipFeatureState(transaction, {
         partnershipId: lifecycle.partnershipId,
         itemId,
@@ -1378,6 +1489,7 @@ export class RelationshipSpaceService {
           item.partnershipId,
           auth.session.accountId,
           candidate.references,
+          item.id,
         );
       }
       if (input.links) {
@@ -1432,6 +1544,17 @@ export class RelationshipSpaceService {
       });
       if (nextVersion === null) throw new ApiError(409, "VERSION_CONFLICT");
 
+      if (input.references !== undefined) {
+        await this.#reconcileMediaReferences(
+          transaction,
+          item.partnershipId,
+          auth.session.accountId,
+          item.id,
+          currentReferences,
+          candidate.references,
+          now,
+        );
+      }
       await replaceRelationshipFeatureState(transaction, {
         partnershipId: item.partnershipId,
         itemId: item.id,
@@ -1616,6 +1739,17 @@ export class RelationshipSpaceService {
           createdAt: now,
         });
       }
+
+      const references = await loadRelationshipReferences(transaction, item.partnershipId, item.id);
+      await this.#reconcileMediaReferences(
+        transaction,
+        item.partnershipId,
+        auth.session.accountId,
+        item.id,
+        references,
+        references.filter((reference) => reference.referenceType !== "media"),
+        now,
+      );
 
       const deleted = await deleteRelationshipItem(
         transaction,

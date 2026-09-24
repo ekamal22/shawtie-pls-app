@@ -22,7 +22,8 @@
       "@shawtie/db": ["./packages/db/src/index.ts"],
       "@shawtie/crypto": ["./packages/crypto/src/index.ts"],
       "@shawtie/ui": ["./packages/ui/src/index.ts"],
-      "@shawtie/testkit": ["./packages/testkit/src/index.ts"]
+      "@shawtie/testkit": ["./packages/testkit/src/index.ts"],
+      "@shawtie/media-storage": ["./packages/media-storage/src/index.ts"]
     }
   }
 }
