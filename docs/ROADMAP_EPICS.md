@@ -1309,7 +1309,7 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: PLANNED
+Status: IN_PROGRESS. SOURCE IMPLEMENTATION COMPLETE ON `feat/m3-media-voice @ 305891f`; PHYSICAL AND MERGE CLOSURE PENDING
 
 ## Scope
 
