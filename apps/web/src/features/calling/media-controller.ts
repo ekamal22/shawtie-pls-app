@@ -2,6 +2,7 @@ import {
   C1_SIGNALING_PROTOCOL_VERSION,
   C1_SIGNALING_SUBPROTOCOL,
   c1SignalServerFrameSchema,
+  type CallFailureCategory,
 } from "@shawtie/contracts";
 import {
   fetchTurnCredentials,
@@ -13,6 +14,7 @@ export interface CallMediaCallbacks {
   readonly onState: (state: RTCPeerConnectionState | "starting" | "stopped") => void;
   readonly onAutoplayBlocked: (blocked: boolean) => void;
   readonly onOwnershipLost: () => void;
+  readonly onUnrecoverableFailure: (category: CallFailureCategory) => void;
   readonly onError: (message: string) => void;
 }
 
@@ -50,6 +52,7 @@ export class CallMediaSession {
   #polite = false;
   #endpointReported = false;
   #restartAttempts = 0;
+  #failureReported = false;
   #turnRefreshTimer: number | null = null;
   #turnRefreshPromise: Promise<void> | null = null;
   #muted = false;
@@ -129,6 +132,7 @@ export class CallMediaSession {
       this.callbacks.onState(state);
       if (state === "connected") {
         this.#restartAttempts = 0;
+        this.#failureReported = false;
         if (!this.#endpointReported) {
           this.#endpointReported = true;
           void reportEndpointConnected(this.callId).catch(() => {
@@ -136,9 +140,14 @@ export class CallMediaSession {
           });
         }
       }
-      if (state === "failed" && this.#restartAttempts < 3) {
-        this.#restartAttempts += 1;
-        void this.#refreshTurnAndRestart(true);
+      if (state === "failed") {
+        if (this.#restartAttempts < 3) {
+          this.#restartAttempts += 1;
+          void this.#refreshTurnAndRestart(true);
+        } else if (!this.#failureReported) {
+          this.#failureReported = true;
+          this.callbacks.onUnrecoverableFailure("network_failed");
+        }
       }
     });
 

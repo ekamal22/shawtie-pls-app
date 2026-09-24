@@ -3,6 +3,7 @@ import {
   C1_SIGNALING_SUBPROTOCOL,
   callCreateSchema,
   callEndpointConnectedSchema,
+  callFailureMutationSchema,
   callHistoryQuerySchema,
   callIdParamsSchema,
   callVersionMutationSchema,
@@ -145,6 +146,14 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
       return deps.service[action](auth, params.callId, input, key);
     });
   }
+
+  app.post("/api/v1/calls/:callId/fail", async (request, reply) => {
+    const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
+    const params = parseAtBoundary(callIdParamsSchema, request.params);
+    const input = parseAtBoundary(callFailureMutationSchema, request.body);
+    privateNoStore(reply);
+    return deps.service.fail(auth, params.callId, input, idempotency(request.headers));
+  });
 
   app.post("/api/v1/calls/:callId/endpoint-connected", async (request, reply) => {
     const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);

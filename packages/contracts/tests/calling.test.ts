@@ -7,6 +7,7 @@ import {
   c1RealtimeServerFrameSchema,
   c1SignalClientFrameSchema,
   callCreateSchema,
+  callFailureMutationSchema,
   callProjectionSchema,
   m2RealtimeServerFrameSchema,
 } from "../src/index.ts";
@@ -52,6 +53,23 @@ test("C1 realtime v2 accepts call.changed without changing M2 v1 schema", () => 
   };
   assert.equal(c1RealtimeServerFrameSchema.safeParse(frame).success, true);
   assert.equal(m2RealtimeServerFrameSchema.safeParse(frame).success, false);
+});
+
+test("C1 failure mutation accepts only coarse categories", () => {
+  assert.equal(
+    callFailureMutationSchema.safeParse({
+      expectedVersion: 3,
+      category: "network_failed",
+    }).success,
+    true,
+  );
+  assert.equal(
+    callFailureMutationSchema.safeParse({
+      expectedVersion: 3,
+      category: "browser_stack_trace",
+    }).success,
+    false,
+  );
 });
 
 test("C1 signaling frames are strict and push payload is generic", () => {

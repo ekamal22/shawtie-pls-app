@@ -1,4 +1,5 @@
 import type {
+  CallFailureCategory,
   CallHistoryQuery,
   CallProjection,
   PushSubscriptionInput,
@@ -73,6 +74,19 @@ export function endCall(
     method: "POST",
     headers: mutationHeaders(idempotencyKey),
     body: { expectedVersion },
+  });
+}
+
+export function failCall(
+  callId: string,
+  expectedVersion: number,
+  category: CallFailureCategory,
+  idempotencyKey = crypto.randomUUID(),
+): Promise<CallProjection> {
+  return apiRequest("/api/v1/calls/" + encodeURIComponent(callId) + "/fail", {
+    method: "POST",
+    headers: mutationHeaders(idempotencyKey),
+    body: { expectedVersion, category },
   });
 }
 

@@ -7,6 +7,7 @@ import {
   cancelCall,
   createCall,
   endCall,
+  failCall,
   fetchCall,
   fetchCurrentCall,
   rejectCall,
@@ -196,6 +197,27 @@ export function CallingPanel({
         mediaRef.current = null;
         setMediaState("observer");
         setError("Audio moved to another tab on this device.");
+      },
+      onUnrecoverableFailure: (category) => {
+        const latest = callRef.current;
+        if (
+          !latest
+          || latest.id !== current.id
+          || !latest.isThisDeviceSelectedEndpoint
+          || (latest.state !== "accepted" && latest.state !== "connected")
+        ) {
+          return;
+        }
+        void failCall(latest.id, latest.version, category)
+          .then(async (ended) => {
+            updateCall(ended);
+            await stopMedia();
+          })
+          .catch((failureError) => {
+            setError(errorMessage(failureError));
+            runtime.coordinator.markDirty();
+            void runtime.coordinator.requestSync();
+          });
       },
       onError: setError,
     });

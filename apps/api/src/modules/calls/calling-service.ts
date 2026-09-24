@@ -35,6 +35,7 @@ import {
 } from "@shawtie/domain";
 import type {
   CallCreateInput,
+  CallFailureMutationInput,
   CallHistoryQuery,
   CallProjection,
   CallVersionMutationInput,
@@ -485,9 +486,9 @@ export class CallingService {
   async #terminalMutation(
     auth: AuthContext,
     callId: string,
-    input: CallVersionMutationInput,
+    input: CallVersionMutationInput | CallFailureMutationInput,
     idempotencyKey: string,
-    action: "reject" | "cancel" | "end",
+    action: "reject" | "cancel" | "end" | "fail",
   ): Promise<CallProjection> {
     if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     return withTransaction(this.database, async (transaction) => {
@@ -510,8 +511,10 @@ export class CallingService {
 
       const participants = await loadCallParticipants(transaction, call.id);
       const mine = participants.find((item) => item.accountId === auth.session.accountId);
-      let reason: "rejected" | "cancelled" | "completed";
+      let reason: "rejected" | "cancelled" | "completed" | "failed";
       let allowedStates: readonly ("ringing" | "accepted" | "connected")[];
+      const failureCategory =
+        action === "fail" && "category" in input ? input.category : null;
 
       if (action === "reject") {
         if (call.state !== "ringing" || mine?.role !== "callee") {
@@ -534,7 +537,7 @@ export class CallingService {
         ) {
           throw new ApiError(409, "CALL_ACTION_NOT_ALLOWED");
         }
-        reason = "completed";
+        reason = action === "fail" ? "failed" : "completed";
         allowedStates = ["accepted", "connected"];
       }
 
@@ -553,6 +556,7 @@ export class CallingService {
         eventType: action,
         actorAccountId: auth.session.accountId,
         callVersion: ended.version,
+        ...(failureCategory ? { metadata: { category: failureCategory } } : {}),
         now,
       });
       const accountIds = [...lifecycle.memberIds].sort() as [string, string];
@@ -580,6 +584,10 @@ export class CallingService {
 
   end(auth: AuthContext, callId: string, input: CallVersionMutationInput, key: string) {
     return this.#terminalMutation(auth, callId, input, key, "end");
+  }
+
+  fail(auth: AuthContext, callId: string, input: CallFailureMutationInput, key: string) {
+    return this.#terminalMutation(auth, callId, input, key, "fail");
   }
 
   async endpointConnected(

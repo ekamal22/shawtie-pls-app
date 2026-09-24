@@ -40,6 +40,8 @@ test("C1 browser keeps one local media owner and relay-only audio", async () => 
   assert.equal(media.includes("peer.setConfiguration"), true);
   assert.equal(media.includes("fetchTurnCredentials(this.callId)"), true);
   assert.equal(media.includes("this.#isSettingRemoteAnswerPending = false"), true);
+  assert.equal(media.includes("onUnrecoverableFailure"), true);
+  assert.equal(media.includes('"network_failed"'), true);
 });
 
 test("C1 microphone and notification permissions stay on explicit user paths", async () => {

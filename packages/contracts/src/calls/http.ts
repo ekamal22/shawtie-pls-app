@@ -41,6 +41,20 @@ export const callVersionMutationSchema = z
   .object({ expectedVersion: positiveVersion })
   .strict();
 
+export const callFailureCategorySchema = z.enum([
+  "media_permission",
+  "relay_unavailable",
+  "negotiation_failed",
+  "network_failed",
+]);
+
+export const callFailureMutationSchema = z
+  .object({
+    expectedVersion: positiveVersion,
+    category: callFailureCategorySchema,
+  })
+  .strict();
+
 export const callEndpointConnectedSchema = z.object({}).strict();
 
 export const callHistoryQuerySchema = z
@@ -96,6 +110,8 @@ export const pushSubscriptionSchema = z
 export type CallCreateInput = z.infer<typeof callCreateSchema>;
 export type CallProjection = z.infer<typeof callProjectionSchema>;
 export type CallVersionMutationInput = z.infer<typeof callVersionMutationSchema>;
+export type CallFailureMutationInput = z.infer<typeof callFailureMutationSchema>;
+export type CallFailureCategory = z.infer<typeof callFailureCategorySchema>;
 export type CallHistoryQuery = z.infer<typeof callHistoryQuerySchema>;
 export type CallHistoryItem = z.infer<typeof callHistoryItemSchema>;
 export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;
