@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE ON CURRENT POST-C1 MAINLINE. SOURCE IMPLEMENTATION NOT STARTED.**
+**DESIGN COMPLETE. SOURCE IMPLEMENTATION COMPLETE THROUGH `3538228`. AUTOMATED/LOCAL AND PHYSICAL VERIFICATION PENDING.**
 
 Implementation branch:
 
@@ -16,7 +16,7 @@ Verified C1 executable baseline inherited by C2:
 
 `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`
 
-C1 is DONE and merged. C2 source implementation is unblocked and proceeds directly on top of the verified call substrate.
+C1 is DONE and merged. C2 source implementation now exists on top of that verified substrate. The branch remains IN_PROGRESS until automated/local closure and the mandatory Redmi Note 9S acceptance matrix pass.
 
 Canonical HTTP/API delta:
 

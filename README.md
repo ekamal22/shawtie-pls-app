@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified mainline includes M2, M3, and C1 as DONE and merged. C1 Voice Calling is merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`, with final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` and full Redmi acceptance complete. C2 Video Calling architecture and implementation design is now complete on `feat/c2-video-calling` from verified post-C1 `main @ 5323d7be21e8776b45f507ec4cf60b9582544621`; source implementation has not started. C2 reuses the C1 call aggregate, keeps voice on `shawtie.call.v1`, introduces `shawtie.call.v2` for video multi-m-line ICE association, requires a coarse `video-v1` compatibility profile for video create/accept, and expects no PostgreSQL migration.
+The verified mainline includes M2, M3, and C1 as DONE and merged. C1 Voice Calling is merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`, with final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` and full Redmi acceptance complete. C2 Video Calling source implementation is complete on `feat/c2-video-calling` through executable source head `35382280fca5e74e06ff7a6937e6b138d4a533cd`. C2 reuses the C1 call aggregate, keeps voice on `shawtie.call.v1`, uses `shawtie.call.v2` for video multi-m-line ICE association, requires `video-v1` compatibility for video create/accept, adds generation-fenced local camera control and video UI, and adds no PostgreSQL migration. C2 remains IN_PROGRESS because automated/local closure and mandatory Redmi Note 9S physical acceptance have not yet been executed.
 
 ## Product direction
 

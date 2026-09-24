@@ -1701,7 +1701,7 @@ The isolated automated/local closure passed at `439b09f` using only documented 0
 
 # C2: Video Calling
 
-Status: IN_PROGRESS. DESIGN COMPLETE. C2-A/B/C SERVER SOURCE STARTED THROUGH `f9caeec`; EXECUTION VERIFICATION AND C2-D/E REMAIN OPEN.
+Status: IN_PROGRESS. DESIGN AND SOURCE IMPLEMENTATION COMPLETE THROUGH `3538228`; AUTOMATED/LOCAL CLOSURE AND PHYSICAL REDMI ACCEPTANCE REMAIN OPEN.
 
 Branch:
 
@@ -1757,9 +1757,15 @@ Migration ownership:
 
 - `989ad0c`: C2 contracts, `video-v1`, feature config, durable video admission, kind persistence, endpoint-kind authorization, focused contract/security tests
 - `f9caeec`: shared C1/C2 signaling-hub dialects, video v2 protocol selection, video SDP validation, kind revalidation
+- `dba3e3a`: kind-aware browser media session, stable video transceiver, generation-fenced camera controller, video rendering and explicit video-call UI
+- `f400895`: retained C1 browser adjustments plus C2 source and real-Chromium camera-race harness
+- `297bcf7`: hidden-before-answer camera-intent fencing and stricter shared signaling typing
+- `d20c385`: disposable C2 PostgreSQL/API integration, automated closure wrapper, and Android prepare/cleanup harness
+- `5e3144a`: camera authority-exception cleanup, strict switch-facing behavior and remote track mute/unmute handling
+- `3538228`: operational-control integration coverage and C2 focused build/test command tightening
 - no migration added or reserved
 - C1 voice remains on `shawtie.call.v1`
-- no C2 gate below is marked complete until focused executable verification is actually run
+- source presence does not close the acceptance gates below; they remain unchecked until executable verification is actually run
 
 ## Implementation gates
 

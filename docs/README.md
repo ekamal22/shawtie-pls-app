@@ -127,7 +127,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages and C1 Voice Calling are DONE and merged. C2 Video Calling design is complete on `feat/c2-video-calling` from verified post-C1 `main @ 5323d7b`; source implementation has not started. Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, and ADR-015. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages and C1 Voice Calling are DONE and merged. C2 Video Calling source implementation is complete on `feat/c2-video-calling` through executable source head `3538228`, including contracts/API admission, shared signaling v2, browser media/camera, video UI, focused browser/API tests, disposable PostgreSQL closure, real-Chromium harness, and Android preflight tooling. Automated/local closure and mandatory physical Redmi acceptance remain unexecuted, so C2 is IN_PROGRESS and unmerged. Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, and ADR-015. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

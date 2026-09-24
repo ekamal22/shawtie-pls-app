@@ -86,6 +86,12 @@ npm run test:c1:device:cleanup
 
 The isolated `test:c1:closure` passed at `439b09f` using only the documented 0015/0016 reservations. The first real-migration integrated closure passed at `9b5c255`. A later physical gap check found one stale media-owner defect; after the fix at `b29aaa1`, `test:c1:closure` re-passed with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, C1 real Chromium 5/5, integrated PostgreSQL/API/worker 111/111, retained M3 gates, full health, audit and git hygiene. Redmi Note 9S acceptance is complete at 25/25, and the rejected-notification, stale-owner and audible bidirectional-audio follow-ups all pass.
 
+## C2 implementation verification status
+
+C2 source implementation is complete on `feat/c2-video-calling` through executable source head `3538228`. The repository now contains focused C2 contract/security/browser tests, disposable PostgreSQL/API integration coverage, a real-Chromium camera-race harness, `test:c2:local`, `test:c2:closure`, and Android device prepare/cleanup tooling. The C2 closure wrapper rejects migration reservations, requires branch/main parity rules and `[skip ci]`, retains M3/C1 local gates and C1 Chromium coverage, then runs C2 PostgreSQL/API and Chromium coverage plus full health, audit and git hygiene.
+
+No C2 automated/local closure result is claimed yet, and no C2 physical Redmi acceptance result is claimed yet. C2 remains IN_PROGRESS until both gates are executed successfully.
+
 ## M2 automated closure status
 
 M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`.

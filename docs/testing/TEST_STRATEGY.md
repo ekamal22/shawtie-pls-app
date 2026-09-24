@@ -607,7 +607,7 @@ Canonical sources:
 - `../api/C2_VIDEO_SIGNALING_PROTOCOL.md`
 - `C2_ANDROID_ACCEPTANCE.md`
 
-Planned command surface:
+Implemented C2 command surface (execution evidence pending on source head `3538228`):
 
 ```text
 npm run test:c2
@@ -649,7 +649,7 @@ Automated/local coverage must include:
 - no camera labels/device IDs/video frames/SDP/ICE/TURN credentials in first-party durable state or logs
 - migration plan remains real 0001 through 0018 with `reserved=0` unless architecture is explicitly amended
 
-C2 closure MUST run the retained C1 integrated closure or an explicitly equivalent integrated dependency gate. C2 source completion alone is not DONE.
+`test:c2:closure` is implemented and runs retained M3/C1 local coverage, retained C1 real-Chromium coverage, C2 disposable PostgreSQL/API coverage, C2 real-Chromium coverage, full health, high-severity audit and git hygiene. It has not yet been executed on source head `3538228`. C2 source completion alone is not DONE.
 
 Physical Android closure follows the mandatory scenario matrix in `C2_ANDROID_ACCEPTANCE.md` and must include real Redmi camera permission, bidirectional audio/video, front/back switching, background privacy, stale camera-operation fencing, old-client compatibility, multi-m-line ICE association and relay-only network evidence.
 
