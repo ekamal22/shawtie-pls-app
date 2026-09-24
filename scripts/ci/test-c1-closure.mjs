@@ -3,11 +3,6 @@ import { spawnSync } from "node:child_process";
 const expectedBranch = "feat/c1-voice-calling";
 const baseRef = process.env.C1_BASE_REF ?? "origin/main";
 const emDash = String.fromCodePoint(0x2014);
-const reservationEnv = {
-  ...process.env,
-  SHAWTIE_MIGRATION_RESERVATIONS: "0015,0016",
-};
-
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: "utf8", ...options });
   if (result.error) throw result.error;
@@ -69,20 +64,18 @@ const introducedEmDash = diff
   .find((line) => line.includes(emDash));
 if (introducedEmDash) throw new Error("C1 diff introduces a forbidden em dash.");
 
-step("c1-local", process.execPath, [npmCli, "run", "test:c1:local"], reservationEnv);
-step("c1-browser-e2e", process.execPath, [npmCli, "run", "test:c1:browser:e2e"], reservationEnv);
-step("health", process.execPath, [npmCli, "run", "health"], reservationEnv);
-step("audit-high", process.execPath, [npmCli, "audit", "--audit-level=high"], reservationEnv);
-step("git-diff-check", "git", ["diff", "--check"], reservationEnv);
+step("c1-local", process.execPath, [npmCli, "run", "test:c1:local"]);
+step("c1-browser-e2e", process.execPath, [npmCli, "run", "test:c1:browser:e2e"]);
+step("health", process.execPath, [npmCli, "run", "health"]);
+step("audit-high", process.execPath, [npmCli, "audit", "--audit-level=high"]);
+step("git-diff-check", "git", ["diff", "--check"]);
 
 const finalStatus = run("git", ["status", "--short"]);
 if (finalStatus) throw new Error("C1 automated closure left a dirty worktree.\n" + finalStatus);
 
 console.log("C1_AUTOMATED_IMPLEMENTATION_HEAD " + localHead);
-console.log("C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016");
-console.log(
-  "C1 final integrated closure remains blocked until real M3 0015/0016 are merged and reserved=0 validation passes.",
-);
+console.log("C1_AUTOMATED_INTEGRATED_PASS reserved=0");
+console.log("C1 integrated migration closure passed against real migrations 0001-0018 with reserved=0.");
 console.log(
   "C1 physical Android acceptance remains a separate required gate and is not implied by this marker.",
 );

@@ -1,15 +1,10 @@
 import { spawnSync } from "node:child_process";
 
-const reservationEnv = {
-  ...process.env,
-  SHAWTIE_MIGRATION_RESERVATIONS: "0015,0016",
-};
-
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     stdio: "inherit",
-    env: reservationEnv,
+    env: process.env,
     ...options,
   });
   if (result.error) throw result.error;
@@ -30,7 +25,7 @@ function npm(script, extra = []) {
   run(process.execPath, [npmCli, "run", script, ...extra]);
 }
 
-console.log("C1_POSTGRES_RESERVATIONS 0015,0016");
+console.log("C1_POSTGRES_MIGRATIONS reserved=0");
 npm("db:migrations:check");
 npm("test:c1");
 npm("db:test:invariants");
@@ -65,5 +60,4 @@ run(process.execPath, [
   "apps/worker/tests/c1.integration.test.ts",
 ]);
 
-console.log("C1_POSTGRES_MATRIX_PASS reservations=0015,0016");
-console.log("C1_POSTGRES_INTEGRATED_M3_PENDING");
+console.log("C1_POSTGRES_MATRIX_PASS reserved=0");

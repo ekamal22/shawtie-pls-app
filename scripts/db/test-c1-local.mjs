@@ -119,7 +119,6 @@ try {
       AUTH_HMAC_KEYS: "1:" + Buffer.alloc(32, 7).toString("base64"),
       AUTH_HMAC_ACTIVE_VERSION: "1",
       PARTNER_REQUEST_MODE: "paired",
-      SHAWTIE_MIGRATION_RESERVATIONS: "0015,0016",
     },
   });
   if (result.error) throw result.error;
