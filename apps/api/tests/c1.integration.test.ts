@@ -34,6 +34,7 @@ const config: ApiConfig = {
   calling: {
     enabled: true,
     transportEnabled: true,
+    videoEnabled: false,
     ringTimeoutMs: 60_000,
     connectTimeoutMs: 120_000,
     hardTimeoutMs: 60 * 60_000,

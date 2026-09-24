@@ -3,9 +3,13 @@ import test from "node:test";
 import {
   C1_REALTIME_SUBPROTOCOL,
   C1_SIGNALING_SUBPROTOCOL,
+  C2_SIGNALING_SUBPROTOCOL,
+  C2_VIDEO_MEDIA_PROFILE,
   c1PushPayloadSchema,
+  c2SignalClientFrameSchema,
   c1RealtimeServerFrameSchema,
   c1SignalClientFrameSchema,
+  callAcceptMutationSchema,
   callCreateSchema,
   callFailureMutationSchema,
   callProjectionSchema,
@@ -87,6 +91,83 @@ test("C1 signaling frames are strict and push payload is generic", () => {
       v: 1,
       type: "call_state_changed",
       callerName: "private",
+    }).success,
+    false,
+  );
+});
+
+
+test("C2 call contracts preserve voice bodies and gate video with a media profile", () => {
+  const partnershipId = "10000000-0000-4000-8000-000000000001";
+  assert.equal(C2_VIDEO_MEDIA_PROFILE, "video-v1");
+  assert.equal(C2_SIGNALING_SUBPROTOCOL, "shawtie.call.v2");
+
+  assert.equal(
+    callCreateSchema.safeParse({ expectedPartnershipId: partnershipId, kind: "voice" }).success,
+    true,
+  );
+  assert.equal(
+    callCreateSchema.safeParse({
+      expectedPartnershipId: partnershipId,
+      kind: "voice",
+      clientMediaProfile: "video-v1",
+    }).success,
+    false,
+  );
+  assert.equal(
+    callCreateSchema.safeParse({
+      expectedPartnershipId: partnershipId,
+      kind: "video",
+      clientMediaProfile: "video-v1",
+    }).success,
+    true,
+  );
+  assert.equal(
+    callAcceptMutationSchema.safeParse({
+      expectedVersion: 2,
+      clientMediaProfile: "video-v1",
+    }).success,
+    true,
+  );
+});
+
+test("C2 signaling v2 carries bounded multi-m-line ICE location", () => {
+  assert.equal(
+    c2SignalClientFrameSchema.safeParse({
+      v: 2,
+      type: "signal.ice_candidate",
+      generation: 1,
+      payload: {
+        candidate: "candidate:relay 1 udp 1677734910 203.0.113.5 50000 typ relay",
+        sdpMid: "1",
+        sdpMLineIndex: 1,
+      },
+    }).success,
+    true,
+  );
+  assert.equal(
+    c2SignalClientFrameSchema.safeParse({
+      v: 2,
+      type: "signal.ice_candidate",
+      generation: 1,
+      payload: {
+        candidate: "candidate:relay 1 udp 1677734910 203.0.113.5 50000 typ relay",
+        sdpMid: null,
+        sdpMLineIndex: null,
+      },
+    }).success,
+    false,
+  );
+  assert.equal(
+    c2SignalClientFrameSchema.safeParse({
+      v: 2,
+      type: "signal.ice_candidate",
+      generation: 1,
+      payload: {
+        candidate: "candidate:relay 1 udp 1677734910 203.0.113.5 50000 typ relay",
+        sdpMid: "video 1",
+        sdpMLineIndex: 2,
+      },
     }).success,
     false,
   );

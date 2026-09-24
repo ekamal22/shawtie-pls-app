@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import {
   C1_SIGNALING_SUBPROTOCOL,
+  callAcceptMutationSchema,
   callCreateSchema,
   callEndpointConnectedSchema,
   callFailureMutationSchema,
@@ -151,7 +152,16 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
     return deps.service.get(auth, params.callId);
   });
 
-  for (const action of ["accept", "reject", "cancel", "end"] as const) {
+  app.post("/api/v1/calls/:callId/accept", async (request, reply) => {
+    const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
+    const params = parseAtBoundary(callIdParamsSchema, request.params);
+    const input = parseAtBoundary(callAcceptMutationSchema, request.body);
+    const key = idempotency(request.headers);
+    privateNoStore(reply);
+    return deps.service.accept(auth, params.callId, input, key);
+  });
+
+  for (const action of ["reject", "cancel", "end"] as const) {
     app.post(`/api/v1/calls/:callId/${action}`, async (request, reply) => {
       const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
       const params = parseAtBoundary(callIdParamsSchema, request.params);

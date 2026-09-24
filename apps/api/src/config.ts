@@ -18,6 +18,7 @@ export interface MediaApiConfig {
 export interface CallingConfig {
   readonly enabled: boolean;
   readonly transportEnabled: boolean;
+  readonly videoEnabled: boolean;
   readonly ringTimeoutMs: number;
   readonly connectTimeoutMs: number;
   readonly hardTimeoutMs: number;
@@ -131,6 +132,7 @@ function callingConfig(
     env.C1_CALLING_ENABLED === undefined ? defaultEnabled : env.C1_CALLING_ENABLED === "1";
   const transportEnabled =
     env.C1_TRANSPORT_ENABLED === undefined ? defaultEnabled : env.C1_TRANSPORT_ENABLED === "1";
+  const videoEnabled = flag(env.C2_VIDEO_ENABLED, defaultEnabled);
   const turnUrls = (env.C1_TURN_URLS ?? "")
     .split(",")
     .map((value) => value.trim())
@@ -148,6 +150,7 @@ function callingConfig(
   return {
     enabled,
     transportEnabled,
+    videoEnabled,
     ringTimeoutMs: boundedPositiveInteger(
       env.C1_RING_TIMEOUT_MS,
       60_000,
@@ -183,6 +186,7 @@ export function resolveCallingConfig(config: ApiConfig): CallingConfig {
     config.calling ?? {
       enabled: config.environment !== "production",
       transportEnabled: config.environment !== "production",
+      videoEnabled: config.environment !== "production",
       ringTimeoutMs: 60_000,
       connectTimeoutMs: 120_000,
       hardTimeoutMs: 6 * 60 * 60_000,

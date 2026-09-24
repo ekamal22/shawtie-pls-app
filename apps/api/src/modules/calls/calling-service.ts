@@ -33,9 +33,11 @@ import {
   publicCallOutcome,
   type CallPolicyContext,
 } from "@shawtie/domain";
-import type {
-  CallCreateInput,
-  CallFailureMutationInput,
+import {
+  C2_VIDEO_MEDIA_PROFILE,
+  type CallAcceptMutationInput,
+  type CallCreateInput,
+  type CallFailureMutationInput,
   CallHistoryQuery,
   CallProjection,
   CallVersionMutationInput,
@@ -288,7 +290,12 @@ export class CallingService {
     if (!this.calling.enabled) throw new ApiError(503, "CALLING_UNAVAILABLE");
     const deviceId = auth.session.deviceId;
     if (!deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
-    if (input.kind === "video") throw new ApiError(409, "FEATURE_NOT_AVAILABLE");
+    if (input.kind === "video") {
+      if (!this.calling.videoEnabled) throw new ApiError(409, "FEATURE_NOT_AVAILABLE");
+      if (input.clientMediaProfile !== C2_VIDEO_MEDIA_PROFILE) {
+        throw new ApiError(409, "CALL_MEDIA_PROFILE_UNSUPPORTED");
+      }
+    }
 
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
@@ -322,7 +329,7 @@ export class CallingService {
         callerDeviceId: deviceId,
         callerSessionId: auth.session.sessionId,
         calleeAccountId: otherAccountId,
-        kind: "voice",
+        kind: input.kind,
         now,
         ringExpiresAt,
       });
@@ -416,7 +423,7 @@ export class CallingService {
   async accept(
     auth: AuthContext,
     callId: string,
-    input: CallVersionMutationInput,
+    input: CallAcceptMutationInput,
     idempotencyKey: string,
   ): Promise<CallProjection> {
     if (!this.calling.transportEnabled) throw new ApiError(503, "CALL_TRANSPORT_UNAVAILABLE");
@@ -433,6 +440,12 @@ export class CallingService {
       if (!call) throw new ApiError(404, "CALL_NOT_FOUND");
       if (call.initiatedByAccountId === auth.session.accountId) {
         throw new ApiError(409, "CALL_ACTION_NOT_ALLOWED");
+      }
+      if (call.kind === "video") {
+        if (!this.calling.videoEnabled) throw new ApiError(409, "FEATURE_NOT_AVAILABLE");
+        if (input.clientMediaProfile !== C2_VIDEO_MEDIA_PROFILE) {
+          throw new ApiError(409, "CALL_MEDIA_PROFILE_UNSUPPORTED");
+        }
       }
 
       const reserved = await this.#reserve(transaction, {

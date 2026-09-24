@@ -4,6 +4,8 @@ const uuid = z.string().uuid();
 const timestamp = z.string().datetime({ offset: true });
 const positiveVersion = z.number().int().safe().positive();
 
+export const C2_VIDEO_MEDIA_PROFILE = "video-v1" as const;
+
 export const callKindSchema = z.enum(["voice", "video"]);
 export const callStateSchema = z.enum(["ringing", "accepted", "connected", "ended"]);
 export const callOutcomeSchema = z
@@ -28,16 +30,36 @@ export const callProjectionSchema = z
   })
   .strict();
 
-export const callCreateSchema = z
+const voiceCallCreateSchema = z
   .object({
     expectedPartnershipId: uuid,
-    kind: callKindSchema,
+    kind: z.literal("voice"),
   })
   .strict();
+
+const videoCallCreateSchema = z
+  .object({
+    expectedPartnershipId: uuid,
+    kind: z.literal("video"),
+    clientMediaProfile: z.string().min(1).max(32).optional(),
+  })
+  .strict();
+
+export const callCreateSchema = z.discriminatedUnion("kind", [
+  voiceCallCreateSchema,
+  videoCallCreateSchema,
+]);
 
 export const callIdParamsSchema = z.object({ callId: uuid }).strict();
 
 export const callVersionMutationSchema = z.object({ expectedVersion: positiveVersion }).strict();
+
+export const callAcceptMutationSchema = z
+  .object({
+    expectedVersion: positiveVersion,
+    clientMediaProfile: z.string().min(1).max(32).optional(),
+  })
+  .strict();
 
 export const callFailureCategorySchema = z.enum([
   "media_permission",
@@ -107,6 +129,7 @@ export const pushSubscriptionSchema = z
 
 export type CallCreateInput = z.infer<typeof callCreateSchema>;
 export type CallProjection = z.infer<typeof callProjectionSchema>;
+export type CallAcceptMutationInput = z.infer<typeof callAcceptMutationSchema>;
 export type CallVersionMutationInput = z.infer<typeof callVersionMutationSchema>;
 export type CallFailureMutationInput = z.infer<typeof callFailureMutationSchema>;
 export type CallFailureCategory = z.infer<typeof callFailureCategorySchema>;

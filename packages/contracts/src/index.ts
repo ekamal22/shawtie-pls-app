@@ -257,4 +257,5 @@ export {
 } from "./realtime/m2.ts";
 export * from "./calls/http.ts";
 export * from "./calls/signaling-v1.ts";
+export * from "./calls/signaling-v2.ts";
 export * from "./calls/push.ts";

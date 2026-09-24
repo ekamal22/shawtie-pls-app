@@ -458,17 +458,19 @@ export async function loadCallEndpointAuthorization(
   },
 ): Promise<{
   readonly partnershipId: string;
+  readonly kind: CallKind;
   readonly state: CallState;
   readonly version: bigint;
   readonly role: "caller" | "callee";
 } | null> {
   const result = await executor.query<{
     partnership_id: string;
+    call_type: CallKind;
     status: CallState;
     version: string | number | bigint;
     role: "caller" | "callee";
   }>(
-    `SELECT session.partnership_id, session.status, session.version, participant.role
+    `SELECT session.partnership_id, session.call_type, session.status, session.version, participant.role
      FROM call_sessions AS session
      JOIN call_participants AS participant
        ON participant.call_session_id=session.id
@@ -507,6 +509,7 @@ export async function loadCallEndpointAuthorization(
   return row
     ? {
         partnershipId: row.partnership_id,
+        kind: row.call_type,
         state: row.status,
         version: asBigInt(row.version),
         role: row.role,

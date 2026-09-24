@@ -89,7 +89,8 @@
     "test:c1:local": "node scripts/db/test-c1-local.mjs",
     "test:c1:closure": "node scripts/ci/test-c1-closure.mjs",
     "test:c1:device:prepare": "node scripts/device/c1-android-acceptance.mjs",
-    "test:c1:device:cleanup": "node scripts/device/c1-android-acceptance.mjs --cleanup"
+    "test:c1:device:cleanup": "node scripts/device/c1-android-acceptance.mjs --cleanup",
+    "test:c2": "npm run build --workspace @shawtie/contracts && node --test packages/contracts/tests/calling.test.ts apps/api/tests/c2.security.test.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
