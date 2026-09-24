@@ -127,7 +127,7 @@ C1 continues to use the central `start_call` partnership capability as the lifec
 
 Important distinction: every call requires explicit recipient acceptance in every lifecycle where calls are allowed. The existing `callRequiresExplicitBreakupAcceptance` helper expresses the extra product emphasis during `breakup_pending`; a false value must never be interpreted as permission to auto-answer in active state.
 
-C1-A adds pure call-state predicates around authoritative call/device state for:
+The C1 implementation adds pure call-state predicates around authoritative call/device state for:
 
 - whether the current selected caller endpoint may continue
 - whether the current callee device may accept
