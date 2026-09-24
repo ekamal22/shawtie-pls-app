@@ -56,7 +56,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             +---+---+
             |       |
             v       v
-       M3 Media ⚪  C1 Voice Calling 🟡
+       M3 Media 🟡  C1 Voice Calling 🟡
             |              |
             |              v
             |        C2 Video Calling ⚪
@@ -102,7 +102,7 @@ flowchart TD
 
     M1 --> M2["M2 Realtime + Offline ✅"]
 
-    M2 --> M3["M3 Media + Voice Messages ⚪"]
+    M2 --> M3["M3 Media + Voice Messages 🟡"]
     M2 --> C1["C1 Voice Calling 🟡"]
     C1 --> C2["C2 Video Calling ⚪"]
 
