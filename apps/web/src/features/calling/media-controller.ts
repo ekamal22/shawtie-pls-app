@@ -5,6 +5,7 @@ import {
   type CallFailureCategory,
 } from "@shawtie/contracts";
 import {
+  fetchCall,
   fetchTurnCredentials,
   reportEndpointConnected,
 } from "./api.ts";
@@ -83,6 +84,14 @@ export class CallMediaSession {
       this.callbacks.onOwnershipLost();
       void this.stop();
     });
+
+    const canonical = await fetchCall(this.callId);
+    if (
+      !canonical.isThisDeviceSelectedEndpoint
+      || (canonical.state !== "accepted" && canonical.state !== "connected")
+    ) {
+      throw new Error("CALL_ENDPOINT_AUTHORITY_CHANGED");
+    }
 
     const turn = await fetchTurnCredentials(this.callId);
     if (this.#stopped) return;
