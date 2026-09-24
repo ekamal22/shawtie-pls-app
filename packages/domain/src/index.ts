@@ -21,3 +21,11 @@ export * from "./relationship-space/rules.ts";
 export * from "./call/types.ts";
 export * from "./call/policy.ts";
 export * from "./call/outcome.ts";
+
+export {
+  mediaBindingAllowed,
+  mediaFormatAllowed,
+  mediaRoleAllowed,
+  type MediaFormatCode,
+  type MediaKind,
+} from "./media/rules.ts";

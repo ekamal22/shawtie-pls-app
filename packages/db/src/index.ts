@@ -290,3 +290,27 @@ export {
 } from "./repositories/relationship-space.ts";
 export * from "./repositories/calls.ts";
 export * from "./repositories/push-subscriptions.ts";
+
+export {
+  bindMediaObject,
+  deleteMediaObjectMetadata,
+  deletePartnershipMediaObjectMetadata,
+  getMediaDeletionGeneration,
+  getMediaUploadGeneration,
+  insertMediaUpload,
+  listBoundMediaForContainer,
+  listPartnershipMediaForDeletion,
+  loadMediaForDeletion,
+  loadMediaObject,
+  lockMediaObject,
+  lockMediaObjectsForBinding,
+  markBoundMediaDeletionPending,
+  markMediaDeletionPending,
+  markMediaReady,
+  refreshMediaUpload,
+  type MediaBindingRole,
+  type MediaBindingType,
+  type MediaKind,
+  type MediaObjectRecord,
+  type MediaState,
+} from "./repositories/media.ts";
