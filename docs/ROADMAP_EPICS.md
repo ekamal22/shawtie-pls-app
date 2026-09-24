@@ -113,7 +113,7 @@ Status: DONE
 
 ## Implementation evidence
 
-Source implementation is present for C1-A through C1-I. The branch now contains durable call authority and history, migrations 0017/0018, endpoint/session authorization, first-accept-wins, realtime v2 invalidation, dedicated call signaling, relay-only WebRTC, TURN rotation, generic Web Push reconciliation, multi-tab media ownership, lifecycle/revocation termination, coarse endpoint failure reporting, PostgreSQL and worker integration suites, disposable local closure runners, a real-Chromium ownership harness, and the Android acceptance preflight.
+Source implementation is present for C1-A through C1-I. The branch now contains durable call authority and history, migrations 0017/0018, endpoint/session authorization, first-accept-wins, realtime v2 invalidation, dedicated call signaling, relay-only WebRTC, TURN rotation, generic Web Push reconciliation, keyed push endpoint fingerprints with key versioning, multi-tab media ownership, lifecycle/revocation termination, coarse endpoint failure reporting, PostgreSQL and worker integration suites, disposable local closure runners, a real-Chromium ownership harness, and the Android acceptance preflight.
 
 Commands are present for `npm run test:c1`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
@@ -1372,7 +1372,7 @@ Migration ownership:
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-Parallel M3 owns planned 0015/0016. Isolated C1 validation may reserve 0015/0016 through `SHAWTIE_MIGRATION_RESERVATIONS`; final integrated closure requires the real 0001-0018 chain with `reserved=0`.
+Parallel M3 owns implemented but unmerged 0015/0016 at `feat/m3-media-voice @ 305891f`. Isolated C1 validation may reserve 0015/0016 through `SHAWTIE_MIGRATION_RESERVATIONS`; final integrated closure requires the real 0001-0018 chain with `reserved=0`.
 
 ## Scope
 
@@ -1416,7 +1416,7 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - caller/callee microphone capture is tied to explicit local gestures; camera remains disabled in C1
 - browser autoplay failure is recoverable UI state, not call failure
 - output routing defaults to browser/OS; optional `setSinkId()` remains local only
-- push subscriptions rotate/reconcile per authenticated device without duplicate active routing
+- push subscriptions rotate/reconcile per authenticated device without duplicate active routing; active endpoint identity is additionally keyed-fingerprinted for privacy-safe uniqueness
 - operational create/transport/push switches fail closed and never enable direct ICE
 - TURN/signaling/push resource budgets are explicit and privacy-safe
 - M3 real 0015/0016 must be on main before C1 final integrated closure
@@ -1500,7 +1500,8 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - [ ] call create/signaling/TURN/push paths have abuse/rate bounds
 - [ ] full C1 contracts/domain/security suites pass
 - [ ] C1 PostgreSQL/API/worker matrix passes
-- [ ] real-browser signaling/WebRTC acceptance passes
+- [ ] focused real-Chromium C1 ownership/Permissions-Policy harness passes
+- [ ] real-browser signaling/WebRTC acceptance passes where a real relay path is available
 - [ ] mandatory physical Android C1 acceptance passes
 - [ ] every legal/illegal durable state transition and exact terminal replay is tested
 - [ ] autoplay-blocked remote audio recovers with explicit user gesture without durable state mutation
