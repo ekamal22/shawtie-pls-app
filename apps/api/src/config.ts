@@ -5,6 +5,16 @@ export interface AuthKeyConfig {
 
 export type PartnerRequestMode = "disabled" | "request_only_test" | "paired";
 
+export interface MediaApiConfig {
+  readonly uploadInitiationEnabled: boolean;
+  readonly bindingEnabled: boolean;
+  readonly downloadGrantEnabled: boolean;
+  readonly uploadGrantTtlMs: number;
+  readonly downloadGrantTtlMs: number;
+  readonly uploadRetentionMs: number;
+  readonly unboundRetentionMs: number;
+}
+
 export interface CallingConfig {
   readonly enabled: boolean;
   readonly transportEnabled: boolean;
@@ -24,6 +34,7 @@ export interface ApiConfig {
   readonly trustedProxy: false | string[];
   readonly authKeys: AuthKeyConfig;
   readonly partnerRequestMode?: PartnerRequestMode;
+  readonly media?: MediaApiConfig;
   readonly calling?: CallingConfig;
 }
 
@@ -85,11 +96,19 @@ function parsePartnerRequestMode(
   return mode;
 }
 
-function positiveInteger(raw: string | undefined, fallback: number, name: string): number {
-  if (!raw) return fallback;
-  const value = Number.parseInt(raw, 10);
-  if (!Number.isInteger(value) || value <= 0) throw new Error(name + " must be a positive integer");
-  return value;
+function parsePositiveInteger(raw: string | undefined, fallback: number, name: string): number {
+  if (raw === undefined) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0)
+    throw new Error(name + " must be a positive integer");
+  return parsed;
+}
+
+function flag(raw: string | undefined, fallback = true): boolean {
+  if (raw === undefined) return fallback;
+  if (raw === "1") return true;
+  if (raw === "0") return false;
+  throw new Error("Feature flags must be 0 or 1");
 }
 
 function boundedPositiveInteger(
@@ -98,7 +117,7 @@ function boundedPositiveInteger(
   name: string,
   maximum: number,
 ): number {
-  const value = positiveInteger(raw, fallback, name);
+  const value = parsePositiveInteger(raw, fallback, name);
   if (value > maximum) throw new Error(name + " must not exceed " + maximum);
   return value;
 }
@@ -175,6 +194,20 @@ export function resolveCallingConfig(config: ApiConfig): CallingConfig {
   );
 }
 
+export function resolveMediaApiConfig(config: ApiConfig): MediaApiConfig {
+  return (
+    config.media ?? {
+      uploadInitiationEnabled: true,
+      bindingEnabled: true,
+      downloadGrantEnabled: true,
+      uploadGrantTtlMs: 5 * 60_000,
+      downloadGrantTtlMs: 60_000,
+      uploadRetentionMs: 15 * 60_000,
+      unboundRetentionMs: 24 * 60 * 60_000,
+    }
+  );
+}
+
 export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const environment =
     env.NODE_ENV === "production" ? "production" : env.NODE_ENV === "test" ? "test" : "development";
@@ -189,6 +222,31 @@ export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfi
     trustedProxy: parseTrustedProxy(env.TRUSTED_PROXY),
     authKeys: parseAuthKeys(env.AUTH_HMAC_KEYS, env.AUTH_HMAC_ACTIVE_VERSION),
     partnerRequestMode: parsePartnerRequestMode(env.PARTNER_REQUEST_MODE, environment),
+    media: {
+      uploadInitiationEnabled: flag(env.MEDIA_UPLOAD_INITIATION_ENABLED),
+      bindingEnabled: flag(env.MEDIA_BINDING_ENABLED),
+      downloadGrantEnabled: flag(env.MEDIA_DOWNLOAD_GRANT_ENABLED),
+      uploadGrantTtlMs: parsePositiveInteger(
+        env.MEDIA_UPLOAD_GRANT_TTL_MS,
+        5 * 60_000,
+        "MEDIA_UPLOAD_GRANT_TTL_MS",
+      ),
+      downloadGrantTtlMs: parsePositiveInteger(
+        env.MEDIA_DOWNLOAD_GRANT_TTL_MS,
+        60_000,
+        "MEDIA_DOWNLOAD_GRANT_TTL_MS",
+      ),
+      uploadRetentionMs: parsePositiveInteger(
+        env.MEDIA_UPLOAD_RETENTION_MS,
+        15 * 60_000,
+        "MEDIA_UPLOAD_RETENTION_MS",
+      ),
+      unboundRetentionMs: parsePositiveInteger(
+        env.MEDIA_UNBOUND_RETENTION_MS,
+        24 * 60 * 60_000,
+        "MEDIA_UNBOUND_RETENTION_MS",
+      ),
+    },
     calling: callingConfig(env, environment),
   };
 }

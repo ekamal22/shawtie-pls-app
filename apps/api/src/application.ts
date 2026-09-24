@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import websocket from "@fastify/websocket";
@@ -8,13 +9,19 @@ import {
   M2_REALTIME_MAX_FRAME_BYTES,
   M2_REALTIME_SUBPROTOCOL,
 } from "@shawtie/contracts";
+import type { MediaObjectStore } from "@shawtie/media-storage";
 import Fastify, { type FastifyInstance } from "fastify";
 import {
+  bindMediaObject,
+  insertScheduledAction,
   loadCurrentConversationReadModel,
+  lockMediaObject,
+  markMediaDeletionPending,
   messageExistsInConversation,
   type DatabasePool,
 } from "@shawtie/db";
-import { resolveCallingConfig, type ApiConfig } from "./config.ts";
+import { mediaRoleAllowed } from "@shawtie/domain";
+import { resolveCallingConfig, resolveMediaApiConfig, type ApiConfig } from "./config.ts";
 import { AccountService } from "./modules/accounts/account-service.ts";
 import { CallingService } from "./modules/calls/calling-service.ts";
 import { registerCallingRoutes } from "./modules/calls/routes.ts";
@@ -31,6 +38,8 @@ import { registerPartnerRequestRoutes } from "./modules/partner-requests/routes.
 import { registerAccountRoutes } from "./modules/auth/routes.ts";
 import { MessagingService } from "./modules/messages/messaging-service.ts";
 import { registerMessagingRoutes } from "./modules/messages/routes.ts";
+import { MediaService } from "./modules/media/media-service.ts";
+import { registerMediaRoutes } from "./modules/media/routes.ts";
 import { NotificationService } from "./modules/notifications/notification-service.ts";
 import { RealtimeHub } from "./modules/realtime/realtime-hub.ts";
 import { RealtimeListener } from "./modules/realtime/realtime-listener.ts";
@@ -54,6 +63,7 @@ export interface ApiApplicationDependencies {
   readonly database: DatabasePool;
   readonly config: ApiConfig;
   readonly partnershipFormationCoordinator?: PartnershipFormationCoordinator;
+  readonly mediaObjectStore?: MediaObjectStore | null;
 }
 
 export function createApiApplication(dependencies?: ApiApplicationDependencies): FastifyInstance {
@@ -125,12 +135,28 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     service: notificationService,
   });
 
-  const messagingService = new MessagingService(dependencies.database, keys);
+  const messagingService = new MessagingService(
+    dependencies.database,
+    keys,
+    resolveMediaApiConfig(dependencies.config).bindingEnabled,
+  );
+  const mediaService = new MediaService(
+    dependencies.database,
+    keys,
+    dependencies.config,
+    dependencies.mediaObjectStore ?? null,
+  );
   registerMessagingRoutes(app, {
     database: dependencies.database,
     config: dependencies.config,
     keys,
     service: messagingService,
+  });
+  registerMediaRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: mediaService,
   });
 
   const realtimePublisher = new RealtimeTransientPublisher(dependencies.database);
@@ -199,6 +225,66 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
           conversation.conversationId,
           input.referenceId,
         );
+      },
+    },
+    mediaReferenceResolver: {
+      async authorize(executor, input) {
+        if (!resolveMediaApiConfig(dependencies.config).bindingEnabled) return false;
+        if (input.role !== "attachment" && input.role !== "voice_letter") return false;
+        const media = await lockMediaObject(executor, input.referenceId);
+        if (
+          !media ||
+          media.partnershipId !== input.partnershipId ||
+          media.uploaderAccountId !== input.actorAccountId ||
+          media.deletedAt !== null ||
+          !mediaRoleAllowed(media.mediaKind, input.role)
+        ) {
+          return false;
+        }
+        if (media.state === "ready_unbound" && media.bindingId === null) return true;
+        return Boolean(
+          input.ownerItemId &&
+          media.state === "bound" &&
+          media.bindingType === "relationship_item" &&
+          media.bindingId === input.ownerItemId &&
+          media.bindingRole === input.role &&
+          media.bindingPosition === input.position,
+        );
+      },
+      async bind(executor, input) {
+        if (!resolveMediaApiConfig(dependencies.config).bindingEnabled) return false;
+        return bindMediaObject(executor, {
+          mediaId: input.referenceId,
+          bindingType: "relationship_item",
+          bindingId: input.itemId,
+          bindingRole: input.role,
+          position: input.position,
+        });
+      },
+      async revoke(executor, input) {
+        const media = await lockMediaObject(executor, input.referenceId);
+        if (
+          !media ||
+          media.partnershipId !== input.partnershipId ||
+          media.bindingType !== "relationship_item" ||
+          media.bindingId !== input.itemId ||
+          media.state !== "bound"
+        ) {
+          return;
+        }
+        const generation = await markMediaDeletionPending(executor, media.id, input.at);
+        if (generation === null) return;
+        await insertScheduledAction(executor, {
+          id: randomUUID(),
+          actionType: "m3.media_delete",
+          aggregateType: "media_object",
+          aggregateId: media.id,
+          executeAt: input.at,
+          expectedGeneration: generation,
+          deduplicationKey: "m3-media-delete:" + media.id + ":g:" + generation,
+          payload: {},
+          payloadVersion: 1,
+        });
       },
     },
   });
