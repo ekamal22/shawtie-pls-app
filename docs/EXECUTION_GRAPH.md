@@ -57,7 +57,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             |       |
             v       v
        M3 Media ✅  C1 Voice 🟡
-M3 status: DONE on `feat/m3-media-voice` (created from `main @ 54b8659a`): automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`; merge is an explicit human decision. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
+M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
             |       |
             +---+---+
                 |
@@ -134,7 +134,7 @@ M1 ✅ + R1 ✅ merged to main
    ->
 M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical Android acceptance 14/14 at `b83102f`
    ->
-M3 ✅ DONE on `feat/m3-media-voice`; Android 20/20 at `ee59850`; ready for explicit merge
+M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
    +
 C1 🟡 source + automated/local closure complete at `439b09f`; final M3-integrated closure and Redmi acceptance pending
 ~~~
@@ -149,9 +149,9 @@ M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source
 
 Verified branch: `feat/m3-media-voice`.
 
-Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete but intentionally unmerged pending explicit merge approval.
+Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
 
-The next dependency action is to merge M3 real migrations 0015/0016 to `main`, then reconcile C1 and run its final `reserved=0` closure before C1 physical acceptance.
+M3 real migrations 0015/0016 are now on `main`. The next dependency action is to reconcile C1 and run its final `reserved=0` closure before C1 physical acceptance.
 
 ## Earlier completed milestone detail
 
@@ -201,7 +201,7 @@ Current flow:
 ~~~text
 main @ 54b8659
   |
-  +--> feat/m3-media-voice      DONE, Android 20/20, ready for explicit merge
+  +--> feat/m3-media-voice      DONE, Android 20/20, merged to main @ 1d3535f
   |
   +--> feat/c1-voice-calling   source + automated/local closure complete
 
@@ -223,7 +223,7 @@ From P2 onward:
 
 The legacy `feat/m1-executable-foundation` branch is historical and is not the M1 Messaging Core branch.
 
-The current completed-but-unmerged milestone branch is:
+The completed M3 milestone branch remains preserved as history:
 
 ~~~text
 feat/m3-media-voice
