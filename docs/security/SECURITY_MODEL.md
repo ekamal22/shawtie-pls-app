@@ -356,11 +356,11 @@ Canonical C1 design: `../architecture/C1_VOICE_CALLING_DESIGN.md`.
 - SDP/ICE use dedicated `shawtie.call.v1` only for the fixed caller participant device and first accepted callee participant device
 - participant rows are the sole durable endpoint-role/device authority
 - SDP is candidate-free, voice-only, and the signaling server accepts only parsed privacy-safe relay candidates; video, data-channel, and non-relay related/base-address leakage fail closed
-- SDP, ICE, TURN credentials, raw push capability data, and media device labels are never persisted or logged
+- SDP, ICE, TURN credentials, and media device labels are never persisted or logged; raw push capability material is persisted only in the device-bound subscription table and never logged
 - `iceTransportPolicy: relay` is mandatory and failure to obtain TURN does not downgrade to direct peer connectivity
 - TURN credentials are short-lived and current call/device/lifecycle authorization is rechecked on every issuance; post-revocation refresh is denied and already-issued allocation lifetime is explicitly bounded
 - push payloads are generic `call_state_changed` reconciliation hints, never caller identity or call authority; service worker fetches canonical state before showing or retaining actionable ringing UI
-- push routing requires current account/device authorization; stale subscriptions alone do not authorize delivery
+- push routing requires current account/device authorization; stale subscriptions alone do not authorize delivery, and active endpoint uniqueness is reinforced with a keyed endpoint fingerprint plus key version
 - random, foreign, old-partnership, and non-selected-device call access fails privacy-safely
 - one generation-fenced browser tab owns media/signaling for a selected device; local lease is not server authority
 - internal session/device/deletion/lifecycle terminal causes map to bounded public outcomes
