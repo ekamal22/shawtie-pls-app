@@ -11,8 +11,10 @@ import {
   insertConversationChange,
   insertMessage,
   insertOutboxEvent,
+  insertScheduledAction,
   listConversationChanges,
   listConversationMessages,
+  listBoundMediaForContainer,
   loadConversationParticipants,
   loadCurrentConversationReadModel,
   loadMessageProjection,
@@ -20,12 +22,15 @@ import {
   lockAccounts,
   lockConversationForMutation,
   lockMessageForMutation,
+  lockMediaObjectsForBinding,
   lockPartnershipLifecycle,
+  markBoundMediaDeletionPending,
   messageExistsInConversation,
   removeMessageReaction,
   reserveLifecycleIdempotency,
   setConversationTypingState,
   setMessageReaction,
+  bindMediaObject,
   tombstoneMessage,
   updateMessageBody,
   updatePartnershipNickname,
@@ -40,6 +45,7 @@ import {
 } from "@shawtie/db";
 import {
   evaluateCapability,
+  mediaRoleAllowed,
   type CapabilityContext,
   type CapabilityName,
   type PartnershipState,
@@ -179,10 +185,12 @@ function lifecycleContext(
 export class MessagingService {
   readonly database: DatabasePool;
   readonly keys: AuthKeyRing;
+  readonly mediaBindingEnabled: boolean;
 
-  constructor(database: DatabasePool, keys: AuthKeyRing) {
+  constructor(database: DatabasePool, keys: AuthKeyRing, mediaBindingEnabled = true) {
     this.database = database;
     this.keys = keys;
+    this.mediaBindingEnabled = mediaBindingEnabled;
   }
 
   #capabilityError(reason: string | null, messageScoped: boolean): ApiError {
@@ -478,6 +486,7 @@ export class MessagingService {
             editedAt: row.editedAt?.toISOString() ?? null,
             deletedAt: row.deletedAt?.toISOString() ?? null,
             reactions: row.reactions,
+            attachments: row.attachments,
           })),
           hasMore,
           oldestSequence: visible[0] ? safeNumber(visible[0].serverSequence) : null,
@@ -532,6 +541,13 @@ export class MessagingService {
       conversationId,
       body: input.body,
       replyToMessageId: input.replyToMessageId,
+      attachments: [...input.attachments]
+        .sort((left, right) => left.position - right.position)
+        .map((attachment) => ({
+          mediaId: attachment.mediaId,
+          role: attachment.role,
+          position: attachment.position,
+        })),
     });
 
     return this.#withConversation(
@@ -580,11 +596,47 @@ export class MessagingService {
           false,
         );
 
+        if (input.attachments.length > 0) {
+          if (!this.mediaBindingEnabled) throw new ApiError(503, "MEDIA_BINDING_DISABLED");
+          this.#assertCapability(
+            auth,
+            lifecycle,
+            now,
+            null,
+            "send_media" as MessageMutationCapability,
+            false,
+          );
+        }
+
         if (
           input.replyToMessageId &&
           !(await messageExistsInConversation(transaction, conversationId, input.replyToMessageId))
         ) {
           throw new ApiError(404, "MESSAGE_NOT_FOUND");
+        }
+
+        const mediaIds = input.attachments.map((attachment) => attachment.mediaId);
+        if (new Set(mediaIds).size !== mediaIds.length) {
+          throw new ApiError(400, "MEDIA_BINDING_INVALID");
+        }
+        const lockedMedia = await lockMediaObjectsForBinding(
+          transaction,
+          conversation.partnershipId,
+          auth.session.accountId,
+          [...mediaIds].sort(),
+        );
+        if (lockedMedia.length !== mediaIds.length) {
+          throw new ApiError(404, "MEDIA_NOT_FOUND");
+        }
+        const mediaById = new Map(lockedMedia.map((media) => [media.id, media]));
+        for (const attachment of input.attachments) {
+          const media = mediaById.get(attachment.mediaId);
+          if (!media || media.state !== "ready_unbound" || media.deletedAt !== null) {
+            throw new ApiError(409, "MEDIA_NOT_READY");
+          }
+          if (!mediaRoleAllowed(media.mediaKind, attachment.role)) {
+            throw new ApiError(400, "MEDIA_BINDING_INVALID");
+          }
         }
 
         const fingerprint = this.keys.activeVerifier("message-request-fingerprint", payload);
@@ -606,6 +658,18 @@ export class MessagingService {
           body: input.body,
           createdAt: now,
         });
+        for (const attachment of [...input.attachments].sort(
+          (left, right) => left.position - right.position,
+        )) {
+          const bound = await bindMediaObject(transaction, {
+            mediaId: attachment.mediaId,
+            bindingType: "message",
+            bindingId: messageId,
+            bindingRole: attachment.role,
+            position: attachment.position,
+          });
+          if (!bound) throw new ApiError(409, "MEDIA_ALREADY_BOUND");
+        }
         await insertConversationChange(transaction, {
           conversationId,
           changeSequence: sequences.changeSequence,
@@ -697,6 +761,11 @@ export class MessagingService {
 
         this.#assertCapability(auth, lifecycle, now, message, "edit_message", true);
 
+        const boundMedia = await listBoundMediaForContainer(transaction, "message", messageId);
+        if (boundMedia.some((media) => media.bindingRole === "voice_message")) {
+          throw new ApiError(409, "VOICE_MESSAGE_NOT_EDITABLE");
+        }
+
         if (message.contentVersion !== BigInt(input.expectedContentVersion)) {
           throw new ApiError(409, "VERSION_CONFLICT");
         }
@@ -767,6 +836,26 @@ export class MessagingService {
         if (reservation.responseStatus !== null) return reservation.responseBody;
 
         this.#assertCapability(auth, lifecycle, now, message, "delete_message", true);
+
+        const mediaToDelete = await markBoundMediaDeletionPending(
+          transaction,
+          "message",
+          messageId,
+          now,
+        );
+        for (const media of mediaToDelete) {
+          await insertScheduledAction(transaction, {
+            id: randomUUID(),
+            actionType: "m3.media_delete",
+            aggregateType: "media_object",
+            aggregateId: media.mediaId,
+            executeAt: now,
+            expectedGeneration: media.generation,
+            deduplicationKey: "m3-media-delete:" + media.mediaId + ":g:" + media.generation,
+            payload: {},
+            payloadVersion: 1,
+          });
+        }
 
         const changeSequence = await allocateChangeSequence(transaction, conversationId);
         const nextVersion = await tombstoneMessage(transaction, {
@@ -1176,6 +1265,7 @@ export class MessagingService {
           editedAt: row.editedAt?.toISOString() ?? null,
           deletedAt: row.deletedAt?.toISOString() ?? null,
           reactions: row.reactions,
+          attachments: row.attachments,
         };
       },
     );

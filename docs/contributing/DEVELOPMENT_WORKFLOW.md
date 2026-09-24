@@ -61,7 +61,7 @@ feat/m1-messaging-core
 feat/r1-relationship-space
 feat/m2-realtime-offline
 feat/m3-media-voice
-feat/c1-calling
+feat/c1-voice-calling
 feat/s1-e2ee
 ```
 

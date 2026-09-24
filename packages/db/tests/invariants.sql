@@ -1169,4 +1169,342 @@ BEGIN
 END;
 $$;
 
+
+-- M3 media invariants.
+INSERT INTO media_objects (
+  id, partnership_id, uploader_account_id, uploader_device_id, storage_object_key,
+  ciphertext_size, crypto_protocol_version, media_kind, format_code, state,
+  ciphertext_sha256, upload_generation, upload_expires_at, ready_at,
+  deletion_generation, created_at
+) VALUES (
+  '81000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '70000000-0000-0000-0000-000000000001',
+  'media/v1/invariant-a',
+  128,
+  'm3-test-aes-gcm-v1',
+  'image',
+  'webp',
+  'ready_unbound',
+  repeat('a', 64),
+  1,
+  now() + interval '1 day',
+  now(),
+  1,
+  now()
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET storage_object_key = 'media/v1/changed'
+    WHERE id = '81000000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected immutable media payload identity rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'media object identity and encrypted payload metadata are immutable' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+UPDATE media_objects
+SET state = 'bound',
+    binding_type = 'relationship_item',
+    binding_id = '80000000-0000-4000-8000-000000000001',
+    binding_role = 'attachment',
+    binding_position = 0,
+    upload_expires_at = NULL
+WHERE id = '81000000-0000-4000-8000-000000000001';
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET binding_position = 1
+    WHERE id = '81000000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected immutable media binding rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'media binding identity is immutable after bind' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+INSERT INTO media_objects (
+  id, partnership_id, uploader_account_id, storage_object_key,
+  ciphertext_size, crypto_protocol_version, media_kind, format_code, state,
+  ciphertext_sha256, upload_generation, upload_expires_at, ready_at,
+  deletion_generation, created_at
+) VALUES (
+  '81000000-0000-4000-8000-000000000002',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'media/v1/invariant-b',
+  128,
+  'm3-test-aes-gcm-v1',
+  'image',
+  'webp',
+  'ready_unbound',
+  repeat('b', 64),
+  1,
+  now() + interval '1 day',
+  now(),
+  1,
+  now()
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET state = 'bound',
+        binding_type = 'relationship_item',
+        binding_id = '80000000-0000-4000-8000-000000000004',
+        binding_role = 'attachment',
+        binding_position = 0,
+        upload_expires_at = NULL
+    WHERE id = '81000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'expected cross-partnership media binding rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'media binding target must exist in the same partnership' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE media_objects
+    SET state = 'bound',
+        binding_type = 'relationship_item',
+        binding_id = '80000000-0000-4000-8000-000000000001',
+        binding_role = 'attachment',
+        binding_position = 0,
+        upload_expires_at = NULL
+    WHERE id = '81000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'expected media binding position uniqueness rejection';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'media_objects_identity_immutable' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing M3 immutable media trigger';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'media_objects_binding_target' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing M3 binding target trigger';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE indexname = 'media_objects_binding_position_unique'
+  ) THEN
+    RAISE EXCEPTION 'missing M3 binding uniqueness index';
+  END IF;
+END;
+$$;
+
+
+-- C1 voice-calling invariants.
+INSERT INTO account_devices (
+  id, account_id, display_name, created_at
+) VALUES (
+  '70000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000002',
+  'Beta Device',
+  now()
+);
+
+INSERT INTO account_sessions (
+  id, account_id, device_id, token_verifier, created_at, expires_at, idle_expires_at
+) VALUES
+  (
+    '71100000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '70000000-0000-0000-0000-000000000001',
+    decode('11', 'hex'),
+    now(),
+    now() + interval '1 hour',
+    now() + interval '1 hour'
+  ),
+  (
+    '71100000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000002',
+    '70000000-0000-0000-0000-000000000002',
+    decode('12', 'hex'),
+    now(),
+    now() + interval '1 hour',
+    now() + interval '1 hour'
+  );
+
+INSERT INTO call_sessions (
+  id, partnership_id, initiated_by_account_id, call_type, status,
+  ring_expires_at, created_at, updated_at
+) VALUES (
+  '90000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'voice',
+  'ringing',
+  now() + interval '1 minute',
+  now(),
+  now()
+);
+
+INSERT INTO call_participants (
+  call_session_id, partnership_id, account_id, role,
+  endpoint_device_id, endpoint_session_id, accepted_at
+) VALUES
+  (
+    '90000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    'caller',
+    '70000000-0000-0000-0000-000000000001',
+    '71100000-0000-0000-0000-000000000001',
+    now()
+  ),
+  (
+    '90000000-0000-4000-8000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000002',
+    'callee',
+    NULL,
+    NULL,
+    NULL
+  );
+
+SET CONSTRAINTS call_participants_exact_roles IMMEDIATE;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO call_sessions (
+      id, partnership_id, initiated_by_account_id, call_type, status,
+      ring_expires_at, created_at, updated_at
+    ) VALUES (
+      '90000000-0000-4000-8000-000000000002',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      'voice',
+      'ringing',
+      now() + interval '1 minute',
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected one non-terminal call per partnership violation';
+  EXCEPTION
+    WHEN unique_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO call_sessions (
+      id, partnership_id, initiated_by_account_id, call_type, status,
+      ended_at, created_at, updated_at
+    ) VALUES (
+      '90000000-0000-4000-8000-000000000003',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      'voice',
+      'ended',
+      now(),
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected terminal call shape violation';
+  EXCEPTION
+    WHEN check_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE call_participants
+    SET
+      endpoint_device_id = '70000000-0000-0000-0000-000000000001',
+      endpoint_session_id = '71100000-0000-0000-0000-000000000001'
+    WHERE call_session_id = '90000000-0000-4000-8000-000000000001'
+      AND role = 'callee';
+    RAISE EXCEPTION 'expected selected endpoint ownership violation';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO push_subscriptions (
+      device_id, account_id, endpoint, endpoint_fingerprint,
+      endpoint_key_version, p256dh, auth
+    ) VALUES (
+      '70000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      'https://push.example.test/mismatched',
+      decode('01', 'hex'),
+      1,
+      'test-p256dh',
+      'test-auth'
+    );
+    RAISE EXCEPTION 'expected push device ownership violation';
+  EXCEPTION
+    WHEN foreign_key_violation THEN NULL;
+  END;
+END;
+$$;
+
+INSERT INTO call_events (
+  id, call_session_id, partnership_id, event_type, actor_account_id,
+  call_version, metadata_json, created_at
+) VALUES (
+  '90100000-0000-4000-8000-000000000001',
+  '90000000-0000-4000-8000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  'created',
+  '00000000-0000-0000-0000-000000000001',
+  1,
+  '{}'::jsonb,
+  now()
+);
+
+DO $$
+BEGIN
+  BEGIN
+    UPDATE call_events
+    SET event_type = 'mutated'
+    WHERE id = '90100000-0000-4000-8000-000000000001';
+    RAISE EXCEPTION 'expected call event append-only rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'call_events rows are append-only while retained' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
 ROLLBACK;

@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-23.
+Refreshed: 2026-09-24.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-`main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d` is the verified M1/R1-derived mainline from which M2 was created. The exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and fast-forward merged to `main @ b6183158` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`; all 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`.
+The verified mainline now includes C1 at `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. M2, M3, and C1 are DONE and merged. C1's final executable baseline is `b29aaa1`, where the integrated closure re-passed with `reserved=0` after the stale media-owner fix. Redmi Note 9S acceptance is 25/25 and rejected-notification cleanup, stale-owner fencing, and audible bidirectional audio are complete.
 
 Completed milestones:
 
@@ -61,9 +61,9 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
-| 8 C1 Voice Calling | DESIGN COMPLETE, implementation not started | M2 | Yes, mandatory |
-| 9 C2 Video Calling | DESIGN COMPLETE, SECOND-PASS HARDENED, implementation blocked on verified C1 | C1 | Yes, mandatory |
+| 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
+| 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
+| 9 C2 Video Calling | DESIGN COMPLETE on `feat/c2-video-calling`; implementation not started | merged C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -75,11 +75,12 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The next verified-mainline work is:
 
 ```text
-main @ 9f4237e
-M1 + R1 merged
-        |
-        v
-feat/m2-realtime-offline
+main @ 54b8659
+   |             |
+   v             v
+M3 ✅           C1 ✅
+20/20 Android   integrated local closure PASS
+merged @ 1d3535f  DONE, merge-ready, unmerged
 ```
 
 M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, documentation-closed at `d7d95a6`, and are now on `main`.
@@ -90,9 +91,10 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M2 is merged at `main @ b6183158`; C1 voice-calling design is complete on `feat/c1-voice-calling` from current `main @ 54b8659a`; implementation may begin from that verified mainline
-6. C2 design is complete on `feat/c2-video-calling` from C1 design checkpoint `489661e3`; implementation remains blocked until C1 is implemented, physically verified, and merged
-6. keep V1 hosted verification separate until Actions capacity returns
+5. M3 is complete on `feat/m3-media-voice`, Android 20/20 at `ee59850`, and merged to `main @ 1d3535f`
+6. C1 final executable baseline is `b29aaa1`; integrated closure re-passed with `reserved=0`, Redmi acceptance 25/25 and all focused physical follow-ups are complete
+7. C1 is merged; C2 Video Calling is now the next planned implementation milestone
+8. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
@@ -350,159 +352,136 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: PLANNED.
+Status: DONE and fast-forward merged to `main @ 1d3535f`. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850` (evidence: `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`).
+
+Branch: `feat/m3-media-voice`.
 
 Depends on verified M2.
 
+Canonical architecture: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
+
+Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`.
+
+Physical Android procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`.
+
+Migration ownership: `0015_media_runtime.sql` and `0016_media_integration_runtime.sql`.
+
 ## Goal
 
-Add private media and recorded voice while preserving partnership authorization, deletion, and future E2EE compatibility.
+Add private images, short video, selected files, chat voice messages, Relationship Space media attachments, and Voice Letters without creating a second message system, relationship system, realtime authority, deletion workflow, or unreviewed production cryptographic protocol.
 
-## Core scope
+## Core architecture
 
-- images
-- short video
-- selected files
-- voice messages
-- client-side media preparation
-- private object storage
-- opaque object keys
-- short-lived signed access
-- attachment authorization
-- deletion-manifest integration
-- E2EE-compatible media path
+- client-side media validation/processing before encryption
+- ciphertext-only private object storage
+- opaque object keys and short-lived signed upload/download grants
+- PostgreSQL media identity and one-time container binding
+- M1 atomic attachment binding and unchanged sequence semantics
+- R1 media resolver and Voice Letter visibility inherited from the containing item
+- M2 canonical invalidation/refetch instead of media-content WebSocket frames
+- P3/F2 durable object deletion with authorization revoked before physical cleanup
+- separate encrypted local media-draft state, never binary reuse of M2 chat outbox
+- S1 remains owner of reviewed production media-key distribution
+
+## Implementation slices
+
+1. M3-A contracts/domain and server-controlled media policy
+2. M3-B migrations 0015/0016 plus database invariants
+3. M3-C provider-neutral private object-store adapter
+4. M3-D upload/refresh/complete/cancel and abandoned-upload cleanup
+5. M3-E download authorization and short-lived access grants
+6. M3-F M1 attachments, media-only messages, and voice messages
+7. M3-G R1 media resolver and Voice Letter integration
+8. M3-H browser media/voice UX and safe rendering
+9. M3-I lifecycle, deletion, local storage, and service-worker hardening
+10. M3-J closure harness executed: automated closure green and mandatory physical Android acceptance passed 20/20
 
 ## Closure boundary
 
-M3 must prove size limits, private storage, authorization, signed-access expiry, cross-partnership denial, deletion behavior, cleanup retry, and physical Android media flows.
+M3 must prove PRD size/duration limits, private ciphertext storage, short-lived grant expiry, one-time binding, cross-partnership denial, Voice Letter container visibility, immediate access revocation on container/lifecycle deletion, retry-safe object cleanup, future-partnership isolation, service-worker exclusion, and all 20 physical Android scenarios.
 
 **REDMI PHONE REQUIRED: YES.**
 
 # Milestone 8: C1 Voice Calling
 
-Status: DESIGN COMPLETE, implementation not started.
+Status: DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. Final executable baseline is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the integrated closure re-passed after the stale media-owner fix. Redmi Note 9S acceptance passed 25/25, and all focused follow-up evidence including rejected-notification cleanup, stale-owner fencing and audible bidirectional audio is complete.
 
-Branch: `feat/c1-voice-calling`.
-
-Base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`.
-
-Canonical architecture: `docs/architecture/C1_VOICE_CALLING_DESIGN.md`.
-
-Canonical API: `docs/api/C1_CALLING_API.md`.
-
-Canonical signaling protocol: `docs/api/C1_SIGNALING_PROTOCOL.md`.
-
-Physical Android procedure: `docs/testing/C1_ANDROID_ACCEPTANCE.md`.
-
-Accepted ADRs:
-
-- `docs/adr/ADR-013-call-signaling-transport.md`
-- `docs/adr/ADR-014-relay-only-call-privacy.md`
-
-Depends on verified M2 and may implement in parallel with M3.
+Depends on verified M2. C1 source work proceeded in parallel with M3 using only the documented reservations for M3-owned migrations 0015/0016.
 
 ## Goal
 
 Add authorized private one-to-one voice calling with explicit acceptance, durable call authority, relay-only network privacy, safe signaling, background reachability, lifecycle-aware deletion, and physical Android closure.
 
-## Core architecture
+## Current closure state
 
-- durable call actions remain authenticated HTTP
-- C1 uses `shawtie.realtime.v2` only for content-free `call.changed` invalidation; M2 v1 remains unchanged
-- accepted-call SDP/ICE uses dedicated `shawtie.call.v1`
-- no signaling or TURN credentials before explicit acceptance
-- SDP is candidate-free and signaling forwards only parsed relay ICE candidates
-- WebRTC uses `iceTransportPolicy: relay` with no direct fallback
-- TURN credentials are short-lived and selected-device authorized
-- caller device is fixed; first eligible callee device to accept wins
-- Web Push provides generic background wakeup; foreground calling works without push permission through realtime v2
-- PostgreSQL owns durable call state, version, selected endpoints, deadlines, and history
-- ring, connect, and hard timeout work is version/generation fenced
-- signaling/WebRTC state remains transient
-- no Redis is introduced; multi-instance signaling requires verified call-ID affinity or a later ADR
-- S1 later reviews cryptographic endpoint identity binding
+- source implementation complete
+- isolated automated/local closure PASS with only 0015/0016 reserved
+- final integrated closure PASS against real migrations 0001 through 0018 with `reserved=0`
+- M3 PostgreSQL/API/worker 63/63, MinIO 1/1, and real Chromium 4/4
+- focused C1 tests 21/21
+- PostgreSQL/API/worker 111/111
+- database invariants PASS
+- real Chromium 2/2
+- full health PASS
+- high-severity audit: 0 vulnerabilities
+- mandatory physical Android voice-call acceptance PASS 25/25 on the Redmi Note 9S, plus PASS for rejected-notification cleanup, stale-owner fencing after the `b29aaa1` fix, and audible bidirectional audio
+- C1 is merged to main at `d44c595`
 
-## Migration coordination
+## Next sequence
 
-C1 owns `0017_calling_runtime.sql` and `0018_push_runtime.sql`. Parallel M3 owns planned 0015/0016. Isolated C1 validation may use `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; final integrated closure must run real 0001-0018 with `reserved=0`.
-
-## Implementation slices
-
-1. C1-A domain/contracts, call states, terminal reasons, capability rules, policy
-2. C1-B 0017/0018 persistence, selected-device invariants, timeouts, push subscriptions, deletion integration
-3. C1-C durable HTTP call API and canonical history/current projections
-4. C1-D realtime v2 invalidation and dedicated signaling transport
-5. C1-E browser audio engine, microphone, mute, perfect negotiation, relay-only candidate handling
-6. C1-F multi-device first-accept-wins and selected-endpoint enforcement
-7. C1-G Web Push incoming-call reachability
-8. C1-H reconnect, ICE restart, process loss, lifecycle/revocation/timeouts
-9. C1-I automated/local closure and mandatory physical Android acceptance
-
-## Closure boundary
-
-C1 must prove partnership/device authorization, no auto-answer, no pre-accept negotiation, first-accept-wins, realtime-v2 compatibility, candidate-free SDP, relay-only media, TURN expiry/fallback, push stale-state safety, lifecycle revocation, bounded stale-call cleanup, call-history isolation/deletion, signaling recovery, and physical Android voice calls.
+1. preserve the merged M3 migrations 0015/0016 and C1 migrations 0017/0018
+2. preserve the final executable baseline and integrated closure re-pass at `b29aaa1` with `reserved=0`
+3. preserve completed C1 Redmi Note 9S acceptance and focused follow-up evidence
+4. preserve the stale media-owner defect fix and regression coverage at `b29aaa1`
+5. C1 is merged; start C2 only from the verified post-C1 mainline
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
 # Milestone 9: C2 Video Calling
 
-Status: DESIGN COMPLETE, SECOND-PASS HARDENED, implementation blocked until verified C1 is merged.
+Status: DESIGN COMPLETE on `feat/c2-video-calling`. Source implementation not started.
 
-Design branch: `feat/c2-video-calling`.
-
-Design parent: `feat/c1-voice-calling @ 489661e3ac85400cc353a0ea673854c62f057030`.
+Depends on verified and merged C1.
 
 Canonical architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`.
 
-Canonical API/compatibility contract: `docs/api/C2_VIDEO_CALLING_API.md`.
+API delta: `docs/api/C2_VIDEO_CALLING_API.md`.
 
-Canonical signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`.
+Video signaling: `docs/api/C2_VIDEO_SIGNALING_PROTOCOL.md`.
 
-Physical Android procedure: `docs/testing/C2_ANDROID_ACCEPTANCE.md`.
+Physical acceptance: `docs/testing/C2_ANDROID_ACCEPTANCE.md`.
 
-Accepted ADR: `docs/adr/ADR-015-stable-video-transceiver-and-camera-privacy.md`.
+Accepted refinement: `docs/adr/ADR-015-c2-video-signaling-and-camera-privacy.md`.
 
 ## Goal
 
-Add explicit private one-to-one video to the verified C1 call substrate without creating a second call authority, signaling transport, TURN policy, push system, history model, or durable camera-state system.
+Add private one-to-one video calling on the verified C1 authority without reopening voice behavior.
 
-## Core architecture
+## Key architecture
 
-- durable call kind `video` reuses C1 HTTP authority/history
-- one stable `sendrecv` video transceiver exists for a video call after acceptance
-- camera sender track may be absent while audio and receiving video continue
-- camera acquisition requires explicit local video intent plus browser permission
-- no camera capture before canonical call acceptance
-- in-memory `cameraGeneration` fences stale asynchronous acquisition/switch results
-- routine camera on/off/switch uses the existing video sender and `replaceTrack()` where supported
-- camera labels, device IDs, facing choice, camera-on state, negotiated resolution, and RTP stats are not durable server state
-- hidden/backgrounded app proactively stops local camera capture
-- foreground return never silently reacquires camera
-- `shawtie.call.v1` is reused with candidate-free SDP and server-validated relay-only trickle candidates
-- realtime v2 remains only a content-free canonical refresh channel and never carries camera state
-- no new application camera-state signaling frame is added in C2 v1
-- C1-only clients show update-required for video calls and never silently answer them as voice
-- relay-only TURN remains mandatory and failure never downgrades to direct peer connectivity
-- S1 later reviews endpoint cryptographic identity binding for both audio and video
+- reuse the C1 durable call aggregate and history
+- no PostgreSQL migration expected or reserved
+- video create/accept require `clientMediaProfile: video-v1`
+- voice stays on `shawtie.call.v1`
+- video uses `shawtie.call.v2` because multi-m-line ICE requires media association
+- one stable video transceiver per video call
+- generation-fenced local camera acquisition/switching
+- camera off/background releases capture while audio may continue
+- no voice-to-video upgrade in C2
+- relay-only TURN remains mandatory
+- no camera metadata or video frames enter durable server state
+- retained C1 closure is part of C2 closure
 
-## Persistence/migration rule
+## Implementation sequence
 
-C2 is expected to require no PostgreSQL migration and reserves no migration number. If final verified C1 cannot safely represent `kind = video`, C2 must use the next forward-only migration on the then-current integrated mainline rather than rewriting C1.
-
-## Implementation slices
-
-1. C2-A enable video call contracts/policy and compatibility gating
-2. C2-B stable video-transceiver engine and remote rendering
-3. C2-C generation-fenced local camera controller
-4. C2-D camera switching and local device privacy
-5. C2-E mobile visibility/orientation/network hardening
-6. C2-F security/lifecycle/compatibility hardening
-7. C2-G browser/integration closure with C1 voice regressions green
-8. C2-H mandatory physical Android video acceptance and documentation closure
-
-## Closure boundary
-
-C2 must prove explicit camera consent, no pre-accept capture, stale camera-operation fencing, stop-on-background privacy, no silent foreground reacquisition, stable audio during camera changes, C1-only update-required compatibility, candidate-free SDP, relay-only video transport, no durable camera metadata, lifecycle/revocation cleanup, real physical Android video calls, and full C1 voice regression safety.
+1. C2-A contracts, client compatibility profile, feature flag
+2. C2-B API/service video enablement with no schema change
+3. C2-C signaling v2 and kind-aware SDP/ICE validation
+4. C2-D browser media engine and camera controller
+5. C2-E video UI, permissions policy and camera controls
+6. C2-F reliability, lifecycle, privacy and C1 regressions
+7. C2-G automated/local closure
+8. C2-H mandatory Redmi Note 9S physical closure
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 

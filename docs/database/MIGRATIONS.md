@@ -258,38 +258,38 @@ If implementation evidence proves that new durable server schema is required, th
 
 IndexedDB local schema versions are client schema and are not PostgreSQL migration numbers.
 
-## C1 migration ownership and parallel M3 coordination
+## M3 migration ownership
 
-Parallel M3 design owns planned migrations 0015 and 0016.
+M3 Media and Voice Messages owns the next two forward-only PostgreSQL migrations:
+
+- `0015_media_runtime.sql`
+- `0016_media_integration_runtime.sql`
+
+`0015_media_runtime.sql` is implemented and refines the existing `media_objects` aggregate with media kind/format, upload state, uploader device, ciphertext digest, upload generation/expiry, ready time, one-time binding fields, and deletion generation.
+
+`0016_media_integration_runtime.sql` is implemented and owns M1/R1 integration hardening: media-only message support where required, container attachment indexes, immutable binding invariants, and media cleanup lookup paths.
+
+M3 must not modify M1-owned 0011/0012 or R1-owned 0013/0014. The committed M3 closure harness applies real migrations 0001 through 0016 from zero with `reserved=0` and all database invariants green; the closure passed at `305891f` and again after the physical fixes (`MIGRATION_PLAN_PASS count=16 reserved=0` and `DATABASE_INVARIANTS_PASS`). The physical Android run required no migration change.
+
+## C1 migration ownership after M3 integration
+
+M3 owns real migrations 0015 and 0016, now merged to main.
 
 C1 Voice Calling owns:
 
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-While M3 migrations are not yet present on the isolated C1 branch, C1 database tests may use the repository's existing reservation mechanism:
+The earlier isolated C1 closure used `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` without placeholder files or copied M3 SQL. After reconciliation, final C1 validation used the real contiguous migration chain with no reservations.
 
-```text
-SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
-```
+Isolated C1 automated/local closure passed at `439b09f` with only M3-owned 0015/0016 reserved. M3 then merged its real 0015/0016 migrations and C1 reconciled onto that mainline. The first real-migration C1 closure passed at `9b5c255`, applying migrations 0001 through 0018 with `reserved=0` and green invariants. A later stale media-owner code fix did not change schema; the full integrated closure re-passed at `b29aaa1` against the same canonical 0001 through 0018 chain with `reserved=0`. Physical acceptance used the same migration chain.
 
-No placeholder migration files and no copied M3 SQL are permitted.
+`0017` is implemented and refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, call uniqueness, endpoint-session binding, and legacy-call terminalization.
 
-Final integrated C1 closure must run real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green.
-
-`0017` refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, and call uniqueness.
-
-`0018` adds reusable device-bound Web Push subscription persistence and call push-routing indexes.
+`0018` is implemented and adds device-bound Web Push subscription persistence, keyed endpoint fingerprints with key versioning, active endpoint/fingerprint uniqueness, and call push-routing indexes.
 
 No C2 migration is reserved by C1 design.
 
-## C2 migration boundary
-
-C2 Video Calling is expected to require no PostgreSQL migration and reserves no migration number. Its current design branch is content-reconciled to hardened C1 design, but source implementation must start from the final merged C1 mainline after real M3 0015/0016 plus C1 0017/0018 integration is closed.
-
-C2 depends on final verified C1 owning the call runtime schema. C2 must not alter C1 migrations 0017/0018.
-
-If implementation evidence proves an additional durable schema change necessary, use the next forward-only migration number from the then-current integrated mainline and document why the existing C1 forward-compatible call kind is insufficient.
 ## M1 and R1 migration ownership
 
 The parallel M1 and R1 milestone branches used non-overlapping forward-only migration ranges, now materialized together in the validated integration baseline.

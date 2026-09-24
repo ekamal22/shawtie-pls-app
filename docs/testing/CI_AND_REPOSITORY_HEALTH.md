@@ -70,6 +70,22 @@ M1 Messaging Core is closed at runtime anchor `aa40a2cc74e8efb08bcefdbe3ae40e306
 
 The exhaustive sweep passed 40/40 gates on one exact local/remote SHA. It included clean bootstrap, repository scanner, migration-plan validation, typecheck, production builds, lint, formatting, dependency-direction checks, root and feature-specific unit/security suites, and every disposable PostgreSQL harness: F2 39/39, A1 27/27, P1 16/16, P2 27/27, P3 39/39, M1 64/64, and R1 69/69. This is the current local integration-validation source of truth until a later code change requires rerunning the matrix.
 
+## C1 implementation verification status
+
+C1 source implementation and final integrated automated/local closure are complete on `feat/c1-voice-calling`. The branch provides:
+
+```text
+npm run test:c1
+npm run test:c1:postgres
+npm run test:c1:local
+npm run test:c1:browser:e2e
+npm run test:c1:closure
+npm run test:c1:device:prepare
+npm run test:c1:device:cleanup
+```
+
+The isolated `test:c1:closure` passed at `439b09f` using only the documented 0015/0016 reservations. The first real-migration integrated closure passed at `9b5c255`. A later physical gap check found one stale media-owner defect; after the fix at `b29aaa1`, `test:c1:closure` re-passed with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, C1 real Chromium 5/5, integrated PostgreSQL/API/worker 111/111, retained M3 gates, full health, audit and git hygiene. Redmi Note 9S acceptance is complete at 25/25, and the rejected-notification, stale-owner and audible bidirectional-audio follow-ups all pass.
+
 ## M2 automated closure status
 
 M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`.
@@ -83,6 +99,12 @@ npm run test:m2:closure
 That wrapper requires the exact `feat/m2-realtime-offline` branch and remote SHA, an initially clean worktree, `[skip ci]` on every M2 branch commit while hosted Actions capacity is intentionally conserved, no newly introduced Unicode em dash, the full `test:m2:local` Docker/PostgreSQL/API/worker/Chromium matrix, `npm run health`, `npm audit --audit-level=high`, `git diff --check`, and a clean final worktree. Passing that command closes the automated local gate only.
 
 All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE.
+
+## M3 physical closure and C1 dependency status
+
+M3 Media and Voice Messages is DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`.
+
+C1 Voice Calling is DONE and fast-forward merged to `main @ d44c595`. Its final executable baseline is `b29aaa1`, where integrated closure re-passed after the stale media-owner fix. Redmi Note 9S acceptance 25/25 and all focused physical follow-up evidence are complete.
 
 ## Repository-health policy
 
@@ -227,3 +249,28 @@ PROJECT_STATE and ROADMAP_EPICS must distinguish:
 - GitHub Actions validated
 - integration validated
 - release validated
+
+
+## M3 local closure
+
+M3 source and verification harnesses are implemented on `feat/m3-media-voice`.
+
+Canonical commands:
+
+```text
+npm run test:m3:contracts
+npm run test:m3:storage
+npm run test:m3:storage:integration
+npm run test:m3:browser
+npm run test:m3:browser:e2e
+npm run test:m3:security
+npm run test:m3:postgres
+npm run test:m3:local
+npm run test:m3:closure
+npm run test:m3:device:prepare
+npm run test:m3:device:cleanup
+```
+
+`test:m3:local` provisions disposable PostgreSQL and private MinIO, then runs the M3 PostgreSQL/API/worker, real object-store, and real Chromium layers. `test:m3:closure` additionally enforces branch/SHA parity, `[skip ci]` history, no introduced Unicode em dash, full repository health, high-severity dependency audit, diff hygiene, and clean-worktree status.
+
+`npm run test:m3:closure` was executed and passed at `305891f` (`M3_AUTOMATED_CLOSURE_PASS`: migration plan `count=16 reserved=0`, database invariants, PostgreSQL/API/worker, MinIO storage integration, real Chromium 4/4, full health, `npm audit --audit-level=high` with 0 vulnerabilities, `git diff --check`). After the physical fixes every step passed again. Physical Android acceptance then passed 20/20 (see `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Hosted GitHub Actions verification remains separate under V1 and was not used.

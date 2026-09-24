@@ -460,7 +460,7 @@ test("R1 final breakup dissolution cancels pending release work and deletion cle
           retryPolicy: defaultRetryPolicy,
         },
       ),
-      2,
+      3,
     );
 
     const roots = await database.pool.query<{ count: string }>(

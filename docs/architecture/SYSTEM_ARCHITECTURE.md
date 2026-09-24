@@ -380,9 +380,27 @@ M2 introduces no Redis and is expected to require no new PostgreSQL migration.
 
 M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
 
-## C1 voice-calling design
+## M3 media and voice-message design
 
-The concrete C1 design is `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`.
+The concrete M3 design is `M3_MEDIA_VOICE_DESIGN.md` with HTTP/storage contract `../api/M3_MEDIA_API.md`.
+
+M3 preserves PostgreSQL/M1/R1/M2/P3 authority rather than adding a parallel media authority:
+
+- the browser validates/processes and encrypts media before upload
+- private object storage receives ciphertext under opaque random keys
+- the API issues short-lived signed grants only after current lifecycle/partnership authorization
+- `media_objects` is refined into the authoritative media identity/state/binding aggregate
+- one media object binds once to one M1 message or R1 relationship item
+- M1/R1 container visibility controls media visibility
+- existing M1/R1 realtime invalidations trigger canonical media refetch
+- P3/F2 deletion manifests gain module-owned media-object cleanup
+- M3 local binary state is separate encrypted draft state, not M2 chat-outbox payload
+- S1 remains the owner of reviewed production attachment-key distribution
+
+M3 owns implemented migrations 0015 and 0016 and is DONE and merged to main after automated/local and physical Android acceptance.
+## C1 voice-calling implementation
+
+The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 C1 preserves the modular monolith and PostgreSQL authority while adding:
 
@@ -395,29 +413,13 @@ C1 preserves the modular monolith and PostgreSQL authority while adding:
 - candidate-free SDP and server-validated relay-only trickle candidates
 - generic Web Push background wakeup bound to current account/device authorization
 - durable ring/connect/hard timeout fencing
-- C1 migrations 0017/0018 coordinated with parallel M3 0015/0016
+- implemented C1 migrations 0017/0018 following merged M3 migrations 0015/0016
 - physical Android acceptance
 
 C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 later enables video over the same verified call substrate.
 
 Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refines the frozen relay-first baseline to relay-only for C1.
 
-## C2 video-calling design
-
-C2 is a video extension of the verified C1 call platform, not a new service boundary.
-
-- C1 durable call/session/history authority remains unchanged
-- `kind = video` identifies a video-capable durable call, not camera-on state
-- one stable video transceiver exists after accepted-call negotiation
-- camera tracks/device identifiers/facing state remain browser-local
-- generation-fenced camera operations prevent stale async capture from reactivating video
-- hidden/backgrounded state stops local camera capture
-- C2 reuses `shawtie.realtime.v2` refresh hints and `shawtie.call.v1` signaling
-- candidate-free SDP and relay-only candidate validation remain mandatory
-- no C2 database migration is expected or reserved
-- C2 implementation is blocked until verified C1 is merged
-
-See `C2_VIDEO_CALLING_DESIGN.md` and ADR-015.
 ## Durable deadlines
 
 Never implement product deadlines with only in-memory timers.

@@ -7,9 +7,19 @@ import {
   M1_TYPING_MIN_REFRESH_MS,
   M1_VISIBLE_CHANGE_POLL_MS,
 } from "@shawtie/contracts";
-import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import type { MediaAttachmentProjection } from "@shawtie/contracts";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiClientError, ApiNetworkError, apiRequest } from "../../lib/api-client.ts";
 import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
+import { MediaAttachment } from "../media/MediaAttachment.tsx";
+import { VoiceRecorder } from "../media/VoiceRecorder.tsx";
+import {
+  discardMediaDraft,
+  prepareMediaDraft,
+  uploadMediaDraft,
+} from "../../lib/media/media-runtime.ts";
+import { listMediaDrafts } from "../../lib/media/media-local-db.ts";
+import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
 
 interface ConversationSummary {
   conversationId: string;
@@ -80,6 +90,7 @@ interface Message {
     accountId: string;
     emoji: string;
   }>;
+  attachments: MediaAttachmentProjection[];
 }
 
 interface MessagePage {
@@ -110,6 +121,13 @@ function errorText(error: unknown): string {
     const known: Record<string, string> = {
       ACCOUNT_LOCKED: "Chat is view-only while account deletion recovery is active.",
       CONVERSATION_NOT_FOUND: "This conversation is no longer available.",
+      MEDIA_ALREADY_BOUND: "That attachment was already used. Remove it and try again.",
+      MEDIA_BINDING_DISABLED: "New attachments are temporarily unavailable.",
+      MEDIA_NOT_FOUND: "That attachment is no longer available.",
+      MEDIA_NOT_READY: "That attachment has not finished uploading.",
+      MEDIA_UNAVAILABLE: "Protected media storage is temporarily unavailable.",
+      MEDIA_UPLOAD_DISABLED: "New media uploads are temporarily unavailable.",
+      MEDIA_CRYPTO_PROTOCOL_UNAVAILABLE: "Protected media needs the S1 production crypto adapter.",
       IDEMPOTENCY_KEY_REUSED: "That retry key was already used for a different change.",
       MESSAGE_DELETED: "That message was already deleted.",
       MESSAGE_EDIT_WINDOW_EXPIRED: "The 30-minute edit window has expired.",
@@ -153,8 +171,9 @@ function messageEditable(message: Message, conversation: ConversationSummary): b
 
 interface PendingSend {
   readonly key: string;
-  readonly body: string;
+  readonly body: string | null;
   readonly replyToMessageId: string | null;
+  readonly draftIds: readonly string[];
 }
 
 export function MessagingPanel() {
@@ -173,6 +192,8 @@ export function MessagingPanel() {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [sendStatus, setSendStatus] = useState<"sending" | "queued" | "failed" | null>(null);
+  const [mediaDrafts, setMediaDrafts] = useState<LocalMediaDraft[]>([]);
+  const [mediaBusy, setMediaBusy] = useState(false);
   const changeCursorRef = useRef(0);
   const lastTypingSentRef = useRef(0);
   const pendingSendRef = useRef<PendingSend | null>(null);
@@ -194,6 +215,156 @@ export function MessagingPanel() {
     }
     return result.conversation;
   }, []);
+
+  const refreshMediaDrafts = useCallback(
+    async (partnershipId: string | null) => {
+      if (!partnershipId) {
+        setMediaDrafts([]);
+        return;
+      }
+      setMediaDrafts(await listMediaDrafts(runtime.accountId, partnershipId, "chat"));
+    },
+    [runtime.accountId],
+  );
+
+  async function prepareFiles(event: ChangeEvent<HTMLInputElement>) {
+    if (!conversation) return;
+    const files = [...(event.target.files ?? [])];
+    event.target.value = "";
+    if (files.length === 0) return;
+    if (mediaDrafts.length + files.length > 10) {
+      setError("A message can contain at most 10 attachments.");
+      return;
+    }
+    setMediaBusy(true);
+    setError("");
+    try {
+      for (const file of files) {
+        await prepareMediaDraft({
+          accountId: runtime.accountId,
+          partnershipId: conversation.partnershipId,
+          ownerContext: "chat",
+          source: file,
+          role: "attachment",
+        });
+      }
+      await refreshMediaDrafts(conversation.partnershipId);
+      setNotice(
+        navigator.onLine
+          ? "Protected attachment prepared. Send when ready."
+          : "Attachment encrypted and saved locally. Connect to upload and send it.",
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message.replaceAll("_", " ").toLowerCase()
+          : "Media preparation failed.",
+      );
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  async function retryDraft(draftId: string) {
+    if (!conversation || !navigator.onLine) return;
+    setMediaBusy(true);
+    setError("");
+    try {
+      await uploadMediaDraft(runtime.accountId, draftId);
+      await refreshMediaDrafts(conversation.partnershipId);
+      setNotice("Protected attachment upload is ready to bind.");
+    } catch (caught) {
+      await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
+      setError(
+        caught instanceof Error
+          ? caught.message.replaceAll("_", " ").toLowerCase()
+          : "Media retry failed.",
+      );
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  async function removeDraft(draftId: string) {
+    if (!conversation) return;
+    setMediaBusy(true);
+    try {
+      await discardMediaDraft(runtime.accountId, draftId);
+      await refreshMediaDrafts(conversation.partnershipId);
+    } finally {
+      setMediaBusy(false);
+    }
+  }
+
+  async function uploadDrafts(): Promise<
+    Array<{ mediaId: string; role: "attachment"; position: number }>
+  > {
+    const uploaded: Array<{ mediaId: string; role: "attachment"; position: number }> = [];
+    for (const [position, draft] of mediaDrafts.entries()) {
+      const result = await uploadMediaDraft(runtime.accountId, draft.draftId);
+      uploaded.push({ mediaId: result.media.mediaId, role: "attachment", position });
+    }
+    return uploaded;
+  }
+
+  async function sendVoice(blob: Blob, durationSeconds: number) {
+    if (!conversation) return;
+    setMediaBusy(true);
+    setError("");
+    try {
+      const draft = await prepareMediaDraft({
+        accountId: runtime.accountId,
+        partnershipId: conversation.partnershipId,
+        ownerContext: "chat",
+        source: blob,
+        role: "voice_message",
+        kind: "voice",
+        durationSeconds,
+      });
+      if (!navigator.onLine) {
+        await refreshMediaDrafts(conversation.partnershipId);
+        setNotice("Voice message encrypted and saved locally. Connect to upload and send it.");
+        return;
+      }
+      const uploaded = await uploadMediaDraft(runtime.accountId, draft.draftId);
+      const key = idempotencyKey();
+      const requestBody = {
+        body: null,
+        replyToMessageId: replyingTo?.messageId ?? null,
+        attachments: [
+          { mediaId: uploaded.media.mediaId, role: "voice_message" as const, position: 0 },
+        ],
+      };
+      try {
+        const created = await apiRequest<{ messageId: string; changeSequence: number }>(
+          "/api/v1/conversations/" + conversation.conversationId + "/messages",
+          {
+            method: "POST",
+            headers: { "idempotency-key": key },
+            body: requestBody,
+          },
+        );
+        await refreshMessage(conversation.conversationId, created.messageId);
+        changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence);
+      } catch (caught) {
+        if (!(caught instanceof ApiClientError)) {
+          await runtime.queueChat({
+            operationType: "message.send",
+            requestBody,
+            idempotencyKey: key,
+          });
+          setNotice("Voice message queued after the final send request lost connection.");
+        } else {
+          throw caught;
+        }
+      }
+      await discardMediaDraft(runtime.accountId, draft.draftId, false);
+      await refreshMediaDrafts(conversation.partnershipId);
+      setReplyingTo(null);
+    } finally {
+      setMediaBusy(false);
+    }
+  }
 
   const refreshMessage = useCallback(
     async (conversationId: string, messageId: string): Promise<Message> => {
@@ -445,6 +616,10 @@ export function MessagingPanel() {
     void loadInitial().catch((caught) => setError(errorText(caught)));
   }, [loadInitial]);
 
+  useEffect(() => {
+    void refreshMediaDrafts(conversation?.partnershipId ?? null).catch(() => undefined);
+  }, [conversation?.partnershipId, refreshMediaDrafts]);
+
   useEffect(
     () =>
       runtime.registerSynchronizer("messaging", async () => {
@@ -560,24 +735,56 @@ export function MessagingPanel() {
 
   async function send(event: FormEvent) {
     event.preventDefault();
-    if (!conversation || !composer.trim()) return;
+    if (!conversation || (!composer.trim() && mediaDrafts.length === 0)) return;
 
-    const body = composer;
+    const body = composer.trim() ? composer : null;
     const replyToMessageId = replyingTo?.messageId ?? null;
+    const draftIds = mediaDrafts.map((draft) => draft.draftId);
     const existing = pendingSendRef.current;
     const pending =
-      existing && existing.body === body && existing.replyToMessageId === replyToMessageId
+      existing &&
+      existing.body === body &&
+      existing.replyToMessageId === replyToMessageId &&
+      existing.draftIds.join(",") === draftIds.join(",")
         ? existing
-        : { key: idempotencyKey(), body, replyToMessageId };
+        : { key: idempotencyKey(), body, replyToMessageId, draftIds };
     pendingSendRef.current = pending;
     setSendStatus("sending");
     setNotice("");
 
     await run(async () => {
+      if (!navigator.onLine && mediaDrafts.length > 0) {
+        setSendStatus(null);
+        setNotice("Protected attachments are saved locally. Connect before sending this message.");
+        return;
+      }
+
+      let attachments: Array<{ mediaId: string; role: "attachment"; position: number }> = [];
+      if (mediaDrafts.length > 0) {
+        setMediaBusy(true);
+        try {
+          attachments = await uploadDrafts();
+        } catch (caught) {
+          await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
+          setSendStatus("failed");
+          if (!(caught instanceof ApiClientError)) {
+            setNotice(
+              "Upload did not finish. Your encrypted attachment is saved on this device. Retry when connected.",
+            );
+            return;
+          }
+          throw caught;
+        } finally {
+          setMediaBusy(false);
+        }
+      }
+
+      const requestBody = { body, replyToMessageId, attachments };
+
       if (!navigator.onLine) {
         await runtime.queueChat({
           operationType: "message.send",
-          requestBody: { body, replyToMessageId },
+          requestBody,
           idempotencyKey: pending.key,
         });
         pendingSendRef.current = null;
@@ -598,11 +805,15 @@ export function MessagingPanel() {
         }>("/api/v1/conversations/" + conversation.conversationId + "/messages", {
           method: "POST",
           headers: { "idempotency-key": pending.key },
-          body: { body, replyToMessageId },
+          body: requestBody,
         });
 
         await refreshMessage(conversation.conversationId, created.messageId);
         changeCursorRef.current = Math.max(changeCursorRef.current, created.changeSequence);
+        for (const draftId of draftIds) {
+          await discardMediaDraft(runtime.accountId, draftId, false);
+        }
+        await refreshMediaDrafts(conversation.partnershipId);
         pendingSendRef.current = null;
         setSendStatus(null);
         setComposer("");
@@ -617,14 +828,18 @@ export function MessagingPanel() {
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "message.send",
-            requestBody: { body, replyToMessageId },
+            requestBody,
             idempotencyKey: pending.key,
           });
+          for (const draftId of draftIds) {
+            await discardMediaDraft(runtime.accountId, draftId, false);
+          }
+          await refreshMediaDrafts(conversation.partnershipId);
           pendingSendRef.current = null;
           setSendStatus("queued");
           setComposer("");
           setReplyingTo(null);
-          setNotice("Message queued after the network request failed.");
+          setNotice("Message queued after the final send request lost connection.");
           return;
         }
         setSendStatus("failed");
@@ -635,7 +850,7 @@ export function MessagingPanel() {
 
   function composerChanged(value: string) {
     setComposer(value);
-    if (pendingSendRef.current && pendingSendRef.current.body !== value) {
+    if (pendingSendRef.current && pendingSendRef.current.body !== (value.trim() ? value : null)) {
       pendingSendRef.current = null;
       setSendStatus(null);
     }
@@ -1013,6 +1228,18 @@ export function MessagingPanel() {
                 {message.deletedAt ? "This message has been deleted" : message.body}
               </p>
 
+              {!message.deletedAt && (message.attachments?.length ?? 0) > 0 ? (
+                <div className="message-media-list">
+                  {(message.attachments ?? []).map((attachment) => (
+                    <MediaAttachment
+                      key={attachment.mediaId}
+                      mediaId={attachment.mediaId}
+                      projection={attachment}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
               {message.editedAt && !message.deletedAt ? (
                 <span className="message-edited">edited</span>
               ) : null}
@@ -1119,6 +1346,57 @@ export function MessagingPanel() {
         </div>
       ) : null}
 
+      {mediaDrafts.length > 0 ? (
+        <div className="media-draft-list">
+          {mediaDrafts.map((draft) => (
+            <div className="media-draft-chip" key={draft.draftId}>
+              <span>
+                {draft.kind.replace("_", " ")} · {Math.ceil(draft.ciphertextBytes / 1024)} KB
+                encrypted · {draft.state}
+              </span>
+              <span className="media-draft-actions">
+                {draft.state === "failed" ? (
+                  <button
+                    type="button"
+                    className="secondary compact"
+                    disabled={mediaBusy || busy || !navigator.onLine}
+                    onClick={() => void retryDraft(draft.draftId)}
+                  >
+                    Retry upload
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="link compact"
+                  disabled={mediaBusy || busy}
+                  onClick={() => void removeDraft(draft.draftId)}
+                >
+                  remove
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="media-composer-actions">
+        <label className="secondary compact media-picker-label">
+          Add media/file
+          <input
+            type="file"
+            multiple
+            hidden
+            disabled={!conversation.capabilities.sendMessage || busy || mediaBusy}
+            accept="image/*,video/mp4,video/webm,application/pdf,text/plain,application/zip,.zip"
+            onChange={(event) => void prepareFiles(event)}
+          />
+        </label>
+        <VoiceRecorder
+          disabled={!conversation.capabilities.sendMessage || busy || mediaBusy}
+          onReady={sendVoice}
+        />
+      </div>
+
       <form className="message-composer" onSubmit={send}>
         <textarea
           value={composer}
@@ -1142,7 +1420,12 @@ export function MessagingPanel() {
         />
         <button
           className="primary"
-          disabled={!conversation.capabilities.sendMessage || busy || !composer.trim()}
+          disabled={
+            !conversation.capabilities.sendMessage ||
+            busy ||
+            mediaBusy ||
+            (!composer.trim() && mediaDrafts.length === 0)
+          }
         >
           Send
         </button>

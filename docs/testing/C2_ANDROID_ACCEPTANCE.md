@@ -2,315 +2,290 @@
 
 ## Status
 
-DESIGN COMPLETE. Execute only after C1 closure is verified and C2 automated/local closure is green.
+DESIGN COMPLETE. EXECUTE AFTER C2 AUTOMATED/LOCAL CLOSURE IS GREEN.
 
-C2 requires verified C1 voice calling and physical Android video acceptance. Design branch: `feat/c2-video-calling`, content-reconciled to hardened C1 design checkpoint `6a416a51`; runtime implementation must be recreated/rebased onto the final verified C1 mainline first.
+At least one endpoint MUST be the physical Xiaomi Redmi Note 9S.
 
-At least one endpoint must be the supported Redmi Android device. Final public-release acceptance should include mobile-to-mobile video when two physical mobile endpoints are available.
+Use synthetic accounts and synthetic/non-private visual scenes.
 
 ## Evidence rules
 
 Record:
 
-- exact commit SHA
-- device and OS version
-- browser/PWA mode
-- peer device/browser
-- network type
-- TURN transport family
-- orientation
-- scenario result
+- exact executable SHA
+- Android version/API
+- browser version
+- peer endpoint
+- network condition
+- TURN transport
+- relevant safe observation
+- PASS/FAIL/BLOCKED
 
-Do not record or commit:
+Never commit:
 
-- video frames
-- screenshots containing private partner video unless deliberately synthetic
-- SDP
+- video frames containing private people/content
+- raw SDP
 - ICE candidate text
 - peer IP addresses
 - TURN credentials
-- camera device IDs
-- camera labels
-
-Use synthetic test accounts and non-private visual scenes for reproducible evidence.
+- camera device IDs or labels
+- auth secrets
 
 ## Mandatory scenarios
 
-Every scenario uses synthetic test accounts and scenes. No private partner video is acceptable as evidence.
+### 1. Basic outgoing video call
 
-### Basic video call
+- explicit Video call action
+- incoming UI identifies video
+- explicit callee acceptance
+- signaling only after acceptance
+- bidirectional audio
+- bidirectional video when both cameras enabled
+- relay-only selected pair
+- clean hangup and track teardown
 
-- caller selects Video call
-- no camera opens merely from durable ringing creation
-- callee sees Video call before accepting
-- callee explicitly accepts
-- signaling starts only after acceptance
-- both endpoints establish audio
-- camera activation follows local intent and browser permission
-- remote video renders
-- hangup performs full track cleanup
+### 2. Incoming accept with camera off
 
-### Caller camera permission denied
+- accept a video-kind call with microphone only
+- call connects
+- remote video can still be received
+- durable kind remains video
+- camera can later be enabled explicitly
 
-- deny caller camera
-- call does not crash
-- audio can continue if microphone succeeds
-- remote endpoint sees camera unavailable/off
-- no retry loop
-- later explicit camera retry is possible
+### 3. Caller camera permission denied
 
-### Callee camera permission denied
+- no crash or retry loop
+- no silent voice reinterpretation
+- explicit retry/continue-camera-off path only
+- no camera metadata reaches server
 
-Same guarantees as caller denial.
+### 4. Callee camera permission denied
 
-### Camera off
+Same privacy properties as caller denial.
 
-- turn camera off during connected video call
-- remote video stops or shows camera-off state
-- audio remains connected
-- camera track stops locally
-- no durable API mutation is required
+### 5. No camera before local action
 
-### Camera on again
+- ringing notification does not request camera
+- notification tap does not request camera
+- remote peer cannot request local camera
+- stale UI cannot activate camera
 
-- after explicit off, select Turn camera on
-- permission and browser state are respected
-- track attaches to existing video sender
+### 6. Camera off
+
+- local capture stops
+- camera indicator/hardware is released where observable
+- local preview clears
+- audio continues
+- durable call version does not change because of camera off
+
+### 7. Camera on again
+
+- explicit local action
+- current endpoint authority rechecked
+- track attaches to existing sender
 - audio remains stable
 
-### Front/rear switch
+### 8. Front/back switch
 
 On Redmi:
 
-- start with user-facing camera
-- switch to environment-facing camera
-- switch back
-- verify local preview changes correctly
-- verify remote video follows
-- verify audio is uninterrupted
-- verify old camera track is released
+- user camera to environment camera
+- environment back to user
+- remote video follows
+- superseded tracks stop
+- audio uninterrupted
 
-### Stale acquisition fencing
+### 9. Constraint fallback
 
-- begin a delayed/simulated camera acquisition or switch
-- before it resolves, turn camera off or background/end/revoke the call
-- let the old acquisition resolve
-- returned stale track is immediately stopped
-- it never attaches to sender or preview
-- camera remains off
+- preferred tier is forced to overconstrain
+- deterministic lower tier succeeds where available
+- denial does not cause repeated prompts
+- no unbounded retry loop
 
-### Switch failure
+### 10. Stale camera acquisition fencing
 
-Force or simulate camera acquisition failure where possible.
+- delay camera acquisition
+- turn camera off/background/end/revoke before completion
+- release delayed result
+- stale track stops immediately
+- stale track never attaches to preview/sender
 
-- keep existing camera when safe or end local video cleanly
-- never select a surprising camera silently
-- call audio survives
+### 11. Camera switch race
 
-### Unexpected camera track end
+- begin switch
+- issue camera-off or newer switch
+- older result cannot win
+- one live local video track maximum
 
-- revoke permission or otherwise end camera track where possible
-- local preview clears
-- app shows camera off/unavailable
-- camera is not silently reacquired
-- explicit user action is required to turn camera back on
+### 12. Multi-tab media ownership
 
-### Orientation
+- only selected owner tab holds mic/camera/peer/signaling
+- observer does not prompt for camera
+- takeover increments media-owner generation
+- old owner cannot regain audio/video/signaling authority
 
-During connected video:
+### 13. Old C1 client compatibility
 
-- portrait to landscape
-- landscape to portrait
-- no call-state mutation
-- controls remain usable
-- no renegotiation loop
-- remote media remains coherent
+- C1-only client receives video projection safely
+- video accept without `video-v1` is rejected
+- v1 signaling for video is rejected
+- it never silently joins as voice
+- another C2-capable device can accept
 
-### Background privacy stop
+### 14. Video SDP policy
 
-- begin with local camera active
-- background the PWA or make the document hidden
-- local camera sender detaches/stops
-- local preview clears
-- audio follows C1/platform behavior and call authority remains canonical
-- no hidden local camera capture continues
+- candidate-free SDP
+- exactly one audio m-line
+- exactly one video m-line
+- data channel/application rejected
+- duplicate/extra media rejected
 
-### Foreground no silent reacquisition
+### 15. Multi-m-line ICE association
 
-- return to foreground
-- canonical call/selected-device authority refreshes
-- local camera remains off
-- camera does not restart automatically
-- explicit Turn camera on is required
+- video v2 candidate carries safe media locator
+- remote addIceCandidate succeeds for audio/video paths
+- no hardcoded index-0 behavior
+- host/srflx/prflx remain rejected
 
-### Background and foreground
+### 16. TURN UDP
 
-- background the PWA during connected video
-- observe platform behavior
-- foreground again
-- canonical call state is refreshed
-- if camera track survived, state reflects reality
-- if track ended, camera remains off until explicit action
-- no hidden camera reacquisition
+- video connects over relay UDP where available
+- audio and video both flow
 
-### Wi-Fi to mobile network
+### 17. Restricted-network TURN fallback
 
-- connected video over Wi-Fi
-- transition to mobile data
-- recover through relay-only ICE restart or fail safely
+- disable UDP in disposable environment
+- connect over TURN TCP or TLS
 - no direct fallback
-- camera state remains coherent
 
-### Constrained network
+### 18. Wi-Fi to mobile transition
 
-Where practical:
+- transition mid-video-call
+- relay-only ICE restart/recovery or safe failure
+- audio prioritized
+- camera state coherent
+- no direct pair selected
 
-- limit or degrade network
-- audio remains prioritized
-- video quality may reduce
-- call does not switch to direct ICE
-- user can turn camera off to preserve call
+### 19. Signaling interruption
 
-### TURN fallback
+- interrupt v2 signaling while media healthy
+- media does not end solely from signaling loss
+- reconnect into fresh generation
+- later camera switch still works
 
-Where deployment supports it:
+### 20. Background privacy
 
-- video over TURN/UDP
-- force UDP failure
-- verify TURN/TCP or TURN/TLS
-- selected path remains relay
+- active camera
+- background/hide PWA
+- local camera detaches/stops
+- preview clears
+- no hidden capture remains
 
-### TURN unavailable fail-closed
+### 21. Foreground no silent camera restart
 
-- make relay allocation unavailable
-- verify the video call does not establish through host/srflx/direct ICE
-- verify no direct candidate is forwarded
-- call fails/degrades according to C1 policy without privacy downgrade
+- return foreground
+- canonical call refresh
+- camera remains off
+- explicit Turn camera on required
 
-### Signaling reconnect
+### 22. Remote video rendering recovery
 
-- interrupt signaling while video media is healthy
-- media should not end solely due signaling socket loss
-- reconnect signaling
-- camera and audio state remain coherent
-- subsequent camera switch still works
+- force video element play/render failure once
+- remote audio continues
+- user gesture can restore video rendering
+- no durable call mutation
 
-### Breakup pending
+### 23. Camera track unexpectedly ends
 
-- initiate a new video call in breakup_pending
-- explicit accept remains required
-- prior video call has no consent effect
-- camera does not open before local action
+- simulate/revoke/end track
+- preview clears
+- no silent reacquisition
+- audio continues if healthy
+- explicit retry required
 
-### Device/session revocation
+### 24. Mute independence
 
-- revoke the currently selected video endpoint device/session from the other authorized session
-- signaling continuation/refresh fails
-- TURN refresh fails
-- local camera and microphone tracks stop
-- no stale camera operation reattaches after revocation
+- microphone mute/unmute does not toggle camera
+- camera off/on does not toggle microphone
+- call remains coherent
 
-### Account deletion
+### 25. breakup_pending
 
-- enter account_deletion_pending during connected video
-- call authority ends
-- camera and microphone tracks stop
-- media elements detach
+- new video call still needs fresh accept
+- no previous call consent carries forward
+- camera remains locally explicit
 
-### Final dissolution
+### 26. account_deletion_pending
 
-- dissolve partnership during video call
-- signaling closes
-- TURN refresh fails
-- local camera stops
-- remote video detaches
-- old call is inaccessible after cleanup
-- future partnership cannot restore it
+- new video calls denied
+- active call terminates
+- mic/camera tracks stop
+- stale camera promises cannot reattach
 
-### One-sided and zero-camera continuity
+### 27. Session/device revocation
 
-- establish a video-kind call with one endpoint camera off
-- verify remote/other audio remains usable
-- then turn both cameras off
-- call remains the same durable video-kind call
-- no server downgrade to voice occurs
-- re-enable one camera explicitly and verify video resumes
+- revoke selected endpoint
+- signaling and TURN refresh fail
+- audio/video tracks stop
+- stale local operations fenced
 
-### Repeated camera-cycle leak test
+### 28. Final partnership dissolution
 
-- repeat camera on/off and front/rear switching many times
-- verify only the expected current track remains live
-- superseded tracks are stopped
-- no duplicate preview streams accumulate
+- ringing and connected cases
+- authorization removed
+- TURN refresh denied
+- local tracks stop
+- history/authorization cleanup follows C1/P3 rules
+
+### 29. Transport kill switch
+
+- disable C1 transport
+- video accept/signaling/TURN fail closed
+- no direct fallback
+- restore transport
+- fresh video call succeeds
+
+### 30. Repeated camera-cycle leak test
+
+- many on/off/switch cycles
+- no duplicate live tracks
+- no duplicate peer connections
+- no duplicate signaling sockets
 - browser remains responsive
 
-### Old client
+### 31. Video feature kill switch
 
-Where a C1-only build can be exercised:
+- `C2_VIDEO_ENABLED=0`
+- video creation/accept disabled
+- existing C1 voice call creation and signaling still work
+- no video-to-voice reinterpretation
 
-- receive a C2 video call
-- client does not attempt video signaling
-- shows update-required state
-- does not silently answer as voice
-- another compatible device can still answer if available
+### 32. Log/privacy audit
 
-### Camera constraint fallback
+Verify no first-party application log/database contains:
 
-- force the preferred 720p constraint tier to fail with an overconstraint condition
-- verify the client falls through deterministically to lower tiers without a second permission prompt
-- verify permission denial stops immediately and does not cycle constraints
+- camera label/device ID
+- raw SDP
+- ICE candidates
+- TURN credentials
+- video frames
+- sensitive RTP dumps
 
-### Remote video autoplay recovery
+## C1 retained regression
 
-- force/instrument the muted remote video element `play()` to reject once
-- C1 remote audio continues
-- UI offers tap-to-show-video recovery
-- user gesture restores video without durable call mutation
+C2 closure MUST rerun the retained C1 integrated closure or an explicitly equivalent integrated dependency gate.
 
-### Wake-lock lifecycle where supported
+Voice must remain:
 
-- with visible active video, acquire screen wake lock if the device/browser supports it
-- background/hidden releases it
-- foreground may reacquire only while video remains active
-- wake-lock failure does not affect call state
-
-### Resource downshift
-
-- simulate/supply sustained CPU-limitation stats in a disposable browser harness and confirm one-tier downshift with cooldown
-- verify audio continues and no direct ICE/privacy downgrade occurs
-- verify the app never auto-turns camera back on after a resource-related track end
-
-## Privacy assertions
-
-Verify through first-party test instrumentation:
-
-- no camera label in server logs
-- no camera device ID in server logs
-- no camera metadata in PostgreSQL
-- no captured frame in application logs
-- no SDP or ICE in logs
-- selected ICE path is relay
-- camera is physically released after off/teardown where browser exposes evidence
-- no camera starts before acceptance
-
-## Additional signaling/privacy assertions
-
-- captured SDP evidence, if instrumented, contains no ICE candidate lines
-- deliberately injected host/srflx/prflx candidate is rejected before peer forwarding
-- selected candidate pair remains relay-only without committing raw peer IPs/candidate strings
-- camera on/off/switch never enters realtime v2 or durable call history
-- no new application signaling frame is used for camera state
-
-## Resource assertions
-
-During a sustained synthetic call:
-
-- no duplicate camera streams accumulate
-- camera switching releases superseded tracks
-- repeated on/off does not leak tracks
-- thermal/battery behavior is observed for obvious regressions
-- browser remains responsive
+- `shawtie.call.v1`
+- one audio m-line
+- relay-only
+- physically/privacy behavior unchanged
 
 ## Closure marker
 
-C2_ANDROID_ACCEPTANCE_PASS may be recorded only after every mandatory scenario above, including constraint fallback, video autoplay recovery, wake-lock lifecycle where supported, and resource downshift behavior, has documented evidence, C1 voice regressions remain green, the exact tested SHA is recorded, sensitive video/signaling/TURN/device material is absent from committed artifacts, and local/remote SHA parity is verified.
+Record:
+
+`C2_ANDROID_ACCEPTANCE_PASS`
+
+only after every mandatory scenario is evidenced, exact tested SHA is recorded, sensitive material is absent, and local/remote parity is verified.

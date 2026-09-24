@@ -1,0 +1,40 @@
+CREATE TABLE push_subscriptions (
+  device_id uuid PRIMARY KEY,
+  account_id uuid NOT NULL,
+  endpoint text NOT NULL,
+  endpoint_fingerprint bytea NOT NULL,
+  endpoint_key_version integer NOT NULL,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  expiration_time_ms bigint,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  revoked_at timestamptz,
+  last_success_at timestamptz,
+  last_failure_at timestamptz,
+  failure_count integer NOT NULL DEFAULT 0,
+  CONSTRAINT push_subscriptions_device_account_fk
+    FOREIGN KEY (device_id, account_id)
+    REFERENCES account_devices(id, account_id)
+    ON DELETE CASCADE,
+  CONSTRAINT push_subscriptions_endpoint_nonempty CHECK (length(endpoint) > 0),
+  CONSTRAINT push_subscriptions_endpoint_key_version_positive
+    CHECK (endpoint_key_version > 0),
+  CONSTRAINT push_subscriptions_endpoint_fingerprint_nonempty
+    CHECK (octet_length(endpoint_fingerprint) > 0),
+  CONSTRAINT push_subscriptions_p256dh_nonempty CHECK (length(p256dh) > 0),
+  CONSTRAINT push_subscriptions_auth_nonempty CHECK (length(auth) > 0),
+  CONSTRAINT push_subscriptions_failure_count_nonnegative CHECK (failure_count >= 0)
+);
+
+CREATE UNIQUE INDEX push_subscriptions_active_endpoint_unique
+  ON push_subscriptions (endpoint)
+  WHERE revoked_at IS NULL;
+
+CREATE UNIQUE INDEX push_subscriptions_active_endpoint_fingerprint_unique
+  ON push_subscriptions (endpoint_key_version, endpoint_fingerprint)
+  WHERE revoked_at IS NULL;
+
+CREATE INDEX push_subscriptions_account_active
+  ON push_subscriptions (account_id, device_id)
+  WHERE revoked_at IS NULL;

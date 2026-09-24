@@ -3,6 +3,8 @@ import { createM1MessagingInvalidationHandlers } from "../messages/messaging-inv
 import { PostgresRealtimeInvalidationPublisher } from "../realtime/realtime-publisher.ts";
 import { createM2RealtimeOutboxHandlers } from "../realtime/realtime-outbox-handler.ts";
 import { OutboxHandlerRegistry } from "./outbox-handler-registry.ts";
+import { createC1CallOutboxHandlers } from "../calls/call-outbox-handler.ts";
+import { webPushConfigFromEnv } from "../calls/web-push.ts";
 
 export function createDefaultOutboxHandlers(database?: DatabasePool): OutboxHandlerRegistry {
   const registry = new OutboxHandlerRegistry();
@@ -12,6 +14,11 @@ export function createDefaultOutboxHandlers(database?: DatabasePool): OutboxHand
   }
   for (const handler of createM2RealtimeOutboxHandlers(publisher)) {
     registry.register(handler);
+  }
+  if (database && publisher) {
+    for (const handler of createC1CallOutboxHandlers(database, publisher, webPushConfigFromEnv())) {
+      registry.register(handler);
+    }
   }
   return registry;
 }

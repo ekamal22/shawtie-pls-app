@@ -2014,7 +2014,7 @@ A phase item appearing below does not imply that it has been implemented.
 - voice calls
 - video calls
 - short-lived TURN credentials
-- relay-first TURN privacy
+- relay-only TURN privacy for C1 voice and C2 video under accepted ADR-014 unless a later accepted ADR changes the call privacy policy
 - call history
 - push notifications
 - serious-event email notifications

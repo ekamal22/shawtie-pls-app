@@ -56,14 +56,12 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             +---+---+
             |       |
             v       v
-       M3 Media ⚪  C1 Voice Calling ⚪
-            |              |
-            |              v
-            |        C2 Video Calling ⚪
-            |              |
-            +------+-------+
-                   |
-                   v
+       M3 Media ✅  C1 Voice ✅
+M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
+            |       |
+            +---+---+
+                |
+                v
         S1 E2EE + Crypto Recovery ⚪
                 |
                 v
@@ -102,9 +100,9 @@ flowchart TD
 
     M1 --> M2["M2 Realtime + Offline ✅"]
 
-    M2 --> M3["M3 Media + Voice Messages ⚪"]
-    M2 --> C1["C1 Voice Calling ⚪"]
-    C1 --> C2["C2 Video Calling ⚪ design complete"]
+    M2 --> M3["M3 Media + Voice Messages ✅"]
+    M2 --> C1["C1 Voice Calling ✅"]
+    C1 --> C2["C2 Video Calling ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
     C2 --> S1
@@ -135,6 +133,10 @@ P3 ✅
 M1 ✅ + R1 ✅ merged to main
    ->
 M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical Android acceptance 14/14 at `b83102f`
+   ->
+M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
+   +
+C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; integrated closure re-passed with `reserved=0`; Redmi 25/25 plus rejected-notification, stale-owner and audible bidirectional-audio follow-ups complete
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -142,6 +144,16 @@ P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is 
 M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source head `b29b095`. R1 source head `9bc9ba4` is also DONE. Both are source-integrated at `01fa182` and exhaustively validated together on `integration/m1-r1 @ 5db7a94`; canonical migrations, full health, audit, and git hygiene are green.
 
 ## Most recently completed milestone
+
+### M3 Media and Voice Messages
+
+Verified branch: `feat/m3-media-voice`.
+
+Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
+
+M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C1 final integrated `reserved=0` closure and mandatory Redmi Note 9S acceptance are complete. C1 is merged at `d44c595`; C2 is the next planned call milestone.
+
+## Earlier completed milestone detail
 
 ### M1 Messaging Core
 
@@ -187,16 +199,16 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 9f4237e
+main @ 54b8659
   |
-  +--> feat/m2-realtime-offline
+  +--> feat/m3-media-voice      DONE, Android 20/20, merged to main @ 1d3535f
+  |
+  +--> feat/c1-voice-calling   historical completed branch; merged to main @ d44c595
 
-M1 and R1 are merged and verified.
-M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented.
-M2 automated/local closure passed at `4bbffdf` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`. M2 is DONE and fast-forward merged to `main @ b6183158`.
-M1 owns migrations 0011 and 0012.
-R1 owns migrations 0013 and 0014.
-M2 is expected to require no PostgreSQL migration and does not reserve 0015.
+M3 owns real migrations 0015/0016.
+C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
+C1 is reconciled onto main containing real M3 0015/0016. Real migrations 0001-0018 passed with `reserved=0`; after the stale media-owner fix, integrated closure re-passed at `b29aaa1`. Redmi physical acceptance and all follow-up evidence, including audible bidirectional audio, are complete.
+C2 Video Calling design is complete on `feat/c2-video-calling`; C1 is merged, so C2 source implementation is now unblocked.
 ~~~
 
 From P2 onward:
@@ -211,13 +223,13 @@ From P2 onward:
 
 The legacy `feat/m1-executable-foundation` branch is historical and is not the M1 Messaging Core branch.
 
-The current C1 design branch is:
+The completed M3 milestone branch remains preserved as history:
 
 ~~~text
-feat/c1-voice-calling
+feat/m3-media-voice
 ~~~
 
-C1 design is complete; implementation has not started. C2 design is also complete on `feat/c2-video-calling`, but C2 source implementation remains blocked until verified C1 is merged.
+The completed C1 implementation branch `feat/c1-voice-calling` is historical after fast-forward merge to `main @ d44c595`. Final executable baseline: `b29aaa1`; all physical evidence complete.
 
 The completed parallel milestone branches remain historical:
 
@@ -252,7 +264,7 @@ The shortest dependency path from the current verified mainline to stable releas
 ~~~text
 M1
  -> M2
- -> M3/C1 Voice -> C2
+ -> M3 + C1 Voice -> C2
  -> S1
  -> R2
  -> Stable Release
@@ -263,11 +275,3 @@ R1 progresses alongside M1 after the verified P3 merge and must be complete befo
 R1 can progress alongside M1 once P2 and the required P3 capability boundaries are stable.
 
 V1 remains a separate verification track and must be complete before R2 closes.
-
-## C1 design checkpoint
-
-`feat/c1-voice-calling` is created from `main @ 54b8659a`. It contains the voice-only call architecture, HTTP API, dedicated signaling protocol, accepted signaling/relay-only ADRs, and physical Android procedure. Parallel M3 design owns planned migrations 0015/0016; C1 owns planned 0017/0018 and may use migration reservations only for isolated branch validation.
-
-## C2 design checkpoint
-
-`feat/c2-video-calling` is based on C1 design checkpoint `489661e3`. It defines the video-only extension, stable video transceiver, generation-fenced local camera controller, stop-on-background privacy, C1-only update-required behavior, and mandatory Android video acceptance. It is a design checkpoint only; runtime implementation must first reconcile onto the final verified C1 mainline.

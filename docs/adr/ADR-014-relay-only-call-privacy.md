@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for C1 design. This refines Architecture Baseline 1.0 relay-first behavior to relay-only for C1 voice calling.
+Accepted and implemented for C1. The integrated closure re-passed at `b29aaa1` after the stale media-owner fix, and physical relay-path acceptance on the Redmi Note 9S is complete, including UDP relay, TCP fallback, network transition and no direct fallback. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 ## Context
 

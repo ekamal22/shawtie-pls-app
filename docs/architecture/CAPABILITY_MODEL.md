@@ -127,7 +127,7 @@ C1 continues to use the central `start_call` partnership capability as the lifec
 
 Important distinction: every call requires explicit recipient acceptance in every lifecycle where calls are allowed. The existing `callRequiresExplicitBreakupAcceptance` helper expresses the extra product emphasis during `breakup_pending`; a false value must never be interpreted as permission to auto-answer in active state.
 
-C1-A adds pure call-state predicates around authoritative call/device state for:
+The C1 implementation adds pure call-state predicates around authoritative call/device state for:
 
 - whether the current selected caller endpoint may continue
 - whether the current callee device may accept
@@ -141,21 +141,6 @@ These predicates consume trusted call state, authenticated account/device identi
 
 Call optimistic `expectedVersion`, first-accept-wins row locking, and timeout generations are concurrency controls after capability approval, not browser-provided permissions.
 
-## C2 video refinement
-
-C2 does not add a second lifecycle call capability. Starting a video call uses the same authoritative `start_call` lifecycle eligibility as voice plus C2 feature policy.
-
-Camera activation is not a server partnership capability. It requires:
-
-- a currently accepted/connected authorized call
-- the current device remains the selected endpoint
-- explicit local video intent
-- browser camera permission
-- visible/foreground local privacy state
-
-The remote peer, browser UI state, or server cannot activate a local camera.
-
-Camera `cameraGeneration` fencing is local concurrency/privacy control, not authorization data.
 ## UI use
 
 The client may receive a server-derived capability snapshot for presentation.

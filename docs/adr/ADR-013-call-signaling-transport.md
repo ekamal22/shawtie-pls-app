@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for C1 design. Implementation-blocking.
+Accepted and implemented. Final executable baseline `b29aaa1` passed the integrated closure after the stale media-owner fix; mandatory Redmi Note 9S acceptance and all focused follow-up evidence are complete. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 ## Context
 
@@ -33,7 +33,7 @@ The signaling socket:
 - derives account and device from the session
 - derives partnership and call role from PostgreSQL
 - opens only after explicit call acceptance
-- authorizes only caller_device_id or accepted_callee_device_id
+- authorizes only the endpoint device resolved from the caller or accepted-callee `call_participants` role row
 - never persists SDP or ICE
 - never logs frame bodies
 - uses bounded frames and rate limits

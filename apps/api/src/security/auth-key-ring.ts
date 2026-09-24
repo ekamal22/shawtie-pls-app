@@ -8,8 +8,10 @@ type Label =
   | "email-code-verifier"
   | "rate-limit-key"
   | "message-request-fingerprint"
+  | "media-request-fingerprint"
   | "r1-idempotency-fingerprint"
-  | "r1-cursor-binding";
+  | "r1-cursor-binding"
+  | "push-endpoint-fingerprint";
 
 function deriveSubkey(root: Buffer, label: Label): Buffer {
   return Buffer.from(hkdfSync("sha256", root, Buffer.alloc(0), Buffer.from(label), 32));

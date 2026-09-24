@@ -11,6 +11,7 @@
   "dependencies": {
     "@shawtie/db": "0.0.0",
     "@shawtie/domain": "0.0.0",
-    "@shawtie/contracts": "0.0.0"
+    "@shawtie/contracts": "0.0.0",
+    "@shawtie/media-storage": "0.0.0"
   }
 }

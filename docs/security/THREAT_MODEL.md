@@ -905,16 +905,23 @@ Impact: High
 Controls:
 
 - short-lived TURN credentials
-- authenticated issuance
-- call capability checks
-- rate limits
-- credential expiry
+- authenticated issuance only for accepted selected endpoints
+- current call/device/lifecycle authorization rechecked on issue and refresh
+- bounded credential issuance and refresh rates
+- bounded provider allocation lifetime
+- no direct-connect fallback when relay is unavailable
+- best-effort allocation revoke only where a provider supports it
+
+Residual risk:
+
+Application authorization can be revoked synchronously, but an already issued credential or relay allocation may remain usable until client teardown or provider expiry. C1 treats provider lifetime as an explicit bounded residual network window rather than claiming instant network-layer revocation.
 
 Verification:
 
 - expired TURN credential tests
-- unauthorized issuance tests
-- load monitoring
+- unauthorized and post-revocation refresh denial
+- accelerated provider allocation-lifetime test
+- load/cost monitoring
 
 ### T23: Direct WebRTC exposes peer IP address
 
@@ -922,14 +929,43 @@ Impact: High for privacy
 
 Controls:
 
-- relay-first TURN policy
-- document any fallback that permits direct connectivity
-- do not claim IP anonymity if direct mode exists
+- C1 uses `iceTransportPolicy: relay` with no direct fallback
+- SDP is candidate-free
+- signaling accepts only parsed `typ relay` trickle candidates
+- host, srflx, prflx, malformed, and unknown candidate types fail closed
+- relay candidate forms exposing a non-relay related/base address fail closed
+- raw candidates and parsed peer addresses are never persisted or logged
+
+Residual risk:
+
+TURN infrastructure, access networks, and network observers still see endpoint/relay connection metadata and timing. Relay-only prevents the partner from receiving a direct peer network path through the application protocol; it does not provide anonymity from the relay operator.
 
 Verification:
 
-- physical-device call test
-- ICE candidate inspection where practical
+- signaling validator tests
+- physical selected-pair inspection without committing raw candidate/IP evidence
+- forced TURN outage proves no direct fallback
+
+### T23A: C1 signaling smuggles non-voice media or cross-protocol payloads
+
+Impact: High
+
+Controls:
+
+- C1 SDP permits exactly one audio media section
+- video and application/data-channel media sections are rejected
+- candidate and end-of-candidates lines are rejected in SDP
+- shared WebSocket negotiation accepts exactly one known application subprotocol
+- realtime and call routes verify the exact negotiated protocol they own
+- M2's 4 KiB application-frame limit remains active even if transport ceiling rises for SDP
+- C1 browser Permissions Policy keeps camera disabled until C2
+
+Verification:
+
+- malicious video SDP rejection
+- malicious data-channel SDP rejection
+- multi-protocol and cross-family WebSocket offer rejection
+- oversize M2 frame remains rejected after C1 integration
 
 ### T24: Network observer infers relationship activity from metadata
 
@@ -940,7 +976,7 @@ Controls:
 - encrypted transport
 - metadata minimization
 - minimal push payloads
-- relay-first calls
+- relay-only calls for C1
 
 Residual risk:
 
@@ -1274,12 +1310,14 @@ Controls:
 - no auto-accept action
 - explicit logout/device revocation/account lockout stops routing
 - provider permanent failure disables subscription idempotently
+- device-bound subscriptions use a keyed endpoint fingerprint and key version to support active-route uniqueness without using the raw endpoint as the only identity signal
 
 Evidence:
 
 - stale push after reject/cancel/missed/final dissolution
 - logged-out/revoked device routing denial
 - payload fixture review
+- subscription replacement proves one active routing path per device and keyed endpoint-fingerprint uniqueness
 
 ### C1-T5: Crossed calls or multi-device races create multiple active sessions
 
@@ -1300,33 +1338,3 @@ Evidence:
 - accept/reject/cancel/timeout races
 - two callee devices accepting concurrently
 - stale timeout after newer transition
-
-## C2 video-calling threat additions
-
-### C2-T1: Camera starts without current local consent
-
-Controls: no pre-accept capture; explicit local video intent; browser permission; selected-endpoint recheck; no remote camera activation.
-
-### C2-T2: Stale getUserMedia result reactivates camera after off/background/end/revocation
-
-Controls: monotonic in-memory `cameraGeneration`; stale results immediately stop returned tracks and never attach them.
-
-### C2-T3: Hidden/background camera capture continues unexpectedly
-
-Controls: hidden/background state proactively detaches and stops local video; foreground requires explicit re-enable.
-
-### C2-T4: Camera hardware metadata leaks to server/provider
-
-Controls: labels/device IDs/facing/permission state remain local; no server inventory; no logs/analytics persistence.
-
-### C2-T5: Video creates direct peer-IP exposure
-
-Controls: inherit candidate-free SDP, server relay-candidate validation, relay-only ICE policy, TURN fail-closed.
-
-### C2-T6: Old client silently downgrades video to voice
-
-Controls: durable `kind = video` remains authoritative; C1-only client shows update-required; no server reinterpretation.
-
-### C2-T7: Repeated camera operations leak tracks/resources
-
-Controls: one current local video track, superseded-track stop, stable transceiver, idempotent cleanup, physical leak/thermal testing.

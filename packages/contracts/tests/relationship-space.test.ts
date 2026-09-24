@@ -40,8 +40,8 @@ test("relationship create rejects a standalone voice_letter kind", () => {
   assert.equal(result.success, false);
 });
 
-test("message references must be source references and voice letters must be media references", () => {
-  const bad = relationshipItemCreateSchema.safeParse({
+test("relationship references enforce roles through their discriminated type", () => {
+  const input = {
     kind: "memory",
     contentSchemaVersion: 1,
     preview: null,
@@ -50,17 +50,31 @@ test("message references must be source references and voice letters must be med
     storyIncluded: false,
     release: null,
     featureState: null,
-    references: [
-      {
-        referenceType: "message",
-        referenceId: "00000000-0000-4000-8000-000000000001",
-        role: "voice_letter",
-        position: 0,
-      },
-    ],
     links: [],
-  });
-  assert.equal(bad.success, false);
+  };
+  const referenceId = "00000000-0000-4000-8000-000000000001";
+
+  assert.equal(
+    relationshipItemCreateSchema.safeParse({
+      ...input,
+      references: [{ referenceType: "message", referenceId, role: "voice_letter", position: 0 }],
+    }).success,
+    false,
+  );
+  assert.equal(
+    relationshipItemCreateSchema.safeParse({
+      ...input,
+      references: [{ referenceType: "media", referenceId, role: "source", position: 0 }],
+    }).success,
+    false,
+  );
+  assert.equal(
+    relationshipItemCreateSchema.safeParse({
+      ...input,
+      references: [{ referenceType: "media", referenceId, role: "voice_letter", position: 0 }],
+    }).success,
+    true,
+  );
 });
 
 test("relationship patch requires expectedVersion and at least one mutation field", () => {

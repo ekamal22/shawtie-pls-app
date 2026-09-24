@@ -5,6 +5,28 @@ export interface AuthKeyConfig {
 
 export type PartnerRequestMode = "disabled" | "request_only_test" | "paired";
 
+export interface MediaApiConfig {
+  readonly uploadInitiationEnabled: boolean;
+  readonly bindingEnabled: boolean;
+  readonly downloadGrantEnabled: boolean;
+  readonly uploadGrantTtlMs: number;
+  readonly downloadGrantTtlMs: number;
+  readonly uploadRetentionMs: number;
+  readonly unboundRetentionMs: number;
+}
+
+export interface CallingConfig {
+  readonly enabled: boolean;
+  readonly transportEnabled: boolean;
+  readonly ringTimeoutMs: number;
+  readonly connectTimeoutMs: number;
+  readonly hardTimeoutMs: number;
+  readonly turnUrls: readonly string[];
+  readonly turnSharedSecret: string | null;
+  readonly turnCredentialTtlMs: number;
+  readonly pushVapidPublicKey: string | null;
+}
+
 export interface ApiConfig {
   readonly environment: "development" | "test" | "production";
   readonly appOrigin: string;
@@ -12,6 +34,8 @@ export interface ApiConfig {
   readonly trustedProxy: false | string[];
   readonly authKeys: AuthKeyConfig;
   readonly partnerRequestMode?: PartnerRequestMode;
+  readonly media?: MediaApiConfig;
+  readonly calling?: CallingConfig;
 }
 
 function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): AuthKeyConfig {
@@ -72,6 +96,118 @@ function parsePartnerRequestMode(
   return mode;
 }
 
+function parsePositiveInteger(raw: string | undefined, fallback: number, name: string): number {
+  if (raw === undefined) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0)
+    throw new Error(name + " must be a positive integer");
+  return parsed;
+}
+
+function flag(raw: string | undefined, fallback = true): boolean {
+  if (raw === undefined) return fallback;
+  if (raw === "1") return true;
+  if (raw === "0") return false;
+  throw new Error("Feature flags must be 0 or 1");
+}
+
+function boundedPositiveInteger(
+  raw: string | undefined,
+  fallback: number,
+  name: string,
+  maximum: number,
+): number {
+  const value = parsePositiveInteger(raw, fallback, name);
+  if (value > maximum) throw new Error(name + " must not exceed " + maximum);
+  return value;
+}
+
+function callingConfig(
+  env: NodeJS.ProcessEnv,
+  environment: ApiConfig["environment"],
+): CallingConfig {
+  const defaultEnabled = environment === "production" ? false : true;
+  const enabled =
+    env.C1_CALLING_ENABLED === undefined ? defaultEnabled : env.C1_CALLING_ENABLED === "1";
+  const transportEnabled =
+    env.C1_TRANSPORT_ENABLED === undefined ? defaultEnabled : env.C1_TRANSPORT_ENABLED === "1";
+  const turnUrls = (env.C1_TURN_URLS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (turnUrls.some((url) => !/^turns?:/i.test(url))) {
+    throw new Error("C1_TURN_URLS must contain only turn: or turns: URLs");
+  }
+  if (environment === "production" && enabled && transportEnabled) {
+    if (turnUrls.length === 0 || !env.C1_TURN_SHARED_SECRET) {
+      throw new Error(
+        "C1 relay-only production calling requires C1_TURN_URLS and C1_TURN_SHARED_SECRET",
+      );
+    }
+  }
+  return {
+    enabled,
+    transportEnabled,
+    ringTimeoutMs: boundedPositiveInteger(
+      env.C1_RING_TIMEOUT_MS,
+      60_000,
+      "C1_RING_TIMEOUT_MS",
+      5 * 60_000,
+    ),
+    connectTimeoutMs: boundedPositiveInteger(
+      env.C1_CONNECT_TIMEOUT_MS,
+      120_000,
+      "C1_CONNECT_TIMEOUT_MS",
+      10 * 60_000,
+    ),
+    hardTimeoutMs: boundedPositiveInteger(
+      env.C1_HARD_TIMEOUT_MS,
+      6 * 60 * 60_000,
+      "C1_HARD_TIMEOUT_MS",
+      24 * 60 * 60_000,
+    ),
+    turnUrls,
+    turnSharedSecret: env.C1_TURN_SHARED_SECRET ?? null,
+    turnCredentialTtlMs: boundedPositiveInteger(
+      env.C1_TURN_CREDENTIAL_TTL_MS,
+      10 * 60_000,
+      "C1_TURN_CREDENTIAL_TTL_MS",
+      15 * 60_000,
+    ),
+    pushVapidPublicKey: env.C1_PUSH_VAPID_PUBLIC_KEY ?? null,
+  };
+}
+
+export function resolveCallingConfig(config: ApiConfig): CallingConfig {
+  return (
+    config.calling ?? {
+      enabled: config.environment !== "production",
+      transportEnabled: config.environment !== "production",
+      ringTimeoutMs: 60_000,
+      connectTimeoutMs: 120_000,
+      hardTimeoutMs: 6 * 60 * 60_000,
+      turnUrls: [],
+      turnSharedSecret: null,
+      turnCredentialTtlMs: 10 * 60_000,
+      pushVapidPublicKey: null,
+    }
+  );
+}
+
+export function resolveMediaApiConfig(config: ApiConfig): MediaApiConfig {
+  return (
+    config.media ?? {
+      uploadInitiationEnabled: true,
+      bindingEnabled: true,
+      downloadGrantEnabled: true,
+      uploadGrantTtlMs: 5 * 60_000,
+      downloadGrantTtlMs: 60_000,
+      uploadRetentionMs: 15 * 60_000,
+      unboundRetentionMs: 24 * 60 * 60_000,
+    }
+  );
+}
+
 export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const environment =
     env.NODE_ENV === "production" ? "production" : env.NODE_ENV === "test" ? "test" : "development";
@@ -86,5 +222,31 @@ export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfi
     trustedProxy: parseTrustedProxy(env.TRUSTED_PROXY),
     authKeys: parseAuthKeys(env.AUTH_HMAC_KEYS, env.AUTH_HMAC_ACTIVE_VERSION),
     partnerRequestMode: parsePartnerRequestMode(env.PARTNER_REQUEST_MODE, environment),
+    media: {
+      uploadInitiationEnabled: flag(env.MEDIA_UPLOAD_INITIATION_ENABLED),
+      bindingEnabled: flag(env.MEDIA_BINDING_ENABLED),
+      downloadGrantEnabled: flag(env.MEDIA_DOWNLOAD_GRANT_ENABLED),
+      uploadGrantTtlMs: parsePositiveInteger(
+        env.MEDIA_UPLOAD_GRANT_TTL_MS,
+        5 * 60_000,
+        "MEDIA_UPLOAD_GRANT_TTL_MS",
+      ),
+      downloadGrantTtlMs: parsePositiveInteger(
+        env.MEDIA_DOWNLOAD_GRANT_TTL_MS,
+        60_000,
+        "MEDIA_DOWNLOAD_GRANT_TTL_MS",
+      ),
+      uploadRetentionMs: parsePositiveInteger(
+        env.MEDIA_UPLOAD_RETENTION_MS,
+        15 * 60_000,
+        "MEDIA_UPLOAD_RETENTION_MS",
+      ),
+      unboundRetentionMs: parsePositiveInteger(
+        env.MEDIA_UNBOUND_RETENTION_MS,
+        24 * 60 * 60_000,
+        "MEDIA_UNBOUND_RETENTION_MS",
+      ),
+    },
+    calling: callingConfig(env, environment),
   };
 }

@@ -29,7 +29,7 @@ Accepted ADRs are authoritative for architecture decisions.
 - ADR-011: Architecture Freeze and Change Control
 - ADR-013: Dedicated Call Signaling Transport
 - ADR-014: Relay-Only Call Network Privacy
-- ADR-015: Stable Video Transceiver and Camera Privacy
+- ADR-015: C2 Video Signaling and Camera Privacy
 
 ## Creating a new ADR
 

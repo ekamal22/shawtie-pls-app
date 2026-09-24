@@ -73,13 +73,10 @@ M2 Realtime and Offline
     +---+---+
     |       |
     v       v
-M3 Media  C1 Voice Calling
-    |            |
-    |            v
-    |      C2 Video Calling
-    |            |
-    +------+-----+
-           v
+M3 Media  C1 Calling
+    |       |
+    +---+---+
+        v
 S1 E2EE and Crypto Recovery
         |
         v
@@ -1309,38 +1306,226 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: PLANNED
+Status: DONE. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850`. Not yet merged to `main`.
+
+Branch: `feat/m3-media-voice`
+
+Base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
+
+Architecture: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
+
+API/storage contract: `docs/api/M3_MEDIA_API.md`
+
+Physical Android procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`
+
+Migration ownership:
+
+- `0015_media_runtime.sql`
+- `0016_media_integration_runtime.sql`
+
+M3 preserves M1 authoritative message order/change order, R1 container visibility, M2 canonical realtime/offline reconciliation, P3 lifecycle authority, and F2 durable cleanup. It refines the existing `media_objects` aggregate rather than introducing a second media identity system.
 
 ## Scope
 
-- image upload
-- video upload
-- general file upload
-- voice-message recording
-- client-side media processing
+- images
+- short videos
+- selected files
+- chat voice messages
+- Relationship Space attachments
+- R1 Voice Letter media
+- client-side preparation and ciphertext-only upload
 - private object storage
-- signed access
-- attachment authorization
-- encrypted-media boundary
+- opaque keys
+- short-lived signed upload/download grants
+- one-time authoritative binding
+- abandoned-upload cleanup
+- message/R1 deletion cleanup
+- partnership media deletion-manifest target
+- encrypted local media drafts
+- physical Android acceptance
+
+M3 does not own production E2EE key distribution, device crypto enrollment/recovery, calls, push notifications, server-side plaintext transcoding, or call recording.
+
+## Refined architecture decisions
+
+- M3 v1 uses whole-object ciphertext PUT/GET; no multipart upload or range-decrypt contract
+- interrupted retry reuses identical encrypted draft bytes/digest; changed ciphertext requires a new media ID
+- signed provider access is exact-origin/private and never falls back through plaintext API proxy
+- server-side upload/binding/download feature controls fail closed during provider incidents
+- production rejects test-only crypto protocol versions; S1 owns key envelopes inside protected M1/R1 content
+- M3 real 0015/0016 must merge before C1 final integrated closure
+
+
+- protected media plaintext never reaches API/object storage
+- S1 owns the reviewed production media-key envelope; M3 exposes only a high-level crypto port and may use an impossible-to-enable-in-production test adapter for synthetic fixtures
+- one media object binds exactly once to one `message` or `relationship_item`
+- unbound media is uploader-only
+- a known media ID is never an authorization grant
+- message-bound access follows current M1 container visibility
+- R1-bound access follows current R1 release/open/reveal visibility
+- Voice Letter is media role `voice_letter`, not a standalone R1 item
+- object store is provider-neutral and never owns product authorization
+- signed URLs are short-lived bearer capabilities and never enter durable product projections/logs/cache
+- realtime uses existing content-free M1/R1 invalidations and canonical HTTP refetch
+- binary media never enters the M2 chat outbox
+- container deletion revokes new access before physical object cleanup
+- final dissolution adds `partnership_media_objects` to the P3 deletion manifest
+- object deletion is idempotent; missing object on retry is success
+- original filenames are not server metadata in M3 v1
+- active content is never rendered from arbitrary decrypted HTML/SVG
+
+## Product limits
+
+- image source <= 10 MB; re-encode/resize to <= 4096 px longest side, target about 2 MB where practical
+- video <= 50 MB and <= 120 seconds
+- selected file <= 25 MB
+- voice <= 15 MB and <= 600 seconds
+- <= 10 attachments per message
+
+## Implementation sequence
+
+### M3-A Contracts and domain
+- media kinds/formats/policy contracts
+- upload/binding state machine
+- media projections
+- message attachment extension
+- Voice Letter role validation
+- deletion/lifecycle rules
+
+### M3-B Migrations 0015/0016
+- refine `media_objects`
+- uploader device, state, digest, generation, expiry, ready time
+- immutable binding type/id/role/position
+- M1 media-only message support
+- indexes and invariants
+- canonical migrations 0001 through 0016 with no reservation
+
+### M3-C Object storage
+- `MediaObjectStore` abstraction
+- signed upload/download grants
+- object verification/checksum
+- idempotent delete
+- realistic private local test adapter
+
+### M3-D Upload API
+- policy
+- initiate
+- refresh
+- complete
+- cancel
+- abandoned-upload expiry
+- rate limits
+- replay/idempotency
+
+### M3-E Retrieval authorization
+- uploader-only unbound access
+- M1/R1 container access
+- lifecycle re-evaluation
+- short-lived signed download grants
+
+### M3-F M1 integration
+- text plus attachments
+- attachment-only messages
+- voice-only messages
+- atomic message/media binding
+- unchanged `server_sequence`/`change_sequence` semantics
+- message delete revokes media
+
+### M3-G R1 integration
+- concrete M3 media resolver
+- atomic relationship-item media binding
+- Voice Letter
+- release visibility inheritance
+- replacement/delete cleanup
+
+### M3-H Browser
+- image/video/file picker
+- image processing worker
+- voice recorder/preview/playback
+- progress/retry/cancel
+- safe decrypted rendering
+
+### M3-I Lifecycle/deletion/local storage
+- breakup and account-deletion rules
+- final dissolution
+- `partnership_media_objects` handler
+- `m3.media_delete` and `m3.media_upload_expire`
+- encrypted local draft store
+- logout/account-switch/revocation/dissolution purge
+- service-worker exclusion
+
+### M3-J Closure
+- contracts/security/PostgreSQL/object-store/browser/real-Chromium
+- full health and dependency audit
+- physical Android 20/20
+- diff/worktree hygiene
+- local/remote SHA parity
+
+## Current source implementation state
+
+Source implementation is complete at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`.
+
+Committed implementation includes:
+
+- M3-A contracts/domain and server policy
+- M3-B real migrations 0015/0016 plus DB invariants
+- M3-C dependency-free S3-compatible private object-store adapter and real MinIO smoke
+- M3-D upload/create/refresh/complete/cancel, idempotency, rate limits, operational controls, and abandoned-upload cleanup
+- M3-E authoritative M1/R1 read authorization and short-lived grants
+- M3-F M1 text+attachments, media-only, and voice-only binding
+- M3-G concrete R1 media resolver, Voice Letters, replacement/delete cleanup, and visibility inheritance
+- M3-H encrypted browser drafts, worker-backed image processing, video/file selection, true voice preview, retry/cancel, safe rendering, and whole-object recovery
+- M3-I lifecycle deletion, partnership media deletion target, service-worker exclusion, fail-closed local purge, and M2 namespace integration
+- M3-J contract/domain/security/PostgreSQL/worker/object-store/real-Chromium/local-closure/device-preflight harnesses
+
+The closure harness was executed: `npm run test:m3:closure` passed at `305891f` and every step passed again after the physical fixes, and all 20 physical Android scenarios passed on a Xiaomi Redmi Note 9S with committed evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. The physical run found and fixed three real defects (commits `98b4c90` and `ee59850`), each with a regression test. All acceptance gates below are therefore closed.
 
 ## Acceptance gates
 
-- [ ] configured attachment limits are enforced
-- [ ] client-side image processing follows product limits
-- [ ] object keys are opaque and do not contain private filenames
-- [ ] storage objects are private
-- [ ] signed access is short-lived and partnership-authorized
-- [ ] attachment IDs cannot cross partnership boundaries
-- [ ] unauthorized object retrieval fails
-- [ ] encrypted-media path is compatible with stable-release E2EE
-- [ ] media is included in deletion manifests
-- [ ] final dissolution removes media access immediately
-- [ ] storage cleanup retries safely
-- [ ] physical Android media and voice-message flows pass
+- [x] migrations 0001 through 0016 apply from zero with `reserved=0`
+- [x] database invariants cover media state, partnership scope, and immutable one-time binding
+- [x] server-controlled PRD media limits are enforced
+- [x] client image processing strips ordinary metadata through re-encoding and respects dimension policy
+- [x] object keys are opaque and contain no user/container/private filename data
+- [x] object storage is private
+- [x] API/object store never receives media plaintext
+- [x] production configuration cannot enable the M3 test-only crypto adapter
+- [x] upload grants are short-lived and exact-scope
+- [x] completion proves object existence and expected size/checksum where supported
+- [x] completion retry is idempotent
+- [x] abandoned uploads clean up safely after crash/lost response
+- [x] unbound media is uploader-only
+- [x] same-partnership membership alone does not expose unbound media
+- [x] a media object cannot bind twice or cross visibility domains
+- [x] message attachments bind atomically with M1 message creation
+- [x] media-only messages preserve M1 ordering/change semantics
+- [x] voice message shape is exactly constrained
+- [x] M1 edit does not silently replace attachments
+- [x] message deletion immediately denies new attachment grants
+- [x] R1 media references require the concrete M3 resolver
+- [x] Voice Letter requires voice media and inherits containing-item visibility
+- [x] unreleased/hidden R1 media cannot be fetched through media ID
+- [x] breakup_pending allows new chat media exactly as the PRD requires
+- [x] R1 remains view-only during breakup
+- [x] account-deletion overlay blocks new media writes
+- [x] final dissolution denies new media access synchronously
+- [x] `partnership_media_objects` deletion target is created and retry-safe
+- [x] worker crash after object deletion is safe to replay
+- [x] future partnership cannot access/rebind old media
+- [x] M3 local drafts are encrypted and namespace-purged on logout/account switch/revocation/dissolution
+- [x] IndexedDB quota failure cannot be represented as safely queued media
+- [x] service worker never caches signed media URLs, authorized media responses, or decrypted media
+- [x] realtime/outbox/logging excludes signed URLs, plaintext, filenames, ciphertext bodies, and key material
+- [x] safe client rendering rejects active untrusted content
+- [x] all 20 physical Android scenarios pass
+- [x] full `npm run health` and `npm audit --audit-level=high` pass
+- [x] branch/worktree/diff hygiene and local/remote SHA parity pass
+
+M3 is DONE: automated/local and physical Android closure are both green, and the milestone was fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`.
 
 # C1: Voice Calling
 
-Status: DESIGN COMPLETE, IMPLEMENTATION NOT STARTED
+Status: DONE AND READY TO MERGE, UNMERGED. SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ACCEPTANCE COMPLETE.
 
 Branch: `feat/c1-voice-calling`
 
@@ -1364,7 +1549,7 @@ Migration ownership:
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-Parallel M3 owns planned 0015/0016. Isolated C1 validation may reserve 0015/0016 through `SHAWTIE_MIGRATION_RESERVATIONS`; final integrated closure requires the real 0001-0018 chain with `reserved=0`.
+M3 owns real merged migrations 0015/0016 on main. The earlier isolated C1 closure used `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; after reconciliation, final integrated closure passed the real 0001-0018 chain with `reserved=0` at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`.
 
 ## Scope
 
@@ -1375,210 +1560,303 @@ Parallel M3 owns planned 0015/0016. Isolated C1 validation may reserve 0015/0016
 - missed and connect timeout
 - bounded hard stale-call timeout
 - first-accept-wins multi-device ringing
-- fixed caller endpoint
-- `shawtie.realtime.v2` call invalidation
+- fixed caller endpoint with participant-row authority
+- independent deadline-generation timeout fencing
+- same-device single media-owner tab with generation-fenced takeover
+- `shawtie.realtime.v2` call invalidation integrated with M2 dirty barrier and anti-entropy
 - dedicated `shawtie.call.v1` signaling
-- audio-only WebRTC
-- candidate-free SDP
-- server-validated relay-only ICE candidates
+- voice-only WebRTC with exactly one audio media section
+- candidate-free SDP with video/data-channel rejection
+- server-validated privacy-safe relay-only ICE candidates
 - relay-only TURN path
 - short-lived TURN credentials
-- Web Push background incoming-call reachability
+- order-independent `call_state_changed` Web Push background reconciliation
 - reconnect, signaling generation fencing, ICE restart
 - breakup/account-deletion/session/device-revocation/dissolution integration
 - physical Android acceptance
 
 C1 excludes video, group calls, screen sharing, call recording, voicemail, direct peer fallback, SFU/MCU, offline queued call initiation, and custom production E2EE.
 
+## Refined hardening decisions
+
+- participant rows are the sole durable caller/callee endpoint authority; no duplicate call-session endpoint columns
+- independent `deadline_generation` fences ring/connect/hard timeout work
+- endpoint-connected is monotonic and versionless; concurrent endpoint reports converge and first report cannot invalidate connect timeout
+- same-device multi-tab media ownership is generation-fenced locally; server selected-device authorization remains the backstop
+- C1 signaling accepts exactly one audio media section and rejects video/data-channel SDP
+- relay-only validation rejects direct candidate types and privacy-unsafe related/base-address leakage
+- shared Fastify WebSocket negotiation separates realtime v1/v2 and call v1 without weakening M2's 4 KiB app-frame bound
+- generic `call_state_changed` push reconciles canonical state and dismisses stale/reordered ringing notifications
+- `call.changed` participates in M2 dirty barrier and visible anti-entropy
+- raw internal security/lifecycle terminal reasons map to bounded public outcomes
+- already-issued TURN allocation lifetime is a documented bounded residual window after app authorization revocation
+- caller/callee microphone capture is tied to explicit local gestures; camera remains disabled in C1
+- browser autoplay failure is recoverable UI state, not call failure
+- output routing defaults to browser/OS; optional `setSinkId()` remains local only
+- push subscriptions rotate/reconcile per authenticated device without duplicate active routing; active endpoint identity is additionally keyed-fingerprinted for privacy-safe uniqueness
+- operational create/transport/push switches fail closed and never enable direct ICE
+- TURN/signaling/push resource budgets are explicit and privacy-safe
+- M3 real 0015/0016 are on main and the C1 final integrated closure is complete
+
+## Implementation evidence
+
+Source implementation is present for C1-A through C1-I. The branch now contains durable call authority and history, migrations 0017/0018, endpoint/session authorization, first-accept-wins, realtime v2 invalidation, dedicated call signaling, relay-only WebRTC, TURN rotation, generic Web Push reconciliation, keyed push endpoint fingerprints with key versioning, multi-tab media ownership, lifecycle/revocation termination, coarse endpoint failure reporting, PostgreSQL and worker integration suites, disposable local closure runners, a real-Chromium ownership harness, and the Android acceptance preflight.
+
+Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
+
+The isolated automated/local closure passed at `439b09f` using only documented 0015/0016 reservations. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25. A focused follow-up found one stale media-owner defect, fixed at `b29aaa1`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, C1 real Chromium 5/5, and integrated PostgreSQL/API/worker 111/111. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed. C1 is DONE and fast-forward merged to `main @ d44c595`.
+
 ## Acceptance gates
 
-- [ ] implementation starts from verified merged-M2 mainline or descendant
-- [ ] isolated C1 tests reserve only M3-owned 0015/0016 and do not copy/create placeholder M3 migrations
-- [ ] final integrated migrations 0001 through 0018 pass with `reserved=0`
-- [ ] existing foundation call tables are refined rather than replaced by a second aggregate
-- [ ] one non-terminal call per partnership is database-enforced
-- [ ] exactly one caller and one callee role are enforced per call
-- [ ] caller endpoint device is fixed at initiation
-- [ ] first eligible callee device to commit acceptance wins
-- [ ] non-winning callee devices cannot signal or obtain TURN credentials
-- [ ] simultaneous initiation cannot create two non-terminal calls
-- [ ] durable mutations use idempotency and expectedVersion where races require it
-- [ ] calls never auto-answer
-- [ ] no signaling socket is authorized before explicit acceptance
-- [ ] no TURN credential is issued before explicit acceptance
-- [ ] breakup_pending requires fresh explicit acceptance for every new call
-- [ ] account-deletion view-only state denies new calling and terminates current call authority
-- [ ] final dissolution removes call/signaling/TURN authority synchronously before cleanup
-- [ ] selected-device revocation prevents signaling reconnect and TURN refresh
-- [ ] random/foreign/old-partnership call IDs fail privacy-safely
-- [ ] ring timeout is durable and stale-safe
-- [ ] accepted-but-never-connected timeout is durable and stale-safe
-- [ ] hard stale-call timeout prevents permanent partnership call blockage
-- [ ] connectedAt is recorded only after both selected endpoints report connected
-- [ ] call duration uses trusted server timestamps
-- [ ] call history is partnership-scoped
-- [ ] final dissolution deletes call history
-- [ ] future partnership cannot access old call IDs/history
-- [ ] M2 `shawtie.realtime.v1` remains unchanged
-- [ ] C1-capable client negotiates `shawtie.realtime.v2` before calling UI is enabled
-- [ ] `call.changed` contains only opaque ID/version refresh metadata
-- [ ] stale v1 app/service-worker code is never treated as C1-capable
-- [ ] `shawtie.call.v1` enforces exact Origin, current session/device, accepted call, and selected endpoint
-- [ ] binary/oversized/unknown signaling frames fail closed
-- [ ] stale signaling generation cannot mutate current negotiation state
-- [ ] SDP is never persisted or logged
-- [ ] SDP forwarded by C1 contains no ICE candidate lines
-- [ ] ICE candidate strings are never persisted or logged
-- [ ] server rejects host, srflx, prflx, malformed, and unknown candidate types
-- [ ] only parsed `typ relay` candidates are forwarded
-- [ ] RTCPeerConnection uses `iceTransportPolicy: relay`
-- [ ] TURN outage never downgrades to direct peer connectivity
-- [ ] TURN credentials are short-lived and never persist in IndexedDB/cache/logs
-- [ ] TURN issuance/refresh rechecks current selected-device and lifecycle authorization
-- [ ] TURN/UDP works where available
-- [ ] TURN/TCP or TURN/TLS fallback works where deployed
-- [ ] signaling disconnect alone does not end healthy media
-- [ ] signaling process loss can recover from canonical call authority
-- [ ] perfect-negotiation glare handling passes
-- [ ] candidate-before-description buffering is generation-safe
-- [ ] relay-only ICE restart after network change is safe
-- [ ] Web Push payload contains no caller identity, call ID, partnership ID, SDP, ICE, or TURN data
-- [ ] push notification click never auto-accepts and fetches canonical current call
-- [ ] push routing requires current device/account authorization, not merely a stored subscription
-- [ ] explicit logout/device revocation/account lockout stops future call push routing
-- [ ] stale push cannot resurrect rejected/cancelled/missed/terminated call
-- [ ] foreground calls still work when push permission is denied
-- [ ] microphone permission denial is safe and creates no hidden media path
-- [ ] mute/unmute remains local transient state and is not sensitive durable history
-- [ ] call audio is never proxied or recorded by application servers
-- [ ] provider/signaling errors are privacy-safe and bounded
-- [ ] call create/signaling/TURN/push paths have abuse/rate bounds
-- [ ] full C1 contracts/domain/security suites pass
-- [ ] C1 PostgreSQL/API/worker matrix passes
-- [ ] real-browser signaling/WebRTC acceptance passes
-- [ ] mandatory physical Android C1 acceptance passes
-- [ ] full `npm run health` passes
-- [ ] `npm audit --audit-level=high` passes
-- [ ] no Unicode em dash is introduced in C1 repo docs/commits
-- [ ] diff/worktree hygiene and local/remote SHA parity pass
+- [x] implementation starts from verified merged-M2 mainline or descendant
+- [x] isolated C1 tests reserved only M3-owned 0015/0016 and did not copy/create placeholder M3 migrations
+- [x] real M3 migrations 0015/0016 are merged to main and reconciled into C1
+- [x] final integrated migrations 0001 through 0018 pass with `reserved=0`
+- [x] existing foundation call tables are refined rather than replaced by a second aggregate
+- [x] one non-terminal call per partnership is database-enforced
+- [x] exactly one caller and one callee role are enforced per call
+- [x] `call_participants` is the sole endpoint role/device authority and no duplicate endpoint columns are added to `call_sessions`
+- [x] caller endpoint device is fixed at initiation
+- [x] first eligible callee device to commit acceptance wins
+- [x] non-winning callee devices cannot signal or obtain TURN credentials
+- [x] simultaneous initiation cannot create two non-terminal calls
+- [x] durable mutations use idempotency and expectedVersion where races require it
+- [x] calls never auto-answer
+- [x] no signaling socket is authorized before explicit acceptance
+- [x] no TURN credential is issued before explicit acceptance
+- [x] breakup_pending requires fresh explicit acceptance for every new call
+- [x] account-deletion view-only state denies new calling and terminates current call authority
+- [x] final dissolution removes call/signaling/TURN authority synchronously before cleanup
+- [x] selected-device revocation prevents signaling reconnect and TURN refresh
+- [x] random/foreign/old-partnership call IDs fail privacy-safely
+- [x] ring/connect/hard work is fenced by independent `deadline_generation`, not mutable call version
+- [x] ring timeout is durable and stale-safe
+- [x] accepted-but-never-connected timeout remains live after only one endpoint-connected attestation
+- [x] endpoint-connected has no expectedVersion and concurrent endpoint reports converge
+- [x] hard stale-call timeout prevents permanent partnership call blockage
+- [x] connectedAt is recorded only after both selected endpoints report connected
+- [x] call duration uses trusted server timestamps
+- [x] call history is partnership-scoped
+- [x] final dissolution deletes call history
+- [x] future partnership cannot access old call IDs/history
+- [x] M2 `shawtie.realtime.v1` remains unchanged
+- [x] C1-capable client negotiates `shawtie.realtime.v2` before calling UI is enabled
+- [x] `call.changed` contains only opaque ID/version refresh metadata
+- [x] stale v1 app/service-worker code is never treated as C1-capable
+- [x] `shawtie.call.v1` enforces exact Origin, current session/device, accepted call, and selected endpoint
+- [x] binary/oversized/unknown signaling frames fail closed
+- [x] stale signaling generation cannot mutate current negotiation state
+- [x] SDP is never persisted or logged
+- [x] SDP forwarded by C1 contains no ICE candidate lines
+- [x] C1 SDP contains exactly one audio media section and rejects video/application/data-channel/extra media sections
+- [x] ICE candidate strings are never persisted or logged
+- [x] server rejects host, srflx, prflx, malformed, and unknown candidate types
+- [x] server rejects privacy-unsafe relay related/base-address leakage
+- [x] only parsed privacy-safe `typ relay` candidates are forwarded
+- [x] RTCPeerConnection uses `iceTransportPolicy: relay`
+- [x] TURN outage never downgrades to direct peer connectivity
+- [x] TURN credentials are short-lived and never persist in IndexedDB/cache/logs
+- [x] TURN issuance/refresh rechecks current selected-device and lifecycle authorization
+- [x] authorization loss denies later TURN refresh and any already-issued allocation is bounded by configured provider lifetime
+- [x] TURN/UDP works where available
+- [x] TURN/TCP or TURN/TLS fallback works where deployed
+- [x] signaling disconnect alone does not end healthy media
+- [x] signaling process loss can recover from canonical call authority
+- [x] perfect-negotiation glare handling passes
+- [x] candidate-before-description buffering is generation-safe
+- [x] relay-only ICE restart after network change is safe
+- [x] Web Push payload is generic `call_state_changed` and contains no caller identity, call ID, partnership ID, terminal state, SDP, ICE, or TURN data
+- [x] delayed/duplicate/reordered pushes reconcile canonical state and cannot resurrect stale ringing UI
+- [x] terminal/current reconciliation dismisses the generic ringing notification
+- [x] push notification click never auto-accepts and fetches canonical current call
+- [x] push routing requires current device/account authorization, not merely a stored subscription
+- [x] explicit logout/device revocation/account lockout stops future call push routing
+- [x] stale push cannot resurrect rejected/cancelled/missed/terminated call
+- [x] foreground calls still work when push permission is denied
+- [x] `call.changed` enters M2 dirty barrier and deliberately missed hint repairs through visible anti-entropy
+- [x] same-device tabs prove one media/signaling owner and generation-fenced takeover
+- [x] Call/Accept gestures gate microphone capture and failed/raced commands stop pre-acquired tracks
+- [x] camera access is disabled and video/data-channel negotiation fails closed
+- [x] microphone permission denial is safe and creates no hidden media path
+- [x] mute/unmute remains local transient state and is not sensitive durable history
+- [x] call audio is never proxied or recorded by application servers
+- [x] internal session/device/account-deletion/lifecycle terminal causes are not exposed verbatim in public history/projections
+- [x] shared WebSocket negotiation rejects zero/multiple/cross-family offers and preserves M2's 4 KiB application limit
+- [x] provider/signaling errors are privacy-safe and bounded
+- [x] call create/signaling/TURN/push paths have abuse/rate bounds
+- [x] full C1 contracts/domain/security suites pass
+- [x] C1 PostgreSQL/API/worker matrix passes
+- [x] focused real-Chromium C1 ownership/Permissions-Policy harness passes
+- [x] real-browser signaling/WebRTC acceptance passes where a real relay path is available
+- [x] mandatory physical Android C1 acceptance passes
+- [x] every legal/illegal durable state transition and exact terminal replay is tested
+- [x] autoplay-blocked remote audio recovers with explicit user gesture without durable state mutation
+- [x] push subscription replacement leaves only one active routing path per device
+- [x] operational transport disable fails closed without direct ICE fallback
+- [x] final integrated C1 closure runs only after real M3 0015/0016 are merged
+- [x] full `npm run health` passes
+- [x] `npm audit --audit-level=high` passes
+- [x] no Unicode em dash is introduced in C1 repo docs/commits
+- [x] diff/worktree hygiene and local/remote SHA parity pass
 
 # C2: Video Calling
 
-Status: DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION BLOCKED ON VERIFIED C1 CLOSURE
+Status: DESIGN COMPLETE. SOURCE IMPLEMENTATION NOT STARTED.
 
-Design branch: `feat/c2-video-calling`
+Branch:
 
-C1 design dependency: `feat/c1-voice-calling @ 6a416a51ee76743ae7d7810ed14a58a0e9f12fdf` (content-reconciled; runtime implementation must still rebase/create from final merged C1)
+`feat/c2-video-calling`
 
-Architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`
+Architecture:
 
-API/compatibility: `docs/api/C2_VIDEO_CALLING_API.md`
+`docs/architecture/C2_VIDEO_CALLING_DESIGN.md`
 
-Signaling compatibility: `docs/api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`
+API:
 
-Physical Android: `docs/testing/C2_ANDROID_ACCEPTANCE.md`
+`docs/api/C2_VIDEO_CALLING_API.md`
 
-Accepted ADR: ADR-015 Stable Video Transceiver and Camera Privacy
+Signaling:
 
-C2 source implementation may begin only after C1 is implemented, physically verified, and merged. Before implementation, the C2 branch must be reconciled with that verified C1 mainline.
+`docs/api/C2_VIDEO_SIGNALING_PROTOCOL.md`
 
-## Scope
+Physical Android:
 
-- enable durable call `kind = video` over verified C1 authority/history
-- explicit video-call initiation and acceptance UX
-- one stable video transceiver per video call
-- local/remote video rendering
-- camera on/off
-- front/rear switching where supported
-- generation-fenced camera acquisition/switch
-- proactive stop-on-background camera privacy
-- no silent foreground camera reacquisition
-- audio-first degradation under constrained network
-- relay-only video over C1 TURN/signaling
-- C1-only update-required compatibility
-- physical Android video acceptance
+`docs/testing/C2_ANDROID_ACCEPTANCE.md`
 
-C2 excludes voice-to-video mid-call upgrade, group calls, screen sharing, server video processing, SFU/MCU, recording, virtual backgrounds, beauty filters, server camera inventory, background camera capture, and direct peer fallback.
+ADR:
 
-## Refined hardening decisions
+`docs/adr/ADR-015-c2-video-signaling-and-camera-privacy.md`
 
-- deterministic camera constraint fallback ladder stops on permission/security failure
-- remote audio remains C1-owned and separate from muted video-only rendering
-- remote-video mute uses a grace/hysteresis state instead of inferring partner intent
-- optional Screen Wake Lock is progressive enhancement only
-- sustained CPU/resource pressure may downshift capture one-way with bounded sampling/cooldown; it never auto-disables audio or weakens privacy
-- C2 video-create/capture operational controls fail closed while C1 voice remains independently available
-- source implementation must recreate/rebase onto final verified C1 mainline
+Migration ownership:
 
-## Acceptance gates
+- no migration expected
+- no migration number reserved
+- canonical chain remains 0001 through 0018 unless implementation evidence proves new durable schema is required
 
-- [ ] C2 implementation starts only after verified C1 is merged
-- [ ] C2 reuses C1 call authority, selected-device model, history, realtime v2 invalidation, `shawtie.call.v1`, TURN, push, lifecycle, and deletion behavior
-- [ ] C2 reserves no migration number and rewrites no C1 migration
-- [ ] if a schema change is proven necessary, it is a new forward-only migration from the then-current integrated mainline
-- [ ] video call creation keeps the existing C1 one-non-terminal-call invariant
-- [ ] creating/ringing a video call does not open camera or microphone capture
-- [ ] incoming UI identifies the call as video before acceptance
-- [ ] no camera track starts without explicit local video intent and browser permission
-- [ ] remote peer cannot activate local camera
-- [ ] `kind = video` means video-capable durable intent, not server-authoritative camera-on state
-- [ ] a video-kind call may continue with one or both cameras off without durable downgrade to voice
-- [ ] one stable `sendrecv` video transceiver is used for the call lifetime
-- [ ] routine camera off/on/switch does not create new durable call mutations
-- [ ] camera off detaches/stops the local track and releases hardware where browser behavior permits
-- [ ] repeated camera on/off does not accumulate live tracks
-- [ ] `cameraGeneration` fences stale `getUserMedia()` and camera-switch results
-- [ ] stale acquisition cannot reactivate camera after camera-off
-- [ ] stale acquisition cannot reactivate camera after backgrounding
-- [ ] stale acquisition cannot reactivate camera after call end or authorization revocation
-- [ ] camera switching uses the existing sender and does not unnecessarily disturb audio
-- [ ] switch failure never silently selects a surprising camera
-- [ ] camera device labels and IDs remain local/transient and are never persisted or sent to API/signaling/logs/analytics
-- [ ] camera-facing preference is not durable server or IndexedDB state
-- [ ] negotiated resolution/frame rate/codec/RTP stats are not normal durable account metadata
-- [ ] local preview is muted, clearly local, and never server-captured
-- [ ] remote video is not mirrored by default
-- [ ] missing remote frames are not falsely interpreted as deliberate partner camera-off intent
-- [ ] unexpected local camera track end does not silently reacquire camera
-- [ ] background/hidden state proactively stops local camera
-- [ ] foreground return refreshes canonical call authority and keeps camera off until explicit local re-enable
-- [ ] orientation changes do not mutate durable call state or force renegotiation loops
-- [ ] audio remains usable when video is unavailable or intentionally off
-- [ ] WebRTC congestion control may reduce video while preserving audio-first behavior
-- [ ] no direct peer fallback occurs under video network degradation
-- [ ] video uses the same short-lived selected-endpoint TURN credentials as voice
-- [ ] TURN/UDP video path passes
-- [ ] TURN/TCP or TURN/TLS fallback passes where deployed
-- [ ] TURN unavailable fails closed without direct ICE
-- [ ] C2 reuses candidate-free SDP from C1
-- [ ] signaling server still rejects host/srflx/prflx/malformed candidates and forwards only relay candidates
-- [ ] C2 adds no camera-state frame to `shawtie.call.v1`
-- [ ] if implementation requires a new signaling frame/semantic, a reviewed `shawtie.call.v2` is introduced instead of mutating v1
-- [ ] camera on/off/switch never enters realtime v2
-- [ ] signaling reconnect does not end healthy video solely because the socket changed
-- [ ] process-loss recovery preserves C1 canonical authority
-- [ ] relay-only ICE restart after Wi-Fi/mobile transition is safe
-- [ ] C1-only client shows update-required and never silently answers video as voice
-- [ ] another compatible callee device may still win acceptance
-- [ ] no detailed camera/browser hardware inventory is persisted server-side
-- [ ] breakup_pending still requires fresh explicit acceptance
-- [ ] account-deletion overlay ends video-call authority through C1 and stops local tracks
-- [ ] selected-device/session revocation stops local camera/microphone and prevents signaling/TURN continuation
-- [ ] final dissolution closes call/signaling/TURN authority and stops/detaches all local video state
-- [ ] future partnership cannot access old video-call history/state
-- [ ] service worker never obtains camera/microphone access or caches call/video state as a media substitute
-- [ ] no captured frames, camera identifiers, SDP, ICE, TURN credentials, or peer IPs appear in logs/analytics/persistence
-- [ ] built-in recording remains absent
-- [ ] S1 endpoint-authentication handoff remains explicit
-- [ ] C2 browser capability matrix passes
-- [ ] C1 voice calling regression suite remains green
-- [ ] mandatory physical Android C2 acceptance passes
-- [ ] repeated camera cycles show no obvious track/resource leak
-- [ ] battery/thermal behavior has no obvious runaway regression in sustained synthetic physical testing
-- [ ] full `npm run health` passes
-- [ ] `npm audit --audit-level=high` passes
-- [ ] no Unicode em dash is introduced in C2 repo docs/commits
-- [ ] diff/worktree hygiene and local/remote SHA parity pass
+## Design gates
+
+- [x] C1 is verified and merged
+- [x] C2 reuses one durable call aggregate
+- [x] video call kind already exists in schema/contracts/history
+- [x] stale C1 client compatibility hazard identified
+- [x] video create/accept media-profile gate designed
+- [x] C1 signaling v1 remains frozen for voice
+- [x] video signaling v2 designed for multi-m-line ICE metadata
+- [x] video SDP policy is exactly one audio plus one video section
+- [x] candidate-free SDP remains mandatory
+- [x] relay-only ICE/TURN remains mandatory
+- [x] stable video transceiver design selected
+- [x] camera generation fencing defined
+- [x] camera background privacy boundary defined
+- [x] no durable camera/device/video state added
+- [x] no speculative migration reserved
+- [x] no voice-to-video upgrade in C2
+- [x] physical Android matrix designed
+
+## Implementation gates
+
+### C2-A Contracts and compatibility
+
+- [ ] add `video-v1` media profile
+- [ ] video create requires profile
+- [ ] video accept requires profile
+- [ ] voice request compatibility remains unchanged
+- [ ] add strict signaling-v2 schemas
+- [ ] add bounded m-line candidate locator fields
+- [ ] add `C2_VIDEO_ENABLED`
+
+### C2-B API and authority
+
+- [ ] stop hardcoding voice on create
+- [ ] persist validated video kind through existing repository
+- [ ] require profile before video endpoint selection
+- [ ] old C1 client cannot win video acceptance
+- [ ] endpoint authorization exposes call kind to signaling
+- [ ] no PostgreSQL migration added without architecture amendment
+
+### C2-C Signaling v2
+
+- [ ] video requires `shawtie.call.v2`
+- [ ] voice retains `shawtie.call.v1`
+- [ ] wrong subprotocol for call kind fails closed
+- [ ] video SDP exactly audio + video
+- [ ] application/data channel rejected
+- [ ] candidate-free SDP enforced
+- [ ] v2 candidate media locator forwarded safely
+- [ ] relay-only candidate parser unchanged
+- [ ] generation/backpressure/rate-limit behavior retained
+
+### C2-D Browser media engine
+
+- [ ] shared peer controller accepts call kind
+- [ ] video call creates stable video transceiver
+- [ ] camera controller is generation-fenced
+- [ ] camera on uses existing sender
+- [ ] camera off detaches/stops track
+- [ ] front/back switch uses replaceTrack path
+- [ ] stale acquisition/switch cannot attach
+- [ ] audio and remote audio path remain C1-derived
+- [ ] remote video rendering is separate from audio
+- [ ] no camera metadata leaves client
+
+### C2-E UI and permission
+
+- [ ] Video call action
+- [ ] Incoming video call wording
+- [ ] Accept video
+- [ ] Accept with camera off
+- [ ] local preview
+- [ ] remote video
+- [ ] camera on/off
+- [ ] camera switch where supported
+- [ ] camera unavailable/retry state
+- [ ] background stop and explicit foreground restart
+- [ ] Permissions Policy is camera self, microphone self
+- [ ] no camera wildcard
+
+### C2-F Reliability/security
+
+- [ ] Wi-Fi/mobile relay-only recovery
+- [ ] TURN UDP plus TCP/TLS fallback
+- [ ] signaling reconnect preserves healthy media
+- [ ] track-ended stays camera-off
+- [ ] multi-tab owner fences camera too
+- [ ] breakup_pending fresh acceptance
+- [ ] account deletion terminates all media
+- [ ] session/device revocation terminates all media
+- [ ] final dissolution terminates all media
+- [ ] transport kill switch remains fail-closed
+- [ ] video feature kill switch leaves voice healthy
+- [ ] server logs/db contain no camera/video-sensitive state
+
+### C2-G Automated closure
+
+- [ ] C2 focused suites pass
+- [ ] real PostgreSQL/API integration passes
+- [ ] real Chromium camera/signaling harness passes
+- [ ] retained C1 integrated closure passes
+- [ ] migrations 0001-0018 pass with `reserved=0`
+- [ ] repository health passes
+- [ ] high-severity audit passes
+- [ ] git diff/worktree hygiene passes
+- [ ] every C2 commit contains `[skip ci]`
+- [ ] no Unicode em dash introduced
+
+### C2-H Physical Android
+
+- [ ] all canonical C2 Redmi scenarios pass
+- [ ] bidirectional audio/video confirmed
+- [ ] front/back switch confirmed
+- [ ] background camera privacy confirmed
+- [ ] stale camera-generation fencing confirmed
+- [ ] old-client compatibility confirmed
+- [ ] multi-m-line ICE association confirmed
+- [ ] relay-only network/privacy confirmed
+- [ ] exact executable SHA recorded
+- [ ] evidence sanitized
+- [ ] local/remote parity clean
+
+C2 is DONE only when every implementation and physical gate above is closed.
 
 # R1: Relationship Space
 
@@ -1887,8 +2165,6 @@ Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3
 # S1: E2EE and Cryptographic Recovery
 
 Status: PLANNED
-
-Depends on verified M3, C1 Voice Calling, and C2 Video Calling.
 
 ## Scope
 

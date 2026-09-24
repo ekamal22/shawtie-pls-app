@@ -30,7 +30,7 @@ Private object storage receives ciphertext and random object identifiers.
 
 Use WebRTC for calls.
 
-Use TURN relay-first behavior where practical to reduce direct peer IP exposure.
+The historical baseline prefers TURN relay-first behavior where practical to reduce direct peer IP exposure. ADR-014 refines this to mandatory relay-only behavior for C1 voice calling, and C2 inherits that verified call substrate unless a later accepted ADR changes it.
 
 TURN credentials are short-lived and issued by the authenticated API only after call authorization. Permanent TURN credentials must never be embedded in the PWA.
 

@@ -156,13 +156,19 @@ See `DEVICE_AND_RECOVERY.md`.
 
 ## Media
 
-Client encrypts protected media before upload once E2EE is active.
+M3 requires protected media plaintext to be processed and encrypted on the authorized client before upload. The API and private object store receive ciphertext only.
 
-Object storage remains private.
+M3 does not define the permanent production media-key distribution protocol. S1 owns the reviewed production key envelope, device identity, rotation, enrollment, and recovery. Any M3 pre-S1 crypto adapter is test-only for synthetic fixtures and must be impossible to enable in production.
 
-Media retrieval requires authorized short-lived signed access even though stored objects are ciphertext.
+Object storage remains private. Object keys are random opaque values and must not contain account, partnership, container, relationship text, MIME description, or original filename.
 
-Object keys must not include private filenames or relationship text.
+Every new media download grant requires current authenticated authorization and is deliberately short-lived. A guessed media ID or an old partnership ID is not authorization.
+
+Unbound media is uploader-only. Message-bound media inherits current M1 container visibility. R1-bound media, including Voice Letter, inherits current R1 release/open/reveal visibility.
+
+Signed URLs, media plaintext, object bodies, filenames, ciphertext bodies, and decryption/key material must not enter logs, analytics, durable outbox payloads, or service-worker caches.
+
+Container/lifecycle deletion revokes new media access before asynchronous storage cleanup. Final partnership destruction uses the durable `partnership_media_objects` deletion target.
 
 ## Logging
 
@@ -350,31 +356,21 @@ PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notificatio
 
 Canonical C1 design: `../architecture/C1_VOICE_CALLING_DESIGN.md`.
 
+C1's first real-migration security and integration closure passed at `9b5c255`. After the physical stale-owner race exposed a signaling-authority defect, the fix landed at `b29aaa1` and the full integrated closure re-passed with `reserved=0`. Physical Redmi Note 9S relay-path acceptance, rejected-notification cleanup, stale-owner fencing, revocation/dissolution denial, log audit and audible bidirectional audio are complete.
+
 - durable call authority remains in PostgreSQL and authenticated HTTP
 - calls never auto-answer and signaling/TURN are unavailable before explicit acceptance
 - M2 v1 remains unchanged; C1 uses negotiated `shawtie.realtime.v2` only for content-free `call.changed` invalidation
-- SDP/ICE use dedicated `shawtie.call.v1` only for the fixed caller device and first accepted callee device
-- SDP is candidate-free and the signaling server accepts only parsed relay candidates
-- SDP, ICE, TURN credentials, raw push capability data, and media device labels are never persisted or logged
+- SDP/ICE use dedicated `shawtie.call.v1` only for the fixed caller participant device and first accepted callee participant device
+- participant rows are the sole durable endpoint-role/device authority
+- SDP is candidate-free, voice-only, and the signaling server accepts only parsed privacy-safe relay candidates; video, data-channel, and non-relay related/base-address leakage fail closed
+- SDP, ICE, TURN credentials, and media device labels are never persisted or logged; raw push capability material is persisted only in the device-bound subscription table and never logged
 - `iceTransportPolicy: relay` is mandatory and failure to obtain TURN does not downgrade to direct peer connectivity
-- TURN credentials are short-lived and current call/device/lifecycle authorization is rechecked on every issuance
-- push payloads are generic wakeup hints, never caller identity or call authority, and never auto-accept
-- push routing requires current account/device authorization; stale subscriptions alone do not authorize delivery
+- TURN credentials are short-lived and current call/device/lifecycle authorization is rechecked on every issuance; post-revocation refresh is denied and already-issued allocation lifetime is explicitly bounded
+- push payloads are generic `call_state_changed` reconciliation hints, never caller identity or call authority; service worker fetches canonical state before showing or retaining actionable ringing UI
+- push routing requires current account/device authorization; stale subscriptions alone do not authorize delivery, and active endpoint uniqueness is reinforced with a keyed endpoint fingerprint plus key version
 - random, foreign, old-partnership, and non-selected-device call access fails privacy-safely
+- one generation-fenced browser tab owns media/signaling for a selected device; local lease is not server authority
+- internal session/device/deletion/lifecycle terminal causes map to bounded public outcomes
 - account deletion, selected-device revocation, and final dissolution remove future signaling/TURN/call authority
 - C1 does not claim S1 endpoint cryptographic identity authentication; stable sensitive-use review remains required
-
-## C2 video-calling security boundary
-
-- C2 reuses verified C1 durable call, selected-device, signaling, TURN, push, lifecycle, and deletion authority
-- no camera capture before canonical acceptance and explicit local video intent
-- remote peer cannot activate local camera
-- `cameraGeneration` fences stale asynchronous capture/switch work
-- hidden/backgrounded app stops local camera capture and foreground return does not silently reacquire it
-- camera labels, device IDs, facing preference, permission state, frames, resolution, and RTP stats are not durable server data
-- video SDP remains candidate-free; signaling forwards only parsed relay candidates
-- `iceTransportPolicy: relay` remains mandatory and TURN failure never downgrades to direct peer connectivity
-- C2 adds no camera-state frame to realtime or `shawtie.call.v1`
-- C1-only clients show update-required rather than silently answering video as voice
-- built-in recording remains absent
-- S1 endpoint-identity review remains required before sensitive stable use

@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, SECOND-PASS HARDENED, IMPLEMENTATION NOT STARTED.**
+**DESIGN COMPLETE, SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ANDROID ACCEPTANCE COMPLETE. C1 IS DONE AND MERGED TO `main @ d44c595`.**
 
 Branch:
 
@@ -12,11 +12,11 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base.
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is complete. Isolated closure passed at `439b09f`. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25; a focused gap check then found one stale media-owner defect, fixed at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the full integrated closure re-passed with `reserved=0`. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are all physically confirmed. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
-M3 may proceed in parallel. The current M3 design branch `feat/m3-media-voice @ 4553be22` owns planned migrations 0015 and 0016. C1 owns planned migrations 0017 and 0018. Isolated C1 database validation uses the repository's proven reservation mechanism `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` rather than copying or fabricating M3 SQL. Final integrated C1 closure must run the real contiguous 0001 through 0018 chain with `reserved=0`.
+M3 proceeded in parallel and now owns merged migrations 0015 and 0016. C1 owns migrations 0017 and 0018. Isolated C1 database validation used the repository's proven reservation mechanism `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` rather than copying or fabricating M3 SQL. Final integrated C1 closure passed the real contiguous 0001 through 0018 chain with `reserved=0`.
 
 Canonical API contract: `docs/api/C1_CALLING_API.md`.
 
@@ -28,6 +28,20 @@ Accepted architecture refinements:
 
 - `docs/adr/ADR-013-call-signaling-transport.md`
 - `docs/adr/ADR-014-relay-only-call-privacy.md`
+
+Third-pass hardening closes implementation seams found by tracing this design against the merged M2 runtime:
+
+- `call_participants` is the sole durable endpoint-role/device authority; C1 does not add duplicate caller/callee endpoint columns to `call_sessions`
+- timeout work is fenced by an independent `deadline_generation`, so a first endpoint-connected attestation cannot accidentally invalidate the accepted-call connect timeout
+- endpoint-connected attestation is monotonic and does not require `expectedVersion`; concurrent endpoint reports converge under the call row lock
+- one browser tab owns microphone capture, peer connection, and signaling for one call/device at a time, with generation-fenced local failover
+- C1 SDP is voice-only: exactly one audio media section and no video or application/data-channel section
+- relay candidate validation also rejects related/base-address forms that would disclose non-relay peer network metadata
+- already-issued TURN allocation lifetime is treated as a bounded residual transport window after app authorization revocation
+- generic `call_state_changed` Web Push performs canonical reconciliation, so delayed or reordered pushes cannot resurrect stale ringing UI
+- `call.changed` participates in M2's dirty-counter synchronization barrier and visible anti-entropy
+- the existing global Fastify WebSocket plugin is refactored for protocol separation without weakening M2's 4 KiB application-frame limit
+- internal terminal causes are mapped to a bounded public outcome vocabulary instead of exposing session, device, deletion, or lifecycle security state
 
 ## Purpose
 
@@ -273,7 +287,7 @@ Incoming call notification may reach every current authorized device for the cal
 
 Acceptance is serialized transactionally.
 
-The first eligible device to commit acceptance becomes accepted_callee_device_id.
+The first eligible device to commit acceptance atomically fills the callee participant's `endpoint_device_id`.
 
 Later acceptance attempts return call_already_answered.
 
@@ -288,35 +302,46 @@ C1 does not implement call handoff between devices.
 
 ### Caller endpoint is fixed
 
-The device that creates the call becomes caller_device_id.
+The authenticated device that creates the call is persisted as the caller participant's `endpoint_device_id`.
 
 Another caller device may observe call history or current state but cannot take over the media session.
 
 A future device-handoff feature requires a separate design.
 
+### Participant rows are the endpoint authority
+
+C1 keeps one durable endpoint model. `call_sessions` owns aggregate call state, lifecycle deadlines, versioning, terminal reason, and trusted timestamps. `call_participants` owns exactly two role rows:
+
+- caller: initiating account plus fixed initiating `endpoint_device_id`
+- callee: partner account plus nullable `endpoint_device_id` until first successful acceptance
+
+The existing `call_sessions.initiated_by_account_id` remains compatibility/initiator metadata and must match the caller participant account. C1 does not add duplicate caller/callee account or endpoint-device authority columns to `call_sessions`.
+
+Every endpoint authorization query resolves through the participant role row and current account-device ownership.
+
 ### Background ringing uses Web Push
 
 A suspended or closed PWA cannot rely on a live WebSocket.
 
-C1 therefore introduces a minimal reusable Web Push subscription and delivery substrate.
+C1 uses a minimal reusable Web Push subscription and delivery substrate. Payloads do not include partner identity, call identity, partnership identity, terminal state, SDP, ICE, TURN credentials, call duration, or lifecycle reason.
 
-Push payloads are opaque and privacy-minimized. They do not include:
+~~~json
+{
+  "v": 1,
+  "type": "call_state_changed"
+}
+~~~
 
-- partner display name
-- username
-- message content
-- relationship content
-- SDP
-- ICE
-- TURN credentials
-- call duration
-- lifecycle reason
+The same event shape covers ringing and later state changes. The service worker never infers call state from delivery order.
 
-A call push may contain only an event kind plus opaque event or call retrieval identifier as required by the implementation.
+On every call-state push, the service worker performs a same-origin, credentialed, no-store `GET /api/v1/calls/current` under a bounded timeout:
 
-The service worker displays generic incoming-call text. The push payload does not need a call ID: notification click opens the trusted application, validates the session, and fetches `/api/v1/calls/current` before rendering actionable state.
+1. incoming + ringing shows or replaces one generic notification with a fixed non-identifying tag
+2. any other canonical state closes the generic call notification
+3. canonical fetch/auth failure exposes no accept/reject action and does not claim a call is still ringing
+4. notification click opens/focuses the trusted app and canonical state is fetched again before actions render
 
-Foreground calling does not require push permission because realtime v2 supplies call.changed. If Web Push is unsupported or the user denies notification permission, foreground calls still work, while background incoming-call reachability is explicitly degraded and the UI must not pretend otherwise.
+Delayed, duplicate, or reordered push deliveries therefore converge on PostgreSQL authority. Foreground calling remains available without push permission through realtime v2.
 
 Push endpoints and subscription keys are SENSITIVE capability data and are never logged.
 
@@ -328,56 +353,62 @@ When offline, the UI shows calling as unavailable.
 
 This prevents a delayed queued operation from creating a call after its consent or lifecycle context is stale.
 
+### Same-device multi-tab media ownership
+
+M2 allows several tabs to hold ordinary realtime sockets. C1 does not allow those tabs to compete for one device's microphone and selected call endpoint.
+
+For each `callId + deviceId`:
+
+- one tab owns microphone capture, `RTCPeerConnection`, `shawtie.call.v1`, and endpoint-connected reporting
+- `navigator.locks`, where available, is an outer efficiency lock
+- IndexedDB stores `ownerTabId`, monotonic `ownerGeneration`, and lease expiry/heartbeat
+- `BroadcastChannel` distributes observation/takeover hints only
+- observer tabs render canonical state but do not capture, signal, or report connection
+- takeover occurs only after explicit release or lease expiry, increments `ownerGeneration`, re-fetches canonical state, and opens a fresh signaling generation
+- callbacks from an older owner generation are ignored and tear down their tracks/sockets
+
+The local lease is not server authority. Selected-device authorization and one active signaling socket per call/device remain the security backstop.
+
 ## Durable call model
 
-The planned calls aggregate contains at least:
+C1 refines the existing `call_sessions`, `call_participants`, and `call_events` aggregate.
+
+`call_sessions` runtime fields include:
 
 - id
 - partnership_id
-- caller_account_id
-- callee_account_id
-- caller_device_id
-- accepted_callee_device_id, nullable until accepted
-- call_kind
-- state
+- initiated_by_account_id
+- call_type
+- status
 - version
-- initiated_at
+- deadline_generation
 - ring_expires_at
-- accepted_at, nullable
-- caller_connected_at, nullable
-- callee_connected_at, nullable
-- connected_at, nullable
-- ended_at, nullable
-- terminal_reason, nullable
+- connect_expires_at
+- hard_expires_at
+- connected_at
+- ended_at
+- terminal_reason
 - created_at
 - updated_at
 
-call_kind supports the forward-compatible vocabulary voice and video, but C1 service policy rejects video creation until C2.
+`call_participants` runtime fields include:
 
-The durable state vocabulary is:
+- call_session_id
+- partnership_id
+- account_id
+- role: caller or callee
+- endpoint_device_id, non-null for caller and nullable for callee until acceptance
+- accepted_at
+- connected_at
+- left_at
 
-~~~text
-ringing
-accepted
-connected
-ended
-~~~
+`call_type` keeps the forward-compatible voice/video vocabulary, but C1 rejects video creation until C2.
 
-Terminal_reason distinguishes:
+Durable states are `ringing`, `accepted`, `connected`, and terminal `ended`.
 
-- rejected
-- cancelled
-- missed
-- completed
-- failed
-- authorization_revoked
-- partnership_terminated
-- account_deletion
-- session_revoked where appropriate for endpoint loss
+Internal `terminal_reason` may distinguish rejected, cancelled, missed, completed, failed, authorization_revoked, partnership_terminated, account_deletion, and session_revoked.
 
-A terminal call has state ended.
-
-The model intentionally avoids storing a large state vocabulary when the terminal reason carries the durable outcome.
+Internal terminal reasons are not a public projection. The API maps them to a smaller privacy-safe outcome vocabulary.
 
 ## State transitions
 
@@ -391,8 +422,8 @@ Canonical durable states are `ringing`, `accepted`, `connected`, and terminal `e
 | ringing | cancel | fixed caller device | ended | `cancelled` |
 | ringing | ring timeout | durable worker | ended | `missed`; fenced by expected version/generation |
 | ringing | lifecycle/device authorization loss | server lifecycle/revocation path | ended | bounded authorization/partnership terminal reason |
-| accepted | first endpoint-connected report | one selected endpoint | accepted | record endpoint timestamp once; no connectedAt yet |
-| accepted | second endpoint-connected report | other selected endpoint | connected | trusted `connectedAt`; set hard expiry |
+| accepted | first endpoint-connected attestation | one selected endpoint | accepted | record participant timestamp; version and deadline generation unchanged |
+| accepted | second endpoint-connected attestation | other selected endpoint | connected | set server `connectedAt`; increment version and deadline generation; set hard expiry |
 | accepted | end | either selected endpoint | ended | `completed`; duration remains absent if never connected |
 | accepted | fail | either selected endpoint | ended | `failed` with coarse category only |
 | accepted | connect timeout | durable worker | ended | `failed`; fenced by expected version/generation |
@@ -403,42 +434,40 @@ Canonical durable states are `ringing`, `accepted`, `connected`, and terminal `e
 | connected | lifecycle/device authorization loss | server lifecycle/revocation path | ended | authorization/partnership terminal reason |
 | ended | any mutation | none | ended | immutable terminal state; exact replay may return prior result |
 
-Every state-changing transition:
+Every aggregate state-changing transition locks the call row, verifies account/device/lifecycle authority, checks `expectedVersion` unless it is an exact replay or endpoint-connected attestation, uses trusted server time, increments call version once, and emits bounded history/invalidation metadata.
 
-- locks the call row
-- verifies current account and, where required, selected device
-- verifies partnership membership/lifecycle authority
-- checks `expectedVersion` unless the request is an exact lost-response replay
-- uses trusted server time
-- increments call version exactly once for the committed transition
-- appends bounded call-event metadata where required
-- writes content-free `call.changed` outbox invalidation
+Endpoint-connected attestation is a monotonic selected-participant fact, not an optimistic aggregate command. It does not require `expectedVersion`. Under the call row lock, participant `connected_at` is set once. The first report leaves call `version` and `deadline_generation` unchanged. The second distinct selected endpoint transitions to `connected`, increments `version` once, advances `deadline_generation`, and emits invalidation.
 
-Timeout workers never infer authority from their payload alone. They reload the row and become no-ops when state/version/generation no longer matches.
+Timeout workers reload the call and verify expected state, deadline, and `deadline_generation`.
 
 ## Connected evidence
 
-The server cannot inspect whether voice packets actually flowed.
+Each selected endpoint may attest that its browser reached WebRTC `connectionState === "connected"`.
 
-For trustworthy history, both selected endpoint devices report WebRTC connectionState connected through an authenticated HTTP command.
+The server records participant `connected_at` with trusted server time and sets aggregate `connected_at` only after both selected endpoint rows are attested.
 
-The server records caller_connected_at and callee_connected_at using trusted server time.
+This is trusted server receipt time, not cryptographic proof that audible media flowed. A malicious authorized endpoint can lie about its local state. History therefore means "both endpoints reported connected".
 
-connected_at is set only when both selected endpoints have reported connected for the current accepted call.
+If only one endpoint attests before the connect deadline, the call remains `accepted` and no connected duration is invented.
 
-If only one endpoint reports connected before the call ends, the call remains accepted and history does not invent a connected duration.
+## Deadline generation and timeout fencing
 
-This makes call duration conservative rather than client-asserted.
+Server deadlines:
 
-## Ring timeout
+- `ring_expires_at`: unanswered ringing becomes missed
+- `connect_expires_at`: accepted without both endpoint attestations becomes failed
+- `hard_expires_at`: generous operational ceiling for connected state
 
-A ringing call has a server-created ring_expires_at.
+C1 adds monotonic `deadline_generation`, independent from call `version`.
 
-The initial timeout is configurable rather than embedded as a protocol constant.
+1. create schedules ring timeout with current deadline generation
+2. accept advances generation and schedules connect timeout
+3. first endpoint-connected attestation does not advance generation, so connect timeout remains valid
+4. second endpoint attestation advances generation and schedules hard expiry
+5. terminal transitions advance generation or otherwise invalidate the old state/generation
+6. workers re-read state/deadline/trusted time under lock
 
-The worker owns timeout finalization. It changes an unanswered ringing call to ended with terminal_reason missed only when the expected call version and state still match.
-
-A stale timeout job becomes a safe no-op after accept, reject, cancel, or lifecycle termination.
+This prevents a first endpoint report from accidentally stranding an accepted call by fencing out its connect timeout.
 
 ## Idempotency
 
@@ -466,12 +495,12 @@ The database remains the final serialization boundary.
 
 ## Signaling lifecycle
 
-The signaling socket may open only after accepted_callee_device_id is set.
+The signaling socket may open only after the callee participant's `endpoint_device_id` is selected.
 
 Upgrade authorization verifies that the current device is either:
 
-- caller_device_id for caller_account_id
-- accepted_callee_device_id for callee_account_id
+- caller participant `endpoint_device_id` for the caller account
+- callee participant `endpoint_device_id` for the callee account
 
 One call signaling connection per selected device is active at a time.
 
@@ -483,39 +512,50 @@ Signaling generations are transient negotiation fencing. They do not replace dur
 
 ## Signaling deployment without Redis
 
-C1 does not add Redis.
+C1 does not add Redis. The initial signaling hub remains in-memory inside the API process.
 
-The initial signaling hub is in-memory inside the API process.
+The first stable deployment may run one signaling API replica. Multi-replica deployment requires verified call-ID affinity so both endpoints reach the same process. Affinity is deployment routing, not authorization. A shared ephemeral broker requires a later ADR; SDP/ICE are not forced through PostgreSQL NOTIFY.
 
-The first stable C1 deployment may run one API signaling replica. For more than one API instance, the deployment must provide verified deterministic affinity for the signaling path so both endpoints for one call reach the same process, keyed by the opaque call ID.
+### Shared Fastify WebSocket upgrade policy
 
-This is an explicit deployment requirement, not an authorization mechanism.
+Before C1, the merged M2 API installed one global `@fastify/websocket` server with a 4 KiB transport `maxPayload` and a global `handleProtocols` accepting only `shawtie.realtime.v1`.
 
-If the production platform cannot provide reliable call-path affinity, a shared ephemeral signaling broker requires a new architecture review and ADR before scale-out. SDP and ICE must not be forced through PostgreSQL NOTIFY.
+The C1 implementation refactors that shared transport seam as follows:
+
+- supported subprotocol constants are `shawtie.realtime.v1`, `shawtie.realtime.v2`, and `shawtie.call.v1`
+- each connection offers exactly one application subprotocol; zero, multiple, or unknown offers fail
+- each route asserts the exact negotiated protocol it owns
+- the transport ceiling may rise if required for C1 SDP, but M2 v1/v2 still enforce their 4 KiB application-frame bound before JSON interpretation
+- call signaling separately enforces whole-frame, SDP, candidate, rate, and generation ceilings
+- per-message compression stays disabled
+
+Tests prove cross-protocol offers fail closed and C1 cannot weaken M2 frame limits.
 
 ## WebRTC negotiation
 
-The browser uses the standard perfect-negotiation pattern.
+The browser uses standard perfect negotiation. Caller is the initial offerer and impolite peer; callee is polite.
 
-Initial roles:
+C1 is voice-only:
 
-- caller is the initial offerer
-- callee is the polite peer
-- caller is the impolite peer for collision handling
+- one audio transceiver/media section
+- exactly one audio `m=` section in transmitted SDP
+- `m=video` rejected
+- `m=application` and data channels rejected
+- unexpected extra media sections rejected
+- candidate/end-of-candidates lines prohibited in SDP
 
-The implementation must still tolerate negotiationneeded glare and ICE restarts.
+C2 must explicitly relax this policy.
 
-The peer connection is audio-only in C1.
+Local media consent:
 
-Recommended audio constraints are hints, not authorization rules:
+- caller microphone capture only from explicit Call gesture
+- callee microphone capture only from explicit Accept gesture
+- pre-acquired local track may exist while HTTP completes, but signaling/TURN/remote path remains unavailable until server acceptance
+- failed or raced create/accept stops the track immediately
+- C1 never requests camera permission
+- browser Permissions Policy limits microphone to trusted origin and disables camera until C2
 
-- echo cancellation
-- noise suppression
-- automatic gain control where supported
-
-Device permission denial is handled as a local failure and may terminate the call with a bounded generic reason.
-
-Raw local media device labels are not persisted by the server.
+Audio processing constraints remain hints. Device permission denial is a local failure with bounded generic outcome. Device labels are not persisted.
 
 ## Browser audio playback and output routing
 
@@ -544,9 +584,9 @@ Audio output routing:
 
 C1 defines server-side operational controls that fail closed without weakening privacy:
 
-- `callCreateEnabled`: blocks new call creation while existing calls may continue
-- `callTransportEnabled`: blocks new acceptance, signaling upgrade, and TURN issuance/refresh; no direct-connect fallback is allowed
-- `callPushEnabled`: disables background Web Push delivery while foreground realtime calling remains available
+- `C1_CALLING_ENABLED`: blocks new call creation while existing calls may continue according to their current authority
+- `C1_TRANSPORT_ENABLED`: blocks new acceptance, signaling upgrade, and TURN issuance/refresh; no direct-connect fallback is allowed
+- Web Push availability is configuration-driven through the C1 VAPID public/private configuration; if push is unavailable, foreground realtime calling remains available
 
 These are operator controls, not browser authority. Disabling a control never rewrites a call to another transport and never enables direct peer ICE.
 
@@ -575,22 +615,22 @@ Policy must bound provider abuse/cost without exposing call existence:
 - bounded signaling frame and ICE candidate rate/count
 - bounded TURN credential issuance/refresh frequency
 - short TURN credential TTL
-- per-account/device/partnership call-create/ring rate limits
+- per-account/network/partnership call-create limits, plus separate signaling, TURN, and push registration/delivery bounds
 - bounded Web Push delivery attempts per authoritative incoming-call event
 
 Operational metrics may aggregate call outcomes, setup latency, signaling reconnects, TURN issuance/failure, push delivery category, and relay transport class. Never record SDP, raw ICE, peer IP, TURN secrets, push endpoint, device label, or partner identity in analytics.
 
 ## Cross-milestone integration choreography
 
-C1 source work may proceed in parallel with M3, but C1 cannot perform final integrated closure or merge while 0015/0016 are only reservations.
+C1 source work proceeded in parallel with M3. M3 and C1 are now both merged. Final integrated closure and physical acceptance are complete, and C2 may build on the verified post-C1 mainline.
 
 Required order:
 
-1. M3 lands real migrations 0015/0016 on main
-2. C1 reconciles onto that mainline without rewriting its own 0017/0018
-3. reservation-only C1 tests are replaced by the real contiguous migration chain
-4. C1 final closure runs 0001-0018 with `reserved=0`
-5. only after C1 source, browser, physical Android, and documentation closure merge may C2 implementation begin
+1. M3 landed real migrations 0015/0016 on main
+2. C1 reconciled onto that mainline without rewriting its own 0017/0018
+3. the real contiguous migration chain replaced reservation-only final validation
+4. C1 final closure passed 0001-0018 with `reserved=0`
+5. only after C1 physical Android and documentation closure may C1 merge and C2 implementation begin
 
 If M3 changes a seam C1 depends on, C1 adapts forward; it never copies or pins private M3 migration SQL.
 
@@ -605,11 +645,12 @@ C1 therefore uses candidate-free SDP descriptions:
 3. the signaling server rejects any SDP frame that still contains candidate lines
 4. candidates are sent only through `signal.ice_candidate`
 5. the signaling server parses every candidate and accepts only `typ relay`
-6. host, srflx, prflx, malformed, or unknown candidate types fail the current signaling generation
+6. relay candidate serialization exposing a non-relay related/base address through `raddr`, `rport`, or an equivalent reviewed extension is rejected
+7. host, srflx, prflx, malformed, unknown, or privacy-unsafe relay candidates fail the signaling generation
 
 Candidate strings remain SENSITIVE transient data and are never persisted or logged.
 
-This prevents a modified/stale client from smuggling direct peer candidates through the SDP path.
+This blocks direct-candidate smuggling and avoidable peer-network metadata disclosure through nominal relay candidates. Physical-browser acceptance must prove the supported Chrome candidate form still passes.
 
 ## Connection and stale-call bounds
 
@@ -681,6 +722,8 @@ The frame contains no call state, partner display name, SDP, ICE, device network
 
 The client responds by fetching canonical call state through HTTP.
 
+For v2, `call.changed` increments the same M2 dirty counter used by the race-free live barrier. Initial sync, reconnect repair, listener-reset repair, and visible anti-entropy include `GET /api/v1/calls/current`. An invalidation arriving during sync changes the dirty counter and forces another pass before live mode.
+
 Rollout rules:
 
 - server supports v1 and v2 during transition
@@ -751,17 +794,20 @@ C1 adds reusable push subscription persistence associated with account and devic
 
 A subscription record stores:
 
-- opaque ID
+- device_id as the durable row identity
 - account_id
-- device_id
 - endpoint capability URL
+- keyed endpoint fingerprint
+- endpoint fingerprint key version
 - p256dh key
 - auth key
 - expiration time when provided
 - created_at
+- updated_at
 - last_success_at
+- last_failure_at
 - failure_count
-- disabled_at
+- revoked_at
 
 Subscription endpoint and keys are SENSITIVE.
 
@@ -771,7 +817,7 @@ Permanent provider failure disables or removes the subscription idempotently.
 
 Push delivery failure never changes call authority.
 
-Payload version 1 is generic and privacy-minimized, conceptually only `{ v: 1, type: "incoming_call" }`. Caller identity and call state are fetched from canonical HTTP after the app opens.
+Payload version 1 is generic and privacy-minimized: `{ v: 1, type: "call_state_changed" }`. Caller identity, call identity, and call state are fetched from canonical HTTP. The same payload shape can also dismiss stale ringing state, so push delivery order is never product order.
 
 Explicit logout, device revocation, account lockout, and permanent subscription-provider invalidation disable routing. Provider 404/410-style permanent failures are idempotent subscription cleanup.
 
@@ -779,7 +825,7 @@ Foreground delivery still uses M2 realtime.
 
 ## TURN provider boundary
 
-The API depends on a TurnCredentialProvider interface.
+The API depends on a `TurnCredentialProvider` interface.
 
 The provider returns:
 
@@ -793,6 +839,12 @@ The server owns provider secrets.
 TURN credential responses use Cache-Control: private, no-store and are never stored in IndexedDB.
 
 The provider abstraction allows self-hosted coturn or a managed service without changing call domain rules.
+
+Application authorization revocation is synchronous, but an already issued TURN credential or established allocation may remain usable until client teardown or provider expiry. C1 does not claim instant network-layer revocation.
+
+Deployment requires short credential TTL, bounded allocation lifetime/refresh, no refresh after authorization loss, best-effort provider revoke when supported, and immediate honest-client teardown on canonical terminal/revoked state. Correctness does not depend on provider-specific active revocation.
+
+The residual relay window is measured in disposable acceptance using accelerated policy.
 
 ## Privacy and cryptographic boundary
 
@@ -858,9 +910,9 @@ C1 owns two forward-only migration numbers coordinated with parallel M3 ownershi
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-M3 owns 0015 and 0016 on its parallel design/implementation path.
+M3 owns merged migrations 0015 and 0016.
 
-Before the real M3 migrations are integrated, isolated C1 database tests may set:
+For historical isolated validation before the real M3 migrations were integrated, C1 database tests could set:
 
 ~~~text
 SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
@@ -884,17 +936,18 @@ with `reserved=0`.
 
 Refine the existing `call_sessions`, `call_participants`, and `call_events` foundations rather than creating a second call model.
 
-Planned durable additions include:
+Implemented durable additions include:
 
 - call `version`
+- independent `deadline_generation`
 - `ring_expires_at`
 - `connect_expires_at`
 - `connected_at`
 - `terminal_reason`
 - `hard_expires_at`
 - trusted `updated_at`
-- participant role
-- selected endpoint device ID
+- participant role as the sole caller/callee endpoint authority
+- participant `endpoint_device_id`; no duplicate endpoint-device columns on `call_sessions`
 - participant accepted/connected timestamps
 - one non-terminal call per partnership partial uniqueness
 - one caller and one callee participant per call
@@ -910,23 +963,43 @@ Add reusable device-bound Web Push subscription persistence for incoming-call re
 
 Persist only the capability data required by Web Push:
 
-- opaque subscription ID
 - account ID
-- device ID
+- device ID, which is the row identity
 - endpoint capability URL
-- keyed endpoint fingerprint for uniqueness
+- keyed endpoint fingerprint for active-route uniqueness
+- endpoint fingerprint key version
 - p256dh key
 - auth key
 - provider expiration when present
-- created/updated/last-success timestamps
+- created/updated/last-success/last-failure timestamps
 - failure count
-- disabled timestamp
+- revoked timestamp
 
 Subscription capability data is SENSITIVE/SECRET-like operational material and is never logged.
 
 Push delivery remains outbox/worker driven. No second durable notification authority is introduced.
 
-## Planned implementation slices
+## Concrete implementation target map
+
+~~~text
+packages/domain/src/call/
+packages/contracts/src/calls/
+packages/db/src/repositories/calls.ts
+packages/db/src/repositories/push-subscriptions.ts
+packages/db/migrations/0017_calling_runtime.sql
+packages/db/migrations/0018_push_runtime.sql
+apps/api/src/modules/calls/
+apps/api/src/modules/notifications/   extend existing push boundary
+apps/worker/src/calls/
+apps/web/src/features/calling/
+apps/web/public/sw.js                 add canonical call-state push reconciliation
+~~~
+
+Pure rules stay in domain, wire schemas in contracts, transaction-aware SQL in db, HTTP/signaling orchestration in API, durable timeout/push side effects in the existing worker, and media/tab ownership in web. No provider SDK enters domain packages.
+
+The shared `apps/api/src/application.ts` WebSocket registration seam is implemented with explicit protocol-family negotiation, route-level exact-protocol rechecks, compression disabled, and M2's application-level 4 KiB frame bound preserved.
+
+## Implemented source slices
 
 ### C1-A Domain and contracts
 
@@ -943,10 +1016,11 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 ### C1-B Persistence and deletion integration
 
 - refine existing call_sessions/call_participants/call_events aggregate
+- participant-role endpoint authority with no duplicate session endpoint columns
 - one non-terminal call per partnership invariant
 - selected-device integrity
 - trusted timestamps
-- ring/connect/hard-timeout durable work
+- independent deadline_generation fencing for ring/connect/hard-timeout durable work
 - call history indexes
 - push subscription persistence
 - final-dissolution cleanup target
@@ -959,7 +1033,7 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 - accept
 - reject
 - cancel
-- endpoint-connected report
+- monotonic endpoint-connected attestation without expectedVersion
 - end
 - TURN credentials
 - exact idempotency and expectedVersion behavior
@@ -968,8 +1042,9 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 
 - shawtie.call.v1
 - exact Origin and session authentication
+- shared Fastify upgrade-policy refactor with route-owned exact protocol checks
 - selected-device authorization
-- bounded candidate-free SDP and relay-only ICE frames
+- bounded candidate-free, voice-only SDP and privacy-safe relay-only ICE frames
 - perfect-negotiation forwarding
 - reconnect generation fencing
 - backpressure and rate limits
@@ -985,6 +1060,7 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 - audio element lifecycle including autoplay-blocked `Tap to hear` recovery
 - default OS/browser output routing with optional local `setSinkId()` only where supported
 - mute control
+- same-device multi-tab media-owner lease and owner-generation fencing
 - connection state
 - safe teardown
 
@@ -1001,9 +1077,10 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 
 - browser subscription lifecycle, replacement, startup reconciliation, and best-effort `pushsubscriptionchange`
 - worker delivery
-- opaque incoming-call push
+- generic call_state_changed push
+- service-worker canonical current-call reconciliation and notification replacement/dismissal
 - notification click routing
-- stale call suppression after canonical fetch
+- stale and reordered push suppression through canonical fetch
 - provider failure cleanup
 
 ### C1-H Reliability and lifecycle hardening
@@ -1020,26 +1097,27 @@ Push delivery remains outbox/worker driven. No second durable notification autho
 - signaling process loss
 - network change
 - ICE restart
-- TURN expiry
+- TURN expiry and bounded post-revocation residual allocation lifetime
 - operational call-create/transport/push controls
 - remote-audio autoplay recovery
 
 ### C1-I Closure harness and device acceptance
 
-Planned command surface:
+Implemented command surface:
 
 ~~~text
 npm run test:c1
-npm run test:c1:security
 npm run test:c1:postgres
-npm run test:c1:browser
 npm run test:c1:local
+npm run test:c1:browser:e2e
 npm run test:c1:closure
+npm run test:c1:device:prepare
+npm run test:c1:device:cleanup
 npm run health
 npm audit --audit-level=high
 ~~~
 
-These are design targets until implemented.
+The isolated automated/local closure passed at `439b09f` with only M3-owned 0015/0016 reserved. The first real-migration integrated closure passed at `9b5c255`. After the physical stale-owner gap exposed a real defect, the fix landed at `b29aaa1` and `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, including C1 real Chromium 5/5 and integrated PostgreSQL/API/worker 111/111. Redmi Note 9S acceptance and all focused follow-up evidence, including audible bidirectional audio, are complete.
 
 ## Acceptance boundary
 
@@ -1049,22 +1127,31 @@ C1 is DONE only when:
 - isolated C1 migration validation uses only documented 0015/0016 reservations and final integrated migrations 0001 through 0018 pass with `reserved=0`
 - call authorization and cross-partnership denial are proven
 - first-accept-wins is proven under concurrency
+- participant rows are the single durable endpoint authority and no duplicate call-session endpoint columns exist
+- concurrent endpoint-connected attestations converge without expectedVersion conflicts
+- one endpoint attestation does not invalidate the accepted-call connect timeout
 - calls never auto-answer
 - pre-accept signaling and TURN issuance are impossible
 - SDP, ICE, TURN secrets, and push endpoints are absent from logs
 - realtime v1 is not silently mutated; C1 requires negotiated realtime v2
-- SDP carries no ICE candidate lines and only parsed relay candidates are forwarded
+- SDP carries no ICE candidate lines, contains exactly one audio media section, and cannot negotiate video or data channels
+- only privacy-safe parsed relay candidates are forwarded; related/base-address leakage is rejected
 - direct peer connectivity is not used
 - TURN UDP and at least one restricted-network fallback are proven where the deployment supports them
 - signaling reconnect and process-loss recovery are safe
 - lifecycle and deletion races pass
-- Web Push stale-call behavior is safe and push-denied foreground calling still works
-- ring, connect, and hard-expiry scheduled actions cannot strand or resurrect calls
+- Web Push uses order-independent call_state_changed canonical reconciliation; stale or reordered delivery cannot resurrect ringing UI
+- push-denied foreground calling still works
+- call.changed participates in M2 dirty-barrier and visible anti-entropy repair
+- same-device multi-tab behavior has one media/signaling owner and generation-fenced takeover
+- internal terminal causes are not exposed through public outcome projections
+- ring/connect/hard-expiry actions use deadline_generation
+- authorization loss denies new TURN refresh immediately and any existing allocation is bounded by provider lifetime
 - physical Android voice calling passes
 - full repository health passes
 - high-severity dependency audit passes
 
-C1 design completion is not C1 implementation completion.
+C1 source implementation completion is not C1 acceptance completion or DONE.
 
 ## C2 handoff
 

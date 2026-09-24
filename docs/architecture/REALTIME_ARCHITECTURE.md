@@ -19,7 +19,7 @@ The concrete M2 implementation is defined in:
 - `M2_REALTIME_OFFLINE_DESIGN.md`
 - `../api/M2_REALTIME_PROTOCOL.md`
 
-Implementation status: M2 realtime/offline closure is complete and merged. C1 design adds an explicitly negotiated realtime v2 call invalidation without reopening M2 v1 semantics.
+Implementation status: M2 realtime/offline closure is complete and merged. C1 uses negotiated realtime v2 without reopening M2 v1 semantics. After a physical stale-owner race exposed a media-owner/signaling takeover defect, the fix at `b29aaa1` added shared lease verification and the full integrated closure re-passed. Redmi Note 9S realtime, signaling-interruption, stale-owner and overall physical acceptance evidence are complete. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 M2 uses the official Fastify WebSocket integration, the existing HttpOnly session cookie, exact trusted-Origin validation, server-derived scope, and one dedicated PostgreSQL LISTEN connection per API process.
 
@@ -160,6 +160,10 @@ C1 introduces `shawtie.realtime.v2`, which preserves v1 behavior and adds only `
 SDP, ICE, TURN credentials, device labels, IP/network data, and call-control mutations never enter the ordinary realtime channel.
 
 After explicit call acceptance, C1 uses the separate authenticated `shawtie.call.v1` WebSocket at `/api/v1/calls/:callId/signal` for transient WebRTC negotiation.
+
+The existing Fastify WebSocket plugin is a shared transport seam, not a shared application protocol. C1 changes global negotiation to an explicit single-protocol allowlist and every route rechecks the exact negotiated protocol it owns. If transport `maxPayload` rises for signaling SDP, M2 v1/v2 still enforce the existing 4 KiB application-frame ceiling before JSON interpretation.
+
+For realtime v2, `call.changed` increments the normal dirty counter and current-call HTTP reconciliation participates in initial sync, reconnect repair, listener-reset repair, and visible anti-entropy.
 
 Signaling data is never persisted or logged. SDP is candidate-free and trickle candidates are parsed and restricted to relay candidates before forwarding.
 

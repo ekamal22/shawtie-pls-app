@@ -16,6 +16,7 @@ import { MessagingPanel } from "../features/messaging/MessagingPanel.tsx";
 import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
 import { RelationshipSpacePanel } from "../features/relationship-space/RelationshipSpacePanel.tsx";
+import { CallingPanel } from "../features/calling/CallingPanel.tsx";
 
 interface Session {
   authenticated: true;
@@ -533,6 +534,7 @@ function AccountScreen({
       <M2UpdateBanner />
       <M2QueueStatus />
       <PartnershipPanel />
+      <CallingPanel deviceId={session.deviceId} />
       <MessagingPanel />
       <RelationshipSpacePanel accountId={session.accountId} />
       <PartnerRequestsPanel />

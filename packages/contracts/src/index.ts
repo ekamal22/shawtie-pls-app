@@ -116,6 +116,39 @@ export {
 } from "./partnerships/lifecycle.ts";
 
 export {
+  M3_ATTACHMENTS_PER_MESSAGE_MAX,
+  M3_FILE_CIPHERTEXT_MAX_BYTES,
+  M3_FILE_MAX_BYTES,
+  M3_IMAGE_CIPHERTEXT_MAX_BYTES,
+  M3_IMAGE_LONGEST_EDGE_MAX,
+  M3_IMAGE_SOURCE_MAX_BYTES,
+  M3_VIDEO_CIPHERTEXT_MAX_BYTES,
+  M3_VIDEO_MAX_BYTES,
+  M3_VIDEO_MAX_DURATION_SECONDS,
+  M3_VOICE_CIPHERTEXT_MAX_BYTES,
+  M3_VOICE_MAX_BYTES,
+  M3_VOICE_MAX_DURATION_SECONDS,
+  mediaAttachmentProjectionSchema,
+  mediaBindingRoleSchema,
+  mediaFormatCodeSchema,
+  mediaIdParamsSchema,
+  mediaKindSchema,
+  mediaPolicySchema,
+  mediaStateSchema,
+  mediaUploadCreateSchema,
+  mediaUploadGenerationSchema,
+  messageMediaAttachmentInputSchema,
+  type MediaAttachmentProjection,
+  type MediaBindingRole,
+  type MediaFormatCode,
+  type MediaKind,
+  type MediaState,
+  type MediaUploadCreateInput,
+  type MediaUploadGenerationInput,
+  type MessageMediaAttachmentInput,
+} from "./media/media.ts";
+
+export {
   M1_CHANGE_DEFAULT_LIMIT,
   M1_CHANGE_MAX_LIMIT,
   M1_HISTORY_DEFAULT_LIMIT,
@@ -209,12 +242,19 @@ export {
   M2_REALTIME_NOTIFY_CHANNEL,
   M2_REALTIME_PROTOCOL_VERSION,
   M2_REALTIME_SUBPROTOCOL,
+  C1_REALTIME_SUBPROTOCOL,
   assertM2RealtimeFrameSize,
+  c1RealtimeCallChangedFrameSchema,
+  c1RealtimeServerFrameSchema,
   m2FrameByteLength,
   m2InternalRealtimeNotificationSchema,
   m2RealtimeClientFrameSchema,
   m2RealtimeServerFrameSchema,
+  type C1RealtimeServerFrame,
   type M2InternalRealtimeNotification,
   type M2RealtimeClientFrame,
   type M2RealtimeServerFrame,
 } from "./realtime/m2.ts";
+export * from "./calls/http.ts";
+export * from "./calls/signaling-v1.ts";
+export * from "./calls/push.ts";

@@ -571,7 +571,6 @@ export async function deletePartnershipRelationalContent(
     partnershipId,
   ]);
   await executor.query("DELETE FROM relationship_items WHERE partnership_id = $1", [partnershipId]);
-  await executor.query("DELETE FROM media_objects WHERE partnership_id = $1", [partnershipId]);
   await executor.query("DELETE FROM call_sessions WHERE partnership_id = $1", [partnershipId]);
 }
 

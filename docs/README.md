@@ -25,17 +25,14 @@ Frozen means implementation should proceed against the accepted baseline unless 
 
 M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test.
 
-C1 Voice Calling design is complete on `feat/c1-voice-calling` from `main @ 54b8659a`. Implementation has not started. C1 is voice-only. C2 Video Calling design is now complete on `feat/c2-video-calling`, based on C1 design checkpoint `489661e3`; C2 implementation remains blocked until verified C1 is merged. The canonical design is `architecture/C1_VOICE_CALLING_DESIGN.md`, the HTTP contract is `api/C1_CALLING_API.md`, the transient signaling protocol is `api/C1_SIGNALING_PROTOCOL.md`, and physical acceptance is `testing/C1_ANDROID_ACCEPTANCE.md`.
+M3 Media and Voice Messages is complete on `feat/m3-media-voice` (created from merged-M2 `main @ 54b8659a`) and is fast-forward merged to `main` at `1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The implementation includes migrations 0015/0016, media contracts/repositories, private S3-compatible object storage, API/worker integration, M1/R1 binding, encrypted browser drafts, image/video/file/voice flows, and cleanup. Automated closure passed and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S, final physical acceptance code SHA `ee59850`, recorded in `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed three real defects, each with a regression test. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
 
-This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
+For still-open milestones, implementation-complete does not mean acceptance-complete or DONE. M3 is now fully closed and merged because both automated/local and physical acceptance are complete.
 
 Governance:
 
 - `architecture/ARCHITECTURE_BASELINE.md`
 - `architecture/ARCHITECTURE_GOVERNANCE.md`
-- `adr/ADR-013-call-signaling-transport.md`
-- `adr/ADR-014-relay-only-call-privacy.md`
-- `adr/ADR-015-stable-video-transceiver-and-camera-privacy.md`
 - `adr/ADR-011-architecture-freeze-and-change-control.md`
 - `contributing/DEVELOPMENT_WORKFLOW.md`
 
@@ -51,7 +48,7 @@ The selected architecture is:
 - IndexedDB for partnership-scoped local cache and offline queues
 - private object storage for encrypted media
 - WebRTC for voice and video calls
-- TURN relay support, with relay-only privacy for C1 under accepted ADR-014
+- TURN relay support, with relay-first privacy behavior
 - reviewed E2EE design with client-side encryption for protected content
 - centralized domain capability engine
 - explicit device model and device revocation
@@ -75,12 +72,8 @@ The selected architecture is:
 - `api/M1_MESSAGING_API.md`
 - `architecture/M2_REALTIME_OFFLINE_DESIGN.md`
 - `api/M2_REALTIME_PROTOCOL.md`
-- `architecture/C1_VOICE_CALLING_DESIGN.md`
-- `api/C1_CALLING_API.md`
-- `api/C1_SIGNALING_PROTOCOL.md`
-- `architecture/C2_VIDEO_CALLING_DESIGN.md`
-- `api/C2_VIDEO_CALLING_API.md`
-- `api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`
+- `architecture/M3_MEDIA_VOICE_DESIGN.md`
+- `api/M3_MEDIA_API.md`
 - `architecture/R1_RELATIONSHIP_SPACE_DESIGN.md`
 - `api/R1_RELATIONSHIP_SPACE_API.md`
 - `architecture/F2_PERSISTENCE_WORKER_DESIGN.md`
@@ -101,8 +94,8 @@ The selected architecture is:
 - `security/E2EE_ARCHITECTURE.md`
 - `testing/TEST_STRATEGY.md`
 - `testing/M2_ANDROID_ACCEPTANCE.md`
-- `testing/C1_ANDROID_ACCEPTANCE.md`
-- `testing/C2_ANDROID_ACCEPTANCE.md`
+- `testing/M3_ANDROID_ACCEPTANCE.md`
+- `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 
@@ -130,7 +123,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. The completed implementation designs include A1, P1, P2, P3, M1 Messaging Core, and R1 Relationship Space. M1 and R1 are combined, exhaustively validated, and merged into the current verified `main @ 9f4237e90c4d289f8b316e5d8dd2bba41609c95d`. The technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`, with automated/local closure green at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`. That run passed the canonical 0001 through 0014 migrations with `reserved=0`, database invariants, PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene. All 14 mandatory physical Android acceptance scenarios subsequently passed, final physical acceptance SHA `b83102f`. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages is DONE and merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. C1 Voice Calling is DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. The final executable baseline is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`; integrated closure re-passed there with `reserved=0`, Redmi Note 9S acceptance passed 25/25, and all focused follow-up evidence is complete. C2 Video Calling remains a separate later milestone and is not started. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

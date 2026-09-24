@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. IMPLEMENTATION NOT STARTED.
+DESIGN COMPLETE. SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ANDROID ACCEPTANCE COMPLETE ON BRANCH.
 
 Branch: `feat/c1-voice-calling`
 
@@ -15,6 +15,8 @@ shawtie.call.v1
 Endpoint:
 
 /api/v1/calls/:callId/signal
+
+The first real-migration integrated signaling verification passed at `9b5c255`; after the stale media-owner fix, the full integrated closure re-passed at `b29aaa1` with `reserved=0`. Physical relay-path and Android acceptance are complete, including stale-owner generation fencing. C1 is DONE and fast-forward merged to `main @ d44c595`.
 
 Purpose:
 
@@ -34,8 +36,9 @@ The signaling WebSocket is accepted only when:
 - device is current
 - call exists in the current partnership
 - call is accepted or connected
-- current device is caller_device_id or accepted_callee_device_id
-- requested subprotocol is exactly shawtie.call.v1
+- current device matches the selected `endpoint_device_id` on its caller/callee participant role row
+- the client offered exactly one WebSocket application subprotocol and it is `shawtie.call.v1`
+- the call route verifies the negotiated socket protocol is exactly `shawtie.call.v1`
 - connection and abuse policy allow the upgrade
 - per-message compression is disabled
 
@@ -55,6 +58,8 @@ The callId path parameter is lookup input only. It is not authorization.
 - one active signaling socket per call and selected device
 
 Initial whole-frame ceiling: 65536 bytes. Initial SDP payload ceiling: 49152 bytes. Initial ICE candidate ceiling: 256 candidates per signaling generation. These are server policy values and may be reduced without changing the protocol.
+
+If the shared WebSocket transport maxPayload rises above M2's 4 KiB ceiling for C1 SDP, M2 v1/v2 still enforce the existing 4 KiB application-frame check before JSON interpretation. The global selector rejects zero, multiple, and unknown application subprotocol offers; each route rechecks the exact protocol it owns.
 
 ## Envelope
 
@@ -145,19 +150,16 @@ Server to client:
 
 The client refreshes canonical call state before deciding whether the call ended.
 
-## Candidate privacy rule
+## Candidate and SDP privacy rule
 
-C1 enforces relay-only candidate privacy at both client and server.
+SDP is candidate-free: candidate/end-of-candidates lines are stripped client-side and rejected server-side. ICE travels only through `signal.ice_candidate`.
 
-SDP descriptions are candidate-free:
+C1 SDP contains exactly one audio media section. Video, application/data-channel, and unexpected extra media sections are rejected and bounded by line/media-section/byte limits.
 
-- before transmission, the client removes `a=candidate:` and `a=end-of-candidates` lines
-- the server rejects any `signal.description` payload containing ICE candidate lines
-- ICE candidates are transported only through `signal.ice_candidate`
-- the server parses each candidate and accepts only `typ relay`
-- host, srflx, prflx, malformed, or unknown candidate types fail the signaling generation
+Every trickle candidate is parsed before forwarding: type must be `relay`; host/srflx/prflx/malformed/unknown types fail; `raddr`, `rport`, or equivalent related/base-address fields may not disclose a non-relay peer address. Candidate count/bytes are bounded per signaling generation.
 
-This is defense in depth above `iceTransportPolicy: "relay"` and prevents a stale or modified client from smuggling a direct candidate through SDP.
+This is defense in depth above `iceTransportPolicy: "relay"`.
+
 ## signal.description
 
 Bidirectional forwarded frame:
@@ -176,7 +178,7 @@ Bidirectional forwarded frame:
 
 descriptionType is offer or answer.
 
-SDP is transient, never persisted, never logged, contains no ICE candidate lines, and is forwarded only to the authorized peer.
+SDP is transient, never persisted, never logged, contains no ICE candidate lines, satisfies the C1 single-audio-media policy, and is forwarded only to the authorized peer.
 
 ## signal.ice_candidate
 
@@ -200,7 +202,7 @@ Bidirectional forwarded frame:
 
 Candidates are transient and never persisted or logged.
 
-Count and byte limits apply. The server parses the candidate grammar sufficiently to require `typ relay`; all non-relay candidate types are rejected before forwarding.
+Count and byte limits apply. The server requires `typ relay` and rejects privacy-unsafe related/base-address serialization before forwarding.
 
 The browser is configured relay-only.
 
@@ -302,6 +304,10 @@ If media needs negotiation, both endpoints reconnect into a fresh signaling gene
 
 If an API process restarts, durable call state remains and both endpoints rebuild transient signaling state.
 
+## Same-device multi-tab ownership
+
+Only one browser tab may own C1 media for one `callId + deviceId`. It owns microphone, peer connection, and signaling. Observer tabs do not negotiate. A persisted owner generation fences stale callbacks; takeover after release/lease expiry increments generation, re-fetches canonical state, and opens a fresh signaling generation. Server one-active-socket-per-call/device remains the backstop.
+
 ## Multi-instance routing
 
 The initial design does not add Redis.
@@ -368,10 +374,13 @@ Test:
 - binary and oversized frame denial
 - stale generation denial
 - SDP and ICE absent from persistence and logs
+- exactly one audio media section; video and application/data-channel SDP rejection
+- privacy-unsafe relay related/base-address rejection
 - rate and candidate limits
 - perfect-negotiation collision
 - candidate-before-description buffering
 - signaling reconnect with live media
+- same-device multi-tab single media owner and generation-fenced takeover
 - process-loss reconnect
 - ICE restart after network change
 - call termination closes signaling

@@ -491,6 +491,38 @@ After protocol selection, include:
 - account deletion
 - future partnership cannot decrypt previous partnership content
 
+## M3 Media and Voice Messages verification
+
+Source implementation and the closure harness were committed through `afc73baf`. `npm run test:m3:closure` passed at `305891f` before device work and every step passed again after the physical fixes; all 20 physical Android scenarios then passed (final code SHA `ee59850`, evidence in `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). The physical run found three defects the automated suites missed (upload draft state after failure, microphone capture while hidden, and a 500 instead of 503 when the object store fails during completion), each now covered by a focused regression test. Canonical commands now include `test:m3:contracts`, `test:m3:storage`, `test:m3:storage:integration`, `test:m3:browser`, `test:m3:browser:e2e`, `test:m3:security`, `test:m3:postgres`, `test:m3:local`, `test:m3:closure`, and the device prepare/cleanup commands.
+
+M3 has a dedicated closure matrix because media correctness spans browser processing, private object storage, lifecycle authorization, M1/R1 atomic binding, durable cleanup, IndexedDB draft persistence, service-worker exclusion, and physical-device camera/microphone behavior.
+
+Canonical design: `../architecture/M3_MEDIA_VOICE_DESIGN.md`.
+
+Canonical API/storage contract: `../api/M3_MEDIA_API.md`.
+
+Physical device procedure: `M3_ANDROID_ACCEPTANCE.md`.
+
+Planned command surface:
+
+```text
+npm run test:m3:contracts
+npm run test:m3:security
+npm run test:m3:postgres
+npm run test:m3:storage
+npm run test:m3:browser
+npm run test:m3:browser:e2e
+npm run test:m3:local
+npm run test:m3:closure
+npm run test:m3:device:prepare
+npm run test:m3:device:cleanup
+```
+
+Automated/local evidence must prove migrations 0001-0016 with no reservation, media state/binding invariants, opaque/private object storage, upload/completion idempotency, cross-partnership denial, M1/R1 atomic binding, Voice Letter container visibility, lifecycle denial, deletion retry, no protected media in logs/outbox/cache, IndexedDB storage-failure behavior, and real Chromium media/service-worker behavior.
+
+Physical Android acceptance is mandatory and contains 20 scenarios. Desktop automation cannot close M3.
+
+Critical race coverage includes upload-complete vs lifecycle change, bind vs dissolution, upload expiry vs message send, double bind, delete vs access grant, R1 release/delete vs media access, object-delete crash recovery, device revocation during upload, completion replay, and two-tab stale finalization.
 ## C1 voice-calling tests
 
 Canonical sources:
@@ -500,70 +532,77 @@ Canonical sources:
 - `../api/C1_SIGNALING_PROTOCOL.md`
 - `C1_ANDROID_ACCEPTANCE.md`
 
-Planned C1 command surface:
+Implemented C1 command surface:
 
 ```text
 npm run test:c1
-npm run test:c1:security
 npm run test:c1:postgres
-npm run test:c1:browser
 npm run test:c1:local
+npm run test:c1:browser:e2e
 npm run test:c1:closure
 npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
+The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. The first real-migration integrated closure passed at `9b5c255`. A physical stale-owner gap then exposed one real media-owner defect; the fix at `b29aaa1` added lease verification and raised the real-Chromium suite to 5/5. The full integrated closure re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, integrated PostgreSQL/API/worker 111/111, retained M3 gates, full health, audit and git hygiene. Redmi Note 9S acceptance is complete at 25/25, and rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed. C1 is DONE and merged to `main @ d44c595`.
+
 Coverage must include:
 
 - one non-terminal call per partnership under simultaneous initiation
 - first-accept-wins with two callee devices
-- fixed caller endpoint and selected-device integrity
+- fixed caller endpoint and participant rows as sole endpoint-role/device authority
 - create/accept/reject/cancel/end lost-response idempotency
-- expectedVersion races
-- ring/connect/hard timeout generation fencing
+- expectedVersion races for aggregate commands
+- endpoint-connected without expectedVersion, including concurrent caller/callee reports
+- first endpoint-connected report does not invalidate accepted-call connect timeout
+- independent deadline_generation fencing for ring/connect/hard timeout work
 - active/breakup/account-deletion/terminated lifecycle behavior
 - selected-device and session revocation
 - future-partnership call-history isolation
 - final-dissolution history cleanup
 - realtime v1/v2 negotiation and `call.changed` content minimization
+- call.changed dirty-counter barrier race and visible anti-entropy repair after deliberately suppressed hint
 - stale v1 client not treated as C1-capable
 - exact Origin/session/device/call authorization on `shawtie.call.v1`
 - unaccepted/random/foreign/non-winning-device signaling denial
 - binary/oversized/unknown/stale-generation signaling denial
+- shared WebSocket zero/multiple/cross-family subprotocol rejection
+- M2 4 KiB application-frame rejection remains intact after signaling integration
 - SDP candidate-line rejection
+- exactly-one-audio SDP enforcement and video/data-channel rejection
 - host/srflx/prflx/malformed candidate rejection
+- privacy-unsafe relay related/base-address rejection
 - relay-only candidate forwarding
-- SDP/ICE/TURN/push capability absence from persistence and logs
+- SDP/ICE/TURN/push capability absence from logs, with raw push capability storage limited to the device-bound subscription table and keyed endpoint fingerprint stored for uniqueness
 - perfect-negotiation glare handling
 - candidate-before-description buffering
 - signaling reconnect and process-loss recovery
+- same-device two-tab single media owner and generation-fenced owner failover, including the real-Chromium C1 ownership harness
+- stale old-owner callbacks cannot capture/send/report after takeover
 - relay-only ICE restart after network change
 - pre-accept TURN denial
 - TURN expiry and authorization refresh
+- post-revocation TURN refresh denial plus bounded existing allocation lifetime
 - TURN/UDP plus TCP/TLS fallback where deployed
-- generic push payload fixture review
+- generic call_state_changed push payload fixture review
+- delayed/duplicate/reordered push convergence and stale-notification dismissal
 - stale push suppression after terminal call
 - logged-out/revoked-device push routing denial
 - push-denied foreground calling through realtime v2
+- caller Call-gesture and callee Accept-gesture microphone acquisition
+- failed/raced create or accept stops pre-acquired tracks
+- camera permission is never requested in C1
+- public outcome mapping hides internal session/device/deletion/lifecycle causes
 - microphone permission denial and teardown
 - physical Android voice-call acceptance
 
-Isolated C1 database validation may reserve only M3-owned 0015/0016. Final integrated C1 closure requires real migrations 0001 through 0018 with `reserved=0`.
+Historical isolated C1 database validation reserved only M3-owned 0015/0016. The canonical integrated chain is now real migrations 0001 through 0018 with `reserved=0`; it passed at `9b5c255` and re-passed unchanged at `b29aaa1` after the stale media-owner fix.
 
 ## C2 video-calling tests
 
-Canonical sources:
+C2 must reuse the verified C1 call authority, signaling protocol, TURN policy, push substrate, and deletion model.
 
-- `../architecture/C2_VIDEO_CALLING_DESIGN.md`
-- `../api/C2_VIDEO_CALLING_API.md`
-- `../api/C2_VIDEO_SIGNALING_COMPATIBILITY.md`
-- `C2_ANDROID_ACCEPTANCE.md`
-
-C2 implementation begins only after verified C1 closure/merge.
-
-Coverage must include video-kind policy, no pre-accept capture, stable video transceiver, one/both-camera-off continuity, generation-fenced camera acquisition, repeated on/off/switch leak tests, camera permission denial, unexpected track end, stop-on-background privacy, no silent foreground reacquisition, candidate-free SDP inheritance, relay-only candidate enforcement, TURN fail-closed, signaling reconnect/process loss, Wi-Fi/mobile ICE restart, C1-only update-required behavior, lifecycle/revocation teardown, privacy/log scans, C1 voice regression, and mandatory physical Android video acceptance.
-
-C2 expects no migration. If final C1 requires a later schema extension, the closure harness must run the then-current real contiguous migration chain with no speculative reservation.
+Additional coverage includes explicit camera permission, no hidden video activation, local/remote rendering, camera on/off, front/back switching where supported, generation-safe video renegotiation, bandwidth/network transitions, and physical Android video acceptance.
 
 ## Acceptance principle
 

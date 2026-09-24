@@ -1,4 +1,5 @@
 import type { DatabasePool } from "@shawtie/db";
+import type { MediaObjectStore } from "@shawtie/media-storage";
 import { createAccountAuthDeletionHandler } from "./account-auth-deletion-handler.ts";
 import { accountDeletionFinalizeHandler } from "./account-deletion-finalize-handler.ts";
 import { accountDeletionBreakupPrecedenceHandler } from "./account-deletion-breakup-precedence-handler.ts";
@@ -10,8 +11,16 @@ import { partnershipBreakupDeadlineReminderHandler } from "../partnerships/break
 import { createPartnershipRelationalDeletionHandler } from "../partnerships/partnership-relational-deletion-handler.ts";
 import { createPartnershipCryptoDeletionHandler } from "../partnerships/partnership-crypto-deletion-handler.ts";
 import { relationshipItemReleaseHandler } from "../relationship-space/relationship-item-release-handler.ts";
+import { createC1CallTimeoutHandlers } from "../calls/call-timeout-handler.ts";
+import {
+  createMediaDeleteScheduledHandler,
+  createMediaUploadExpireScheduledHandler,
+  createPartnershipMediaDeletionHandler,
+} from "../media/media-handlers.ts";
 
-export function createDefaultScheduledHandlers(): ScheduledActionHandlerRegistry {
+export function createDefaultScheduledHandlers(
+  mediaStore: MediaObjectStore | null = null,
+): ScheduledActionHandlerRegistry {
   const registry = new ScheduledActionHandlerRegistry();
   registry.register(accountDeletionBreakupPrecedenceHandler);
   registry.register(accountDeletionFinalizeHandler);
@@ -19,13 +28,20 @@ export function createDefaultScheduledHandlers(): ScheduledActionHandlerRegistry
   registry.register(partnershipBreakupFinalizeHandler);
   registry.register(partnershipBreakupDeadlineReminderHandler);
   registry.register(relationshipItemReleaseHandler);
+  for (const handler of createC1CallTimeoutHandlers()) registry.register(handler);
+  registry.register(createMediaUploadExpireScheduledHandler(mediaStore));
+  registry.register(createMediaDeleteScheduledHandler(mediaStore));
   return registry;
 }
 
-export function createDefaultDeletionHandlers(database: DatabasePool): DeletionHandlerRegistry {
+export function createDefaultDeletionHandlers(
+  database: DatabasePool,
+  mediaStore: MediaObjectStore | null = null,
+): DeletionHandlerRegistry {
   const registry = new DeletionHandlerRegistry();
   registry.register(createAccountAuthDeletionHandler(database));
   registry.register(createPartnershipRelationalDeletionHandler(database));
+  registry.register(createPartnershipMediaDeletionHandler(database, mediaStore));
   registry.register(createPartnershipCryptoDeletionHandler(database));
   return registry;
 }

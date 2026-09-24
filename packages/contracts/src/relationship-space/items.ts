@@ -110,22 +110,24 @@ export const relationshipReleaseInputSchema = z.union([
 
 export type RelationshipReleaseInput = z.infer<typeof relationshipReleaseInputSchema>;
 
-export const relationshipReferenceSchema = z
-  .object({
-    referenceType: z.enum(["message", "media"]),
-    referenceId: uuid,
-    role: z.enum(["source", "attachment", "voice_letter"]),
-    position: z.number().int().min(0).max(31),
-  })
-  .strict()
-  .superRefine((value, context) => {
-    if (value.referenceType === "message" && value.role !== "source") {
-      context.addIssue({ code: "custom", message: "message references must use source role" });
-    }
-    if (value.referenceType === "media" && value.role === "source") {
-      context.addIssue({ code: "custom", message: "media references cannot use source role" });
-    }
-  });
+export const relationshipReferenceSchema = z.discriminatedUnion("referenceType", [
+  z
+    .object({
+      referenceType: z.literal("message"),
+      referenceId: uuid,
+      role: z.literal("source"),
+      position: z.number().int().min(0).max(31),
+    })
+    .strict(),
+  z
+    .object({
+      referenceType: z.literal("media"),
+      referenceId: uuid,
+      role: z.enum(["attachment", "voice_letter"]),
+      position: z.number().int().min(0).max(31),
+    })
+    .strict(),
+]);
 
 export type RelationshipReferenceInput = z.infer<typeof relationshipReferenceSchema>;
 

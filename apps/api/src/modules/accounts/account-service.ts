@@ -48,10 +48,15 @@ import {
   resetRateLimitBucket,
   revokeAllSessionsForAccount,
   revokeDevice,
+  revokePushSubscriptionForDevice,
   revokeSession,
   rotateDeviceHandle,
   rotateSessionToken,
   supersedeActiveChallenges,
+  terminalizeCallsByEndpointDevice,
+  terminalizeCallsByEndpointSession,
+  terminalizeCurrentCallForPartnership,
+  loadCallParticipants,
   updateDisplayName,
   updatePasswordCredential,
   wakePendingRelationshipReleaseActionsForPartnership,
@@ -62,6 +67,7 @@ import {
   type EmailChallenge,
   type EmailPurpose,
   type QueryExecutor,
+  type CallSessionRecord,
 } from "@shawtie/db";
 import {
   evaluateDateOfBirthCorrection,
@@ -131,6 +137,40 @@ export class AccountService {
     this.database = database;
     this.keys = keys;
     this.passwords = passwords;
+  }
+
+  async #queueCallTermination(transaction: QueryExecutor, call: CallSessionRecord): Promise<void> {
+    const participants = await loadCallParticipants(transaction, call.id);
+    const accountIds = participants.map((participant) => participant.accountId).sort();
+    if (accountIds.length !== 2 || accountIds[0] === accountIds[1]) {
+      throw new Error("Terminated call must retain exactly two participants");
+    }
+    const version = Number(call.version);
+    if (!Number.isSafeInteger(version) || version <= 0) {
+      throw new Error("Call version exceeds safe integer range");
+    }
+    await insertOutboxEvent(transaction, {
+      id: randomUUID(),
+      eventType: "c1.call.changed",
+      aggregateType: "call",
+      aggregateId: call.id,
+      deduplicationKey: "c1:call-changed:" + call.id + ":" + version,
+      payload: {
+        partnershipId: call.partnershipId,
+        callId: call.id,
+        version,
+      },
+      payloadVersion: 1,
+    });
+    await insertOutboxEvent(transaction, {
+      id: randomUUID(),
+      eventType: "c1.call.push",
+      aggregateType: "call",
+      aggregateId: call.id,
+      deduplicationKey: "c1:call-push:" + call.id + ":" + version,
+      payload: { accountIds },
+      payloadVersion: 1,
+    });
   }
 
   async #assertSession(transaction: QueryExecutor, auth: AuthContext): Promise<void> {
@@ -606,6 +646,22 @@ export class AccountService {
     await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       await revokeSession(transaction, auth.session.sessionId, now);
+      const terminatedCalls = await terminalizeCallsByEndpointSession(transaction, {
+        sessionId: auth.session.sessionId,
+        reason: "session_revoked",
+        now,
+      });
+      for (const call of terminatedCalls) {
+        await this.#queueCallTermination(transaction, call);
+      }
+      if (auth.session.deviceId) {
+        await revokePushSubscriptionForDevice(
+          transaction,
+          auth.session.deviceId,
+          auth.session.accountId,
+          now,
+        );
+      }
       await appendSecurityEvent(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,
@@ -1074,6 +1130,14 @@ export class AccountService {
       await revokeAllSessionsForAccount(transaction, auth.session.accountId, now);
 
       if (currentPartnership) {
+        const terminatedCall = await terminalizeCurrentCallForPartnership(transaction, {
+          partnershipId: currentPartnership.partnershipId,
+          reason: "account_deletion",
+          now,
+        });
+        if (terminatedCall) {
+          await this.#queueCallTermination(transaction, terminatedCall);
+        }
         await pausePendingRelationshipReleaseActionsForPartnership(
           transaction,
           currentPartnership.partnershipId,
@@ -1348,6 +1412,15 @@ export class AccountService {
       await this.#assertSession(transaction, auth);
       const revoked = await revokeDevice(transaction, auth.session.accountId, deviceId, now);
       if (!revoked) return null;
+      await revokePushSubscriptionForDevice(transaction, deviceId, auth.session.accountId, now);
+      const terminatedCalls = await terminalizeCallsByEndpointDevice(transaction, {
+        deviceId,
+        reason: "authorization_revoked",
+        now,
+      });
+      for (const call of terminatedCalls) {
+        await this.#queueCallTermination(transaction, call);
+      }
       await appendSecurityEvent(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,
