@@ -31,7 +31,7 @@ The selected architecture is:
 - partnership-scoped local storage
 - client-side encrypted media
 - WebSockets for realtime synchronization and call signaling
-- WebRTC with relay-first TURN support
+- WebRTC with relay-only TURN for C1/C2 calls; no direct peer fallback
 - reviewed E2EE with per-device and per-partnership cryptographic state
 
 ## Documentation
@@ -49,6 +49,12 @@ Start with:
 - `docs/api/M1_MESSAGING_API.md` for the implemented M1 HTTP and synchronization contract
 - `docs/architecture/M2_REALTIME_OFFLINE_DESIGN.md` for the implemented M2 realtime/offline architecture and closure boundary
 - `docs/architecture/M3_MEDIA_VOICE_DESIGN.md` for the completed M3 media/voice architecture and implementation plan
+- `docs/architecture/C1_VOICE_CALLING_DESIGN.md` for the verified and merged C1 voice-call architecture
+- `docs/api/C1_SIGNALING_PROTOCOL.md` for the frozen voice `shawtie.call.v1` signaling contract
+- `docs/architecture/C2_VIDEO_CALLING_DESIGN.md` for the completed C2 architecture and implementation design
+- `docs/api/C2_VIDEO_CALLING_API.md` for the C2 HTTP compatibility delta
+- `docs/api/C2_VIDEO_SIGNALING_PROTOCOL.md` for video `shawtie.call.v2`
+- `docs/testing/C2_ANDROID_ACCEPTANCE.md` for mandatory physical Android C2 closure
 - `docs/api/M3_MEDIA_API.md` for the implemented M3 upload, retrieval, storage, and binding contract
 - `docs/testing/M3_ANDROID_ACCEPTANCE.md` for the M3 physical Android acceptance procedure (20 of 20 executed; evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`)
 - `docs/api/M2_REALTIME_PROTOCOL.md` for the M2 WebSocket protocol and invalidation contract

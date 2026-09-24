@@ -102,7 +102,7 @@ flowchart TD
 
     M2 --> M3["M3 Media + Voice Messages ✅"]
     M2 --> C1["C1 Voice Calling ✅"]
-    C1 --> C2["C2 Video Calling ⚪"]
+    C1 --> C2["C2 Video Calling: design ✅, implementation ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
     C2 --> S1
@@ -136,7 +136,9 @@ M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical
    ->
 M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
    +
-C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; integrated closure re-passed with `reserved=0`; Redmi 25/25 plus rejected-notification, stale-owner and audible bidirectional-audio follow-ups complete
+C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; full physical acceptance complete
+   ->
+C2 Video Calling design ✅ on `feat/c2-video-calling`; implementation not started
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -151,7 +153,7 @@ Verified branch: `feat/m3-media-voice`.
 
 Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
 
-M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C1 final integrated `reserved=0` closure and mandatory Redmi Note 9S acceptance are complete. C1 is merged at `d44c595`; C2 is the next planned call milestone.
+M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C2 architecture/API/signaling/security/testing design is complete with no migration reserved; source implementation is the next call milestone.
 
 ## Earlier completed milestone detail
 

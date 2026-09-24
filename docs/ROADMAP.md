@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-24.
+Refreshed: 2026-09-25.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -72,29 +72,34 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 ## Immediate execution sequence
 
-The next verified-mainline work is:
+The verified implementation frontier is:
 
 ```text
-main @ 54b8659
-   |             |
-   v             v
-M3 ✅           C1 ✅
-20/20 Android   integrated local closure PASS
-merged @ 1d3535f  DONE, merge-ready, unmerged
+main @ 5323d7b
+   |
+   +--> M3 Media ✅ merged
+   |
+   +--> C1 Voice ✅ merged
+           |
+           v
+      C2 Video
+      design ✅
+      implementation not started
 ```
 
-M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, documentation-closed at `d7d95a6`, and are now on `main`.
+M1 and R1 remain verified and merged behind M2. M2, M3, and C1 are closed milestones. C2 is now the active design-complete implementation frontier.
 
 Next:
 
-1. preserve the M1 runtime closure anchor `aa40a2c` and R1 source history `9bc9ba4`
-2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
-3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
-4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M3 is complete on `feat/m3-media-voice`, Android 20/20 at `ee59850`, and merged to `main @ 1d3535f`
-6. C1 final executable baseline is `b29aaa1`; integrated closure re-passed with `reserved=0`, Redmi acceptance 25/25 and all focused physical follow-ups are complete
-7. C1 is merged; C2 Video Calling is now the next planned implementation milestone
-8. keep V1 hosted verification separate until Actions capacity returns
+1. preserve verified C1 executable baseline `b29aaa1` and full C1 physical evidence
+2. implement C2-A contracts, `video-v1` compatibility and `C2_VIDEO_ENABLED`
+3. implement C2-B API video enablement without a speculative migration
+4. implement C2-C `shawtie.call.v2` with kind-aware SDP and multi-m-line ICE metadata
+5. implement C2-D/E camera controller, stable video transceiver, rendering and UI
+6. close C2 reliability/security and retained C1 regression gates
+7. run C2 automated/local closure against real migrations 0001 through 0018 with `reserved=0`
+8. execute mandatory C2 Redmi Note 9S physical acceptance
+9. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
