@@ -1310,12 +1310,14 @@ Controls:
 - no auto-accept action
 - explicit logout/device revocation/account lockout stops routing
 - provider permanent failure disables subscription idempotently
+- device-bound subscriptions use a keyed endpoint fingerprint and key version to support active-route uniqueness without using the raw endpoint as the only identity signal
 
 Evidence:
 
 - stale push after reject/cancel/missed/final dissolution
 - logged-out/revoked device routing denial
 - payload fixture review
+- subscription replacement proves one active routing path per device and keyed endpoint-fingerprint uniqueness
 
 ### C1-T5: Crossed calls or multi-device races create multiple active sessions
 
