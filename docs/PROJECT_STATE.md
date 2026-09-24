@@ -147,7 +147,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
-- `main` -> contains the completed M1/R1 integrated baseline plus merge-state documentation at `9f4237e90c4d289f8b316e5d8dd2bba41609c95d`
+- `main` -> verified post-M2 mainline at `54b8659a101dcaeb6ff1e0b7caee76921c5b9919`, containing the completed M1/R1 baseline and merged M2 implementation/acceptance state
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> source implementation head `305891f`; remains unmerged pending physical Android acceptance and owns real migrations 0015/0016
 - `feat/c1-voice-calling` -> source implementation complete; remains unmerged pending automated/local closure, mandatory physical Android acceptance, and final integrated migration closure
