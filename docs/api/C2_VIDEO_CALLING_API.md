@@ -6,40 +6,30 @@ DESIGN COMPLETE. SOURCE IMPLEMENTATION NOT STARTED.
 
 Architecture: `docs/architecture/C2_VIDEO_CALLING_DESIGN.md`
 
-C2 reuses the existing `/api/v1/calls` HTTP surface. It does not create a separate video-call aggregate or namespace.
+C2 reuses the existing `/api/v1/calls` surface and call aggregate.
 
-## 1. Existing call kinds
+## 1. Media profile
 
-The canonical call kind vocabulary already contains:
-
-- `voice`
-- `video`
-
-C2 enables durable creation of `video` under a separate feature gate.
-
-## 2. Client media profile
-
-C2 introduces a compatibility token:
+C2 defines exactly one coarse compatibility token:
 
 `video-v1`
 
-This is not security authority. It is a protocol compatibility requirement preventing a stale C1 bundle from becoming an accepted video endpoint.
+It is not security authority and carries no hardware detail.
 
-For video create and video accept, the request MUST include:
+## 2. Create schema
+
+`callCreateSchema` becomes a strict discriminated union.
+
+Voice remains the existing C1 request:
 
 ```json
 {
-  "clientMediaProfile": "video-v1"
+  "expectedPartnershipId": "uuid",
+  "kind": "voice"
 }
 ```
 
-For voice, the field remains optional and existing C1 clients remain valid.
-
-## 3. Create call
-
-`POST /api/v1/calls`
-
-Video request:
+Video is:
 
 ```json
 {
@@ -49,38 +39,78 @@ Video request:
 }
 ```
 
-Voice request remains backward-compatible:
+Unknown fields fail normal boundary validation.
+
+Video without the exact profile returns:
+
+`409 CALL_MEDIA_PROFILE_UNSUPPORTED`
+
+Video also requires both:
+
+- `C1_CALLING_ENABLED`
+- `C2_VIDEO_ENABLED`
+
+Disabled video returns the existing bounded feature-unavailable behavior and never falls back to voice.
+
+The server persists `input.kind` through the existing repository.
+
+## 3. Accept schema
+
+Introduce:
+
+`callAcceptMutationSchema`
+
+Shape:
 
 ```json
 {
-  "expectedPartnershipId": "uuid",
-  "kind": "voice"
+  "expectedVersion": 3,
+  "clientMediaProfile": "video-v1"
 }
 ```
 
-Server rules:
+`clientMediaProfile` is optional at schema level because voice uses the same route.
 
-- normal C1 authentication, lifecycle, idempotency and one-call invariant remain
-- `C2_VIDEO_ENABLED` must be true for video
-- video without `video-v1` fails closed
-- caller device/session remains server-derived
-- callee remains server-derived
-- server persists the requested kind
-- no camera information is accepted
+Service rules after locking the authoritative call:
 
-Recommended public error for missing/unsupported video profile:
+- voice: existing C1 accept remains valid without the field
+- video: exact `video-v1` is mandatory
+- profile validation occurs before idempotency replay lookup and before callee endpoint selection
+- the profile is included in the idempotency request fingerprint when present
 
-`CALL_MEDIA_PROFILE_UNSUPPORTED`
+A video accept without the profile returns:
 
-Recommended status: 409.
+`409 CALL_MEDIA_PROFILE_UNSUPPORTED`
 
-Disabled video feature returns a bounded unavailable/feature-disabled error without affecting voice.
+A stale C1 client therefore cannot receive a stored successful video-accept response through an idempotency replay.
 
-## 4. Projection
+## 4. Feature-flag semantics
 
-No new durable projection fields are required.
+`C2_VIDEO_ENABLED` controls new video admission only.
 
-Existing projection remains:
+It gates:
+
+- video create
+- acceptance of a ringing video call
+
+It does not block:
+
+- current/detail/history reads
+- reject
+- cancel
+- end
+- already accepted/connected video signaling
+- already accepted/connected video TURN refresh
+
+The shared `C1_TRANSPORT_ENABLED` flag remains the transport kill switch for accepted voice and video calls.
+
+If C2 is disabled after video acceptance, the in-flight call may finish normally.
+
+## 5. Call projection
+
+No durable projection fields are added.
+
+Existing projection remains authoritative:
 
 - id
 - partnershipId
@@ -92,119 +122,105 @@ Existing projection remains:
 - outcome
 - isThisDeviceSelectedEndpoint
 
-Do not add:
+Do not add camera/device/rendering state.
 
-- cameraOn
-- selectedCamera
-- cameraDeviceId
-- facingMode
-- resolution
-- frameRate
-- videoConnected
+## 6. Media permission semantics
 
-## 5. Accept call
+Microphone behavior remains C1-derived.
 
-C2 SHOULD split the accept boundary from the generic C1 mutation schema so video compatibility can be verified explicitly.
+Camera permission is never requested by the API and is never represented in the request.
 
-Recommended video accept:
+For video:
 
-`POST /api/v1/calls/:callId/accept`
+- caller camera is not requested while ringing
+- callee camera is not requested while ringing
+- camera request occurs only after authoritative acceptance, selected-endpoint confirmation and local media-owner lease
+- camera failure does not mutate durable call state if audio/peer connection remain healthy
 
-```json
-{
-  "expectedVersion": 3,
-  "clientMediaProfile": "video-v1"
-}
-```
-
-For voice calls:
-
-```json
-{
-  "expectedVersion": 3
-}
-```
-
-Rules:
-
-- if call kind is video, `video-v1` is mandatory
-- if call kind is voice, old C1 body remains valid
-- capability token does not replace account/device/session/call authorization
-- no camera permission or camera ID is sent
-- first committed callee accept still wins
-- a stale C1 client may reject, but cannot accept a video call
-
-## 6. Reject, cancel, end and fail
+## 7. Reject, cancel, end and fail
 
 Existing C1 endpoints remain unchanged.
 
-Camera failure alone is not whole-call failure when audio remains healthy.
+Camera off, camera switch, camera permission denial, or camera track ending are not durable call mutations.
 
-A user turning camera off is not a server mutation.
+Do not invoke `/fail` for a local camera-only problem while the call can continue with audio.
 
-## 7. Endpoint connected
+## 8. Endpoint connected
 
-Existing endpoint-connected reporting remains unchanged.
+Existing endpoint-connected semantics remain unchanged.
 
-Connected means the selected endpoint peer connection reached the C1 connected criterion.
+Connected means the selected endpoint peer connection reached the existing C1 connected criterion.
 
-It does not assert:
+It does not assert camera activity or flowing video frames.
 
-- camera active
-- video frames flowing
-- specific video quality
+## 9. TURN
 
-## 8. TURN
-
-Existing TURN credential endpoint is reused.
+The existing TURN credential endpoint is reused.
 
 Video gets no broader authorization.
 
-The response remains relay-only.
+Relay-only policy remains mandatory.
 
-## 9. Push and realtime
+`C2_VIDEO_ENABLED` is not rechecked for an already accepted video call. `C1_TRANSPORT_ENABLED` is.
 
-No new durable or push API is added.
+## 10. Push and realtime
 
-Generic call push wakes the app.
+No new API/event family is added.
 
-`call.changed` causes canonical refetch.
+Reuse:
 
-The authenticated projection reveals `kind = video`.
+- generic call Web Push
+- `shawtie.realtime.v2`
+- `call.changed`
+- canonical HTTP reconciliation
 
-## 10. History
+The push provider does not need video-kind detail.
 
-Existing history already exposes kind.
+## 11. History
 
-A video-kind call remains video in history even if both cameras were off for part or all of the connected call.
+Existing history already carries `kind`.
 
-History does not record camera usage duration.
+A video call remains video history even if either camera was off.
 
-## 11. Old client behavior
+No camera-usage duration is stored.
+
+## 12. Stable internal durable identifiers
+
+C2 reuses the existing durable identifiers:
+
+- `c1.call.changed`
+- `c1.call.push`
+- `c1.call.ringing_timeout`
+- `c1.call.accepted_timeout`
+- `c1.call.connected_timeout`
+
+The historical prefix is not renamed during C2.
+
+## 13. Old client behavior
 
 A stale C1 client:
 
-- may fetch a video call projection
-- may display a bounded update-required state
-- may reject the call
+- may fetch a video projection
+- may display update-required state
+- may reject
 - may let it expire
-- MUST NOT accept it
-- MUST NOT open video signaling
-- MUST NOT cause the server to reinterpret it as voice
+- cannot accept without `video-v1`
+- cannot signal with v1
+- cannot cause server downgrade to voice
 
-Another C2-compatible device may still win acceptance.
+Another C2-capable device may still win acceptance.
 
-## 12. Caching and logs
+## 14. Caching and logging
 
 Existing private no-store policy remains.
 
 Never cache or routinely log:
 
-- media profile with hardware detail
-- camera information
+- camera permission or identity
+- camera state
 - SDP
 - ICE
 - TURN credentials
-- video stats
+- RTP/video statistics
 
-The only client capability token is the coarse constant `video-v1`.
+The coarse `video-v1` token may appear only as bounded compatibility metadata if operational logging explicitly needs it.

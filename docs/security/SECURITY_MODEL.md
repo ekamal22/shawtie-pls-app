@@ -387,11 +387,11 @@ C2 extends the verified C1 call platform without changing durable call authority
 - video SDP is candidate-free and permits exactly one audio plus one video media section; application/data-channel and extra media sections fail closed
 - v2 trickle ICE carries bounded `sdpMid`/`sdpMLineIndex` association while candidate text still passes the existing relay-only privacy parser
 - `iceTransportPolicy: relay` remains mandatory for video and TURN failure never enables direct connectivity
-- remote peers cannot activate local camera; camera capture begins only from explicit local video action and browser permission
+- remote peers cannot activate local camera; no camera is requested while ringing, and capture requires authoritative acceptance, selected-endpoint/media-owner confirmation, current local intent, and browser permission
 - asynchronous camera acquisition/switch is fenced by local monotonic generation so stale completions cannot reactivate capture
 - hidden/background state stops local camera and foreground does not silently reacquire it
 - camera labels, device IDs, facing mode, camera state, video frames and RTP detail are not durable server state and are not routinely logged
-- `C2_VIDEO_ENABLED` can fail closed without disabling verified C1 voice calling
+- `C2_VIDEO_ENABLED` is a video-admission gate: it blocks new video create/ringing accept without killing an already accepted video call; verified C1 voice remains independent
 - existing C1 transport kill switch still disables signaling/TURN for both media kinds
 - account deletion, endpoint revocation and final dissolution stop local audio/video media and remove future signaling/TURN authorization
 - C2 retains the C1 stale-owner ownership fix and must rerun C1 closure as part of C2 acceptance

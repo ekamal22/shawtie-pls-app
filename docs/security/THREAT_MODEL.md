@@ -1382,7 +1382,9 @@ Impact: Critical privacy violation
 Controls:
 
 - ringing/push/remote signaling cannot request camera
-- camera begins only from explicit local video action plus browser permission
+- caller/callee camera request waits for authoritative acceptance and selected media-owner lease
+- losing accept devices/tabs stop pre-acquired microphone and never request camera
+- camera begins only from current local video intent plus browser permission
 - camera operations use monotonic local generation fencing
 - hidden/background and authority loss increment generation and stop capture
 - foreground never silently restarts camera

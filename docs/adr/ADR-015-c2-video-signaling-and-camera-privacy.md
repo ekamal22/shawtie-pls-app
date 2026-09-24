@@ -26,11 +26,15 @@ C2 SHALL:
 - keep one audio plus one stable video transceiver for video-call lifetime
 - use `RTCRtpSender.replaceTrack()` for routine camera attach, detach, and switch
 - fence asynchronous camera operations with local monotonic generation
+- never request camera while the durable call is ringing
+- require authoritative acceptance, selected-endpoint/media-owner confirmation and current local camera intent before camera acquisition
 - stop camera on document hidden/background
 - require explicit local action to restart camera
 - keep camera state transient and non-durable
 - preserve relay-only ICE with no direct fallback
 - preserve C1 voice wire compatibility and retained closure
+- keep global v2 end-of-candidates as an empty payload mapped to `addIceCandidate(null)`
+- keep `C2_VIDEO_ENABLED` as a new-video admission gate only; accepted video is controlled by the shared transport kill switch
 
 ## Why v2 instead of extending v1
 

@@ -127,115 +127,199 @@ The following remain transient and MUST NOT be persisted:
 - ICE
 - TURN credentials
 
-## 5. Compatibility boundary
+## 5. Compatibility and request-contract boundary
 
-The finished C1 client already understands `kind: "video"` in the projection vocabulary but does not implement video media.
+The finished C1 client understands `kind: "video"` in the projection vocabulary but does not implement video media.
 
-That means C2 needs a hard server boundary so a stale C1 bundle cannot accept a video call as an audio-only call by accident.
+C2 therefore needs a hard server boundary so a stale C1 bundle cannot become an accepted video endpoint.
 
-C2 introduces the client media profile:
+C2 introduces exactly one coarse client media profile:
 
 `video-v1`
 
-For `kind = video`:
+### Create schema
 
-- create MUST include `clientMediaProfile: "video-v1"`
-- accept MUST include `clientMediaProfile: "video-v1"`
-- signaling MUST negotiate `shawtie.call.v2`
+`callCreateSchema` becomes a strict discriminated union on `kind`:
 
-For `kind = voice`:
+```text
+voice:
+  expectedPartnershipId
+  kind = "voice"
 
-- existing C1 requests remain valid without a media profile
-- signaling remains `shawtie.call.v1`
-- existing C1 candidate payloads remain unchanged
+video:
+  expectedPartnershipId
+  kind = "video"
+  clientMediaProfile = "video-v1"
+```
 
-A stale C1 client may still fetch, display, reject, or let a video call expire, but it cannot become the selected accepted video endpoint.
+A video create request without the exact profile fails with:
+
+`409 CALL_MEDIA_PROFILE_UNSUPPORTED`
+
+Voice create remains byte-for-byte compatible with the existing C1 body.
+
+### Accept schema
+
+The shared accept route uses a new strict `callAcceptMutationSchema`:
+
+```text
+expectedVersion: positive integer
+clientMediaProfile?: "video-v1"
+```
+
+The service MUST lock/load the call first, then enforce:
+
+- video requires `video-v1`
+- voice does not require a profile
+- compatibility validation happens before idempotency replay lookup or endpoint selection
+
+The profile participates in the idempotency request fingerprint when present.
+
+This ordering prevents a request that lacks C2 compatibility from receiving a previously stored video-accept response merely because an idempotency key is replayed.
+
+A stale C1 client may fetch, display, reject, or let a video call expire, but it cannot accept it and cannot open video signaling.
 
 No server path silently reinterprets video as voice.
 
-## 6. Why video uses shawtie.call.v2
+## 6. Signaling protocol split
 
-C1 has exactly one audio m-line and reconstructs trickled candidates with `sdpMLineIndex: 0`.
+Voice remains frozen on:
 
-A C2 video call has one audio m-line and one video m-line. A raw candidate string alone is not a sufficient robust application contract for associating a candidate with the correct media description.
+`shawtie.call.v1`
 
-C2 therefore keeps C1 voice signaling frozen and introduces:
+Video uses:
 
 `shawtie.call.v2`
 
-The v2 frame envelope retains the same generation-fenced signaling model but extends ICE candidate payloads with bounded media-description location metadata:
+The same WebSocket route is reused.
 
-- `candidate`
-- `sdpMid` nullable
-- `sdpMLineIndex` nullable
+The global WebSocket selector accepts exactly one offered application subprotocol from the existing realtime families plus call v1/v2. The call route then compares the negotiated protocol with the durable call kind.
 
-At least one of `sdpMid` or `sdpMLineIndex` must be present.
+Wrong call protocol fails before the signaling hub accepts the socket.
 
-The server still validates the candidate text itself as relay-only and privacy-safe.
+The existing `CallSignalingHub` remains one shared hub. It is extended with a small protocol dialect selected from durable call kind rather than duplicated into a video-specific hub.
 
-C2 v2 does not add camera-state signaling.
+Each accepted signaling connection carries:
 
-## 7. Video SDP policy
+- call ID
+- durable call kind
+- negotiated call protocol
+- role
+- selected device/session
+- signaling generation
 
-Voice v1 remains:
+## 7. Exact video signaling shape
 
-- exactly one `m=audio`
-- no video
-- no application/data channel
-- no candidate lines in SDP
+C2 v2 retains the C1 generation-fenced frame types:
 
-Video v2 requires:
+- `control.ready`
+- `control.superseded`
+- `signal.description`
+- `signal.ice_candidate`
+- `signal.end_of_candidates`
+- `signal.restart`
+
+### SDP
+
+Voice v1 remains exactly one audio media section.
+
+Video v2 requires this deterministic media order:
+
+```text
+m-line 0: audio
+m-line 1: video
+```
+
+Video SDP MUST contain:
 
 - exactly one `m=audio`
 - exactly one `m=video`
-- no `m=application`
-- no additional media sections
+- audio before video
+- no application/data-channel media section
+- no additional media section
 - no candidate lines
 - no end-of-candidates lines
 - bounded SDP size and line count
 
 The server validates SDP against the durable call kind before forwarding.
 
-A video SDP sent for a voice call fails closed.
+### ICE candidate
 
-A voice-only SDP sent for a video call fails closed during initial C2 negotiation.
+Video v2 candidate payload is exactly:
 
-## 8. Call creation and local consent
+```text
+candidate: bounded string
+sdpMid: bounded token or null
+sdpMLineIndex: 0 | 1 | null
+```
 
-### Caller
+At least one of `sdpMid` or `sdpMLineIndex` MUST be non-null.
 
-The caller explicitly selects **Video call**.
+`sdpMid` is a 1 to 32 character token using only letters, digits, underscore, dot, or hyphen.
 
-That action may request microphone and front-camera access locally before durable call creation, just as C1 already pre-acquires microphone on explicit Call.
+`sdpMLineIndex` is limited to 0 or 1.
 
-No SDP, ICE, TURN authorization, or remote media begins before the callee accepts.
+If both are supplied, the client forwards both unchanged to `addIceCandidate`.
 
-If microphone acquisition fails, no call is created.
+The candidate string independently passes the existing relay-only C1 parser. Candidate text is never persisted or logged.
 
-If camera acquisition fails:
+### End of candidates
 
-- do not silently create a voice call
-- show a bounded local error
-- offer explicit retry
-- optionally offer an explicit user choice to continue the video-kind call with camera off
-- optionally offer a separate explicit Voice call action
+C2 v2 keeps one global empty `signal.end_of_candidates` payload.
 
-A video call remains `kind = video` even if one or both cameras are off.
+The receiver applies:
 
-### Callee
+`addIceCandidate(null)`
 
-Ringing never activates microphone or camera.
+Do not invent per-m-line end markers in C2.
 
-The callee sees **Incoming video call** before acceptance.
+## 8. Camera consent boundary
 
-C2 provides explicit choices:
+C2 adopts a stricter rule than the earlier draft:
 
-- **Accept video**, which attempts microphone plus camera
-- **Accept with camera off**, which acquires microphone only and still accepts the durable video-kind call
+**Camera capture is never requested while the durable call is only ringing.**
 
-Both actions send the required `video-v1` media profile.
+This avoids camera prompts/capture in a losing tab or losing callee device and keeps the privacy boundary aligned with authoritative acceptance.
 
-Camera permission alone never accepts the call.
+### Caller flow
+
+When the caller selects **Video call**:
+
+1. verify live realtime/offline preconditions
+2. acquire microphone exactly as C1 does
+3. store an in-memory `cameraIntent = on` for this call attempt
+4. create the durable video call with `video-v1`
+5. keep camera closed while ringing
+6. after canonical state becomes accepted on this selected caller endpoint, acquire the media-owner lease
+7. only then request camera if the original camera intent is still current
+8. if camera acquisition fails, keep the video-kind call alive with audio and show camera unavailable
+
+If the tab reloads, loses media ownership, backgrounds before camera starts, or otherwise loses the transient intent, camera defaults to off. It never reconstructs camera intent from durable state.
+
+If microphone acquisition fails, no outgoing call is created.
+
+### Callee flow
+
+Ringing never requests microphone or camera.
+
+The incoming UI exposes:
+
+- **Accept video**
+- **Accept with camera off**
+- **Reject**
+
+For either accept action:
+
+1. acquire microphone before the authoritative accept exactly as C1 does
+2. send accept with `video-v1`
+3. first committed accept still selects the callee endpoint
+4. acquire the media-owner lease on the winning selected endpoint
+5. only **Accept video** sets transient camera intent and requests camera after successful accept plus lease ownership
+6. **Accept with camera off** never requests camera
+
+A losing tab/device MUST stop its pre-acquired microphone and MUST NOT request camera.
+
+Camera permission failure after a successful video accept is a local camera failure, not whole-call failure. Audio may continue and durable kind remains `video`.
 
 ## 9. Camera privacy state machine
 
@@ -244,7 +328,8 @@ Camera state is local only:
 ```text
 off
  |
- | explicit local action
+ | accepted selected endpoint
+ | + current local camera intent
  v
 acquiring
  | \
@@ -261,7 +346,7 @@ on
  |
  +--> track ended --> off
  |
- +--> authority lost --> off
+ +--> authority/ownership lost --> off
 ```
 
 Every asynchronous camera operation is fenced by a monotonic in-memory `cameraGeneration`.
@@ -277,98 +362,130 @@ Increment generation when:
 - selected endpoint/session is revoked
 - partnership authority changes
 
-A stale `getUserMedia()` result MUST immediately stop its returned tracks and MUST NOT attach to sender or preview.
+A stale `getUserMedia()` result MUST immediately stop every returned track and MUST NOT attach to sender or preview.
 
-## 10. Camera acquisition policy
+Camera generation is never persisted or signaled.
 
-Initial preferred capture:
+## 10. Camera acquisition and switching policy
 
-- facing mode: `user`
-- width: ideal 1280, max 1280
-- height: ideal 720, max 720
-- frame rate: ideal 24, max 30
+Initial camera request uses:
 
-If constraints fail with `OverconstrainedError`, retry through a deterministic lower tier without looping permission prompts.
+- facing mode `user`
+- width ideal/max 1280
+- height ideal/max 720
+- frame rate ideal 24, max 30
+
+Fallback is deterministic:
+
+1. preferred 720p tier
+2. same facing mode with width/height ideals removed
+3. same facing mode with only a 30 fps maximum
+4. fail camera acquisition
+
+Only `OverconstrainedError` advances to the next constraint tier.
+
+Permission denial, security errors, missing media devices, or arbitrary browser failures do not loop through tiers.
 
 Do not enumerate camera labels before permission.
 
-Server APIs never receive camera labels or device IDs.
+For explicit front/back switching:
+
+- request the opposite facing mode explicitly
+- never silently fall back to an unrelated camera
+- if the browser cannot open both cameras simultaneously, stop the old camera first, then attempt the requested facing mode
+- if that attempt fails, camera remains off and audio continues
+- no automatic reacquisition of the old camera occurs without a new local action
+
+Camera labels/device IDs remain local even after permission.
 
 ## 11. Stable media topology
 
-Voice call:
+Voice remains the verified C1 topology and protocol.
 
-- existing C1 audio topology only
-- `shawtie.call.v1`
-
-Video call:
+Video creates one peer connection with:
 
 - one audio sender/receiver
-- one stable video transceiver for the call lifetime
+- one stable video transceiver
 - `shawtie.call.v2`
+- `iceTransportPolicy: "relay"`
+- `bundlePolicy: "max-bundle"`
+- `iceCandidatePoolSize: 0`
 
-Create the video transceiver during initial accepted-call negotiation even when the local camera is currently off.
+For a video call, construct media in deterministic order:
 
-The video transceiver remains present for the call lifetime.
+1. add the local audio track first
+2. add one `video` transceiver with direction `sendrecv`
 
-Routine camera operations MUST NOT add/remove m-lines.
+That guarantees the expected initial media ordering: audio index 0, video index 1.
+
+The video sender initially has no track unless camera acquisition has already completed after acceptance and ownership.
+
+Routine camera on/off/switch MUST use the existing video sender and MUST NOT add/remove transceivers or media sections.
 
 ## 12. Camera on/off and switch
 
 ### Camera on
 
 1. verify canonical call is accepted or connected
-2. verify current device still owns the selected endpoint
-3. capture `cameraGeneration`
-4. acquire one video track
-5. discard immediately if generation became stale
-6. attach with `RTCRtpSender.replaceTrack(videoTrack)`
-7. attach same track to muted local preview
-8. stop any superseded track
-9. update local camera state
+2. verify this device is still selected
+3. verify this tab still owns the media lease
+4. increment/capture `cameraGeneration`
+5. acquire one requested video track
+6. stop it immediately if generation or ownership became stale
+7. attach with `RTCRtpSender.replaceTrack(videoTrack)`
+8. attach the same track to muted local preview
+9. stop any superseded track
+10. update local camera state
 
 ### Camera off
 
 1. increment `cameraGeneration`
 2. `replaceTrack(null)`
-3. stop local camera track
-4. clear local preview
-5. retain video transceiver
-6. keep audio and durable call state unchanged
+3. stop local video track
+4. clear preview
+5. retain transceiver
+6. retain audio and durable call state
+
+Camera off never mutates call version and never calls a server camera endpoint.
 
 ### Camera switch
 
-Prefer:
+1. increment/capture generation
+2. request the explicit opposite facing mode
+3. validate generation and ownership
+4. replace the video sender track
+5. update preview only after replacement succeeds
+6. stop superseded track
 
-1. acquire replacement camera track
-2. generation-check it
-3. replace existing video sender track
-4. update preview only after successful replacement
-5. stop old track
+If old hardware must be released first and replacement fails, camera remains off.
 
-On mobile browsers that cannot open both cameras at once, stop the old track first, enter a bounded switching state, then acquire the requested facing mode.
+Camera failure alone MUST NOT call the durable `/fail` endpoint while the peer connection and audio remain healthy.
 
-A failed switch never ends the audio call and never silently chooses an unrelated camera.
+## 13. Media-controller implementation boundary
 
-## 13. Media controller structure
+Do not grow the existing `CallingPanel` into the WebRTC state machine.
 
-Do not turn the existing C1 `CallingPanel` into a monolith.
+Required structure:
 
-Refactor calling media into:
+- `media-controller.ts`: selected-endpoint lease, peer connection, audio, signaling, TURN, network recovery, endpoint-connected reporting
+- new `camera-controller.ts`: camera intent, generation fencing, constraints, on/off/switch, local preview track
+- new `VideoSurface.tsx`: rendering only
+- `CallingPanel.tsx`: product actions and presentation state
 
-- shared call session controller
-- audio controller inherited from C1
-- C2 camera controller
-- rendering state exposed to React
+`CallMediaSession` becomes call-kind aware.
 
-Recommended files:
+The camera controller can operate only after the shared media session owns the C1 `MediaOwnerLease`.
 
-- `apps/web/src/features/calling/media-controller.ts`: shared peer/signaling/ICE ownership
-- `apps/web/src/features/calling/camera-controller.ts`: camera generation, constraints, switch/off lifecycle
-- `apps/web/src/features/calling/CallingPanel.tsx`: call action/UI state
-- optional `VideoSurface.tsx`: local/remote rendering only
+Remote media is split into dedicated streams:
 
-The C1 voice path MUST remain covered by existing tests after refactor.
+- audio tracks feed the existing remote audio element
+- video tracks feed a video-only `MediaStream` bound to the muted `VideoSurface`
+
+Never bind remote video audio to the video element.
+
+Remote camera availability is inferred from WebRTC video-track/render state. C2 sends no camera-state frame.
+
+The C1 voice path MUST remain behaviorally unchanged and covered after the refactor.
 
 ## 14. Audio and video rendering
 
@@ -434,7 +551,7 @@ Baseline video capture is bounded to 720p and 30 fps.
 
 Browser congestion control remains the primary adaptation mechanism.
 
-Where supported and verified, the video sender may apply a conservative maximum bitrate through `RTCRtpSender.setParameters()`. Failure to set a bitrate cap MUST NOT break the call.
+A video sender bitrate cap may be attempted through `RTCRtpSender.setParameters()` only after the connection is healthy. Failure to apply the cap is non-fatal and MUST NOT trigger call failure or privacy downgrade.
 
 Audio continuity has priority over preserving video quality.
 
@@ -443,7 +560,7 @@ On network transition:
 - reuse C1 signaling reconnect
 - use relay-only ICE restart
 - never fall back to host or srflx connectivity
-- video may temporarily freeze/degrade while audio remains active
+- video may freeze/degrade while audio remains active
 
 ## 18. Permissions Policy
 
@@ -451,45 +568,72 @@ C1 currently serves:
 
 `camera=(), microphone=(self)`
 
-C2 implementation changes same-origin policy to:
+C2 changes the trusted application origin to:
 
 `camera=(self), microphone=(self)`
 
 Do not use `camera=*`.
 
-The policy only makes same-origin camera access possible. Actual capture still requires browser permission and explicit local product action.
+This header only permits the trusted origin to request camera. It does not authorize capture.
 
-## 19. Operational controls
+Camera still requires:
 
-C2 adds:
+- an accepted selected video endpoint
+- current media-owner lease
+- current local camera intent
+- browser permission
+
+## 19. Operational-control truth table
+
+C2 adds `videoEnabled` to the shared calling configuration, sourced from:
 
 `C2_VIDEO_ENABLED`
 
-Rules:
+Default:
 
-- defaults off in production until C2 acceptance closes
-- video create fails closed when disabled
-- video accept fails closed when disabled
-- voice calls remain governed by existing C1 controls
-- `C1_TRANSPORT_ENABLED` still controls signaling/TURN for both voice and video
-- disabling C2 never rewrites an existing video call into voice
+- production: false
+- development/test: true
 
-Existing accepted/connected video calls may be allowed to finish when only new-video creation is disabled. A separate emergency transport disable still uses the C1 transport kill switch.
+Exact behavior:
 
-## 20. Realtime and push
+| Operation | C1_CALLING_ENABLED | C1_TRANSPORT_ENABLED | C2_VIDEO_ENABLED |
+| --- | --- | --- | --- |
+| create voice | required | not required until accept | ignored |
+| create video | required | not required until accept | required |
+| accept ringing voice | existing C1 behavior | required | ignored |
+| accept ringing video | existing C1 behavior | required | required |
+| reject/cancel/end/read/history | existing C1 behavior | existing C1 behavior | ignored |
+| signaling/TURN for accepted voice | existing C1 behavior | required | ignored |
+| signaling/TURN for accepted video | existing C1 behavior | required | ignored after acceptance |
 
-No new realtime event family is needed.
+If `C2_VIDEO_ENABLED` turns off while a video call is ringing, new acceptance fails closed and the call may still be rejected, cancelled, or expire.
 
-C2 continues to use:
+If it turns off after the call is already accepted/connected, the product flag does not kill the in-flight call. Existing selected endpoints may continue signaling/TURN refresh while `C1_TRANSPORT_ENABLED` remains true.
+
+`C1_TRANSPORT_ENABLED` remains the emergency transport kill switch for both voice and video.
+
+No flag ever rewrites a video call into voice.
+
+## 20. Realtime, push, worker and durable identifiers
+
+C2 does not fork the existing shared call delivery machinery.
+
+Reuse unchanged:
 
 - `shawtie.realtime.v2`
 - content-free `call.changed`
-- canonical HTTP refetch
 - generic call Web Push
+- `c1.call.changed` outbox event name
+- `c1.call.push` outbox event name
+- `c1.call.ringing_timeout`
+- `c1.call.accepted_timeout`
+- `c1.call.connected_timeout`
 
-Push payload remains privacy-minimized and does not need video metadata.
+The historical `c1.` prefixes are stable internal identifiers for the shared call subsystem. Renaming them during C2 would create unnecessary durable compatibility risk and is explicitly out of scope.
 
-The authenticated app learns `kind = video` after canonical fetch.
+The PWA synchronizer key may remain `c1-call` internally; user-visible labels become generic voice/video call language.
+
+Push stays privacy-minimized. The authenticated canonical fetch reveals `kind = video`.
 
 ## 21. Lifecycle behavior
 
@@ -543,7 +687,7 @@ Every C2 closure run includes the retained C1 closure.
 
 ## 24. Implementation slices
 
-### C2-A Contracts, compatibility, and feature gate
+### C2-A Contracts and configuration
 
 Files:
 
@@ -551,16 +695,20 @@ Files:
 - new `packages/contracts/src/calls/signaling-v2.ts`
 - `packages/contracts/src/index.ts`
 - `apps/api/src/config.ts`
+- `apps/api/src/application.ts`
 
 Implement:
 
-- `clientMediaProfile: "video-v1"`
-- video-specific accept schema
-- `shawtie.call.v2` schemas
-- candidate m-line locator fields
-- `C2_VIDEO_ENABLED`
+- strict voice/video create discriminated union
+- new `callAcceptMutationSchema`
+- `video-v1` profile
+- `shawtie.call.v2` schemas and limits
+- exact v2 candidate locator validation
+- global empty end-of-candidates frame
+- register v2 in the one-protocol global WebSocket selector
+- `CallingConfig.videoEnabled` from `C2_VIDEO_ENABLED`
 
-### C2-B Server video enablement
+### C2-B API and durable authority
 
 Files:
 
@@ -568,14 +716,15 @@ Files:
 - `apps/api/src/modules/calls/routes.ts`
 - `packages/db/src/repositories/calls.ts`
 
-Implement:
+Implement in this order:
 
-- stop hardcoding `kind: "voice"`
-- pass validated `input.kind`
-- require media profile for video create/accept
-- return update-required/unsupported error for stale clients
-- extend endpoint authorization result with call kind
-- no schema migration
+1. keep C1 voice request path unchanged
+2. validate video feature/profile before idempotency replay
+3. persist `input.kind` instead of hardcoded voice
+4. expose durable call kind from endpoint authorization
+5. use the existing participant endpoint-selection transaction
+6. preserve existing `c1.call.*` outbox/deadline identifiers
+7. add no migration
 
 ### C2-C Signaling v2
 
@@ -587,12 +736,15 @@ Files:
 
 Implement:
 
-- select v1 for voice and v2 for video
-- kind-aware SDP validation
-- v2 candidate `sdpMid/sdpMLineIndex`
-- relay candidate validation unchanged
-- generation fencing unchanged
-- backlog/rate/backpressure unchanged
+- one hub, two strict call signaling dialects
+- v1 only for voice
+- v2 only for video
+- audio index 0, video index 1
+- candidate-free SDP
+- exact v2 candidate locator
+- global end-of-candidates
+- existing relay candidate parser unchanged
+- generation, rate, backlog and backpressure controls unchanged
 
 ### C2-D Browser media engine
 
@@ -600,17 +752,22 @@ Files:
 
 - `media-controller.ts`
 - new `camera-controller.ts`
+- new `VideoSurface.tsx`
 - browser harness
 
 Implement:
 
+- microphone pre-acquisition remains C1-derived
+- no camera request while ringing
+- camera intent is transient and in-memory
+- media lease acquired before camera request
 - call-kind aware signaling
-- v2 ICE candidate metadata
+- video peer configuration with max-bundle and zero candidate pool
+- deterministic audio then video topology
 - stable video transceiver
 - camera generation fencing
-- replaceTrack on/off/switch
-- separate audio/video rendering
-- stop-on-hidden behavior
+- separate audio/video remote streams
+- background camera stop
 - no camera metadata server transmission
 
 ### C2-E Product UI
@@ -618,20 +775,21 @@ Implement:
 Files:
 
 - `CallingPanel.tsx`
-- optional `VideoSurface.tsx`
+- `VideoSurface.tsx`
 - styles
 - `vite.config.ts`
 
 Implement:
 
-- Voice call and Video call actions
+- separate Voice call and Video call actions
 - Incoming video call wording
-- Accept video / Accept with camera off
+- Accept video
+- Accept with camera off
 - local preview
 - remote video
 - camera on/off
-- switch camera
-- video unavailable states
+- explicit front/back switch
+- camera unavailable/retry state
 - responsive portrait-first controls
 - Permissions Policy camera self only
 
@@ -639,15 +797,21 @@ Implement:
 
 Add:
 
-- contract/domain tests
+- exact contract tests
+- profile-before-idempotency tests
+- feature-flag truth-table tests
 - API/security integration
 - signaling v1 regression
 - signaling v2 tests
+- wrong-kind protocol denial
 - stale old-client acceptance denial
-- camera stale-promise tests
+- no-camera-before-acceptance tests
+- losing-device/tab never requests camera
+- stale camera-promise tests
 - camera leak tests
 - network/ICE restart tests
 - lifecycle/revocation tests
+- existing accepted video continues after C2 product disable
 - log/privacy scans
 
 ### C2-G Automated local closure

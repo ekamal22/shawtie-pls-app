@@ -36,9 +36,12 @@ Never commit:
 ### 1. Basic outgoing video call
 
 - explicit Video call action
+- caller microphone may be pre-acquired exactly as C1
+- caller camera remains unopened while ringing
 - incoming UI identifies video
 - explicit callee acceptance
 - signaling only after acceptance
+- camera request happens only after acceptance plus selected-endpoint/media-owner confirmation
 - bidirectional audio
 - bidirectional video when both cameras enabled
 - relay-only selected pair
@@ -63,11 +66,13 @@ Never commit:
 
 Same privacy properties as caller denial.
 
-### 5. No camera before local action
+### 5. No camera before authoritative acceptance
 
-- ringing notification does not request camera
+- outgoing ringing never requests caller camera
+- incoming ringing never requests callee camera
 - notification tap does not request camera
 - remote peer cannot request local camera
+- losing tab/device never requests camera after losing acceptance
 - stale UI cannot activate camera
 
 ### 6. Camera off
@@ -119,8 +124,10 @@ On Redmi:
 
 ### 12. Multi-tab media ownership
 
-- only selected owner tab holds mic/camera/peer/signaling
+- only selected owner tab holds camera/peer/signaling
 - observer does not prompt for camera
+- caller camera intent remains transient until accepted ownership
+- callee losing accept tab stops its pre-acquired microphone and never requests camera
 - takeover increments media-owner generation
 - old owner cannot regain audio/video/signaling authority
 
@@ -256,11 +263,40 @@ On Redmi:
 ### 31. Video feature kill switch
 
 - `C2_VIDEO_ENABLED=0`
-- video creation/accept disabled
+- new video creation is disabled
+- ringing video acceptance is disabled
 - existing C1 voice call creation and signaling still work
 - no video-to-voice reinterpretation
+- an already accepted/connected video call is not killed solely by this product flag
+- disabling `C1_TRANSPORT_ENABLED` still fails closed for accepted video signaling/TURN
 
-### 32. Log/privacy audit
+### 33. Caller intent lost before answer
+
+- start an outgoing video call
+- reload/background or transfer media ownership before the callee accepts
+- after acceptance, camera remains off
+- no delayed permission prompt or silent camera acquisition occurs
+- explicit Turn camera on is required
+
+### 34. Two callee devices race to accept video
+
+- both devices receive the ringing video call
+- both may pre-acquire microphone from explicit accept action
+- first committed accept wins
+- losing device stops microphone
+- losing device never requests camera
+- winning device alone may request camera after selected-endpoint/media-owner confirmation
+
+### 35. Video flag disabled after acceptance
+
+- establish an accepted/connected video call
+- set `C2_VIDEO_ENABLED=0`
+- existing media/signaling/TURN refresh can continue
+- new video calls and new ringing-video accepts fail
+- voice remains healthy
+- setting `C1_TRANSPORT_ENABLED=0` then fails closed for transport
+
+### 36. Log/privacy audit
 
 Verify no first-party application log/database contains:
 

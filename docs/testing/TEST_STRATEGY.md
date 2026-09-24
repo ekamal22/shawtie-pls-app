@@ -623,16 +623,20 @@ C2 reuses the verified C1 durable call authority, TURN policy, push substrate, l
 
 Automated/local coverage must include:
 
-- video create/accept requires `video-v1`
+- strict create union preserves the old voice body and requires `video-v1` for video
+- video accept profile is checked before idempotency replay and endpoint selection
 - old C1 clients cannot accept a video call
 - voice create/accept remains backward compatible
 - wrong signaling subprotocol for durable call kind fails closed
-- video SDP contains exactly one audio plus one video media section
+- video SDP contains audio at index 0 and video at index 1
 - application/data-channel, extra media and candidate-in-SDP rejection
-- v2 candidate media locator validation and no hardcoded m-line index 0
+- v2 candidate locator exact-shape validation and no hardcoded index 0
+- global empty end-of-candidates maps to `addIceCandidate(null)`
 - relay-only host/srflx/prflx rejection remains unchanged
-- stable video transceiver creation
-- camera generation fencing across acquire/off/switch/background/end/revocation
+- video peer uses relay/max-bundle/zero candidate pool with one stable video transceiver
+- no camera request while call is ringing
+- camera generation fencing across acquire/off/switch/background/end/revocation and ownership loss
+- losing accept device/tab never requests camera
 - camera off stops track and preserves audio
 - front/back switching and failed-switch behavior
 - separate remote audio/video rendering and video recovery gesture
@@ -640,7 +644,7 @@ Automated/local coverage must include:
 - network transition plus relay-only ICE restart
 - signaling reconnect under video
 - breakup, account deletion, endpoint revocation and final dissolution
-- `C2_VIDEO_ENABLED` fail-closed behavior with C1 voice still healthy
+- `C2_VIDEO_ENABLED` admission-gate truth table, including accepted video continuity and C1 transport kill-switch behavior
 - no camera labels/device IDs/video frames/SDP/ICE/TURN credentials in first-party durable state or logs
 - migration plan remains real 0001 through 0018 with `reserved=0` unless architecture is explicitly amended
 

@@ -4,49 +4,48 @@
 
 DESIGN COMPLETE. SOURCE IMPLEMENTATION NOT STARTED.
 
-C2 adds a dedicated negotiated subprotocol for video calls:
+Video uses:
 
 `shawtie.call.v2`
 
-Voice calls continue to use the verified:
+Voice remains frozen on:
 
 `shawtie.call.v1`
 
-## 1. Why v2 is required
+## 1. Route and negotiation
 
-C1 v1 was intentionally designed for exactly one audio m-line.
-
-Its ICE application payload carries only the raw candidate string, and the C1 client reconstructs remote candidates against m-line index 0.
-
-Video calls require at least:
-
-- one audio m-line
-- one video m-line
-- correct candidate association to media descriptions
-
-C2 MUST NOT silently redefine the strict C1 v1 candidate payload.
-
-Therefore video uses v2.
-
-## 2. Transport route
-
-C2 reuses the same authenticated route:
+Both protocols use:
 
 `/api/v1/calls/:callId/signal`
 
-Protocol selection is call-kind aware:
+The global WebSocket transport accepts exactly one offered supported subprotocol.
 
-- voice call: server accepts `shawtie.call.v1`
-- video call: server accepts `shawtie.call.v2`
-- wrong protocol for durable call kind fails closed
+After session/device authorization, the call route loads selected-endpoint authorization including durable call kind and requires:
 
-No second WebSocket endpoint is required.
+| Call kind | Required protocol |
+| --- | --- |
+| voice | `shawtie.call.v1` |
+| video | `shawtie.call.v2` |
+
+Wrong protocol fails closed before the hub accepts the socket.
+
+The server keeps one shared signaling hub with a strict protocol dialect per connection.
+
+## 2. Limits
+
+C2 v2 uses bounded limits no weaker than C1:
+
+- frame: 64 KiB
+- SDP: 48 KiB
+- candidate string: 2048 bytes
+- candidates per signaling connection: 256
+- existing per-minute frame and buffered-byte limits remain
+
+M2 realtime application-frame limits remain unchanged.
 
 ## 3. Frame envelope
 
-C2 v2 remains generation-fenced and text-only.
-
-Recommended frame shape:
+Every v2 frame contains:
 
 ```json
 {
@@ -57,7 +56,7 @@ Recommended frame shape:
 }
 ```
 
-Control semantics remain equivalent to C1:
+Allowed types:
 
 - `control.ready`
 - `control.superseded`
@@ -66,11 +65,11 @@ Control semantics remain equivalent to C1:
 - `signal.end_of_candidates`
 - `signal.restart`
 
-No camera-state frame is introduced.
+No camera-state frame exists.
 
-## 4. SDP frame
+## 4. SDP description
 
-Description payload:
+Payload:
 
 ```json
 {
@@ -79,21 +78,31 @@ Description payload:
 }
 ```
 
-Video v2 validator requires:
+Video v2 requires deterministic media order:
 
-- one audio media section
-- one video media section
-- no application/data media section
-- no additional media section
-- no candidate lines
-- no end-of-candidates lines
-- bounded byte and line limits
+- m-line index 0 is audio
+- m-line index 1 is video
 
-Server validation is based on durable call kind.
+Exactly two media sections are permitted:
 
-## 5. ICE candidate frame
+1. one `m=audio`
+2. one `m=video`
 
-Video v2 candidate payload:
+Reject:
+
+- video-before-audio order
+- duplicate audio/video sections
+- application/data-channel sections
+- any third media section
+- candidate lines
+- end-of-candidates lines
+- oversized/over-line-limit SDP
+
+The durable call kind is checked before forwarding.
+
+## 5. ICE candidate payload
+
+Exact payload:
 
 ```json
 {
@@ -103,41 +112,90 @@ Video v2 candidate payload:
 }
 ```
 
-Rules:
+Schema:
 
-- `candidate` remains bounded
-- `sdpMid` may be null
-- `sdpMLineIndex` may be null
-- at least one media locator must be present
-- m-line index must be in the expected video-call range
-- candidate text must independently pass existing relay-only parser
-- raw peer candidate/IP evidence is not persisted or logged
+- `candidate`: non-empty, at most 2048 bytes
+- `sdpMid`: null or 1 to 32 characters matching `[A-Za-z0-9_.-]+`
+- `sdpMLineIndex`: null, 0, or 1
+- at least one locator is non-null
 
-The client reconstructs:
+If both locators exist, preserve both.
+
+The server does not need to interpret the semantic MID value. It validates only its bounded safe-token shape and the bounded index.
+
+Candidate text independently passes the existing C1 relay-only parser.
+
+The receiver constructs:
 
 ```text
-RTCIceCandidateInit {
+{
   candidate,
   sdpMid,
   sdpMLineIndex
 }
 ```
 
-Do not hardcode index 0 for video.
+and passes it to `addIceCandidate`.
+
+Video code never hardcodes index 0.
 
 ## 6. End of candidates
 
-End-of-candidates should retain enough media association to be applied safely when browser behavior requires it.
+Exact v2 frame:
 
-If browser evidence shows one global end marker is sufficient under BUNDLE, keep the contract minimal.
+```json
+{
+  "v": 2,
+  "type": "signal.end_of_candidates",
+  "generation": 4,
+  "payload": {}
+}
+```
 
-If separate media association is required, use the same bounded locator shape as candidate frames.
+It is global for the current ICE generation.
 
-This must be settled by automated Chromium plus Redmi evidence before closure.
+The receiver calls:
 
-## 7. Relay-only privacy
+`addIceCandidate(null)`
 
-C2 inherits the C1 relay parser without relaxation.
+C2 does not add per-media end markers.
+
+## 7. Peer configuration
+
+Video peer connection uses:
+
+```text
+iceTransportPolicy = relay
+bundlePolicy = max-bundle
+iceCandidatePoolSize = 0
+```
+
+TURN servers and short-lived credentials come from the existing C1 endpoint.
+
+Media construction order is:
+
+1. add audio track
+2. add one video transceiver with direction sendrecv
+
+This produces the expected initial audio/video m-line order.
+
+## 8. Stable video transceiver
+
+The video transceiver exists for the video-call lifetime.
+
+Routine camera operations use its sender:
+
+- on: `replaceTrack(videoTrack)`
+- off: `replaceTrack(null)`, then stop track
+- switch: `replaceTrack(replacementTrack)`
+
+Routine camera operations must not create another video transceiver.
+
+If browser behavior unexpectedly requires negotiation, reuse the current v2 perfect-negotiation path.
+
+## 9. Relay-only privacy
+
+C2 inherits the C1 relay candidate parser without relaxation.
 
 Reject:
 
@@ -146,54 +204,57 @@ Reject:
 - prflx
 - unknown candidate types
 - malformed relay candidates
-- relay candidate related/base address leakage
+- privacy-unsafe related/base address forms
 
-Video never enables direct fallback.
+No direct fallback exists.
 
-## 8. Perfect negotiation
+## 10. Perfect negotiation and generation
 
-C2 reuses C1 polite/impolite roles and signaling generation.
+C2 reuses:
 
-Stable video transceiver creation occurs before initial offer/answer.
+- polite/impolite roles
+- making-offer collision handling
+- candidate buffering
+- signaling generations
+- socket supersession
+- reconnect behavior
+- relay-only ICE restart
 
-Routine camera on/off/switch SHOULD use `replaceTrack` and avoid negotiation.
+A stale signaling generation is ignored/rejected exactly as C1 requires.
 
-If a supported browser requires renegotiation, it uses the same perfect-negotiation path and current v2 generation.
+## 11. Signaling reconnect
 
-## 9. Signaling reconnect
-
-A lost signaling socket does not end healthy media by itself.
+Healthy media does not end solely because the signaling socket closes.
 
 Reconnect:
 
-- revalidates session/device/call authority
-- uses a fresh signaling generation
-- video call reconnect negotiates v2
-- voice call reconnect remains v1
-- relay-only ICE restart may occur
+- reauthenticates session/device
+- rechecks selected endpoint authorization
+- rechecks durable call kind
+- negotiates v2 for video
+- receives a fresh signaling generation
+- may perform relay-only ICE restart
 
-## 10. Compatibility
-
-C1 voice client and server behavior remains frozen.
+## 12. Compatibility
 
 A C2-capable client:
 
 - uses v1 for voice
 - uses v2 for video
 
-A C1-only client offering only v1 for a video call is rejected.
+A C1-only client offering v1 for video is rejected.
 
-Video acceptance is already protected by the HTTP `video-v1` media-profile gate, so signaling is a second compatibility boundary.
+HTTP `video-v1` acceptance is the first compatibility boundary. Signaling v2 is the second.
 
-## 11. No camera-state signaling
+Neither boundary is a substitute for account/device/call authorization.
 
-C2 does not send:
+## 13. Logging
 
-- camera permission
-- camera device
-- facing mode
-- on/off history
+Never persist or routinely log:
 
-Remote UI derives transient video availability from WebRTC tracks/rendering.
-
-If a future product requirement truly needs explicit camera state, review a later protocol change rather than smuggling it into v2.
+- SDP
+- candidate text
+- peer addresses
+- MID values tied to raw candidate evidence
+- TURN credentials
+- raw signaling frames

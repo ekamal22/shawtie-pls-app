@@ -1757,21 +1757,24 @@ Migration ownership:
 
 ### C2-A Contracts and compatibility
 
-- [ ] add `video-v1` media profile
-- [ ] video create requires profile
-- [ ] video accept requires profile
+- [ ] strict create union keeps the existing voice body unchanged and requires `video-v1` for video
+- [ ] dedicated accept schema permits profile and service requires it for video
+- [ ] profile validation happens before idempotency replay and endpoint selection
 - [ ] voice request compatibility remains unchanged
-- [ ] add strict signaling-v2 schemas
+- [ ] add strict signaling-v2 schemas and exact limits
 - [ ] add bounded m-line candidate locator fields
-- [ ] add `C2_VIDEO_ENABLED`
+- [ ] global v2 end-of-candidates payload is fixed as `{}`
+- [ ] add `C2_VIDEO_ENABLED` with production-off/nonproduction-on default
 
 ### C2-B API and authority
 
 - [ ] stop hardcoding voice on create
 - [ ] persist validated video kind through existing repository
-- [ ] require profile before video endpoint selection
+- [ ] require profile before video idempotency replay and endpoint selection
 - [ ] old C1 client cannot win video acceptance
 - [ ] endpoint authorization exposes call kind to signaling
+- [ ] existing `c1.call.*` outbox/deadline identifiers remain unchanged
+- [ ] C2 product flag gates admission only, not already accepted calls
 - [ ] no PostgreSQL migration added without architecture amendment
 
 ### C2-C Signaling v2
@@ -1779,18 +1782,21 @@ Migration ownership:
 - [ ] video requires `shawtie.call.v2`
 - [ ] voice retains `shawtie.call.v1`
 - [ ] wrong subprotocol for call kind fails closed
-- [ ] video SDP exactly audio + video
+- [ ] video SDP exactly audio index 0 then video index 1
 - [ ] application/data channel rejected
 - [ ] candidate-free SDP enforced
-- [ ] v2 candidate media locator forwarded safely
+- [ ] v2 candidate locator is exact bounded `sdpMid`/0-or-1 `sdpMLineIndex`
+- [ ] global end-of-candidates maps to `addIceCandidate(null)`
 - [ ] relay-only candidate parser unchanged
 - [ ] generation/backpressure/rate-limit behavior retained
 
 ### C2-D Browser media engine
 
 - [ ] shared peer controller accepts call kind
-- [ ] video call creates stable video transceiver
-- [ ] camera controller is generation-fenced
+- [ ] video peer uses relay, max-bundle and zero candidate pool
+- [ ] audio is created before one stable video transceiver
+- [ ] no camera is requested while ringing
+- [ ] camera controller is generation-fenced and lease-gated
 - [ ] camera on uses existing sender
 - [ ] camera off detaches/stops track
 - [ ] front/back switch uses replaceTrack path
