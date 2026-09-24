@@ -13,6 +13,7 @@ import {
 } from "@shawtie/contracts";
 import {
   consumeRateLimitBuckets,
+  getCurrentPartnershipForAccount,
   getTransactionTimestamp,
   loadCallEndpointAuthorization,
   withTransaction,
@@ -59,39 +60,59 @@ async function rateLimit(
   deps: Dependencies,
   scope: string,
   limit: number,
+  includePartnership = false,
 ): Promise<void> {
   const decision = await withTransaction(deps.database, async (transaction) => {
     const now = await getTransactionTimestamp(transaction);
-    return consumeRateLimitBuckets(
-      transaction,
-      [
-        {
-          scope: `c1.${scope}.account`,
+    const buckets = [
+      {
+        scope: `c1.${scope}.account`,
+        keyVersion: deps.keys.activeVersion,
+        keyHash: deps.keys.verifier(
+          "rate-limit-key",
+          `account\0${auth.session.accountId}`,
+          deps.keys.activeVersion,
+        ),
+        windowMs: 60_000,
+        limit,
+        blockMs: 60_000,
+      },
+      {
+        scope: `c1.${scope}.network`,
+        keyVersion: deps.keys.activeVersion,
+        keyHash: deps.keys.verifier(
+          "rate-limit-key",
+          `network\0${request.ip}`,
+          deps.keys.activeVersion,
+        ),
+        windowMs: 60_000,
+        limit: limit * 2,
+        blockMs: 60_000,
+      },
+    ];
+
+    if (includePartnership) {
+      const current = await getCurrentPartnershipForAccount(
+        transaction,
+        auth.session.accountId,
+      );
+      if (current) {
+        buckets.push({
+          scope: `c1.${scope}.partnership`,
           keyVersion: deps.keys.activeVersion,
           keyHash: deps.keys.verifier(
             "rate-limit-key",
-            `account\0${auth.session.accountId}`,
+            `partnership\0${current.partnershipId}`,
             deps.keys.activeVersion,
           ),
           windowMs: 60_000,
           limit,
           blockMs: 60_000,
-        },
-        {
-          scope: `c1.${scope}.network`,
-          keyVersion: deps.keys.activeVersion,
-          keyHash: deps.keys.verifier(
-            "rate-limit-key",
-            `network\0${request.ip}`,
-            deps.keys.activeVersion,
-          ),
-          windowMs: 60_000,
-          limit: limit * 2,
-          blockMs: 60_000,
-        },
-      ],
-      now,
-    );
+        });
+      }
+    }
+
+    return consumeRateLimitBuckets(transaction, buckets, now);
   });
   if (!decision.allowed) {
     throw new ApiError(
@@ -121,7 +142,7 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
 
   app.post("/api/v1/calls", async (request, reply) => {
     const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
-    await rateLimit(request, auth, deps, "call.create", 12);
+    await rateLimit(request, auth, deps, "call.create", 12, true);
     const input = parseAtBoundary(callCreateSchema, request.body);
     const result = await deps.service.create(auth, input, idempotency(request.headers));
     privateNoStore(reply);
