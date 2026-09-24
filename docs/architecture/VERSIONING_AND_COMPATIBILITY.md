@@ -176,3 +176,18 @@ The service-worker/client compatibility gate must prevent stale application code
 The shared WebSocket server does not implicitly negotiate across protocol families. A connection offers exactly one application subprotocol; the global handler rejects unknown or multiple offers; the route verifies the exact protocol it owns. Realtime v1/v2 keep the 4 KiB M2 application-frame limit even if the transport ceiling increases for `shawtie.call.v1` SDP.
 
 C1 durable scheduled/outbox payloads remain independently versioned and unknown payload versions fail closed.
+
+## C2 video-call compatibility
+
+C2 preserves the verified C1 wire contract instead of widening it in place.
+
+- voice calls remain on `shawtie.call.v1`
+- video calls use `shawtie.call.v2`
+- video create and accept require `clientMediaProfile: "video-v1"`
+- a C1-only client may fetch/reject a video call but cannot become its accepted endpoint
+- the same `/api/v1/calls/:callId/signal` route selects signaling protocol by durable call kind
+- v2 ICE candidates include bounded `sdpMid`/`sdpMLineIndex` location metadata because video has multiple media sections
+- realtime remains `shawtie.realtime.v2` with the same content-free `call.changed`; camera state never enters realtime
+
+No existing v1 client is required to interpret video SDP or a new v1 frame shape.
+

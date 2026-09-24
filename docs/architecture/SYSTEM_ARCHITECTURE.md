@@ -416,9 +416,9 @@ C1 preserves the modular monolith and PostgreSQL authority while adding:
 - implemented C1 migrations 0017/0018 following merged M3 migrations 0015/0016
 - physical Android acceptance
 
-C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 later enables video over the same verified call substrate.
+C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 design is complete and adds video on the same authority model, with `shawtie.call.v2`, stable video transceivers, generation-fenced local camera control, and no new durable call aggregate or expected database migration.
 
-Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refines the frozen relay-first baseline to relay-only for C1.
+Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refines the frozen relay-first baseline to relay-only for C1. ADR-015 keeps C1 voice signaling on v1 and defines video signaling v2 plus camera privacy for C2.
 
 ## Durable deadlines
 

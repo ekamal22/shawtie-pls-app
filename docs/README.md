@@ -82,6 +82,9 @@ The selected architecture is:
 - `architecture/REALTIME_ARCHITECTURE.md`
 - `architecture/OFFLINE_ARCHITECTURE.md`
 - `architecture/CALL_ARCHITECTURE.md`
+- `architecture/C2_VIDEO_CALLING_DESIGN.md`
+- `api/C2_VIDEO_CALLING_API.md`
+- `api/C2_VIDEO_SIGNALING_PROTOCOL.md`
 - `architecture/CAPABILITY_MODEL.md`
 - `architecture/DELETION_ARCHITECTURE.md`
 - `architecture/VERSIONING_AND_COMPATIBILITY.md`
@@ -96,6 +99,7 @@ The selected architecture is:
 - `testing/M2_ANDROID_ACCEPTANCE.md`
 - `testing/M3_ANDROID_ACCEPTANCE.md`
 - `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`
+- `testing/C2_ANDROID_ACCEPTANCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 
@@ -123,7 +127,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages is DONE and merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. C1 Voice Calling is DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. The final executable baseline is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`; integrated closure re-passed there with `reserved=0`, Redmi Note 9S acceptance passed 25/25, and all focused follow-up evidence is complete. C2 Video Calling remains a separate later milestone and is not started. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages and C1 Voice Calling are DONE and merged. C2 Video Calling design is complete on `feat/c2-video-calling` from verified post-C1 `main @ 5323d7b`; source implementation has not started. Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, and ADR-015. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

@@ -163,3 +163,17 @@ Architecture Baseline 1.0 remains the historical frozen baseline. Accepted ADRs 
 - ADR-014 refines baseline item 16 from relay-first to relay-only for C1 voice calling. C1 must fail closed when TURN relay is unavailable rather than silently use a direct peer path.
 
 C2 inherits these C1 call-platform refinements unless a later accepted ADR changes them.
+
+## C2 accepted refinements
+
+ADR-015 refines the verified C1 call substrate for video without reopening durable authority:
+
+- voice signaling remains frozen on `shawtie.call.v1`
+- video signaling uses `shawtie.call.v2` so multi-m-line ICE retains media association
+- video create/accept require the coarse `video-v1` compatibility profile
+- one stable video transceiver is retained for video-call lifetime
+- camera state and device identity remain transient local state
+- camera capture stops on hidden/background and never silently restarts
+- relay-only TURN remains mandatory
+- C2 reserves no PostgreSQL migration number
+

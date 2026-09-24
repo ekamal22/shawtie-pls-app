@@ -535,7 +535,7 @@ States are `ringing`, `accepted`, `connected`, and terminal `ended`. Internal te
 
 Migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions for generic `call_state_changed` reachability. Each active subscription stores the sensitive endpoint capability plus a keyed endpoint fingerprint and key version for privacy-safe uniqueness and rotation handling. Push capability data is never public or logged.
 
-C2 later enables video over the same call model.
+C2 enables video over the same call model. No new durable camera/video state is required: existing `call_type` already permits `video`, while camera on/off, camera identity, facing mode, resolution, frame rate, RTP state, SDP, ICE, and TURN credentials remain transient and are not persisted. C2 design therefore expects no PostgreSQL migration.
 
 ## Media
 
