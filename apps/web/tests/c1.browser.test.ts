@@ -26,6 +26,8 @@ test("C1 browser keeps one local media owner and relay-only audio", async () => 
   assert.equal(lease.includes("ownerGeneration"), true);
   assert.equal(lease.includes("indexedDB.open"), true);
   assert.equal(lease.includes("BroadcastChannel"), true);
+  assert.equal(lease.includes("#loseOwnership"), true);
+  assert.equal(lease.includes("message.generation <= this.#generation"), true);
   assert.equal(lease.includes("navigator as Navigator"), true);
   assert.equal(media.includes('iceTransportPolicy: "relay"'), true);
   assert.equal(media.includes("getAudioTracks"), true);

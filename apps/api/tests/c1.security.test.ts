@@ -49,6 +49,9 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   );
   assert.equal(migration.includes("ON DELETE SET NULL (endpoint_session_id)"), true);
   assert.equal(migration.includes("ON DELETE SET NULL (endpoint_device_id)"), true);
+  assert.equal(migration.includes("WHEN 'ringing' THEN 'failed'"), true);
+  assert.equal(migration.includes("WHEN 'accepted' THEN 'failed'"), true);
+  assert.equal(migration.includes("status = 'ended'"), true);
 });
 
 test("C1 TURN credentials avoid raw account and call identifiers", async () => {
