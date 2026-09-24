@@ -314,6 +314,8 @@ test("C2 video admission, stale-client fencing, v2 signaling and relay ICE work 
     assert.equal(accepted.kind, "video");
     assert.equal(accepted.state, "accepted");
 
+    const mutableCalling = config.calling as { videoEnabled: boolean; transportEnabled: boolean };
+    mutableCalling.videoEnabled = false;
     const callerConnection = await openVideoSignaling(app, created.id, alice);
     const calleeConnection = await openVideoSignaling(app, created.id, bob);
     try {
@@ -380,6 +382,23 @@ test("C2 video admission, stale-client fencing, v2 signaling and relay ICE work 
     });
     assert.equal(turn.statusCode, 200, turn.body);
     assert.equal(turn.json().iceTransportPolicy, "relay");
+
+    mutableCalling.transportEnabled = false;
+    try {
+      const blockedTurn = await app.inject({
+        method: "POST",
+        url: "/api/v1/calls/" + created.id + "/turn-credentials",
+        headers: mutationHeaders(alice.cookie),
+      });
+      assert.equal(blockedTurn.statusCode, 503, blockedTurn.body);
+      assert.equal(
+        (blockedTurn.json() as { error: { code: string } }).error.code,
+        "CALL_TRANSPORT_UNAVAILABLE",
+      );
+    } finally {
+      mutableCalling.transportEnabled = true;
+      mutableCalling.videoEnabled = true;
+    }
   } finally {
     await app.close();
     await closeDatabasePool(database);

@@ -18,7 +18,7 @@ const sender = {
     replaceCount += 1;
     senderTrack = track;
   },
-} as RTCRtpSender;
+} as unknown as RTCRtpSender;
 
 function syntheticVideoStream(): MediaStream {
   const canvas = document.createElement("canvas");
