@@ -25,7 +25,7 @@ each with a focused regression test:
    500 `INTERNAL_ERROR` instead of a fail-closed 503 `MEDIA_UNAVAILABLE` (found
    in scenario 20, fixed in `ee59850`, re-verified in scenario 20).
 
-M3 is not merged to `main`. Merge remains an explicit human decision.
+M3 was subsequently fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a` after this acceptance evidence closed.
 
 ## Test environment
 
