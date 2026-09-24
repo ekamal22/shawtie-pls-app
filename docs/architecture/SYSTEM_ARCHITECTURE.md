@@ -380,9 +380,27 @@ M2 introduces no Redis and is expected to require no new PostgreSQL migration.
 
 M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
 
+## M3 media and voice-message design
+
+The concrete M3 design is `M3_MEDIA_VOICE_DESIGN.md` with HTTP/storage contract `../api/M3_MEDIA_API.md`.
+
+M3 preserves PostgreSQL/M1/R1/M2/P3 authority rather than adding a parallel media authority:
+
+- the browser validates/processes and encrypts media before upload
+- private object storage receives ciphertext under opaque random keys
+- the API issues short-lived signed grants only after current lifecycle/partnership authorization
+- `media_objects` is refined into the authoritative media identity/state/binding aggregate
+- one media object binds once to one M1 message or R1 relationship item
+- M1/R1 container visibility controls media visibility
+- existing M1/R1 realtime invalidations trigger canonical media refetch
+- P3/F2 deletion manifests gain module-owned media-object cleanup
+- M3 local binary state is separate encrypted draft state, not M2 chat-outbox payload
+- S1 remains the owner of reviewed production attachment-key distribution
+
+M3 owns implemented migrations 0015 and 0016 and is DONE and merged to main after automated/local and physical Android acceptance.
 ## C1 voice-calling implementation
 
-The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation and automated/local closure are complete on `feat/c1-voice-calling`, with canonical local closure at `439b09f`; mandatory physical Android acceptance and final M3-integrated migration closure remain open.
+The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation and automated/local closure are complete on `feat/c1-voice-calling`, with canonical local closure at `439b09f`; the branch is now reconciled onto main containing real M3 migrations 0015/0016; final integrated 0001-0018 closure and mandatory physical Android acceptance remain open.
 
 C1 preserves the modular monolith and PostgreSQL authority while adding:
 
@@ -395,7 +413,7 @@ C1 preserves the modular monolith and PostgreSQL authority while adding:
 - candidate-free SDP and server-validated relay-only trickle candidates
 - generic Web Push background wakeup bound to current account/device authorization
 - durable ring/connect/hard timeout fencing
-- implemented C1 migrations 0017/0018 coordinated with implemented but unmerged M3 0015/0016
+- implemented C1 migrations 0017/0018 following merged M3 migrations 0015/0016
 - physical Android acceptance
 
 C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 later enables video over the same verified call substrate.
