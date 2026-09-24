@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, THIRD-PASS HARDENED, IMPLEMENTATION NOT STARTED.**
+**DESIGN COMPLETE, SOURCE IMPLEMENTATION COMPLETE ON BRANCH, VERIFICATION PENDING.**
 
 Branch:
 
@@ -12,7 +12,7 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base.
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Automated closure still requires execution, mandatory physical Android acceptance is still open, and final integrated closure still waits for real M3 migrations 0015/0016.
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 

@@ -111,6 +111,14 @@ Status: DONE
 - initial partnership state-machine tests
 - initial capability tests
 
+## Implementation evidence
+
+Source implementation is present for C1-A through C1-I. The branch now contains durable call authority and history, migrations 0017/0018, endpoint/session authorization, first-accept-wins, realtime v2 invalidation, dedicated call signaling, relay-only WebRTC, TURN rotation, generic Web Push reconciliation, multi-tab media ownership, lifecycle/revocation termination, coarse endpoint failure reporting, PostgreSQL and worker integration suites, disposable local closure runners, a real-Chromium ownership harness, and the Android acceptance preflight.
+
+Commands are present for `npm run test:c1`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
+
+No execution result is inferred from source presence. The gates below remain open until their required commands or physical procedures are actually executed. Final integrated migration closure remains blocked on real M3 0015/0016.
+
 ## Acceptance gates
 
 - [x] PRD defines core product behavior
@@ -1340,7 +1348,7 @@ Status: PLANNED
 
 # C1: Voice Calling
 
-Status: DESIGN COMPLETE, THIRD-PASS HARDENED, IMPLEMENTATION NOT STARTED
+Status: IN_PROGRESS. SOURCE IMPLEMENTATION COMPLETE ON BRANCH; AUTOMATED, PHYSICAL, AND FINAL INTEGRATED CLOSURE PENDING
 
 Branch: `feat/c1-voice-calling`
 

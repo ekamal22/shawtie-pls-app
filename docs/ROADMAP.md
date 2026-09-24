@@ -62,7 +62,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | PLANNED | M2 | Yes |
-| 8 C1 Voice Calling | DESIGN COMPLETE, THIRD-PASS HARDENED, implementation not started | M2 | Yes, mandatory |
+| 8 C1 Voice Calling | IN_PROGRESS, source implementation complete on branch; verification pending | M2 | Yes, mandatory |
 | 9 C2 Video Calling | PLANNED | C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -90,8 +90,8 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M2 is merged at `main @ b6183158`; C1 third-pass voice-calling design is complete on `feat/c1-voice-calling` from current `main @ 54b8659a`; implementation may begin from that verified mainline
-6. implement C1 against the concrete module map and shared WebSocket seam in the canonical C1 design
+5. C1 source implementation is complete on `feat/c1-voice-calling` from current `main @ 54b8659a`; automated closure still needs execution
+6. execute C1 automated/local and real-Chromium closure with M3-owned 0015/0016 reserved, then perform mandatory Android acceptance
 7. keep C2 video separate and dependent on verified C1 voice-call substrate
 8. keep V1 hosted verification separate until Actions capacity returns
 
@@ -381,7 +381,7 @@ M3 must prove size limits, private storage, authorization, signed-access expiry,
 
 # Milestone 8: C1 Voice Calling
 
-Status: DESIGN COMPLETE, THIRD-PASS HARDENED, implementation not started.
+Status: IN_PROGRESS. Source implementation complete on branch; automated, physical, and final integrated verification pending.
 
 Branch: `feat/c1-voice-calling`.
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE, THIRD-PASS HARDENED. Execute only after automated/local C1 closure is green.
+IMPLEMENTATION COMPLETE ON BRANCH. PHYSICAL ACCEPTANCE NOT EXECUTED. Execute the mandatory scenarios only after automated/local C1 closure is green.
 
 C1 requires physical-device acceptance. The canonical design branch is `feat/c1-voice-calling` from `main @ 54b8659a`.
 
