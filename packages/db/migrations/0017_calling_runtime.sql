@@ -16,29 +16,18 @@ SET
     WHEN 'cancelled' THEN 'cancelled'
     WHEN 'missed' THEN 'missed'
     WHEN 'ended' THEN 'completed'
-    ELSE NULL
+    WHEN 'ringing' THEN 'failed'
+    WHEN 'accepted' THEN 'failed'
   END,
-  status = CASE
-    WHEN status IN ('rejected', 'cancelled', 'missed') THEN 'ended'
-    ELSE status
-  END,
-  ring_expires_at = CASE
-    WHEN status = 'ringing' THEN created_at + interval '1 minute'
-    ELSE NULL
-  END,
+  status = 'ended',
+  ring_expires_at = NULL,
   accepted_at = CASE
     WHEN status = 'accepted' THEN COALESCE(started_at, created_at)
     ELSE NULL
   END,
-  connect_expires_at = CASE
-    WHEN status = 'accepted' THEN COALESCE(started_at, created_at) + interval '2 minutes'
-    ELSE NULL
-  END,
-  ended_at = CASE
-    WHEN status IN ('rejected', 'cancelled', 'missed', 'ended') THEN COALESCE(ended_at, created_at)
-    ELSE ended_at
-  END,
-  updated_at = created_at;
+  connect_expires_at = NULL,
+  ended_at = COALESCE(ended_at, started_at, created_at),
+  updated_at = COALESCE(ended_at, started_at, created_at);
 
 ALTER TABLE call_sessions
   DROP CONSTRAINT call_sessions_status_valid;
