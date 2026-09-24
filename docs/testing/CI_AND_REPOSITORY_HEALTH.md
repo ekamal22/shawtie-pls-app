@@ -86,7 +86,7 @@ All 14 mandatory physical Android acceptance scenarios have since executed and p
 
 ## M3 physical closure and C1 dependency status
 
-M3 Media and Voice Messages is DONE on `feat/m3-media-voice`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`. The final branch documentation head is `822e6d8`. M3 remains unmerged only pending explicit merge approval.
+M3 Media and Voice Messages is DONE on `feat/m3-media-voice`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`. M3 remains unmerged only pending explicit merge approval.
 
 C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling`, canonical closure `439b09f`, documentation head `7b154a1`. Its isolated closure used only the documented M3 migration reservations 0015/0016. After M3 merges, C1 must reconcile onto the real 0015/0016 mainline, pass the canonical 0001-0018 migration chain with `reserved=0`, and then complete mandatory physical Android acceptance.
 

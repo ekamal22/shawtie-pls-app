@@ -149,7 +149,7 @@ M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source
 
 Verified branch: `feat/m3-media-voice`.
 
-Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`; documentation head is `822e6d8`. M3 is complete but intentionally unmerged pending explicit merge approval.
+Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete but intentionally unmerged pending explicit merge approval.
 
 The next dependency action is to merge M3 real migrations 0015/0016 to `main`, then reconcile C1 and run its final `reserved=0` closure before C1 physical acceptance.
 
@@ -199,16 +199,16 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 9f4237e
+main @ 54b8659
   |
-  +--> feat/m2-realtime-offline
+  +--> feat/m3-media-voice      DONE, Android 20/20, ready for explicit merge
+  |
+  +--> feat/c1-voice-calling   source + automated/local closure complete
 
-M1 and R1 are merged and verified.
-M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented.
-M2 automated/local closure passed at `4bbffdf` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`. M2 is DONE and fast-forward merged to `main @ b6183158`.
-M1 owns migrations 0011 and 0012.
-R1 owns migrations 0013 and 0014.
-M2 is expected to require no PostgreSQL migration and does not reserve 0015.
+M3 owns real migrations 0015/0016.
+C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
+After M3 merges, C1 reconciles onto main, passes 0001-0018 with reserved=0, then completes mandatory Redmi voice-call acceptance.
+C2 Video Calling remains separate and blocked until C1 is verified and merged.
 ~~~
 
 From P2 onward:

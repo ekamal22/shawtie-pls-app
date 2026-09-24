@@ -402,36 +402,64 @@ M3 must prove PRD size/duration limits, private ciphertext storage, short-lived 
 
 **REDMI PHONE REQUIRED: YES.**
 
-# Milestone 8: C1 Voice and Video Calling
+# Milestone 8: C1 Voice Calling
 
-Status: PLANNED.
+Status: IN_PROGRESS on `feat/c1-voice-calling`. Source implementation and automated/local closure are complete. Canonical local closure passed at `439b09f`; mandatory physical Android acceptance and final M3-integrated closure remain open.
 
-Depends on verified M2 and may progress alongside M3.
+Depends on verified M2. C1 source work proceeded in parallel with M3 using only the documented reservations for M3-owned migrations 0015/0016.
 
 ## Goal
 
-Add authorized private realtime calling with explicit privacy and lifecycle rules.
+Add authorized private one-to-one voice calling with explicit acceptance, durable call authority, relay-only network privacy, safe signaling, background reachability, lifecycle-aware deletion, and physical Android closure.
 
-## Core scope
+## Current closure state
 
-- call signaling
-- voice calls
-- video calls
-- accept, reject, cancel
-- missed-call state
-- call history
-- short-lived TURN credentials
-- relay-first privacy
-- TURN/TCP or TURN/TLS fallback where supported
-- breakup-pending explicit acceptance for every call
+- source implementation complete
+- isolated automated/local closure PASS with only 0015/0016 reserved
+- focused C1 tests 20/20
+- PostgreSQL/API/worker 111/111
+- database invariants PASS
+- real Chromium 2/2
+- full health PASS
+- high-severity audit: 0 vulnerabilities
+- final real-M3 0001-0018 `reserved=0` closure pending
+- mandatory physical Android voice-call acceptance pending
+- C1 remains unmerged
 
-## Closure boundary
+## Next sequence
 
-C1 must prove authorization, no auto-answer, TURN credential expiry, relay behavior, lifecycle restrictions, call-history isolation/deletion, reconnect safety, and real physical-device calls.
+1. merge M3 so real migrations 0015/0016 reach `main`
+2. reconcile `feat/c1-voice-calling` onto that mainline
+3. run the canonical 0001-0018 chain with `reserved=0`
+4. if green, execute mandatory C1 Redmi acceptance
+5. fix any physical defects and rerun affected regression gates
+6. merge C1 only when all C1 gates are closed
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
-# Milestone 9: S1 E2EE and Cryptographic Recovery
+# Milestone 9: C2 Video Calling
+
+Status: PLANNED.
+
+Depends on verified and merged C1.
+
+## Goal
+
+Add video calling on top of the verified C1 call authority, signaling, TURN, push, lifecycle, and deletion substrate without reopening the voice-call architecture.
+
+## Core scope
+
+- explicit camera permission and activation
+- local and remote video rendering
+- camera enable/disable
+- front/back camera switching where supported
+- generation-safe video renegotiation
+- bandwidth/network transition handling
+- mandatory physical Android video acceptance
+
+**REDMI PHONE REQUIRED: YES, MANDATORY.**
+
+# Milestone 10: S1 E2EE and Cryptographic Recovery
 
 Status: PLANNED.
 
@@ -468,7 +496,7 @@ S1 requires protocol review, test vectors where available, ciphertext-at-rest ev
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
-# Milestone 10: R2 Public Readiness
+# Milestone 11: R2 Public Readiness
 
 Status: PLANNED.
 

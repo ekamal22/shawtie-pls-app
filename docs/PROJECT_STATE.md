@@ -128,7 +128,7 @@ Current epic status:
 - M1 Messaging Core: DONE at 18/18 acceptance gates. Runtime closure is anchored at `aa40a2c`; source head `b29b095` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. M1 owns verified migrations 0011 and 0012.
 - R1 Relationship Space: DONE. Source head `9bc9ba4` is integrated and exhaustively validated on `integration/m1-r1 @ 5db7a94`. R1 owns migrations 0013 and 0014. Canonical 0001 through 0014 migrations run without reservations, `test:r1:local` passes 69/69 with `R1_LOCAL_POSTGRES_PASS`, the real same-partnership M1 message-reference seam is positively verified without copying message plaintext, and full repository health plus audit are green.
 - M2 Realtime and Offline Reliability: DONE on `feat/m2-realtime-offline`. The canonical automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene green. All 14 mandatory physical Android acceptance scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects, each with a focused regression test. M2 is merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`.
-- M3 Media and Voice Messages: DONE on `feat/m3-media-voice`; automated closure green, physical Android acceptance 20/20 at final code SHA `ee59850`, documentation head `822e6d8`; ready for explicit merge review and still unmerged.
+- M3 Media and Voice Messages: DONE on `feat/m3-media-voice`; automated closure green, physical Android acceptance 20/20 at final code SHA `ee59850`; ready for explicit merge review and still unmerged.
 - C1 Voice Calling: IN_PROGRESS on `feat/c1-voice-calling`; source implementation and automated/local closure complete at canonical closure `439b09f`, documentation head `7b154a1`; real M3 0015/0016 integration, final `reserved=0` closure, and mandatory physical Android acceptance remain open.
 - C2 Video Calling: PLANNED after verified C1.
 - all other pre-release implementation epics not listed above: PLANNED
@@ -150,7 +150,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
 - `main` -> verified post-M2 mainline at `54b8659a101dcaeb6ff1e0b7caee76921c5b9919`, containing completed M1/R1 and merged M2
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
-- `feat/m3-media-voice` -> M3 DONE (automated closure green, physical Android 20/20, final physical acceptance code SHA `ee59850`); documentation head `822e6d8`; ready for explicit merge review, not merged
+- `feat/m3-media-voice` -> M3 DONE (automated closure green, physical Android 20/20, final physical acceptance code SHA `ee59850`); ready for explicit merge review, not merged
 - `feat/c1-voice-calling` -> C1 source implementation and automated/local closure complete; canonical closure `439b09f`, documentation head `7b154a1`; final real-M3 `reserved=0` integration closure and mandatory physical Android acceptance pending
 - C2 Video Calling -> PLANNED separately after verified C1
 
