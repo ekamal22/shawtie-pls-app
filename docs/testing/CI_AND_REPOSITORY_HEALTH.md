@@ -70,6 +70,22 @@ M1 Messaging Core is closed at runtime anchor `aa40a2cc74e8efb08bcefdbe3ae40e306
 
 The exhaustive sweep passed 40/40 gates on one exact local/remote SHA. It included clean bootstrap, repository scanner, migration-plan validation, typecheck, production builds, lint, formatting, dependency-direction checks, root and feature-specific unit/security suites, and every disposable PostgreSQL harness: F2 39/39, A1 27/27, P1 16/16, P2 27/27, P3 39/39, M1 64/64, and R1 69/69. This is the current local integration-validation source of truth until a later code change requires rerunning the matrix.
 
+## C1 implementation verification status
+
+C1 source implementation is complete on `feat/c1-voice-calling`, but no automated/local C1 closure PASS is claimed yet. The branch provides:
+
+```text
+npm run test:c1
+npm run test:c1:postgres
+npm run test:c1:local
+npm run test:c1:browser:e2e
+npm run test:c1:closure
+npm run test:c1:device:prepare
+npm run test:c1:device:cleanup
+```
+
+`test:c1:closure` requires the disposable PostgreSQL path, the focused real-Chromium C1 browser harness, full repository health, high-severity audit, git hygiene, and the documented 0015/0016 migration reservations. Mandatory physical Android acceptance remains separate. Final integrated C1 closure cannot run until the real M3 migrations 0015/0016 are merged and the canonical 0001-0018 chain passes with `reserved=0`.
+
 ## M2 automated closure status
 
 M2 automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with `M2_AUTOMATED_CLOSURE_PASS`.
