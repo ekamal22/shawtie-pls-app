@@ -2,7 +2,7 @@
 
 ## Milestone split
 
-C1 source implementation and final integrated automated/local closure for voice calling are complete on `feat/c1-voice-calling`; the integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance then passed 25/25 on the Redmi Note 9S (`../testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`), so C1 is DONE on the branch and unmerged. C1 implements voice calling only.
+C1 source implementation is complete on `feat/c1-voice-calling`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 is DONE and merge-ready, but unmerged. C1 implements voice calling only.
 
 C2 later adds video on top of the verified C1 call authority, signaling, TURN, push, history, and lifecycle substrate.
 

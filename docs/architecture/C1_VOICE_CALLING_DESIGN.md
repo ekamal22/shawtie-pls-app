@@ -12,7 +12,7 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance then passed 25/25 on the Redmi Note 9S at `9cbc2f8` (no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there; evidence in `../testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is complete. Isolated closure passed at `439b09f`. The first real-migration integrated closure passed at `9b5c255`. Redmi Note 9S acceptance passed 25/25; a focused gap check then found one stale media-owner defect, fixed at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, where the full integrated closure re-passed with `reserved=0`. Rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are all physically confirmed. C1 is DONE and merge-ready, but unmerged.
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
@@ -1117,7 +1117,7 @@ npm run health
 npm audit --audit-level=high
 ~~~
 
-The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`: database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene all passed. Physical Android acceptance then passed 25/25 on the Redmi Note 9S with no defects found during that run. A later follow-up gap check found and fixed one stale media-owner defect at `b29aaa1`, and the integrated closure re-passed there.
+The isolated automated/local closure passed at `439b09f` with only M3-owned 0015/0016 reserved. The first real-migration integrated closure passed at `9b5c255`. After the physical stale-owner gap exposed a real defect, the fix landed at `b29aaa1` and `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, including C1 real Chromium 5/5 and integrated PostgreSQL/API/worker 111/111. Redmi Note 9S acceptance and all focused follow-up evidence, including audible bidirectional audio, are complete.
 
 ## Acceptance boundary
 

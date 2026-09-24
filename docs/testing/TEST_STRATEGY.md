@@ -544,7 +544,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`, including focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, the retained M3 PostgreSQL/MinIO/Chromium gates, full health, zero high-severity vulnerabilities, and git hygiene. Full relay-path WebRTC and Android behavior were then verified by the physical acceptance procedure on the Redmi Note 9S (25/25 PASS, `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
+The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. The first real-migration integrated closure passed at `9b5c255`. A physical stale-owner gap then exposed one real media-owner defect; the fix at `b29aaa1` added lease verification and raised the real-Chromium suite to 5/5. The full integrated closure re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0`, integrated PostgreSQL/API/worker 111/111, retained M3 gates, full health, audit and git hygiene. Redmi Note 9S acceptance is complete at 25/25, and rejected-notification cleanup, stale-owner fencing and audible bidirectional audio are physically confirmed.
 
 Coverage must include:
 
@@ -596,7 +596,7 @@ Coverage must include:
 - microphone permission denial and teardown
 - physical Android voice-call acceptance
 
-Isolated C1 database validation may reserve only M3-owned 0015/0016. Final integrated C1 closure passed real migrations 0001 through 0018 with `reserved=0` at `9b5c255`.
+Historical isolated C1 database validation reserved only M3-owned 0015/0016. The canonical integrated chain is now real migrations 0001 through 0018 with `reserved=0`; it passed at `9b5c255` and re-passed unchanged at `b29aaa1` after the stale media-owner fix.
 
 ## C2 video-calling tests
 
