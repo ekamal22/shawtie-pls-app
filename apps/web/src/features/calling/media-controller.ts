@@ -1,10 +1,15 @@
 import {
   C1_SIGNALING_PROTOCOL_VERSION,
   C1_SIGNALING_SUBPROTOCOL,
+  C2_SIGNALING_PROTOCOL_VERSION,
+  C2_SIGNALING_SUBPROTOCOL,
   c1SignalServerFrameSchema,
+  c2SignalServerFrameSchema,
   type CallFailureCategory,
+  type CallProjection,
 } from "@shawtie/contracts";
 import { fetchCall, fetchTurnCredentials, reportEndpointConnected } from "./api.ts";
+import { CameraController, type CameraFacingMode, type CameraState } from "./camera-controller.ts";
 import { MediaOwnerLease } from "./media-owner-lease.ts";
 
 export interface CallMediaCallbacks {
@@ -13,6 +18,9 @@ export interface CallMediaCallbacks {
   readonly onOwnershipLost: () => void;
   readonly onUnrecoverableFailure: (category: CallFailureCategory) => void;
   readonly onError: (message: string) => void;
+  readonly onCameraState?: (state: CameraState) => void;
+  readonly onLocalVideoStream?: (stream: MediaStream | null) => void;
+  readonly onRemoteVideoStream?: (stream: MediaStream | null) => void;
 }
 
 function stripCandidates(sdp: string | undefined): string {
@@ -35,9 +43,13 @@ export class CallMediaSession {
   readonly #lease: MediaOwnerLease;
   readonly #remoteAudio = new Audio();
   readonly #pendingCandidates: RTCIceCandidateInit[] = [];
+  readonly #kind: "voice" | "video";
   #pendingEndOfCandidates = false;
   #peer: RTCPeerConnection | null = null;
   #socket: WebSocket | null = null;
+  #videoSender: RTCRtpSender | null = null;
+  #camera: CameraController | null = null;
+  #remoteVideoStream: MediaStream | null = null;
   #signalingGeneration = 0;
   #stopped = false;
   #reconnectTimer: number | null = null;
@@ -52,13 +64,20 @@ export class CallMediaSession {
   #turnRefreshTimer: number | null = null;
   #turnRefreshPromise: Promise<void> | null = null;
   #muted = false;
+  readonly #visibilityHandler = () => {
+    if (document.visibilityState === "hidden") {
+      void this.#camera?.disable();
+    }
+  };
 
   constructor(
     readonly callId: string,
     readonly deviceId: string,
     readonly localStream: MediaStream,
+    kind: CallProjection["kind"],
     private readonly callbacks: CallMediaCallbacks,
   ) {
+    this.#kind = kind;
     this.#lease = new MediaOwnerLease(callId, deviceId);
     this.#remoteAudio.autoplay = true;
     this.#remoteAudio.setAttribute("playsinline", "");
@@ -68,11 +87,19 @@ export class CallMediaSession {
     return this.#muted;
   }
 
+  get cameraState(): CameraState {
+    return this.#camera?.state ?? "off";
+  }
+
+  get cameraFacingMode(): CameraFacingMode {
+    return this.#camera?.facingMode ?? "user";
+  }
+
   async start(): Promise<void> {
     this.callbacks.onState("starting");
     const ownerGeneration = await this.#lease.acquire();
     if (ownerGeneration === null) {
-      this.#stopTracks();
+      this.#stopAudioTracks();
       throw new Error("CALL_ACTIVE_IN_ANOTHER_TAB");
     }
     this.#lease.startHeartbeat(() => {
@@ -82,6 +109,7 @@ export class CallMediaSession {
 
     const canonical = await fetchCall(this.callId);
     if (
+      canonical.kind !== this.#kind ||
       !canonical.isThisDeviceSelectedEndpoint ||
       (canonical.state !== "accepted" && canonical.state !== "connected")
     ) {
@@ -92,6 +120,8 @@ export class CallMediaSession {
     if (!(await this.#stillOwner())) return;
     const peer = new RTCPeerConnection({
       iceTransportPolicy: "relay",
+      bundlePolicy: this.#kind === "video" ? "max-bundle" : undefined,
+      iceCandidatePoolSize: 0,
       iceServers: [
         {
           urls: [...turn.urls],
@@ -107,19 +137,59 @@ export class CallMediaSession {
       peer.addTrack(track, this.localStream);
     }
 
+    if (this.#kind === "video") {
+      const transceiver = peer.addTransceiver("video", { direction: "sendrecv" });
+      this.#videoSender = transceiver.sender;
+      this.#camera = new CameraController(transceiver.sender, {
+        verifyAuthority: () => this.#verifyCameraAuthority(),
+        onState: (state) => this.callbacks.onCameraState?.(state),
+        onLocalStream: (stream) => this.callbacks.onLocalVideoStream?.(stream),
+        onError: (message) => this.callbacks.onError(message),
+      });
+      document.addEventListener("visibilitychange", this.#visibilityHandler);
+    }
+
     peer.addEventListener("track", (event) => {
-      const stream = event.streams[0] ?? new MediaStream([event.track]);
-      this.#remoteAudio.srcObject = stream;
-      void this.#remoteAudio.play().then(
-        () => this.callbacks.onAutoplayBlocked(false),
-        () => this.callbacks.onAutoplayBlocked(true),
-      );
+      if (event.track.kind === "video") {
+        const stream = new MediaStream([event.track]);
+        this.#remoteVideoStream = stream;
+        this.callbacks.onRemoteVideoStream?.(stream);
+        event.track.addEventListener(
+          "ended",
+          () => {
+            if (this.#remoteVideoStream === stream) {
+              this.#remoteVideoStream = null;
+              this.callbacks.onRemoteVideoStream?.(null);
+            }
+          },
+          { once: true },
+        );
+        return;
+      }
+      if (event.track.kind === "audio") {
+        const stream = new MediaStream([event.track]);
+        this.#remoteAudio.srcObject = stream;
+        void this.#remoteAudio.play().then(
+          () => this.callbacks.onAutoplayBlocked(false),
+          () => this.callbacks.onAutoplayBlocked(true),
+        );
+      }
     });
 
     peer.addEventListener("icecandidate", (event) => {
       if (event.candidate) {
         const candidate = event.candidate.candidate;
-        if (/\btyp relay\b/i.test(candidate)) {
+        if (!/\btyp relay\b/i.test(candidate)) return;
+        if (this.#kind === "video") {
+          const sdpMid = event.candidate.sdpMid;
+          const sdpMLineIndex = event.candidate.sdpMLineIndex;
+          if (sdpMid === null && sdpMLineIndex === null) return;
+          this.#send("signal.ice_candidate", {
+            candidate,
+            sdpMid,
+            sdpMLineIndex,
+          });
+        } else {
           this.#send("signal.ice_candidate", { candidate });
         }
         return;
@@ -165,6 +235,20 @@ export class CallMediaSession {
     }
   }
 
+  async enableCamera(facingMode?: CameraFacingMode): Promise<boolean> {
+    if (this.#kind !== "video" || !this.#camera) return false;
+    return this.#camera.enable(facingMode);
+  }
+
+  async disableCamera(): Promise<void> {
+    await this.#camera?.disable();
+  }
+
+  async switchCamera(): Promise<boolean> {
+    if (this.#kind !== "video" || !this.#camera) return false;
+    return this.#camera.switchFacingMode();
+  }
+
   async resumeRemoteAudio(): Promise<boolean> {
     try {
       await this.#remoteAudio.play();
@@ -179,6 +263,7 @@ export class CallMediaSession {
   async stop(): Promise<void> {
     if (this.#stopped) return;
     this.#stopped = true;
+    document.removeEventListener("visibilitychange", this.#visibilityHandler);
     if (this.#reconnectTimer !== null) {
       window.clearTimeout(this.#reconnectTimer);
       this.#reconnectTimer = null;
@@ -187,6 +272,11 @@ export class CallMediaSession {
       window.clearTimeout(this.#turnRefreshTimer);
       this.#turnRefreshTimer = null;
     }
+    await this.#camera?.stop().catch(() => undefined);
+    this.#camera = null;
+    this.#videoSender = null;
+    this.#remoteVideoStream = null;
+    this.callbacks.onRemoteVideoStream?.(null);
     const socket = this.#socket;
     this.#socket = null;
     if (socket && socket.readyState < WebSocket.CLOSING) {
@@ -196,18 +286,22 @@ export class CallMediaSession {
     this.#peer = null;
     this.#remoteAudio.pause();
     this.#remoteAudio.srcObject = null;
-    this.#stopTracks();
+    this.#stopAudioTracks();
     await this.#lease.release().catch(() => undefined);
     this.callbacks.onState("stopped");
   }
 
-  /**
-   * Work that started under an earlier lease generation can complete after another
-   * tab has taken over. The heartbeat and the takeover hint are not ordered against
-   * that completion, so the lease record itself is checked before media or signaling
-   * state is created. A superseded owner stops and never opens a signaling socket that
-   * would displace the current owner.
-   */
+  async #verifyCameraAuthority(): Promise<boolean> {
+    if (this.#stopped || this.#kind !== "video") return false;
+    if (!(await this.#stillOwner())) return false;
+    const canonical = await fetchCall(this.callId);
+    return (
+      canonical.kind === "video" &&
+      canonical.isThisDeviceSelectedEndpoint &&
+      (canonical.state === "accepted" || canonical.state === "connected")
+    );
+  }
+
   async #stillOwner(): Promise<boolean> {
     if (this.#stopped) return false;
     const owned = await this.#lease.verifyOwnership();
@@ -220,8 +314,8 @@ export class CallMediaSession {
     return true;
   }
 
-  #stopTracks(): void {
-    for (const track of this.localStream.getTracks()) track.stop();
+  #stopAudioTracks(): void {
+    for (const track of this.localStream.getAudioTracks()) track.stop();
   }
 
   #connectSignaling(): void {
@@ -232,7 +326,9 @@ export class CallMediaSession {
     this.#ignoreOffer = false;
     this.#isSettingRemoteAnswerPending = false;
 
-    const socket = new WebSocket(websocketUrl(this.callId), C1_SIGNALING_SUBPROTOCOL);
+    const protocol =
+      this.#kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL;
+    const socket = new WebSocket(websocketUrl(this.callId), protocol);
     this.#socket = socket;
     socket.addEventListener("open", () => {
       if (this.#stopped || this.#socket !== socket) return;
@@ -279,7 +375,10 @@ export class CallMediaSession {
       this.callbacks.onError("Invalid call signaling data.");
       return;
     }
-    const parsed = c1SignalServerFrameSchema.safeParse(json);
+    const parsed =
+      this.#kind === "video"
+        ? c2SignalServerFrameSchema.safeParse(json)
+        : c1SignalServerFrameSchema.safeParse(json);
     if (!parsed.success) {
       this.callbacks.onError("Unsupported call signaling data.");
       return;
@@ -335,10 +434,15 @@ export class CallMediaSession {
     }
 
     if (frame.type === "signal.ice_candidate") {
-      const candidate: RTCIceCandidateInit = {
-        candidate: frame.payload.candidate,
-        sdpMLineIndex: 0,
-      };
+      const candidate: RTCIceCandidateInit =
+        this.#kind === "video"
+          ? {
+              candidate: frame.payload.candidate,
+              sdpMid: "sdpMid" in frame.payload ? frame.payload.sdpMid : null,
+              sdpMLineIndex:
+                "sdpMLineIndex" in frame.payload ? frame.payload.sdpMLineIndex : null,
+            }
+          : { candidate: frame.payload.candidate, sdpMLineIndex: 0 };
       if (this.#peer.remoteDescription) {
         await this.#peer.addIceCandidate(candidate).catch((error) => {
           if (!this.#ignoreOffer) throw error;
@@ -443,7 +547,10 @@ export class CallMediaSession {
 
   #send(
     type:
-      "signal.description" | "signal.ice_candidate" | "signal.end_of_candidates" | "signal.restart",
+      | "signal.description"
+      | "signal.ice_candidate"
+      | "signal.end_of_candidates"
+      | "signal.restart",
     payload: Record<string, unknown>,
   ): void {
     const socket = this.#socket;
@@ -457,7 +564,10 @@ export class CallMediaSession {
     }
     socket.send(
       JSON.stringify({
-        v: C1_SIGNALING_PROTOCOL_VERSION,
+        v:
+          this.#kind === "video"
+            ? C2_SIGNALING_PROTOCOL_VERSION
+            : C1_SIGNALING_PROTOCOL_VERSION,
         type,
         generation: this.#signalingGeneration,
         payload,

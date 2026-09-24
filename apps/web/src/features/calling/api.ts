@@ -1,8 +1,9 @@
-import type {
-  CallFailureCategory,
-  CallHistoryQuery,
-  CallProjection,
-  PushSubscriptionInput,
+import {
+  C2_VIDEO_MEDIA_PROFILE,
+  type CallFailureCategory,
+  type CallHistoryQuery,
+  type CallProjection,
+  type PushSubscriptionInput,
 } from "@shawtie/contracts";
 import { apiRequest } from "../../lib/api-client.ts";
 
@@ -20,24 +21,36 @@ export function fetchCall(callId: string): Promise<CallProjection> {
 
 export function createCall(
   partnershipId: string,
+  kind: "voice" | "video" = "voice",
   idempotencyKey = crypto.randomUUID(),
 ): Promise<CallProjection> {
   return apiRequest("/api/v1/calls", {
     method: "POST",
     headers: mutationHeaders(idempotencyKey),
-    body: { expectedPartnershipId: partnershipId, kind: "voice" },
+    body:
+      kind === "video"
+        ? {
+            expectedPartnershipId: partnershipId,
+            kind,
+            clientMediaProfile: C2_VIDEO_MEDIA_PROFILE,
+          }
+        : { expectedPartnershipId: partnershipId, kind },
   });
 }
 
 export function acceptCall(
   callId: string,
   expectedVersion: number,
+  kind: "voice" | "video" = "voice",
   idempotencyKey = crypto.randomUUID(),
 ): Promise<CallProjection> {
   return apiRequest("/api/v1/calls/" + encodeURIComponent(callId) + "/accept", {
     method: "POST",
     headers: mutationHeaders(idempotencyKey),
-    body: { expectedVersion },
+    body:
+      kind === "video"
+        ? { expectedVersion, clientMediaProfile: C2_VIDEO_MEDIA_PROFILE }
+        : { expectedVersion },
   });
 }
 
