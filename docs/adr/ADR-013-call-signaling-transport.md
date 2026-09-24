@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for C1 design. Implementation-blocking.
+Accepted and implemented on `feat/c1-voice-calling`. Verification and physical acceptance remain open.
 
 ## Context
 
