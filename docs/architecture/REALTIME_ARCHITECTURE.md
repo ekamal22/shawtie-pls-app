@@ -19,7 +19,7 @@ The concrete M2 implementation is defined in:
 - `M2_REALTIME_OFFLINE_DESIGN.md`
 - `../api/M2_REALTIME_PROTOCOL.md`
 
-Implementation status: M2 realtime/offline closure is complete and merged. C1 design adds an explicitly negotiated realtime v2 call invalidation without reopening M2 v1 semantics.
+Implementation status: M2 realtime/offline closure is complete and merged. C1 source implementation adds an explicitly negotiated realtime v2 call invalidation without reopening M2 v1 semantics; C1 verification and physical acceptance remain open.
 
 M2 uses the official Fastify WebSocket integration, the existing HttpOnly session cookie, exact trusted-Origin validation, server-derived scope, and one dedicated PostgreSQL LISTEN connection per API process.
 
