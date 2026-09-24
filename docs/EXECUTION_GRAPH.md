@@ -56,7 +56,7 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             +---+---+
             |       |
             v       v
-       M3 Media ⚪  C1 Voice Calling ⚪
+       M3 Media ⚪  C1 Voice Calling 🟡
             |              |
             |              v
             |        C2 Video Calling ⚪
@@ -103,7 +103,7 @@ flowchart TD
     M1 --> M2["M2 Realtime + Offline ✅"]
 
     M2 --> M3["M3 Media + Voice Messages ⚪"]
-    M2 --> C1["C1 Voice Calling ⚪"]
+    M2 --> C1["C1 Voice Calling 🟡"]
     C1 --> C2["C2 Video Calling ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
@@ -135,6 +135,8 @@ P3 ✅
 M1 ✅ + R1 ✅ merged to main
    ->
 M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical Android acceptance 14/14 at `b83102f`
+   ->
+C1 🟡 source implementation complete on `feat/c1-voice-calling`; automated/local closure, Redmi acceptance, and final M3-integrated closure pending
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -187,16 +189,18 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 9f4237e
+main @ 54b8659
   |
-  +--> feat/m2-realtime-offline
+  +--> feat/c1-voice-calling
+  |
+  +--> feat/m3-media-voice
 
 M1 and R1 are merged and verified.
-M2 architecture, protocol, runtime source, browser/offline integration, real Chromium closure automation, composite local harness, and Android preflight are implemented.
-M2 automated/local closure passed at `4bbffdf` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`. M2 is DONE and fast-forward merged to `main @ b6183158`.
+M2 is DONE and merged. Its automated/local closure and all 14 mandatory Android scenarios are green.
+C1 source implementation is complete on its branch. Automated/local closure, mandatory Redmi acceptance, and final integrated migration closure are still open.
+M3 remains unmerged; its real migrations 0015/0016 stay owned by M3. C1 owns implemented migrations 0017/0018 and uses only the documented 0015/0016 reservation mechanism for isolated branch validation.
 M1 owns migrations 0011 and 0012.
 R1 owns migrations 0013 and 0014.
-M2 is expected to require no PostgreSQL migration and does not reserve 0015.
 ~~~
 
 From P2 onward:
@@ -211,13 +215,13 @@ From P2 onward:
 
 The legacy `feat/m1-executable-foundation` branch is historical and is not the M1 Messaging Core branch.
 
-The current C1 design branch is:
+The current C1 implementation branch is:
 
 ~~~text
 feat/c1-voice-calling
 ~~~
 
-C1 design is complete; implementation has not started. C2 remains separate and depends on verified C1.
+C1 source implementation is complete, but C1 is not DONE until automated/local closure, mandatory physical Android acceptance, and final integrated 0001-0018 validation with real M3 migrations are green. C2 remains separate and depends on verified C1.
 
 The completed parallel milestone branches remain historical:
 
@@ -264,6 +268,6 @@ R1 can progress alongside M1 once P2 and the required P3 capability boundaries a
 
 V1 remains a separate verification track and must be complete before R2 closes.
 
-## C1 design checkpoint
+## C1 implementation checkpoint
 
-`feat/c1-voice-calling` is created from `main @ 54b8659a`. It contains the voice-only call architecture, HTTP API, dedicated signaling protocol, accepted signaling/relay-only ADRs, and physical Android procedure. Parallel M3 design owns planned migrations 0015/0016; C1 owns planned 0017/0018 and may use migration reservations only for isolated branch validation.
+`feat/c1-voice-calling` was created from `main @ 54b8659a`. It now contains the full C1 source implementation: durable call API and persistence, worker deadlines/push, realtime v2 invalidation, dedicated signaling, relay-only browser voice transport, TURN rotation, keyed push endpoint fingerprints, multi-tab media ownership, lifecycle/revocation integration, automated closure runners, a real-Chromium ownership harness, and Android preflight. M3 owns implemented but still-unmerged migrations 0015/0016; C1 owns implemented 0017/0018 and may use migration reservations only for isolated branch validation.
