@@ -18,13 +18,15 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(routes.includes("CALL_SIGNAL_ORIGIN_REJECTED"), true);
   assert.equal(routes.includes("offered.length !== 1"), true);
   assert.equal(routes.includes("sessionId: auth.session.sessionId"), true);
+  assert.equal(routes.includes("getCurrentPartnershipForAccount"), true);
+  assert.equal(routes.includes('scope: `c1.${scope}.partnership`'), true);
   assert.equal(hub.includes('/^m=audio\\s/i'), true);
   assert.equal(hub.includes('media.length === 1'), true);
   assert.equal(hub.includes('candidateType !== "relay"'), true);
   assert.equal(hub.includes("extensions.length % 2 !== 0"), true);
   assert.equal(hub.includes('transport === "tcp" && !sawTcpType'), true);
-  assert.equal(hub.includes('token.toLowerCase() === "raddr"'), true);
-  assert.equal(hub.includes('foundation.startsWith("candidate:")'), true);
+  assert.equal(hub.includes('name === "raddr"'), true);
+  assert.equal(hub.includes("/^candidate:[A-Za-z0-9+/_-]{1,64}$/"), true);
   assert.equal(hub.includes("4_294_967_295n"), true);
   assert.equal(hub.includes("fromGeneration"), true);
   assert.equal(hub.includes("source.generation !== item.fromGeneration"), true);

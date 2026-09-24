@@ -716,6 +716,65 @@ test("C1 signaling fails closed for hostile frames and non-voice media", async (
   }
 });
 
+test("C1 selected endpoint can fail a call with coarse exact-replay outcome", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "fail_alice");
+    const bob = await register(app, database, "fail_bob");
+    const partnershipId = await formPartnership(app, alice, bob, "fail");
+    const created = await createVoiceCall(
+      app,
+      alice,
+      partnershipId,
+      "c1-create-fail-0001",
+    );
+    const accepted = await action(
+      app,
+      bob,
+      created.id,
+      "accept",
+      1,
+      "c1-accept-fail-0001",
+    );
+    assert.equal(accepted.statusCode, 200, accepted.body);
+
+    const failKey = "c1-fail-network-0001";
+    const failed = await app.inject({
+      method: "POST",
+      url: "/api/v1/calls/" + created.id + "/fail",
+      headers: jsonHeaders(alice.cookie, failKey),
+      payload: { expectedVersion: 2, category: "network_failed" },
+    });
+    assert.equal(failed.statusCode, 200, failed.body);
+    const body = failed.json() as CallProjection;
+    assert.equal(body.state, "ended");
+    assert.equal(body.outcome, "failed");
+    assert.equal(body.version, 3);
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/v1/calls/" + created.id + "/fail",
+      headers: jsonHeaders(alice.cookie, failKey),
+      payload: { expectedVersion: 2, category: "network_failed" },
+    });
+    assert.equal(replay.statusCode, 200, replay.body);
+    assert.deepEqual(replay.json(), failed.json());
+
+    const invalidCategory = await app.inject({
+      method: "POST",
+      url: "/api/v1/calls/" + created.id + "/fail",
+      headers: jsonHeaders(alice.cookie, "c1-fail-invalid-0001"),
+      payload: { expectedVersion: 3, category: "browser_stack_trace" },
+    });
+    assert.equal(invalidCategory.statusCode, 400, invalidCategory.body);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("C1 logout terminalizes a selected session and removes future call authority", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
