@@ -70,6 +70,7 @@ const introducedEmDash = diff
 if (introducedEmDash) throw new Error("C1 diff introduces a forbidden em dash.");
 
 step("c1-local", process.execPath, [npmCli, "run", "test:c1:local"], reservationEnv);
+step("c1-browser-e2e", process.execPath, [npmCli, "run", "test:c1:browser:e2e"], reservationEnv);
 step("health", process.execPath, [npmCli, "run", "health"], reservationEnv);
 step("audit-high", process.execPath, [npmCli, "audit", "--audit-level=high"], reservationEnv);
 step("git-diff-check", "git", ["diff", "--check"], reservationEnv);
