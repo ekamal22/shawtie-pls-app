@@ -600,9 +600,53 @@ Historical isolated C1 database validation reserved only M3-owned 0015/0016. The
 
 ## C2 video-calling tests
 
-C2 must reuse the verified C1 call authority, signaling protocol, TURN policy, push substrate, and deletion model.
+Canonical sources:
 
-Additional coverage includes explicit camera permission, no hidden video activation, local/remote rendering, camera on/off, front/back switching where supported, generation-safe video renegotiation, bandwidth/network transitions, and physical Android video acceptance.
+- `../architecture/C2_VIDEO_CALLING_DESIGN.md`
+- `../api/C2_VIDEO_CALLING_API.md`
+- `../api/C2_VIDEO_SIGNALING_PROTOCOL.md`
+- `C2_ANDROID_ACCEPTANCE.md`
+
+Planned command surface:
+
+```text
+npm run test:c2
+npm run test:c2:postgres
+npm run test:c2:local
+npm run test:c2:browser:e2e
+npm run test:c2:closure
+npm run test:c2:device:prepare
+npm run test:c2:device:cleanup
+```
+
+C2 reuses the verified C1 durable call authority, TURN policy, push substrate, lifecycle and deletion model. It deliberately does not reuse C1 signaling v1 for video: voice stays on `shawtie.call.v1`, while video uses `shawtie.call.v2` for multi-m-line candidate association.
+
+Automated/local coverage must include:
+
+- video create/accept requires `video-v1`
+- old C1 clients cannot accept a video call
+- voice create/accept remains backward compatible
+- wrong signaling subprotocol for durable call kind fails closed
+- video SDP contains exactly one audio plus one video media section
+- application/data-channel, extra media and candidate-in-SDP rejection
+- v2 candidate media locator validation and no hardcoded m-line index 0
+- relay-only host/srflx/prflx rejection remains unchanged
+- stable video transceiver creation
+- camera generation fencing across acquire/off/switch/background/end/revocation
+- camera off stops track and preserves audio
+- front/back switching and failed-switch behavior
+- separate remote audio/video rendering and video recovery gesture
+- multi-tab ownership covers camera, peer connection and signaling
+- network transition plus relay-only ICE restart
+- signaling reconnect under video
+- breakup, account deletion, endpoint revocation and final dissolution
+- `C2_VIDEO_ENABLED` fail-closed behavior with C1 voice still healthy
+- no camera labels/device IDs/video frames/SDP/ICE/TURN credentials in first-party durable state or logs
+- migration plan remains real 0001 through 0018 with `reserved=0` unless architecture is explicitly amended
+
+C2 closure MUST run the retained C1 integrated closure or an explicitly equivalent integrated dependency gate. C2 source completion alone is not DONE.
+
+Physical Android closure follows the mandatory scenario matrix in `C2_ANDROID_ACCEPTANCE.md` and must include real Redmi camera permission, bidirectional audio/video, front/back switching, background privacy, stale camera-operation fencing, old-client compatibility, multi-m-line ICE association and relay-only network evidence.
 
 ## Acceptance principle
 

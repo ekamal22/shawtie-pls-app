@@ -374,3 +374,25 @@ C1's first real-migration security and integration closure passed at `9b5c255`. 
 - internal session/device/deletion/lifecycle terminal causes map to bounded public outcomes
 - account deletion, selected-device revocation, and final dissolution remove future signaling/TURN/call authority
 - C1 does not claim S1 endpoint cryptographic identity authentication; stable sensitive-use review remains required
+
+## C2 video-calling security boundary
+
+Canonical C2 design: `../architecture/C2_VIDEO_CALLING_DESIGN.md`.
+
+C2 extends the verified C1 call platform without changing durable call authority.
+
+- video create and accept require the coarse `video-v1` compatibility profile so stale C1 clients cannot become accepted video endpoints
+- voice remains on strict `shawtie.call.v1`; video uses `shawtie.call.v2`
+- video v2 preserves selected-endpoint, Origin/session/device/call authorization and signaling generation fencing
+- video SDP is candidate-free and permits exactly one audio plus one video media section; application/data-channel and extra media sections fail closed
+- v2 trickle ICE carries bounded `sdpMid`/`sdpMLineIndex` association while candidate text still passes the existing relay-only privacy parser
+- `iceTransportPolicy: relay` remains mandatory for video and TURN failure never enables direct connectivity
+- remote peers cannot activate local camera; camera capture begins only from explicit local video action and browser permission
+- asynchronous camera acquisition/switch is fenced by local monotonic generation so stale completions cannot reactivate capture
+- hidden/background state stops local camera and foreground does not silently reacquire it
+- camera labels, device IDs, facing mode, camera state, video frames and RTP detail are not durable server state and are not routinely logged
+- `C2_VIDEO_ENABLED` can fail closed without disabling verified C1 voice calling
+- existing C1 transport kill switch still disables signaling/TURN for both media kinds
+- account deletion, endpoint revocation and final dissolution stop local audio/video media and remove future signaling/TURN authorization
+- C2 retains the C1 stale-owner ownership fix and must rerun C1 closure as part of C2 acceptance
+

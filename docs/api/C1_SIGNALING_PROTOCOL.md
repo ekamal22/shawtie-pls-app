@@ -358,7 +358,7 @@ Forbidden:
 
 `shawtie.call.v1` versions independently from both `shawtie.realtime.v1` and `shawtie.realtime.v2`.
 
-C2 should reuse v1 if video is compatible.
+C2 does not widen this verified voice protocol. Voice remains on `shawtie.call.v1`; video uses `shawtie.call.v2` because multi-m-line ICE requires explicit media-description association. See `C2_VIDEO_SIGNALING_PROTOCOL.md`.
 
 S1 call-authentication changes must be versioned and reviewed rather than silently changing v1 semantics.
 

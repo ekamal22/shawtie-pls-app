@@ -490,6 +490,17 @@ Implementation must define bounded, privacy-safe limits for:
 
 ## C2 compatibility
 
-C2 should reuse these routes where possible.
+C1 remains the verified voice API baseline.
 
-C2 enables kind video and extends client media behavior without creating a second call-history model.
+C2 reuses the same HTTP call routes and durable call projection, but adds an explicit compatibility requirement for video:
+
+- video create requires `clientMediaProfile: "video-v1"`
+- video accept requires `clientMediaProfile: "video-v1"`
+- existing voice create/accept bodies remain valid
+- a stale C1 client may fetch/reject a video call but cannot become its accepted endpoint
+- no camera state/device metadata is added to the durable projection
+- video continues to use the same call history model
+
+Canonical C2 HTTP delta: `C2_VIDEO_CALLING_API.md`.
+
+C2 video signaling does not widen strict `shawtie.call.v1`; video uses reviewed `shawtie.call.v2`.

@@ -1338,3 +1338,95 @@ Evidence:
 - accept/reject/cancel/timeout races
 - two callee devices accepting concurrently
 - stale timeout after newer transition
+
+## C2 video-calling threat additions
+
+### C2-T1: Stale client accepts video without video semantics
+
+Impact: High
+
+Controls:
+
+- video create/accept require `clientMediaProfile: "video-v1"`
+- video signaling requires `shawtie.call.v2`
+- durable video kind is never reinterpreted as voice
+- C1-only clients may reject or let the call expire but cannot become selected accepted video endpoints
+
+Evidence:
+
+- stale C1 accept denial
+- wrong signaling subprotocol denial
+- multi-device case where a C2-capable endpoint can still win acceptance
+
+### C2-T2: Multi-m-line ICE is associated with the wrong media section
+
+Impact: Medium to High
+
+Controls:
+
+- strict signaling v2 candidate schema includes bounded `sdpMid`/`sdpMLineIndex`
+- at least one media locator is required
+- receiver does not hardcode m-line index 0 for video
+- raw candidate still passes the C1 relay-only parser
+
+Evidence:
+
+- audio and video candidate association integration tests
+- malformed/out-of-range locator denial
+- real Chromium and Redmi relay-path evidence
+
+### C2-T3: Camera activates without current local intent
+
+Impact: Critical privacy violation
+
+Controls:
+
+- ringing/push/remote signaling cannot request camera
+- camera begins only from explicit local video action plus browser permission
+- camera operations use monotonic local generation fencing
+- hidden/background and authority loss increment generation and stop capture
+- foreground never silently restarts camera
+
+Evidence:
+
+- delayed `getUserMedia` stale-completion test
+- background/foreground physical test
+- endpoint revocation race test
+
+### C2-T4: Camera switch/on-off leaks tracks or leaves hidden capture
+
+Impact: High
+
+Controls:
+
+- one stable video sender/transceiver
+- `replaceTrack` for routine attach/detach/switch
+- superseded tracks are stopped
+- camera off detaches sender and clears preview
+- repeated-cycle leak test
+
+Evidence:
+
+- track-count instrumentation
+- Android camera indicator/hardware release where observable
+- repeated front/back and on/off stress run
+
+### C2-T5: Video expansion weakens C1 network privacy
+
+Impact: High
+
+Controls:
+
+- C1 `shawtie.call.v1` remains unchanged for voice
+- video uses separate `shawtie.call.v2`
+- candidate-free SDP remains mandatory
+- relay-only TURN and candidate validation are shared
+- no host/srflx/prflx fallback
+- C2 closure includes retained C1 closure
+
+Evidence:
+
+- voice v1 regression matrix
+- video v2 relay-only negative tests
+- TURN unavailable fail-closed physical test
+

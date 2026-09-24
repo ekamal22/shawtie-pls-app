@@ -311,3 +311,16 @@ Update this matrix when:
 | Call audio plaintext | HIGHLY_SENSITIVE | Never | Never | Endpoints only; TURN relays encrypted packets | End of call |
 
 SDP must be candidate-free in C1. Candidate IP/network text must never be retained as test evidence.
+
+## C2 video-calling additions
+
+| Data | Classification | Server storage | Logs | Provider exposure | Deletion/expiry |
+| --- | --- | --- | --- | --- | --- |
+| Call video plaintext | HIGHLY_SENSITIVE | Never | Never | Endpoints only; TURN relays encrypted packets | End of call |
+| Camera device ID/label | SENSITIVE local metadata | Never | Never | Browser/OS only | Local capture lifetime |
+| Facing mode and camera on/off state | SENSITIVE transient | Never | Never | Endpoint only | Local call lifetime |
+| Video signaling SDP/ICE | SENSITIVE transient | Never | Never | Authorized peer through `shawtie.call.v2` | Drop after forwarding/generation |
+| Coarse `video-v1` media profile | LOW_SENSITIVITY compatibility metadata | Request processing only | Bounded category only if needed | Application server | Request lifetime |
+
+C2 does not persist camera inventory, video frames, negotiated resolution, frame rate, codec selection, or RTP statistics. Physical evidence must use synthetic scenes and must not commit private video frames, camera labels, device IDs, raw SDP, raw ICE, or peer addresses.
+

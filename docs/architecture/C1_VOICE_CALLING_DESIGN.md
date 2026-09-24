@@ -104,7 +104,7 @@ C1 does not implement:
 - a second durable notification system
 - production S1 cryptographic identity or recovery
 
-C2 later enables video over the same call authority and signaling substrate.
+C2 reuses the same call authority and signaling route/hub architecture, but keeps this verified voice protocol frozen: voice uses `shawtie.call.v1`, while C2 video uses `shawtie.call.v2` for multi-m-line ICE association.
 
 ## Inherited authority
 
@@ -1157,24 +1157,25 @@ C1 source implementation completion is not C1 acceptance completion or DONE.
 
 C2 reuses:
 
-- call table and history
-- call lifecycle
+- call tables and history
+- call lifecycle and deadline fencing
 - selected-device semantics
-- signaling transport
-- TURN authorization
-- relay-only policy
+- signaling route and hub authorization model
+- TURN authorization and relay-only policy
 - push reachability
+- realtime v2 canonical invalidation
 - lifecycle and deletion integration
+- generation-fenced one-tab media ownership
 
 C2 adds:
 
-- video call initiation policy
-- camera permission
-- video transceivers
-- camera switching
-- video rendering
-- background/foreground camera behavior
-- bandwidth adaptation
+- video create/accept compatibility profile `video-v1`
+- `shawtie.call.v2` for video while C1 voice stays on v1
+- exactly one stable video transceiver
+- explicit camera permission and camera-off acceptance
+- generation-fenced camera acquisition and switching
+- local/remote video rendering
+- background camera stop with no silent foreground reacquisition
 - video-specific Android acceptance
 
-C2 must not create a second call authority system.
+C2 must not create a second call authority system, reinterpret video as voice, or mutate the verified C1 voice signaling contract.
