@@ -491,6 +491,38 @@ After protocol selection, include:
 - account deletion
 - future partnership cannot decrypt previous partnership content
 
+## M3 Media and Voice Messages verification
+
+Source implementation and the closure harness were committed through `afc73baf`. `npm run test:m3:closure` passed at `305891f` before device work and every step passed again after the physical fixes; all 20 physical Android scenarios then passed (final code SHA `ee59850`, evidence in `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). The physical run found three defects the automated suites missed (upload draft state after failure, microphone capture while hidden, and a 500 instead of 503 when the object store fails during completion), each now covered by a focused regression test. Canonical commands now include `test:m3:contracts`, `test:m3:storage`, `test:m3:storage:integration`, `test:m3:browser`, `test:m3:browser:e2e`, `test:m3:security`, `test:m3:postgres`, `test:m3:local`, `test:m3:closure`, and the device prepare/cleanup commands.
+
+M3 has a dedicated closure matrix because media correctness spans browser processing, private object storage, lifecycle authorization, M1/R1 atomic binding, durable cleanup, IndexedDB draft persistence, service-worker exclusion, and physical-device camera/microphone behavior.
+
+Canonical design: `../architecture/M3_MEDIA_VOICE_DESIGN.md`.
+
+Canonical API/storage contract: `../api/M3_MEDIA_API.md`.
+
+Physical device procedure: `M3_ANDROID_ACCEPTANCE.md`.
+
+Planned command surface:
+
+```text
+npm run test:m3:contracts
+npm run test:m3:security
+npm run test:m3:postgres
+npm run test:m3:storage
+npm run test:m3:browser
+npm run test:m3:browser:e2e
+npm run test:m3:local
+npm run test:m3:closure
+npm run test:m3:device:prepare
+npm run test:m3:device:cleanup
+```
+
+Automated/local evidence must prove migrations 0001-0016 with no reservation, media state/binding invariants, opaque/private object storage, upload/completion idempotency, cross-partnership denial, M1/R1 atomic binding, Voice Letter container visibility, lifecycle denial, deletion retry, no protected media in logs/outbox/cache, IndexedDB storage-failure behavior, and real Chromium media/service-worker behavior.
+
+Physical Android acceptance is mandatory and contains 20 scenarios. Desktop automation cannot close M3.
+
+Critical race coverage includes upload-complete vs lifecycle change, bind vs dissolution, upload expiry vs message send, double bind, delete vs access grant, R1 release/delete vs media access, object-delete crash recovery, device revocation during upload, completion replay, and two-tab stale finalization.
 ## C1 voice-calling tests
 
 Canonical sources:
