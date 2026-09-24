@@ -2,9 +2,9 @@
 
 ## Status
 
-SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE. PHYSICAL ACCEPTANCE NOT EXECUTED. The prerequisite automated/local closure is green at `439b09f551512ea79a16e8f3d047a32b9a722203`; this document now defines the next mandatory C1 gate.
+SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE. PHYSICAL ACCEPTANCE NOT EXECUTED. The prerequisite integrated closure is green at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`; this document defines the only remaining C1 closure gate.
 
-C1 requires physical-device acceptance. The canonical implementation branch is `feat/c1-voice-calling`; automated/local closure passed at `439b09f` and documentation closure is recorded at `3483a458`, from base `main @ 54b8659a`. A focused real-Chromium ownership/Permissions-Policy harness is also implemented, but it does not replace relay-path or physical Android acceptance.
+C1 requires physical-device acceptance. The canonical implementation branch is `feat/c1-voice-calling`; final integrated automated/local closure passed at `9b5c255` against real migrations 0001 through 0018 with `reserved=0`. A focused real-Chromium ownership/Permissions-Policy harness is also implemented, but it does not replace relay-path or physical Android acceptance.
 
 At least one endpoint must be the supported Redmi Android device. The peer endpoint may be a second physical phone or a desktop browser for baseline scenarios. Final mobile-to-mobile acceptance should be completed before public stable release when two physical mobile devices are available.
 

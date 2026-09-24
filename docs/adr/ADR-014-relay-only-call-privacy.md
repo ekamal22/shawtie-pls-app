@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented for C1 on `feat/c1-voice-calling`. This refines Architecture Baseline 1.0 relay-first behavior to relay-only for C1 voice calling. Automated/local privacy and signaling verification passed at `439b09f`; physical relay-path/Android acceptance and final M3-integrated closure remain open.
+Accepted and implemented for C1 on `feat/c1-voice-calling`. This refines Architecture Baseline 1.0 relay-first behavior to relay-only for C1 voice calling. Final integrated automated/local privacy and signaling verification passed at `9b5c255`; physical relay-path and Android acceptance remain open.
 
 ## Context
 

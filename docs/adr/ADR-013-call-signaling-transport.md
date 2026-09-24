@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented on `feat/c1-voice-calling`. Automated/local verification passed at `439b09f`; mandatory physical Android acceptance and final M3-integrated closure remain open.
+Accepted and implemented on `feat/c1-voice-calling`. Final integrated automated/local verification passed at `9b5c255`; mandatory physical Android acceptance remains open.
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH. PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING.
+DESIGN COMPLETE. SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH. PHYSICAL ACCEPTANCE PENDING.
 
 Branch: `feat/c1-voice-calling`
 
@@ -16,7 +16,7 @@ Endpoint:
 
 /api/v1/calls/:callId/signal
 
-Automated/local signaling verification passed at `439b09f551512ea79a16e8f3d047a32b9a722203` as part of `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Physical relay-path/Android acceptance and final integrated migration closure remain open.
+Final integrated automated/local signaling verification passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Physical relay-path and Android acceptance remain open.
 
 Purpose:
 

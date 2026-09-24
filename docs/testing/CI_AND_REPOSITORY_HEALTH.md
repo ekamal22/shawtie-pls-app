@@ -72,7 +72,7 @@ The exhaustive sweep passed 40/40 gates on one exact local/remote SHA. It includ
 
 ## C1 implementation verification status
 
-C1 source implementation and automated/local closure are complete on `feat/c1-voice-calling`. The branch provides:
+C1 source implementation and final integrated automated/local closure are complete on `feat/c1-voice-calling`. The branch provides:
 
 ```text
 npm run test:c1
@@ -84,7 +84,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-`test:c1:closure` passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. The run passed C1 fast tests 20/20, database invariants, the PostgreSQL/API/worker matrix 111/111 with only M3-owned 0015/0016 reserved, focused real-Chromium 2/2, full repository health with Domain 63/63, Contracts 40/40, API unit/security 54/54, and Worker 11/11, the high-severity audit with 0 vulnerabilities, and git hygiene/local-remote parity. It ended with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance remains separate and has not run. Final integrated C1 closure cannot run until the real M3 migrations 0015/0016 are merged and the canonical 0001-0018 chain passes with `reserved=0`.
+The isolated `test:c1:closure` passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only the documented 0015/0016 reservations. Final integrated `test:c1:closure` passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full repository health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, and M3 browser unit 13/13, plus the high-severity audit with 0 vulnerabilities and git hygiene. Mandatory physical Android acceptance remains separate and has not run.
 
 ## M2 automated closure status
 
@@ -104,7 +104,7 @@ All 14 mandatory physical Android acceptance scenarios have since executed and p
 
 M3 Media and Voice Messages is DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`.
 
-C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling`, canonical closure `439b09f`, documentation head `7b154a1`. Its isolated closure used only the documented M3 migration reservations 0015/0016. C1 must now reconcile onto the real 0015/0016 mainline, pass the canonical 0001-0018 migration chain with `reserved=0`, and then complete mandatory physical Android acceptance.
+C1 Voice Calling has completed source implementation and final integrated automated/local closure on `feat/c1-voice-calling` at `9b5c255`. The canonical real 0001-0018 migration chain passed with `reserved=0`; mandatory physical Android acceptance on the Redmi Note 9S is the only remaining C1 closure item.
 
 ## Repository-health policy
 

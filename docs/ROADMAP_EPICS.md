@@ -1525,7 +1525,7 @@ M3 is DONE: automated/local and physical Android closure are both green, and the
 
 # C1: Voice Calling
 
-Status: IN_PROGRESS. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE; RECONCILED ONTO MERGED M3; FINAL INTEGRATED CLOSURE AND PHYSICAL ACCEPTANCE PENDING
+Status: IN_PROGRESS. SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE; PHYSICAL ACCEPTANCE PENDING
 
 Branch: `feat/c1-voice-calling`
 
@@ -1549,7 +1549,7 @@ Migration ownership:
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-M3 owns real merged migrations 0015/0016 on main. The earlier isolated C1 closure used `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; after reconciliation, final integrated closure must use the real 0001-0018 chain with `reserved=0`.
+M3 owns real merged migrations 0015/0016 on main. The earlier isolated C1 closure used `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016`; after reconciliation, final integrated closure passed the real 0001-0018 chain with `reserved=0` at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`.
 
 ## Scope
 
@@ -1596,7 +1596,7 @@ C1 excludes video, group calls, screen sharing, call recording, voicemail, direc
 - push subscriptions rotate/reconcile per authenticated device without duplicate active routing; active endpoint identity is additionally keyed-fingerprinted for privacy-safe uniqueness
 - operational create/transport/push switches fail closed and never enable direct ICE
 - TURN/signaling/push resource budgets are explicit and privacy-safe
-- M3 real 0015/0016 must be on main before C1 final integrated closure
+- M3 real 0015/0016 are on main and the C1 final integrated closure is complete
 
 ## Implementation evidence
 
@@ -1604,14 +1604,14 @@ Source implementation is present for C1-A through C1-I. The branch now contains 
 
 Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
-Canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. The run passed C1 fast tests 20/20, database invariants, the PostgreSQL/API/worker matrix 111/111 with only M3-owned 0015/0016 reserved, real Chromium 2/2, full health with Domain 63/63, Contracts 40/40, API unit/security 54/54, and Worker 11/11, a zero-vulnerability high-severity audit, and git hygiene/local-remote parity. It ended with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. C1 is reconciled onto real M3 0015/0016. Mandatory physical Android acceptance and final integrated migration closure with `reserved=0` remain open, so C1 is not DONE.
+The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` using only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, the integrated PostgreSQL/API/worker matrix 111/111, C1 real Chromium 2/2, full health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, M3 browser unit 13/13, a zero-vulnerability high-severity audit, and git hygiene. Mandatory physical Android acceptance remains open, so C1 is not DONE and is not merged.
 
 ## Acceptance gates
 
 - [x] implementation starts from verified merged-M2 mainline or descendant
 - [x] isolated C1 tests reserved only M3-owned 0015/0016 and did not copy/create placeholder M3 migrations
 - [x] real M3 migrations 0015/0016 are merged to main and reconciled into C1
-- [ ] final integrated migrations 0001 through 0018 pass with `reserved=0`
+- [x] final integrated migrations 0001 through 0018 pass with `reserved=0`
 - [ ] existing foundation call tables are refined rather than replaced by a second aggregate
 - [ ] one non-terminal call per partnership is database-enforced
 - [ ] exactly one caller and one callee role are enforced per call
@@ -1693,7 +1693,7 @@ Canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a7
 - [ ] autoplay-blocked remote audio recovers with explicit user gesture without durable state mutation
 - [ ] push subscription replacement leaves only one active routing path per device
 - [ ] operational transport disable fails closed without direct ICE fallback
-- [ ] final integrated C1 closure runs only after real M3 0015/0016 are merged
+- [x] final integrated C1 closure runs only after real M3 0015/0016 are merged
 - [x] full `npm run health` passes
 - [x] `npm audit --audit-level=high` passes
 - [x] no Unicode em dash is introduced in C1 repo docs/commits

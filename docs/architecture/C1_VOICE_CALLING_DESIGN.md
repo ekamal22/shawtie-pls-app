@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH, PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING.**
+**DESIGN COMPLETE, SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH, PHYSICAL ACCEPTANCE PENDING.**
 
 Branch:
 
@@ -12,11 +12,11 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`, ending with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance is still open, and final integrated closure still waits for real M3 migrations 0015/0016 and `reserved=0` validation.
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance is the only remaining C1 closure item.
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
-M3 proceeded in parallel. The current M3 implementation branch `feat/m3-media-voice @ 305891f` owns implemented but unmerged migrations 0015 and 0016. C1 owns implemented migrations 0017 and 0018. Isolated C1 database validation uses the repository's proven reservation mechanism `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` rather than copying or fabricating M3 SQL. Final integrated C1 closure must run the real contiguous 0001 through 0018 chain with `reserved=0`.
+M3 proceeded in parallel and now owns merged migrations 0015 and 0016. C1 owns migrations 0017 and 0018. Isolated C1 database validation used the repository's proven reservation mechanism `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` rather than copying or fabricating M3 SQL. Final integrated C1 closure passed the real contiguous 0001 through 0018 chain with `reserved=0`.
 
 Canonical API contract: `docs/api/C1_CALLING_API.md`.
 
@@ -622,15 +622,15 @@ Operational metrics may aggregate call outcomes, setup latency, signaling reconn
 
 ## Cross-milestone integration choreography
 
-C1 source work proceeded in parallel with M3. C1 cannot perform final integrated closure or merge while 0015/0016 are only reservations on the C1 branch.
+C1 source work proceeded in parallel with M3. M3 is now merged, C1 is reconciled, and final integrated closure is complete. C1 still cannot merge before mandatory physical acceptance closes.
 
 Required order:
 
-1. M3 lands real migrations 0015/0016 on main
-2. C1 reconciles onto that mainline without rewriting its own 0017/0018
-3. reservation-only C1 tests are replaced by the real contiguous migration chain
-4. C1 final closure runs 0001-0018 with `reserved=0`
-5. only after C1 source, browser, physical Android, and documentation closure merge may C2 implementation begin
+1. M3 landed real migrations 0015/0016 on main
+2. C1 reconciled onto that mainline without rewriting its own 0017/0018
+3. the real contiguous migration chain replaced reservation-only final validation
+4. C1 final closure passed 0001-0018 with `reserved=0`
+5. only after C1 physical Android and documentation closure may C1 merge and C2 implementation begin
 
 If M3 changes a seam C1 depends on, C1 adapts forward; it never copies or pins private M3 migration SQL.
 
@@ -910,9 +910,9 @@ C1 owns two forward-only migration numbers coordinated with parallel M3 ownershi
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-M3 owns implemented 0015 and 0016 on its still-unmerged parallel implementation branch.
+M3 owns merged migrations 0015 and 0016.
 
-Before the real M3 migrations are integrated, isolated C1 database tests may set:
+For historical isolated validation before the real M3 migrations were integrated, C1 database tests could set:
 
 ~~~text
 SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
@@ -1117,7 +1117,7 @@ npm run health
 npm audit --audit-level=high
 ~~~
 
-The canonical automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`: C1 fast tests 20/20, PostgreSQL/API/worker 111/111, real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene passed with only M3-owned 0015/0016 reserved. Physical Android acceptance is still mandatory, and final integrated migration closure still waits for real M3 0015/0016 on main and `reserved=0` validation.
+The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`: database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene all passed. Physical Android acceptance is still mandatory and is the only remaining C1 closure item.
 
 ## Acceptance boundary
 

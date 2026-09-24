@@ -2,7 +2,7 @@
 
 ## Status
 
-DESIGN COMPLETE. SOURCE IMPLEMENTATION AND AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH. PHYSICAL AND FINAL INTEGRATED CLOSURE PENDING.
+DESIGN COMPLETE. SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH. PHYSICAL ACCEPTANCE PENDING.
 
 Branch: `feat/c1-voice-calling`
 
@@ -12,7 +12,7 @@ Architecture: `docs/architecture/C1_VOICE_CALLING_DESIGN.md`
 
 Signaling: `docs/api/C1_SIGNALING_PROTOCOL.md`
 
-Automated/local contract and integration verification passed at `439b09f551512ea79a16e8f3d047a32b9a722203`, ending with `C1_AUTOMATED_IMPLEMENTATION_PASS reservations=0015,0016`. Mandatory physical Android acceptance and final real-migration `reserved=0` closure remain open.
+Final integrated automated/local contract and integration verification passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance remains open.
 
 This contract is subordinate to the PRD and C1 architecture design.
 

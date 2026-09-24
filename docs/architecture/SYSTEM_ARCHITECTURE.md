@@ -400,7 +400,7 @@ M3 preserves PostgreSQL/M1/R1/M2/P3 authority rather than adding a parallel medi
 M3 owns implemented migrations 0015 and 0016 and is DONE and merged to main after automated/local and physical Android acceptance.
 ## C1 voice-calling implementation
 
-The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation and automated/local closure are complete on `feat/c1-voice-calling`, with canonical local closure at `439b09f`; the branch is now reconciled onto main containing real M3 migrations 0015/0016; final integrated 0001-0018 closure and mandatory physical Android acceptance remain open.
+The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation and final integrated automated/local closure are complete on `feat/c1-voice-calling` at `9b5c255`; the real migration chain 0001 through 0018 passed with `reserved=0`. Mandatory physical Android acceptance is the only remaining C1 closure item.
 
 C1 preserves the modular monolith and PostgreSQL authority while adding:
 

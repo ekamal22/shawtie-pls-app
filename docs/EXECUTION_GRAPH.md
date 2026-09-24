@@ -136,7 +136,7 @@ M2 ✅ DONE, merged to `main @ b6183158`; automated/local closure PASS, physical
    ->
 M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
    +
-C1 🟡 source + automated/local closure complete at `439b09f`; reconciled onto real M3 0015/0016; final `reserved=0` closure and Redmi acceptance pending
+C1 🟡 source + final integrated automated/local closure complete at `9b5c255`; real 0001-0018 chain passed with `reserved=0`; Redmi acceptance pending
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -151,7 +151,7 @@ Verified branch: `feat/m3-media-voice`.
 
 Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
 
-M3 real migrations 0015/0016 are now on `main`. The next dependency action is to reconcile C1 and run its final `reserved=0` closure before C1 physical acceptance.
+M3 real migrations 0015/0016 are on `main`, and C1 final integrated `reserved=0` closure is complete. The next dependency action is C1 physical Android acceptance.
 
 ## Earlier completed milestone detail
 
@@ -203,11 +203,11 @@ main @ 54b8659
   |
   +--> feat/m3-media-voice      DONE, Android 20/20, merged to main @ 1d3535f
   |
-  +--> feat/c1-voice-calling   source + automated/local closure complete
+  +--> feat/c1-voice-calling   integrated local closure complete; Redmi acceptance pending
 
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
-C1 is now reconciled onto main containing real M3 0015/0016. Next it must pass 0001-0018 with reserved=0, then complete mandatory Redmi voice-call acceptance.
+C1 is reconciled onto main containing real M3 0015/0016 and passed real migrations 0001-0018 with reserved=0 at `9b5c255`. Mandatory Redmi voice-call acceptance remains.
 C2 Video Calling remains separate and blocked until C1 is verified and merged.
 ~~~
 
