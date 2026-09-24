@@ -16,6 +16,9 @@ test("C2 browser keeps camera behind accepted selected media ownership", async (
   assert.equal(panel.includes("await media.start();"), true);
   assert.equal(panel.includes("await media.enableCamera();"), true);
   assert.equal(panel.indexOf("await media.start();") < panel.indexOf("await media.enableCamera();"), true);
+  assert.equal(panel.includes('document.visibilityState === "hidden"'), true);
+  assert.equal(panel.includes("pendingCameraIntentRef.current = false"), true);
+  assert.equal(panel.includes('document.visibilityState === "visible"'), true);
   assert.equal(media.includes("async #verifyCameraAuthority()"), true);
   assert.equal(media.includes("canonical.isThisDeviceSelectedEndpoint"), true);
   assert.equal(media.includes("this.#lease.verifyOwnership()"), true);

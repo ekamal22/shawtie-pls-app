@@ -153,6 +153,12 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
     window.addEventListener("shawtie:call-changed", changed);
     window.addEventListener("shawtie:partnership-changed", changed);
     window.addEventListener("shawtie:security-changed", changed);
+    const visibilityChanged = () => {
+      if (document.visibilityState === "hidden") {
+        pendingCameraIntentRef.current = false;
+      }
+    };
+    document.addEventListener("visibilitychange", visibilityChanged);
     navigator.serviceWorker?.addEventListener("message", workerMessage);
     runtime.coordinator.markDirty();
     void runtime.coordinator.requestSync();
@@ -168,6 +174,7 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
       window.removeEventListener("shawtie:call-changed", changed);
       window.removeEventListener("shawtie:partnership-changed", changed);
       window.removeEventListener("shawtie:security-changed", changed);
+      document.removeEventListener("visibilitychange", visibilityChanged);
       navigator.serviceWorker?.removeEventListener("message", workerMessage);
       void stopMedia();
     };
@@ -252,7 +259,9 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
       await media.start();
       if (cameraIntent && current.kind === "video") {
         pendingCameraIntentRef.current = false;
-        await media.enableCamera();
+        if (document.visibilityState === "visible") {
+          await media.enableCamera();
+        }
       }
     } catch (mediaError) {
       if (mediaRef.current === media) mediaRef.current = null;

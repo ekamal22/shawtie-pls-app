@@ -12,6 +12,8 @@ import {
   c1SignalServerFrameSchema,
   c2SignalClientFrameSchema,
   c2SignalServerFrameSchema,
+  type C1SignalClientFrame,
+  type C2SignalClientFrame,
 } from "@shawtie/contracts";
 import { loadCallEndpointAuthorization, type DatabasePool } from "@shawtie/db";
 import type { RawData, WebSocket } from "ws";
@@ -209,27 +211,32 @@ export class CallSignalingHub {
       state.protocol === C2_SIGNALING_SUBPROTOCOL
         ? c2SignalClientFrameSchema.safeParse(raw)
         : c1SignalClientFrameSchema.safeParse(raw);
-    if (!parsed.success || parsed.data.generation !== state.generation) {
+    if (!parsed.success) {
+      this.#close(state, 1008, "Invalid signaling frame");
+      return;
+    }
+    const frame = parsed.data as C1SignalClientFrame | C2SignalClientFrame;
+    if (frame.generation !== state.generation) {
       this.#close(state, 1008, "Invalid signaling frame");
       return;
     }
 
-    if (parsed.data.type === "signal.description") {
+    if (frame.type === "signal.description") {
       const validDescription =
         state.kind === "video"
-          ? validateVideoCallDescription(parsed.data.payload.sdp)
-          : validateCallDescription(parsed.data.payload.sdp);
+          ? validateVideoCallDescription(frame.payload.sdp)
+          : validateCallDescription(frame.payload.sdp);
       if (!validDescription) {
         this.#close(state, 1008, "Invalid SDP");
         return;
       }
     }
 
-    if (parsed.data.type === "signal.ice_candidate") {
+    if (frame.type === "signal.ice_candidate") {
       state.candidateCount += 1;
       if (
         state.candidateCount > maxCandidates(state) ||
-        !validateCallRelayCandidate(parsed.data.payload.candidate)
+        !validateCallRelayCandidate(frame.payload.candidate)
       ) {
         this.#close(state, 1008, "Invalid ICE candidate");
         return;
@@ -238,7 +245,7 @@ export class CallSignalingHub {
 
     const peer = this.#peer(state);
     if (peer) {
-      this.#send(peer, { ...parsed.data, generation: peer.generation });
+      this.#send(peer, { ...frame, generation: peer.generation });
       return;
     }
 
@@ -252,7 +259,7 @@ export class CallSignalingHub {
       fromKey: state.key,
       fromGeneration: state.generation,
       protocol: state.protocol,
-      frame: parsed.data,
+      frame,
     });
     this.#pendingByCall.set(state.callId, pending);
   }
