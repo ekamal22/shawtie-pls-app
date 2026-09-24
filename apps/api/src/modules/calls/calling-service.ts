@@ -44,6 +44,7 @@ import type {
 import { ApiError } from "../../lib/api-error.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import { resolveCallingConfig, type ApiConfig, type CallingConfig } from "../../config.ts";
+import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import type { TurnCredentialProvider } from "./turn-credential-provider.ts";
 
 const IDEMPOTENCY_RETENTION_MS = 24 * 60 * 60_000;
@@ -118,6 +119,7 @@ export class CallingService {
     readonly database: DatabasePool,
     config: ApiConfig,
     private readonly turnProvider: TurnCredentialProvider,
+    private readonly keys: AuthKeyRing,
   ) {
     this.calling = resolveCallingConfig(config);
   }
@@ -682,10 +684,16 @@ export class CallingService {
   async savePushSubscription(auth: AuthContext, input: PushSubscriptionInput): Promise<void> {
     if (!auth.session.deviceId) throw new ApiError(409, "PUSH_NOT_AVAILABLE");
     const now = await getTransactionTimestamp(this.database.pool);
+    const endpointFingerprint = this.keys.activeVerifier(
+      "push-endpoint-fingerprint",
+      input.endpoint,
+    );
     await upsertPushSubscription(this.database.pool, {
       deviceId: auth.session.deviceId,
       accountId: auth.session.accountId,
       endpoint: input.endpoint,
+      endpointFingerprint: endpointFingerprint.value,
+      endpointKeyVersion: endpointFingerprint.version,
       p256dh: input.keys.p256dh,
       auth: input.keys.auth,
       expirationTimeMs:
