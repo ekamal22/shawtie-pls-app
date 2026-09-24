@@ -10,9 +10,9 @@ async function openHarness(page: import("@playwright/test").Page) {
   return response!;
 }
 
-test("C1 browser host disables camera and scopes microphone to self", async ({ page }) => {
+test("C1 browser host keeps microphone and C2 camera permission scoped to self", async ({ page }) => {
   const response = await openHarness(page);
-  expect(response.headers()["permissions-policy"]).toBe("camera=(), microphone=(self)");
+  expect(response.headers()["permissions-policy"]).toBe("camera=(self), microphone=(self)");
 });
 
 test("C1 media owner is single-tab and takeover generation is monotonic", async ({
@@ -51,6 +51,7 @@ test("C1 media owner is single-tab and takeover generation is monotonic", async 
 
 const projection = {
   id: CALL,
+  kind: "voice",
   state: "accepted",
   version: 2,
   isThisDeviceSelectedEndpoint: true,

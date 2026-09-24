@@ -118,9 +118,8 @@ export class CallMediaSession {
 
     const turn = await fetchTurnCredentials(this.callId);
     if (!(await this.#stillOwner())) return;
-    const peer = new RTCPeerConnection({
+    const peerConfiguration: RTCConfiguration = {
       iceTransportPolicy: "relay",
-      bundlePolicy: this.#kind === "video" ? "max-bundle" : undefined,
       iceCandidatePoolSize: 0,
       iceServers: [
         {
@@ -129,7 +128,9 @@ export class CallMediaSession {
           credential: turn.credential,
         },
       ],
-    });
+    };
+    if (this.#kind === "video") peerConfiguration.bundlePolicy = "max-bundle";
+    const peer = new RTCPeerConnection(peerConfiguration);
     this.#peer = peer;
     this.#scheduleTurnRefresh(turn.expiresAt);
 

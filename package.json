@@ -90,7 +90,10 @@
     "test:c1:closure": "node scripts/ci/test-c1-closure.mjs",
     "test:c1:device:prepare": "node scripts/device/c1-android-acceptance.mjs",
     "test:c1:device:cleanup": "node scripts/device/c1-android-acceptance.mjs --cleanup",
-    "test:c2": "npm run build --workspace @shawtie/contracts && node --test packages/contracts/tests/calling.test.ts apps/api/tests/c2.security.test.ts"
+    "test:c2": "npm run build --workspace @shawtie/contracts && node --test packages/contracts/tests/calling.test.ts apps/api/tests/c2.security.test.ts apps/web/tests/c2.browser.test.ts",
+    "test:c2:browser": "node --test apps/web/tests/c2.browser.test.ts",
+    "test:c2:browser:e2e": "playwright test --config=playwright.c2.config.ts",
+    "test:c2:install-browser": "playwright install chromium"
   },
   "devDependencies": {
     "@types/node": "22.20.3",

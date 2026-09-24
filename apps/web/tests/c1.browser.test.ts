@@ -19,7 +19,7 @@ test("C1 browser negotiates realtime v2 and canonicalizes call invalidations", a
   assert.equal(panel.includes("fetchCurrentCall"), true);
 });
 
-test("C1 browser keeps one local media owner and relay-only audio", async () => {
+test("C1 browser keeps one local media owner and preserves the relay-only voice path", async () => {
   const lease = await source("../src/features/calling/media-owner-lease.ts");
   const media = await source("../src/features/calling/media-controller.ts");
 
@@ -31,7 +31,7 @@ test("C1 browser keeps one local media owner and relay-only audio", async () => 
   assert.equal(lease.includes("navigator as Navigator"), true);
   assert.equal(media.includes('iceTransportPolicy: "relay"'), true);
   assert.equal(media.includes("getAudioTracks"), true);
-  assert.equal(media.includes("getVideoTracks"), false);
+  assert.equal(media.includes('this.#kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL'), true);
   assert.equal(media.includes("stripCandidates"), true);
   assert.equal(media.includes("/\\btyp relay\\b/i"), true);
   assert.equal(media.includes("reportEndpointConnected"), true);
@@ -71,10 +71,13 @@ test("C1 microphone and notification permissions stay on explicit user paths", a
   assert.equal(worker.includes("/accept"), false);
 });
 
-test("C1 local browser host disables camera and scopes microphone to self", async () => {
+test("C1 voice path never requests camera even though C2 permits trusted-origin camera access", async () => {
   const vite = await source("../vite.config.ts");
-  assert.equal(vite.includes('"Permissions-Policy": "camera=(), microphone=(self)"'), true);
-  assert.equal(vite.includes("headers: c1PermissionHeaders"), true);
+  const panel = await source("../src/features/calling/CallingPanel.tsx");
+  assert.equal(vite.includes('"Permissions-Policy": "camera=(self), microphone=(self)"'), true);
+  assert.equal(vite.includes("headers: callingPermissionHeaders"), true);
+  assert.equal(panel.includes("video: false"), true);
+  assert.equal(panel.includes('startOutgoing("voice")'), true);
 });
 
 test("C1 browser verifies lease ownership before stale asynchronous work creates media", async () => {
