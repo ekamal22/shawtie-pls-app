@@ -71,6 +71,8 @@
     "test:m2:device:cleanup": "node scripts/device/m2-android-acceptance.mjs --cleanup",
     "test:m2:closure": "node scripts/ci/test-m2-closure.mjs",
     "test:c1": "node --test packages/domain/tests/calling.test.ts packages/contracts/tests/calling.test.ts apps/api/tests/c1.security.test.ts apps/api/tests/c1.turn.test.ts apps/web/tests/c1.browser.test.ts apps/worker/tests/c1.worker.test.ts",
+    "test:c1:browser:e2e": "playwright test --config=playwright.c1.config.ts",
+    "test:c1:install-browser": "playwright install chromium",
     "test:c1:postgres": "node scripts/db/test-c1-postgres.mjs",
     "test:c1:local": "node scripts/db/test-c1-local.mjs",
     "test:c1:closure": "node scripts/ci/test-c1-closure.mjs",
