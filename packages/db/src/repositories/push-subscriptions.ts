@@ -4,6 +4,8 @@ export interface PushSubscriptionRecord {
   readonly deviceId: string;
   readonly accountId: string;
   readonly endpoint: string;
+  readonly endpointFingerprint: Buffer;
+  readonly endpointKeyVersion: number;
   readonly p256dh: string;
   readonly auth: string;
   readonly expirationTimeMs: bigint | null;
@@ -15,20 +17,31 @@ export async function upsertPushSubscription(
 ): Promise<void> {
   await executor.query(
     `UPDATE push_subscriptions
-     SET revoked_at=$3, updated_at=$3
-     WHERE endpoint=$1
+     SET revoked_at=$5, updated_at=$5
+     WHERE (
+         endpoint=$1
+         OR (endpoint_key_version=$3 AND endpoint_fingerprint=$4)
+       )
        AND device_id<>$2
        AND revoked_at IS NULL`,
-    [input.endpoint, input.deviceId, input.now],
+    [
+      input.endpoint,
+      input.deviceId,
+      input.endpointKeyVersion,
+      input.endpointFingerprint,
+      input.now,
+    ],
   );
   await executor.query(
     `INSERT INTO push_subscriptions (
-       device_id, account_id, endpoint, p256dh, auth, expiration_time_ms,
-       created_at, updated_at, revoked_at, failure_count
+       device_id, account_id, endpoint, endpoint_fingerprint, endpoint_key_version,
+       p256dh, auth, expiration_time_ms, created_at, updated_at, revoked_at, failure_count
      )
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$7,NULL,0)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,NULL,0)
      ON CONFLICT (device_id) DO UPDATE
      SET endpoint=EXCLUDED.endpoint,
+         endpoint_fingerprint=EXCLUDED.endpoint_fingerprint,
+         endpoint_key_version=EXCLUDED.endpoint_key_version,
          p256dh=EXCLUDED.p256dh,
          auth=EXCLUDED.auth,
          expiration_time_ms=EXCLUDED.expiration_time_ms,
@@ -39,6 +52,8 @@ export async function upsertPushSubscription(
       input.deviceId,
       input.accountId,
       input.endpoint,
+      input.endpointFingerprint,
+      input.endpointKeyVersion,
       input.p256dh,
       input.auth,
       input.expirationTimeMs?.toString() ?? null,
@@ -68,11 +83,14 @@ export async function listActivePushSubscriptionsForAccounts(
     device_id: string;
     account_id: string;
     endpoint: string;
+    endpoint_fingerprint: Buffer;
+    endpoint_key_version: number;
     p256dh: string;
     auth: string;
     expiration_time_ms: string | number | bigint | null;
   }>(
     `SELECT subscription.device_id, subscription.account_id, subscription.endpoint,
+            subscription.endpoint_fingerprint, subscription.endpoint_key_version,
             subscription.p256dh, subscription.auth, subscription.expiration_time_ms
      FROM push_subscriptions AS subscription
      JOIN accounts AS account ON account.id=subscription.account_id
@@ -93,6 +111,8 @@ export async function listActivePushSubscriptionsForAccounts(
     deviceId: row.device_id,
     accountId: row.account_id,
     endpoint: row.endpoint,
+    endpointFingerprint: row.endpoint_fingerprint,
+    endpointKeyVersion: row.endpoint_key_version,
     p256dh: row.p256dh,
     auth: row.auth,
     expirationTimeMs:
