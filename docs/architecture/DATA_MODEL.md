@@ -533,7 +533,7 @@ States are `ringing`, `accepted`, `connected`, and terminal `ended`. Internal te
 
 `call_events` never stores SDP, ICE, TURN credentials, device labels, raw provider errors, or audio. History is partnership-scoped and deleted at final dissolution.
 
-Migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions for generic `call_state_changed` reachability. Push capability data is sensitive and never public/logged.
+Migration `0018_push_runtime.sql` adds device-bound Web Push subscriptions for generic `call_state_changed` reachability. Each active subscription stores the sensitive endpoint capability plus a keyed endpoint fingerprint and key version for privacy-safe uniqueness and rotation handling. Push capability data is never public or logged.
 
 C2 later enables video over the same call model.
 
