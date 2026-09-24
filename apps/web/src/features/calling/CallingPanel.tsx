@@ -137,7 +137,15 @@ export function CallingPanel({
       void runtime.coordinator.requestSync();
     };
     const workerMessage = (event: MessageEvent) => {
-      if (event.data?.type === "C1_CALL_NOTIFICATION_CLICK") changed();
+      if (event.data?.type === "C1_CALL_NOTIFICATION_CLICK") {
+        changed();
+        return;
+      }
+      if (event.data?.type === "C1_PUSH_SUBSCRIPTION_CHANGED") {
+        void reconcileCallPushSubscription(false)
+          .then(setPushState)
+          .catch(() => setPushState("unavailable"));
+      }
     };
     window.addEventListener("shawtie:call-changed", changed);
     window.addEventListener("shawtie:partnership-changed", changed);

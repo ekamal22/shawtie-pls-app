@@ -131,6 +131,20 @@ async function reconcileCallNotification() {
   await closeCallNotifications();
 }
 
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of windows) {
+        client.postMessage({ type: "C1_PUSH_SUBSCRIPTION_CHANGED" });
+      }
+    })(),
+  );
+});
+
 self.addEventListener("push", (event) => {
   let payload = null;
   try {
