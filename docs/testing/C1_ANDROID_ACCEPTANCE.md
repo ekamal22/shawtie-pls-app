@@ -2,7 +2,7 @@
 
 ## Status
 
-SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ACCEPTANCE COMPLETE. `C1_ANDROID_ACCEPTANCE_PASS` is recorded: all mandatory scenarios below passed on a physical Xiaomi Redmi Note 9S (Android 12, API 31) at `9cbc2f8194591e95752eb3a7a9f771e340974b19`, whose executable code is identical to the integrated closure at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Executed evidence, environment, limits and honest notes are in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`. C1 is DONE on `feat/c1-voice-calling` and is not merged.
+SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ACCEPTANCE COMPLETE. `C1_ANDROID_ACCEPTANCE_PASS` is recorded: all mandatory scenarios below passed on a physical Xiaomi Redmi Note 9S (Android 12, API 31) at `9cbc2f8194591e95752eb3a7a9f771e340974b19`, whose executable code matched the integrated closure at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. A follow-up gap check later found and fixed one stale media-owner defect at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` and the integrated closure re-passed there. Executed evidence, environment, limits and honest notes are in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`. C1 is DONE on `feat/c1-voice-calling` and is not merged.
 
 C1 requires physical-device acceptance. The canonical implementation branch is `feat/c1-voice-calling`; final integrated automated/local closure passed at `9b5c255` against real migrations 0001 through 0018 with `reserved=0`. A focused real-Chromium ownership/Permissions-Policy harness is also implemented, but it does not replace relay-path or physical Android acceptance, which has now been executed.
 
@@ -64,6 +64,8 @@ Never store raw SDP, candidate strings, peer IP addresses, or TURN credentials a
 
 ### Background push
 
+Physical evidence for the rejected-call notification cleanup and the stale notification tap after rejection is recorded in the evidence document.
+
 - suspend or close foreground PWA where platform permits
 - incoming generic `call_state_changed` push wakes service worker
 - service worker fetches canonical current call before actionable ringing state
@@ -82,6 +84,8 @@ Never store raw SDP, candidate strings, peer IP addresses, or TURN credentials a
 - second device cannot signal or receive TURN credentials
 
 ### Same-device multi-tab ownership
+
+Physical evidence for a delayed generation-1 completion after generation-2 takeover is recorded in the evidence document.
 
 - open two tabs/windows for the same selected endpoint where browser permits
 - only one tab owns microphone, peer connection, signaling, and endpoint-connected reporting

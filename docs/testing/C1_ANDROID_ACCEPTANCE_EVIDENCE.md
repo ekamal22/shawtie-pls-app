@@ -15,10 +15,19 @@ observations". The tested executable code is `feat/c1-voice-calling` at
 `9cbc2f8194591e95752eb3a7a9f771e340974b19`. That commit differs from the last
 code and test commit `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` only in
 documentation, so the executable code under test is the code the integrated
-automated closure passed against. No production or test code was changed by
-the physical run: no C1 product defect was found, so no regression test was
-added and the integrated closure was not re-run. `9b5c255` remains the latest
-integrated automated closure (`C1_AUTOMATED_INTEGRATED_PASS reserved=0`).
+automated closure passed against. The 25-scenario run itself changed no code.
+
+A later follow-up check of two evidence gaps (rejected-call notification
+cleanup and physical stale-owner fencing) found one real defect in the
+multi-tab media-owner code. It was fixed at
+`b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` with real-Chromium regression tests,
+and `npm run test:c1:closure` re-passed at that SHA
+(`C1_AUTOMATED_INTEGRATED_PASS reserved=0`), so `b29aaa1` is now the final
+executable SHA and the latest integrated automated closure. The scenarios the
+fix logically affects (multi-tab ownership and signaling interruption with
+reconnect) were rerun physically on the fixed build; the full 25-scenario
+suite was not rerun. One evidence item, audible desktop-to-phone audio, is
+still open (see "Limits and observations").
 
 The final documentation and evidence HEAD is the tip of `feat/c1-voice-calling`
 after the evidence commit, which contains only documentation. C1 is not merged
@@ -182,8 +191,21 @@ SHA.
   one notification. Three delayed duplicate pushes after cancel created no
   incoming-call notification. Missed (25 second ring timeout) and answered on
   another device (second desktop device accepted) also removed the phone's
-  notification. The rejected case uses the same service worker branch and was
-  not separately exercised on the phone.
+  notification.
+- Rejected (follow-up check, run on a fresh secure test origin because Chrome
+  had reset the notification permission of the earlier test origin): with the
+  phone backgrounded, a desktop call produced the generic incoming
+  notification and canonical state `ringing`. The app was then brought forward
+  from the launcher, not from the notification, and a real tap on Reject
+  rejected the call: canonical state ended with terminal reason rejected, the
+  history projection reported outcome `rejected`, and the notification was
+  removed about 2.5 seconds later by the state push. After rejection there was
+  no accept request and no microphone request. With the worker stopped so no
+  cleanup push was sent, a real Reject tap left the notification in the shade
+  (stale); a real tap on that stale notification opened the app to "Call ended,
+  rejected" with no Incoming or Accept controls, no accept request, no
+  microphone request and canonical state with no call, and the notification was
+  cleared.
 - A push with an unknown version or unknown type triggered no canonical fetch
   (ignored); a valid one triggered exactly one.
 - Notification click: a real tap on the notification opened Chrome on the app,
@@ -225,10 +247,63 @@ SHA.
   already active in another tab on this device", its acquired microphone track
   ended, it created no peer connection or socket, and the original owner kept
   its single connected peer and socket. Limit: the observer acquires the
-  microphone on its explicit tap before the lease check, then stops it. Stale
-  callbacks of a superseded owner are evidenced by the generation increment
-  here and by the automated ownership tests, not by a separate physical
-  stale-callback trigger.
+  microphone on its explicit tap before the lease check, then stops it.
+- Stale-owner completion (follow-up check, see the next subsection): a
+  deliberately delayed generation-1 completion was fired after generation 2 was
+  established. It exposed a defect that was fixed and physically re-verified.
+
+#### Follow-up: stale-owner completion fencing (defect found and fixed)
+
+- Mechanism: the test-only probe held the owner tab's TURN credential request
+  so its `start()` was mid-flight under generation 1 (the call was accepted,
+  the lease record showed generation 1). The owner tab's JavaScript was then
+  frozen through the DevTools debugger, the equivalent of a frozen or
+  throttled tab, so its heartbeat stopped. After 12 seconds (the lease is 8
+  seconds) a second tab was opened and a real tap on Resume audio here took
+  ownership at generation 2 and the call connected through it. The held
+  generation-1 request was then released while the owner tab was still frozen
+  and the tab was resumed, so the old work completed after generation 2 was
+  authoritative. Two hold points were used: before the request (the
+  completion is slower than the resumed heartbeat) and after the response (the
+  completion is faster than the heartbeat).
+- Before the fix: with the request-side hold the resumed heartbeat noticed the
+  loss first and the completion arrived 31 ms after the old owner stopped, so
+  the existing `stopped` flag fenced it (no peer connection, no socket, no
+  endpoint-connected report, generation-2 owner intact). With the response-side
+  hold the completion arrived 13 ms before the heartbeat noticed the loss. The
+  old owner then created a peer connection and a signaling socket. That socket
+  superseded the generation-2 owner's socket (server close code 1008
+  "Superseded"), the generation-2 tab stopped its media, the old tab then
+  stopped too, and the call stayed canonically connected with no media owner at
+  all. That is a real defect: a superseded owner regained signaling authority.
+- Root cause: `CallMediaSession.start()` re-checked only its own `stopped` flag
+  after the awaited API calls. That flag is set by the heartbeat or the
+  takeover hint, neither of which is ordered against the completion. The same
+  pattern existed in the TURN refresh and the signaling reconnect timer.
+- Fix (`b29aaa1`): `MediaOwnerLease.verifyOwnership()` verifies the shared lease
+  record, and the session verifies it after the TURN credential request in
+  `start()` and in the TURN refresh and before a signaling reconnect. A
+  superseded owner now stops without creating media or signaling state.
+- Regression tests: two new real-Chromium tests, one for lease verification of
+  the current owner versus a superseded generation and one in which a
+  generation-1 completion arrives after a generation-2 takeover and must create
+  zero peer connections and zero sockets and leave generation 2 untouched, plus
+  a control test that the current owner still creates exactly one peer
+  connection and one socket. Both new stale tests fail on the old code and
+  pass on the fix (real Chromium 5/5), and a source-level test was added.
+- Physical result after the fix (rebuilt phone bundle, response-side hold):
+  generation before takeover 1, after takeover 2. When the stale generation-1
+  completion fired (the held request completed about 19 ms before the old owner
+  released its lease) the old tab created no peer connection, no signaling
+  socket and no endpoint-connected report, stopped with "Audio moved to another
+  tab on this device", and did not touch generation-2 state. Counts across all
+  phone tabs afterward: one microphone-owner tab with one live microphone
+  track, one open peer connection and one open signaling socket. The
+  generation-2 lease stayed current and was renewed, the desktop peer's
+  signaling socket was not superseded and had no close events, and the
+  canonical call stayed connected. The normal takeover (scenario 8) and the
+  signaling interruption with reconnect (scenario 15) were rerun on the fixed
+  build and passed.
 
 ### 9. Wi-Fi to mobile network change
 
@@ -438,7 +513,6 @@ window test. That is the third-party TURN server's log, not an application log.
 - Desktop-to-phone audio was verified from decoded audio counters, not by the
   user's ear; phone-to-desktop audio was verified both ways.
 - TURN over TLS was not exercised (no certificate); TCP fallback was.
-- Rejected-call notification removal on the phone was not separately run.
 - Chrome's on-device "Possible spam" notification masking and its generic
   fallback notification affect the visible notification wording on the test
   origins; the notification content and tap behavior were verified anyway.
@@ -455,7 +529,9 @@ window test. That is the third-party TURN server's log, not an application log.
 ## Closure
 
 C1 source implementation, final integrated automated/local closure and
-physical Redmi Note 9S acceptance are complete on `feat/c1-voice-calling`. C1
-is DONE on the branch and is ready for independent verification and an
-explicit merge decision. It has not been merged to `main`, and C2 has not been
-started.
+physical Redmi Note 9S acceptance are complete on `feat/c1-voice-calling`, with
+the follow-up gap results above (rejected-call notification cleanup and
+stale-owner fencing, the latter with one fix). One evidence item remains open:
+physically confirming that the desktop tone is audible on the phone, not only
+decoded. Merge readiness is to be restated after that item closes. C1 has not
+been merged to `main`, and C2 has not been started.

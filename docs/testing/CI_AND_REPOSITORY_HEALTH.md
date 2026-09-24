@@ -84,7 +84,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-The isolated `test:c1:closure` passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only the documented 0015/0016 reservations. Final integrated `test:c1:closure` passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full repository health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, and M3 browser unit 13/13, plus the high-severity audit with 0 vulnerabilities and git hygiene. Mandatory physical Android acceptance was run separately on the Redmi Note 9S and passed 25/25 (`docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`); it changed no code, so this closure remains the latest.
+The isolated `test:c1:closure` passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only the documented 0015/0016 reservations. Final integrated `test:c1:closure` passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full repository health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, and M3 browser unit 13/13, plus the high-severity audit with 0 vulnerabilities and git hygiene. Mandatory physical Android acceptance was run separately on the Redmi Note 9S and passed 25/25 (`docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`). A later follow-up gap check fixed one media-owner defect, and `test:c1:closure` re-passed at `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` with `C1_AUTOMATED_INTEGRATED_PASS reserved=0` (C1 real Chromium 5/5, integrated PostgreSQL/API/worker 111/111).
 
 ## M2 automated closure status
 
@@ -104,7 +104,7 @@ All 14 mandatory physical Android acceptance scenarios have since executed and p
 
 M3 Media and Voice Messages is DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`.
 
-C1 Voice Calling has completed source implementation and final integrated automated/local closure on `feat/c1-voice-calling` at `9b5c255`. The canonical real 0001-0018 migration chain passed with `reserved=0`; mandatory physical Android acceptance on the Redmi Note 9S then passed 25/25 at `9cbc2f8` (executable code identical to `9b5c255`), so C1 is DONE on the branch and unmerged.
+C1 Voice Calling has completed source implementation and final integrated automated/local closure on `feat/c1-voice-calling` at `9b5c255`. The canonical real 0001-0018 migration chain passed with `reserved=0`; mandatory physical Android acceptance on the Redmi Note 9S then passed 25/25 at `9cbc2f8` (no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there), so C1 is DONE on the branch and unmerged.
 
 ## Repository-health policy
 

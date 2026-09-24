@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The current verified post-M2 mainline is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. M2 Realtime and Offline Reliability is DONE and merged. M3 Media and Voice Messages is DONE on `feat/m3-media-voice`: automated closure is green, physical Android acceptance is 20/20 at final code SHA `ee59850`, and M3 is fast-forward merged to `main @ 1d3535f`. C1 Voice Calling has completed source implementation and final integrated automated/local closure on `feat/c1-voice-calling` at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Real migrations 0001 through 0018 passed with `reserved=0`. Mandatory physical Android acceptance on the Redmi Note 9S then passed 25/25 (tested SHA `9cbc2f8`, executable code identical to `9b5c255`), so C1 is DONE on `feat/c1-voice-calling` and is not merged.
+The current verified post-M2 mainline is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. M2 Realtime and Offline Reliability is DONE and merged. M3 Media and Voice Messages is DONE on `feat/m3-media-voice`: automated closure is green, physical Android acceptance is 20/20 at final code SHA `ee59850`, and M3 is fast-forward merged to `main @ 1d3535f`. C1 Voice Calling has completed source implementation and final integrated automated/local closure on `feat/c1-voice-calling` at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Real migrations 0001 through 0018 passed with `reserved=0`. Mandatory physical Android acceptance on the Redmi Note 9S then passed 25/25 (tested SHA `9cbc2f8`, no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there), so C1 is DONE on `feat/c1-voice-calling` and is not merged.
 
 Completed milestones:
 
@@ -404,7 +404,7 @@ M3 must prove PRD size/duration limits, private ciphertext storage, short-lived 
 
 # Milestone 8: C1 Voice Calling
 
-Status: DONE on `feat/c1-voice-calling` and not merged. Source implementation and final integrated automated/local closure are complete at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Mandatory physical Android acceptance on the Redmi Note 9S passed 25/25 at `9cbc2f8194591e95752eb3a7a9f771e340974b19` (executable code identical to `9b5c255`, evidence in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
+Status: DONE on `feat/c1-voice-calling` and not merged. Source implementation and final integrated automated/local closure are complete at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Mandatory physical Android acceptance on the Redmi Note 9S passed 25/25 at `9cbc2f8194591e95752eb3a7a9f771e340974b19` (no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there, evidence in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 Depends on verified M2. C1 source work proceeded in parallel with M3 using only the documented reservations for M3-owned migrations 0015/0016.
 
@@ -424,7 +424,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 - real Chromium 2/2
 - full health PASS
 - high-severity audit: 0 vulnerabilities
-- mandatory physical Android voice-call acceptance PASS 25/25 on the Redmi Note 9S, no defects found
+- mandatory physical Android voice-call acceptance PASS 25/25 on the Redmi Note 9S; a follow-up gap check fixed one stale media-owner defect at `b29aaa1` and the integrated closure re-passed there
 - C1 remains unmerged
 
 ## Next sequence
