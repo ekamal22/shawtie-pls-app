@@ -32,6 +32,9 @@ function step(name, command, args, env = process.env) {
 
 const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error("Run through npm: npm run test:c1:closure");
+if ((process.env.SHAWTIE_MIGRATION_RESERVATIONS ?? "").trim()) {
+  throw new Error("C1 integrated closure forbids SHAWTIE_MIGRATION_RESERVATIONS.");
+}
 
 const branch = run("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
 if (branch !== expectedBranch) {
@@ -64,6 +67,7 @@ const introducedEmDash = diff
   .find((line) => line.includes(emDash));
 if (introducedEmDash) throw new Error("C1 diff introduces a forbidden em dash.");
 
+step("m3-local", process.execPath, [npmCli, "run", "test:m3:local"]);
 step("c1-local", process.execPath, [npmCli, "run", "test:c1:local"]);
 step("c1-browser-e2e", process.execPath, [npmCli, "run", "test:c1:browser:e2e"]);
 step("health", process.execPath, [npmCli, "run", "health"]);

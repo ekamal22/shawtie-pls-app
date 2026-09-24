@@ -1393,7 +1393,7 @@ INSERT INTO call_participants (
 
 SET CONSTRAINTS call_participants_exact_roles IMMEDIATE;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO call_sessions (
@@ -1414,9 +1414,9 @@ BEGIN
     WHEN unique_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO call_sessions (
@@ -1437,9 +1437,9 @@ BEGIN
     WHEN check_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE call_participants
@@ -1453,9 +1453,9 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO push_subscriptions (
@@ -1475,7 +1475,7 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
 INSERT INTO call_events (
   id, call_session_id, partnership_id, event_type, actor_account_id,
@@ -1491,7 +1491,7 @@ INSERT INTO call_events (
   now()
 );
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE call_events
@@ -1505,6 +1505,6 @@ BEGIN
       END IF;
   END;
 END;
-$;
+$$;
 
 ROLLBACK;

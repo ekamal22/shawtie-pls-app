@@ -144,3 +144,19 @@ test("C1 account and partnership authority changes synchronously terminalize cal
   assert.equal(dissolution.includes("terminalizeCurrentCallForPartnership"), true);
   assert.equal(dissolution.includes('"partnership_terminated"'), true);
 });
+
+test("C1 integrated closure requires real M3 coverage and valid database invariants", async () => {
+  const closure = await source("../../../scripts/ci/test-c1-closure.mjs");
+  const invariants = await source("../../../packages/db/tests/invariants.sql");
+
+  assert.equal(
+    closure.includes("C1 integrated closure forbids SHAWTIE_MIGRATION_RESERVATIONS"),
+    true,
+  );
+  const m3Step = closure.indexOf('step("m3-local"');
+  const c1Step = closure.indexOf('step("c1-local"');
+  assert.equal(m3Step >= 0, true);
+  assert.equal(c1Step > m3Step, true);
+  assert.doesNotMatch(invariants, /DO \$(?:\r?\n)/);
+  assert.doesNotMatch(invariants, /^\$;$/m);
+});
