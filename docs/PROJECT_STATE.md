@@ -130,7 +130,7 @@ Current epic status:
 - M2 Realtime and Offline Reliability: DONE on `feat/m2-realtime-offline`. The canonical automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene green. All 14 mandatory physical Android acceptance scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects, each with a focused regression test. M2 is merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`.
 - M3 Media and Voice Messages: DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`; automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`.
 - C1 Voice Calling: DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. Final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0` after the stale media-owner fix. Redmi Note 9S acceptance passed 25/25, and rejected-notification cleanup, stale-owner fencing, and audible bidirectional audio are physically confirmed.
-- C2 Video Calling: DESIGN COMPLETE on `feat/c2-video-calling`; source implementation not started. The design is reconciled onto verified post-C1 `main @ 5323d7b`, reuses the C1 call aggregate with no expected migration, keeps voice on `shawtie.call.v1`, requires `video-v1` compatibility on video create/accept, and introduces `shawtie.call.v2` for video multi-m-line ICE metadata.
+- C2 Video Calling: IN_PROGRESS on `feat/c2-video-calling`. Design is complete. Source implementation has started: server contracts/config/API admission landed at `989ad0c`, and the shared dialect-aware signaling-v2 server path landed at `f9caeec`. Video create/accept now use `video-v1`, `kind=video` persists through the existing call repository, endpoint authorization exposes durable kind, and video signaling uses `shawtie.call.v2` while C1 voice remains on v1. No migration is added or reserved. Focused execution verification and browser camera/media implementation remain pending.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -152,7 +152,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
-- `feat/c2-video-calling` -> C2 architecture and implementation design complete on verified post-C1 mainline; source implementation not started
+- `feat/c2-video-calling` -> C2 IN_PROGRESS; C2-A/B/C server source started through `f9caeec`; focused execution verification and browser C2-D/E remain pending
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -184,7 +184,7 @@ M2 Realtime and Offline Reliability was created from documentation-correct `main
 4. preserve merged M3 and its real migrations 0015/0016
 5. preserve the final C1 executable baseline and integrated closure at `b29aaa1`, which re-passed real migrations 0001 through 0018 with `reserved=0` after the stale media-owner fix
 6. C1 mandatory physical Android voice-call acceptance on the Redmi Note 9S is complete (25/25); preserve its evidence
-7. C2 design is complete on `feat/c2-video-calling`; begin source implementation from the reconciled post-C1 branch while preserving the C1 voice contract
+7. continue C2 from server source head `f9caeec`: first run focused contract/API type/build checks, then implement C2-D browser media/camera and C2-E UI while preserving the C1 voice contract
 8. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy

@@ -63,7 +63,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
 | 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
-| 9 C2 Video Calling | DESIGN COMPLETE on `feat/c2-video-calling`; implementation not started | merged C1 | Yes, mandatory |
+| 9 C2 Video Calling | IN_PROGRESS on `feat/c2-video-calling`; C2-A/B/C server source started through `f9caeec`, verification + browser/media/UI pending | merged C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -444,7 +444,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 
 # Milestone 9: C2 Video Calling
 
-Status: DESIGN COMPLETE on `feat/c2-video-calling`. Source implementation not started.
+Status: IN_PROGRESS on `feat/c2-video-calling`. Design complete. C2-A/B/C server source has started through `f9caeec`; focused execution verification and C2-D/E browser/media/UI remain pending.
 
 Depends on verified and merged C1.
 

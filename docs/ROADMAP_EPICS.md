@@ -1701,7 +1701,7 @@ The isolated automated/local closure passed at `439b09f` using only documented 0
 
 # C2: Video Calling
 
-Status: DESIGN COMPLETE. SOURCE IMPLEMENTATION NOT STARTED.
+Status: IN_PROGRESS. DESIGN COMPLETE. C2-A/B/C SERVER SOURCE STARTED THROUGH `f9caeec`; EXECUTION VERIFICATION AND C2-D/E REMAIN OPEN.
 
 Branch:
 
@@ -1752,6 +1752,14 @@ Migration ownership:
 - [x] no speculative migration reserved
 - [x] no voice-to-video upgrade in C2
 - [x] physical Android matrix designed
+
+## Current implementation evidence
+
+- `989ad0c`: C2 contracts, `video-v1`, feature config, durable video admission, kind persistence, endpoint-kind authorization, focused contract/security tests
+- `f9caeec`: shared C1/C2 signaling-hub dialects, video v2 protocol selection, video SDP validation, kind revalidation
+- no migration added or reserved
+- C1 voice remains on `shawtie.call.v1`
+- no C2 gate below is marked complete until focused executable verification is actually run
 
 ## Implementation gates
 
