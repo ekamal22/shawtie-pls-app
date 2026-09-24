@@ -26,8 +26,9 @@ and `npm run test:c1:closure` re-passed at that SHA
 executable SHA and the latest integrated automated closure. The scenarios the
 fix logically affects (multi-tab ownership and signaling interruption with
 reconnect) were rerun physically on the fixed build; the full 25-scenario
-suite was not rerun. One evidence item, audible desktop-to-phone audio, is
-still open (see "Limits and observations").
+suite was not rerun. The last evidence item, audible desktop-to-phone audio,
+was then confirmed by ear on the fixed build (see "Follow-up: audible audio
+confirmation"). All physical acceptance evidence is now complete.
 
 The final documentation and evidence HEAD is the tip of `feat/c1-voice-calling`
 after the evidence commit, which contains only documentation. C1 is not merged
@@ -131,9 +132,9 @@ SHA.
   energy rose by about 0.72 (peak level about 0.73) and the user heard their
   own voice come out of the desktop speakers. In the other direction the
   phone's decoded inbound audio energy rose steadily from the desktop tone
-  (about 0.40 over the measured window). The desktop-to-phone direction was
-  measured from decoded audio and playout counters; the user did not
-  separately report hearing the tone on the phone.
+  (about 0.40 over the measured window). The user did not report hearing the
+  desktop tone in that first run; that direction was confirmed by ear in the
+  follow-up on the fixed build (see "Follow-up: audible audio confirmation").
 - The desktop ended the call. History showed outcome `completed` with a
   duration; the history projection contains only `id`, `kind`, `direction`,
   `initiatedAt`, `connectedAt`, `endedAt`, `outcome`, `durationSeconds`.
@@ -486,6 +487,26 @@ SHA.
   acquired microphone track ended. After restoring the flag a fresh call
   connected over relay.
 
+## Follow-up: audible audio confirmation
+
+Run on the fixed executable code (`b29aaa1`) after the gap fixes, with the same
+physical Redmi Note 9S and the desktop peer sending its synthetic 440 Hz tone.
+
+- A real call was placed with a real tap on Call and the desktop accepted.
+  Both sides reported `connected`, the phone's local candidates were relay only
+  (relay protocol TCP through the USB tunnel on mobile data), the selected pair
+  was relay to relay, and the peer connection policy was relay. No direct
+  candidate existed. History later showed `completed`.
+- Desktop to Redmi: the user held the Redmi to the ear and confirmed by ear
+  that a steady beep came out of the Redmi ("Yes, steady beep"). The phone's
+  decoded inbound audio energy also rose (about 0.43 over the window), as
+  supporting evidence only.
+- Redmi to desktop: the user spoke into the Redmi and confirmed by ear that the
+  voice came out of the desktop ("Yes, hear my voice"). The desktop's received
+  audio energy rose by about 1.36 with a peak level of about 0.58.
+- Result: genuine bidirectional audible audio over a relay-only C1 call.
+  `C1_PHYSICAL_GAP1_BIDIRECTIONAL_AUDIBLE_AUDIO_PASS`.
+
 ## Privacy assertions
 
 | Assertion | Result |
@@ -510,8 +531,6 @@ window test. That is the third-party TURN server's log, not an application log.
 - Peer was a desktop headless browser with a synthetic microphone; a second
   physical mobile device was not available. Two-phone acceptance remains a
   pre-stable-release item per the canonical document.
-- Desktop-to-phone audio was verified from decoded audio counters, not by the
-  user's ear; phone-to-desktop audio was verified both ways.
 - TURN over TLS was not exercised (no certificate); TCP fallback was.
 - Chrome's on-device "Possible spam" notification masking and its generic
   fallback notification affect the visible notification wording on the test
@@ -529,9 +548,10 @@ window test. That is the third-party TURN server's log, not an application log.
 ## Closure
 
 C1 source implementation, final integrated automated/local closure and
-physical Redmi Note 9S acceptance are complete on `feat/c1-voice-calling`, with
-the follow-up gap results above (rejected-call notification cleanup and
-stale-owner fencing, the latter with one fix). One evidence item remains open:
-physically confirming that the desktop tone is audible on the phone, not only
-decoded. Merge readiness is to be restated after that item closes. C1 has not
-been merged to `main`, and C2 has not been started.
+physical Redmi Note 9S acceptance are complete on `feat/c1-voice-calling`,
+including the follow-up results (rejected-call notification cleanup,
+stale-owner fencing with its fix, and audible bidirectional audio). The final
+executable SHA is `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`, whose integrated
+closure passed with `reserved=0`. No physical acceptance evidence remains
+open, so C1 is DONE on the branch and is ready to merge. It has not been
+merged to `main`, and C2 has not been started.

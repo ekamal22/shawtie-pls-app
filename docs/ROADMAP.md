@@ -404,7 +404,7 @@ M3 must prove PRD size/duration limits, private ciphertext storage, short-lived 
 
 # Milestone 8: C1 Voice Calling
 
-Status: DONE on `feat/c1-voice-calling` and not merged. Source implementation and final integrated automated/local closure are complete at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Mandatory physical Android acceptance on the Redmi Note 9S passed 25/25 at `9cbc2f8194591e95752eb3a7a9f771e340974b19` (no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there, evidence in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
+Status: DONE and ready to merge on `feat/c1-voice-calling`; not merged. Source implementation and final integrated automated/local closure are complete at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`. Mandatory physical Android acceptance on the Redmi Note 9S passed 25/25 at `9cbc2f8194591e95752eb3a7a9f771e340974b19` (no code changed during that run; a later follow-up gap check fixed one media-owner defect at `b29aaa1` and the integrated closure re-passed there, evidence in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 Depends on verified M2. C1 source work proceeded in parallel with M3 using only the documented reservations for M3-owned migrations 0015/0016.
 

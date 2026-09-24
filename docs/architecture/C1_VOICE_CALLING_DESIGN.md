@@ -622,7 +622,7 @@ Operational metrics may aggregate call outcomes, setup latency, signaling reconn
 
 ## Cross-milestone integration choreography
 
-C1 source work proceeded in parallel with M3. M3 is now merged, C1 is reconciled, and final integrated closure is complete. Mandatory physical acceptance has now closed; C1 still awaits independent verification and an explicit merge decision.
+C1 source work proceeded in parallel with M3. M3 is now merged, C1 is reconciled, and final integrated closure is complete. Mandatory physical acceptance has now closed; all physical evidence is complete and C1 is ready to merge on an explicit merge decision.
 
 Required order:
 
