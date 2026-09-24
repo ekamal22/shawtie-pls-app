@@ -518,9 +518,9 @@ The first stable deployment may run one signaling API replica. Multi-replica dep
 
 ### Shared Fastify WebSocket upgrade policy
 
-The merged M2 API currently installs one global `@fastify/websocket` server with a 4 KiB transport `maxPayload` and a global `handleProtocols` accepting only `shawtie.realtime.v1`.
+Before C1, the merged M2 API installed one global `@fastify/websocket` server with a 4 KiB transport `maxPayload` and a global `handleProtocols` accepting only `shawtie.realtime.v1`.
 
-C1 must refactor that shared transport seam before adding signaling:
+The C1 implementation refactors that shared transport seam as follows:
 
 - supported subprotocol constants are `shawtie.realtime.v1`, `shawtie.realtime.v2`, and `shawtie.call.v1`
 - each connection offers exactly one application subprotocol; zero, multiple, or unknown offers fail
@@ -584,9 +584,9 @@ Audio output routing:
 
 C1 defines server-side operational controls that fail closed without weakening privacy:
 
-- `callCreateEnabled`: blocks new call creation while existing calls may continue
-- `callTransportEnabled`: blocks new acceptance, signaling upgrade, and TURN issuance/refresh; no direct-connect fallback is allowed
-- `callPushEnabled`: disables background Web Push delivery while foreground realtime calling remains available
+- `C1_CALLING_ENABLED`: blocks new call creation while existing calls may continue according to their current authority
+- `C1_TRANSPORT_ENABLED`: blocks new acceptance, signaling upgrade, and TURN issuance/refresh; no direct-connect fallback is allowed
+- Web Push availability is configuration-driven through the C1 VAPID public/private configuration; if push is unavailable, foreground realtime calling remains available
 
 These are operator controls, not browser authority. Disabling a control never rewrites a call to another transport and never enables direct peer ICE.
 
@@ -615,14 +615,14 @@ Policy must bound provider abuse/cost without exposing call existence:
 - bounded signaling frame and ICE candidate rate/count
 - bounded TURN credential issuance/refresh frequency
 - short TURN credential TTL
-- per-account/device/partnership call-create/ring rate limits
+- per-account/network/partnership call-create limits, plus separate signaling, TURN, and push registration/delivery bounds
 - bounded Web Push delivery attempts per authoritative incoming-call event
 
 Operational metrics may aggregate call outcomes, setup latency, signaling reconnects, TURN issuance/failure, push delivery category, and relay transport class. Never record SDP, raw ICE, peer IP, TURN secrets, push endpoint, device label, or partner identity in analytics.
 
 ## Cross-milestone integration choreography
 
-C1 source work may proceed in parallel with M3, but C1 cannot perform final integrated closure or merge while 0015/0016 are only reservations.
+C1 source work proceeded in parallel with M3. C1 cannot perform final integrated closure or merge while 0015/0016 are only reservations on the C1 branch.
 
 Required order:
 
