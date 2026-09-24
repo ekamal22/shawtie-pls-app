@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The current verified post-M2 mainline is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. M2 Realtime and Offline Reliability is DONE and merged. M3 Media and Voice Messages is DONE on `feat/m3-media-voice`: automated closure is green, physical Android acceptance is 20/20 at final code SHA `ee59850`, and explicit merge review is the next M3 action. C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling`, canonical closure `439b09f`, but still requires real-M3 integration, final 0001-0018 `reserved=0` closure, and mandatory physical Android acceptance.
+The current verified post-M2 mainline is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. M2 Realtime and Offline Reliability is DONE and merged. M3 Media and Voice Messages is DONE on `feat/m3-media-voice`: automated closure is green, physical Android acceptance is 20/20 at final code SHA `ee59850`, and M3 is fast-forward merged to `main @ 1d3535f`. C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling`, canonical closure `439b09f`, but still requires real-M3 integration, final 0001-0018 `reserved=0` closure, and mandatory physical Android acceptance.
 
 Completed milestones:
 
@@ -61,7 +61,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | DONE on `feat/m3-media-voice`; physical Android acceptance 20/20 at `ee59850`; not merged | M2 | Yes |
+| 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
 | 8 C1 Voice Calling | IN_PROGRESS, source implementation and automated/local closure complete at `439b09f`; integration and physical acceptance pending | M2, with final integration after M3 | Yes, mandatory |
 | 9 C2 Video Calling | PLANNED | verified C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
@@ -80,7 +80,7 @@ main @ 54b8659
    v             v
 M3 ✅           C1 🟡
 20/20 Android   local closure PASS
-ready to merge  waits for real 0015/0016
+merged @ 1d3535f  reconcile onto real 0015/0016
 ```
 
 M1 and R1 progressed in parallel from the verified P3 boundary, were source-integrated at `01fa182`, exhaustively validated together at `5db7a94183bca153d142389d7188e3887653a9ec`, documentation-closed at `d7d95a6`, and are now on `main`.
@@ -352,7 +352,7 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: DONE on `feat/m3-media-voice`. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850` (evidence: `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Not merged to `main`.
+Status: DONE and fast-forward merged to `main @ 1d3535f`. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850` (evidence: `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 Branch: `feat/m3-media-voice`.
 
@@ -428,7 +428,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 
 ## Next sequence
 
-1. merge M3 so real migrations 0015/0016 reach `main`
+1. M3 merge is complete; real migrations 0015/0016 are now on `main`
 2. reconcile `feat/c1-voice-calling` onto that mainline
 3. run the canonical 0001-0018 chain with `reserved=0`
 4. if green, execute mandatory C1 Redmi acceptance
