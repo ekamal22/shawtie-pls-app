@@ -267,7 +267,7 @@ C1 Voice Calling owns:
 - `0017_calling_runtime.sql`
 - `0018_push_runtime.sql`
 
-While M3 migrations are not yet present on the isolated C1 branch, C1 database tests may use the repository's existing reservation mechanism:
+While M3 remains unmerged and its real migrations are therefore absent from the isolated C1 branch, C1 database tests may use the repository's existing reservation mechanism:
 
 ```text
 SHAWTIE_MIGRATION_RESERVATIONS=0015,0016
@@ -277,9 +277,9 @@ No placeholder migration files and no copied M3 SQL are permitted.
 
 Final integrated C1 closure must run real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green. Therefore M3 must merge its real 0015/0016 migrations first; C1 then reconciles onto that mainline and removes reservation-only closure assumptions.
 
-`0017` refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, and call uniqueness.
+`0017` is implemented and refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, call uniqueness, endpoint-session binding, and legacy-call terminalization.
 
-`0018` adds reusable device-bound Web Push subscription persistence and call push-routing indexes.
+`0018` is implemented and adds device-bound Web Push subscription persistence, keyed endpoint fingerprints with key versioning, active endpoint/fingerprint uniqueness, and call push-routing indexes.
 
 No C2 migration is reserved by C1 design.
 
