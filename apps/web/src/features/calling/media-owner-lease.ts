@@ -52,11 +52,27 @@ export class MediaOwnerLease {
   #generation = 0;
   #heartbeat: number | null = null;
   #channel: BroadcastChannel | null = null;
+  #onLost: (() => void) | null = null;
 
   constructor(callId: string, deviceId: string) {
     this.key = callId + ":" + deviceId;
     if ("BroadcastChannel" in window) {
       this.#channel = new BroadcastChannel("shawtie-c1-call-owner");
+      this.#channel.addEventListener("message", (event) => {
+        const message = event.data;
+        if (
+          !message
+          || typeof message !== "object"
+          || message.key !== this.key
+          || message.type !== "claimed"
+          || typeof message.generation !== "number"
+          || !Number.isSafeInteger(message.generation)
+          || message.generation <= this.#generation
+        ) {
+          return;
+        }
+        this.#loseOwnership();
+      });
     }
   }
 
@@ -78,11 +94,11 @@ export class MediaOwnerLease {
 
   startHeartbeat(onLost: () => void): void {
     if (this.#generation <= 0 || this.#heartbeat !== null) return;
+    this.#onLost = onLost;
     this.#heartbeat = window.setInterval(() => {
       void this.#renew().then((owned) => {
         if (owned) return;
-        this.stopHeartbeat();
-        onLost();
+        this.#loseOwnership();
       });
     }, HEARTBEAT_MS);
   }
@@ -92,6 +108,13 @@ export class MediaOwnerLease {
       window.clearInterval(this.#heartbeat);
       this.#heartbeat = null;
     }
+  }
+
+  #loseOwnership(): void {
+    this.stopHeartbeat();
+    const onLost = this.#onLost;
+    this.#onLost = null;
+    onLost?.();
   }
 
   async release(): Promise<void> {
@@ -114,6 +137,7 @@ export class MediaOwnerLease {
       this.#channel?.postMessage({ key: this.key, type: "released" });
       this.#channel?.close();
       this.#channel = null;
+      this.#onLost = null;
       this.#generation = 0;
     }
   }
