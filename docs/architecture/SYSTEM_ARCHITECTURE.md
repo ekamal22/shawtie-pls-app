@@ -380,9 +380,9 @@ M2 introduces no Redis and is expected to require no new PostgreSQL migration.
 
 M1 sequence semantics remain unchanged: `server_sequence` is history order and `change_sequence` is durable mutation synchronization order.
 
-## C1 voice-calling design
+## C1 voice-calling implementation
 
-The concrete C1 design is `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`.
+The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation is complete on `feat/c1-voice-calling`; automated/local closure, physical Android acceptance, and final M3-integrated migration closure remain open.
 
 C1 preserves the modular monolith and PostgreSQL authority while adding:
 
@@ -395,7 +395,7 @@ C1 preserves the modular monolith and PostgreSQL authority while adding:
 - candidate-free SDP and server-validated relay-only trickle candidates
 - generic Web Push background wakeup bound to current account/device authorization
 - durable ring/connect/hard timeout fencing
-- C1 migrations 0017/0018 coordinated with parallel M3 0015/0016
+- implemented C1 migrations 0017/0018 coordinated with implemented but unmerged M3 0015/0016
 - physical Android acceptance
 
 C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 later enables video over the same verified call substrate.
