@@ -82,6 +82,10 @@ test("C1 account and partnership authority changes synchronously terminalize cal
   assert.equal(accounts.includes("terminalizeCallsByEndpointDevice"), true);
   assert.equal(accounts.includes("terminalizeCurrentCallForPartnership"), true);
   assert.equal(accounts.includes("revokePushSubscriptionForDevice"), true);
+  const callingService = await source("../src/modules/calls/calling-service.ts");
+  assert.equal(callingService.includes('"push-endpoint-fingerprint"'), true);
+  assert.equal(callingService.includes("endpointFingerprint.value"), true);
+  assert.equal(callingService.includes("endpointKeyVersion: endpointFingerprint.version"), true);
   assert.equal(dissolution.includes("terminalizeCurrentCallForPartnership"), true);
   assert.equal(dissolution.includes('"partnership_terminated"'), true);
 });
