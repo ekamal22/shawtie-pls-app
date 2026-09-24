@@ -1306,7 +1306,7 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: SOURCE IMPLEMENTATION COMPLETE; AUTOMATED/LOCAL AND PHYSICAL CLOSURE PENDING
+Status: DONE. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850`. Not yet merged to `main`.
 
 Branch: `feat/m3-media-voice`
 
@@ -1457,7 +1457,7 @@ M3 does not own production E2EE key distribution, device crypto enrollment/recov
 ### M3-J Closure
 - contracts/security/PostgreSQL/object-store/browser/real-Chromium
 - full health and dependency audit
-- physical Android 18/18
+- physical Android 20/20
 - diff/worktree hygiene
 - local/remote SHA parity
 
@@ -1478,50 +1478,50 @@ Committed implementation includes:
 - M3-I lifecycle deletion, partnership media deletion target, service-worker exclusion, fail-closed local purge, and M2 namespace integration
 - M3-J contract/domain/security/PostgreSQL/worker/object-store/real-Chromium/local-closure/device-preflight harnesses
 
-The committed closure harness has not been executed in this environment. All execution-dependent acceptance gates below therefore remain unchecked. M3 becomes DONE only after `npm run test:m3:closure` and all 20 physical Android scenarios pass with committed evidence.
+The closure harness was executed: `npm run test:m3:closure` passed at `305891f` and every step passed again after the physical fixes, and all 20 physical Android scenarios passed on a Xiaomi Redmi Note 9S with committed evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. The physical run found and fixed three real defects (commits `98b4c90` and `ee59850`), each with a regression test. All acceptance gates below are therefore closed.
 
 ## Acceptance gates
 
-- [ ] migrations 0001 through 0016 apply from zero with `reserved=0`
-- [ ] database invariants cover media state, partnership scope, and immutable one-time binding
-- [ ] server-controlled PRD media limits are enforced
-- [ ] client image processing strips ordinary metadata through re-encoding and respects dimension policy
-- [ ] object keys are opaque and contain no user/container/private filename data
-- [ ] object storage is private
-- [ ] API/object store never receives media plaintext
-- [ ] production configuration cannot enable the M3 test-only crypto adapter
-- [ ] upload grants are short-lived and exact-scope
-- [ ] completion proves object existence and expected size/checksum where supported
-- [ ] completion retry is idempotent
-- [ ] abandoned uploads clean up safely after crash/lost response
-- [ ] unbound media is uploader-only
-- [ ] same-partnership membership alone does not expose unbound media
-- [ ] a media object cannot bind twice or cross visibility domains
-- [ ] message attachments bind atomically with M1 message creation
-- [ ] media-only messages preserve M1 ordering/change semantics
-- [ ] voice message shape is exactly constrained
-- [ ] M1 edit does not silently replace attachments
-- [ ] message deletion immediately denies new attachment grants
-- [ ] R1 media references require the concrete M3 resolver
-- [ ] Voice Letter requires voice media and inherits containing-item visibility
-- [ ] unreleased/hidden R1 media cannot be fetched through media ID
-- [ ] breakup_pending allows new chat media exactly as the PRD requires
-- [ ] R1 remains view-only during breakup
-- [ ] account-deletion overlay blocks new media writes
-- [ ] final dissolution denies new media access synchronously
-- [ ] `partnership_media_objects` deletion target is created and retry-safe
-- [ ] worker crash after object deletion is safe to replay
-- [ ] future partnership cannot access/rebind old media
-- [ ] M3 local drafts are encrypted and namespace-purged on logout/account switch/revocation/dissolution
-- [ ] IndexedDB quota failure cannot be represented as safely queued media
-- [ ] service worker never caches signed media URLs, authorized media responses, or decrypted media
-- [ ] realtime/outbox/logging excludes signed URLs, plaintext, filenames, ciphertext bodies, and key material
-- [ ] safe client rendering rejects active untrusted content
-- [ ] all 20 physical Android scenarios pass
-- [ ] full `npm run health` and `npm audit --audit-level=high` pass
-- [ ] branch/worktree/diff hygiene and local/remote SHA parity pass
+- [x] migrations 0001 through 0016 apply from zero with `reserved=0`
+- [x] database invariants cover media state, partnership scope, and immutable one-time binding
+- [x] server-controlled PRD media limits are enforced
+- [x] client image processing strips ordinary metadata through re-encoding and respects dimension policy
+- [x] object keys are opaque and contain no user/container/private filename data
+- [x] object storage is private
+- [x] API/object store never receives media plaintext
+- [x] production configuration cannot enable the M3 test-only crypto adapter
+- [x] upload grants are short-lived and exact-scope
+- [x] completion proves object existence and expected size/checksum where supported
+- [x] completion retry is idempotent
+- [x] abandoned uploads clean up safely after crash/lost response
+- [x] unbound media is uploader-only
+- [x] same-partnership membership alone does not expose unbound media
+- [x] a media object cannot bind twice or cross visibility domains
+- [x] message attachments bind atomically with M1 message creation
+- [x] media-only messages preserve M1 ordering/change semantics
+- [x] voice message shape is exactly constrained
+- [x] M1 edit does not silently replace attachments
+- [x] message deletion immediately denies new attachment grants
+- [x] R1 media references require the concrete M3 resolver
+- [x] Voice Letter requires voice media and inherits containing-item visibility
+- [x] unreleased/hidden R1 media cannot be fetched through media ID
+- [x] breakup_pending allows new chat media exactly as the PRD requires
+- [x] R1 remains view-only during breakup
+- [x] account-deletion overlay blocks new media writes
+- [x] final dissolution denies new media access synchronously
+- [x] `partnership_media_objects` deletion target is created and retry-safe
+- [x] worker crash after object deletion is safe to replay
+- [x] future partnership cannot access/rebind old media
+- [x] M3 local drafts are encrypted and namespace-purged on logout/account switch/revocation/dissolution
+- [x] IndexedDB quota failure cannot be represented as safely queued media
+- [x] service worker never caches signed media URLs, authorized media responses, or decrypted media
+- [x] realtime/outbox/logging excludes signed URLs, plaintext, filenames, ciphertext bodies, and key material
+- [x] safe client rendering rejects active untrusted content
+- [x] all 20 physical Android scenarios pass
+- [x] full `npm run health` and `npm audit --audit-level=high` pass
+- [x] branch/worktree/diff hygiene and local/remote SHA parity pass
 
-M3 remains IN_PROGRESS once source implementation starts and becomes DONE only after automated/local and physical Android closure are both green.
+M3 is DONE: automated/local and physical Android closure are both green. It has not been merged to `main`; that requires an explicit decision.
 
 # C1: Voice and Video Calling
 

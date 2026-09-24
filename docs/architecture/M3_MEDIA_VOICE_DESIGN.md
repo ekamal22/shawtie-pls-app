@@ -2,7 +2,7 @@
 
 ## Status and base
 
-**Status:** SOURCE IMPLEMENTATION COMPLETE at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`; AUTOMATED/LOCAL AND PHYSICAL CLOSURE PENDING
+**Status:** DONE on `feat/m3-media-voice`: source complete at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`, automated closure green, physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`.
 **Branch:** `feat/m3-media-voice`
 **Required base:** `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
@@ -19,7 +19,7 @@ M3 does not own general message E2EE, partnership cryptographic epochs, device e
 
 The M3 source implementation is committed on `feat/m3-media-voice` through `afc73baf`. It includes real migrations 0015/0016, media contracts/domain/repository, private S3-compatible object storage, API/worker lifecycle integration, M1/R1 binding, encrypted browser drafts, worker-backed image re-encoding, voice preview/playback, whole-object retry, rate limits/feature controls, deletion/purge behavior, and the full local/Chromium/Android closure harness.
 
-This is not executed closure evidence. M3 remains IN_PROGRESS until the committed automated/local closure succeeds and all 20 mandatory physical Android scenarios pass with committed evidence.
+Closure has since been executed: the automated closure passed and all 20 mandatory physical Android scenarios passed with committed evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. The physical run added three fixes: voice capture now stops when the page is hidden or the microphone track ends, a failed chat upload refreshes the draft list and reports the failure, and an object-store failure during completion returns 503 `MEDIA_UNAVAILABLE`.
 
 ## Existing boundaries M3 must preserve
 

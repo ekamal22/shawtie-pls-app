@@ -25,7 +25,7 @@ Frozen means implementation should proceed against the accepted baseline unless 
 
 M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd` from `feat/m2-realtime-offline`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with the Docker/PostgreSQL/API/worker/Chromium matrix, full health, audit, and git hygiene green. All 14 mandatory physical Android scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test.
 
-M3 Media and Voice Messages source implementation is complete on `feat/m3-media-voice @ afc73baf`, created from merged-M2 `main @ 54b8659a`. The committed implementation includes migrations 0015/0016, media contracts/repositories, private S3-compatible object storage, API/worker integration, M1/R1 binding, encrypted browser drafts, image/video/file/voice flows, cleanup, and the automated/local/device closure harnesses. Automated/local closure and mandatory 20-scenario physical Android acceptance remain pending execution. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
+M3 Media and Voice Messages is complete on `feat/m3-media-voice` (created from merged-M2 `main @ 54b8659a`) and is not yet merged to `main`. The implementation includes migrations 0015/0016, media contracts/repositories, private S3-compatible object storage, API/worker integration, M1/R1 binding, encrypted browser drafts, image/video/file/voice flows, and cleanup. Automated closure passed and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S, final physical acceptance code SHA `ee59850`, recorded in `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed three real defects, each with a regression test. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
 
 This distinction is intentional: implementation-complete does not mean acceptance-complete or DONE.
 
@@ -95,6 +95,7 @@ The selected architecture is:
 - `testing/TEST_STRATEGY.md`
 - `testing/M2_ANDROID_ACCEPTANCE.md`
 - `testing/M3_ANDROID_ACCEPTANCE.md`
+- `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 

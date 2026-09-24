@@ -251,4 +251,4 @@ npm run test:m3:device:cleanup
 
 `test:m3:local` provisions disposable PostgreSQL and private MinIO, then runs the M3 PostgreSQL/API/worker, real object-store, and real Chromium layers. `test:m3:closure` additionally enforces branch/SHA parity, `[skip ci]` history, no introduced Unicode em dash, full repository health, high-severity dependency audit, diff hygiene, and clean-worktree status.
 
-These commands are committed but are not recorded as executed evidence yet. Physical Android acceptance remains a separate mandatory 20-scenario gate.
+`npm run test:m3:closure` was executed and passed at `305891f` (`M3_AUTOMATED_CLOSURE_PASS`: migration plan `count=16 reserved=0`, database invariants, PostgreSQL/API/worker, MinIO storage integration, real Chromium 4/4, full health, `npm audit --audit-level=high` with 0 vulnerabilities, `git diff --check`). After the physical fixes every step passed again. Physical Android acceptance then passed 20/20 (see `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Hosted GitHub Actions verification remains separate under V1 and was not used.

@@ -56,8 +56,8 @@ A1 Accounts + Devices ✅      P1 Discovery + Requests ✅
             +---+---+
             |       |
             v       v
-       M3 Media ⚪  C1 Calling ⚪
-M3 design status: `feat/m3-media-voice` contains the completed architecture/API/device-acceptance design from `main @ 54b8659a`; implementation has not started. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
+       M3 Media ✅  C1 Calling ⚪
+M3 status: DONE on `feat/m3-media-voice` (created from `main @ 54b8659a`): automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`; merge is an explicit human decision. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`.
             |       |
             +---+---+
                 |
@@ -100,7 +100,7 @@ flowchart TD
 
     M1 --> M2["M2 Realtime + Offline ✅"]
 
-    M2 --> M3["M3 Media + Voice Messages ⚪"]
+    M2 --> M3["M3 Media + Voice Messages ✅"]
     M2 --> C1["C1 Voice + Video Calling ⚪"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]

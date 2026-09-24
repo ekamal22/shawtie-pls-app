@@ -2,7 +2,7 @@
 
 ## Status
 
-**Design/source implementation complete at `afc73baf`; automated/local and physical closure pending execution.**
+**Implemented and closed: automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`. Not merged to `main`.**
 
 Branch: `feat/m3-media-voice`
 Required base: `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
@@ -86,6 +86,8 @@ Refreshes only the current uploader's still-authorized `uploading` object. It ca
 Completion is replay-safe. The API verifies current upload generation and asks `MediaObjectStore.verifyObject()` to prove object existence, expected ciphertext size, and checksum where supported. Success transitions `uploading -> ready_unbound`.
 
 A forged complete request cannot make a missing object usable.
+
+If the object store is unreachable or returns an error while verifying, the API fails closed with `503 MEDIA_UNAVAILABLE` (never a generic 500), the object stays `uploading` and completion can be retried once the provider recovers.
 
 ## DELETE /api/v1/media/:mediaId
 

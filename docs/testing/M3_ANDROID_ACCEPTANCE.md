@@ -2,9 +2,9 @@
 
 ## Status
 
-Procedure and device preflight harness are implemented. Execution begins only after M3 automated/local closure is green.
+Executed: all 20 mandatory scenarios passed on a Xiaomi Redmi Note 9S (Android 12, Chrome 153.0.8010.52), final physical acceptance code SHA `ee59850`. Evidence: `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
-M3 is not DONE until all 20 mandatory physical scenarios pass on a supported physical Android device and committed evidence records the exact tested SHA.
+M3 was DONE only after all 20 mandatory physical scenarios passed on a supported physical Android device with committed evidence of the exact tested SHA. That evidence now exists.
 
 Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`
 Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`

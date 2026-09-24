@@ -61,7 +61,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 5A M1 Messaging Core | DONE, merged to main | P3 | No for core closure |
 | 5B R1 Relationship Space | DONE, merged to main | P3 | No for core closure |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
-| 7 M3 Media and Voice Messages | SOURCE IMPLEMENTATION COMPLETE; closure pending execution | M2 | Yes |
+| 7 M3 Media and Voice Messages | DONE on `feat/m3-media-voice`; physical Android acceptance 20/20 at `ee59850`; not merged | M2 | Yes |
 | 8 C1 Voice and Video Calling | PLANNED | M2 | Yes, mandatory |
 | 9 S1 E2EE and Cryptographic Recovery | PLANNED | M3 and C1 | Yes, mandatory |
 | 10 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -89,7 +89,7 @@ Next:
 2. preserve M1 ownership of 0011/0012 and R1 ownership of 0013/0014
 3. preserve the automated/local M2 closure anchor `4bbffdf` and its green evidence
 4. M2 physical Android acceptance is complete, 14/14, final SHA `b83102f`
-5. M2 is merged at `main @ b6183158`; M3 source implementation is complete on `feat/m3-media-voice @ afc73baf`; execute automated/local closure and the 20-scenario Android matrix before merge
+5. M2 is merged at `main @ b6183158`; M3 is complete on `feat/m3-media-voice` with automated closure green and the 20-scenario Android matrix passed at `ee59850`; merge to `main` awaits an explicit decision
 6. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -348,7 +348,7 @@ M2 is DONE only when the canonical acceptance gates in `docs/ROADMAP_EPICS.md` a
 
 # Milestone 7: M3 Media and Voice Messages
 
-Status: SOURCE IMPLEMENTATION COMPLETE at `afc73baf`; automated/local and physical acceptance pending execution.
+Status: DONE on `feat/m3-media-voice`. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850` (evidence: `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Not merged to `main`.
 
 Branch: `feat/m3-media-voice`.
 
@@ -390,7 +390,7 @@ Add private images, short video, selected files, chat voice messages, Relationsh
 7. M3-G R1 media resolver and Voice Letter integration
 8. M3-H browser media/voice UX and safe rendering
 9. M3-I lifecycle, deletion, local storage, and service-worker hardening
-10. M3-J closure harness implemented; automated/local execution plus mandatory physical Android acceptance remain pending
+10. M3-J closure harness executed: automated closure green and mandatory physical Android acceptance passed 20/20
 
 ## Closure boundary
 

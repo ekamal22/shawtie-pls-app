@@ -493,7 +493,7 @@ After protocol selection, include:
 
 ## M3 Media and Voice Messages verification
 
-Source implementation and the closure harness are committed through `afc73baf`, but this document does not claim that the M3 automated/local or physical suites have executed. Canonical commands now include `test:m3:contracts`, `test:m3:storage`, `test:m3:storage:integration`, `test:m3:browser`, `test:m3:browser:e2e`, `test:m3:security`, `test:m3:postgres`, `test:m3:local`, `test:m3:closure`, and the device prepare/cleanup commands.
+Source implementation and the closure harness were committed through `afc73baf`. `npm run test:m3:closure` passed at `305891f` before device work and every step passed again after the physical fixes; all 20 physical Android scenarios then passed (final code SHA `ee59850`, evidence in `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). The physical run found three defects the automated suites missed (upload draft state after failure, microphone capture while hidden, and a 500 instead of 503 when the object store fails during completion), each now covered by a focused regression test. Canonical commands now include `test:m3:contracts`, `test:m3:storage`, `test:m3:storage:integration`, `test:m3:browser`, `test:m3:browser:e2e`, `test:m3:security`, `test:m3:postgres`, `test:m3:local`, `test:m3:closure`, and the device prepare/cleanup commands.
 
 M3 has a dedicated closure matrix because media correctness spans browser processing, private object storage, lifecycle authorization, M1/R1 atomic binding, durable cleanup, IndexedDB draft persistence, service-worker exclusion, and physical-device camera/microphone behavior.
 

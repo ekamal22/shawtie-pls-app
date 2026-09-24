@@ -269,7 +269,7 @@ M3 Media and Voice Messages owns the next two forward-only PostgreSQL migrations
 
 `0016_media_integration_runtime.sql` is implemented and owns M1/R1 integration hardening: media-only message support where required, container attachment indexes, immutable binding invariants, and media cleanup lookup paths.
 
-M3 must not modify M1-owned 0011/0012 or R1-owned 0013/0014. The committed M3 closure harness applies real migrations 0001 through 0016 from zero with `reserved=0` and all database invariants green; execution evidence is still pending.
+M3 must not modify M1-owned 0011/0012 or R1-owned 0013/0014. The committed M3 closure harness applies real migrations 0001 through 0016 from zero with `reserved=0` and all database invariants green; the closure passed at `305891f` and again after the physical fixes (`MIGRATION_PLAN_PASS count=16 reserved=0` and `DATABASE_INVARIANTS_PASS`). The physical Android run required no migration change.
 
 C1 separately designs ownership of 0017/0018. M3 must merge real 0015/0016 before C1 final integrated closure. Isolated C1 work may reserve 0015/0016 through the documented reservation mechanism, but no placeholder M3 SQL is permitted.
 ## M1 and R1 migration ownership
