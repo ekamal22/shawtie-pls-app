@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented on `feat/c1-voice-calling`. Final integrated automated/local verification passed at `9b5c255`; mandatory physical Android acceptance remains open.
+Accepted and implemented on `feat/c1-voice-calling`. Final integrated automated/local verification passed at `9b5c255`, and mandatory physical Android acceptance passed 25/25 on the Redmi Note 9S.
 
 ## Context
 

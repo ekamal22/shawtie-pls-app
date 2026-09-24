@@ -282,7 +282,7 @@ C1 Voice Calling owns:
 
 The earlier isolated C1 closure used `SHAWTIE_MIGRATION_RESERVATIONS=0015,0016` without placeholder files or copied M3 SQL. After reconciliation, final C1 validation used the real contiguous migration chain with no reservations.
 
-Isolated C1 automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved, database invariants green, and no placeholder 0015/0016 files. M3 then merged its real 0015/0016 migrations and C1 reconciled onto that mainline. Final integrated C1 closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`, applying real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green.
+Isolated C1 automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved, database invariants green, and no placeholder 0015/0016 files. M3 then merged its real 0015/0016 migrations and C1 reconciled onto that mainline. Final integrated C1 closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0`, applying real migrations 0001 through 0018 in order with `reserved=0` and all database invariants green. Physical Redmi Note 9S acceptance then ran against the same real 0001 through 0018 chain (`MIGRATION_PLAN_PASS count=18 reserved=0`) with no schema change.
 
 `0017` is implemented and refines existing call tables for versioned state, endpoint selection, trusted deadlines, history, call uniqueness, endpoint-session binding, and legacy-call terminalization.
 

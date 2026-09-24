@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE, SOURCE IMPLEMENTATION AND FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE COMPLETE ON BRANCH, PHYSICAL ACCEPTANCE PENDING.**
+**DESIGN COMPLETE, SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ANDROID ACCEPTANCE COMPLETE ON BRANCH. C1 IS DONE ON THE BRANCH AND UNMERGED.**
 
 Branch:
 
@@ -12,7 +12,7 @@ Required base:
 
 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`
 
-Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance is the only remaining C1 closure item.
+Prior design branch `design/c1-voice-calling` is historical input only and is not the implementation base. C1-A through C1-I source work is implemented on this branch, including API, persistence, worker, realtime v2, signaling, browser voice engine, push reachability, lifecycle integration, local/PostgreSQL closure runners, Android preflight, and a focused real-Chromium ownership harness. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. Mandatory physical Android acceptance then passed 25/25 on the Redmi Note 9S at `9cbc2f8` (executable code identical to `9b5c255`; evidence in `../testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 C1 is voice calling only. Video calling is C2 so call authority, consent, signaling, TURN privacy, push reachability, multi-device behavior, and recovery can close before camera-specific complexity is added.
 
@@ -622,7 +622,7 @@ Operational metrics may aggregate call outcomes, setup latency, signaling reconn
 
 ## Cross-milestone integration choreography
 
-C1 source work proceeded in parallel with M3. M3 is now merged, C1 is reconciled, and final integrated closure is complete. C1 still cannot merge before mandatory physical acceptance closes.
+C1 source work proceeded in parallel with M3. M3 is now merged, C1 is reconciled, and final integrated closure is complete. Mandatory physical acceptance has now closed; C1 still awaits independent verification and an explicit merge decision.
 
 Required order:
 
@@ -1117,7 +1117,7 @@ npm run health
 npm audit --audit-level=high
 ~~~
 
-The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`: database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene all passed. Physical Android acceptance is still mandatory and is the only remaining C1 closure item.
+The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only M3-owned 0015/0016 reserved. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`: database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, full health, zero high-severity vulnerabilities, and git hygiene all passed. Physical Android acceptance then passed 25/25 on the Redmi Note 9S with no defects found and no code changed.
 
 ## Acceptance boundary
 

@@ -544,7 +544,7 @@ npm run test:c1:device:prepare
 npm run test:c1:device:cleanup
 ```
 
-The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`, including focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, the retained M3 PostgreSQL/MinIO/Chromium gates, full health, zero high-severity vulnerabilities, and git hygiene. Full relay-path WebRTC and Android behavior still require the documented environment and physical acceptance procedure.
+The focused real-Chromium suite exercises browser media-owner/Permissions-Policy behavior. Isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` with only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`, including focused C1 21/21, integrated PostgreSQL/API/worker 111/111, C1 real Chromium 2/2, the retained M3 PostgreSQL/MinIO/Chromium gates, full health, zero high-severity vulnerabilities, and git hygiene. Full relay-path WebRTC and Android behavior were then verified by the physical acceptance procedure on the Redmi Note 9S (25/25 PASS, `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 Coverage must include:
 

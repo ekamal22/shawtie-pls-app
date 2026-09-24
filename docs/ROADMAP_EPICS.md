@@ -1604,7 +1604,7 @@ Source implementation is present for C1-A through C1-I. The branch now contains 
 
 Commands are present for `npm run test:c1`, `npm run test:c1:postgres`, `npm run test:c1:local`, `npm run test:c1:browser:e2e`, `npm run test:c1:closure`, and `npm run test:c1:device:prepare`.
 
-The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` using only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, the integrated PostgreSQL/API/worker matrix 111/111, C1 real Chromium 2/2, full health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, M3 browser unit 13/13, a zero-vulnerability high-severity audit, and git hygiene. Mandatory physical Android acceptance remains open, so C1 is not DONE and is not merged.
+The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203` using only the documented 0015/0016 reservations. Final integrated closure passed at `9b5c255b5e8c60cbe8da4bcd2b6f7596c56687a0` against real migrations 0001 through 0018 with `reserved=0`. It passed database invariants, M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 real Chromium 4/4, focused C1 tests 21/21, the integrated PostgreSQL/API/worker matrix 111/111, C1 real Chromium 2/2, full health with Domain 65/65, Contracts 43/43, API unit/security 62/62, Worker 11/11, M3 storage unit 2/2, M3 browser unit 13/13, a zero-vulnerability high-severity audit, and git hygiene. Mandatory physical Android acceptance then passed 25/25 on the Redmi Note 9S at `9cbc2f8` (executable code identical to `9b5c255`; evidence in `docs/testing/C1_ANDROID_ACCEPTANCE_EVIDENCE.md`), so C1 is DONE on `feat/c1-voice-calling` and is not merged.
 
 ## Acceptance gates
 
@@ -1612,87 +1612,87 @@ The isolated automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b
 - [x] isolated C1 tests reserved only M3-owned 0015/0016 and did not copy/create placeholder M3 migrations
 - [x] real M3 migrations 0015/0016 are merged to main and reconciled into C1
 - [x] final integrated migrations 0001 through 0018 pass with `reserved=0`
-- [ ] existing foundation call tables are refined rather than replaced by a second aggregate
-- [ ] one non-terminal call per partnership is database-enforced
-- [ ] exactly one caller and one callee role are enforced per call
-- [ ] `call_participants` is the sole endpoint role/device authority and no duplicate endpoint columns are added to `call_sessions`
-- [ ] caller endpoint device is fixed at initiation
-- [ ] first eligible callee device to commit acceptance wins
-- [ ] non-winning callee devices cannot signal or obtain TURN credentials
-- [ ] simultaneous initiation cannot create two non-terminal calls
-- [ ] durable mutations use idempotency and expectedVersion where races require it
-- [ ] calls never auto-answer
-- [ ] no signaling socket is authorized before explicit acceptance
-- [ ] no TURN credential is issued before explicit acceptance
-- [ ] breakup_pending requires fresh explicit acceptance for every new call
-- [ ] account-deletion view-only state denies new calling and terminates current call authority
-- [ ] final dissolution removes call/signaling/TURN authority synchronously before cleanup
-- [ ] selected-device revocation prevents signaling reconnect and TURN refresh
-- [ ] random/foreign/old-partnership call IDs fail privacy-safely
-- [ ] ring/connect/hard work is fenced by independent `deadline_generation`, not mutable call version
-- [ ] ring timeout is durable and stale-safe
-- [ ] accepted-but-never-connected timeout remains live after only one endpoint-connected attestation
-- [ ] endpoint-connected has no expectedVersion and concurrent endpoint reports converge
-- [ ] hard stale-call timeout prevents permanent partnership call blockage
-- [ ] connectedAt is recorded only after both selected endpoints report connected
-- [ ] call duration uses trusted server timestamps
-- [ ] call history is partnership-scoped
-- [ ] final dissolution deletes call history
-- [ ] future partnership cannot access old call IDs/history
-- [ ] M2 `shawtie.realtime.v1` remains unchanged
-- [ ] C1-capable client negotiates `shawtie.realtime.v2` before calling UI is enabled
-- [ ] `call.changed` contains only opaque ID/version refresh metadata
-- [ ] stale v1 app/service-worker code is never treated as C1-capable
-- [ ] `shawtie.call.v1` enforces exact Origin, current session/device, accepted call, and selected endpoint
-- [ ] binary/oversized/unknown signaling frames fail closed
-- [ ] stale signaling generation cannot mutate current negotiation state
-- [ ] SDP is never persisted or logged
-- [ ] SDP forwarded by C1 contains no ICE candidate lines
-- [ ] C1 SDP contains exactly one audio media section and rejects video/application/data-channel/extra media sections
-- [ ] ICE candidate strings are never persisted or logged
-- [ ] server rejects host, srflx, prflx, malformed, and unknown candidate types
-- [ ] server rejects privacy-unsafe relay related/base-address leakage
-- [ ] only parsed privacy-safe `typ relay` candidates are forwarded
-- [ ] RTCPeerConnection uses `iceTransportPolicy: relay`
-- [ ] TURN outage never downgrades to direct peer connectivity
-- [ ] TURN credentials are short-lived and never persist in IndexedDB/cache/logs
-- [ ] TURN issuance/refresh rechecks current selected-device and lifecycle authorization
-- [ ] authorization loss denies later TURN refresh and any already-issued allocation is bounded by configured provider lifetime
-- [ ] TURN/UDP works where available
-- [ ] TURN/TCP or TURN/TLS fallback works where deployed
-- [ ] signaling disconnect alone does not end healthy media
-- [ ] signaling process loss can recover from canonical call authority
-- [ ] perfect-negotiation glare handling passes
-- [ ] candidate-before-description buffering is generation-safe
-- [ ] relay-only ICE restart after network change is safe
-- [ ] Web Push payload is generic `call_state_changed` and contains no caller identity, call ID, partnership ID, terminal state, SDP, ICE, or TURN data
-- [ ] delayed/duplicate/reordered pushes reconcile canonical state and cannot resurrect stale ringing UI
-- [ ] terminal/current reconciliation dismisses the generic ringing notification
-- [ ] push notification click never auto-accepts and fetches canonical current call
-- [ ] push routing requires current device/account authorization, not merely a stored subscription
-- [ ] explicit logout/device revocation/account lockout stops future call push routing
-- [ ] stale push cannot resurrect rejected/cancelled/missed/terminated call
-- [ ] foreground calls still work when push permission is denied
-- [ ] `call.changed` enters M2 dirty barrier and deliberately missed hint repairs through visible anti-entropy
-- [ ] same-device tabs prove one media/signaling owner and generation-fenced takeover
-- [ ] Call/Accept gestures gate microphone capture and failed/raced commands stop pre-acquired tracks
-- [ ] camera access is disabled and video/data-channel negotiation fails closed
-- [ ] microphone permission denial is safe and creates no hidden media path
-- [ ] mute/unmute remains local transient state and is not sensitive durable history
-- [ ] call audio is never proxied or recorded by application servers
-- [ ] internal session/device/account-deletion/lifecycle terminal causes are not exposed verbatim in public history/projections
-- [ ] shared WebSocket negotiation rejects zero/multiple/cross-family offers and preserves M2's 4 KiB application limit
-- [ ] provider/signaling errors are privacy-safe and bounded
-- [ ] call create/signaling/TURN/push paths have abuse/rate bounds
+- [x] existing foundation call tables are refined rather than replaced by a second aggregate
+- [x] one non-terminal call per partnership is database-enforced
+- [x] exactly one caller and one callee role are enforced per call
+- [x] `call_participants` is the sole endpoint role/device authority and no duplicate endpoint columns are added to `call_sessions`
+- [x] caller endpoint device is fixed at initiation
+- [x] first eligible callee device to commit acceptance wins
+- [x] non-winning callee devices cannot signal or obtain TURN credentials
+- [x] simultaneous initiation cannot create two non-terminal calls
+- [x] durable mutations use idempotency and expectedVersion where races require it
+- [x] calls never auto-answer
+- [x] no signaling socket is authorized before explicit acceptance
+- [x] no TURN credential is issued before explicit acceptance
+- [x] breakup_pending requires fresh explicit acceptance for every new call
+- [x] account-deletion view-only state denies new calling and terminates current call authority
+- [x] final dissolution removes call/signaling/TURN authority synchronously before cleanup
+- [x] selected-device revocation prevents signaling reconnect and TURN refresh
+- [x] random/foreign/old-partnership call IDs fail privacy-safely
+- [x] ring/connect/hard work is fenced by independent `deadline_generation`, not mutable call version
+- [x] ring timeout is durable and stale-safe
+- [x] accepted-but-never-connected timeout remains live after only one endpoint-connected attestation
+- [x] endpoint-connected has no expectedVersion and concurrent endpoint reports converge
+- [x] hard stale-call timeout prevents permanent partnership call blockage
+- [x] connectedAt is recorded only after both selected endpoints report connected
+- [x] call duration uses trusted server timestamps
+- [x] call history is partnership-scoped
+- [x] final dissolution deletes call history
+- [x] future partnership cannot access old call IDs/history
+- [x] M2 `shawtie.realtime.v1` remains unchanged
+- [x] C1-capable client negotiates `shawtie.realtime.v2` before calling UI is enabled
+- [x] `call.changed` contains only opaque ID/version refresh metadata
+- [x] stale v1 app/service-worker code is never treated as C1-capable
+- [x] `shawtie.call.v1` enforces exact Origin, current session/device, accepted call, and selected endpoint
+- [x] binary/oversized/unknown signaling frames fail closed
+- [x] stale signaling generation cannot mutate current negotiation state
+- [x] SDP is never persisted or logged
+- [x] SDP forwarded by C1 contains no ICE candidate lines
+- [x] C1 SDP contains exactly one audio media section and rejects video/application/data-channel/extra media sections
+- [x] ICE candidate strings are never persisted or logged
+- [x] server rejects host, srflx, prflx, malformed, and unknown candidate types
+- [x] server rejects privacy-unsafe relay related/base-address leakage
+- [x] only parsed privacy-safe `typ relay` candidates are forwarded
+- [x] RTCPeerConnection uses `iceTransportPolicy: relay`
+- [x] TURN outage never downgrades to direct peer connectivity
+- [x] TURN credentials are short-lived and never persist in IndexedDB/cache/logs
+- [x] TURN issuance/refresh rechecks current selected-device and lifecycle authorization
+- [x] authorization loss denies later TURN refresh and any already-issued allocation is bounded by configured provider lifetime
+- [x] TURN/UDP works where available
+- [x] TURN/TCP or TURN/TLS fallback works where deployed
+- [x] signaling disconnect alone does not end healthy media
+- [x] signaling process loss can recover from canonical call authority
+- [x] perfect-negotiation glare handling passes
+- [x] candidate-before-description buffering is generation-safe
+- [x] relay-only ICE restart after network change is safe
+- [x] Web Push payload is generic `call_state_changed` and contains no caller identity, call ID, partnership ID, terminal state, SDP, ICE, or TURN data
+- [x] delayed/duplicate/reordered pushes reconcile canonical state and cannot resurrect stale ringing UI
+- [x] terminal/current reconciliation dismisses the generic ringing notification
+- [x] push notification click never auto-accepts and fetches canonical current call
+- [x] push routing requires current device/account authorization, not merely a stored subscription
+- [x] explicit logout/device revocation/account lockout stops future call push routing
+- [x] stale push cannot resurrect rejected/cancelled/missed/terminated call
+- [x] foreground calls still work when push permission is denied
+- [x] `call.changed` enters M2 dirty barrier and deliberately missed hint repairs through visible anti-entropy
+- [x] same-device tabs prove one media/signaling owner and generation-fenced takeover
+- [x] Call/Accept gestures gate microphone capture and failed/raced commands stop pre-acquired tracks
+- [x] camera access is disabled and video/data-channel negotiation fails closed
+- [x] microphone permission denial is safe and creates no hidden media path
+- [x] mute/unmute remains local transient state and is not sensitive durable history
+- [x] call audio is never proxied or recorded by application servers
+- [x] internal session/device/account-deletion/lifecycle terminal causes are not exposed verbatim in public history/projections
+- [x] shared WebSocket negotiation rejects zero/multiple/cross-family offers and preserves M2's 4 KiB application limit
+- [x] provider/signaling errors are privacy-safe and bounded
+- [x] call create/signaling/TURN/push paths have abuse/rate bounds
 - [x] full C1 contracts/domain/security suites pass
 - [x] C1 PostgreSQL/API/worker matrix passes
 - [x] focused real-Chromium C1 ownership/Permissions-Policy harness passes
-- [ ] real-browser signaling/WebRTC acceptance passes where a real relay path is available
-- [ ] mandatory physical Android C1 acceptance passes
-- [ ] every legal/illegal durable state transition and exact terminal replay is tested
-- [ ] autoplay-blocked remote audio recovers with explicit user gesture without durable state mutation
-- [ ] push subscription replacement leaves only one active routing path per device
-- [ ] operational transport disable fails closed without direct ICE fallback
+- [x] real-browser signaling/WebRTC acceptance passes where a real relay path is available
+- [x] mandatory physical Android C1 acceptance passes
+- [x] every legal/illegal durable state transition and exact terminal replay is tested
+- [x] autoplay-blocked remote audio recovers with explicit user gesture without durable state mutation
+- [x] push subscription replacement leaves only one active routing path per device
+- [x] operational transport disable fails closed without direct ICE fallback
 - [x] final integrated C1 closure runs only after real M3 0015/0016 are merged
 - [x] full `npm run health` passes
 - [x] `npm audit --audit-level=high` passes

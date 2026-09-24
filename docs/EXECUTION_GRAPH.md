@@ -151,7 +151,7 @@ Verified branch: `feat/m3-media-voice`.
 
 Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
 
-M3 real migrations 0015/0016 are on `main`, and C1 final integrated `reserved=0` closure is complete. The next dependency action is C1 physical Android acceptance.
+M3 real migrations 0015/0016 are on `main`, and C1 final integrated `reserved=0` closure is complete. C1 physical Android acceptance then passed 25/25 on the Redmi Note 9S at `9cbc2f8`. The next dependency action is independent verification and an explicit merge decision for C1; C2 is not started.
 
 ## Earlier completed milestone detail
 
