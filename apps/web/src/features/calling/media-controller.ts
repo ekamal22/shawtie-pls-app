@@ -203,19 +203,28 @@ export class CallMediaSession {
 
   #connectSignaling(): void {
     if (this.#stopped) return;
+    this.#signalingGeneration = 0;
+    this.#pendingCandidates.length = 0;
+    this.#pendingEndOfCandidates = false;
+    this.#ignoreOffer = false;
+    this.#isSettingRemoteAnswerPending = false;
+
     const socket = new WebSocket(websocketUrl(this.callId), C1_SIGNALING_SUBPROTOCOL);
     this.#socket = socket;
     socket.addEventListener("open", () => {
+      if (this.#stopped || this.#socket !== socket) return;
       this.#reconnectAttempt = 0;
     });
     socket.addEventListener("message", (event) => {
-      void this.#onSignal(event.data).catch(() => {
+      if (this.#stopped || this.#socket !== socket) return;
+      void this.#onSignal(socket, event.data).catch(() => {
         this.callbacks.onError("Call signaling failed.");
       });
     });
     socket.addEventListener("close", () => {
       if (this.#stopped || this.#socket !== socket) return;
       this.#socket = null;
+      this.#signalingGeneration = 0;
       this.#scheduleReconnect();
     });
     socket.addEventListener("error", () => {
@@ -233,8 +242,8 @@ export class CallMediaSession {
     }, delay);
   }
 
-  async #onSignal(raw: unknown): Promise<void> {
-    if (this.#stopped || typeof raw !== "string") return;
+  async #onSignal(socket: WebSocket, raw: unknown): Promise<void> {
+    if (this.#stopped || this.#socket !== socket || typeof raw !== "string") return;
     let json: unknown;
     try {
       json = JSON.parse(raw);

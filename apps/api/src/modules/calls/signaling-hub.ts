@@ -62,7 +62,7 @@ function validateRelayCandidate(candidate: string): boolean {
   const typ = (tokens[6] ?? "").toLowerCase();
   const candidateType = (tokens[7] ?? "").toLowerCase();
 
-  if (!foundation.startsWith("candidate:") || foundation.length <= "candidate:".length) return false;
+  if (!/^candidate:[A-Za-z0-9+/_-]{1,64}$/.test(foundation)) return false;
   if (!/^[12]$/.test(component)) return false;
   if (transport !== "udp" && transport !== "tcp") return false;
   if (!/^\\d+$/.test(priority) || BigInt(priority) > 4_294_967_295n) return false;
@@ -73,24 +73,31 @@ function validateRelayCandidate(candidate: string): boolean {
   if (typ !== "typ" || candidateType !== "relay") return false;
 
   const extensions = tokens.slice(8);
-  if (extensions.some((token) => token.toLowerCase() === "typ")) return false;
+  if (extensions.length % 2 !== 0) return false;
 
-  const raddrIndexes = extensions
-    .map((token, index) => (token.toLowerCase() === "raddr" ? index : -1))
-    .filter((index) => index >= 0);
-  const rportIndexes = extensions
-    .map((token, index) => (token.toLowerCase() === "rport" ? index : -1))
-    .filter((index) => index >= 0);
-  if (raddrIndexes.length > 1 || rportIndexes.length > 1) return false;
+  let sawRelatedAddress = false;
+  let sawRelatedPort = false;
+  let sawTcpType = false;
+  for (let index = 0; index < extensions.length; index += 2) {
+    const name = (extensions[index] ?? "").toLowerCase();
+    const value = extensions[index + 1] ?? "";
+    if (!name || !value || name === "typ") return false;
 
-  if (raddrIndexes.length === 1) {
-    const related = extensions[(raddrIndexes[0] ?? -1) + 1]?.toLowerCase();
-    if (!related || !["0.0.0.0", "::", "0", "0:0:0:0:0:0:0:0"].includes(related)) return false;
+    if (name === "raddr") {
+      if (sawRelatedAddress) return false;
+      sawRelatedAddress = true;
+      const related = value.toLowerCase();
+      if (!["0.0.0.0", "::", "0", "0:0:0:0:0:0:0:0"].includes(related)) return false;
+    } else if (name === "rport") {
+      if (sawRelatedPort || value !== "0") return false;
+      sawRelatedPort = true;
+    } else if (name === "tcptype") {
+      if (sawTcpType || transport !== "tcp") return false;
+      sawTcpType = true;
+      if (!["active", "passive", "so"].includes(value.toLowerCase())) return false;
+    }
   }
-  if (rportIndexes.length === 1) {
-    const relatedPort = extensions[(rportIndexes[0] ?? -1) + 1];
-    if (!relatedPort || relatedPort !== "0") return false;
-  }
+  if (transport === "tcp" && !sawTcpType) return false;
   return true;
 }
 

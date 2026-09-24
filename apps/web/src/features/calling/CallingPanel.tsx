@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { CallProjection } from "@shawtie/contracts";
 import { ApiClientError } from "../../lib/api-client.ts";
-import { useM2Runtime } from "../../lib/realtime/runtime-context.tsx";
+import {
+  useM2Runtime,
+  useM2SyncStatus,
+} from "../../lib/realtime/runtime-context.tsx";
 import {
   acceptCall,
   cancelCall,
@@ -55,6 +58,7 @@ export function CallingPanel({
   readonly deviceId: string | null;
 }) {
   const runtime = useM2Runtime();
+  const syncStatus = useM2SyncStatus();
   const [call, setCall] = useState<CallProjection | null>(null);
   const callRef = useRef<CallProjection | null>(null);
   const [busy, setBusy] = useState(false);
@@ -234,6 +238,7 @@ export function CallingPanel({
   async function startOutgoing(): Promise<void> {
     const partnershipId = runtime.realtime.scope.partnershipId;
     if (!partnershipId) throw new Error("No current partnership.");
+    if (syncStatus !== "live") throw new Error("Calling is waiting for realtime sync.");
     if (!navigator.onLine) throw new Error("Calls are unavailable while offline.");
     const stream = await microphone();
     pendingStreamRef.current = stream;
@@ -249,6 +254,7 @@ export function CallingPanel({
 
   async function acceptIncoming(): Promise<void> {
     if (!call) return;
+    if (syncStatus !== "live") throw new Error("Calling is waiting for realtime sync.");
     const stream = await microphone();
     try {
       const accepted = await acceptCall(call.id, call.version);
@@ -296,7 +302,12 @@ export function CallingPanel({
         {!call || call.state === "ended" ? (
           <button
             className="primary"
-            disabled={busy || !deviceId || !runtime.realtime.scope.partnershipId}
+            disabled={
+              busy
+              || syncStatus !== "live"
+              || !deviceId
+              || !runtime.realtime.scope.partnershipId
+            }
             onClick={() => void run(startOutgoing)}
           >
             Call
@@ -334,7 +345,7 @@ export function CallingPanel({
               <>
                 <button
                   className="primary"
-                  disabled={busy || !deviceId}
+                  disabled={busy || syncStatus !== "live" || !deviceId}
                   onClick={() => void run(acceptIncoming)}
                 >
                   Accept

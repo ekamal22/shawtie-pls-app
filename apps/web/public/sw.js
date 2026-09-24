@@ -91,11 +91,14 @@ async function closeCallNotifications() {
 
 async function reconcileCallNotification() {
   let response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5_000);
   try {
     response = await fetch("/api/v1/calls/current", {
       method: "GET",
       credentials: "include",
       cache: "no-store",
+      signal: controller.signal,
       headers: {
         "x-shawtie-client-protocol-version": "1",
         "x-shawtie-local-schema-version": "1",
@@ -104,6 +107,8 @@ async function reconcileCallNotification() {
   } catch {
     await closeCallNotifications();
     return;
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (!response.ok) {

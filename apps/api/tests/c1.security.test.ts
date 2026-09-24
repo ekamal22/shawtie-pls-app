@@ -21,6 +21,8 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(hub.includes('/^m=audio\\s/i'), true);
   assert.equal(hub.includes('media.length === 1'), true);
   assert.equal(hub.includes('candidateType !== "relay"'), true);
+  assert.equal(hub.includes("extensions.length % 2 !== 0"), true);
+  assert.equal(hub.includes('transport === "tcp" && !sawTcpType'), true);
   assert.equal(hub.includes('token.toLowerCase() === "raddr"'), true);
   assert.equal(hub.includes('foundation.startsWith("candidate:")'), true);
   assert.equal(hub.includes("4_294_967_295n"), true);
