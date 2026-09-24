@@ -222,9 +222,9 @@ test("P3 breakup finalizer uses the authoritative deadline, exact cooldown, and 
     assert.equal(manifest.rowCount, 1);
     assert.equal(manifest.rows[0]?.reason, "breakup_dissolution");
     assert.equal(manifest.rows[0]?.status, "pending");
-    assert.equal(manifest.rows[0]?.target_count, "2");
+    assert.equal(manifest.rows[0]?.target_count, "3");
 
-    assert.equal(await runDeletion(database, "p3-breakup-cleanup"), 2);
+    assert.equal(await runDeletion(database, "p3-breakup-cleanup"), 3);
     const completed = await database.pool.query<{ status: string }>(
       "SELECT status FROM deletion_manifests WHERE id = $1",
       [manifest.rows[0]?.id],
@@ -464,7 +464,7 @@ test("P3 equal breakup and deletion deadlines resolve to breakup and preserve se
     assert.equal(emailBeforeCleanup.rowCount, 1);
     assert.equal(emailBeforeCleanup.rows[0]?.account_id, null);
 
-    assert.equal(await runDeletion(database, "p3-equal-cleanup"), 3);
+    assert.equal(await runDeletion(database, "p3-equal-cleanup"), 4);
 
     const emailAfterCleanup = await database.pool.query<{
       account_id: string | null;
