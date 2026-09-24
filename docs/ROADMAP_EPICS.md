@@ -1521,7 +1521,7 @@ The closure harness was executed: `npm run test:m3:closure` passed at `305891f` 
 - [x] full `npm run health` and `npm audit --audit-level=high` pass
 - [x] branch/worktree/diff hygiene and local/remote SHA parity pass
 
-M3 is DONE: automated/local and physical Android closure are both green. It has not been merged to `main`; that requires an explicit decision.
+M3 is DONE: automated/local and physical Android closure are both green, and the milestone was fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`.
 
 # C1: Voice Calling
 
@@ -1538,7 +1538,7 @@ Current gate summary:
 - [x] database invariants pass in isolated C1 closure
 - [x] real Chromium C1 harness 2/2
 - [x] full health and high-severity audit pass
-- [ ] M3 real 0015/0016 merged to `main`
+- [x] M3 real 0015/0016 merged to `main @ 1d3535f`
 - [ ] C1 reconciled onto the real-M3 mainline
 - [ ] canonical 0001 through 0018 migration chain passes with `reserved=0`
 - [ ] mandatory physical Android C1 acceptance passes
