@@ -1286,7 +1286,7 @@ BEGIN
 END;
 $$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     UPDATE call_participants
@@ -1300,9 +1300,9 @@ BEGIN
     WHEN foreign_key_violation THEN NULL;
   END;
 END;
-$;
+$$;
 
-DO $
+DO $$
 BEGIN
   BEGIN
     INSERT INTO push_subscriptions (
