@@ -73,9 +73,9 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
       handleProtocols(protocols) {
         if (protocols.size !== 1) return false;
         const [protocol] = [...protocols];
-        return protocol === M2_REALTIME_SUBPROTOCOL
-          || protocol === C1_REALTIME_SUBPROTOCOL
-          || protocol === C1_SIGNALING_SUBPROTOCOL
+        return protocol === M2_REALTIME_SUBPROTOCOL ||
+          protocol === C1_REALTIME_SUBPROTOCOL ||
+          protocol === C1_SIGNALING_SUBPROTOCOL
           ? protocol
           : false;
       },

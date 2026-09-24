@@ -27,12 +27,11 @@ export class DisabledTurnCredentialProvider implements TurnCredentialProvider {
 
 export class HmacTurnCredentialProvider implements TurnCredentialProvider {
   readonly available = true;
+  private readonly urls: readonly string[];
+  private readonly sharedSecret: string;
+  private readonly ttlMs: number;
 
-  constructor(
-    private readonly urls: readonly string[],
-    private readonly sharedSecret: string,
-    private readonly ttlMs: number,
-  ) {
+  constructor(urls: readonly string[], sharedSecret: string, ttlMs: number) {
     if (urls.length === 0 || urls.some((url) => !/^turns?:/i.test(url))) {
       throw new Error("TURN_PROVIDER_URLS_INVALID");
     }
@@ -40,6 +39,9 @@ export class HmacTurnCredentialProvider implements TurnCredentialProvider {
     if (!Number.isInteger(ttlMs) || ttlMs <= 0 || ttlMs > 15 * 60_000) {
       throw new Error("TURN_PROVIDER_TTL_INVALID");
     }
+    this.urls = urls;
+    this.sharedSecret = sharedSecret;
+    this.ttlMs = ttlMs;
   }
 
   async issue(input: {
@@ -54,9 +56,7 @@ export class HmacTurnCredentialProvider implements TurnCredentialProvider {
       .digest("base64url")
       .slice(0, 32);
     const username = `${expirySeconds}:${opaqueSubject}`;
-    const credential = createHmac("sha1", this.sharedSecret)
-      .update(username)
-      .digest("base64");
+    const credential = createHmac("sha1", this.sharedSecret).update(username).digest("base64");
 
     return {
       urls: this.urls,

@@ -25,8 +25,8 @@ function record(value: unknown): Record<string, unknown> {
 
 function uuid(value: unknown): string {
   if (
-    typeof value !== "string"
-    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    typeof value !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
   ) {
     throw new PermanentWorkerError("INVALID_C1_CALL_OUTBOX_PAYLOAD");
   }
@@ -66,10 +66,10 @@ function changedNotification(event: OutboxEvent): M2InternalRealtimeNotification
 function pushAccounts(event: OutboxEvent): readonly string[] {
   const value = record(event.payload);
   if (
-    Object.keys(value).join(",") !== "accountIds"
-    || !Array.isArray(value.accountIds)
-    || value.accountIds.length < 1
-    || value.accountIds.length > 2
+    Object.keys(value).join(",") !== "accountIds" ||
+    !Array.isArray(value.accountIds) ||
+    value.accountIds.length < 1 ||
+    value.accountIds.length > 2
   ) {
     throw new PermanentWorkerError("INVALID_C1_CALL_OUTBOX_PAYLOAD");
   }
@@ -114,22 +114,12 @@ export function createC1CallOutboxHandlers(
               now,
             );
             if (result.gone) {
-              await markPushDeliveryFailure(
-                database.pool,
-                subscription.deviceId,
-                now,
-                true,
-              );
+              await markPushDeliveryFailure(database.pool, subscription.deviceId, now, true);
             } else if (result.delivered) {
               await markPushDeliverySuccess(database.pool, subscription.deviceId, now);
             }
           } catch (error) {
-            await markPushDeliveryFailure(
-              database.pool,
-              subscription.deviceId,
-              now,
-              false,
-            );
+            await markPushDeliveryFailure(database.pool, subscription.deviceId, now, false);
             throw error;
           }
         }

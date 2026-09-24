@@ -16,11 +16,7 @@ export function createDefaultOutboxHandlers(database?: DatabasePool): OutboxHand
     registry.register(handler);
   }
   if (database && publisher) {
-    for (const handler of createC1CallOutboxHandlers(
-      database,
-      publisher,
-      webPushConfigFromEnv(),
-    )) {
+    for (const handler of createC1CallOutboxHandlers(database, publisher, webPushConfigFromEnv())) {
       registry.register(handler);
     }
   }

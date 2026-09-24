@@ -30,22 +30,13 @@ export const c1SignalCandidateSchema = frame(
   "signal.ice_candidate",
   z.object({ candidate }).strict(),
 );
-export const c1SignalEndCandidatesSchema = frame(
-  "signal.end_of_candidates",
-  z.object({}).strict(),
-);
-export const c1SignalRestartSchema = frame(
-  "signal.restart",
-  z.object({}).strict(),
-);
+export const c1SignalEndCandidatesSchema = frame("signal.end_of_candidates", z.object({}).strict());
+export const c1SignalRestartSchema = frame("signal.restart", z.object({}).strict());
 export const c1SignalReadySchema = frame(
   "control.ready",
   z.object({ polite: z.boolean() }).strict(),
 );
-export const c1SignalSupersededSchema = frame(
-  "control.superseded",
-  z.object({}).strict(),
-);
+export const c1SignalSupersededSchema = frame("control.superseded", z.object({}).strict());
 
 export const c1SignalClientFrameSchema = z.discriminatedUnion("type", [
   c1SignalDescriptionSchema,

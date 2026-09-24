@@ -139,10 +139,7 @@ export class AccountService {
     this.passwords = passwords;
   }
 
-  async #queueCallTermination(
-    transaction: QueryExecutor,
-    call: CallSessionRecord,
-  ): Promise<void> {
+  async #queueCallTermination(transaction: QueryExecutor, call: CallSessionRecord): Promise<void> {
     const participants = await loadCallParticipants(transaction, call.id);
     const accountIds = participants.map((participant) => participant.accountId).sort();
     if (accountIds.length !== 2 || accountIds[0] === accountIds[1]) {
@@ -1415,12 +1412,7 @@ export class AccountService {
       await this.#assertSession(transaction, auth);
       const revoked = await revokeDevice(transaction, auth.session.accountId, deviceId, now);
       if (!revoked) return null;
-      await revokePushSubscriptionForDevice(
-        transaction,
-        deviceId,
-        auth.session.accountId,
-        now,
-      );
+      await revokePushSubscriptionForDevice(transaction, deviceId, auth.session.accountId, now);
       const terminatedCalls = await terminalizeCallsByEndpointDevice(transaction, {
         deviceId,
         reason: "authorization_revoked",

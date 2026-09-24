@@ -18,9 +18,9 @@ function payload(value: unknown): {
   }
   const record = value as Record<string, unknown>;
   if (
-    Object.keys(record).sort().join(",") !== "callId,expectedState"
-    || typeof record.callId !== "string"
-    || !["ringing", "accepted", "connected"].includes(String(record.expectedState))
+    Object.keys(record).sort().join(",") !== "callId,expectedState" ||
+    typeof record.callId !== "string" ||
+    !["ringing", "accepted", "connected"].includes(String(record.expectedState))
   ) {
     throw new PermanentWorkerError("INVALID_C1_CALL_TIMEOUT_PAYLOAD");
   }
@@ -30,9 +30,7 @@ function payload(value: unknown): {
   };
 }
 
-function handler(
-  expectedState: "ringing" | "accepted" | "connected",
-): ScheduledActionHandler {
+function handler(expectedState: "ringing" | "accepted" | "connected"): ScheduledActionHandler {
   return {
     actionType: `c1.call.${expectedState}_timeout`,
     payloadVersion: 1,
@@ -42,10 +40,10 @@ function handler(
     async execute({ transaction, action, now }) {
       const parsed = payload(action.payload);
       if (
-        parsed.callId !== action.aggregateId
-        || parsed.expectedState !== expectedState
-        || action.aggregateType !== "call"
-        || action.expectedGeneration === null
+        parsed.callId !== action.aggregateId ||
+        parsed.expectedState !== expectedState ||
+        action.aggregateType !== "call" ||
+        action.expectedGeneration === null
       ) {
         throw new PermanentWorkerError("INVALID_C1_CALL_TIMEOUT_PAYLOAD");
       }

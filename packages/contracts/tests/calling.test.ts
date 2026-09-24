@@ -81,10 +81,7 @@ test("C1 signaling frames are strict and push payload is generic", () => {
   });
   assert.equal(offer.success, true);
 
-  assert.equal(
-    c1PushPayloadSchema.safeParse({ v: 1, type: "call_state_changed" }).success,
-    true,
-  );
+  assert.equal(c1PushPayloadSchema.safeParse({ v: 1, type: "call_state_changed" }).success, true);
   assert.equal(
     c1PushPayloadSchema.safeParse({
       v: 1,

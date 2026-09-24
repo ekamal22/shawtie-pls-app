@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CallProjection } from "@shawtie/contracts";
 import { ApiClientError } from "../../lib/api-client.ts";
-import {
-  useM2Runtime,
-  useM2SyncStatus,
-} from "../../lib/realtime/runtime-context.tsx";
+import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
 import {
   acceptCall,
   cancelCall,
@@ -52,11 +49,7 @@ async function microphone(): Promise<MediaStream> {
   });
 }
 
-export function CallingPanel({
-  deviceId,
-}: {
-  readonly deviceId: string | null;
-}) {
+export function CallingPanel({ deviceId }: { readonly deviceId: string | null }) {
   const runtime = useM2Runtime();
   const syncStatus = useM2SyncStatus();
   const [call, setCall] = useState<CallProjection | null>(null);
@@ -65,9 +58,9 @@ export function CallingPanel({
   const [error, setError] = useState("");
   const [mediaState, setMediaState] = useState<string>("idle");
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
-  const [pushState, setPushState] = useState<
-    "unknown" | "enabled" | "denied" | "unavailable"
-  >("unknown");
+  const [pushState, setPushState] = useState<"unknown" | "enabled" | "denied" | "unavailable">(
+    "unknown",
+  );
   const mediaRef = useRef<CallMediaSession | null>(null);
   const pendingStreamRef = useRef<MediaStream | null>(null);
 
@@ -93,12 +86,10 @@ export function CallingPanel({
       if (current.call) {
         updateCall(current.call);
         if (
-          mediaRef.current
-          && (
-            current.call.id !== mediaRef.current.callId
-            || current.call.state === "ended"
-            || !current.call.isThisDeviceSelectedEndpoint
-          )
+          mediaRef.current &&
+          (current.call.id !== mediaRef.current.callId ||
+            current.call.state === "ended" ||
+            !current.call.isThisDeviceSelectedEndpoint)
         ) {
           await stopMedia();
         }
@@ -155,9 +146,11 @@ export function CallingPanel({
     void runtime.coordinator.requestSync();
 
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      void reconcileCallPushSubscription(false).then(setPushState).catch(() => {
-        setPushState("unavailable");
-      });
+      void reconcileCallPushSubscription(false)
+        .then(setPushState)
+        .catch(() => {
+          setPushState("unavailable");
+        });
     }
 
     return () => {
@@ -187,10 +180,7 @@ export function CallingPanel({
     }
   }
 
-  async function startMedia(
-    current: CallProjection,
-    stream?: MediaStream,
-  ): Promise<void> {
+  async function startMedia(current: CallProjection, stream?: MediaStream): Promise<void> {
     if (!deviceId) throw new Error("This session has no callable device.");
     if (mediaRef.current?.callId === current.id) return;
     if (current.state !== "accepted" && current.state !== "connected") {
@@ -213,10 +203,10 @@ export function CallingPanel({
       onUnrecoverableFailure: (category) => {
         const latest = callRef.current;
         if (
-          !latest
-          || latest.id !== current.id
-          || !latest.isThisDeviceSelectedEndpoint
-          || (latest.state !== "accepted" && latest.state !== "connected")
+          !latest ||
+          latest.id !== current.id ||
+          !latest.isThisDeviceSelectedEndpoint ||
+          (latest.state !== "accepted" && latest.state !== "connected")
         ) {
           return;
         }
@@ -276,11 +266,11 @@ export function CallingPanel({
 
   useEffect(() => {
     if (
-      !call
-      || mediaRef.current
-      || !pendingStreamRef.current
-      || !call.isThisDeviceSelectedEndpoint
-      || (call.state !== "accepted" && call.state !== "connected")
+      !call ||
+      mediaRef.current ||
+      !pendingStreamRef.current ||
+      !call.isThisDeviceSelectedEndpoint ||
+      (call.state !== "accepted" && call.state !== "connected")
     ) {
       return;
     }
@@ -303,18 +293,13 @@ export function CallingPanel({
       <div className="row between">
         <div>
           <h2>Voice call</h2>
-          <p className="hint">
-            Calls use relay-only WebRTC and require an explicit answer.
-          </p>
+          <p className="hint">Calls use relay-only WebRTC and require an explicit answer.</p>
         </div>
         {!call || call.state === "ended" ? (
           <button
             className="primary"
             disabled={
-              busy
-              || syncStatus !== "live"
-              || !deviceId
-              || !runtime.realtime.scope.partnershipId
+              busy || syncStatus !== "live" || !deviceId || !runtime.realtime.scope.partnershipId
             }
             onClick={() => void run(startOutgoing)}
           >
@@ -469,7 +454,9 @@ export function CallingPanel({
           {pushState === "enabled" ? "Call notifications enabled" : "Enable call notifications"}
         </button>
         {pushState === "denied" ? (
-          <span className="hint">Background ringing is unavailable. Foreground calls still work.</span>
+          <span className="hint">
+            Background ringing is unavailable. Foreground calls still work.
+          </span>
         ) : null}
       </div>
     </section>

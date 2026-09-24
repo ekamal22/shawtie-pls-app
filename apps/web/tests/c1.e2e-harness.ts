@@ -17,8 +17,7 @@ async function forceExpire(key: string): Promise<void> {
   const database = await new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open("shawtie-c1-media-owner", 1);
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () =>
-      reject(request.error ?? new Error("C1 harness database failed"));
+    request.onerror = () => reject(request.error ?? new Error("C1 harness database failed"));
   });
 
   try {
@@ -35,8 +34,7 @@ async function forceExpire(key: string): Promise<void> {
         }
         store.put({ ...value, expiresAt: 0 });
       };
-      request.onerror = () =>
-        reject(request.error ?? new Error("C1 harness lease read failed"));
+      request.onerror = () => reject(request.error ?? new Error("C1 harness lease read failed"));
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
         reject(transaction.error ?? new Error("C1 harness transaction failed"));

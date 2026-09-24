@@ -12,6 +12,7 @@ import type { RawData, WebSocket } from "ws";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import { authenticateSessionToken } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import { validateCallDescription, validateCallRelayCandidate } from "./signaling-validation.ts";
 
 const MAX_BUFFERED_BYTES = 256 * 1024;
 const MAX_FRAMES_PER_MINUTE = 360;
@@ -42,85 +43,33 @@ function frameBytes(frame: unknown): number {
   return new TextEncoder().encode(JSON.stringify(frame)).byteLength;
 }
 
-function validateDescription(sdp: string): boolean {
-  const lines = sdp.split(/\\r?\\n/).map((line) => line.trim());
-  if (lines.some((line) => /^a=(candidate:|end-of-candidates)/i.test(line))) return false;
-  const media = lines.filter((line) => line.startsWith("m="));
-  return media.length === 1 && /^m=audio\\s/i.test(media[0] ?? "");
-}
-
-function validateRelayCandidate(candidate: string): boolean {
-  const tokens = candidate.trim().split(/\\s+/);
-  if (tokens.length < 8) return false;
-
-  const foundation = tokens[0] ?? "";
-  const component = tokens[1] ?? "";
-  const transport = (tokens[2] ?? "").toLowerCase();
-  const priority = tokens[3] ?? "";
-  const address = tokens[4] ?? "";
-  const port = tokens[5] ?? "";
-  const typ = (tokens[6] ?? "").toLowerCase();
-  const candidateType = (tokens[7] ?? "").toLowerCase();
-
-  if (!/^candidate:[A-Za-z0-9+/_-]{1,64}$/.test(foundation)) return false;
-  if (!/^[12]$/.test(component)) return false;
-  if (transport !== "udp" && transport !== "tcp") return false;
-  if (!/^\\d+$/.test(priority) || BigInt(priority) > 4_294_967_295n) return false;
-  if (!address) return false;
-  if (!/^\\d+$/.test(port)) return false;
-  const portNumber = Number(port);
-  if (!Number.isInteger(portNumber) || portNumber < 1 || portNumber > 65_535) return false;
-  if (typ !== "typ" || candidateType !== "relay") return false;
-
-  const extensions = tokens.slice(8);
-  if (extensions.length % 2 !== 0) return false;
-
-  let sawRelatedAddress = false;
-  let sawRelatedPort = false;
-  let sawTcpType = false;
-  for (let index = 0; index < extensions.length; index += 2) {
-    const name = (extensions[index] ?? "").toLowerCase();
-    const value = extensions[index + 1] ?? "";
-    if (!name || !value || name === "typ") return false;
-
-    if (name === "raddr") {
-      if (sawRelatedAddress) return false;
-      sawRelatedAddress = true;
-      const related = value.toLowerCase();
-      if (!["0.0.0.0", "::", "0", "0:0:0:0:0:0:0:0"].includes(related)) return false;
-    } else if (name === "rport") {
-      if (sawRelatedPort || value !== "0") return false;
-      sawRelatedPort = true;
-    } else if (name === "tcptype") {
-      if (sawTcpType || transport !== "tcp") return false;
-      sawTcpType = true;
-      if (!["active", "passive", "so"].includes(value.toLowerCase())) return false;
-    }
-  }
-  if (transport === "tcp" && !sawTcpType) return false;
-  return true;
-}
-
 interface PendingSignal {
   readonly fromRole: "caller" | "callee";
   readonly fromKey: string;
   readonly fromGeneration: number;
   readonly frame: Extract<
     C1SignalServerFrame,
-    { type: "signal.description" | "signal.ice_candidate" | "signal.end_of_candidates" | "signal.restart" }
+    {
+      type:
+        | "signal.description"
+        | "signal.ice_candidate"
+        | "signal.end_of_candidates"
+        | "signal.restart";
+    }
   >;
 }
 
 export class CallSignalingHub {
+  private readonly database: DatabasePool;
+  private readonly keys: AuthKeyRing;
   readonly #connections = new Map<string, ConnectionState>();
   readonly #generations = new Map<string, number>();
   readonly #pendingByCall = new Map<string, PendingSignal[]>();
   readonly #maintenance: ReturnType<typeof setInterval>;
 
-  constructor(
-    private readonly database: DatabasePool,
-    private readonly keys: AuthKeyRing,
-  ) {
+  constructor(database: DatabasePool, keys: AuthKeyRing) {
+    this.database = database;
+    this.keys = keys;
     this.#maintenance = setInterval(() => {
       for (const state of [...this.#connections.values()]) {
         void this.#revalidate(state);
@@ -232,7 +181,10 @@ export class CallSignalingHub {
       return;
     }
 
-    if (parsed.data.type === "signal.description" && !validateDescription(parsed.data.payload.sdp)) {
+    if (
+      parsed.data.type === "signal.description" &&
+      !validateCallDescription(parsed.data.payload.sdp)
+    ) {
       this.#close(state, 1008, "Invalid SDP");
       return;
     }
@@ -240,8 +192,8 @@ export class CallSignalingHub {
     if (parsed.data.type === "signal.ice_candidate") {
       state.candidateCount += 1;
       if (
-        state.candidateCount > C1_SIGNALING_MAX_CANDIDATES
-        || !validateRelayCandidate(parsed.data.payload.candidate)
+        state.candidateCount > C1_SIGNALING_MAX_CANDIDATES ||
+        !validateCallRelayCandidate(parsed.data.payload.candidate)
       ) {
         this.#close(state, 1008, "Invalid ICE candidate");
         return;
@@ -279,9 +231,9 @@ export class CallSignalingHub {
           this.keys,
         );
         if (
-          session.accountId !== state.auth.session.accountId
-          || session.deviceId !== state.deviceId
-          || session.sessionId !== state.auth.session.sessionId
+          session.accountId !== state.auth.session.accountId ||
+          session.deviceId !== state.deviceId ||
+          session.sessionId !== state.auth.session.sessionId
         ) {
           this.#close(state, 1008, "Authorization changed");
           return false;
@@ -335,9 +287,9 @@ export class CallSignalingHub {
   #peer(state: ConnectionState): ConnectionState | null {
     for (const candidate of this.#connections.values()) {
       if (
-        candidate.callId === state.callId
-        && candidate.deviceId !== state.deviceId
-        && candidate.role !== state.role
+        candidate.callId === state.callId &&
+        candidate.deviceId !== state.deviceId &&
+        candidate.role !== state.role
       ) {
         return candidate;
       }

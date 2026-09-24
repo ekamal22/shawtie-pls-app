@@ -33,8 +33,10 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
 function transactionDone(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onabort = () => reject(transaction.error ?? new Error("C1 owner transaction aborted"));
-    transaction.onerror = () => reject(transaction.error ?? new Error("C1 owner transaction failed"));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error("C1 owner transaction aborted"));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("C1 owner transaction failed"));
   });
 }
 
@@ -61,13 +63,13 @@ export class MediaOwnerLease {
       this.#channel.addEventListener("message", (event) => {
         const message = event.data;
         if (
-          !message
-          || typeof message !== "object"
-          || message.key !== this.key
-          || message.type !== "claimed"
-          || typeof message.generation !== "number"
-          || !Number.isSafeInteger(message.generation)
-          || message.generation <= this.#generation
+          !message ||
+          typeof message !== "object" ||
+          message.key !== this.key ||
+          message.type !== "claimed" ||
+          typeof message.generation !== "number" ||
+          !Number.isSafeInteger(message.generation) ||
+          message.generation <= this.#generation
         ) {
           return;
         }
@@ -123,11 +125,13 @@ export class MediaOwnerLease {
     try {
       const transaction = database.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      const current = await requestResult(store.get(this.key) as IDBRequest<LeaseRecord | undefined>);
+      const current = await requestResult(
+        store.get(this.key) as IDBRequest<LeaseRecord | undefined>,
+      );
       if (
-        current
-        && current.ownerTabId === this.tabId
-        && current.ownerGeneration === this.#generation
+        current &&
+        current.ownerTabId === this.tabId &&
+        current.ownerGeneration === this.#generation
       ) {
         store.put({ ...current, expiresAt: 0 });
       }
@@ -147,13 +151,11 @@ export class MediaOwnerLease {
     try {
       const transaction = database.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      const current = await requestResult(store.get(this.key) as IDBRequest<LeaseRecord | undefined>);
+      const current = await requestResult(
+        store.get(this.key) as IDBRequest<LeaseRecord | undefined>,
+      );
       const now = Date.now();
-      if (
-        current
-        && current.expiresAt > now
-        && current.ownerTabId !== this.tabId
-      ) {
+      if (current && current.expiresAt > now && current.ownerTabId !== this.tabId) {
         await transactionDone(transaction);
         return null;
       }
@@ -179,11 +181,13 @@ export class MediaOwnerLease {
     try {
       const transaction = database.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      const current = await requestResult(store.get(this.key) as IDBRequest<LeaseRecord | undefined>);
+      const current = await requestResult(
+        store.get(this.key) as IDBRequest<LeaseRecord | undefined>,
+      );
       if (
-        !current
-        || current.ownerTabId !== this.tabId
-        || current.ownerGeneration !== this.#generation
+        !current ||
+        current.ownerTabId !== this.tabId ||
+        current.ownerGeneration !== this.#generation
       ) {
         await transactionDone(transaction);
         return false;

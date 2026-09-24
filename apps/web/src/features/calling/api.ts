@@ -94,14 +94,11 @@ export function reportEndpointConnected(
   callId: string,
   idempotencyKey = crypto.randomUUID(),
 ): Promise<CallProjection> {
-  return apiRequest(
-    "/api/v1/calls/" + encodeURIComponent(callId) + "/endpoint-connected",
-    {
-      method: "POST",
-      headers: mutationHeaders(idempotencyKey),
-      body: {},
-    },
-  );
+  return apiRequest("/api/v1/calls/" + encodeURIComponent(callId) + "/endpoint-connected", {
+    method: "POST",
+    headers: mutationHeaders(idempotencyKey),
+    body: {},
+  });
 }
 
 export interface TurnCredential {
@@ -113,10 +110,9 @@ export interface TurnCredential {
 }
 
 export function fetchTurnCredentials(callId: string): Promise<TurnCredential> {
-  return apiRequest(
-    "/api/v1/calls/" + encodeURIComponent(callId) + "/turn-credentials",
-    { method: "POST" },
-  );
+  return apiRequest("/api/v1/calls/" + encodeURIComponent(callId) + "/turn-credentials", {
+    method: "POST",
+  });
 }
 
 export interface PushConfig {

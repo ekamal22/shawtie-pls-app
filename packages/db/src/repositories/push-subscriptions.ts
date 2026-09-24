@@ -115,8 +115,7 @@ export async function listActivePushSubscriptionsForAccounts(
     endpointKeyVersion: row.endpoint_key_version,
     p256dh: row.p256dh,
     auth: row.auth,
-    expirationTimeMs:
-      row.expiration_time_ms === null ? null : BigInt(row.expiration_time_ms),
+    expirationTimeMs: row.expiration_time_ms === null ? null : BigInt(row.expiration_time_ms),
   }));
 }
 

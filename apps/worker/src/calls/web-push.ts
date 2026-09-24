@@ -30,13 +30,10 @@ function hmac(key: Buffer, data: Buffer): Buffer {
 
 function hkdfExpand(prk: Buffer, info: Buffer, length: number): Buffer {
   const blocks: Buffer[] = [];
-  let previous = Buffer.alloc(0);
+  let previous: Buffer = Buffer.alloc(0);
   let counter = 1;
   while (Buffer.concat(blocks).length < length) {
-    previous = hmac(
-      prk,
-      Buffer.concat([previous, info, Buffer.from([counter])]),
-    );
+    previous = hmac(prk, Buffer.concat([previous, info, Buffer.from([counter])]));
     blocks.push(previous);
     counter += 1;
   }
@@ -61,15 +58,9 @@ function vapidPrivateKey(config: WebPushConfig) {
   });
 }
 
-function vapidAuthorization(
-  endpoint: string,
-  config: WebPushConfig,
-  now: Date,
-): string {
+function vapidAuthorization(endpoint: string, config: WebPushConfig, now: Date): string {
   const audience = new URL(endpoint).origin;
-  const header = base64url(
-    Buffer.from(JSON.stringify({ typ: "JWT", alg: "ES256" }), "utf8"),
-  );
+  const header = base64url(Buffer.from(JSON.stringify({ typ: "JWT", alg: "ES256" }), "utf8"));
   const payload = base64url(
     Buffer.from(
       JSON.stringify({
@@ -88,10 +79,7 @@ function vapidAuthorization(
   return `vapid t=${unsigned}.${base64url(signature)}, k=${config.publicKey}`;
 }
 
-function encryptPayload(
-  subscription: PushSubscriptionRecord,
-  payload: Buffer,
-): Buffer {
+function encryptPayload(subscription: PushSubscriptionRecord, payload: Buffer): Buffer {
   const receiverPublic = decodeBase64url(subscription.p256dh);
   const authSecret = decodeBase64url(subscription.auth);
   if (receiverPublic.length !== 65 || receiverPublic[0] !== 4 || authSecret.length < 16) {
@@ -113,16 +101,8 @@ function encryptPayload(
 
   const salt = randomBytes(16);
   const prk = hmac(salt, ikm);
-  const cek = hkdfExpand(
-    prk,
-    Buffer.from("Content-Encoding: aes128gcm\0", "utf8"),
-    16,
-  );
-  const nonce = hkdfExpand(
-    prk,
-    Buffer.from("Content-Encoding: nonce\0", "utf8"),
-    12,
-  );
+  const cek = hkdfExpand(prk, Buffer.from("Content-Encoding: aes128gcm\0", "utf8"), 16);
+  const nonce = hkdfExpand(prk, Buffer.from("Content-Encoding: nonce\0", "utf8"), 12);
 
   const plaintext = Buffer.concat([payload, Buffer.from([2])]);
   const cipher = createCipheriv("aes-128-gcm", cek, nonce);
@@ -148,10 +128,7 @@ export async function sendWebPush(
   signal: AbortSignal,
   now = new Date(),
 ): Promise<{ readonly delivered: boolean; readonly gone: boolean }> {
-  const body = encryptPayload(
-    subscription,
-    Buffer.from(JSON.stringify(payload), "utf8"),
-  );
+  const body = encryptPayload(subscription, Buffer.from(JSON.stringify(payload), "utf8"));
   const requestController = new AbortController();
   const timeout = setTimeout(() => requestController.abort(), WEB_PUSH_REQUEST_TIMEOUT_MS);
   const abortFromWorker = () => requestController.abort(signal.reason);
@@ -185,9 +162,7 @@ export async function sendWebPush(
   return { delivered: true, gone: false };
 }
 
-export function webPushConfigFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): WebPushConfig | null {
+export function webPushConfigFromEnv(env: NodeJS.ProcessEnv = process.env): WebPushConfig | null {
   const subject = env.C1_PUSH_VAPID_SUBJECT;
   const publicKey = env.C1_PUSH_VAPID_PUBLIC_KEY;
   const privateKey = env.C1_PUSH_VAPID_PRIVATE_KEY;

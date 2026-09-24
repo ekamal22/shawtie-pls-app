@@ -1,12 +1,13 @@
-import {
-  fetchPushConfig,
-  savePushSubscription,
-} from "./api.ts";
+import { fetchPushConfig, savePushSubscription } from "./api.ts";
 
-function applicationServerKey(value: string): Uint8Array {
+function applicationServerKey(value: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const raw = atob((value + padding).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+  const output = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let index = 0; index < raw.length; index += 1) {
+    output[index] = raw.charCodeAt(index);
+  }
+  return output;
 }
 
 function serialize(subscription: PushSubscription) {
@@ -25,9 +26,9 @@ export async function reconcileCallPushSubscription(
   requestPermission: boolean,
 ): Promise<"enabled" | "denied" | "unavailable"> {
   if (
-    !("serviceWorker" in navigator)
-    || !("PushManager" in window)
-    || !("Notification" in window)
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window) ||
+    !("Notification" in window)
   ) {
     return "unavailable";
   }

@@ -322,6 +322,8 @@ test("C1 revoked push endpoint can be safely rebound without duplicate active ro
       deviceId: data.alice.deviceId,
       accountId: data.alice.accountId,
       endpoint,
+      endpointFingerprint: Buffer.from("c1-rebind-fingerprint"),
+      endpointKeyVersion: 1,
       p256dh: "alice-p256dh",
       auth: "alice-auth-secret",
       expirationTimeMs: null,
@@ -337,6 +339,8 @@ test("C1 revoked push endpoint can be safely rebound without duplicate active ro
       deviceId: data.bob.deviceId,
       accountId: data.bob.accountId,
       endpoint,
+      endpointFingerprint: Buffer.from("c1-rebind-fingerprint"),
+      endpointKeyVersion: 1,
       p256dh: "bob-p256dh",
       auth: "bob-auth-secret",
       expirationTimeMs: null,
@@ -353,10 +357,7 @@ test("C1 revoked push endpoint can be safely rebound without duplicate active ro
     );
     assert.equal(rows.rowCount, 2);
     assert.equal(rows.rows.filter((row) => row.revoked_at === null).length, 1);
-    assert.equal(
-      rows.rows.find((row) => row.revoked_at === null)?.device_id,
-      data.bob.deviceId,
-    );
+    assert.equal(rows.rows.find((row) => row.revoked_at === null)?.device_id, data.bob.deviceId);
   } finally {
     await closeDatabasePool(database);
   }

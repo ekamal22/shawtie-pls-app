@@ -98,9 +98,9 @@ function parseHistoryCursor(raw: string | undefined): { createdAt: Date; id: str
       id?: unknown;
     };
     if (
-      typeof value.createdAt !== "string"
-      || typeof value.id !== "string"
-      || !/^[0-9a-f-]{36}$/i.test(value.id)
+      typeof value.createdAt !== "string" ||
+      typeof value.id !== "string" ||
+      !/^[0-9a-f-]{36}$/i.test(value.id)
     ) {
       throw new Error("invalid");
     }
@@ -113,15 +113,21 @@ function parseHistoryCursor(raw: string | undefined): { createdAt: Date; id: str
 }
 
 export class CallingService {
+  readonly database: DatabasePool;
   private readonly calling: CallingConfig;
+  private readonly turnProvider: TurnCredentialProvider;
+  private readonly keys: AuthKeyRing;
 
   constructor(
-    readonly database: DatabasePool,
+    database: DatabasePool,
     config: ApiConfig,
-    private readonly turnProvider: TurnCredentialProvider,
-    private readonly keys: AuthKeyRing,
+    turnProvider: TurnCredentialProvider,
+    keys: AuthKeyRing,
   ) {
+    this.database = database;
     this.calling = resolveCallingConfig(config);
+    this.turnProvider = turnProvider;
+    this.keys = keys;
   }
 
   async #lockedLifecycle(
@@ -156,9 +162,9 @@ export class CallingService {
     const participants = await loadCallParticipants(executor, call.id);
     const selected = participants.some(
       (participant) =>
-        participant.accountId === auth.session.accountId
-        && participant.endpointDeviceId !== null
-        && participant.endpointDeviceId === auth.session.deviceId,
+        participant.accountId === auth.session.accountId &&
+        participant.endpointDeviceId !== null &&
+        participant.endpointDeviceId === auth.session.deviceId,
     );
 
     return {
@@ -280,7 +286,8 @@ export class CallingService {
     idempotencyKey: string,
   ): Promise<CallProjection> {
     if (!this.calling.enabled) throw new ApiError(503, "CALLING_UNAVAILABLE");
-    if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
+    const deviceId = auth.session.deviceId;
+    if (!deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     if (input.kind === "video") throw new ApiError(409, "FEATURE_NOT_AVAILABLE");
 
     return withTransaction(this.database, async (transaction) => {
@@ -312,7 +319,7 @@ export class CallingService {
         id: randomUUID(),
         partnershipId: lifecycle.partnershipId,
         callerAccountId: auth.session.accountId,
-        callerDeviceId: auth.session.deviceId,
+        callerDeviceId: deviceId,
         callerSessionId: auth.session.sessionId,
         calleeAccountId: otherAccountId,
         kind: "voice",
@@ -375,15 +382,18 @@ export class CallingService {
     const cursor = parseHistoryCursor(query.cursor);
     const rows = await listCallHistory(this.database.pool, {
       partnershipId: current.partnershipId,
-      beforeCreatedAt: cursor?.createdAt,
-      beforeId: cursor?.id,
+      beforeCreatedAt: cursor?.createdAt ?? null,
+      beforeId: cursor?.id ?? null,
       limit: query.limit + 1,
     });
     const visible = rows.slice(0, query.limit);
     const items = visible.map((call) => ({
       id: call.id,
       kind: call.kind,
-      direction: call.initiatedByAccountId === auth.session.accountId ? "outgoing" as const : "incoming" as const,
+      direction:
+        call.initiatedByAccountId === auth.session.accountId
+          ? ("outgoing" as const)
+          : ("incoming" as const),
       initiatedAt: call.createdAt.toISOString(),
       connectedAt: call.connectedAt?.toISOString() ?? null,
       endedAt: call.endedAt?.toISOString() ?? null,
@@ -410,11 +420,14 @@ export class CallingService {
     idempotencyKey: string,
   ): Promise<CallProjection> {
     if (!this.calling.transportEnabled) throw new ApiError(503, "CALL_TRANSPORT_UNAVAILABLE");
-    if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
+    const deviceId = auth.session.deviceId;
+    if (!deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const { lifecycle } = await this.#lockedLifecycle(transaction, auth.session.accountId);
-      const decision = evaluateContinueCall(contextFromLifecycle(auth.session.accountId, lifecycle));
+      const decision = evaluateContinueCall(
+        contextFromLifecycle(auth.session.accountId, lifecycle),
+      );
       if (!decision.allowed) throw new ApiError(409, "CALLING_NOT_ALLOWED");
       const call = await lockCall(transaction, callId, lifecycle.partnershipId);
       if (!call) throw new ApiError(404, "CALL_NOT_FOUND");
@@ -437,23 +450,22 @@ export class CallingService {
         const participants = await loadCallParticipants(transaction, call.id);
         const callee = participants.find((participant) => participant.role === "callee");
         if (
-          callee?.endpointDeviceId
-          && (
-            callee.endpointDeviceId !== auth.session.deviceId
-            || callee.endpointSessionId !== auth.session.sessionId
-          )
+          callee?.endpointDeviceId &&
+          (callee.endpointDeviceId !== deviceId ||
+            callee.endpointSessionId !== auth.session.sessionId)
         ) {
           throw new ApiError(409, "CALL_ANSWERED_ELSEWHERE");
         }
         throw new ApiError(409, "CALL_NOT_RINGING");
       }
-      if (call.version !== BigInt(input.expectedVersion)) throw new ApiError(409, "VERSION_CONFLICT");
+      if (call.version !== BigInt(input.expectedVersion))
+        throw new ApiError(409, "VERSION_CONFLICT");
       const connectExpiresAt = new Date(now.getTime() + this.calling.connectTimeoutMs);
       const accepted = await acceptCall(transaction, {
         callId: call.id,
         expectedVersion: call.version,
         calleeAccountId: auth.session.accountId,
-        deviceId: auth.session.deviceId,
+        deviceId,
         sessionId: auth.session.sessionId,
         now,
         connectExpiresAt,
@@ -492,7 +504,8 @@ export class CallingService {
     idempotencyKey: string,
     action: "reject" | "cancel" | "end" | "fail",
   ): Promise<CallProjection> {
-    if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
+    const deviceId = auth.session.deviceId;
+    if (!deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const { lifecycle } = await this.#lockedLifecycle(transaction, auth.session.accountId);
@@ -509,14 +522,14 @@ export class CallingService {
       if (reserved.record.responseStatus && reserved.record.responseBody) {
         return reserved.record.responseBody as CallProjection;
       }
-      if (call.version !== BigInt(input.expectedVersion)) throw new ApiError(409, "VERSION_CONFLICT");
+      if (call.version !== BigInt(input.expectedVersion))
+        throw new ApiError(409, "VERSION_CONFLICT");
 
       const participants = await loadCallParticipants(transaction, call.id);
       const mine = participants.find((item) => item.accountId === auth.session.accountId);
       let reason: "rejected" | "cancelled" | "completed" | "failed";
       let allowedStates: readonly ("ringing" | "accepted" | "connected")[];
-      const failureCategory =
-        action === "fail" && "category" in input ? input.category : null;
+      const failureCategory = action === "fail" && "category" in input ? input.category : null;
 
       if (action === "reject") {
         if (call.state !== "ringing" || mine?.role !== "callee") {
@@ -532,10 +545,10 @@ export class CallingService {
         allowedStates = ["ringing"];
       } else {
         if (
-          !mine
-          || mine.endpointDeviceId !== auth.session.deviceId
-          || mine.endpointSessionId !== auth.session.sessionId
-          || !["accepted", "connected"].includes(call.state)
+          !mine ||
+          mine.endpointDeviceId !== auth.session.deviceId ||
+          mine.endpointSessionId !== auth.session.sessionId ||
+          !["accepted", "connected"].includes(call.state)
         ) {
           throw new ApiError(409, "CALL_ACTION_NOT_ALLOWED");
         }
@@ -597,7 +610,8 @@ export class CallingService {
     callId: string,
     idempotencyKey: string,
   ): Promise<CallProjection> {
-    if (!auth.session.deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
+    const deviceId = auth.session.deviceId;
+    if (!deviceId) throw new ApiError(409, "CALLING_NOT_ALLOWED");
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const { lifecycle } = await this.#lockedLifecycle(transaction, auth.session.accountId);
@@ -606,7 +620,7 @@ export class CallingService {
 
       const reserved = await this.#reserve(transaction, {
         accountId: auth.session.accountId,
-        scope: `c1.call.endpoint-connected:${call.id}:${auth.session.deviceId}`,
+        scope: `c1.call.endpoint-connected:${call.id}:${deviceId}`,
         idempotencyKey,
         request: {},
         now,
@@ -622,7 +636,7 @@ export class CallingService {
       const result = await recordEndpointConnected(transaction, {
         callId: call.id,
         accountId: auth.session.accountId,
-        deviceId: auth.session.deviceId,
+        deviceId,
         sessionId: auth.session.sessionId,
         now,
         hardExpiresAt,

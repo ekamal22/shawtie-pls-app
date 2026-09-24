@@ -21,10 +21,7 @@ import {
 } from "@shawtie/db";
 import { resolveCallingConfig, type ApiConfig } from "../../config.ts";
 import { ApiError } from "../../lib/api-error.ts";
-import {
-  requireAuthentication,
-  type AuthContext,
-} from "../../plugins/authentication.ts";
+import { requireAuthentication, type AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import type { CallingService } from "./calling-service.ts";
 import type { CallSignalingHub } from "./signaling-hub.ts";
@@ -92,10 +89,7 @@ async function rateLimit(
     ];
 
     if (includePartnership) {
-      const current = await getCurrentPartnershipForAccount(
-        transaction,
-        auth.session.accountId,
-      );
+      const current = await getCurrentPartnershipForAccount(transaction, auth.session.accountId);
       if (current) {
         buckets.push({
           scope: `c1.${scope}.partnership`,
@@ -219,7 +213,11 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
 
   const authenticated = new WeakMap<
     FastifyRequest,
-    { auth: AuthContext; callId: string; authorization: { partnershipId: string; role: "caller" | "callee" } }
+    {
+      auth: AuthContext;
+      callId: string;
+      authorization: { partnershipId: string; role: "caller" | "callee" };
+    }
   >();
 
   app.get(
@@ -265,12 +263,7 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
         socket.close(1008, "Call signaling authorization required");
         return;
       }
-      deps.signalingHub.accept(
-        socket,
-        context.auth,
-        context.callId,
-        context.authorization,
-      );
+      deps.signalingHub.accept(socket, context.auth, context.callId, context.authorization);
     },
   );
 }

@@ -71,7 +71,6 @@ test("C1 microphone and notification permissions stay on explicit user paths", a
   assert.equal(worker.includes("/accept"), false);
 });
 
-
 test("C1 local browser host disables camera and scopes microphone to self", async () => {
   const vite = await source("../vite.config.ts");
   assert.equal(vite.includes('"Permissions-Policy": "camera=(), microphone=(self)"'), true);

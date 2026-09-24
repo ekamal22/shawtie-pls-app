@@ -162,8 +162,8 @@ export function registerRealtimeRoutes(
         }
         const offered = offeredProtocols(request);
         if (
-          offered.length !== 1
-          || (offered[0] !== M2_REALTIME_SUBPROTOCOL && offered[0] !== C1_REALTIME_SUBPROTOCOL)
+          offered.length !== 1 ||
+          (offered[0] !== M2_REALTIME_SUBPROTOCOL && offered[0] !== C1_REALTIME_SUBPROTOCOL)
         ) {
           throw new ApiError(400, "REALTIME_PROTOCOL_REQUIRED");
         }
@@ -185,8 +185,8 @@ export function registerRealtimeRoutes(
         return;
       }
       if (
-        socket.protocol !== M2_REALTIME_SUBPROTOCOL
-        && socket.protocol !== C1_REALTIME_SUBPROTOCOL
+        socket.protocol !== M2_REALTIME_SUBPROTOCOL &&
+        socket.protocol !== C1_REALTIME_SUBPROTOCOL
       ) {
         socket.close(1002, "Unexpected realtime protocol");
         return;

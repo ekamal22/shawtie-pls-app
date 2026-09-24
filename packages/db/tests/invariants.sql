@@ -1306,11 +1306,14 @@ DO $$
 BEGIN
   BEGIN
     INSERT INTO push_subscriptions (
-      device_id, account_id, endpoint, p256dh, auth
+      device_id, account_id, endpoint, endpoint_fingerprint,
+      endpoint_key_version, p256dh, auth
     ) VALUES (
       '70000000-0000-0000-0000-000000000001',
       '00000000-0000-0000-0000-000000000002',
       'https://push.example.test/mismatched',
+      decode('01', 'hex'),
+      1,
       'test-p256dh',
       'test-auth'
     );

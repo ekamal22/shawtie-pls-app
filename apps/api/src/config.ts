@@ -108,12 +108,10 @@ function callingConfig(
   environment: ApiConfig["environment"],
 ): CallingConfig {
   const defaultEnabled = environment === "production" ? false : true;
-  const enabled = env.C1_CALLING_ENABLED === undefined
-    ? defaultEnabled
-    : env.C1_CALLING_ENABLED === "1";
-  const transportEnabled = env.C1_TRANSPORT_ENABLED === undefined
-    ? defaultEnabled
-    : env.C1_TRANSPORT_ENABLED === "1";
+  const enabled =
+    env.C1_CALLING_ENABLED === undefined ? defaultEnabled : env.C1_CALLING_ENABLED === "1";
+  const transportEnabled =
+    env.C1_TRANSPORT_ENABLED === undefined ? defaultEnabled : env.C1_TRANSPORT_ENABLED === "1";
   const turnUrls = (env.C1_TURN_URLS ?? "")
     .split(",")
     .map((value) => value.trim())
@@ -123,7 +121,9 @@ function callingConfig(
   }
   if (environment === "production" && enabled && transportEnabled) {
     if (turnUrls.length === 0 || !env.C1_TURN_SHARED_SECRET) {
-      throw new Error("C1 relay-only production calling requires C1_TURN_URLS and C1_TURN_SHARED_SECRET");
+      throw new Error(
+        "C1 relay-only production calling requires C1_TURN_URLS and C1_TURN_SHARED_SECRET",
+      );
     }
   }
   return {
@@ -160,17 +160,19 @@ function callingConfig(
 }
 
 export function resolveCallingConfig(config: ApiConfig): CallingConfig {
-  return config.calling ?? {
-    enabled: config.environment !== "production",
-    transportEnabled: config.environment !== "production",
-    ringTimeoutMs: 60_000,
-    connectTimeoutMs: 120_000,
-    hardTimeoutMs: 6 * 60 * 60_000,
-    turnUrls: [],
-    turnSharedSecret: null,
-    turnCredentialTtlMs: 10 * 60_000,
-    pushVapidPublicKey: null,
-  };
+  return (
+    config.calling ?? {
+      enabled: config.environment !== "production",
+      transportEnabled: config.environment !== "production",
+      ringTimeoutMs: 60_000,
+      connectTimeoutMs: 120_000,
+      hardTimeoutMs: 6 * 60 * 60_000,
+      turnUrls: [],
+      turnSharedSecret: null,
+      turnCredentialTtlMs: 10 * 60_000,
+      pushVapidPublicKey: null,
+    }
+  );
 }
 
 export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfig {

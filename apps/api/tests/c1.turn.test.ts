@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  HmacTurnCredentialProvider,
-} from "../src/modules/calls/turn-credential-provider.ts";
+import { HmacTurnCredentialProvider } from "../src/modules/calls/turn-credential-provider.ts";
 
 const ACCOUNT = "10000000-0000-4000-8000-000000000001";
 const CALL = "20000000-0000-4000-8000-000000000001";

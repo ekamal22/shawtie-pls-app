@@ -11,9 +11,7 @@ import {
 const A = "10000000-0000-4000-8000-000000000001";
 const B = "10000000-0000-4000-8000-000000000002";
 
-function context(
-  overrides: Partial<CallPolicyContext> = {},
-): CallPolicyContext {
+function context(overrides: Partial<CallPolicyContext> = {}): CallPolicyContext {
   return {
     actorAccountId: A,
     memberAccountIds: [A, B],
@@ -32,10 +30,7 @@ test("C1 active and breakup partnerships permit fresh voice-call authority", () 
 });
 
 test("C1 account deletion and termination deny new or continued call authority", () => {
-  assert.equal(
-    evaluateStartCall(context({ accountDeletionAccountId: A })).allowed,
-    false,
-  );
+  assert.equal(evaluateStartCall(context({ accountDeletionAccountId: A })).allowed, false);
   assert.equal(
     evaluateContinueCall(
       context({

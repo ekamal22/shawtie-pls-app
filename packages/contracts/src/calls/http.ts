@@ -37,9 +37,7 @@ export const callCreateSchema = z
 
 export const callIdParamsSchema = z.object({ callId: uuid }).strict();
 
-export const callVersionMutationSchema = z
-  .object({ expectedVersion: positiveVersion })
-  .strict();
+export const callVersionMutationSchema = z.object({ expectedVersion: positiveVersion }).strict();
 
 export const callFailureCategorySchema = z.enum([
   "media_permission",

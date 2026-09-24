@@ -24,12 +24,10 @@ export function evaluateContinueCall(context: CallPolicyContext): CallPolicyDeci
   return evaluateStartCall(context);
 }
 
-export function callRequiresFreshAcceptance(
-  context: CallPolicyContext,
-): boolean {
+export function callRequiresFreshAcceptance(context: CallPolicyContext): boolean {
   return (
-    context.partnershipLifecycle === "breakup_pending"
-    && !context.accountDeletionAccountId
-    && context.accountStatuses[context.actorAccountId] === "active"
+    context.partnershipLifecycle === "breakup_pending" &&
+    !context.accountDeletionAccountId &&
+    context.accountStatuses[context.actorAccountId] === "active"
   );
 }

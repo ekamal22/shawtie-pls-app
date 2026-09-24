@@ -47,10 +47,10 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
     const accountIds = participants.map((participant) => participant.accountId).sort();
     const callVersion = Number(terminatedCall.version);
     if (
-      accountIds.length !== 2
-      || accountIds[0] === accountIds[1]
-      || !Number.isSafeInteger(callVersion)
-      || callVersion <= 0
+      accountIds.length !== 2 ||
+      accountIds[0] === accountIds[1] ||
+      !Number.isSafeInteger(callVersion) ||
+      callVersion <= 0
     ) {
       throw new Error("Invalid call state during partnership dissolution");
     }
@@ -59,8 +59,7 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
       eventType: "c1.call.changed",
       aggregateType: "call",
       aggregateId: terminatedCall.id,
-      deduplicationKey:
-        "c1:call-changed:" + terminatedCall.id + ":" + callVersion,
+      deduplicationKey: "c1:call-changed:" + terminatedCall.id + ":" + callVersion,
       payload: {
         partnershipId: terminatedCall.partnershipId,
         callId: terminatedCall.id,
@@ -73,8 +72,7 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
       eventType: "c1.call.push",
       aggregateType: "call",
       aggregateId: terminatedCall.id,
-      deduplicationKey:
-        "c1:call-push:" + terminatedCall.id + ":" + callVersion,
+      deduplicationKey: "c1:call-push:" + terminatedCall.id + ":" + callVersion,
       payload: { accountIds },
       payloadVersion: 1,
     });

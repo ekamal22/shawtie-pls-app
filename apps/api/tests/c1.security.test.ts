@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import {
+  validateCallDescription,
+  validateCallRelayCandidate,
+} from "../src/modules/calls/signaling-validation.ts";
 
 async function source(relative: string): Promise<string> {
   return readFile(new URL(relative, import.meta.url), "utf8");
@@ -10,6 +14,7 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   const application = await source("../src/application.ts");
   const routes = await source("../src/modules/calls/routes.ts");
   const hub = await source("../src/modules/calls/signaling-hub.ts");
+  const validation = await source("../src/modules/calls/signaling-validation.ts");
   const repository = await source("../../../packages/db/src/repositories/calls.ts");
 
   assert.equal(application.includes("C1_SIGNALING_SUBPROTOCOL"), true);
@@ -19,15 +24,15 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(routes.includes("offered.length !== 1"), true);
   assert.equal(routes.includes("sessionId: auth.session.sessionId"), true);
   assert.equal(routes.includes("getCurrentPartnershipForAccount"), true);
-  assert.equal(routes.includes('scope: `c1.${scope}.partnership`'), true);
-  assert.equal(hub.includes('/^m=audio\\s/i'), true);
-  assert.equal(hub.includes('media.length === 1'), true);
-  assert.equal(hub.includes('candidateType !== "relay"'), true);
-  assert.equal(hub.includes("extensions.length % 2 !== 0"), true);
-  assert.equal(hub.includes('transport === "tcp" && !sawTcpType'), true);
-  assert.equal(hub.includes('name === "raddr"'), true);
-  assert.equal(hub.includes("/^candidate:[A-Za-z0-9+/_-]{1,64}$/"), true);
-  assert.equal(hub.includes("4_294_967_295n"), true);
+  assert.equal(routes.includes("scope: `c1.${scope}.partnership`"), true);
+  assert.equal(validation.includes("/^m=audio\\s/i"), true);
+  assert.equal(validation.includes("media.length === 1"), true);
+  assert.equal(validation.includes('candidateType !== "relay"'), true);
+  assert.equal(validation.includes("extensions.length % 2 !== 0"), true);
+  assert.equal(validation.includes('transport === "tcp" && !sawTcpType'), true);
+  assert.equal(validation.includes('name === "raddr"'), true);
+  assert.equal(validation.includes("/^candidate:[A-Za-z0-9+/_-]{1,64}$/"), true);
+  assert.equal(validation.includes("4_294_967_295n"), true);
   assert.equal(hub.includes("fromGeneration"), true);
   assert.equal(hub.includes("source.generation !== item.fromGeneration"), true);
   assert.equal(hub.includes("sessionId: session.sessionId"), true);
@@ -42,6 +47,14 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   const migration = await source("../../../packages/db/migrations/0017_calling_runtime.sql");
   assert.equal(baseRelationalMigration.includes("account_devices_id_account_unique"), true);
   assert.equal(migration.includes("account_devices_id_account_unique"), false);
+  assert.equal(baseRelationalMigration.includes("call_sessions_id_partnership_unique"), true);
+  assert.equal(migration.includes("call_sessions_id_partnership_unique"), false);
+  assert.equal(baseRelationalMigration.includes("ADD COLUMN partnership_id uuid"), true);
+  assert.equal(migration.includes("ADD COLUMN partnership_id uuid"), false);
+  assert.equal(baseRelationalMigration.includes("call_participants_member_fk"), true);
+  assert.equal(migration.includes("call_participants_member_fk"), false);
+  assert.equal(baseRelationalMigration.includes("call_events_session_partnership_fk"), true);
+  assert.equal(migration.includes("call_events_partnership_fk"), false);
   assert.equal(migration.includes("account_sessions_endpoint_identity_unique"), true);
   assert.equal(
     migration.includes("FOREIGN KEY (endpoint_session_id, account_id, endpoint_device_id)"),
@@ -54,11 +67,53 @@ test("C1 signaling is isolated, voice-only, relay-only, and session-bound", asyn
   assert.equal(migration.includes("status = 'ended'"), true);
 });
 
+test("C1 SDP and ICE validators enforce voice-only candidate-free relay signaling", () => {
+  assert.equal(
+    validateCallDescription(
+      "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=rtpmap:111 opus/48000/2\r\n",
+    ),
+    true,
+  );
+  assert.equal(validateCallDescription("v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n"), false);
+  assert.equal(
+    validateCallDescription(
+      "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\nm=application 9 DTLS/SCTP 5000\r\n",
+    ),
+    false,
+  );
+  assert.equal(
+    validateCallDescription(
+      "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=candidate:relay 1 udp 1 203.0.113.5 50000 typ relay\r\n",
+    ),
+    false,
+  );
+
+  const relay =
+    "candidate:relay 1 udp 1677734910 203.0.113.5 50000 typ relay raddr 0.0.0.0 rport 0";
+  assert.equal(validateCallRelayCandidate(relay), true);
+  assert.equal(validateCallRelayCandidate(relay.replace("typ relay", "typ host")), false);
+  assert.equal(validateCallRelayCandidate(relay.replace("1677734910", "not-a-number")), false);
+  assert.equal(
+    validateCallRelayCandidate(relay.replace("raddr 0.0.0.0", "raddr 192.168.1.5")),
+    false,
+  );
+  assert.equal(
+    validateCallRelayCandidate(
+      "candidate:relay 1 tcp 1677734910 203.0.113.5 443 typ relay tcptype passive",
+    ),
+    true,
+  );
+  assert.equal(
+    validateCallRelayCandidate("candidate:relay 1 tcp 1677734910 203.0.113.5 443 typ relay"),
+    false,
+  );
+});
+
 test("C1 TURN credentials avoid raw account and call identifiers", async () => {
   const provider = await source("../src/modules/calls/turn-credential-provider.ts");
   assert.equal(provider.includes('createHash("sha256")'), true);
   assert.equal(provider.includes('input.accountId + "\\0" + input.callId'), true);
-  assert.equal(provider.includes('${input.accountId}:${input.callId}'), false);
+  assert.equal(provider.includes("${input.accountId}:${input.callId}"), false);
 });
 
 test("C1 durable authority never stores SDP, ICE, TURN secrets, or public raw terminal causes", async () => {

@@ -14,12 +14,7 @@ export type CallTerminalReason =
   | "session_revoked";
 
 export type PublicCallOutcome =
-  | "rejected"
-  | "cancelled"
-  | "missed"
-  | "completed"
-  | "failed"
-  | "unavailable";
+  "rejected" | "cancelled" | "missed" | "completed" | "failed" | "unavailable";
 
 export interface CallPolicyContext {
   readonly actorAccountId: string;
@@ -32,9 +27,5 @@ export interface CallPolicyContext {
 export interface CallPolicyDecision {
   readonly allowed: boolean;
   readonly reason:
-    | null
-    | "NO_PARTNERSHIP"
-    | "CALLING_NOT_ALLOWED"
-    | "ACCOUNT_LOCKED"
-    | "PARTNERSHIP_TERMINATED";
+    null | "NO_PARTNERSHIP" | "CALLING_NOT_ALLOWED" | "ACCOUNT_LOCKED" | "PARTNERSHIP_TERMINATED";
 }

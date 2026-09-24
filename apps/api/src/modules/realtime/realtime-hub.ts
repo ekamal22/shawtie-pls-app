@@ -3,7 +3,6 @@ import {
   C1_REALTIME_SUBPROTOCOL,
   M2_REALTIME_MAX_FRAME_BYTES,
   M2_REALTIME_PROTOCOL_VERSION,
-  M2_REALTIME_SUBPROTOCOL,
   assertM2RealtimeFrameSize,
   c1RealtimeServerFrameSchema,
   m2RealtimeClientFrameSchema,
@@ -11,7 +10,7 @@ import {
   type C1RealtimeServerFrame,
   type M2InternalRealtimeNotification,
   type M2RealtimeClientFrame,
-  type M2RealtimeServerFrame,
+  type M2_REALTIME_SUBPROTOCOL,
 } from "@shawtie/contracts";
 import {
   getClockTimestamp,

@@ -123,7 +123,14 @@ export async function insertCallSession(
      ON CONFLICT (partnership_id) WHERE status <> 'ended'
      DO NOTHING
      RETURNING ${sessionColumns}`,
-    [input.id, input.partnershipId, input.callerAccountId, input.kind, input.ringExpiresAt, input.now],
+    [
+      input.id,
+      input.partnershipId,
+      input.callerAccountId,
+      input.kind,
+      input.ringExpiresAt,
+      input.now,
+    ],
   );
   const row = result.rows[0];
   if (!row) return null;
@@ -374,7 +381,13 @@ export async function timeoutCall(
        AND ${deadlineColumn} IS NOT NULL
        AND ${deadlineColumn} <= $4
      RETURNING ${sessionColumns}`,
-    [input.callId, input.expectedGeneration.toString(), input.expectedState, input.now, input.reason],
+    [
+      input.callId,
+      input.expectedGeneration.toString(),
+      input.expectedState,
+      input.now,
+      input.reason,
+    ],
   );
   return result.rows[0] ? mapSession(result.rows[0]) : null;
 }
@@ -512,7 +525,6 @@ export async function loadCallDeadlineGeneration(
   const row = result.rows[0];
   return row ? asBigInt(row.deadline_generation) : 0n;
 }
-
 
 export async function terminalizeCallsByEndpointSession(
   executor: QueryExecutor,

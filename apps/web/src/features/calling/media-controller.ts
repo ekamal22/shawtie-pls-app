@@ -4,11 +4,7 @@ import {
   c1SignalServerFrameSchema,
   type CallFailureCategory,
 } from "@shawtie/contracts";
-import {
-  fetchCall,
-  fetchTurnCredentials,
-  reportEndpointConnected,
-} from "./api.ts";
+import { fetchCall, fetchTurnCredentials, reportEndpointConnected } from "./api.ts";
 import { MediaOwnerLease } from "./media-owner-lease.ts";
 
 export interface CallMediaCallbacks {
@@ -22,16 +18,15 @@ export interface CallMediaCallbacks {
 function stripCandidates(sdp: string | undefined): string {
   return (sdp ?? "")
     .split(/\r?\n/)
-    .filter(
-      (line) =>
-        !line.startsWith("a=candidate:")
-        && line !== "a=end-of-candidates",
-    )
+    .filter((line) => !line.startsWith("a=candidate:") && line !== "a=end-of-candidates")
     .join("\r\n");
 }
 
 function websocketUrl(callId: string): string {
-  const url = new URL("/api/v1/calls/" + encodeURIComponent(callId) + "/signal", window.location.href);
+  const url = new URL(
+    "/api/v1/calls/" + encodeURIComponent(callId) + "/signal",
+    window.location.href,
+  );
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   return url.toString();
 }
@@ -66,7 +61,7 @@ export class CallMediaSession {
   ) {
     this.#lease = new MediaOwnerLease(callId, deviceId);
     this.#remoteAudio.autoplay = true;
-    this.#remoteAudio.playsInline = true;
+    this.#remoteAudio.setAttribute("playsinline", "");
   }
 
   get muted(): boolean {
@@ -87,8 +82,8 @@ export class CallMediaSession {
 
     const canonical = await fetchCall(this.callId);
     if (
-      !canonical.isThisDeviceSelectedEndpoint
-      || (canonical.state !== "accepted" && canonical.state !== "connected")
+      !canonical.isThisDeviceSelectedEndpoint ||
+      (canonical.state !== "accepted" && canonical.state !== "connected")
     ) {
       throw new Error("CALL_ENDPOINT_AUTHORITY_CHANGED");
     }
@@ -288,8 +283,8 @@ export class CallMediaSession {
         sdp: frame.payload.sdp,
       };
       const readyForOffer =
-        !this.#makingOffer
-        && (this.#peer.signalingState === "stable" || this.#isSettingRemoteAnswerPending);
+        !this.#makingOffer &&
+        (this.#peer.signalingState === "stable" || this.#isSettingRemoteAnswerPending);
       const offerCollision = description.type === "offer" && !readyForOffer;
       this.#ignoreOffer = !this.#polite && offerCollision;
       if (this.#ignoreOffer) return;
@@ -393,10 +388,10 @@ export class CallMediaSession {
 
   async #negotiate(): Promise<void> {
     if (
-      this.#stopped
-      || !this.#peer
-      || this.#signalingGeneration <= 0
-      || this.#socket?.readyState !== WebSocket.OPEN
+      this.#stopped ||
+      !this.#peer ||
+      this.#signalingGeneration <= 0 ||
+      this.#socket?.readyState !== WebSocket.OPEN
     ) {
       return;
     }
@@ -423,18 +418,15 @@ export class CallMediaSession {
 
   #send(
     type:
-      | "signal.description"
-      | "signal.ice_candidate"
-      | "signal.end_of_candidates"
-      | "signal.restart",
+      "signal.description" | "signal.ice_candidate" | "signal.end_of_candidates" | "signal.restart",
     payload: Record<string, unknown>,
   ): void {
     const socket = this.#socket;
     if (
-      this.#stopped
-      || this.#signalingGeneration <= 0
-      || !socket
-      || socket.readyState !== WebSocket.OPEN
+      this.#stopped ||
+      this.#signalingGeneration <= 0 ||
+      !socket ||
+      socket.readyState !== WebSocket.OPEN
     ) {
       return;
     }

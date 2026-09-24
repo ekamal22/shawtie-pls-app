@@ -66,10 +66,6 @@ ALTER TABLE call_sessions
       OR status IN ('connected', 'ended')
     );
 
-ALTER TABLE call_sessions
-  ADD CONSTRAINT call_sessions_id_partnership_unique
-  UNIQUE (id, partnership_id);
-
 CREATE UNIQUE INDEX call_sessions_one_nonterminal_per_partnership
   ON call_sessions (partnership_id)
   WHERE status <> 'ended';
@@ -78,7 +74,6 @@ CREATE INDEX call_sessions_partnership_history
   ON call_sessions (partnership_id, created_at DESC, id DESC);
 
 ALTER TABLE call_participants
-  ADD COLUMN partnership_id uuid,
   ADD COLUMN role text,
   ADD COLUMN endpoint_device_id uuid,
   ADD COLUMN endpoint_session_id uuid,
@@ -87,7 +82,6 @@ ALTER TABLE call_participants
 
 UPDATE call_participants AS participant
 SET
-  partnership_id = session.partnership_id,
   role = CASE
     WHEN participant.account_id = session.initiated_by_account_id THEN 'caller'
     ELSE 'callee'
@@ -100,15 +94,7 @@ ALTER TABLE account_sessions
   UNIQUE (id, account_id, device_id);
 
 ALTER TABLE call_participants
-  ALTER COLUMN partnership_id SET NOT NULL,
   ALTER COLUMN role SET NOT NULL,
-  ADD CONSTRAINT call_participants_partnership_fk
-    FOREIGN KEY (call_session_id, partnership_id)
-    REFERENCES call_sessions(id, partnership_id)
-    ON DELETE CASCADE,
-  ADD CONSTRAINT call_participants_member_fk
-    FOREIGN KEY (partnership_id, account_id)
-    REFERENCES partnership_members(partnership_id, account_id),
   ADD CONSTRAINT call_participants_endpoint_device_fk
     FOREIGN KEY (endpoint_device_id, account_id)
     REFERENCES account_devices(id, account_id)
@@ -221,21 +207,10 @@ FOR EACH ROW
 EXECUTE FUNCTION enforce_call_participant_roles();
 
 ALTER TABLE call_events
-  ADD COLUMN partnership_id uuid,
   ADD COLUMN call_version bigint,
   ADD COLUMN metadata_json jsonb NOT NULL DEFAULT '{}'::jsonb;
 
-UPDATE call_events AS event
-SET partnership_id = session.partnership_id
-FROM call_sessions AS session
-WHERE session.id = event.call_session_id;
-
 ALTER TABLE call_events
-  ALTER COLUMN partnership_id SET NOT NULL,
-  ADD CONSTRAINT call_events_partnership_fk
-    FOREIGN KEY (call_session_id, partnership_id)
-    REFERENCES call_sessions(id, partnership_id)
-    ON DELETE CASCADE,
   ADD CONSTRAINT call_events_version_positive
     CHECK (call_version IS NULL OR call_version > 0);
 

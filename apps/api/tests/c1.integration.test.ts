@@ -125,11 +125,7 @@ async function latestRegistrationCode(
   );
 }
 
-async function register(
-  app: App,
-  database: DatabasePool,
-  suffix: string,
-): Promise<TestAccount> {
+async function register(app: App, database: DatabasePool, suffix: string): Promise<TestAccount> {
   const username = "c1_" + suffix;
   const password = "very secure C1 password " + suffix;
   const start = await app.inject({
@@ -145,9 +141,8 @@ async function register(
     },
   });
   assert.equal(start.statusCode, 200, start.body);
-  const registrationIntentId = (
-    start.json() as { registrationIntentId: string }
-  ).registrationIntentId;
+  const registrationIntentId = (start.json() as { registrationIntentId: string })
+    .registrationIntentId;
   const code = await latestRegistrationCode(database, registrationIntentId);
   const verify = await app.inject({
     method: "POST",
@@ -260,12 +255,7 @@ function waitForFrame(
       } catch {
         return;
       }
-      if (
-        frame !== null
-        && typeof frame === "object"
-        && "type" in frame
-        && frame.type === type
-      ) {
+      if (frame !== null && typeof frame === "object" && "type" in frame && frame.type === type) {
         clearTimeout(timeout);
         socket.off("message", onMessage);
         resolve(frame as Record<string, unknown>);
@@ -274,6 +264,31 @@ function waitForFrame(
 
     socket.on("message", onMessage);
   });
+}
+
+async function openSignalingSocket(
+  app: App,
+  callId: string,
+  account: TestAccount,
+): Promise<{ socket: WebSocket; ready: Record<string, unknown> }> {
+  let readyPromise: Promise<Record<string, unknown>> | undefined;
+  const socket = await app.injectWS(
+    "/api/v1/calls/" + callId + "/signal",
+    {
+      headers: {
+        origin: config.appOrigin,
+        cookie: account.cookie,
+        "sec-websocket-protocol": "shawtie.call.v1",
+      },
+    },
+    {
+      onInit(candidate) {
+        readyPromise = waitForFrame(candidate, "control.ready");
+      },
+    },
+  );
+  if (!readyPromise) throw new Error("C1 signaling listener was not initialized");
+  return { socket, ready: await readyPromise };
 }
 
 function waitForClose(
@@ -296,7 +311,6 @@ function waitForClose(
     socket.once("close", onClose);
   });
 }
-
 
 test("C1 simultaneous initiation creates exactly one non-terminal call", async () => {
   const database = requireDisposableDatabase();
@@ -327,10 +341,7 @@ test("C1 simultaneous initiation creates exactly one non-terminal call", async (
     assert.equal(responses.filter((response) => response.statusCode === 409).length, 1);
     const loser = responses.find((response) => response.statusCode === 409);
     assert.ok(loser);
-    assert.equal(
-      (loser.json() as { error: { code: string } }).error.code,
-      "CALL_IN_PROGRESS",
-    );
+    assert.equal((loser.json() as { error: { code: string } }).error.code, "CALL_IN_PROGRESS");
 
     const count = await database.pool.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM call_sessions WHERE partnership_id=$1 AND status <> 'ended'",
@@ -353,23 +364,13 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
     const bobSecond = await login(app, bob, "C1 Bob second device");
     const partnershipId = await formPartnership(app, alice, bob, "race");
 
-    const created = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-race-0001",
-    );
+    const created = await createVoiceCall(app, alice, partnershipId, "c1-create-race-0001");
     assert.equal(created.state, "ringing");
     assert.equal(created.version, 1);
     assert.equal(created.direction, "outgoing");
     assert.equal(created.isThisDeviceSelectedEndpoint, true);
 
-    const replay = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-race-0001",
-    );
+    const replay = await createVoiceCall(app, alice, partnershipId, "c1-create-race-0001");
     assert.equal(replay.id, created.id);
     assert.equal(replay.version, 1);
 
@@ -379,10 +380,7 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
       headers: { cookie: bob.cookie },
     });
     assert.equal(incoming.statusCode, 200, incoming.body);
-    assert.equal(
-      (incoming.json() as { call: CallProjection }).call.direction,
-      "incoming",
-    );
+    assert.equal((incoming.json() as { call: CallProjection }).call.direction, "incoming");
 
     const [first, second] = await Promise.all([
       action(app, bob, created.id, "accept", 1, "c1-accept-first-0001"),
@@ -420,37 +418,15 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
     });
     assert.equal(turnLoser.statusCode, 404, turnLoser.body);
 
-    const callerSignal = await app.injectWS(
-      "/api/v1/calls/" + created.id + "/signal",
-      {
-        headers: {
-          origin: config.appOrigin,
-          cookie: alice.cookie,
-          "sec-websocket-protocol": "shawtie.call.v1",
-        },
-      },
-    );
-    const calleeSignal = await app.injectWS(
-      "/api/v1/calls/" + created.id + "/signal",
-      {
-        headers: {
-          origin: config.appOrigin,
-          cookie: winner.account.cookie,
-          "sec-websocket-protocol": "shawtie.call.v1",
-        },
-      },
-    );
+    const callerConnection = await openSignalingSocket(app, created.id, alice);
+    const calleeConnection = await openSignalingSocket(app, created.id, winner.account);
+    const callerSignal = callerConnection.socket;
+    const calleeSignal = calleeConnection.socket;
     try {
-      const callerReady = await waitForFrame(callerSignal, "control.ready");
-      const calleeReady = await waitForFrame(calleeSignal, "control.ready");
-      assert.equal(
-        (callerReady.payload as { polite: boolean }).polite,
-        false,
-      );
-      assert.equal(
-        (calleeReady.payload as { polite: boolean }).polite,
-        true,
-      );
+      const callerReady = callerConnection.ready;
+      const calleeReady = calleeConnection.ready;
+      assert.equal((callerReady.payload as { polite: boolean }).polite, false);
+      assert.equal((calleeReady.payload as { polite: boolean }).polite, true);
       const peerDescription = waitForFrame(calleeSignal, "signal.description");
       callerSignal.send(
         JSON.stringify({
@@ -465,10 +441,7 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
       );
       const forwarded = await peerDescription;
       assert.equal(forwarded.generation, calleeReady.generation);
-      assert.equal(
-        (forwarded.payload as { descriptionType: string }).descriptionType,
-        "offer",
-      );
+      assert.equal((forwarded.payload as { descriptionType: string }).descriptionType, "offer");
     } finally {
       callerSignal.terminate();
       calleeSignal.terminate();
@@ -494,14 +467,7 @@ test("C1 first-accept-wins, selected signaling, endpoint convergence, TURN, and 
     assert.equal((calleeConnected.json() as CallProjection).state, "connected");
     assert.equal((calleeConnected.json() as CallProjection).version, 3);
 
-    const ended = await action(
-      app,
-      winner.account,
-      created.id,
-      "end",
-      3,
-      "c1-end-race-0001",
-    );
+    const ended = await action(app, winner.account, created.id, "end", 3, "c1-end-race-0001");
     assert.equal(ended.statusCode, 200, ended.body);
     const endedCall = ended.json() as CallProjection;
     assert.equal(endedCall.state, "ended");
@@ -539,12 +505,7 @@ test("C1 call invalidation is delivered to realtime v2 but not M2 v1", async () 
     const alice = await register(app, database, "rt_alice");
     const bob = await register(app, database, "rt_bob");
     const partnershipId = await formPartnership(app, alice, bob, "rt");
-    const created = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-rt-0001",
-    );
+    const created = await createVoiceCall(app, alice, partnershipId, "c1-create-rt-0001");
 
     const v1 = await app.injectWS("/api/v1/realtime", {
       headers: {
@@ -612,12 +573,7 @@ test("C1 signaling fails closed for hostile frames and non-voice media", async (
     const alice = await register(app, database, "signal_alice");
     const bob = await register(app, database, "signal_bob");
     const partnershipId = await formPartnership(app, alice, bob, "signal");
-    const created = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-signal-0001",
-    );
+    const created = await createVoiceCall(app, alice, partnershipId, "c1-create-signal-0001");
     const accepted = await action(
       app,
       bob,
@@ -629,17 +585,9 @@ test("C1 signaling fails closed for hostile frames and non-voice media", async (
     assert.equal(accepted.statusCode, 200, accepted.body);
 
     async function callerSocket(): Promise<{ socket: WebSocket; generation: number }> {
-      const socket = await app.injectWS(
-        "/api/v1/calls/" + created.id + "/signal",
-        {
-          headers: {
-            origin: config.appOrigin,
-            cookie: alice.cookie,
-            "sec-websocket-protocol": "shawtie.call.v1",
-          },
-        },
-      );
-      const ready = await waitForFrame(socket, "control.ready");
+      const connection = await openSignalingSocket(app, created.id, alice);
+      const socket = connection.socket;
+      const ready = connection.ready;
       assert.equal((ready.payload as { polite: boolean }).polite, false);
       return { socket, generation: ready.generation as number };
     }
@@ -724,20 +672,8 @@ test("C1 selected endpoint can fail a call with coarse exact-replay outcome", as
     const alice = await register(app, database, "fail_alice");
     const bob = await register(app, database, "fail_bob");
     const partnershipId = await formPartnership(app, alice, bob, "fail");
-    const created = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-fail-0001",
-    );
-    const accepted = await action(
-      app,
-      bob,
-      created.id,
-      "accept",
-      1,
-      "c1-accept-fail-0001",
-    );
+    const created = await createVoiceCall(app, alice, partnershipId, "c1-create-fail-0001");
+    const accepted = await action(app, bob, created.id, "accept", 1, "c1-accept-fail-0001");
     assert.equal(accepted.statusCode, 200, accepted.body);
 
     const failKey = "c1-fail-network-0001";
@@ -783,12 +719,7 @@ test("C1 logout terminalizes a selected session and removes future call authorit
     const alice = await register(app, database, "logout_alice");
     const bob = await register(app, database, "logout_bob");
     const partnershipId = await formPartnership(app, alice, bob, "logout");
-    const created = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-logout-0001",
-    );
+    const created = await createVoiceCall(app, alice, partnershipId, "c1-create-logout-0001");
     const acceptedResponse = await action(
       app,
       bob,
@@ -836,20 +767,8 @@ test("C1 account-deletion start terminalizes the partnership call before view-on
     const alice = await register(app, database, "delete_alice");
     const bob = await register(app, database, "delete_bob");
     const partnershipId = await formPartnership(app, alice, bob, "delete");
-    const created = await createVoiceCall(
-      app,
-      alice,
-      partnershipId,
-      "c1-create-delete-0001",
-    );
-    const accepted = await action(
-      app,
-      bob,
-      created.id,
-      "accept",
-      1,
-      "c1-accept-delete-0001",
-    );
+    const created = await createVoiceCall(app, alice, partnershipId, "c1-create-delete-0001");
+    const accepted = await action(app, bob, created.id, "accept", 1, "c1-accept-delete-0001");
     assert.equal(accepted.statusCode, 200, accepted.body);
 
     const reauthenticated = await app.inject({
