@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The current verified post-M2 mainline for parallel M3/C1 work is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. The M1/R1 exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and merged, with automated/local closure at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` and all 14 mandatory physical Android scenarios passed at final acceptance SHA `b83102f`. C1 automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`; the documentation-closed C1 branch head is `3483a458af6bc727675f56c6520e2b38dfd7aea2`.
+The current verified post-M2 mainline for parallel M3/C1 work is `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. The M1/R1 exhaustive technical validation anchor remains `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is DONE and merged, with automated/local closure at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` and all 14 mandatory physical Android scenarios passed at final acceptance SHA `b83102f`. C1 automated/local closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`.
 
 Completed milestones:
 

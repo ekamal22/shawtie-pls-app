@@ -350,6 +350,8 @@ PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notificatio
 
 Canonical C1 design: `../architecture/C1_VOICE_CALLING_DESIGN.md`.
 
+C1 automated/local security and integration verification passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. Physical Android/relay-path acceptance and final M3-integrated closure remain open.
+
 - durable call authority remains in PostgreSQL and authenticated HTTP
 - calls never auto-answer and signaling/TURN are unavailable before explicit acceptance
 - M2 v1 remains unchanged; C1 uses negotiated `shawtie.realtime.v2` only for content-free `call.changed` invalidation

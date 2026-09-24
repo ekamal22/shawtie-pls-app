@@ -382,7 +382,7 @@ M1 sequence semantics remain unchanged: `server_sequence` is history order and `
 
 ## C1 voice-calling implementation
 
-The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation is complete on `feat/c1-voice-calling`; automated/local closure, physical Android acceptance, and final M3-integrated migration closure remain open.
+The concrete C1 design and source implementation are defined by `C1_VOICE_CALLING_DESIGN.md`, with API contract `../api/C1_CALLING_API.md` and transient signaling protocol `../api/C1_SIGNALING_PROTOCOL.md`. Source implementation and automated/local closure are complete on `feat/c1-voice-calling`, with canonical local closure at `439b09f`; mandatory physical Android acceptance and final M3-integrated migration closure remain open.
 
 C1 preserves the modular monolith and PostgreSQL authority while adding:
 

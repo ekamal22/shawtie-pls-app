@@ -2,7 +2,7 @@
 
 ## Milestone split
 
-C1 source implementation for voice calling is complete on `feat/c1-voice-calling`; automated/local closure, mandatory physical Android acceptance, and final M3-integrated closure remain open. C1 implements voice calling only.
+C1 source implementation and automated/local closure for voice calling are complete on `feat/c1-voice-calling`; the canonical closure passed at `439b09f551512ea79a16e8f3d047a32b9a722203`. Mandatory physical Android acceptance and final M3-integrated `reserved=0` closure remain open. C1 implements voice calling only.
 
 C2 later adds video on top of the verified C1 call authority, signaling, TURN, push, history, and lifecycle substrate.
 
