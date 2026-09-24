@@ -100,6 +100,12 @@ That wrapper requires the exact `feat/m2-realtime-offline` branch and remote SHA
 
 All 14 mandatory physical Android acceptance scenarios have since executed and passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects not caught by the automated/local closure, each with a focused regression test. M2 is DONE.
 
+## M3 physical closure and C1 dependency status
+
+M3 Media and Voice Messages is DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The canonical automated closure is green and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S at final code SHA `ee59850`.
+
+C1 Voice Calling has separately completed source implementation and automated/local closure on `feat/c1-voice-calling`, canonical closure `439b09f`, documentation head `7b154a1`. Its isolated closure used only the documented M3 migration reservations 0015/0016. C1 must now reconcile onto the real 0015/0016 mainline, pass the canonical 0001-0018 migration chain with `reserved=0`, and then complete mandatory physical Android acceptance.
+
 ## Repository-health policy
 
 `scripts/ci/repository-health.mjs` checks the current repository for:
@@ -243,3 +249,28 @@ PROJECT_STATE and ROADMAP_EPICS must distinguish:
 - GitHub Actions validated
 - integration validated
 - release validated
+
+
+## M3 local closure
+
+M3 source and verification harnesses are implemented on `feat/m3-media-voice`.
+
+Canonical commands:
+
+```text
+npm run test:m3:contracts
+npm run test:m3:storage
+npm run test:m3:storage:integration
+npm run test:m3:browser
+npm run test:m3:browser:e2e
+npm run test:m3:security
+npm run test:m3:postgres
+npm run test:m3:local
+npm run test:m3:closure
+npm run test:m3:device:prepare
+npm run test:m3:device:cleanup
+```
+
+`test:m3:local` provisions disposable PostgreSQL and private MinIO, then runs the M3 PostgreSQL/API/worker, real object-store, and real Chromium layers. `test:m3:closure` additionally enforces branch/SHA parity, `[skip ci]` history, no introduced Unicode em dash, full repository health, high-severity dependency audit, diff hygiene, and clean-worktree status.
+
+`npm run test:m3:closure` was executed and passed at `305891f` (`M3_AUTOMATED_CLOSURE_PASS`: migration plan `count=16 reserved=0`, database invariants, PostgreSQL/API/worker, MinIO storage integration, real Chromium 4/4, full health, `npm audit --audit-level=high` with 0 vulnerabilities, `git diff --check`). After the physical fixes every step passed again. Physical Android acceptance then passed 20/20 (see `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Hosted GitHub Actions verification remains separate under V1 and was not used.

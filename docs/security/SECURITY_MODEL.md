@@ -156,13 +156,19 @@ See `DEVICE_AND_RECOVERY.md`.
 
 ## Media
 
-Client encrypts protected media before upload once E2EE is active.
+M3 requires protected media plaintext to be processed and encrypted on the authorized client before upload. The API and private object store receive ciphertext only.
 
-Object storage remains private.
+M3 does not define the permanent production media-key distribution protocol. S1 owns the reviewed production key envelope, device identity, rotation, enrollment, and recovery. Any M3 pre-S1 crypto adapter is test-only for synthetic fixtures and must be impossible to enable in production.
 
-Media retrieval requires authorized short-lived signed access even though stored objects are ciphertext.
+Object storage remains private. Object keys are random opaque values and must not contain account, partnership, container, relationship text, MIME description, or original filename.
 
-Object keys must not include private filenames or relationship text.
+Every new media download grant requires current authenticated authorization and is deliberately short-lived. A guessed media ID or an old partnership ID is not authorization.
+
+Unbound media is uploader-only. Message-bound media inherits current M1 container visibility. R1-bound media, including Voice Letter, inherits current R1 release/open/reveal visibility.
+
+Signed URLs, media plaintext, object bodies, filenames, ciphertext bodies, and decryption/key material must not enter logs, analytics, durable outbox payloads, or service-worker caches.
+
+Container/lifecycle deletion revokes new media access before asynchronous storage cleanup. Final partnership destruction uses the durable `partnership_media_objects` deletion target.
 
 ## Logging
 
