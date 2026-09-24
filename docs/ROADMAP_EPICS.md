@@ -1758,7 +1758,7 @@ Migration ownership:
 ### C2-A Contracts and compatibility
 
 - [ ] strict create union keeps the existing voice body unchanged and requires `video-v1` for video
-- [ ] dedicated accept schema permits profile and service requires it for video
+- [ ] `accept` is removed from the generic mutation loop and uses dedicated accept schema; reject/cancel/end stay strict C1 version mutations
 - [ ] profile validation happens before idempotency replay and endpoint selection
 - [ ] voice request compatibility remains unchanged
 - [ ] add strict signaling-v2 schemas and exact limits
@@ -1774,7 +1774,7 @@ Migration ownership:
 - [ ] old C1 client cannot win video acceptance
 - [ ] endpoint authorization exposes call kind to signaling
 - [ ] existing `c1.call.*` outbox/deadline identifiers remain unchanged
-- [ ] C2 product flag gates admission only, not already accepted calls
+- [ ] exact flag truth table proves C1 calling gates create, C1 transport gates accept/transport, and C2 video flag gates video admission only
 - [ ] no PostgreSQL migration added without architecture amendment
 
 ### C2-C Signaling v2
@@ -1802,7 +1802,8 @@ Migration ownership:
 - [ ] front/back switch uses replaceTrack path
 - [ ] stale acquisition/switch cannot attach
 - [ ] audio and remote audio path remain C1-derived
-- [ ] remote video rendering is separate from audio
+- [ ] remote video rendering is separate from audio and render failure exposes explicit retry
+- [ ] no application-driven bitrate/stats adaptation is added in C2 v1
 - [ ] no camera metadata leaves client
 
 ### C2-E UI and permission

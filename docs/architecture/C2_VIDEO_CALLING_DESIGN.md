@@ -16,7 +16,7 @@ Verified C1 executable baseline inherited by C2:
 
 `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`
 
-C1 is DONE and merged. C2 may now implement directly on top of the verified call substrate.
+C1 is DONE and merged. C2 source implementation is unblocked and proceeds directly on top of the verified call substrate.
 
 Canonical HTTP/API delta:
 
@@ -319,7 +319,7 @@ For either accept action:
 
 A losing tab/device MUST stop its pre-acquired microphone and MUST NOT request camera.
 
-Camera permission failure after a successful video accept is a local camera failure, not whole-call failure. Audio may continue and durable kind remains `video`.
+Camera permission failure after a successful video accept is a local camera failure, not whole-call failure. Audio continues when its track and peer connection remain healthy, and durable kind remains `video`.
 
 ## 9. Camera privacy state machine
 
@@ -503,7 +503,7 @@ Local preview is:
 
 Separate rendering avoids coupling remote-audio autoplay recovery to remote-video rendering.
 
-If remote video `play()` is blocked or fails, audio remains authoritative and UI may offer **Tap to show video** without a durable call mutation.
+If remote video `play()` is blocked or fails, audio remains authoritative and the UI MUST expose **Tap to show video** retry without a durable call mutation.
 
 ## 15. Remote video availability
 
@@ -551,9 +551,9 @@ Baseline video capture is bounded to 720p and 30 fps.
 
 Browser congestion control remains the primary adaptation mechanism.
 
-A video sender bitrate cap may be attempted through `RTCRtpSender.setParameters()` only after the connection is healthy. Failure to apply the cap is non-fatal and MUST NOT trigger call failure or privacy downgrade.
+C2 v1 does not implement application-driven bitrate adaptation or stats-based quality control. Browser WebRTC congestion control owns adaptation. This keeps the first video milestone out of fragile device-specific tuning and avoids collecting per-user RTP statistics.
 
-Audio continuity has priority over preserving video quality.
+Audio continuity has priority over preserving video quality. A user may explicitly turn camera off when bandwidth is constrained.
 
 On network transition:
 
@@ -600,15 +600,15 @@ Exact behavior:
 | --- | --- | --- | --- |
 | create voice | required | not required until accept | ignored |
 | create video | required | not required until accept | required |
-| accept ringing voice | existing C1 behavior | required | ignored |
-| accept ringing video | existing C1 behavior | required | required |
-| reject/cancel/end/read/history | existing C1 behavior | existing C1 behavior | ignored |
-| signaling/TURN for accepted voice | existing C1 behavior | required | ignored |
-| signaling/TURN for accepted video | existing C1 behavior | required | ignored after acceptance |
+| accept ringing voice | not rechecked after create | required | ignored |
+| accept ringing video | not rechecked after create | required | required |
+| reject/cancel/end/read/history | not required | not required | ignored |
+| signaling/TURN for accepted voice | not required | required | ignored |
+| signaling/TURN for accepted video | not required | required | ignored after acceptance |
 
-If `C2_VIDEO_ENABLED` turns off while a video call is ringing, new acceptance fails closed and the call may still be rejected, cancelled, or expire.
+If `C2_VIDEO_ENABLED` turns off while a video call is ringing, new acceptance fails closed. Reject, cancel and normal ring-timeout behavior remain available.
 
-If it turns off after the call is already accepted/connected, the product flag does not kill the in-flight call. Existing selected endpoints may continue signaling/TURN refresh while `C1_TRANSPORT_ENABLED` remains true.
+If it turns off after the call is already accepted/connected, the product flag does not kill the in-flight call. Existing selected endpoints continue to be eligible for signaling/TURN refresh while `C1_TRANSPORT_ENABLED` remains true and normal authorization still passes.
 
 `C1_TRANSPORT_ENABLED` remains the emergency transport kill switch for both voice and video.
 
@@ -631,7 +631,7 @@ Reuse unchanged:
 
 The historical `c1.` prefixes are stable internal identifiers for the shared call subsystem. Renaming them during C2 would create unnecessary durable compatibility risk and is explicitly out of scope.
 
-The PWA synchronizer key may remain `c1-call` internally; user-visible labels become generic voice/video call language.
+The PWA synchronizer key remains `c1-call` internally for C2 to avoid unnecessary compatibility churn; user-visible labels become generic voice/video call language.
 
 Push stays privacy-minimized. The authenticated canonical fetch reveals `kind = video`.
 
@@ -715,6 +715,11 @@ Files:
 - `apps/api/src/modules/calls/calling-service.ts`
 - `apps/api/src/modules/calls/routes.ts`
 - `packages/db/src/repositories/calls.ts`
+
+Route registration change:
+
+- register `accept` separately with `callAcceptMutationSchema`
+- keep only `reject`, `cancel`, and `end` in the existing generic version-mutation route loop
 
 Implement in this order:
 

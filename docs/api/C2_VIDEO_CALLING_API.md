@@ -69,7 +69,7 @@ Shape:
 }
 ```
 
-`clientMediaProfile` is optional at schema level because voice uses the same route.
+`clientMediaProfile` is optional at schema level because voice uses the same URL. The route itself is registered separately from reject/cancel/end so accept can parse `callAcceptMutationSchema` without widening the other mutation bodies.
 
 Service rules after locking the authoritative call:
 
@@ -104,7 +104,7 @@ It does not block:
 
 The shared `C1_TRANSPORT_ENABLED` flag remains the transport kill switch for accepted voice and video calls.
 
-If C2 is disabled after video acceptance, the in-flight call may finish normally.
+If C2 is disabled after video acceptance, the in-flight call remains eligible to finish normally. Only the shared C1 transport flag, lifecycle/authorization loss, explicit end/failure, or existing timeout policy can terminate/strand transport authority.
 
 ## 5. Call projection
 
@@ -200,15 +200,15 @@ The historical prefix is not renamed during C2.
 
 A stale C1 client:
 
-- may fetch a video projection
-- may display update-required state
-- may reject
-- may let it expire
+- can fetch a video projection
+- can display update-required state
+- can reject
+- can leave the call to expire
 - cannot accept without `video-v1`
 - cannot signal with v1
 - cannot cause server downgrade to voice
 
-Another C2-capable device may still win acceptance.
+Another C2-capable device can still win acceptance while the call remains ringing.
 
 ## 14. Caching and logging
 
@@ -223,4 +223,16 @@ Never cache or routinely log:
 - TURN credentials
 - RTP/video statistics
 
-The coarse `video-v1` token may appear only as bounded compatibility metadata if operational logging explicitly needs it.
+Do not log raw request bodies or `clientMediaProfile`. Operational metrics can count bounded result/error codes without retaining the token.
+
+## 15. Public error matrix
+
+| Condition | Status | Code |
+| --- | ---: | --- |
+| calling subsystem disabled on create | 503 | `CALLING_UNAVAILABLE` |
+| video admission disabled | 409 | `FEATURE_NOT_AVAILABLE` |
+| video create/accept missing compatible profile | 409 | `CALL_MEDIA_PROFILE_UNSUPPORTED` |
+| shared transport disabled on accept/signaling/TURN | 503 | `CALL_TRANSPORT_UNAVAILABLE` |
+| wrong signaling subprotocol for call kind | handshake/upgrade failure or WS 1008 after defense-in-depth check | `CALL_SIGNAL_PROTOCOL_REQUIRED` where HTTP error is available |
+
+Profile errors are checked only after normal authentication and partnership/call scoping, so they do not become a cross-account call-kind oracle.

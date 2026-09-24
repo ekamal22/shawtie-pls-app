@@ -191,7 +191,7 @@ Routine camera operations use its sender:
 
 Routine camera operations must not create another video transceiver.
 
-If browser behavior unexpectedly requires negotiation, reuse the current v2 perfect-negotiation path.
+If a routine `replaceTrack()` causes `negotiationneeded` on a supported browser, the existing v2 perfect-negotiation handler processes it. C2 does not create a camera-specific renegotiation channel.
 
 ## 9. Relay-only privacy
 
@@ -233,7 +233,7 @@ Reconnect:
 - rechecks durable call kind
 - negotiates v2 for video
 - receives a fresh signaling generation
-- may perform relay-only ICE restart
+- signaling reconnect alone does not force ICE restart; relay-only ICE restart occurs only on the existing network-failure or TURN-refresh recovery path
 
 ## 12. Compatibility
 
@@ -258,3 +258,35 @@ Never persist or routinely log:
 - MID values tied to raw candidate evidence
 - TURN credentials
 - raw signaling frames
+
+## 14. Server implementation shape
+
+Do not create a second signaling hub.
+
+Extend the existing connection authorization record with:
+
+```text
+kind: "voice" | "video"
+protocol: "shawtie.call.v1" | "shawtie.call.v2"
+```
+
+The protocol dialect owns only:
+
+- client/server frame parser
+- frame version constant
+- SDP validator
+- candidate payload normalization
+
+Shared hub behavior remains common:
+
+- endpoint/session revalidation
+- one active socket per call/device
+- generation assignment
+- pending-frame buffering
+- candidate count
+- frame rate limit
+- backpressure
+- peer routing
+- supersession
+
+This prevents C2 from duplicating C1 authorization/recovery logic.

@@ -36,7 +36,7 @@ Never commit:
 ### 1. Basic outgoing video call
 
 - explicit Video call action
-- caller microphone may be pre-acquired exactly as C1
+- caller microphone MUST be pre-acquired exactly as C1 before durable create
 - caller camera remains unopened while ringing
 - incoming UI identifies video
 - explicit callee acceptance
@@ -281,11 +281,11 @@ On Redmi:
 ### 34. Two callee devices race to accept video
 
 - both devices receive the ringing video call
-- both may pre-acquire microphone from explicit accept action
+- both explicitly accepting devices MUST pre-acquire microphone before their accept request
 - first committed accept wins
 - losing device stops microphone
 - losing device never requests camera
-- winning device alone may request camera after selected-endpoint/media-owner confirmation
+- winning device alone requests camera after selected-endpoint/media-owner confirmation when Accept video intent remains current
 
 ### 35. Video flag disabled after acceptance
 

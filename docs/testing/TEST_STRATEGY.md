@@ -624,7 +624,7 @@ C2 reuses the verified C1 durable call authority, TURN policy, push substrate, l
 Automated/local coverage must include:
 
 - strict create union preserves the old voice body and requires `video-v1` for video
-- video accept profile is checked before idempotency replay and endpoint selection
+- accept has its own strict schema/route registration and video profile is checked before idempotency replay and endpoint selection
 - old C1 clients cannot accept a video call
 - voice create/accept remains backward compatible
 - wrong signaling subprotocol for durable call kind fails closed
@@ -644,7 +644,8 @@ Automated/local coverage must include:
 - network transition plus relay-only ICE restart
 - signaling reconnect under video
 - breakup, account deletion, endpoint revocation and final dissolution
-- `C2_VIDEO_ENABLED` admission-gate truth table, including accepted video continuity and C1 transport kill-switch behavior
+- exact C1 calling/C1 transport/C2 video flag truth table, including accepted video continuity and transport kill-switch behavior
+- C2 v1 introduces no custom bitrate/stats adaptation
 - no camera labels/device IDs/video frames/SDP/ICE/TURN credentials in first-party durable state or logs
 - migration plan remains real 0001 through 0018 with `reserved=0` unless architecture is explicitly amended
 
