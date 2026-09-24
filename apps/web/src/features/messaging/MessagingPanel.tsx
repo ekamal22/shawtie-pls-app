@@ -764,6 +764,16 @@ export function MessagingPanel() {
         setMediaBusy(true);
         try {
           attachments = await uploadDrafts();
+        } catch (caught) {
+          await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
+          setSendStatus("failed");
+          if (!(caught instanceof ApiClientError)) {
+            setNotice(
+              "Upload did not finish. Your encrypted attachment is saved on this device. Retry when connected.",
+            );
+            return;
+          }
+          throw caught;
         } finally {
           setMediaBusy(false);
         }

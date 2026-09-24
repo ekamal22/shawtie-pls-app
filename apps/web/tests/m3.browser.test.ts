@@ -106,3 +106,23 @@ test("M3 account purge fails closed instead of swallowing media-database deletio
   assert.equal(local.includes("purgeMediaAccountData(accountId).catch"), false);
   assert.equal(mediaLocal.includes("Media database purge is blocked by another tab"), true);
 });
+
+test("M3 voice recorder stops capture when the page is hidden or the microphone track ends", async () => {
+  const recorder = await source("../src/features/media/VoiceRecorder.tsx");
+  assert.equal(recorder.includes('document.addEventListener("visibilitychange"'), true);
+  assert.equal(recorder.includes('window.addEventListener("pagehide"'), true);
+  assert.equal(recorder.includes('document.visibilityState === "hidden"'), true);
+  assert.equal(recorder.includes("track.onended"), true);
+  assert.equal(recorder.includes("Nothing was saved."), true);
+  const interrupt = recorder.slice(recorder.indexOf("function interruptRecording"));
+  assert.equal(interrupt.slice(0, 120).includes("cancelRecording()"), true);
+});
+
+test("M3 chat upload failure refreshes drafts and never leaves a stuck sending state", async () => {
+  const messaging = await source("../src/features/messaging/MessagingPanel.tsx");
+  const start = messaging.indexOf("attachments = await uploadDrafts();");
+  const block = messaging.slice(start, start + 700);
+  assert.equal(block.includes("refreshMediaDrafts(conversation.partnershipId)"), true);
+  assert.equal(block.includes('setSendStatus("failed")'), true);
+  assert.equal(block.includes("saved on this device"), true);
+});

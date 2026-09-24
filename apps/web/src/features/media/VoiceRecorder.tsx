@@ -48,6 +48,30 @@ export function VoiceRecorder({
     setState("idle");
   }
 
+  function interruptRecording(message: string) {
+    cancelRecording();
+    setError(message);
+  }
+
+  // A recording must never keep capturing while the page is hidden (app switch,
+  // screen lock, tab switch). Cleanup is deterministic and nothing is uploaded.
+  useEffect(() => {
+    if (state !== "recording") return undefined;
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") {
+        interruptRecording(
+          "Recording stopped because the app moved to the background. Nothing was saved.",
+        );
+      }
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("pagehide", onHidden);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", onHidden);
+    };
+  }, [state]);
+
   useEffect(
     () => () => {
       if (recorderRef.current && recorderRef.current.state !== "inactive") {
@@ -81,6 +105,13 @@ export function VoiceRecorder({
         if (event.data.size > 0) chunksRef.current.push(event.data);
       };
       recorder.onstop = () => finishStopped(recorder.mimeType);
+      stream.getTracks().forEach((track) => {
+        track.onended = () => {
+          if (recorderRef.current === recorder) {
+            interruptRecording("The microphone was interrupted. Nothing was saved.");
+          }
+        };
+      });
       startedAtRef.current = Date.now();
       recorder.start(1_000);
       setState("recording");
