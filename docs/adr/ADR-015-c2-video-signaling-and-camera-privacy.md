@@ -119,11 +119,11 @@ C2 reserves no migration number.
 
 ## Rollout
 
-1. implement C2 behind `C2_VIDEO_ENABLED`
-2. keep production default off
-3. close automated/local C2 gates with retained C1 closure
-4. close Redmi physical acceptance
-5. only then allow production video enablement
+1. [complete] implement C2 behind `C2_VIDEO_ENABLED`
+2. [complete] keep production default off
+3. [complete] close automated/local C2 gates with retained C1 closure at executable SHA `94e0e93`
+4. [pending] close mandatory Redmi Note 9S physical acceptance
+5. [pending] only then allow production video enablement
 
 ## Rollback
 

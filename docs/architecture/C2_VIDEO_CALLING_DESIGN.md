@@ -697,7 +697,7 @@ Files:
 - `apps/api/src/config.ts`
 - `apps/api/src/application.ts`
 
-Implement:
+Implemented:
 
 - strict voice/video create discriminated union
 - new `callAcceptMutationSchema`
@@ -721,7 +721,7 @@ Route registration change:
 - register `accept` separately with `callAcceptMutationSchema`
 - keep only `reject`, `cancel`, and `end` in the existing generic version-mutation route loop
 
-Implement in this order:
+Implemented in this order:
 
 1. keep C1 voice request path unchanged
 2. validate video feature/profile before idempotency replay
@@ -739,7 +739,7 @@ Files:
 - `apps/api/src/modules/calls/signaling-hub.ts`
 - calling WebSocket route
 
-Implement:
+Implemented:
 
 - one hub, two strict call signaling dialects
 - v1 only for voice
@@ -760,7 +760,7 @@ Files:
 - new `VideoSurface.tsx`
 - browser harness
 
-Implement:
+Implemented:
 
 - microphone pre-acquisition remains C1-derived
 - no camera request while ringing
@@ -784,7 +784,7 @@ Files:
 - styles
 - `vite.config.ts`
 
-Implement:
+Implemented:
 
 - separate Voice call and Video call actions
 - Incoming video call wording
@@ -800,7 +800,7 @@ Implement:
 
 ### C2-F Reliability and security closure
 
-Add:
+Implemented verification coverage:
 
 - exact contract tests
 - profile-before-idempotency tests
@@ -821,7 +821,7 @@ Add:
 
 ### C2-G Automated local closure
 
-Planned commands:
+Implemented commands:
 
 ```text
 npm run test:c2
@@ -869,4 +869,4 @@ C2 is DONE only when:
 - documentation and exact tested SHA are recorded
 - all commits retain `[skip ci]` while hosted Actions capacity is unavailable
 
-Until those gates execute, C2 remains implementation-in-progress even if source code is complete.
+Automated/local closure is complete at executable SHA `94e0e93`. C2 remains IN_PROGRESS only because the mandatory physical Android acceptance gate is still open. The milestone must not be marked DONE or merged until that physical matrix passes and its evidence is reconciled.

@@ -177,3 +177,5 @@ ADR-015 refines the verified C1 call substrate for video without reopening durab
 - relay-only TURN remains mandatory
 - C2 reserves no PostgreSQL migration number
 
+These refinements are implemented on `feat/c2-video-calling`. Automated/local closure passed at executable SHA `94e0e93` with retained C1 verification, C2 focused/API/Chromium coverage, real migrations 0001 through 0018 with `reserved=0`, full repository health, audit, and git hygiene. Mandatory physical Redmi Note 9S acceptance remains the open C2 gate.
+

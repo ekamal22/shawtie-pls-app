@@ -958,7 +958,7 @@ Controls:
 - shared WebSocket negotiation accepts exactly one known application subprotocol
 - realtime and call routes verify the exact negotiated protocol they own
 - M2's 4 KiB application-frame limit remains active even if transport ceiling rises for SDP
-- C1 browser Permissions Policy keeps camera disabled until C2
+- the trusted origin now permits `camera=(self)` for C2, while the C1 voice path never requests camera and C1 signaling still rejects video media
 
 Verification:
 
@@ -1373,7 +1373,7 @@ Evidence:
 
 - audio and video candidate association integration tests
 - malformed/out-of-range locator denial
-- real Chromium and Redmi relay-path evidence
+- automated API/signaling evidence verifies v2 candidate association and relay-only validation; physical Redmi relay-path evidence remains pending
 
 ### C2-T3: Camera activates without current local intent
 
@@ -1391,9 +1391,9 @@ Controls:
 
 Evidence:
 
-- delayed `getUserMedia` stale-completion test
-- background/foreground physical test
-- endpoint revocation race test
+- real-Chromium delayed `getUserMedia` stale-completion test passes in the C2 automated closure
+- background/foreground physical acceptance remains pending
+- endpoint authority/revocation behavior remains part of the mandatory physical matrix
 
 ### C2-T4: Camera switch/on-off leaks tracks or leaves hidden capture
 
@@ -1409,9 +1409,9 @@ Controls:
 
 Evidence:
 
-- track-count instrumentation
-- Android camera indicator/hardware release where observable
-- repeated front/back and on/off stress run
+- automated camera-controller and Chromium stale-track coverage is green
+- Android camera indicator/hardware release remains pending physical evidence
+- repeated front/back and on/off stress remains pending physical evidence
 
 ### C2-T5: Video expansion weakens C1 network privacy
 
@@ -1428,7 +1428,7 @@ Controls:
 
 Evidence:
 
-- voice v1 regression matrix
-- video v2 relay-only negative tests
-- TURN unavailable fail-closed physical test
+- retained C1 voice v1 regression matrix passes in the C2 closure
+- video v2 relay-only negative/API tests pass in the C2 closure
+- TURN/network fail-closed physical confirmation remains pending
 

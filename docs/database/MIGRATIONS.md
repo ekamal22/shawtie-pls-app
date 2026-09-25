@@ -290,7 +290,7 @@ Isolated C1 automated/local closure passed at `439b09f` with only M3-owned 0015/
 
 ## C2 migration position
 
-C2 Video Calling source implementation through `3538228` required no PostgreSQL migration and reserves none. The existing canonical schema already permits `call_type IN ('voice','video')`, and C2 camera/media state remains transient client state. The intended canonical chain therefore remains 0001 through 0018 with `reserved=0`. That chain must be reverified by `npm run test:c2:closure`; no new C2 closure result is claimed until it runs. If implementation evidence later proves a genuinely new durable field is necessary, update architecture and migration ownership before adding the next forward-only migration; do not speculatively reserve `0019`.
+C2 Video Calling required no PostgreSQL migration and reserves none. The canonical automated/local closure passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`, applying real migrations 0001 through 0018 from zero with `reserved=0` and `DATABASE_INVARIANTS_PASS`. The existing schema already permits `call_type IN ('voice','video')`, while C2 camera/media state remains transient client state. If later implementation evidence proves a genuinely new durable field is necessary, update architecture and migration ownership before adding the next forward-only migration; do not speculatively reserve `0019`.
 
 ## M1 and R1 migration ownership
 

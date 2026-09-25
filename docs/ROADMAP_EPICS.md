@@ -1770,86 +1770,88 @@ Migration ownership:
 
 ## Implementation gates
 
+The C2-A through C2-G checkmarks below record implemented source and the green automated/local closure at `94e0e93`. They do not satisfy the separate C2-H physical-device gate.
+
 ### C2-A Contracts and compatibility
 
-- [ ] strict create union keeps the existing voice body unchanged and requires `video-v1` for video
-- [ ] `accept` is removed from the generic mutation loop and uses dedicated accept schema; reject/cancel/end stay strict C1 version mutations
-- [ ] profile validation happens before idempotency replay and endpoint selection
-- [ ] voice request compatibility remains unchanged
-- [ ] add strict signaling-v2 schemas and exact limits
-- [ ] add bounded m-line candidate locator fields
-- [ ] global v2 end-of-candidates payload is fixed as `{}`
-- [ ] add `C2_VIDEO_ENABLED` with production-off/nonproduction-on default
+- [x] strict create union keeps the existing voice body unchanged and requires `video-v1` for video
+- [x] `accept` is removed from the generic mutation loop and uses dedicated accept schema; reject/cancel/end stay strict C1 version mutations
+- [x] profile validation happens before idempotency replay and endpoint selection
+- [x] voice request compatibility remains unchanged
+- [x] add strict signaling-v2 schemas and exact limits
+- [x] add bounded m-line candidate locator fields
+- [x] global v2 end-of-candidates payload is fixed as `{}`
+- [x] add `C2_VIDEO_ENABLED` with production-off/nonproduction-on default
 
 ### C2-B API and authority
 
-- [ ] stop hardcoding voice on create
-- [ ] persist validated video kind through existing repository
-- [ ] require profile before video idempotency replay and endpoint selection
-- [ ] old C1 client cannot win video acceptance
-- [ ] endpoint authorization exposes call kind to signaling
-- [ ] existing `c1.call.*` outbox/deadline identifiers remain unchanged
-- [ ] exact flag truth table proves C1 calling gates create, C1 transport gates accept/transport, and C2 video flag gates video admission only
-- [ ] no PostgreSQL migration added without architecture amendment
+- [x] stop hardcoding voice on create
+- [x] persist validated video kind through existing repository
+- [x] require profile before video idempotency replay and endpoint selection
+- [x] old C1 client cannot win video acceptance
+- [x] endpoint authorization exposes call kind to signaling
+- [x] existing `c1.call.*` outbox/deadline identifiers remain unchanged
+- [x] exact flag truth table proves C1 calling gates create, C1 transport gates accept/transport, and C2 video flag gates video admission only
+- [x] no PostgreSQL migration added without architecture amendment
 
 ### C2-C Signaling v2
 
-- [ ] video requires `shawtie.call.v2`
-- [ ] voice retains `shawtie.call.v1`
-- [ ] wrong subprotocol for call kind fails closed
-- [ ] video SDP exactly audio index 0 then video index 1
-- [ ] application/data channel rejected
-- [ ] candidate-free SDP enforced
-- [ ] v2 candidate locator is exact bounded `sdpMid`/0-or-1 `sdpMLineIndex`
-- [ ] global end-of-candidates maps to `addIceCandidate(null)`
-- [ ] relay-only candidate parser unchanged
-- [ ] generation/backpressure/rate-limit behavior retained
+- [x] video requires `shawtie.call.v2`
+- [x] voice retains `shawtie.call.v1`
+- [x] wrong subprotocol for call kind fails closed
+- [x] video SDP exactly audio index 0 then video index 1
+- [x] application/data channel rejected
+- [x] candidate-free SDP enforced
+- [x] v2 candidate locator is exact bounded `sdpMid`/0-or-1 `sdpMLineIndex`
+- [x] global end-of-candidates maps to `addIceCandidate(null)`
+- [x] relay-only candidate parser unchanged
+- [x] generation/backpressure/rate-limit behavior retained
 
 ### C2-D Browser media engine
 
-- [ ] shared peer controller accepts call kind
-- [ ] video peer uses relay, max-bundle and zero candidate pool
-- [ ] audio is created before one stable video transceiver
-- [ ] no camera is requested while ringing
-- [ ] camera controller is generation-fenced and lease-gated
-- [ ] camera on uses existing sender
-- [ ] camera off detaches/stops track
-- [ ] front/back switch uses replaceTrack path
-- [ ] stale acquisition/switch cannot attach
-- [ ] audio and remote audio path remain C1-derived
-- [ ] remote video rendering is separate from audio and render failure exposes explicit retry
-- [ ] no application-driven bitrate/stats adaptation is added in C2 v1
-- [ ] no camera metadata leaves client
+- [x] shared peer controller accepts call kind
+- [x] video peer uses relay, max-bundle and zero candidate pool
+- [x] audio is created before one stable video transceiver
+- [x] no camera is requested while ringing
+- [x] camera controller is generation-fenced and lease-gated
+- [x] camera on uses existing sender
+- [x] camera off detaches/stops track
+- [x] front/back switch uses replaceTrack path
+- [x] stale acquisition/switch cannot attach
+- [x] audio and remote audio path remain C1-derived
+- [x] remote video rendering is separate from audio and render failure exposes explicit retry
+- [x] no application-driven bitrate/stats adaptation is added in C2 v1
+- [x] no camera metadata leaves client
 
 ### C2-E UI and permission
 
-- [ ] Video call action
-- [ ] Incoming video call wording
-- [ ] Accept video
-- [ ] Accept with camera off
-- [ ] local preview
-- [ ] remote video
-- [ ] camera on/off
-- [ ] camera switch where supported
-- [ ] camera unavailable/retry state
-- [ ] background stop and explicit foreground restart
-- [ ] Permissions Policy is camera self, microphone self
-- [ ] no camera wildcard
+- [x] Video call action
+- [x] Incoming video call wording
+- [x] Accept video
+- [x] Accept with camera off
+- [x] local preview
+- [x] remote video
+- [x] camera on/off
+- [x] camera switch where supported
+- [x] camera unavailable/retry state
+- [x] background stop and explicit foreground restart
+- [x] Permissions Policy is camera self, microphone self
+- [x] no camera wildcard
 
 ### C2-F Reliability/security
 
-- [ ] Wi-Fi/mobile relay-only recovery
-- [ ] TURN UDP plus TCP/TLS fallback
-- [ ] signaling reconnect preserves healthy media
-- [ ] track-ended stays camera-off
-- [ ] multi-tab owner fences camera too
-- [ ] breakup_pending fresh acceptance
-- [ ] account deletion terminates all media
-- [ ] session/device revocation terminates all media
-- [ ] final dissolution terminates all media
-- [ ] transport kill switch remains fail-closed
-- [ ] video feature kill switch leaves voice healthy
-- [ ] server logs/db contain no camera/video-sensitive state
+- [x] Wi-Fi/mobile relay-only recovery
+- [x] TURN UDP plus TCP/TLS fallback
+- [x] signaling reconnect preserves healthy media
+- [x] track-ended stays camera-off
+- [x] multi-tab owner fences camera too
+- [x] breakup_pending fresh acceptance
+- [x] account deletion terminates all media
+- [x] session/device revocation terminates all media
+- [x] final dissolution terminates all media
+- [x] transport kill switch remains fail-closed
+- [x] video feature kill switch leaves voice healthy
+- [x] server logs/db contain no camera/video-sensitive state
 
 ### C2-G Automated closure
 
