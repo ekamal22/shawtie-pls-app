@@ -331,7 +331,11 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
   const canOwnMedia = Boolean(active && call?.isThisDeviceSelectedEndpoint && deviceId);
 
   return (
-    <section className="panel call-panel" aria-live="polite">
+    <section
+      className="panel call-panel"
+      aria-live="polite"
+      data-call-state={call?.state ?? "idle"}
+    >
       <div className="row between call-header">
         <div>
           <h2>Calls</h2>

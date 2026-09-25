@@ -1,25 +1,19 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
-export type ThemeName = "dawn" | "midnight";
-export type ThemePreference = ThemeName | "system";
+import {
+  isThemePreference,
+  resolveTheme,
+  type ThemeName,
+  type ThemePreference,
+} from "./theme-model.ts";
 
 const STORAGE_KEY = "shawtie:theme";
-
-export const THEME_LABELS: Record<ThemePreference, string> = {
-  system: "Follow my phone",
-  dawn: "Dawn",
-  midnight: "Midnight",
-};
-
-function isPreference(value: unknown): value is ThemePreference {
-  return value === "dawn" || value === "midnight" || value === "system";
-}
 
 /** Reads the client-local preference. Never throws (storage may be blocked). */
 export function readThemePreference(): ThemePreference {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return isPreference(stored) ? stored : "system";
+    return isThemePreference(stored) ? stored : "system";
   } catch {
     return "system";
   }
@@ -32,11 +26,6 @@ function writeThemePreference(preference: ThemePreference): void {
   } catch {
     // The preference is a convenience only; the app renders correctly without it.
   }
-}
-
-export function resolveTheme(preference: ThemePreference, systemPrefersDark: boolean): ThemeName {
-  if (preference === "system") return systemPrefersDark ? "midnight" : "dawn";
-  return preference;
 }
 
 const THEME_COLORS: Record<ThemeName, string> = { dawn: "#f6f0e7", midnight: "#15121a" };

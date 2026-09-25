@@ -540,13 +540,15 @@
 
 /* Segmented */
 .ds-segmented {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   padding: 3px;
   border-radius: var(--radius-full);
   background: var(--raised);
 }
 
 .ds-segmented__option {
+  flex: 1;
   min-height: 2.25rem;
   padding: 0 var(--space-4);
   border: 0;
@@ -763,4 +765,13 @@
 .us-section {
   display: grid;
   gap: var(--space-3);
+}
+
+/*
+ * The call panel stays mounted on every route so an incoming call is never missed. While it
+ * is idle it only takes space on Talk; any active, ringing, or ended state shows everywhere.
+ * UX5 replaces this dock with dedicated full-screen call surfaces.
+ */
+.app-shell:not([data-route="talk"]) .call-panel[data-call-state="idle"] {
+  display: none;
 }
