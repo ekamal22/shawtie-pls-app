@@ -75,6 +75,8 @@
     "test:m3:storage:integration": "npm run build --workspace @shawtie/media-storage && node --test packages/media-storage/tests/s3.integration.test.ts",
     "test:m3:browser": "node --test apps/web/tests/m3.browser.test.ts",
     "test:ux1": "node --test apps/web/tests/ux1.design.test.ts",
+    "test:ux4": "node --test apps/web/tests/ux4.ours.test.ts",
+    "test:ux4:browser:e2e": "playwright test --config=playwright.ux4.config.ts",
     "test:ux1:browser:e2e": "playwright test --config=playwright.ux1.config.ts",
     "test:m3:browser:e2e": "playwright test --config=playwright.m3.config.ts",
     "test:m3:install-browser": "playwright install chromium",

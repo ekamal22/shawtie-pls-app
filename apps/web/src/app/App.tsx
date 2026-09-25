@@ -15,7 +15,7 @@ import {
 import { MessagingPanel } from "../features/messaging/MessagingPanel.tsx";
 import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
-import { RelationshipSpacePanel } from "../features/relationship-space/RelationshipSpacePanel.tsx";
+import { OursScreen } from "../features/ours/OursScreen.tsx";
 import { CallingPanel } from "../features/calling/CallingPanel.tsx";
 import { HomeScreen } from "../features/home/HomeScreen.tsx";
 import { THEME_LABELS, type ThemePreference } from "../design/theme-model.ts";
@@ -577,7 +577,7 @@ function AccountScreen({
         <MessagingPanel />
       </RouteView>
       <RouteView active={route === "ours"}>
-        <RelationshipSpacePanel accountId={session.accountId} />
+        <OursScreen accountId={session.accountId} onOpenUs={() => navigate("us")} />
       </RouteView>
       <RouteView active={route === "us"}>
         <section className="panel us-section">
