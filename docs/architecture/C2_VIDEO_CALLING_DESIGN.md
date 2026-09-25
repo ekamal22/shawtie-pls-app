@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN COMPLETE. SOURCE IMPLEMENTATION COMPLETE THROUGH `3538228`. AUTOMATED/LOCAL AND PHYSICAL VERIFICATION PENDING.**
+**DESIGN, SOURCE IMPLEMENTATION, AND AUTOMATED/LOCAL VERIFICATION COMPLETE AT `94e0e93`. PHYSICAL VERIFICATION PENDING.**
 
 Implementation branch:
 
@@ -16,7 +16,7 @@ Verified C1 executable baseline inherited by C2:
 
 `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`
 
-C1 is DONE and merged. C2 source implementation now exists on top of that verified substrate. The branch remains IN_PROGRESS until automated/local closure and the mandatory Redmi Note 9S acceptance matrix pass.
+C1 is DONE and merged. C2 source implementation and automated/local closure are complete on top of that verified substrate at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The branch remains IN_PROGRESS until the mandatory Redmi Note 9S acceptance matrix passes.
 
 Canonical HTTP/API delta:
 
@@ -833,7 +833,7 @@ npm run test:c2:closure
 
 C2 closure MUST run retained C1 closure first or as an integrated dependency.
 
-No migration reservation is permitted.
+No migration reservation is permitted. Canonical closure passed real migrations 0001 through 0018 with `reserved=0` at `94e0e93`, including retained M3 63/63 plus MinIO 1/1 and Chromium 4/4, retained C1 24/24 and integrated 111/111 plus Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit, and git hygiene.
 
 ### C2-H Physical Android closure
 

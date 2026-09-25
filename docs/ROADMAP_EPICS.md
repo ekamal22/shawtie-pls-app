@@ -1701,7 +1701,7 @@ The isolated automated/local closure passed at `439b09f` using only documented 0
 
 # C2: Video Calling
 
-Status: IN_PROGRESS. DESIGN AND SOURCE IMPLEMENTATION COMPLETE THROUGH `3538228`; AUTOMATED/LOCAL CLOSURE AND PHYSICAL REDMI ACCEPTANCE REMAIN OPEN.
+Status: IN_PROGRESS. DESIGN, SOURCE IMPLEMENTATION, AND AUTOMATED/LOCAL CLOSURE COMPLETE AT `94e0e93`; PHYSICAL REDMI ACCEPTANCE REMAINS OPEN.
 
 Branch:
 
@@ -1763,9 +1763,10 @@ Migration ownership:
 - `d20c385`: disposable C2 PostgreSQL/API integration, automated closure wrapper, and Android prepare/cleanup harness
 - `5e3144a`: camera authority-exception cleanup, strict switch-facing behavior and remote track mute/unmute handling
 - `3538228`: operational-control integration coverage and C2 focused build/test command tightening
+- `94e0e93`: lint/format hygiene repair and canonical automated/local closure PASS with `reserved=0`
 - no migration added or reserved
 - C1 voice remains on `shawtie.call.v1`
-- source presence does not close the acceptance gates below; they remain unchecked until executable verification is actually run
+- automated/local closure passed with retained M3 63/63 plus MinIO 1/1 and Chromium 4/4, retained C1 24/24 and integrated 111/111 plus Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit, and git hygiene
 
 ## Implementation gates
 
@@ -1852,16 +1853,16 @@ Migration ownership:
 
 ### C2-G Automated closure
 
-- [ ] C2 focused suites pass
-- [ ] real PostgreSQL/API integration passes
-- [ ] real Chromium camera/signaling harness passes
-- [ ] retained C1 integrated closure passes
-- [ ] migrations 0001-0018 pass with `reserved=0`
-- [ ] repository health passes
-- [ ] high-severity audit passes
-- [ ] git diff/worktree hygiene passes
-- [ ] every C2 commit contains `[skip ci]`
-- [ ] no Unicode em dash introduced
+- [x] C2 focused suites pass
+- [x] real PostgreSQL/API integration passes
+- [x] real Chromium camera/signaling harness passes
+- [x] retained C1 integrated closure passes
+- [x] migrations 0001-0018 pass with `reserved=0`
+- [x] repository health passes
+- [x] high-severity audit passes
+- [x] git diff/worktree hygiene passes
+- [x] every C2 commit contains `[skip ci]`
+- [x] no Unicode em dash introduced
 
 ### C2-H Physical Android
 

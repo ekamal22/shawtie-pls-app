@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for C2 design.
+Accepted and implemented for C2. Automated/local closure passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`; physical Redmi Note 9S acceptance remains pending.
 
 ## Context
 

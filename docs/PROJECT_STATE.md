@@ -130,7 +130,7 @@ Current epic status:
 - M2 Realtime and Offline Reliability: DONE on `feat/m2-realtime-offline`. The canonical automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0` with PostgreSQL/API/worker 100/100, real Chromium 7/7, full health, a zero-vulnerability high-severity audit, and git hygiene green. All 14 mandatory physical Android acceptance scenarios subsequently passed on a physical Xiaomi Redmi Note 9S, final physical acceptance SHA `b83102f`, recorded in `docs/testing/M2_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed seven real M2 defects, each with a focused regression test. M2 is merged to `main` at fast-forward anchor `b6183158dcc916589cef415b42fa9e9d2b8cc2fd`.
 - M3 Media and Voice Messages: DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`; automated closure green and physical Android acceptance 20/20 at final code SHA `ee59850`.
 - C1 Voice Calling: DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. Final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`; `npm run test:c1:closure` re-passed there with `C1_AUTOMATED_INTEGRATED_PASS reserved=0` after the stale media-owner fix. Redmi Note 9S acceptance passed 25/25, and rejected-notification cleanup, stale-owner fencing, and audible bidirectional audio are physically confirmed.
-- C2 Video Calling: IN_PROGRESS on `feat/c2-video-calling`. Source implementation is complete through executable head `35382280fca5e74e06ff7a6937e6b138d4a533cd`. Implemented source includes `video-v1` create/accept compatibility, `C2_VIDEO_ENABLED`, durable `kind=video` persistence through the existing call repository, kind-aware endpoint authorization, shared C1/C2 signaling with video on `shawtie.call.v2`, audio-then-video SDP validation, multi-m-line relay ICE metadata, one stable video transceiver, generation-fenced camera acquisition/on/off/switch, no camera while ringing, hidden-page camera shutdown with no silent restart, separate local/remote video rendering, explicit Accept video / Accept with camera off UI, retained C1 browser behavior, C2 API/PostgreSQL integration coverage, real-Chromium camera-race coverage, integrated closure scripts, and Android prepare/cleanup tooling. No PostgreSQL migration is added or reserved. Automated/local closure has not yet been executed on this source head and mandatory Redmi Note 9S physical acceptance has not yet been executed, so C2 is not DONE or merge-ready.
+- C2 Video Calling: IN_PROGRESS on `feat/c2-video-calling`. Source implementation and automated/local closure are complete at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The canonical closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, zero high-severity vulnerabilities, and git hygiene. No PostgreSQL migration is added or reserved. Mandatory Redmi Note 9S physical acceptance remains pending, so C2 is not DONE or merge-ready.
 - all other pre-release implementation epics not listed above: PLANNED
 
 
@@ -152,7 +152,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
-- `feat/c2-video-calling` -> C2 IN_PROGRESS; source implementation complete through `3538228`; automated/local closure and mandatory Redmi Note 9S acceptance remain pending
+- `feat/c2-video-calling` -> C2 IN_PROGRESS; source implementation and automated/local closure complete at `94e0e93`; mandatory Redmi Note 9S acceptance remains pending; branch is unmerged
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -184,7 +184,7 @@ M2 Realtime and Offline Reliability was created from documentation-correct `main
 4. preserve merged M3 and its real migrations 0015/0016
 5. preserve the final C1 executable baseline and integrated closure at `b29aaa1`, which re-passed real migrations 0001 through 0018 with `reserved=0` after the stale media-owner fix
 6. C1 mandatory physical Android voice-call acceptance on the Redmi Note 9S is complete (25/25); preserve its evidence
-7. run `npm run test:c2:closure` against executable C2 source head `3538228`, fix any defects it exposes, then execute the mandatory Redmi Note 9S matrix before C2 can be marked DONE or merged
+7. preserve C2 automated/local closure at executable SHA `94e0e93`, then execute the mandatory Redmi Note 9S matrix before C2 can be marked DONE or merged
 8. keep V1 hosted verification separate until GitHub Actions capacity returns
 
 ## Deferred heavy feature policy

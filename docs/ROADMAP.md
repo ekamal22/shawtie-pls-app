@@ -63,7 +63,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
 | 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
-| 9 C2 Video Calling | IN_PROGRESS on `feat/c2-video-calling`; source implementation complete through `3538228`, automated/local closure + Redmi acceptance pending | merged C1 | Yes, mandatory |
+| 9 C2 Video Calling | IN_PROGRESS on `feat/c2-video-calling`; source and automated/local closure complete at `94e0e93`; Redmi acceptance pending | merged C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -83,8 +83,8 @@ main @ 5323d7b
            |
            v
       C2 Video
-      design ✅
-      implementation not started
+      automated/local ✅
+      Redmi acceptance pending
 ```
 
 M1 and R1 remain verified and merged behind M2. M2, M3, and C1 are closed milestones. C2 source implementation is complete and is now the active verification frontier.
@@ -92,13 +92,12 @@ M1 and R1 remain verified and merged behind M2. M2, M3, and C1 are closed milest
 Next:
 
 1. preserve verified C1 executable baseline `b29aaa1` and full C1 physical evidence
-2. run C2 automated/local closure against real migrations 0001 through 0018 with `reserved=0`
-3. fix any executable defects discovered by closure and add focused regression coverage
-4. rerun retained C1 closure and C2 Chromium/API/PostgreSQL gates after any executable fix
-5. execute mandatory C2 Redmi Note 9S physical acceptance
-6. reconcile evidence and mark C2 DONE only after all mandatory physical scenarios pass
-7. merge C2 only after closure and device evidence are complete
-8. keep V1 hosted verification separate until Actions capacity returns
+2. preserve C2 automated/local closure at executable SHA `94e0e93` against real migrations 0001 through 0018 with `reserved=0`
+3. execute mandatory C2 Redmi Note 9S physical acceptance
+4. fix any physical defects and rerun affected automated gates
+5. reconcile evidence and mark C2 DONE only after all mandatory physical scenarios pass
+6. merge C2 only after closure and device evidence are complete
+7. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
 
@@ -443,7 +442,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 
 # Milestone 9: C2 Video Calling
 
-Status: IN_PROGRESS on `feat/c2-video-calling`. Source implementation is complete through executable head `3538228`. Automated/local closure and mandatory Redmi Note 9S acceptance remain pending, so the milestone is not DONE or merge-ready.
+Status: IN_PROGRESS on `feat/c2-video-calling`. Source implementation and automated/local closure are complete at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. Mandatory Redmi Note 9S acceptance remains pending, so the milestone is not DONE or merge-ready.
 
 Depends on verified and merged C1.
 

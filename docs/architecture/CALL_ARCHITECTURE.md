@@ -4,7 +4,7 @@
 
 C1 source implementation is complete and fast-forward merged to `main @ d44c595`. The first real-migration integrated closure passed at `9b5c255`; after the stale media-owner fix, the full closure re-passed at `b29aaa1` with `reserved=0`. Redmi Note 9S acceptance passed 25/25 and all focused follow-up evidence, including audible bidirectional audio, is complete. C1 implements voice calling only.
 
-C2 design is complete on `feat/c2-video-calling`. It reuses the verified C1 call authority, TURN, push, history, lifecycle and deletion substrate; voice remains on `shawtie.call.v1`, while video uses `shawtie.call.v2` for multi-m-line ICE association and requires a `video-v1` HTTP compatibility profile.
+C2 design, source implementation, and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. It reuses the verified C1 call authority, TURN, push, history, lifecycle and deletion substrate; voice remains on `shawtie.call.v1`, while video uses `shawtie.call.v2` for multi-m-line ICE association and requires a `video-v1` HTTP compatibility profile. Mandatory Redmi Note 9S physical acceptance remains pending.
 
 Built-in call recording remains deferred beyond stable release.
 

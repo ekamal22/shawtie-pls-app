@@ -88,9 +88,9 @@ The isolated `test:c1:closure` passed at `439b09f` using only the documented 001
 
 ## C2 implementation verification status
 
-C2 source implementation is complete on `feat/c2-video-calling` through executable source head `3538228`. The repository now contains focused C2 contract/security/browser tests, disposable PostgreSQL/API integration coverage, a real-Chromium camera-race harness, `test:c2:local`, `test:c2:closure`, and Android device prepare/cleanup tooling. The C2 closure wrapper rejects migration reservations, requires branch/main parity rules and `[skip ci]`, retains M3/C1 local gates and C1 Chromium coverage, then runs C2 PostgreSQL/API and Chromium coverage plus full health, audit and git hygiene.
+C2 source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The repository contains focused C2 contract/security/browser tests, disposable PostgreSQL/API integration coverage, a real-Chromium camera-race harness, `test:c2:local`, `test:c2:closure`, and Android device prepare/cleanup tooling. The C2 closure wrapper rejects migration reservations, requires branch/main parity rules and `[skip ci]`, retains M3/C1 local gates and C1 Chromium coverage, then runs C2 PostgreSQL/API and Chromium coverage plus full health, audit and git hygiene.
 
-No C2 automated/local closure result is claimed yet, and no C2 physical Redmi acceptance result is claimed yet. C2 remains IN_PROGRESS until both gates are executed successfully.
+The C2 automated/local closure passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`: retained M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 Chromium 4/4, retained C1 focused 24/24, integrated 111/111, C1 Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit with 0 vulnerabilities, and git hygiene. No C2 physical Redmi acceptance result is claimed. C2 remains IN_PROGRESS until that physical gate passes.
 
 ## M2 automated closure status
 
