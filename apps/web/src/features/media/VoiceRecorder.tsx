@@ -1,11 +1,26 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "../../design/primitives.tsx";
+
+function formatElapsed(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  return minutes + ":" + String(seconds % 60).padStart(2, "0");
+}
 
 export function VoiceRecorder({
   disabled,
   onReady,
+  autoStart = false,
+  onIdle,
+  onError,
 }: {
   disabled?: boolean;
   onReady: (blob: Blob, durationSeconds: number) => Promise<void> | void;
+  /** Start capturing as soon as the recorder mounts (Talk opens it from the composer). */
+  autoStart?: boolean;
+  /** Called when the recorder returns to idle after being active (finished, cancelled, or failed). */
+  onIdle?: () => void;
+  /** Called with a plain-language message whenever the recorder surfaces an error. */
+  onError?: (message: string) => void;
 }) {
   const [state, setState] = useState<"idle" | "requesting" | "recording" | "preview" | "sending">(
     "idle",
@@ -21,6 +36,7 @@ export function VoiceRecorder({
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef(0);
   const timerRef = useRef<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   function stopCapture() {
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
@@ -52,6 +68,39 @@ export function VoiceRecorder({
     cancelRecording();
     setError(message);
   }
+
+  const wasActiveRef = useRef(false);
+  useEffect(() => {
+    if (state !== "idle") {
+      wasActiveRef.current = true;
+    } else if (wasActiveRef.current) {
+      wasActiveRef.current = false;
+      onIdle?.();
+    }
+  }, [onIdle, state]);
+
+  useEffect(() => {
+    if (error) onError?.(error);
+  }, [error, onError]);
+
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    void start();
+    // start() is intentionally captured once; it only reads refs and setters.
+  }, [autoStart]);
+
+  // Display-only elapsed clock. The capture and the ten-minute stop live in start().
+  useEffect(() => {
+    if (state !== "recording") return undefined;
+    setElapsedSeconds(0);
+    const tick = window.setInterval(
+      () => setElapsedSeconds(Math.floor((Date.now() - startedAtRef.current) / 1000)),
+      1_000,
+    );
+    return () => window.clearInterval(tick);
+  }, [state]);
 
   // A recording must never keep capturing while the page is hidden (app switch,
   // screen lock, tab switch). Cleanup is deterministic and nothing is uploaded.
@@ -167,48 +216,60 @@ export function VoiceRecorder({
   }
 
   return (
-    <div className="voice-recorder">
+    <div className="voice-recorder talk-voice" data-state={state}>
       {state === "idle" ? (
-        <button
-          type="button"
-          className="secondary compact"
-          disabled={disabled}
-          onClick={() => void start()}
-        >
+        <Button variant="secondary" icon="mic" disabled={disabled} onClick={() => void start()}>
           Record voice
-        </button>
+        </Button>
       ) : null}
-      {state === "requesting" ? <span className="hint">Requesting microphone...</span> : null}
+      {state === "requesting" ? (
+        <span className="hint" role="status">
+          Requesting microphone...
+        </span>
+      ) : null}
       {state === "recording" ? (
         <>
-          <span className="hint">Recording...</span>
-          <button type="button" className="secondary compact" onClick={stop}>
+          <span className="talk-voice__live" role="status">
+            <span className="talk-voice__dot" aria-hidden="true" />
+            Recording {formatElapsed(elapsedSeconds)}
+          </span>
+          <Button variant="primary" onClick={stop}>
             Stop
-          </button>
-          <button type="button" className="link compact" onClick={cancelRecording}>
+          </Button>
+          <Button variant="quiet" onClick={cancelRecording}>
             Cancel
-          </button>
+          </Button>
         </>
       ) : null}
       {state === "preview" && preview ? (
-        <div className="voice-preview">
-          <audio controls preload="metadata" src={preview.url} />
+        <div className="voice-preview talk-voice__preview">
+          <audio controls preload="metadata" src={preview.url} aria-label="Voice message preview" />
           <span className="hint">Preview before sending · {preview.durationSeconds}s</span>
-          <button
-            type="button"
-            className="primary compact"
-            disabled={disabled}
-            onClick={() => void sendPreview()}
-          >
-            Send voice
-          </button>
-          <button type="button" className="link compact" onClick={reset}>
-            Discard
-          </button>
+          <div className="talk-voice__actions">
+            <Button
+              variant="primary"
+              icon="send"
+              disabled={disabled}
+              onClick={() => void sendPreview()}
+            >
+              Send voice
+            </Button>
+            <Button variant="quiet" onClick={reset}>
+              Discard
+            </Button>
+          </div>
         </div>
       ) : null}
-      {state === "sending" ? <span className="hint">Preparing protected voice...</span> : null}
-      {error ? <span className="banner error">{error}</span> : null}
+      {state === "sending" ? (
+        <span className="hint" role="status">
+          Preparing voice message...
+        </span>
+      ) : null}
+      {error ? (
+        <span className="talk-voice__error" role="alert">
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 }
