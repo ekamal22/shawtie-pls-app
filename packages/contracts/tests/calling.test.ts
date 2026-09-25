@@ -96,7 +96,6 @@ test("C1 signaling frames are strict and push payload is generic", () => {
   );
 });
 
-
 test("C2 call contracts preserve voice bodies and gate video with a media profile", () => {
   const partnershipId = "10000000-0000-4000-8000-000000000001";
   assert.equal(C2_VIDEO_MEDIA_PROFILE, "video-v1");

@@ -15,7 +15,10 @@ test("C2 browser keeps camera behind accepted selected media ownership", async (
   assert.equal(panel.includes('pendingCameraIntentRef.current = kind === "video"'), true);
   assert.equal(panel.includes("await media.start();"), true);
   assert.equal(panel.includes("await media.enableCamera();"), true);
-  assert.equal(panel.indexOf("await media.start();") < panel.indexOf("await media.enableCamera();"), true);
+  assert.equal(
+    panel.indexOf("await media.start();") < panel.indexOf("await media.enableCamera();"),
+    true,
+  );
   assert.equal(panel.includes('document.visibilityState === "hidden"'), true);
   assert.equal(panel.includes("pendingCameraIntentRef.current = false"), true);
   assert.equal(panel.includes('document.visibilityState === "visible"'), true);
@@ -47,7 +50,10 @@ test("C2 camera controller owns replacement, switching, background stop and loca
 
   assert.equal(camera.includes("this.sender.replaceTrack(track)"), true);
   assert.equal(camera.includes("this.sender.replaceTrack(null)"), true);
-  assert.equal(camera.includes("exactFacing ? { exact: facingMode } : { ideal: facingMode }"), true);
+  assert.equal(
+    camera.includes("exactFacing ? { exact: facingMode } : { ideal: facingMode }"),
+    true,
+  );
   assert.equal(camera.includes("return this.enable(next, true)"), true);
   assert.equal(camera.includes("async #hasAuthority()"), true);
   assert.equal(camera.includes('error.name !== "OverconstrainedError"'), true);
@@ -71,5 +77,5 @@ test("C2 product UI exposes explicit video consent and camera-off acceptance", a
   assert.equal(panel.includes("Turn camera on"), true);
   assert.equal(panel.includes("Switch camera"), true);
   assert.equal(api.includes("C2_VIDEO_MEDIA_PROFILE"), true);
-  assert.equal(vite.includes('camera=(self), microphone=(self)'), true);
+  assert.equal(vite.includes("camera=(self), microphone=(self)"), true);
 });

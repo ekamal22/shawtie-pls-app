@@ -335,7 +335,9 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
       <div className="row between call-header">
         <div>
           <h2>Calls</h2>
-          <p className="hint">Voice and video use relay-only WebRTC and require an explicit answer.</p>
+          <p className="hint">
+            Voice and video use relay-only WebRTC and require an explicit answer.
+          </p>
         </div>
         {!call || call.state === "ended" ? (
           <div className="row">
@@ -365,7 +367,9 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
 
       {call && call.state !== "ended" ? (
         <div className="stack">
-          {video && active ? <VideoSurface localStream={localVideo} remoteStream={remoteVideo} /> : null}
+          {video && active ? (
+            <VideoSurface localStream={localVideo} remoteStream={remoteVideo} />
+          ) : null}
           <p>
             <strong>
               {ringing
@@ -499,7 +503,9 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
                     <button
                       className="secondary compact"
                       disabled={busy || cameraState === "switching"}
-                      onClick={() => void run(async () => void (await mediaRef.current?.switchCamera()))}
+                      onClick={() =>
+                        void run(async () => void (await mediaRef.current?.switchCamera()))
+                      }
                     >
                       Switch camera
                     </button>
@@ -508,7 +514,9 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
                   <button
                     className="secondary compact"
                     disabled={busy || cameraState === "acquiring"}
-                    onClick={() => void run(async () => void (await mediaRef.current?.enableCamera()))}
+                    onClick={() =>
+                      void run(async () => void (await mediaRef.current?.enableCamera()))
+                    }
                   >
                     Turn camera on
                   </button>

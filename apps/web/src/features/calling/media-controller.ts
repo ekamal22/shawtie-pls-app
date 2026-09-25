@@ -338,8 +338,7 @@ export class CallMediaSession {
     this.#ignoreOffer = false;
     this.#isSettingRemoteAnswerPending = false;
 
-    const protocol =
-      this.#kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL;
+    const protocol = this.#kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL;
     const socket = new WebSocket(websocketUrl(this.callId), protocol);
     this.#socket = socket;
     socket.addEventListener("open", () => {
@@ -451,8 +450,7 @@ export class CallMediaSession {
           ? {
               candidate: frame.payload.candidate,
               sdpMid: "sdpMid" in frame.payload ? frame.payload.sdpMid : null,
-              sdpMLineIndex:
-                "sdpMLineIndex" in frame.payload ? frame.payload.sdpMLineIndex : null,
+              sdpMLineIndex: "sdpMLineIndex" in frame.payload ? frame.payload.sdpMLineIndex : null,
             }
           : { candidate: frame.payload.candidate, sdpMLineIndex: 0 };
       if (this.#peer.remoteDescription) {
@@ -559,10 +557,7 @@ export class CallMediaSession {
 
   #send(
     type:
-      | "signal.description"
-      | "signal.ice_candidate"
-      | "signal.end_of_candidates"
-      | "signal.restart",
+      "signal.description" | "signal.ice_candidate" | "signal.end_of_candidates" | "signal.restart",
     payload: Record<string, unknown>,
   ): void {
     const socket = this.#socket;
@@ -576,10 +571,7 @@ export class CallMediaSession {
     }
     socket.send(
       JSON.stringify({
-        v:
-          this.#kind === "video"
-            ? C2_SIGNALING_PROTOCOL_VERSION
-            : C1_SIGNALING_PROTOCOL_VERSION,
+        v: this.#kind === "video" ? C2_SIGNALING_PROTOCOL_VERSION : C1_SIGNALING_PROTOCOL_VERSION,
         type,
         generation: this.#signalingGeneration,
         payload,

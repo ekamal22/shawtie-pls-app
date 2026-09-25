@@ -49,7 +49,6 @@ test("C2 registers signaling v2 globally without replacing C1 v1", async () => {
   assert.equal(application.includes("C2_SIGNALING_MAX_FRAME_BYTES"), true);
 });
 
-
 test("C2 video SDP validator requires audio then video and remains candidate-free", () => {
   assert.equal(
     validateVideoCallDescription(

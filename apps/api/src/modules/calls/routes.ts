@@ -250,8 +250,7 @@ export function registerCallingRoutes(app: FastifyInstance, deps: Dependencies):
         const offered = offeredProtocols(request);
         if (
           offered.length !== 1 ||
-          (offered[0] !== C1_SIGNALING_SUBPROTOCOL &&
-            offered[0] !== C2_SIGNALING_SUBPROTOCOL)
+          (offered[0] !== C1_SIGNALING_SUBPROTOCOL && offered[0] !== C2_SIGNALING_SUBPROTOCOL)
         ) {
           throw new ApiError(400, "CALL_SIGNAL_PROTOCOL_REQUIRED");
         }

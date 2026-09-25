@@ -328,9 +328,9 @@ test("C2 video admission, stale-client fencing, v2 signaling and relay ICE work 
           payload: {
             descriptionType: "offer",
             sdp:
-              "v=0\r\n"
-              + "m=audio 9 UDP/TLS/RTP/SAVPF 111\r\n"
-              + "m=video 9 UDP/TLS/RTP/SAVPF 96\r\n",
+              "v=0\r\n" +
+              "m=audio 9 UDP/TLS/RTP/SAVPF 111\r\n" +
+              "m=video 9 UDP/TLS/RTP/SAVPF 96\r\n",
           },
         }),
       );
@@ -440,7 +440,10 @@ test("C2 video admission flag blocks ringing acceptance without affecting voice 
         },
       });
       assert.equal(accept.statusCode, 409, accept.body);
-      assert.equal((accept.json() as { error: { code: string } }).error.code, "FEATURE_NOT_AVAILABLE");
+      assert.equal(
+        (accept.json() as { error: { code: string } }).error.code,
+        "FEATURE_NOT_AVAILABLE",
+      );
     } finally {
       mutableCalling.videoEnabled = true;
     }

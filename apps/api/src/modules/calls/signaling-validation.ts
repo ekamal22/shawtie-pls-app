@@ -11,9 +11,7 @@ export function validateVideoCallDescription(sdp: string): boolean {
   if (lines.some((line) => /^a=(candidate:|end-of-candidates)/i.test(line))) return false;
   const media = lines.filter((line) => line.startsWith("m="));
   return (
-    media.length === 2 &&
-    /^m=audio\s/i.test(media[0] ?? "") &&
-    /^m=video\s/i.test(media[1] ?? "")
+    media.length === 2 && /^m=audio\s/i.test(media[0] ?? "") && /^m=video\s/i.test(media[1] ?? "")
   );
 }
 

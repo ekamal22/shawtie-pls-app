@@ -31,7 +31,10 @@ test("C1 browser keeps one local media owner and preserves the relay-only voice 
   assert.equal(lease.includes("navigator as Navigator"), true);
   assert.equal(media.includes('iceTransportPolicy: "relay"'), true);
   assert.equal(media.includes("getAudioTracks"), true);
-  assert.equal(media.includes('this.#kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL'), true);
+  assert.equal(
+    media.includes('this.#kind === "video" ? C2_SIGNALING_SUBPROTOCOL : C1_SIGNALING_SUBPROTOCOL'),
+    true,
+  );
   assert.equal(media.includes("stripCandidates"), true);
   assert.equal(media.includes("/\\btyp relay\\b/i"), true);
   assert.equal(media.includes("reportEndpointConnected"), true);

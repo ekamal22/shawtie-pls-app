@@ -10,7 +10,11 @@ export const C2_SIGNALING_MAX_CANDIDATES = 256;
 const generation = z.number().int().safe().positive();
 const sdp = z.string().min(1).max(C2_SIGNALING_MAX_SDP_BYTES);
 const candidate = z.string().min(1).max(C2_SIGNALING_MAX_CANDIDATE_BYTES);
-const sdpMid = z.string().min(1).max(32).regex(/^[A-Za-z0-9_.-]+$/);
+const sdpMid = z
+  .string()
+  .min(1)
+  .max(32)
+  .regex(/^[A-Za-z0-9_.-]+$/);
 const sdpMLineIndex = z.union([z.literal(0), z.literal(1)]);
 
 function frame<T extends string, S extends z.ZodTypeAny>(type: T, payload: S) {
@@ -45,10 +49,7 @@ export const c2SignalDescriptionSchema = frame(
   z.object({ descriptionType: z.enum(["offer", "answer"]), sdp }).strict(),
 );
 export const c2SignalCandidateSchema = frame("signal.ice_candidate", candidatePayload);
-export const c2SignalEndCandidatesSchema = frame(
-  "signal.end_of_candidates",
-  z.object({}).strict(),
-);
+export const c2SignalEndCandidatesSchema = frame("signal.end_of_candidates", z.object({}).strict());
 export const c2SignalRestartSchema = frame("signal.restart", z.object({}).strict());
 export const c2SignalReadySchema = frame(
   "control.ready",
