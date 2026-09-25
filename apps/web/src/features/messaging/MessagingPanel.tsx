@@ -176,8 +176,11 @@ interface PendingSend {
   readonly draftIds: readonly string[];
 }
 
-export function MessagingPanel() {
+export function MessagingPanel({ active = true }: { readonly active?: boolean } = {}) {
   const runtime = useM2Runtime();
+  // Talk stays mounted while Home or Ours is showing so delivery, sync, and typing keep working.
+  // A message is only READ when Talk is the visible route, so the receipt code reads this ref.
+  const activeRef = useRef(active);
   const syncStatus = useM2SyncStatus();
   const [conversation, setConversation] = useState<ConversationSummary | null | undefined>(
     undefined,
@@ -386,7 +389,8 @@ export function MessagingPanel() {
         partnershipId: summary.partnershipId,
         conversationId: summary.conversationId,
         deliveredThrough: throughSequence,
-        readThrough: document.visibilityState === "visible" ? throughSequence : 0,
+        readThrough:
+          document.visibilityState === "visible" && activeRef.current ? throughSequence : 0,
       });
 
       const deliveredThrough = Math.max(throughSequence, pending?.pendingDeliveredThrough ?? 0);
@@ -611,6 +615,17 @@ export function MessagingPanel() {
     },
     [loadInitial],
   );
+
+  // Entering Talk acknowledges what is now actually visible. Leaving it stops read
+  // acknowledgment until Talk is opened again; delivered receipts are unaffected.
+  useEffect(() => {
+    const becameActive = active && !activeRef.current;
+    activeRef.current = active;
+    if (becameActive && conversation) {
+      void syncChanges().catch((caught) => void handleSyncFailure(caught));
+    }
+    // Only a change of `active` re-evaluates; sync dependencies are read at call time.
+  }, [active]);
 
   useEffect(() => {
     void loadInitial().catch((caught) => setError(errorText(caught)));

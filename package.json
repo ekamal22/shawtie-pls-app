@@ -76,6 +76,7 @@
     "test:m3:browser": "node --test apps/web/tests/m3.browser.test.ts",
     "test:ux1": "node --test apps/web/tests/ux1.design.test.ts",
     "test:ux1:browser:e2e": "playwright test --config=playwright.ux1.config.ts",
+    "test:ux3:browser:e2e": "playwright test --config=playwright.ux3.config.ts",
     "test:m3:browser:e2e": "playwright test --config=playwright.m3.config.ts",
     "test:m3:install-browser": "playwright install chromium",
     "test:m3:security": "npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/media-storage && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && npm run build --workspace @shawtie/web && npm run test:m3:contracts && npm run test:m3:storage && npm run test:m3:browser && node --test apps/api/tests/m3.security.test.ts",
