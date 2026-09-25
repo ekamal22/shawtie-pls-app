@@ -1,0 +1,228 @@
+/*
+ * Shawtie pls design tokens (UX1). Owned by the UX lead.
+ * Two themes: Dawn (light, default) and Midnight (dark). Role names are frozen;
+ * values may be tuned only with the contrast test in apps/web/tests/ux1.design.test.ts.
+ * Surface agents consume these variables and must not add global colors.
+ */
+
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/fraunces/opsz.css";
+@import "@fontsource-variable/fraunces/opsz-italic.css";
+
+:root,
+:root[data-theme="dawn"] {
+  color-scheme: light;
+  --room: #f6f0e7;
+  --surface: #fffbf5;
+  --surface-2: #f8f2e9;
+  --raised: #efe6da;
+  --mine: #ebd3cf;
+  --paper: #fffdf8;
+  --glass: rgb(255 251 245 / 78%);
+  --glass-line: rgb(42 34 41 / 18%);
+  --ink: #2a2229;
+  --ink-2: #665a5f;
+  --ink-3: #7d7175;
+  --ink-onpaper: #2e2528;
+  --rose: #9e4f55;
+  --accent-fill: #8b3f47;
+  --accent-text: #8b3f47;
+  --on-accent: #fffbf5;
+  --candle: #9a6a2a;
+  --candle-fill: #e0b676;
+  --accept: #3f6b4e;
+  --accept-text: #2f5a3e;
+  --accept-wash: #e7f1e8;
+  --end: #a8322e;
+  --on-end: #ffffff;
+  --end-text: #8f2622;
+  --end-wash: #fbe9e6;
+  --end-line: #e4b4ae;
+  --caution: #8a5a12;
+  --caution-wash: #f8ecd2;
+  --focus: #1f5f8b;
+  --line: rgb(42 34 41 / 14%);
+  --line-strong: rgb(42 34 41 / 30%);
+  --shadow-ink: rgb(60 40 30 / 8%);
+  --shadow-strong: rgb(60 40 30 / 22%);
+  --video-bg: #15121a;
+  --video-tile: #28232f;
+  --video-ink: #d9d0c6;
+  --scrim: rgb(21 18 26 / 45%);
+}
+
+:root[data-theme="midnight"],
+.force-midnight {
+  color-scheme: dark;
+  --room: #15121a;
+  --surface: #1e1a24;
+  --surface-2: #1a1720;
+  --raised: #28232f;
+  --mine: #432b34;
+  --paper: #f1e8da;
+  --glass: rgb(21 18 26 / 62%);
+  --glass-line: rgb(242 234 223 / 22%);
+  --ink: #f2eadf;
+  --ink-2: #b9afa6;
+  --ink-3: #9a908c;
+  --ink-onpaper: #2e2528;
+  --rose: #d48e8b;
+  --accent-fill: #b96a6c;
+  --accent-text: #e2a3a0;
+  --on-accent: #1a1216;
+  --candle: #e6be84;
+  --candle-fill: #e6be84;
+  --accept: #8fb39a;
+  --accept-text: #9cc4a8;
+  --accept-wash: #1f2c25;
+  --end: #d0605a;
+  --on-end: #1a1216;
+  --end-text: #f09a94;
+  --end-wash: #34201f;
+  --end-line: #6b3a37;
+  --caution: #d9a55b;
+  --caution-wash: #33291a;
+  --focus: #8fc4ee;
+  --line: rgb(242 234 223 / 12%);
+  --line-strong: rgb(242 234 223 / 30%);
+  --shadow-ink: rgb(0 0 0 / 30%);
+  --shadow-strong: rgb(0 0 0 / 55%);
+  --video-bg: #0d0b11;
+  --video-tile: #28232f;
+  --video-ink: #d9d0c6;
+  --scrim: rgb(0 0 0 / 55%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --room: #15121a;
+    --surface: #1e1a24;
+    --surface-2: #1a1720;
+    --raised: #28232f;
+    --mine: #432b34;
+    --paper: #f1e8da;
+    --glass: rgb(21 18 26 / 62%);
+    --glass-line: rgb(242 234 223 / 22%);
+    --ink: #f2eadf;
+    --ink-2: #b9afa6;
+    --ink-3: #9a908c;
+    --ink-onpaper: #2e2528;
+    --rose: #d48e8b;
+    --accent-fill: #b96a6c;
+    --accent-text: #e2a3a0;
+    --on-accent: #1a1216;
+    --candle: #e6be84;
+    --candle-fill: #e6be84;
+    --accept: #8fb39a;
+    --accept-text: #9cc4a8;
+    --accept-wash: #1f2c25;
+    --end: #d0605a;
+    --on-end: #1a1216;
+    --end-text: #f09a94;
+    --end-wash: #34201f;
+    --end-line: #6b3a37;
+    --caution: #d9a55b;
+    --caution-wash: #33291a;
+    --focus: #8fc4ee;
+    --line: rgb(242 234 223 / 12%);
+    --line-strong: rgb(242 234 223 / 30%);
+    --shadow-ink: rgb(0 0 0 / 30%);
+    --shadow-strong: rgb(0 0 0 / 55%);
+    --video-bg: #0d0b11;
+    --video-tile: #28232f;
+    --video-ink: #d9d0c6;
+    --scrim: rgb(0 0 0 / 55%);
+  }
+}
+
+:root {
+  /* Type families: UI sans and editorial serif with system fallbacks. */
+  --font-ui:
+    "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-editorial:
+    "Fraunces Variable", Fraunces, ui-serif, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+
+  /* Type roles (size / line). Editorial roles use --font-editorial. */
+  --type-display: 2rem;
+  --type-display-lh: 2.375rem;
+  --type-section: 1.375rem;
+  --type-section-lh: 1.75rem;
+  --type-date: 1.75rem;
+  --type-date-lh: 2rem;
+  --type-letter: 1.125rem;
+  --type-letter-lh: 1.8125rem;
+  --type-quote: 1.25rem;
+  --type-quote-lh: 1.875rem;
+  --type-ui-title: 1.0625rem;
+  --type-ui-title-lh: 1.375rem;
+  --type-message: 1rem;
+  --type-message-lh: 1.375rem;
+  --type-body: 0.9375rem;
+  --type-body-lh: 1.3125rem;
+  --type-meta: 0.75rem;
+  --type-meta-lh: 1rem;
+  --type-call-label: 0.8125rem;
+  --type-call-label-lh: 1.125rem;
+  --measure-letter: 64ch;
+
+  /* Spacing (4px base). */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --gutter: 1rem;
+
+  /* Radii. */
+  --radius-xs: 6px;
+  --radius-s: 12px;
+  --radius-m: 20px;
+  --radius-l: 28px;
+  --radius-full: 999px;
+
+  /* Layout. */
+  --content-max: 40rem;
+  --nav-height: 3.5rem;
+  --header-height: 3.25rem;
+  --tap: 2.75rem;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Motion vocabulary. */
+  --ease-settle: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-unfold: cubic-bezier(0.3, 0, 0.1, 1);
+  --dur-instant: 120ms;
+  --dur-quick: 200ms;
+  --dur-move: 320ms;
+  --dur-reveal: 480ms;
+  --dur-moment: 800ms;
+  --dur-breath: 2400ms;
+}
+
+@media (min-width: 400px) {
+  :root {
+    --gutter: 1.25rem;
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --tap: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-quick: 120ms;
+    --dur-move: 120ms;
+    --dur-reveal: 120ms;
+    --dur-moment: 120ms;
+    --dur-breath: 120ms;
+  }
+}

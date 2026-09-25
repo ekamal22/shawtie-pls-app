@@ -1,10 +1,10 @@
-:root {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  color: #201c24;
-  background: #f6f3f7;
+html {
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--room);
   font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 * {
@@ -15,6 +15,11 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--room);
+  color: var(--ink);
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
 }
 
 button,
@@ -67,18 +72,18 @@ button:disabled {
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: #2d2431;
-  color: white;
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font-weight: 800;
   font-size: 22px;
 }
 
 .panel {
-  background: white;
-  border: 1px solid #e5dfe8;
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 18px;
-  box-shadow: 0 8px 28px rgb(43 31 48 / 6%);
+  box-shadow: 0 8px 28px var(--shadow-ink);
 }
 
 .stack {
@@ -96,15 +101,15 @@ button:disabled {
 .field input {
   width: 100%;
   min-height: 44px;
-  border: 1px solid #cfc5d3;
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 12px;
-  color: #201c24;
-  background: #fff;
+  color: var(--ink);
+  background: var(--surface-2);
 }
 
 .field input:focus {
-  outline: 2px solid #6b5873;
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
@@ -121,23 +126,23 @@ button:disabled {
 }
 
 .primary {
-  background: #2d2431;
-  color: white;
+  background: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 .secondary {
-  background: #eee8f0;
-  color: #2d2431;
+  background: var(--raised);
+  color: var(--ink);
 }
 
 .danger {
-  background: #8b2937;
-  color: white;
+  background: var(--end);
+  color: var(--on-accent);
 }
 
 .link {
   background: transparent;
-  color: #5a4162;
+  color: var(--accent-text);
   padding-inline: 4px;
   text-align: left;
 }
@@ -155,13 +160,13 @@ button:disabled {
 }
 
 .tabs button {
-  background: #f3eef4;
-  color: #695b6e;
+  background: var(--raised);
+  color: var(--ink-2);
 }
 
 .tabs button.active {
-  background: #2d2431;
-  color: white;
+  background: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 .banner {
@@ -170,18 +175,18 @@ button:disabled {
 }
 
 .banner.error {
-  background: #fff0f1;
-  color: #7b1e2a;
+  background: var(--end-wash);
+  color: var(--end-text);
 }
 
 .banner.success {
-  background: #eff8ef;
-  color: #285b2f;
+  background: var(--accept-wash);
+  color: var(--accept-text);
 }
 
 .hint,
 .muted {
-  color: #726775;
+  color: var(--ink-2);
   font-size: 13px;
 }
 
@@ -198,7 +203,7 @@ button:disabled {
 }
 
 .topbar span {
-  color: #726775;
+  color: var(--ink-2);
 }
 
 .two-column {
@@ -216,7 +221,7 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid #eee8f0;
+  border-top: 1px solid var(--line);
   padding-top: 12px;
 }
 
@@ -233,14 +238,14 @@ button:disabled {
   margin-left: 8px;
   border-radius: 999px;
   padding: 3px 7px;
-  background: #eee8f0;
-  color: #5a4162;
+  background: var(--raised);
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 700;
 }
 
 .danger-zone {
-  border-color: #efc8cd;
+  border-color: var(--end-line);
 }
 
 @media (min-width: 680px) {
@@ -252,7 +257,6 @@ button:disabled {
     grid-template-columns: 1fr 1fr;
   }
 }
-
 
 .partner-grid {
   display: grid;
@@ -267,7 +271,7 @@ button:disabled {
 .profile-card,
 .request-card {
   margin-top: 14px;
-  border: 1px solid #e5dfe8;
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 14px;
 }
@@ -297,14 +301,13 @@ button:disabled {
   }
 }
 
-
 .lifecycle-card {
   display: grid;
   gap: 10px;
-  border: 1px solid #d8c9dd;
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 14px;
-  background: #faf7fb;
+  background: var(--surface-2);
 }
 
 .lifecycle-card p {
@@ -312,11 +315,10 @@ button:disabled {
 }
 
 .danger-zone-inline {
-  border-top: 1px solid #efc8cd;
+  border-top: 1px solid var(--end-line);
   padding-top: 14px;
   margin-top: 4px;
 }
-
 
 .messaging-panel {
   display: grid;
@@ -336,8 +338,8 @@ button:disabled {
 }
 
 .nickname-settings {
-  border-top: 1px solid #eee8f0;
-  border-bottom: 1px solid #eee8f0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   padding: 10px 0;
 }
 
@@ -357,15 +359,15 @@ button:disabled {
 
 .message-bubble {
   width: min(86%, 520px);
-  border: 1px solid #e5dfe8;
+  border: 1px solid var(--line);
   border-radius: 16px;
   padding: 10px 12px;
-  background: #f8f5f9;
+  background: var(--surface-2);
 }
 
 .message-own {
   justify-self: end;
-  background: #eee8f0;
+  background: var(--raised);
 }
 
 .message-partner {
@@ -377,7 +379,7 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   font-size: 11px;
-  color: #726775;
+  color: var(--ink-2);
 }
 
 .message-bubble p {
@@ -388,24 +390,24 @@ button:disabled {
 
 .message-deleted {
   font-style: italic;
-  color: #726775;
+  color: var(--ink-2);
 }
 
 .message-edited,
 .message-delivery {
   display: block;
-  color: #726775;
+  color: var(--ink-2);
   font-size: 11px;
   text-align: right;
 }
 
 .reply-context {
   margin-top: 8px;
-  border-left: 3px solid #9c8aa4;
+  border-left: 3px solid var(--ink-2);
   padding: 6px 8px;
-  background: rgb(255 255 255 / 65%);
+  background: var(--glass);
   border-radius: 8px;
-  color: #5f5363;
+  color: var(--ink-2);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -425,22 +427,22 @@ button:disabled {
 
 .reaction-list span {
   border-radius: 999px;
-  background: white;
+  background: var(--surface);
   padding: 3px 7px;
-  border: 1px solid #ddd3e1;
+  border: 1px solid var(--line);
 }
 
 .reaction-picker button {
   min-width: 32px;
   min-height: 30px;
-  border: 1px solid #ddd3e1;
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: white;
+  background: var(--surface);
 }
 
 .reaction-picker button.active {
-  border-color: #5a4162;
-  background: #e8dfea;
+  border-color: var(--accent-text);
+  background: var(--raised);
 }
 
 .message-composer {
@@ -452,22 +454,22 @@ button:disabled {
   width: 100%;
   resize: vertical;
   min-height: 76px;
-  border: 1px solid #cfc5d3;
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 12px;
-  color: #201c24;
-  background: white;
+  color: var(--ink);
+  background: var(--surface);
 }
 
 .message-composer textarea:focus {
-  outline: 2px solid #6b5873;
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
 }
 
 .replying-banner {
   border-radius: 12px;
   padding: 8px 10px;
-  background: #f3eef4;
+  background: var(--raised);
   font-size: 13px;
 }
 
@@ -489,7 +491,7 @@ button:disabled {
 
 .relationship-kicker {
   display: block;
-  color: #7a667f;
+  color: var(--ink-2);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -498,16 +500,16 @@ button:disabled {
 
 .relationship-anniversary {
   min-width: 116px;
-  border: 1px solid #e4d9e7;
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 10px 12px;
-  background: #faf7fb;
+  background: var(--surface-2);
   text-align: right;
 }
 
 .relationship-anniversary span {
   display: block;
-  color: #7a667f;
+  color: var(--ink-2);
   font-size: 11px;
 }
 
@@ -521,10 +523,10 @@ button:disabled {
   display: grid;
   gap: 3px;
   margin: 12px 0;
-  border: 1px solid #d8c9dd;
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 13px 14px;
-  background: #f8f3f9;
+  background: var(--surface-2);
 }
 
 .relationship-section {
@@ -549,14 +551,14 @@ button:disabled {
   min-height: 34px;
   border-radius: 999px;
   padding: 7px 11px;
-  background: #f2edf3;
-  color: #625468;
+  background: var(--surface-2);
+  color: var(--ink-2);
   font-size: 12px;
 }
 
 .relationship-filter-strip button.active {
-  background: #2d2431;
-  color: white;
+  background: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 .relationship-card-grid {
@@ -567,10 +569,10 @@ button:disabled {
 .relationship-item-card {
   display: grid;
   gap: 9px;
-  border: 1px solid #e5dfe8;
+  border: 1px solid var(--line);
   border-radius: 15px;
   padding: 13px;
-  background: #fff;
+  background: var(--surface-2);
 }
 
 .relationship-item-card__top {
@@ -596,11 +598,11 @@ button:disabled {
 .relationship-lock {
   border-radius: 11px;
   padding: 9px 10px;
-  background: #f5f0f6;
+  background: var(--surface-2);
 }
 
 .relationship-lock > span {
-  color: #6f5b75;
+  color: var(--ink-2);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -619,13 +621,13 @@ button:disabled {
 }
 
 .relationship-inline-editor {
-  border-top: 1px solid #eee8f0;
+  border-top: 1px solid var(--line);
   padding-top: 10px;
 }
 
 .relationship-create {
   margin-top: 22px;
-  border-top: 1px solid #e5dfe8;
+  border-top: 1px solid var(--line);
   padding-top: 18px;
 }
 
@@ -649,20 +651,20 @@ button:disabled {
   display: grid;
   gap: 12px;
   margin-top: 12px;
-  border: 1px solid #d8c9dd;
+  border: 1px solid var(--line);
   border-radius: 15px;
   padding: 13px;
-  background: #faf7fb;
+  background: var(--surface-2);
 }
 
 .field select,
 .field textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d8d0dc;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: white;
-  color: #2d2431;
+  background: var(--surface);
+  color: var(--ink);
   font: inherit;
   padding: 10px 11px;
 }
@@ -685,7 +687,6 @@ button:disabled {
   }
 }
 
-
 .relationship-sequence {
   display: grid;
   gap: 7px;
@@ -705,10 +706,10 @@ button:disabled {
 
 .relationship-reunion-editor input[type="date"] {
   min-height: 36px;
-  border: 1px solid #d8d0dc;
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: white;
-  color: #2d2431;
+  background: var(--surface);
+  color: var(--ink);
   font: inherit;
   padding: 6px 9px;
 }
@@ -718,10 +719,10 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border: 1px solid #e5dfe8;
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 11px;
-  background: white;
+  background: var(--surface);
 }
 
 .relationship-curation-toolbar p {
@@ -738,7 +739,7 @@ button:disabled {
   align-items: center;
   gap: 8px;
   width: fit-content;
-  color: #625468;
+  color: var(--ink-2);
   font-size: 12px;
   font-weight: 700;
 }
@@ -749,7 +750,6 @@ button:disabled {
   margin: 0;
 }
 
-
 .relationship-schedule-editor {
   display: grid;
   gap: 7px;
@@ -759,14 +759,13 @@ button:disabled {
 .relationship-schedule-editor input[type="datetime-local"] {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d8d0dc;
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: white;
-  color: #2d2431;
+  background: var(--surface);
+  color: var(--ink);
   font: inherit;
   padding: 7px 9px;
 }
-
 
 .message-media-list,
 .relationship-media-list,
@@ -780,10 +779,10 @@ button:disabled {
 .media-unavailable,
 .media-file,
 .media-draft-chip {
-  border: 1px solid #ddd3e1;
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 9px 10px;
-  background: rgb(255 255 255 / 72%);
+  background: var(--glass);
 }
 
 .media-image,
@@ -793,7 +792,7 @@ button:disabled {
   max-height: 420px;
   border-radius: 12px;
   object-fit: contain;
-  background: #1d1920;
+  background: var(--video-bg);
 }
 
 .media-audio {
@@ -802,7 +801,7 @@ button:disabled {
 
 .media-file {
   display: block;
-  color: #5a4162;
+  color: var(--accent-text);
   font-weight: 700;
   text-decoration: none;
 }
@@ -834,10 +833,9 @@ button:disabled {
 }
 
 .relationship-media-composer {
-  border-top: 1px solid #eee8f0;
+  border-top: 1px solid var(--line);
   padding-top: 10px;
 }
-
 
 .media-draft-actions,
 .voice-preview {
@@ -872,7 +870,7 @@ button:disabled {
   min-height: 280px;
   overflow: hidden;
   border-radius: 16px;
-  background: #1c1820;
+  background: var(--video-bg);
 }
 
 .remote-video-shell {
@@ -889,11 +887,11 @@ button:disabled {
   min-height: 280px;
   max-height: 70vh;
   object-fit: cover;
-  background: #1c1820;
+  background: var(--video-bg);
 }
 
 .video-placeholder {
-  color: #d9cedd;
+  color: var(--video-ink);
   font-size: 14px;
 }
 
@@ -912,9 +910,9 @@ button:disabled {
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 14px;
-  border: 2px solid rgb(255 255 255 / 70%);
-  background: #302935;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+  border: 2px solid var(--glass-line);
+  background: var(--video-tile);
+  box-shadow: 0 8px 24px var(--shadow-strong);
 }
 
 .local-video,
@@ -931,7 +929,7 @@ button:disabled {
 .local-video-placeholder {
   display: grid;
   place-items: center;
-  color: #d9cedd;
+  color: var(--video-ink);
   font-size: 12px;
   text-align: center;
   padding: 8px;
