@@ -1,0 +1,638 @@
+/*
+ * Talk surface (UX3). Only talk- prefixed selectors plus a few scoped overrides beneath
+ * .talk. Colors, type, spacing, radii, and motion come from the shared tokens.
+ */
+
+.talk {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  min-width: 0;
+}
+
+/* Header */
+
+.talk-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.talk-header__who {
+  flex: 1;
+  min-width: 0;
+}
+
+.talk-header__name {
+  margin: 0;
+  font-size: var(--type-ui-title);
+  line-height: var(--type-ui-title-lh);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.talk-skeleton {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Message rhythm: 2px inside a speaker group, 12px between speakers. */
+
+.talk-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-bottom: var(--space-2);
+}
+
+.talk-message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: var(--space-3);
+  min-width: 0;
+  scroll-margin-block: 96px;
+}
+
+.talk-message[data-own="true"] {
+  align-items: flex-end;
+}
+
+.talk-message[data-position="middle"],
+.talk-message[data-position="last"] {
+  margin-top: 2px;
+}
+
+.talk-separator {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-6) 0 var(--space-2);
+  color: var(--ink-2);
+  font-family: var(--font-editorial);
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+  font-style: italic;
+}
+
+.talk-separator:first-child {
+  margin-top: var(--space-2);
+}
+
+/* Bubbles: grouped corners, no avatars, no tails. */
+
+.talk-bubble {
+  position: relative;
+  max-width: min(84%, 32rem);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-l);
+  background: var(--raised);
+  color: var(--ink);
+  font-size: var(--type-message);
+  line-height: var(--type-message-lh);
+  overflow-wrap: anywhere;
+}
+
+.talk-message[data-own="true"] .talk-bubble {
+  background: var(--mine);
+}
+
+.talk-message[data-own="false"][data-position="first"] .talk-bubble,
+.talk-message[data-own="false"][data-position="middle"] .talk-bubble {
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+.talk-message[data-own="false"][data-position="middle"] .talk-bubble,
+.talk-message[data-own="false"][data-position="last"] .talk-bubble {
+  border-top-left-radius: var(--radius-xs);
+}
+
+.talk-message[data-own="true"][data-position="first"] .talk-bubble,
+.talk-message[data-own="true"][data-position="middle"] .talk-bubble {
+  border-bottom-right-radius: var(--radius-xs);
+}
+
+.talk-message[data-own="true"][data-position="middle"] .talk-bubble,
+.talk-message[data-own="true"][data-position="last"] .talk-bubble {
+  border-top-right-radius: var(--radius-xs);
+}
+
+.talk-bubble[data-actionable="true"] {
+  cursor: pointer;
+}
+
+.talk-message[data-pending="true"] .talk-bubble {
+  opacity: 0.72;
+}
+
+.talk-message[data-highlighted="true"] .talk-bubble {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.talk-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.talk-text[data-collapsed="true"] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 8;
+  line-clamp: 8;
+  overflow: hidden;
+}
+
+.talk-text--deleted {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+.talk-message[data-deleted="true"] .talk-bubble {
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+}
+
+.talk-readmore {
+  margin-top: var(--space-1);
+  padding: var(--space-2) 0;
+  min-height: var(--tap);
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: var(--type-meta);
+}
+
+.talk-more {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink-2);
+  opacity: 0;
+}
+
+.talk-more:focus-visible,
+.talk-bubble:hover .talk-more {
+  opacity: 1;
+  background: var(--surface);
+}
+
+/* Quoted reply */
+
+.talk-quote {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-inline-start: 3px solid var(--rose);
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  text-align: start;
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+  cursor: pointer;
+}
+
+.talk-quote__who {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.talk-quote__text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Reactions, kept, meta */
+
+.talk-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: -4px;
+  padding-inline: var(--space-2);
+}
+
+.talk-reaction,
+.talk-kept {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: var(--type-meta);
+}
+
+.talk-reaction[data-mine="true"] {
+  border-color: var(--rose);
+}
+
+.talk-kept {
+  color: var(--accent-text);
+}
+
+.talk-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 2px var(--space-2) 0;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+}
+
+.talk-meta [data-delivery="failed"] {
+  color: var(--end-text);
+  font-weight: 600;
+}
+
+/* Media inside bubbles */
+
+.talk-media {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.talk-media:first-child {
+  margin-top: 0;
+}
+
+.talk .media-card,
+.talk .media-file {
+  display: block;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.talk-media-loading {
+  min-width: 12rem;
+}
+
+.talk-media-unavailable {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.talk-image-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.talk .media-image,
+.talk .media-video {
+  display: block;
+  width: 100%;
+  max-height: 22rem;
+  border-radius: var(--radius-m);
+  object-fit: cover;
+  background: var(--video-bg);
+}
+
+.talk-image-viewer {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--radius-m);
+}
+
+.talk-voice-note {
+  display: grid;
+  gap: var(--space-1);
+  min-width: min(15rem, 100%);
+}
+
+.talk-voice-note__label {
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+}
+
+.talk-voice-note .media-audio {
+  width: 100%;
+  height: 40px;
+}
+
+/* Composer */
+
+.talk-composer-wrap {
+  position: sticky;
+  bottom: calc(var(--nav-height) + var(--safe-bottom));
+  z-index: 10;
+  display: grid;
+  gap: var(--space-2);
+  margin-inline: calc(var(--gutter) * -1);
+  padding: var(--space-2) var(--gutter) var(--space-3);
+  background: var(--room);
+  border-top: 1px solid var(--line);
+}
+
+.app-shell[data-keyboard="open"] .talk-composer-wrap {
+  bottom: 0;
+}
+
+@media (min-width: 900px) {
+  .talk-composer-wrap {
+    bottom: 0;
+  }
+}
+
+.talk-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.talk-composer__input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  max-height: 8.5rem;
+  padding: 10px var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--type-message);
+  line-height: var(--type-message-lh);
+  resize: none;
+  field-sizing: content;
+}
+
+.talk-composer__input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.talk-send {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+.talk-send:disabled {
+  opacity: 0.5;
+}
+
+.talk-replying {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border-inline-start: 3px solid var(--rose);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  font-size: var(--type-meta);
+}
+
+.talk-replying__text {
+  display: grid;
+  min-width: 0;
+}
+
+.talk-replying__text > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.talk-sendstatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+}
+
+.talk-drafts {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.talk-draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  font-size: var(--type-meta);
+}
+
+.talk-draft__actions {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.talk-voicebar {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+
+.talk-voice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.talk-voice__live {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.talk-voice__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--end);
+  animation: talk-breath var(--dur-breath) ease-in-out infinite;
+}
+
+@keyframes talk-breath {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.talk-voice__preview {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.talk-voice__preview audio {
+  width: 100%;
+}
+
+.talk-voice__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.talk-voice__error {
+  color: var(--end-text);
+  font-size: var(--type-meta);
+}
+
+/* Sheets */
+
+.talk-actionlist {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.talk-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.talk-action:hover:not(:disabled) {
+  background: var(--raised);
+}
+
+.talk-action:disabled {
+  color: var(--ink-2);
+  cursor: default;
+}
+
+.talk-action.is-danger {
+  color: var(--end-text);
+}
+
+.talk-action__gap {
+  display: inline-block;
+  width: 22px;
+  flex: none;
+}
+
+.talk-action__label {
+  display: block;
+  font-weight: 600;
+}
+
+.talk-action__hint {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+}
+
+.talk-reactpick {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.talk-reactpick__emoji {
+  flex: 1;
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  font-size: 1.375rem;
+}
+
+.talk-reactpick__emoji[aria-pressed="true"] {
+  border-color: var(--rose);
+  background: var(--raised);
+}
+
+.talk-otheremoji {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--type-meta);
+}
+
+.talk-otheremoji input {
+  width: 5rem;
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.talk-edit-input {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.talk-nicknames {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* Reduced motion: no loops, no smooth movement. */
+
+@media (prefers-reduced-motion: reduce) {
+  .talk-voice__dot {
+    animation: none;
+  }
+}
