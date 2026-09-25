@@ -37,6 +37,7 @@ Six non-negotiable rules bind every UX agent. Each agent must acknowledge all si
 | Our Year edits, chapter naming, Two Sides second author note | `PRODUCT_EXTENSION` unless expressible with existing item and curation fields | Present existing single-author memory and curation only |
 | Quick-reply messages on declined calls | `PRODUCT_EXTENSION` | None |
 | Call "Message" shortcut from call screen | `PRESENTATION_ONLY` (navigation only) | Deep link to Talk |
+| Home or Talk hint such as "Something is waiting for you" derived from unreleased items | `DEFERRED_PRIVACY_BOUNDARY` | None. Never surface the existence, type, scheduled release, creator activity, countdown, hidden-item count, or teaser wording of an unreleased release-gated item (Surprise, Proposal, Future Us, scheduled For You). Only a preview the current authoritative R1 projection already authorizes before release may be presented, by UX6, under current R1 rules. Do not add a preview projection or metadata field |
 | Quiet map with custom tiles | `DEFERRED` | List first; map rendering is client behavior with no tracking |
 
 ## 3. Information architecture (frozen)
