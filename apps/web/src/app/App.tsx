@@ -17,6 +17,12 @@ import { PartnerRequestsPanel } from "../features/partner-requests/PartnerReques
 import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
 import { RelationshipSpacePanel } from "../features/relationship-space/RelationshipSpacePanel.tsx";
 import { CallingPanel } from "../features/calling/CallingPanel.tsx";
+import { HomeScreen } from "../features/home/HomeScreen.tsx";
+import { THEME_LABELS, type ThemePreference, useTheme } from "../design/theme.tsx";
+import { Button, ErrorNotice, LifecycleBanner, Notice, Segmented } from "../design/primitives.tsx";
+import { AppShell, RouteView } from "./shell/AppShell.tsx";
+import { useRoute } from "./shell/routes.ts";
+import { useConversationContext } from "./shell/useConversationContext.ts";
 
 interface Session {
   authenticated: true;
@@ -46,6 +52,10 @@ interface Device {
 }
 
 type AuthMode = "login" | "register" | "password-recovery" | "account-recovery";
+
+const THEME_OPTIONS: ReadonlyArray<{ value: ThemePreference; label: string }> = (
+  ["system", "dawn", "midnight"] as const
+).map((value) => ({ value, label: THEME_LABELS[value] }));
 
 function messageFor(error: unknown): string {
   if (error instanceof ApiClientError) {
@@ -434,6 +444,9 @@ function AccountScreen({
   onSignedOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }) {
+  const [route, navigate] = useRoute();
+  const conversation = useConversationContext();
+  const theme = useTheme();
   const [me, setMe] = useState<Me | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
   const [error, setError] = useState("");
@@ -516,228 +529,280 @@ function AccountScreen({
     );
   }
 
+  const lifecycleBanner =
+    conversation && conversation.interactionMode === "account_deletion_view_only" ? (
+      <LifecycleBanner
+        title="View-only for now"
+        action={
+          <Button compact onClick={() => navigate("us")}>
+            Details
+          </Button>
+        }
+      >
+        Account deletion is pending, so shared content can be viewed but not changed.
+      </LifecycleBanner>
+    ) : conversation && conversation.interactionMode === "breakup_restricted" ? (
+      <LifecycleBanner
+        title="Breakup process in progress"
+        action={
+          <Button compact onClick={() => navigate("us")}>
+            Details
+          </Button>
+        }
+      >
+        Shared content is view-only. Dates and options are in Us.
+      </LifecycleBanner>
+    ) : null;
+
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div>
-          <strong>{me.displayName}</strong>
-          <span>@{me.username}</span>
-        </div>
-        <button className="secondary compact" onClick={() => void logout()} disabled={busy}>
-          Sign out
-        </button>
-      </header>
+    <AppShell
+      route={route}
+      onNavigate={navigate}
+      status={
+        <>
+          {error ? <ErrorNotice>{error}</ErrorNotice> : null}
+          {notice ? <Notice tone="success">{notice}</Notice> : null}
+          <M2UpdateBanner />
+          <M2QueueStatus />
+          {lifecycleBanner}
+        </>
+      }
+      calls={<CallingPanel deviceId={session.deviceId} />}
+    >
+      <RouteView active={route === "home"}>
+        <HomeScreen context={conversation} onNavigate={navigate} />
+      </RouteView>
+      <RouteView active={route === "talk"} keepMounted>
+        <MessagingPanel />
+      </RouteView>
+      <RouteView active={route === "ours"}>
+        <RelationshipSpacePanel accountId={session.accountId} />
+      </RouteView>
+      <RouteView active={route === "us"}>
+        <section className="panel us-section">
+          <div className="topbar">
+            <div>
+              <strong>{me.displayName}</strong>
+              <span>@{me.username}</span>
+            </div>
+            <Button compact onClick={() => void logout()} disabled={busy}>
+              Sign out
+            </Button>
+          </div>
+          <div className="us-section">
+            <h2 className="ds-editorial-title">Appearance</h2>
+            <Segmented
+              label="Appearance"
+              value={theme.preference}
+              options={THEME_OPTIONS}
+              onChange={theme.setPreference}
+            />
+          </div>
+        </section>
 
-      {error ? <p className="banner error">{error}</p> : null}
-      {notice ? <p className="banner success">{notice}</p> : null}
+        <PartnershipPanel />
+        <PartnerRequestsPanel />
 
-      <M2UpdateBanner />
-      <M2QueueStatus />
-      <PartnershipPanel />
-      <CallingPanel deviceId={session.deviceId} />
-      <MessagingPanel />
-      <RelationshipSpacePanel accountId={session.accountId} />
-      <PartnerRequestsPanel />
-
-      <section className="panel">
-        <h2>Account</h2>
-        <p className="muted">{me.email}</p>
-        <form
-          className="stack"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void run(async () => {
-              await mutate("/api/v1/me/profile", { displayName }, "PATCH");
-              await load();
-            }, "Display name updated.");
-          }}
-        >
-          <Field
-            label="Display name"
-            name="profileDisplayName"
-            value={displayName}
-            onChange={setDisplayName}
-          />
-          <button className="primary" disabled={busy}>
-            Save display name
-          </button>
-        </form>
-      </section>
-
-      <section className="panel">
-        <h2>Security confirmation</h2>
-        <p className="hint">
-          Email changes and account deletion require a recent password confirmation.
-        </p>
-        <form className="stack" onSubmit={reauthenticate}>
-          <Field
-            label="Current password"
-            name="reauthPassword"
-            type="password"
-            value={reauthPassword}
-            onChange={setReauthPassword}
-            autoComplete="current-password"
-          />
-          <button className="secondary" disabled={busy}>
-            Confirm password
-          </button>
-          <span className="hint">
-            Last confirmed:{" "}
-            {session.reauthenticatedAt
-              ? new Date(session.reauthenticatedAt).toLocaleString()
-              : "not recently"}
-          </span>
-        </form>
-      </section>
-
-      <section className="panel">
-        <h2>Verified email</h2>
-        <div className="stack">
-          <Field
-            label="New email"
-            name="newEmail"
-            type="email"
-            value={newEmail}
-            onChange={setNewEmail}
-            autoComplete="email"
-          />
-          <button
-            className="secondary"
-            disabled={busy}
-            onClick={() =>
-              void run(
-                () => mutate("/api/v1/me/email-change/start", { email: newEmail }),
-                "Verification code sent to the new email.",
-              )
-            }
-          >
-            Send verification code
-          </button>
-          <Field
-            label="Verification code"
-            name="emailCode"
-            value={emailCode}
-            onChange={setEmailCode}
-            autoComplete="one-time-code"
-          />
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() =>
+        <section className="panel">
+          <h2>Account</h2>
+          <p className="muted">{me.email}</p>
+          <form
+            className="stack"
+            onSubmit={(event) => {
+              event.preventDefault();
               void run(async () => {
-                await mutate("/api/v1/me/email-change/complete", { code: emailCode });
-                setEmailCode("");
-                setNewEmail("");
-                await Promise.all([load(), refreshSession()]);
-              }, "Email changed. Other sessions were revoked.")
-            }
-          >
-            Confirm new email
-          </button>
-        </div>
-      </section>
-
-      <section className="panel two-column">
-        <div className="stack">
-          <h2>Username</h2>
-          <Field label="Username" name="usernameChange" value={username} onChange={setUsername} />
-          <button
-            className="secondary"
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                await mutate("/api/v1/me/username", { username });
+                await mutate("/api/v1/me/profile", { displayName }, "PATCH");
                 await load();
-              }, "Username updated.")
-            }
+              }, "Display name updated.");
+            }}
           >
-            Change username
-          </button>
-        </div>
-        <div className="stack">
-          <h2>Date of birth</h2>
-          <Field
-            label="One-time correction"
-            name="dateOfBirthCorrection"
-            type="date"
-            value={dateOfBirth}
-            onChange={setDateOfBirth}
-          />
+            <Field
+              label="Display name"
+              name="profileDisplayName"
+              value={displayName}
+              onChange={setDisplayName}
+            />
+            <button className="primary" disabled={busy}>
+              Save display name
+            </button>
+          </form>
+        </section>
+
+        <section className="panel">
+          <h2>Security confirmation</h2>
+          <p className="hint">
+            Email changes and account deletion require a recent password confirmation.
+          </p>
+          <form className="stack" onSubmit={reauthenticate}>
+            <Field
+              label="Current password"
+              name="reauthPassword"
+              type="password"
+              value={reauthPassword}
+              onChange={setReauthPassword}
+              autoComplete="current-password"
+            />
+            <button className="secondary" disabled={busy}>
+              Confirm password
+            </button>
+            <span className="hint">
+              Last confirmed:{" "}
+              {session.reauthenticatedAt
+                ? new Date(session.reauthenticatedAt).toLocaleString()
+                : "not recently"}
+            </span>
+          </form>
+        </section>
+
+        <section className="panel">
+          <h2>Verified email</h2>
+          <div className="stack">
+            <Field
+              label="New email"
+              name="newEmail"
+              type="email"
+              value={newEmail}
+              onChange={setNewEmail}
+              autoComplete="email"
+            />
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() =>
+                void run(
+                  () => mutate("/api/v1/me/email-change/start", { email: newEmail }),
+                  "Verification code sent to the new email.",
+                )
+              }
+            >
+              Send verification code
+            </button>
+            <Field
+              label="Verification code"
+              name="emailCode"
+              value={emailCode}
+              onChange={setEmailCode}
+              autoComplete="one-time-code"
+            />
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await mutate("/api/v1/me/email-change/complete", { code: emailCode });
+                  setEmailCode("");
+                  setNewEmail("");
+                  await Promise.all([load(), refreshSession()]);
+                }, "Email changed. Other sessions were revoked.")
+              }
+            >
+              Confirm new email
+            </button>
+          </div>
+        </section>
+
+        <section className="panel two-column">
+          <div className="stack">
+            <h2>Username</h2>
+            <Field label="Username" name="usernameChange" value={username} onChange={setUsername} />
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await mutate("/api/v1/me/username", { username });
+                  await load();
+                }, "Username updated.")
+              }
+            >
+              Change username
+            </button>
+          </div>
+          <div className="stack">
+            <h2>Date of birth</h2>
+            <Field
+              label="One-time correction"
+              name="dateOfBirthCorrection"
+              type="date"
+              value={dateOfBirth}
+              onChange={setDateOfBirth}
+            />
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await mutate("/api/v1/me/date-of-birth-correction", { dateOfBirth });
+                  await load();
+                }, "Date of birth corrected.")
+              }
+            >
+              Use correction
+            </button>
+          </div>
+        </section>
+
+        <section className="panel">
+          <h2>Devices</h2>
+          <p className="hint">Revoking a device immediately revokes its active sessions.</p>
+          <div className="device-list">
+            {devices.map((device) => (
+              <article className="device" key={device.id}>
+                <div>
+                  <strong>{device.displayName}</strong>
+                  {device.isCurrent ? <span className="pill">This device</span> : null}
+                  <p className="muted">
+                    {device.revokedAt
+                      ? `Revoked ${new Date(device.revokedAt).toLocaleString()}`
+                      : `${device.activeSessionCount} active session(s)`}
+                  </p>
+                </div>
+                {!device.revokedAt ? (
+                  <button
+                    className="danger compact"
+                    disabled={busy}
+                    onClick={() =>
+                      void run(
+                        async () => {
+                          await mutate(`/api/v1/me/devices/${device.id}`, undefined, "DELETE");
+                          if (device.isCurrent) onSignedOut();
+                          else await load();
+                        },
+                        device.isCurrent ? undefined : "Device revoked.",
+                      )
+                    }
+                  >
+                    Revoke
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </div>
+          {currentDevice ? <p className="hint">Current device ID: {currentDevice.id}</p> : null}
+        </section>
+
+        <section className="panel danger-zone">
+          <h2>Delete account</h2>
+          <p>
+            Access is removed immediately. You have exactly seven days to recover the account by
+            verified email.
+          </p>
           <button
-            className="secondary"
+            className="danger"
             disabled={busy}
-            onClick={() =>
+            onClick={() => {
+              if (!window.confirm("Request account deletion now?")) return;
               void run(async () => {
-                await mutate("/api/v1/me/date-of-birth-correction", { dateOfBirth });
-                await load();
-              }, "Date of birth corrected.")
-            }
+                await mutate("/api/v1/me/account-deletion", {});
+                onSignedOut();
+              });
+            }}
           >
-            Use correction
+            Request account deletion
           </button>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>Devices</h2>
-        <p className="hint">Revoking a device immediately revokes its active sessions.</p>
-        <div className="device-list">
-          {devices.map((device) => (
-            <article className="device" key={device.id}>
-              <div>
-                <strong>{device.displayName}</strong>
-                {device.isCurrent ? <span className="pill">This device</span> : null}
-                <p className="muted">
-                  {device.revokedAt
-                    ? `Revoked ${new Date(device.revokedAt).toLocaleString()}`
-                    : `${device.activeSessionCount} active session(s)`}
-                </p>
-              </div>
-              {!device.revokedAt ? (
-                <button
-                  className="danger compact"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(
-                      async () => {
-                        await mutate(`/api/v1/me/devices/${device.id}`, undefined, "DELETE");
-                        if (device.isCurrent) onSignedOut();
-                        else await load();
-                      },
-                      device.isCurrent ? undefined : "Device revoked.",
-                    )
-                  }
-                >
-                  Revoke
-                </button>
-              ) : null}
-            </article>
-          ))}
-        </div>
-        {currentDevice ? <p className="hint">Current device ID: {currentDevice.id}</p> : null}
-      </section>
-
-      <section className="panel danger-zone">
-        <h2>Delete account</h2>
-        <p>
-          Access is removed immediately. You have exactly seven days to recover the account by
-          verified email.
-        </p>
-        <button
-          className="danger"
-          disabled={busy}
-          onClick={() => {
-            if (!window.confirm("Request account deletion now?")) return;
-            void run(async () => {
-              await mutate("/api/v1/me/account-deletion", {});
-              onSignedOut();
-            });
-          }}
-        >
-          Request account deletion
-        </button>
-      </section>
-    </main>
+        </section>
+      </RouteView>
+    </AppShell>
   );
 }
 
