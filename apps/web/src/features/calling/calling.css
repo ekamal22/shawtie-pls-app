@@ -1,0 +1,546 @@
+/*
+ * Call surfaces (UX5). Scoped with the call- prefix; consumes design tokens only.
+ * The full-screen surface always uses the Midnight palette through .force-midnight.
+ * Presentation only: no call state, signaling, or media behavior lives here.
+ */
+
+/* Idle entry ----------------------------------------------------------------------------- */
+
+.call-panel {
+  display: block;
+}
+
+/* While a surface is open the panel itself takes no room in the page stack. */
+.call-panel--surface {
+  display: contents;
+}
+
+.call-entry {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.call-entry__who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.call-entry__title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+.call-entry__hint {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-call-label);
+  line-height: var(--type-call-label-lh);
+}
+
+.call-entry__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.call-entry__button {
+  min-height: 3.5rem;
+  font-size: var(--type-message);
+}
+
+.call-entry__notify {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Full-screen surface -------------------------------------------------------------------- */
+
+html.call-open,
+html.call-open body {
+  overflow: hidden;
+}
+
+.call-surface {
+  --call-disc: 4.5rem;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--room);
+  color: var(--ink);
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: manipulation;
+  animation: call-surface-in var(--dur-quick) var(--ease-settle) both;
+}
+
+@media (max-width: 380px) {
+  .call-surface {
+    --call-disc: 4rem;
+  }
+}
+
+@keyframes call-surface-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.call-ambience {
+  position: absolute;
+  inset: 0;
+  background: var(--room);
+}
+
+/* One soft rose glow is the only gradient in the call experience. */
+.call-portrait {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.call-portrait::before {
+  content: "";
+  position: absolute;
+  inset: -1.75rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--raised) 0%, transparent 68%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--rose) 40%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.7;
+  animation: call-breathe var(--dur-breath) ease-in-out infinite alternate;
+}
+
+.call-portrait[data-breathing="false"]::before {
+  animation: none;
+}
+
+.call-portrait > * {
+  position: relative;
+}
+
+.call-portrait__blank {
+  display: grid;
+  place-items: center;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  background: var(--mine);
+  color: var(--ink);
+}
+
+@keyframes call-breathe {
+  from {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+
+  to {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .call-surface,
+  .call-portrait::before {
+    animation: none;
+  }
+}
+
+.call-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: calc(var(--safe-top) + var(--space-8)) var(--gutter)
+    calc(var(--safe-bottom) + var(--space-6));
+  overflow-y: auto;
+}
+
+.call-head {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.call-eyebrow {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-call-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.call-title {
+  margin: 0;
+  max-width: 18ch;
+  font-family: var(--font-editorial);
+  font-weight: 450;
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+  overflow-wrap: anywhere;
+}
+
+.call-title:focus {
+  outline: none;
+}
+
+.call-status {
+  margin: 0;
+  max-width: 30ch;
+  color: var(--ink-2);
+  font-size: var(--type-ui-title);
+  line-height: var(--type-ui-title-lh);
+}
+
+.call-timer {
+  color: var(--ink-2);
+  font-size: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.call-note {
+  margin: var(--space-1) 0 0;
+  max-width: 34ch;
+  color: var(--ink-2);
+  font-size: var(--type-call-label);
+  line-height: var(--type-call-label-lh);
+}
+
+.call-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.call-privacy {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.call-lower {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+}
+
+.call-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-4) var(--space-3);
+}
+
+/* Controls: 64 to 72px discs, always labelled ------------------------------------------- */
+
+.call-control {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: calc(var(--call-disc) + 1.5rem);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.call-control__disc {
+  display: grid;
+  place-items: center;
+  width: var(--call-disc);
+  height: var(--call-disc);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--raised);
+  transition:
+    background-color var(--dur-instant) ease-out,
+    transform var(--dur-instant) ease-out;
+}
+
+.call-control:active:not(:disabled) .call-control__disc {
+  transform: scale(0.96);
+}
+
+.call-control__label {
+  max-width: 6.5rem;
+  font-size: var(--type-call-label);
+  font-weight: 600;
+  line-height: var(--type-call-label-lh);
+  text-align: center;
+}
+
+.call-control--accept .call-control__disc {
+  border-color: transparent;
+  background: var(--accept);
+  color: var(--on-accent);
+}
+
+.call-control--end .call-control__disc {
+  border-color: transparent;
+  background: var(--end);
+  color: var(--on-end);
+}
+
+.call-control--warn .call-control__disc {
+  border-color: var(--caution);
+  background: var(--caution-wash);
+}
+
+.call-control__disc--hangup svg {
+  transform: rotate(135deg);
+}
+
+.call-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.call-control:focus-visible .call-control__disc {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Video layout --------------------------------------------------------------------------- */
+
+.call-surface--video .call-video-stage {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.call-surface--video .remote-video-shell,
+.call-surface--video .remote-video {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+}
+
+.call-surface--video .remote-video {
+  object-fit: cover;
+}
+
+.call-remote__placeholder {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: center;
+  padding: var(--space-6);
+  color: var(--video-ink);
+  font-family: var(--font-editorial);
+  font-size: var(--type-quote);
+  line-height: var(--type-quote-lh);
+  text-align: center;
+}
+
+.call-remote__placeholder small {
+  font-family: inherit;
+  font-size: var(--type-call-label);
+  line-height: var(--type-call-label-lh);
+  opacity: 0.85;
+}
+
+.call-surface--video .call-remote__placeholder.video-stalled {
+  background: var(--video-bg);
+}
+
+.call-remote__retry {
+  bottom: 9rem;
+}
+
+.call-surface--video .call-content {
+  position: absolute;
+  inset: 0;
+  justify-content: space-between;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.call-head--overlay {
+  flex: none;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-1);
+  padding: calc(var(--safe-top) + var(--space-4)) var(--gutter) var(--space-8);
+  background: linear-gradient(to bottom, rgb(0 0 0 / 55%), transparent);
+  text-align: left;
+  pointer-events: none;
+}
+
+.call-head--overlay .call-title {
+  max-width: none;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+.call-head--overlay .call-status,
+.call-head--overlay .call-timer,
+.call-head--overlay .call-note {
+  color: var(--ink);
+  font-size: var(--type-call-label);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 60%);
+}
+
+.call-head--overlay .call-badges {
+  justify-content: flex-start;
+}
+
+.call-surface--video .call-lower {
+  max-width: none;
+  margin: 0;
+  padding: var(--space-4) var(--gutter) calc(var(--safe-bottom) + var(--space-4));
+  pointer-events: auto;
+  transition:
+    opacity var(--dur-quick) ease-out,
+    transform var(--dur-quick) var(--ease-settle);
+}
+
+.call-surface--video .call-bar {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-l);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .call-surface--video .call-bar {
+    background: var(--raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.call-surface[data-controls="hidden"] .call-lower {
+  opacity: 0;
+  transform: translateY(0.75rem);
+  pointer-events: none;
+}
+
+.call-surface[data-controls="hidden"] .call-lower:focus-within {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* Local preview tile: draggable, snaps to a corner ------------------------------------- */
+
+.call-preview {
+  position: absolute;
+  z-index: 2;
+  width: min(30%, 9.5rem);
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--glass-line);
+  border-radius: var(--radius-s);
+  background: var(--video-tile);
+  color: var(--video-ink);
+  box-shadow: 0 8px 24px var(--shadow-strong);
+  cursor: grab;
+  touch-action: none;
+  transition: transform var(--dur-move) var(--ease-settle);
+  pointer-events: auto;
+}
+
+.call-preview.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.call-preview[data-corner="bottom-right"] {
+  inset: auto var(--space-3) calc(var(--safe-bottom) + 9.5rem) auto;
+}
+
+.call-preview[data-corner="bottom-left"] {
+  inset: auto auto calc(var(--safe-bottom) + 9.5rem) var(--space-3);
+}
+
+.call-preview[data-corner="top-right"] {
+  inset: calc(var(--safe-top) + 7.5rem) var(--space-3) auto auto;
+}
+
+.call-preview[data-corner="top-left"] {
+  inset: calc(var(--safe-top) + 7.5rem) auto auto var(--space-3);
+}
+
+.call-preview__off {
+  display: grid;
+  gap: var(--space-1);
+  place-items: center;
+  align-content: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2);
+  font-size: var(--type-call-label);
+  line-height: var(--type-call-label-lh);
+  text-align: center;
+}
+
+/* Video bar: one row of four labelled controls even on 320px phones. */
+.call-surface--video .call-bar {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  padding-inline: var(--space-2);
+}
+
+.call-surface--video .call-control {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.call-surface--video .call-control__label {
+  max-width: none;
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+}
+
+.call-preview[data-corner="bottom-right"] {
+  inset: auto var(--space-3) calc(var(--safe-bottom) + 11.5rem) auto;
+}
+
+.call-preview[data-corner="bottom-left"] {
+  inset: auto auto calc(var(--safe-bottom) + 11.5rem) var(--space-3);
+}

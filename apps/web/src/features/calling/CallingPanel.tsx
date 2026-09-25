@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { CallProjection } from "@shawtie/contracts";
 import { ApiClientError } from "../../lib/api-client.ts";
+import {
+  partnerDisplayName,
+  useConversationContext,
+} from "../../app/shell/useConversationContext.ts";
 import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
 import {
   acceptCall,
@@ -15,7 +19,10 @@ import {
 import type { CameraState } from "./camera-controller.ts";
 import { CallMediaSession } from "./media-controller.ts";
 import { reconcileCallPushSubscription } from "./push.ts";
-import { VideoSurface } from "./VideoSurface.tsx";
+import { CallEntry } from "./ui/CallEntry.tsx";
+import { CallSurface } from "./ui/CallSurface.tsx";
+import { derivePhase } from "./ui/call-model.ts";
+import "./calling.css";
 
 function errorMessage(error: unknown): string {
   if (error instanceof DOMException && error.name === "NotAllowedError") {
@@ -323,253 +330,100 @@ export function CallingPanel({ deviceId }: { readonly deviceId: string | null })
     });
   }, [call?.id, call?.kind, call?.state, call?.version, call?.isThisDeviceSelectedEndpoint]);
 
-  const outgoing = call?.direction === "outgoing";
-  const incoming = call?.direction === "incoming";
-  const ringing = call?.state === "ringing";
+  const partnerContext = useConversationContext();
+  const partnerName = partnerContext ? partnerDisplayName(partnerContext) : null;
+
   const active = call?.state === "accepted" || call?.state === "connected";
-  const video = call?.kind === "video";
   const canOwnMedia = Boolean(active && call?.isThisDeviceSelectedEndpoint && deviceId);
+  const canStart =
+    !busy &&
+    syncStatus === "live" &&
+    Boolean(deviceId) &&
+    Boolean(runtime.realtime.scope.partnershipId);
+  const showEntry = !call;
+  const surfacePhase = call
+    ? derivePhase({ call, mediaState, hasMedia: mediaRef.current !== null })
+    : null;
 
   return (
     <section
-      className="panel call-panel"
-      aria-live="polite"
+      className={"call-panel" + (call ? " call-panel--surface" : "")}
       data-call-state={call?.state ?? "idle"}
     >
-      <div className="row between call-header">
-        <div>
-          <h2>Calls</h2>
-          <p className="hint">
-            Voice and video use relay-only WebRTC and require an explicit answer.
-          </p>
-        </div>
-        {!call || call.state === "ended" ? (
-          <div className="row">
-            <button
-              className="secondary"
-              disabled={
-                busy || syncStatus !== "live" || !deviceId || !runtime.realtime.scope.partnershipId
-              }
-              onClick={() => void run(async () => startOutgoing("voice"))}
-            >
-              Voice call
-            </button>
-            <button
-              className="primary"
-              disabled={
-                busy || syncStatus !== "live" || !deviceId || !runtime.realtime.scope.partnershipId
-              }
-              onClick={() => void run(async () => startOutgoing("video"))}
-            >
-              Video call
-            </button>
-          </div>
-        ) : null}
-      </div>
-
-      {error ? <p className="banner error">{error}</p> : null}
-
-      {call && call.state !== "ended" ? (
-        <div className="stack">
-          {video && active ? (
-            <VideoSurface localStream={localVideo} remoteStream={remoteVideo} />
-          ) : null}
-          <p>
-            <strong>
-              {ringing
-                ? outgoing
-                  ? video
-                    ? "Calling with video..."
-                    : "Calling..."
-                  : video
-                    ? "Incoming video call"
-                    : "Incoming voice call"
-                : call.state === "connected"
-                  ? video
-                    ? "Video call connected"
-                    : "Connected"
-                  : video
-                    ? "Connecting video..."
-                    : "Connecting audio..."}
-            </strong>
-          </p>
-          <p className="hint">
-            {mediaState === "observer"
-              ? "Media is active in another tab."
-              : mediaState !== "idle"
-                ? "Media: " + mediaState + (video ? " · Camera: " + cameraState : "")
-                : call.isThisDeviceSelectedEndpoint
-                  ? "This device is selected for the call."
-                  : "Another device is handling this call."}
-          </p>
-
-          <div className="row call-actions">
-            {incoming && ringing ? (
-              <>
-                <button
-                  className="primary"
-                  disabled={busy || syncStatus !== "live" || !deviceId}
-                  onClick={() => void run(async () => acceptIncoming(video))}
-                >
-                  {video ? "Accept video" : "Accept"}
-                </button>
-                {video ? (
-                  <button
-                    className="secondary"
-                    disabled={busy || syncStatus !== "live" || !deviceId}
-                    onClick={() => void run(async () => acceptIncoming(false))}
-                  >
-                    Accept with camera off
-                  </button>
-                ) : null}
-                <button
-                  className="danger"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(async () => {
-                      const ended = await rejectCall(call.id, call.version);
-                      updateCall(ended);
-                      await stopMedia();
-                    })
-                  }
-                >
-                  Reject
-                </button>
-              </>
-            ) : null}
-
-            {outgoing && ringing ? (
-              <button
-                className="danger"
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const ended = await cancelCall(call.id, call.version);
-                    updateCall(ended);
-                    await stopMedia();
-                  })
-                }
-              >
-                Cancel
-              </button>
-            ) : null}
-
-            {canOwnMedia && !mediaRef.current ? (
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() => void run(async () => startMedia(call, undefined, false))}
-              >
-                Resume media here
-              </button>
-            ) : null}
-
-            {active && call.isThisDeviceSelectedEndpoint ? (
-              <button
-                className="danger"
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const ended = await endCall(call.id, call.version);
-                    updateCall(ended);
-                    await stopMedia();
-                  })
-                }
-              >
-                End call
-              </button>
-            ) : null}
-          </div>
-
-          {mediaRef.current ? (
-            <div className="row call-controls">
-              <button
-                className="secondary compact"
-                onClick={() => {
-                  const currentMedia = mediaRef.current;
-                  if (!currentMedia) return;
-                  currentMedia.setMuted(!currentMedia.muted);
-                  setMediaState(currentMedia.muted ? "muted" : "connected");
-                }}
-              >
-                {mediaRef.current.muted ? "Unmute" : "Mute"}
-              </button>
-              {video ? (
-                cameraState === "on" || cameraState === "switching" ? (
-                  <>
-                    <button
-                      className="secondary compact"
-                      disabled={busy}
-                      onClick={() => void run(async () => mediaRef.current?.disableCamera())}
-                    >
-                      Camera off
-                    </button>
-                    <button
-                      className="secondary compact"
-                      disabled={busy || cameraState === "switching"}
-                      onClick={() =>
-                        void run(async () => void (await mediaRef.current?.switchCamera()))
-                      }
-                    >
-                      Switch camera
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    className="secondary compact"
-                    disabled={busy || cameraState === "acquiring"}
-                    onClick={() =>
-                      void run(async () => void (await mediaRef.current?.enableCamera()))
-                    }
-                  >
-                    Turn camera on
-                  </button>
-                )
-              ) : null}
-              {autoplayBlocked ? (
-                <button
-                  className="primary compact"
-                  onClick={() => void mediaRef.current?.resumeRemoteAudio()}
-                >
-                  Tap to hear
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {call?.state === "ended" ? (
-        <div className="stack">
-          <p>
-            <strong>{call.kind === "video" ? "Video call ended" : "Call ended"}</strong>
-            {call.outcome ? " · " + call.outcome : ""}
-          </p>
-          <button className="secondary compact" onClick={() => updateCall(null)}>
-            Dismiss
-          </button>
-        </div>
-      ) : null}
-
-      <div className="row">
-        <button
-          className="secondary compact"
-          disabled={busy || pushState === "enabled"}
-          onClick={() =>
+      {showEntry ? (
+        <CallEntry
+          partnerName={partnerName}
+          canStart={canStart}
+          waitingForSync={syncStatus !== "live"}
+          error={error}
+          pushState={pushState}
+          pushBusy={busy}
+          onVoice={() => void run(async () => startOutgoing("voice"))}
+          onVideo={() => void run(async () => startOutgoing("video"))}
+          onEnableNotifications={() =>
             void run(async () => {
               const state = await reconcileCallPushSubscription(true);
               setPushState(state);
             })
           }
-        >
-          {pushState === "enabled" ? "Call notifications enabled" : "Enable call notifications"}
-        </button>
-        {pushState === "denied" ? (
-          <span className="hint">
-            Background ringing is unavailable. Foreground calls still work.
-          </span>
-        ) : null}
-      </div>
+        />
+      ) : null}
+
+      {call && surfacePhase ? (
+        <CallSurface
+          call={call}
+          partnerName={partnerName}
+          phase={surfacePhase}
+          cameraState={cameraState}
+          muted={mediaRef.current?.muted ?? false}
+          hasMedia={mediaRef.current !== null}
+          canResume={canOwnMedia && !mediaRef.current}
+          busy={busy}
+          canAnswer={!busy && syncStatus === "live" && Boolean(deviceId)}
+          error={error}
+          localVideo={localVideo}
+          remoteVideo={remoteVideo}
+          autoplayBlocked={autoplayBlocked}
+          onAnswer={(cameraIntent) => void run(async () => acceptIncoming(cameraIntent))}
+          onDecline={() =>
+            void run(async () => {
+              const ended = await rejectCall(call.id, call.version);
+              updateCall(ended);
+              await stopMedia();
+            })
+          }
+          onCancel={() =>
+            void run(async () => {
+              const ended = await cancelCall(call.id, call.version);
+              updateCall(ended);
+              await stopMedia();
+            })
+          }
+          onEnd={() =>
+            void run(async () => {
+              const ended = await endCall(call.id, call.version);
+              updateCall(ended);
+              await stopMedia();
+            })
+          }
+          onResume={() => void run(async () => startMedia(call, undefined, false))}
+          onToggleMute={() => {
+            const currentMedia = mediaRef.current;
+            if (!currentMedia) return;
+            currentMedia.setMuted(!currentMedia.muted);
+            setMediaState(currentMedia.muted ? "muted" : "connected");
+          }}
+          onCameraOn={() => void run(async () => void (await mediaRef.current?.enableCamera()))}
+          onCameraOff={() => void run(async () => mediaRef.current?.disableCamera())}
+          onSwitchCamera={() => void run(async () => void (await mediaRef.current?.switchCamera()))}
+          onHearRemote={() => void mediaRef.current?.resumeRemoteAudio()}
+          onDismiss={() => updateCall(null)}
+          onTryAgain={() => {
+            updateCall(null);
+            void run(async () => startOutgoing(call.kind));
+          }}
+        />
+      ) : null}
     </section>
   );
 }
