@@ -94,3 +94,43 @@ test("C2 callee adopts the offered video transceiver and never renegotiates a se
   expect(result.videoTransceivers).toBe(1);
   expect(result.cameraWaitSettled).toBe("settled");
 });
+
+test("C2 remote video shows the no-video state when the sender camera stops and recovers when it returns", async ({
+  page,
+}) => {
+  await openHarness(page);
+  await page.evaluate(() => window.c2Harness.mountRemoteVideo());
+
+  // 1. frames initially advance and the frame is shown
+  await expect
+    .poll(() => page.evaluate(() => window.c2Harness.remoteVideoState()), { timeout: 10_000 })
+    .toMatchObject({ hasElement: true, placeholderVisible: false, hidden: false });
+  await expect
+    .poll(() => page.evaluate(() => window.c2Harness.remoteVideoState().totalFrames))
+    .toBeGreaterThan(5);
+
+  // 2. the sender detaches its camera track
+  await page.evaluate(() => window.c2Harness.remoteSenderCamera(false));
+
+  // 3. the receiving track stays live and unmuted, so mute events alone would keep the stale frame
+  await page.waitForTimeout(1500);
+  const stale = await page.evaluate(() => window.c2Harness.remoteVideoState());
+  expect(stale.receiverTrackState).toBe("live");
+  expect(stale.receiverTrackMuted).toBe(false);
+
+  // 4. rendering progress stops, so the UI moves to the no-video state
+  await expect
+    .poll(() => page.evaluate(() => window.c2Harness.remoteVideoState()), { timeout: 12_000 })
+    .toMatchObject({ placeholderVisible: true, hidden: true });
+  const stalled = await page.evaluate(() => window.c2Harness.remoteVideoState());
+  expect(stalled.receiverTrackState).toBe("live");
+  expect(stalled.receiverTrackMuted).toBe(false);
+
+  // 5. the sender camera returns and rendering resumes automatically
+  await page.evaluate(() => window.c2Harness.remoteSenderCamera(true));
+  await expect
+    .poll(() => page.evaluate(() => window.c2Harness.remoteVideoState()), { timeout: 12_000 })
+    .toMatchObject({ placeholderVisible: false, hidden: false });
+
+  await page.evaluate(() => window.c2Harness.unmountRemoteVideo());
+});

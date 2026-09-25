@@ -1,3 +1,6 @@
+import { createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { VideoSurface } from "../src/features/calling/VideoSurface.tsx";
 import { CameraController } from "../src/features/calling/camera-controller.ts";
 import { CallMediaSession } from "../src/features/calling/media-controller.ts";
 
@@ -80,6 +83,19 @@ class FakeSocket extends EventTarget {
     this.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(frame) }));
   }
 }
+
+interface RemoteVideoRig {
+  readonly senderPeer: RTCPeerConnection;
+  readonly receiverPeer: RTCPeerConnection;
+  readonly sender: RTCRtpSender;
+  readonly track: MediaStreamTrack;
+  readonly receivedTrack: MediaStreamTrack;
+  readonly root: Root;
+  readonly host: HTMLElement;
+  readonly timer: number;
+}
+
+let remoteRig: RemoteVideoRig | null = null;
 
 function countLines(sdp: string, pattern: RegExp): number {
   return (sdp.match(pattern) ?? []).length;
@@ -205,6 +221,85 @@ const api = {
       window.RTCPeerConnection = NativePeer;
       window.WebSocket = NativeSocket;
     }
+  },
+  async mountRemoteVideo() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 160;
+    canvas.height = 120;
+    const context = canvas.getContext("2d");
+    let counter = 0;
+    const timer = window.setInterval(() => {
+      counter += 1;
+      if (context) {
+        context.fillStyle = "hsl(" + ((counter * 7) % 360) + ",70%,50%)";
+        context.fillRect(0, 0, 160, 120);
+      }
+    }, 40);
+    const captured = canvas.captureStream(15);
+    const track = captured.getVideoTracks()[0]!;
+    const senderPeer = new RTCPeerConnection();
+    const receiverPeer = new RTCPeerConnection();
+    senderPeer.onicecandidate = (event) => {
+      if (event.candidate) void receiverPeer.addIceCandidate(event.candidate);
+    };
+    receiverPeer.onicecandidate = (event) => {
+      if (event.candidate) void senderPeer.addIceCandidate(event.candidate);
+    };
+    const receivedPromise = new Promise<MediaStreamTrack>((resolve) => {
+      receiverPeer.ontrack = (event) => resolve(event.track);
+    });
+    const transceiver = senderPeer.addTransceiver(track, { streams: [captured] });
+    await senderPeer.setLocalDescription(await senderPeer.createOffer());
+    await receiverPeer.setRemoteDescription(senderPeer.localDescription!);
+    await receiverPeer.setLocalDescription(await receiverPeer.createAnswer());
+    await senderPeer.setRemoteDescription(receiverPeer.localDescription!);
+    const receivedTrack = await receivedPromise;
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    root.render(
+      createElement(VideoSurface, {
+        localStream: null,
+        remoteStream: new MediaStream([receivedTrack]),
+      }),
+    );
+    remoteRig = {
+      senderPeer,
+      receiverPeer,
+      sender: transceiver.sender,
+      track,
+      receivedTrack,
+      root,
+      host,
+      timer,
+    };
+  },
+  async remoteSenderCamera(on: boolean) {
+    if (!remoteRig) throw new Error("Remote video rig is not mounted");
+    await remoteRig.sender.replaceTrack(on ? remoteRig.track : null);
+  },
+  remoteVideoState() {
+    if (!remoteRig) throw new Error("Remote video rig is not mounted");
+    const video = remoteRig.host.querySelector("video.remote-video") as HTMLVideoElement | null;
+    return {
+      hasElement: video !== null,
+      hidden: video ? video.style.visibility === "hidden" : null,
+      totalFrames: video ? video.getVideoPlaybackQuality().totalVideoFrames : 0,
+      placeholderVisible:
+        remoteRig.host.textContent?.includes("Waiting for partner video") ?? false,
+      receiverTrackMuted: remoteRig.receivedTrack.muted,
+      receiverTrackState: remoteRig.receivedTrack.readyState,
+    };
+  },
+  async unmountRemoteVideo() {
+    if (!remoteRig) return;
+    window.clearInterval(remoteRig.timer);
+    remoteRig.root.unmount();
+    remoteRig.host.remove();
+    remoteRig.track.stop();
+    remoteRig.senderPeer.close();
+    remoteRig.receiverPeer.close();
+    remoteRig = null;
   },
   async cleanup() {
     await controller.stop();

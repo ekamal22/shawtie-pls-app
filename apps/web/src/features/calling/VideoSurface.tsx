@@ -1,5 +1,63 @@
 import { useEffect, useRef, useState } from "react";
 
+const REMOTE_FRAME_STALL_MS = 3_000;
+
+/**
+ * Remote video availability is derived from rendering progress. When the sender turns its camera
+ * off the receiving track can stay live and unmuted, so the last decoded frame would otherwise stay
+ * on screen indefinitely. This stays entirely inside the browser: no statistics leave the page and
+ * no camera state is signalled or stored.
+ */
+function useRemoteFrameStall(element: HTMLVideoElement | null, active: boolean): boolean {
+  const [stalled, setStalled] = useState(false);
+
+  useEffect(() => {
+    if (!element || !active) {
+      setStalled(false);
+      return undefined;
+    }
+    let disposed = false;
+    let seenFrame = false;
+    let lastAdvance = performance.now();
+    let lastTotal = -1;
+    let handle: number | null = null;
+    const hasFrameCallback = typeof element.requestVideoFrameCallback === "function";
+
+    const advanced = () => {
+      seenFrame = true;
+      lastAdvance = performance.now();
+      setStalled(false);
+    };
+    const onFrame = () => {
+      if (disposed) return;
+      advanced();
+      handle = element.requestVideoFrameCallback(onFrame);
+    };
+    if (hasFrameCallback) handle = element.requestVideoFrameCallback(onFrame);
+
+    const timer = window.setInterval(() => {
+      if (!hasFrameCallback) {
+        const total = element.getVideoPlaybackQuality().totalVideoFrames;
+        if (total !== lastTotal) {
+          lastTotal = total;
+          if (total > 0) advanced();
+        }
+      }
+      if (seenFrame && performance.now() - lastAdvance > REMOTE_FRAME_STALL_MS) setStalled(true);
+    }, 1_000);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      if (handle !== null && typeof element.cancelVideoFrameCallback === "function") {
+        element.cancelVideoFrameCallback(handle);
+      }
+    };
+  }, [element, active]);
+
+  return stalled;
+}
+
 function bindStream(
   element: HTMLVideoElement | null,
   stream: MediaStream | null,
@@ -27,7 +85,9 @@ export function VideoSurface({
 }) {
   const localRef = useRef<HTMLVideoElement | null>(null);
   const remoteRef = useRef<HTMLVideoElement | null>(null);
+  const [remoteElement, setRemoteElement] = useState<HTMLVideoElement | null>(null);
   const [remoteBlocked, setRemoteBlocked] = useState(false);
+  const remoteStalled = useRemoteFrameStall(remoteElement, remoteStream !== null);
 
   useEffect(() => {
     bindStream(localRef.current, localStream);
@@ -47,10 +107,23 @@ export function VideoSurface({
     <div className="video-stage" aria-label="Video call">
       <div className="remote-video-shell">
         {remoteStream ? (
-          <video ref={remoteRef} className="remote-video" autoPlay playsInline muted />
+          <video
+            ref={(element) => {
+              remoteRef.current = element;
+              setRemoteElement(element);
+            }}
+            className="remote-video"
+            style={remoteStalled ? { visibility: "hidden" } : undefined}
+            autoPlay
+            playsInline
+            muted
+          />
         ) : (
           <div className="video-placeholder">Waiting for partner video</div>
         )}
+        {remoteStream && remoteStalled ? (
+          <div className="video-placeholder video-stalled">Waiting for partner video</div>
+        ) : null}
         {remoteBlocked ? (
           <button
             className="primary compact video-retry"

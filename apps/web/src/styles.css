@@ -897,6 +897,13 @@ button:disabled {
   font-size: 14px;
 }
 
+.video-stalled {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
 .local-video-shell {
   position: absolute;
   right: 12px;
