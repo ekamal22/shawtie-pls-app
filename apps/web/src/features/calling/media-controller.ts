@@ -49,6 +49,8 @@ export class CallMediaSession {
   #socket: WebSocket | null = null;
   #videoSender: RTCRtpSender | null = null;
   #camera: CameraController | null = null;
+  #cameraReady: Promise<void>;
+  #resolveCameraReady: (() => void) | null = null;
   #remoteVideoStream: MediaStream | null = null;
   #signalingGeneration = 0;
   #stopped = false;
@@ -78,6 +80,9 @@ export class CallMediaSession {
     private readonly callbacks: CallMediaCallbacks,
   ) {
     this.#kind = kind;
+    this.#cameraReady = new Promise<void>((resolve) => {
+      this.#resolveCameraReady = resolve;
+    });
     this.#lease = new MediaOwnerLease(callId, deviceId);
     this.#remoteAudio.autoplay = true;
     this.#remoteAudio.setAttribute("playsinline", "");
@@ -138,16 +143,14 @@ export class CallMediaSession {
       peer.addTrack(track, this.localStream);
     }
 
-    if (this.#kind === "video") {
+    // Only the offering side (the caller) creates the video transceiver. An answerer that
+    // called addTransceiver before the remote offer would keep an unassociated second video
+    // transceiver, because transceivers created that way are not matched to offered m-lines.
+    // That orphan renegotiates as a second video m-line, which the C2 SDP policy forbids.
+    // The answerer instead adopts the transceiver created by the remote offer.
+    if (this.#kind === "video" && canonical.direction === "outgoing") {
       const transceiver = peer.addTransceiver("video", { direction: "sendrecv" });
-      this.#videoSender = transceiver.sender;
-      this.#camera = new CameraController(transceiver.sender, {
-        verifyAuthority: () => this.#verifyCameraAuthority(),
-        onState: (state) => this.callbacks.onCameraState?.(state),
-        onLocalStream: (stream) => this.callbacks.onLocalVideoStream?.(stream),
-        onError: (message) => this.callbacks.onError(message),
-      });
-      document.addEventListener("visibilitychange", this.#visibilityHandler);
+      this.#createCamera(transceiver.sender);
     }
 
     peer.addEventListener("track", (event) => {
@@ -248,7 +251,9 @@ export class CallMediaSession {
   }
 
   async enableCamera(facingMode?: CameraFacingMode): Promise<boolean> {
-    if (this.#kind !== "video" || !this.#camera) return false;
+    if (this.#kind !== "video") return false;
+    await this.#waitForCamera();
+    if (!this.#camera) return false;
     return this.#camera.enable(facingMode);
   }
 
@@ -275,6 +280,7 @@ export class CallMediaSession {
   async stop(): Promise<void> {
     if (this.#stopped) return;
     this.#stopped = true;
+    this.#resolveCameraReady?.();
     document.removeEventListener("visibilitychange", this.#visibilityHandler);
     if (this.#reconnectTimer !== null) {
       window.clearTimeout(this.#reconnectTimer);
@@ -301,6 +307,40 @@ export class CallMediaSession {
     this.#stopAudioTracks();
     await this.#lease.release().catch(() => undefined);
     this.callbacks.onState("stopped");
+  }
+
+  #createCamera(sender: RTCRtpSender): void {
+    this.#videoSender = sender;
+    this.#camera = new CameraController(sender, {
+      verifyAuthority: () => this.#verifyCameraAuthority(),
+      onState: (state) => this.callbacks.onCameraState?.(state),
+      onLocalStream: (stream) => this.callbacks.onLocalVideoStream?.(stream),
+      onError: (message) => this.callbacks.onError(message),
+    });
+    document.addEventListener("visibilitychange", this.#visibilityHandler);
+    this.#resolveCameraReady?.();
+  }
+
+  #adoptOfferedVideoTransceiver(peer: RTCPeerConnection): void {
+    if (this.#kind !== "video" || this.#camera) return;
+    const offered = peer
+      .getTransceivers()
+      .filter((transceiver) => transceiver.receiver.track.kind === "video");
+    const transceiver = offered[0];
+    if (offered.length !== 1 || !transceiver) {
+      this.callbacks.onError("Video negotiation failed.");
+      return;
+    }
+    transceiver.direction = "sendrecv";
+    this.#createCamera(transceiver.sender);
+  }
+
+  async #waitForCamera(): Promise<void> {
+    if (this.#camera || this.#stopped) return;
+    await Promise.race([
+      this.#cameraReady,
+      new Promise<void>((resolve) => window.setTimeout(resolve, 10_000)),
+    ]);
   }
 
   async #verifyCameraAuthority(): Promise<boolean> {
@@ -438,6 +478,7 @@ export class CallMediaSession {
         await this.#peer.addIceCandidate(null).catch(() => undefined);
       }
       if (description.type === "offer") {
+        this.#adoptOfferedVideoTransceiver(this.#peer);
         await this.#peer.setLocalDescription();
         this.#sendDescription();
       }

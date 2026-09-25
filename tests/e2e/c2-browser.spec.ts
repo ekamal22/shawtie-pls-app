@@ -48,3 +48,49 @@ test("C2 browser host scopes camera and microphone to self", async ({ page }) =>
   const response = await openHarness(page);
   expect(response.headers()["permissions-policy"]).toBe("camera=(self), microphone=(self)");
 });
+
+const VIDEO_CALL = "20000000-0000-4000-8000-0000000000c2";
+const VIDEO_DEVICE = "70000000-0000-4000-8000-0000000000c2";
+
+test("C2 callee adopts the offered video transceiver and never renegotiates a second video m-line", async ({
+  page,
+}) => {
+  await page.route("**/api/v1/calls/" + VIDEO_CALL, (route) =>
+    route.fulfill({
+      json: {
+        id: VIDEO_CALL,
+        kind: "video",
+        direction: "incoming",
+        state: "accepted",
+        version: 2,
+        isThisDeviceSelectedEndpoint: true,
+      },
+    }),
+  );
+  await page.route("**/api/v1/calls/" + VIDEO_CALL + "/turn-credentials", (route) =>
+    route.fulfill({
+      json: {
+        urls: ["turn:127.0.0.1:1?transport=tcp"],
+        username: "c2-harness",
+        credential: "c2-harness",
+        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+        iceTransportPolicy: "relay",
+      },
+    }),
+  );
+  await openHarness(page);
+  const result = await page.evaluate(
+    ({ callId, deviceId }) => window.c2Harness.videoCalleeNegotiation(callId, deviceId),
+    { callId: VIDEO_CALL, deviceId: VIDEO_DEVICE },
+  );
+
+  expect(result.descriptions.map((description) => description.type)).toEqual(["answer"]);
+  expect(result.descriptions[0]).toMatchObject({
+    audioLines: 1,
+    videoLines: 1,
+    applicationLines: 0,
+    sendrecvLines: 2,
+  });
+  expect(result.videoTransceivers).toBe(1);
+  expect(result.cameraWaitSettled).toBe("settled");
+});

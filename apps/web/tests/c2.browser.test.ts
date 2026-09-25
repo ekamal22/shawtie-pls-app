@@ -79,3 +79,13 @@ test("C2 product UI exposes explicit video consent and camera-off acceptance", a
   assert.equal(api.includes("C2_VIDEO_MEDIA_PROFILE"), true);
   assert.equal(vite.includes("camera=(self), microphone=(self)"), true);
 });
+
+test("C2 answerer adopts the offered video transceiver instead of adding its own", async () => {
+  const media = await source("../src/features/calling/media-controller.ts");
+
+  assert.equal(media.includes("#adoptOfferedVideoTransceiver"), true);
+  assert.equal(media.includes('canonical.direction === "outgoing"'), true);
+  assert.equal(media.includes('transceiver.direction = "sendrecv"'), true);
+  assert.equal(media.includes("await this.#waitForCamera()"), true);
+  assert.equal(media.split('peer.addTransceiver("video"').length - 1, 1);
+});
