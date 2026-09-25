@@ -1,0 +1,147 @@
+/* Home (UX2). Surface-prefixed styles only; tokens come from the shared design system. */
+.home-page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.home-loading {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.home-presence {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) 0 var(--space-4);
+  text-align: center;
+}
+
+.home-presence__name {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-editorial);
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+  font-weight: 450;
+  overflow-wrap: anywhere;
+}
+
+.home-talk,
+.home-ours {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+}
+
+.home-talk {
+  min-height: 5.5rem;
+  padding: var(--space-4);
+  background: var(--mine);
+}
+
+.home-ours {
+  min-height: 3.5rem;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+}
+
+.home-talk__body,
+.home-ours__body {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.home-talk__title,
+.home-ours__title {
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+.home-ours__title {
+  font-size: var(--type-ui-title);
+  line-height: var(--type-ui-title-lh);
+}
+
+.home-talk__line,
+.home-ours__line {
+  color: var(--ink-2);
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
+}
+
+.home-talk__snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.home-talk__who {
+  color: var(--ink);
+}
+
+.home-talk__when {
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+}
+
+.home-talk:focus-visible,
+.home-ours:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.home-moment {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+}
+
+.home-moment p {
+  margin: 0;
+}
+
+.home-moment__kicker {
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-moment__figure {
+  font-family: var(--font-editorial);
+  font-size: var(--type-date);
+  line-height: var(--type-date-lh);
+}
+
+.home-moment__quote {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-quote);
+  line-height: var(--type-quote-lh);
+  overflow-wrap: anywhere;
+}
+
+.home-moment__note {
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
+  opacity: 0.8;
+}
+
+.home-moment-loading {
+  min-height: 6rem;
+}
