@@ -63,7 +63,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
 | 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
-| 9 C2 Video Calling | IN_PROGRESS on `feat/c2-video-calling`; source and automated/local closure complete at `94e0e93`; Redmi acceptance pending | merged C1 | Yes, mandatory |
+| 9 C2 Video Calling | DONE on `feat/c2-video-calling` at final executable SHA `ecbb2e1`; Redmi acceptance complete; ready to merge, not merged | merged C1 | Yes, mandatory |
 | 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
 | 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -92,11 +92,11 @@ M1 and R1 remain verified and merged behind M2. M2, M3, and C1 are closed milest
 Next:
 
 1. preserve verified C1 executable baseline `b29aaa1` and full C1 physical evidence
-2. preserve C2 automated/local closure at executable SHA `94e0e93` against real migrations 0001 through 0018 with `reserved=0`
-3. execute mandatory C2 Redmi Note 9S physical acceptance
-4. fix any physical defects and rerun affected automated gates
-5. reconcile evidence and mark C2 DONE only after all mandatory physical scenarios pass
-6. merge C2 only after closure and device evidence are complete
+2. preserve C2 closure at final executable SHA `ecbb2e1` against real migrations 0001 through 0018 with `reserved=0` (first automated closure at `94e0e93`)
+3. C2 mandatory Redmi Note 9S physical acceptance is complete; preserve `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
+4. two physical-sweep defects were fixed and rerun (`e6576e9`, `ecbb2e1`)
+5. C2 is DONE on the branch after all mandatory physical scenarios passed
+6. merge C2 to `main` (ready, not merged)
 7. keep V1 hosted verification separate until Actions capacity returns
 
 # Milestone 5A: M1 Messaging Core
@@ -442,7 +442,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 
 # Milestone 9: C2 Video Calling
 
-Status: IN_PROGRESS on `feat/c2-video-calling`. Source implementation and automated/local closure are complete at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. Mandatory Redmi Note 9S acceptance remains pending, so the milestone is not DONE or merge-ready.
+Status: DONE on `feat/c2-video-calling`, ready to merge, not merged. The final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated/local closure passed earlier at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. Mandatory Redmi Note 9S acceptance is complete at `ecbb2e1`: every scenario (1 through 31 and 33 through 36) PASSED after two sweep defects (`e6576e9`, `ecbb2e1`) were fixed, and the automated closure re-passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 Depends on verified and merged C1.
 
@@ -452,7 +452,7 @@ API delta: `docs/api/C2_VIDEO_CALLING_API.md`.
 
 Video signaling: `docs/api/C2_VIDEO_SIGNALING_PROTOCOL.md`.
 
-Physical acceptance: `docs/testing/C2_ANDROID_ACCEPTANCE.md`.
+Physical acceptance: `docs/testing/C2_ANDROID_ACCEPTANCE.md` (complete; evidence in `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 Accepted refinement: `docs/adr/ADR-015-c2-video-signaling-and-camera-privacy.md`.
 

@@ -100,6 +100,7 @@ The selected architecture is:
 - `testing/M3_ANDROID_ACCEPTANCE.md`
 - `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - `testing/C2_ANDROID_ACCEPTANCE.md`
+- `testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 
@@ -127,7 +128,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages and C1 Voice Calling are DONE and merged. C2 Video Calling source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 gates, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. Mandatory physical Redmi acceptance remains pending, so C2 is IN_PROGRESS and unmerged. Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, and ADR-015. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages and C1 Voice Calling are DONE and merged. C2 Video Calling source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 gates, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. The first automated closure passed at `94e0e93`; the final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where the closure re-passed with `reserved=0` and mandatory physical Redmi Note 9S acceptance is COMPLETE (scenarios 1 through 31 and 33 through 36 PASSED). C2 is DONE on the branch: ready to merge, not merged. Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, and ADR-015. Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

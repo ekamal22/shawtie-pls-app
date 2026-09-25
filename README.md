@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified mainline includes M2, M3, and C1 as DONE and merged. C1 Voice Calling is merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`, with final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` and full Redmi acceptance complete. C2 Video Calling source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 gates, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, and a zero-vulnerability high-severity audit. C2 reuses the C1 call aggregate, keeps voice on `shawtie.call.v1`, uses `shawtie.call.v2` for video multi-m-line ICE association, requires `video-v1` compatibility for video create/accept, adds generation-fenced local camera control and video UI, and adds no PostgreSQL migration. Mandatory Redmi Note 9S physical acceptance remains pending, so C2 is IN_PROGRESS, unmerged, and not DONE.
+The verified mainline includes M2, M3, and C1 as DONE and merged. C1 Voice Calling is merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`, with final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` and full Redmi acceptance complete. C2 Video Calling source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 gates, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, and a zero-vulnerability high-severity audit. C2 reuses the C1 call aggregate, keeps voice on `shawtie.call.v1`, uses `shawtie.call.v2` for video multi-m-line ICE association, requires `video-v1` compatibility for video create/accept, adds generation-fenced local camera control and video UI, and adds no PostgreSQL migration. The first automated closure passed at `94e0e93`; the final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where the automated closure re-passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and mandatory physical Redmi Note 9S acceptance is COMPLETE (every scenario 1 through 31 and 33 through 36 PASSED; `C2_ANDROID_ACCEPTANCE_PASS`, `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`). C2 is DONE on the branch: ready to merge, not merged. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 ## Product direction
 
@@ -54,7 +54,7 @@ Start with:
 - `docs/architecture/C2_VIDEO_CALLING_DESIGN.md` for the completed C2 architecture and implementation design
 - `docs/api/C2_VIDEO_CALLING_API.md` for the C2 HTTP compatibility delta
 - `docs/api/C2_VIDEO_SIGNALING_PROTOCOL.md` for video `shawtie.call.v2`
-- `docs/testing/C2_ANDROID_ACCEPTANCE.md` for mandatory physical Android C2 closure
+- `docs/testing/C2_ANDROID_ACCEPTANCE.md` for mandatory physical Android C2 closure (complete; evidence in `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`)
 - `docs/api/M3_MEDIA_API.md` for the implemented M3 upload, retrieval, storage, and binding contract
 - `docs/testing/M3_ANDROID_ACCEPTANCE.md` for the M3 physical Android acceptance procedure (20 of 20 executed; evidence in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`)
 - `docs/api/M2_REALTIME_PROTOCOL.md` for the M2 WebSocket protocol and invalidation contract

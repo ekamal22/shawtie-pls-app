@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and implemented for C2. Automated/local closure passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`; physical Redmi Note 9S acceptance remains pending.
+Accepted and implemented for C2. Automated/local closure first passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`; the final executable SHA is `ecbb2e1`, where physical Redmi Note 9S acceptance is complete.
 
 ## Context
 
@@ -122,7 +122,7 @@ C2 reserves no migration number.
 1. [complete] implement C2 behind `C2_VIDEO_ENABLED`
 2. [complete] keep production default off
 3. [complete] close automated/local C2 gates with retained C1 closure at executable SHA `94e0e93`
-4. [pending] close mandatory Redmi Note 9S physical acceptance
+4. [complete] close mandatory Redmi Note 9S physical acceptance at final executable SHA `ecbb2e1` (evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`)
 5. [pending] only then allow production video enablement
 
 ## Rollback

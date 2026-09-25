@@ -2,7 +2,7 @@
 
 ## Status
 
-**DESIGN, SOURCE IMPLEMENTATION, AND AUTOMATED/LOCAL VERIFICATION COMPLETE AT `94e0e93`. PHYSICAL VERIFICATION PENDING.**
+**DESIGN, SOURCE IMPLEMENTATION, AUTOMATED/LOCAL VERIFICATION, AND PHYSICAL VERIFICATION COMPLETE AT FINAL EXECUTABLE SHA `ecbb2e1` (FIRST AUTOMATED CLOSURE AT `94e0e93`). DONE ON THE BRANCH, READY TO MERGE, NOT MERGED.**
 
 Implementation branch:
 
@@ -16,7 +16,7 @@ Verified C1 executable baseline inherited by C2:
 
 `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`
 
-C1 is DONE and merged. C2 source implementation and automated/local closure are complete on top of that verified substrate at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The branch remains IN_PROGRESS until the mandatory Redmi Note 9S acceptance matrix passes.
+C1 is DONE and merged. C2 source implementation and automated/local closure are complete on top of that verified substrate; the first automated closure passed at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and the final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`. The mandatory Redmi Note 9S acceptance matrix passed (evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`), so the branch is DONE, ready to merge, not merged.
 
 Canonical HTTP/API delta:
 
@@ -833,7 +833,7 @@ npm run test:c2:closure
 
 C2 closure MUST run retained C1 closure first or as an integrated dependency.
 
-No migration reservation is permitted. Canonical closure passed real migrations 0001 through 0018 with `reserved=0` at `94e0e93`, including retained M3 63/63 plus MinIO 1/1 and Chromium 4/4, retained C1 24/24 and integrated 111/111 plus Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit, and git hygiene.
+No migration reservation is permitted. Canonical closure passed real migrations 0001 through 0018 with `reserved=0` at `94e0e93` and re-passed at final executable SHA `ecbb2e1`, including retained M3 63/63 plus MinIO 1/1 and Chromium 4/4, retained C1 24/24 and integrated 111/111 plus Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit, and git hygiene.
 
 ### C2-H Physical Android closure
 
@@ -844,7 +844,7 @@ npm run test:c2:device:prepare
 npm run test:c2:device:cleanup
 ```
 
-C2 is not DONE until the canonical physical Android matrix passes on the Redmi Note 9S.
+The canonical physical Android matrix passed on the Redmi Note 9S at final executable SHA `ecbb2e1` (scenarios 1 through 31 and 33 through 36); see `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`. Two defects found in the discovery sweep were fixed before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame).
 
 ## 25. Closure boundary
 
@@ -869,4 +869,4 @@ C2 is DONE only when:
 - documentation and exact tested SHA are recorded
 - all commits retain `[skip ci]` while hosted Actions capacity is unavailable
 
-Automated/local closure is complete at executable SHA `94e0e93`. C2 remains IN_PROGRESS only because the mandatory physical Android acceptance gate is still open. The milestone must not be marked DONE or merged until that physical matrix passes and its evidence is reconciled.
+Automated/local closure passed first at `94e0e93` and again at final executable SHA `ecbb2e1`, and the mandatory physical Android acceptance gate is closed with evidence reconciled. C2 is DONE on the branch: ready to merge, not merged.

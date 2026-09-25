@@ -394,4 +394,4 @@ C2 extends the verified C1 call platform without changing durable call authority
 - `C2_VIDEO_ENABLED` is a video-admission gate: it blocks new video create/ringing accept without killing an already accepted video call; verified C1 voice remains independent
 - existing C1 transport kill switch still disables signaling/TURN for both media kinds
 - account deletion, endpoint revocation and final dissolution stop local audio/video media and remove future signaling/TURN authorization
-- C2 retains the C1 stale-owner ownership fix; automated/local closure reran retained C1 focused 24/24, integrated 111/111, and Chromium 5/5 at `94e0e93`
+- C2 retains the C1 stale-owner ownership fix; automated/local closure reran retained C1 focused 24/24, integrated 111/111, and Chromium 5/5 at `94e0e93` and again at final executable SHA `ecbb2e1`; physical Redmi Note 9S acceptance is complete (see `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`)

@@ -1701,7 +1701,7 @@ The isolated automated/local closure passed at `439b09f` using only documented 0
 
 # C2: Video Calling
 
-Status: IN_PROGRESS. DESIGN, SOURCE IMPLEMENTATION, AND AUTOMATED/LOCAL CLOSURE COMPLETE AT `94e0e93`; PHYSICAL REDMI ACCEPTANCE REMAINS OPEN.
+Status: DONE on the branch (ready to merge, not merged). DESIGN, SOURCE IMPLEMENTATION, AUTOMATED CLOSURE, AND PHYSICAL REDMI ACCEPTANCE COMPLETE AT FINAL EXECUTABLE SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated closure passed earlier at `94e0e93`.
 
 Branch:
 
@@ -1722,6 +1722,10 @@ Signaling:
 Physical Android:
 
 `docs/testing/C2_ANDROID_ACCEPTANCE.md`
+
+Physical Android evidence:
+
+`docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
 
 ADR:
 
@@ -1763,14 +1767,16 @@ Migration ownership:
 - `d20c385`: disposable C2 PostgreSQL/API integration, automated closure wrapper, and Android prepare/cleanup harness
 - `5e3144a`: camera authority-exception cleanup, strict switch-facing behavior and remote track mute/unmute handling
 - `3538228`: operational-control integration coverage and C2 focused build/test command tightening
-- `94e0e93`: lint/format hygiene repair and canonical automated/local closure PASS with `reserved=0`
+- `94e0e93`: lint/format hygiene repair and first canonical automated/local closure PASS with `reserved=0`
+- `e6576e9`: reuse the offered video transceiver on the callee (physical sweep defect)
+- `ecbb2e1`: detect stalled remote video rendering (physical sweep defect); final executable SHA with automated closure PASS `reserved=0` and physical acceptance complete
 - no migration added or reserved
 - C1 voice remains on `shawtie.call.v1`
 - automated/local closure passed with retained M3 63/63 plus MinIO 1/1 and Chromium 4/4, retained C1 24/24 and integrated 111/111 plus Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit, and git hygiene
 
 ## Implementation gates
 
-The C2-A through C2-G checkmarks below record implemented source and the green automated/local closure at `94e0e93`. They do not satisfy the separate C2-H physical-device gate.
+The C2-A through C2-G checkmarks below record implemented source and the green automated/local closure (first at `94e0e93`, re-run at final executable SHA `ecbb2e1`). C2-H records the separate physical-device gate, which is also closed.
 
 ### C2-A Contracts and compatibility
 
@@ -1868,19 +1874,21 @@ The C2-A through C2-G checkmarks below record implemented source and the green a
 
 ### C2-H Physical Android
 
-- [ ] all canonical C2 Redmi scenarios pass
-- [ ] bidirectional audio/video confirmed
-- [ ] front/back switch confirmed
-- [ ] background camera privacy confirmed
-- [ ] stale camera-generation fencing confirmed
-- [ ] old-client compatibility confirmed
-- [ ] multi-m-line ICE association confirmed
-- [ ] relay-only network/privacy confirmed
-- [ ] exact executable SHA recorded
-- [ ] evidence sanitized
-- [ ] local/remote parity clean
+- [x] all canonical C2 Redmi scenarios pass
+- [x] bidirectional audio/video confirmed
+- [x] front/back switch confirmed
+- [x] background camera privacy confirmed
+- [x] stale camera-generation fencing confirmed
+- [x] old-client compatibility confirmed
+- [x] multi-m-line ICE association confirmed
+- [x] relay-only network/privacy confirmed
+- [x] exact executable SHA recorded
+- [x] evidence sanitized
+- [x] local/remote parity clean
 
 C2 is DONE only when every implementation and physical gate above is closed.
+
+Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`, final executable SHA `ecbb2e1`.
 
 # R1: Relationship Space
 

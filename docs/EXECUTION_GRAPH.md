@@ -105,7 +105,7 @@ flowchart TD
 
     M2 --> M3["M3 Media + Voice Messages ✅"]
     M2 --> C1["C1 Voice Calling ✅"]
-    C1 --> C2["C2 Video Calling: automated/local ✅, physical 🟡"]
+    C1 --> C2["C2 Video Calling: automated/local ✅, physical ✅"]
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
     C2 --> S1
@@ -141,7 +141,7 @@ M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
    +
 C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; full physical acceptance complete
    ->
-C2 Video Calling 🟡 on `feat/c2-video-calling`; source and automated/local closure complete at `94e0e93`; mandatory Redmi acceptance pending
+C2 Video Calling ✅ on `feat/c2-video-calling`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi acceptance complete; ready to merge, not merged
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -156,7 +156,7 @@ Verified branch: `feat/m3-media-voice`.
 
 Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
 
-M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C2 source implementation and automated/local closure are complete at `94e0e93` with no migration added or reserved. Mandatory Redmi Note 9S acceptance is the remaining C2 gate.
+M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C2 source implementation and automated/local closure are complete (first at `94e0e93`, final executable SHA `ecbb2e1`) with no migration added or reserved. Mandatory Redmi Note 9S acceptance is complete; C2 awaits merge.
 
 ## Earlier completed milestone detail
 
@@ -213,7 +213,7 @@ main @ 54b8659
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
 C1 is reconciled onto main containing real M3 0015/0016. Real migrations 0001-0018 passed with `reserved=0`; after the stale media-owner fix, integrated closure re-passed at `b29aaa1`. Redmi physical acceptance and all follow-up evidence, including audible bidirectional audio, are complete.
-C2 Video Calling is IN_PROGRESS on `feat/c2-video-calling`; source implementation and automated/local closure are complete at `94e0e93`, while physical acceptance remains pending.
+C2 Video Calling is DONE on `feat/c2-video-calling`, ready to merge, not merged; source implementation and automated/local closure are complete (first at `94e0e93`, final executable SHA `ecbb2e1`) and physical Redmi Note 9S acceptance is complete. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 ~~~
 
 From P2 onward:

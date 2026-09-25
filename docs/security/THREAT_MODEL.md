@@ -1373,7 +1373,7 @@ Evidence:
 
 - audio and video candidate association integration tests
 - malformed/out-of-range locator denial
-- automated API/signaling evidence verifies v2 candidate association and relay-only validation; physical Redmi relay-path evidence remains pending
+- automated API/signaling evidence verifies v2 candidate association and relay-only validation; physical Redmi relay-path evidence is complete (see `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`)
 
 ### C2-T3: Camera activates without current local intent
 
