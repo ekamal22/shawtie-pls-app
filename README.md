@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified mainline includes M2, M3, and C1 as DONE and merged. C1 Voice Calling is merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`, with final executable baseline `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8` and full Redmi acceptance complete. C2 Video Calling source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 gates, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, and a zero-vulnerability high-severity audit. C2 reuses the C1 call aggregate, keeps voice on `shawtie.call.v1`, uses `shawtie.call.v2` for video multi-m-line ICE association, requires `video-v1` compatibility for video create/accept, adds generation-fenced local camera control and video UI, and adds no PostgreSQL migration. The first automated closure passed at `94e0e93`; the final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where the automated closure re-passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and mandatory physical Redmi Note 9S acceptance is COMPLETE (every scenario 1 through 31 and 33 through 36 PASSED; `C2_ANDROID_ACCEPTANCE_PASS`, `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`). C2 is DONE on the branch: ready to merge, not merged. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video Calling is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. Its final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where `npm run test:c2:closure` passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi Note 9S scenario (1 through 31 and 33 through 36) passed with `C2_ANDROID_ACCEPTANCE_PASS` and `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The discovery sweep found and fixed two physical-only defects before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame). The canonical migration chain remains real 0001 through 0018 with `reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`. The next product-experience program is UX0 through UX8, governed by `docs/design/ROMANTIC_UX_DIRECTION.md`; S1 E2EE remains a required stable-release milestone and the UX program must not claim E2EE before S1 is implemented and verified.
 
 ## Product direction
 
@@ -41,6 +41,7 @@ Start with:
 - `docs/README.md` for document authority and navigation
 - `docs/PROJECT_STATE.md` for verified current implementation state
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
+- `docs/design/ROMANTIC_UX_DIRECTION.md` for the accepted romantic UX direction, implementation boundaries, and UX0 through UX8 program
 - `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the completed A1 implementation design
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
 - `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the completed, locally verified P2 implementation design

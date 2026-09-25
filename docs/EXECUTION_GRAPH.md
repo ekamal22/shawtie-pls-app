@@ -62,9 +62,23 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
             +---+---+
                 |
                 v
-        C2 Video Calling 🟡
+        C2 Video Calling ✅
                 |
                 v
+        UX0 Romantic Spec 🟡
+                |
+                v
+        UX1 Design Foundation ⚪
+          /      |       \
+         v       v        v
+      UX2/3    UX4/5     UX6/7
+          \      |       /
+           +-----+------+
+                 |
+                 v
+        UX8 Encrypted UX ⚪
+                 ^
+                 |
         S1 E2EE + Crypto Recovery ⚪
                 |
                 v
@@ -105,12 +119,27 @@ flowchart TD
 
     M2 --> M3["M3 Media + Voice Messages ✅"]
     M2 --> C1["C1 Voice Calling ✅"]
-    C1 --> C2["C2 Video Calling: automated/local ✅, physical ✅"]
+    C1 --> C2["C2 Video Calling ✅ merged"]
+
+    C2 --> UX0["UX0 Romantic Experience Spec 🟡"]
+    UX0 --> UX1["UX1 Design Foundation ⚪"]
+    UX1 --> UX2["UX2 Home ⚪"]
+    UX1 --> UX3["UX3 Talk ⚪"]
+    UX1 --> UX4["UX4 Ours ⚪"]
+    UX1 --> UX5["UX5 Calls UX ⚪"]
+    UX1 --> UX6["UX6 Memories + Letters ⚪"]
+    UX2 --> UX7["UX7 Signature Moments ⚪"]
+    UX3 --> UX7
+    UX4 --> UX7
+    UX5 --> UX7
+    UX6 --> UX7
 
     M3 --> S1["S1 E2EE + Crypto Recovery ⚪"]
     C2 --> S1
+    UX7 --> UX8["UX8 Encrypted UX Integration ⚪"]
+    S1 --> UX8
 
-    S1 --> R2["R2 Public Readiness ⚪"]
+    UX8 --> R2["R2 Public Readiness ⚪"]
     V1["V1 Hosted CI Verification 🔒"] -. required before close .-> R2
 
     R2 --> RELEASE["Stable Release 🔒"]
@@ -141,7 +170,7 @@ M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
    +
 C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; full physical acceptance complete
    ->
-C2 Video Calling ✅ on `feat/c2-video-calling`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi acceptance complete; ready to merge, not merged
+C2 Video Calling ✅ DONE and fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi acceptance complete
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -213,7 +242,7 @@ main @ 54b8659
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
 C1 is reconciled onto main containing real M3 0015/0016. Real migrations 0001-0018 passed with `reserved=0`; after the stale media-owner fix, integrated closure re-passed at `b29aaa1`. Redmi physical acceptance and all follow-up evidence, including audible bidirectional audio, are complete.
-C2 Video Calling is DONE on `feat/c2-video-calling`, ready to merge, not merged; source implementation and automated/local closure are complete (first at `94e0e93`, final executable SHA `ecbb2e1`) and physical Redmi Note 9S acceptance is complete. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+C2 Video Calling is DONE and fast-forward merged to `main @ fed2db7`; source implementation and automated/local closure are complete (first at `94e0e93`, final executable SHA `ecbb2e1`) and physical Redmi Note 9S acceptance is complete. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 ~~~
 
 From P2 onward:

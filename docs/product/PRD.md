@@ -2028,6 +2028,16 @@ A phase item appearing below does not imply that it has been implemented.
 - polish
 - accessibility
 - performance
+- accepted user-facing information architecture: Home, Talk, and Ours
+- Ours may present existing Relationship Space features through Then, Now, and Next without changing the underlying R1 authority or schema
+- restrained romantic visual direction using content-led photography, editorial memory/letter treatment, and the Midnight/Dawn concept
+- progressive disclosure instead of permanently crowded action rows
+- relationship warmth without engagement scoring, streak pressure, surveillance, or manipulative lifecycle copy
+- operational, security, consent, breakup, deletion, and recovery states remain explicit and unambiguous
+- product-experience work must not claim verified E2EE until Phase 7/S1 is implemented and reviewed
+
+Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
+
 
 ### Phase 6: Shared Space
 

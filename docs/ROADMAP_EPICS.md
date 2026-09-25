@@ -1701,7 +1701,7 @@ The isolated automated/local closure passed at `439b09f` using only documented 0
 
 # C2: Video Calling
 
-Status: DONE on the branch (ready to merge, not merged). DESIGN, SOURCE IMPLEMENTATION, AUTOMATED CLOSURE, AND PHYSICAL REDMI ACCEPTANCE COMPLETE AT FINAL EXECUTABLE SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated closure passed earlier at `94e0e93`.
+Status: DONE and fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. DESIGN, SOURCE IMPLEMENTATION, AUTOMATED CLOSURE, AND PHYSICAL REDMI ACCEPTANCE COMPLETE AT FINAL EXECUTABLE SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated closure passed earlier at `94e0e93`.
 
 Branch:
 
@@ -2193,6 +2193,115 @@ The integrated command surface has executed successfully through `test:r1:local`
 
 
 Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3887653a9ec` passed the exhaustive 40-gate local validation sweep, including canonical 0001 through 0014 migrations with no reservations, R1 69/69, M1 64/64, full health, audit, whitespace, clean worktree, and SHA parity.
+
+# UX0: Romantic Experience Specification
+
+Status: IN_PROGRESS. The romantic UX concept is accepted as the product-experience direction; this epic freezes the canonical implementation-ready specification without changing runtime behavior.
+
+Canonical direction:
+
+`docs/design/ROMANTIC_UX_DIRECTION.md`
+
+## Acceptance gates
+
+- [ ] Home, Talk, and Ours information architecture is frozen
+- [ ] Ours maps relationship features into Then, Now, and Next without changing R1 authority
+- [ ] visual tokens, typography, surfaces, iconography, spacing, motion, and accessibility rules are frozen
+- [ ] every proposal is classified as presentation-only, separate product work, or deferred
+- [ ] no design text claims verified E2EE before S1
+- [ ] no UX proposal silently changes lifecycle, messaging, R1, M3, C1, or C2 semantics
+- [ ] mobile-first screen and component inventories are complete
+- [ ] implementation ownership map supports parallel work without shared-component conflicts
+
+# UX1: Romantic Design Foundation
+
+Status: PLANNED after UX0.
+
+## Acceptance gates
+
+- [ ] shared Midnight/Dawn token system implemented
+- [ ] shared typography, spacing, radius, surface, icon, and motion primitives implemented
+- [ ] accessible buttons, inputs, sheets, dialogs, cards, navigation, empty/loading/error states implemented
+- [ ] reduced-motion and contrast behavior verified
+- [ ] existing product flows remain functionally unchanged
+
+# UX2: Home - The Threshold
+
+Status: PLANNED after UX1.
+
+## Acceptance gates
+
+- [ ] partner-first Home replaces dashboard-like density
+- [ ] one curated shared moment can surface without engagement ranking
+- [ ] Talk and Ours remain immediately reachable
+- [ ] no new backend state is required
+
+# UX3: Talk
+
+Status: PLANNED after UX1.
+
+## Acceptance gates
+
+- [ ] messaging hierarchy and compact composer implemented
+- [ ] progressive attachment disclosure implemented
+- [ ] Remember This ribbon uses existing R1/M1 semantics
+- [ ] M1/M2/M3 behavior and offline/realtime guarantees remain unchanged
+- [ ] mobile density and accessibility verified
+
+# UX4: Ours
+
+Status: PLANNED after UX1 and verified R1.
+
+## Acceptance gates
+
+- [ ] user-facing Relationship Space becomes Ours
+- [ ] Then, Now, and Next presentation maps existing R1 feature kinds without schema change
+- [ ] lifecycle view-only states remain authoritative and neutral
+- [ ] no relationship scoring, surveillance, or engagement ranking is introduced
+
+# UX5: Calls Experience
+
+Status: PLANNED after UX1 and merged C1/C2.
+
+## Acceptance gates
+
+- [ ] voice calling presentation feels partner-first while preserving C1
+- [ ] video presentation preserves C2 Accept video, Accept camera off, camera privacy, switching, mute, and recovery states
+- [ ] remote media remains dominant and controls remain accessible
+- [ ] no voice-to-video upgrade or new call state is introduced
+- [ ] physical Redmi smoke confirms call UX changes do not regress accepted behavior
+
+# UX6: Memories, Letters, and Time
+
+Status: PLANNED after UX1 with verified R1/M3.
+
+## Acceptance gates
+
+- [ ] Our Story, Remember This, For You, Voice Letters, Future Us, This Day in Us, Our Year, Places, Someday, Firsts, reunion, anniversary, surprise, and proposal receive coherent presentation
+- [ ] editorial/photo treatment remains restrained and content-led
+- [ ] release, ownership, privacy, and lifecycle semantics remain unchanged
+- [ ] product extensions such as synchronized Open Together remain out of scope unless separately approved
+
+# UX7: Signature Shawtie Moments
+
+Status: PLANNED after UX2 through UX6.
+
+## Acceptance gates
+
+- [ ] Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return are coherent with UX1
+- [ ] signature interactions respect reduced motion
+- [ ] no signature moment creates hidden durable state or new backend semantics
+
+# UX8: Encrypted UX Integration
+
+Status: PLANNED after S1 and the main romantic UX surfaces.
+
+## Acceptance gates
+
+- [ ] device enrollment, recovery, revocation, encryption failure, and unavailable-history states are integrated into the redesigned experience
+- [ ] privacy copy accurately reflects verified S1 behavior
+- [ ] security-critical actions remain explicit and accessible
+- [ ] no romantic microcopy obscures destructive or security-sensitive consequences
 
 # S1: E2EE and Cryptographic Recovery
 

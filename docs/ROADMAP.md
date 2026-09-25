@@ -63,9 +63,18 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158`; physical Android acceptance 14/14 | M1 + R1 merged mainline | Yes |
 | 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
 | 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
-| 9 C2 Video Calling | DONE on `feat/c2-video-calling` at final executable SHA `ecbb2e1`; Redmi acceptance complete; ready to merge, not merged | merged C1 | Yes, mandatory |
-| 10 S1 E2EE and Cryptographic Recovery | PLANNED | M3, C1, and C2 | Yes, mandatory |
-| 11 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
+| 9 C2 Video Calling | DONE and fast-forward merged to `main @ fed2db7`; final executable `ecbb2e1`; automated closure and all mandatory Redmi scenarios PASS | merged C1 | Yes, mandatory |
+| 10 UX0 Romantic Experience Specification | IN_PROGRESS; romantic UX direction accepted, canonical implementation spec being frozen | merged C2 | No code |
+| 11 UX1 Romantic Design Foundation | PLANNED | UX0 | Browser/device visual validation |
+| 12 UX2 Home: The Threshold | PLANNED | UX1 | Mobile-first |
+| 13 UX3 Talk | PLANNED | UX1 | Mobile-first |
+| 14 UX4 Ours | PLANNED | UX1 + verified R1 | Mobile-first |
+| 15 UX5 Calls Experience | PLANNED | UX1 + merged C1/C2 | Physical call smoke required |
+| 16 UX6 Memories, Letters, and Time | PLANNED | UX1 + verified R1/M3 | Mobile-first |
+| 17 UX7 Signature Shawtie Moments | PLANNED | UX2 through UX6 | Mobile-first |
+| 18 S1 E2EE and Cryptographic Recovery | PLANNED; may run in parallel with UX2 through UX7 | M3, C1, C2 | Yes, mandatory |
+| 19 UX8 Encrypted UX Integration | PLANNED | S1 + redesigned UX surfaces | Yes, security-critical UX |
+| 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
@@ -75,29 +84,56 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The verified implementation frontier is:
 
 ```text
-main @ 5323d7b
+main @ fed2db7
    |
-   +--> M3 Media ✅ merged
-   |
-   +--> C1 Voice ✅ merged
-           |
-           v
-      C2 Video
-      automated/local ✅
-      Redmi acceptance pending
+   +--> M3 Media ✅
+   +--> C1 Voice ✅
+   +--> C2 Video ✅
+            |
+            v
+      UX0 specification
+            |
+            v
+      UX1 foundation
+       /    |    \
+      v     v     v
+    UX2   UX3   UX4/UX5/UX6
+      \     |     /
+       +---- UX7
+            |
+            +----------------+
+            |                |
+            v                v
+          UX8 <----------- S1 E2EE
+            |
+            v
+            R2
+            |
+            v
+          STABLE
 ```
 
-M1 and R1 remain verified and merged behind M2. M2, M3, and C1 are closed milestones. C2 source implementation is complete and is now the active verification frontier.
+C2 is closed and merged. The next product-experience frontier is UX0, using the accepted romantic direction in `docs/design/ROMANTIC_UX_DIRECTION.md`. UX0 freezes the implementation-ready design system and classifies every proposal as presentation-only, separate product work, or deferred. UX1 establishes the shared design foundation before parallel surface work begins.
 
-Next:
+After UX1, UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, and UX6 Memories may proceed in parallel on isolated branches/worktrees with one design lead/integrator. UX7 consolidates signature Shawtie interactions. S1 E2EE may run in parallel with UX2 through UX7. UX8 integrates verified cryptographic and recovery states into the redesigned experience after S1. R2 remains the final pre-release gate.
 
-1. preserve verified C1 executable baseline `b29aaa1` and full C1 physical evidence
-2. preserve C2 closure at final executable SHA `ecbb2e1` against real migrations 0001 through 0018 with `reserved=0` (first automated closure at `94e0e93`)
-3. C2 mandatory Redmi Note 9S physical acceptance is complete; preserve `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
-4. two physical-sweep defects were fixed and rerun (`e6576e9`, `ecbb2e1`)
-5. C2 is DONE on the branch after all mandatory physical scenarios passed
-6. merge C2 to `main` (ready, not merged)
-7. keep V1 hosted verification separate until Actions capacity returns
+## UX0 through UX8 product-experience program
+
+Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
+
+- **UX0 Romantic Experience Specification:** freeze the accepted direction, component ownership, screen inventory, motion rules, accessibility requirements, and presentation-versus-product-extension classification.
+- **UX1 Romantic Design Foundation:** Midnight/Dawn tokens, typography, surfaces, iconography, spacing, motion primitives, sheets, dialogs, cards, buttons, loading/error/empty states, responsive shell, reduced-motion behavior.
+- **UX2 Home: The Threshold:** partner-first entry experience with one quiet shared moment and restrained access to Talk and Ours. No dashboard wall.
+- **UX3 Talk:** primary conversation redesign, compact composer, progressive attachment disclosure, voice/media presentation, and Remember This ribbon interaction while preserving M1/M2/M3 semantics.
+- **UX4 Ours:** user-facing relationship world organized as Then, Now, and Next over the existing R1 model. No database-model rewrite is implied.
+- **UX5 Calls Experience:** intimate voice/video presentation over the accepted C1/C2 behavior. No voice-to-video upgrade or new call state in this milestone.
+- **UX6 Memories, Letters, and Time:** Our Story, Remember This, For You, Voice Letters, Future Us, This Day in Us, Our Year, Places, Someday, Firsts, reunion, anniversary, surprise, and proposal presentation.
+- **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
+- **S1 E2EE and Cryptographic Recovery:** reviewed cryptographic protocol and recovery implementation. No UX copy may claim verified E2EE before this closes.
+- **UX8 Encrypted UX Integration:** device enrollment, recovery, revocation, unavailable-history states, encryption errors, and privacy language integrated into the romantic experience.
+- **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure.
+
+Parallel UX implementation is allowed only after UX1 establishes shared tokens/components. Recommended ownership is one UX lead/integrator plus separate Home, Talk, Ours, Calls, Memories, and read-only QA/reviewer agents. Every implementation branch must preserve `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent backend semantics when a design concept crosses the presentation boundary.
 
 # Milestone 5A: M1 Messaging Core
 
@@ -442,7 +478,7 @@ Add authorized private one-to-one voice calling with explicit acceptance, durabl
 
 # Milestone 9: C2 Video Calling
 
-Status: DONE on `feat/c2-video-calling`, ready to merge, not merged. The final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated/local closure passed earlier at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. Mandatory Redmi Note 9S acceptance is complete at `ecbb2e1`: every scenario (1 through 31 and 33 through 36) PASSED after two sweep defects (`e6576e9`, `ecbb2e1`) were fixed, and the automated closure re-passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+Status: DONE and fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. The final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated/local closure passed earlier at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, audit, and git hygiene. Mandatory Redmi Note 9S acceptance is complete at `ecbb2e1`: every scenario (1 through 31 and 33 through 36) PASSED after two sweep defects (`e6576e9`, `ecbb2e1`) were fixed, and the automated closure re-passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 Depends on verified and merged C1.
 
