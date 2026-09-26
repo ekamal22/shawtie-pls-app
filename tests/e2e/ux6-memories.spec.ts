@@ -364,11 +364,18 @@ function newScenario(items = fixtures()): Scenario {
   return { items, writes: [] };
 }
 
+/** The relationship content views live in the Ours shell's full space sheet. */
+function full(page: Page) {
+  return page.getByRole("dialog", { name: "The full space" });
+}
+
 async function openOurs(page: Page, scenario: Scenario, lens?: string) {
   await mockApi(page, scenario);
   await page.goto("/index.html#/ours");
-  await expect(page.getByRole("heading", { name: /Together for/ })).toBeVisible();
-  if (lens) await page.getByRole("button", { name: lens, exact: true }).click();
+  // The relationship content views are reached through the Ours shell's full space sheet.
+  await page.getByRole("button", { name: "Open the full space" }).click();
+  await expect(full(page).getByRole("heading", { name: /Together for/ })).toBeVisible();
+  if (lens) await full(page).getByRole("button", { name: lens, exact: true }).click();
 }
 
 async function noHorizontalScroll(page: Page) {
@@ -383,52 +390,54 @@ test("Our Story is an editorial timeline with explicit precision and a year rail
 }) => {
   await openOurs(page, newScenario(), "Our Story");
   await expect(
-    page.getByRole("heading", { name: "The night we talked until sunrise" }),
+    full(page).getByRole("heading", { name: "The night we talked until sunrise" }),
   ).toBeVisible();
   // Day precision: large day, month and year, and the precision named.
-  const day = page.locator("time[datetime='2024-06-01']");
+  const day = full(page).locator("time[datetime='2024-06-01']");
   await expect(day).toContainText("1");
   await expect(day).toContainText("June 2024");
   await expect(day).toContainText("Exact day");
   // Month precision is not dressed up as a day.
-  const month = page.locator("time[datetime='2025-02']");
+  const month = full(page).locator("time[datetime='2025-02']");
   await expect(month).toContainText("February");
   await expect(month).toContainText("Month");
   // Year rail is derived from the years that exist plus the undated group.
-  const rail = page.getByRole("navigation", { name: "Jump to a year" });
+  const rail = full(page).getByRole("navigation", { name: "Jump to a year" });
   await expect(rail.getByRole("button", { name: "2024" })).toBeVisible();
   await expect(rail.getByRole("button", { name: "2025" })).toBeVisible();
   await expect(rail.getByRole("button", { name: "Undated" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Whenever it was" })).toBeVisible();
+  await expect(full(page).getByRole("heading", { name: "Whenever it was" })).toBeVisible();
 });
 
 test("Kept shows pull-quotes, creator-only edit and delete, and Memory Return only when it resolves", async ({
   page,
 }) => {
   await openOurs(page, newScenario(), "Kept");
-  await expect(page.getByText("Text me when you land, even if it is 3am.")).toBeVisible();
-  await expect(page.getByText("Kept by Gulnur").or(page.getByText("Kept by them"))).toBeVisible();
-  await expect(page.getByText("Kept by you")).toBeVisible();
+  await expect(full(page).getByText("Text me when you land, even if it is 3am.")).toBeVisible();
+  await expect(
+    full(page).getByText("Kept by Gulnur").or(full(page).getByText("Kept by them")),
+  ).toBeVisible();
+  await expect(full(page).getByText("Kept by you")).toBeVisible();
 
   // Resolvable source shows the action; the missing one is rendered unavailable.
-  await expect(page.getByRole("button", { name: "Take me there" })).toHaveCount(1);
-  await expect(page.getByText("The original message is no longer available.")).toBeVisible();
+  await expect(full(page).getByRole("button", { name: "Take me there" })).toHaveCount(1);
+  await expect(full(page).getByText("The original message is no longer available.")).toBeVisible();
 
   // Partner's kept item: no Edit and no Delete.
   const theirs = page.locator("article.mem-kept").filter({ hasText: "Text me when you land" });
   await theirs.getByRole("button", { name: "More for this item" }).click();
-  await expect(page.getByRole("menuitem", { name: "Edit" })).toHaveCount(0);
-  await expect(page.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
+  await expect(full(page).getByRole("menuitem", { name: "Edit" })).toHaveCount(0);
+  await expect(full(page).getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
   await page.keyboard.press("Escape");
 
   // My own kept item: Edit and Delete are offered.
   const mine = page.locator("article.mem-kept").filter({ hasText: "You did enough today." });
   await mine.getByRole("button", { name: "More for this item" }).click();
-  await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Delete" })).toBeVisible();
+  await expect(full(page).getByRole("menuitem", { name: "Edit" })).toBeVisible();
+  await expect(full(page).getByRole("menuitem", { name: "Delete" })).toBeVisible();
   await page.keyboard.press("Escape");
 
-  await page.getByRole("button", { name: "Take me there" }).click();
+  await full(page).getByRole("button", { name: "Take me there" }).click();
   await expect(page).toHaveURL(new RegExp("#/talk/message/" + MSG_OK));
 });
 
@@ -447,10 +456,12 @@ test("A sealed letter shows only the projection, opens with the existing action,
   await expect(sealed.getByText("Whenever you miss me")).toHaveCount(0);
 
   // The opened letter reads as paper regardless of theme.
-  await expect(page.getByText("Happy birthday. I hope today feels like being held.")).toBeVisible();
+  await expect(
+    full(page).getByText("Happy birthday. I hope today feels like being held."),
+  ).toBeVisible();
 
   await sealed.getByRole("button", { name: "Open the letter" }).click();
-  await expect(page.getByText("Whenever you miss me, read this.")).toBeVisible();
+  await expect(full(page).getByText("Whenever you miss me, read this.")).toBeVisible();
   const release = scenario.writes.find((write) => write.path.endsWith("/release"));
   expect(release?.method).toBe("POST");
   expect(release?.body).toEqual({ expectedVersion: 1 });
@@ -493,7 +504,7 @@ test("Creator sees their own scheduled letter with a calm sealed band and resche
 
 test("Empty states are warm and never imply the relationship is incomplete", async ({ page }) => {
   await openOurs(page, newScenario([]));
-  await expect(page.getByText("Your space is ready")).toBeVisible();
+  await expect(full(page).getByText("Your space is ready")).toBeVisible();
   for (const [lens, text] of [
     ["Our Story", "Your story starts wherever you like"],
     ["Kept", "Nothing kept yet"],
@@ -502,10 +513,10 @@ test("Empty states are warm and never imply the relationship is incomplete", asy
     ["Love", "Nothing here yet"],
     ["Firsts", "Firsts will gather here"],
   ] as const) {
-    await page.getByRole("button", { name: lens, exact: true }).click();
-    await expect(page.getByText(text)).toBeVisible();
+    await full(page).getByRole("button", { name: lens, exact: true }).click();
+    await expect(full(page).getByText(text)).toBeVisible();
   }
-  await expect(page.getByText(/no streak|behind|catch up|you haven't/i)).toHaveCount(0);
+  await expect(full(page).getByText(/no streak|behind|catch up|you haven't/i)).toHaveCount(0);
 });
 
 test("Someday renders three soft states and moves an item with the existing state change", async ({
@@ -513,8 +524,8 @@ test("Someday renders three soft states and moves an item with the existing stat
 }) => {
   const scenario = newScenario();
   await openOurs(page, scenario, "Someday");
-  await expect(page.getByRole("heading", { name: "Someday", level: 3 })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "We did it", level: 3 })).toBeVisible();
+  await expect(full(page).getByRole("heading", { name: "Someday", level: 3 })).toBeVisible();
+  await expect(full(page).getByRole("heading", { name: "We did it", level: 3 })).toBeVisible();
 
   const lights = page.locator("li.mem-someday").filter({ hasText: "See the northern lights" });
   await expect(lights.getByRole("radio", { name: "Someday" })).toHaveAttribute(
@@ -522,7 +533,7 @@ test("Someday renders three soft states and moves an item with the existing stat
     "true",
   );
   await lights.getByRole("radio", { name: "Soon" }).click();
-  await expect(page.getByRole("heading", { name: "Soon", level: 3 })).toBeVisible();
+  await expect(full(page).getByRole("heading", { name: "Soon", level: 3 })).toBeVisible();
   const patch = scenario.writes.find((write) => write.method === "PATCH");
   expect(patch?.body).toEqual({
     expectedVersion: 1,
@@ -532,15 +543,15 @@ test("Someday renders three soft states and moves an item with the existing stat
 
 test("Love is a calm deck with no counts or streaks", async ({ page }) => {
   await openOurs(page, newScenario(), "Love");
-  await expect(page.getByText("You laugh with your whole face.")).toBeVisible();
-  await expect(page.getByText(/\d+\s*(of|\/)\s*\d+|streak|day \d+/i)).toHaveCount(0);
+  await expect(full(page).getByText("You laugh with your whole face.")).toBeVisible();
+  await expect(full(page).getByText(/\d+\s*(of|\/)\s*\d+|streak|day \d+/i)).toHaveCount(0);
 });
 
 test("Composer keeps the existing create payload and idempotent key", async ({ page }) => {
   const scenario = newScenario([]);
   await openOurs(page, scenario);
-  await page.getByRole("button", { name: "Add to Ours" }).first().click();
-  const sheet = page.getByRole("dialog");
+  await full(page).getByRole("button", { name: "Add to Ours" }).first().click();
+  const sheet = full(page).getByRole("dialog");
   await sheet.getByRole("radio", { name: "First", exact: true }).click();
   await sheet.getByLabel("Title").fill("First snow");
   await sheet.getByLabel("When did this happen?").selectOption("month");
@@ -559,8 +570,8 @@ test("Composer keeps the existing create payload and idempotent key", async ({ p
 
 test("Composer copy makes only truthful local-storage statements", async ({ page }) => {
   await openOurs(page, newScenario([]));
-  await page.getByRole("button", { name: "Add to Ours" }).first().click();
-  const text = (await page.getByRole("dialog").innerText()).toLowerCase();
+  await full(page).getByRole("button", { name: "Add to Ours" }).first().click();
+  const text = (await full(page).getByRole("dialog").innerText()).toLowerCase();
   expect(text).not.toContain("encrypted");
   expect(text).toContain("stay on this device");
 });
@@ -569,15 +580,16 @@ test("View-only spaces hide write actions and keep a neutral banner", async ({ p
   const scenario = newScenario();
   scenario.mode = "breakup_pending_view_only";
   await openOurs(page, scenario, "For you");
-  await expect(page.getByText("Ours is view-only for now")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Open the letter" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Reschedule" })).toHaveCount(0);
+  await expect(full(page).getByText("Ours is view-only for now")).toBeVisible();
+  await expect(full(page).getByRole("button", { name: "Open the letter" })).toHaveCount(0);
+  await expect(full(page).getByRole("button", { name: "Reschedule" })).toHaveCount(0);
 });
 
 test("Paper stays light in Midnight and Dawn", async ({ page }) => {
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.unroute("**/api/**").catch(() => undefined);
+    await page.goto("about:blank");
     await openOurs(page, newScenario(), "For you");
     const paper = await page
       .locator("article.mem-letter")
@@ -596,7 +608,7 @@ test("Small phones keep every lens within the viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await openOurs(page, newScenario());
   for (const lens of ["Our Story", "Kept", "For you", "Someday", "Love", "Firsts", "Places"]) {
-    await page.getByRole("button", { name: lens, exact: true }).click();
+    await full(page).getByRole("button", { name: lens, exact: true }).click();
     await page.waitForTimeout(150);
     await noHorizontalScroll(page);
   }
@@ -610,9 +622,10 @@ test("Visual review screenshots (opt in)", async ({ page }) => {
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.unroute("**/api/**").catch(() => undefined);
+    await page.goto("about:blank");
     await openOurs(page, newScenario());
     for (const lens of ["Our Story", "Kept", "For you", "Someday", "Love", "Firsts"]) {
-      await page.getByRole("button", { name: lens, exact: true }).click();
+      await full(page).getByRole("button", { name: lens, exact: true }).click();
       await page.waitForTimeout(300);
       await page.screenshot({
         path: dir + "/" + scheme + "-" + lens.replaceAll(" ", "_") + ".png",
