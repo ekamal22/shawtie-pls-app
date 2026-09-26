@@ -100,3 +100,16 @@ test("UX7 Letter Unfolds: under one second, skippable, focus moves to the letter
   // The existing release action is still the only thing that opens a letter.
   assert.equal(letters.includes("actions.release()"), true);
 });
+
+test("UX7 Our Year book: keyboard, swipe and status paging with no metrics", async () => {
+  const book = await source("../src/features/ours/content/curation.tsx");
+  for (const key of ["ArrowRight", "ArrowLeft", "PageDown", "PageUp", "Home", "End"]) {
+    assert.equal(book.includes('"' + key + '"'), true, key);
+  }
+  assert.equal(book.includes('role="status"'), true);
+  assert.equal(book.includes("onPointerUp"), true);
+  assert.match(book, /"Page " \+ safe \+ " of " \+ pages\.length/);
+  // Only a place in the book: no scoring, ranking or totals language on the paging surface.
+  const paging = book.slice(book.indexOf("export function Book("));
+  assert.equal(/score|rank|streak|total|most /i.test(paging), false);
+});

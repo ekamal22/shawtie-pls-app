@@ -100,3 +100,22 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
   outline-offset: 4px;
   border-radius: var(--radius-s);
 }
+
+/* Our Year as a Book: a quiet place marker (Cover, Page n of m, Last page), never a metric. */
+.mem-book__pager {
+  margin: 0;
+  text-align: center;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  letter-spacing: 0.04em;
+}
+
+.mem-book:focus-visible {
+  outline: 2px solid var(--accent-fill);
+  outline-offset: 4px;
+  border-radius: var(--radius-s);
+}
+
+.mem-book__stage {
+  touch-action: pan-y;
+}

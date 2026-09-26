@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, ErrorNotice, Sheet } from "../../../design/primitives.tsx";
 import { createRelationshipItem, patchRelationshipItem } from "../../relationship-space/api.ts";
 import type { RelationshipItem } from "../../relationship-space/model.ts";
@@ -218,6 +218,10 @@ export function Book({
   const atStart = safe === 0;
   const atEnd = safe === last;
   const go = (delta: number) => setIndex(Math.max(0, Math.min(last, safe + delta)));
+  const swipeStart = useRef<number | null>(null);
+  // Plain paging position: a place in the book, never a count of anything about the couple.
+  const pageLabel =
+    safe === 0 ? "Cover" : safe === last ? "Last page" : "Page " + safe + " of " + pages.length;
 
   return (
     <div
@@ -225,18 +229,41 @@ export function Book({
       role="group"
       aria-roledescription="book"
       aria-label={label}
+      aria-keyshortcuts="ArrowLeft ArrowRight Home End"
       tabIndex={0}
       onKeyDown={(event) => {
-        if (event.key === "ArrowRight") {
+        if (event.key === "ArrowRight" || event.key === "PageDown") {
           event.preventDefault();
           go(1);
-        } else if (event.key === "ArrowLeft") {
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
           event.preventDefault();
           go(-1);
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          go(-last);
+        } else if (event.key === "End") {
+          event.preventDefault();
+          go(last);
         }
       }}
     >
-      <div className="mem-book__stage" key={safe} aria-live="polite">
+      <div
+        className="mem-book__stage"
+        key={safe}
+        onPointerDown={(event) => {
+          if (event.pointerType === "touch") swipeStart.current = event.clientX;
+        }}
+        onPointerUp={(event) => {
+          const start = swipeStart.current;
+          swipeStart.current = null;
+          if (start === null) return;
+          const delta = event.clientX - start;
+          if (Math.abs(delta) >= 56) go(delta < 0 ? 1 : -1);
+        }}
+        onPointerCancel={() => {
+          swipeStart.current = null;
+        }}
+      >
         {safe === 0 ? (
           <div className="mem-book__cover">{cover}</div>
         ) : safe === last ? (
@@ -248,6 +275,9 @@ export function Book({
         )}
       </div>
       {pages.length === 0 && safe === 0 && empty ? empty : null}
+      <p className="mem-book__pager" role="status">
+        {pageLabel}
+      </p>
       <div className="mem-book__controls">
         <Button variant="secondary" onClick={() => go(-1)} disabled={atStart} icon="back">
           Back
