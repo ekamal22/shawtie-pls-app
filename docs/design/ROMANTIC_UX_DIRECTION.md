@@ -214,7 +214,7 @@ UX8 exists specifically to integrate verified S1 states into the redesigned expe
 
 ## Implementation program
 
-UX0 through UX7 below are DONE on `integration/ux-romantic` and physically accepted at `ca7cd35`. The descriptions remain the canonical scope of what each milestone delivered. S1 and UX8 remain future work.
+UX0 through UX7 below are DONE, physically accepted at `ca7cd35`, and merged to `main` at `9f0bea4`. The descriptions remain the canonical scope of what each milestone delivered. S1 and UX8 remain future work.
 
 
 ### UX0 Romantic Experience Specification
