@@ -12,7 +12,7 @@ Every concept carries one label:
 
 Six non-negotiable rules bind every UX agent. Each agent must acknowledge all six before editing code. Rules 2 and 3 are current product behavior, not a future UX proposal.
 
-1. Remember This is a `relationship_items(kind=remember_this)` row. Reads are shared by both partners. Content edit and delete are creator-only. There is no shared-mutation mode. The item stores an independent snapshot and an optional loose `message` reference; it survives deletion of the source message. `PRESENTATION_ONLY`: present it as belonging to the couple, but show edit and delete only to the creator (capability comes from the server projection), and never offer "stop keeping" on a partner's item.
+1. Remember This is a `relationship_items(kind=remember_this)` row. Reads are shared by both partners. Content edit and delete are creator-only. There is no shared-mutation mode. The item stores an independent snapshot and an optional loose `message` reference; it survives deletion of the source message. `PRESENTATION_ONLY`: present it as belonging to the couple, but show edit and delete only to the creator (capability comes from the server projection), and never offer "stop keeping" on a partner's item. Adding or removing a kept item from Our Story is shared curation of the shared story, which the server authorizes for either partner; it does not edit, delete, or modify the creator-owned Remember This content, and the partner still has no edit or delete authority over it.
 2. Read receipts are mutual, always enabled, and cannot be turned off (PRD sections 17, 32, 39; M1 design). No toggle, no per-user or partnership-level opt-out, no privacy-mode exception, no settings copy suggesting otherwise.
 3. Typing indicators, online presence, and last seen are mutual, always enabled, and cannot be turned off or hidden. No toggle, no "Nobody / Partner" style preference, no privacy setting. Home and Talk may display the authoritative state from the existing conversation contract (`partner.presence.online`, `partner.presence.lastSeenAt`, `partner.typing`): "Online", or "Last seen" with a formatted time or date, or "Offline" when the server reports neither online nor a last-seen time. Never invent precision, never infer presence from unrelated activity, and keep it as quiet context, not a KPI. No settings surface may imply these can be hidden. Earlier concept text that made receipts optional, hid last seen, allowed presence to be disabled, or allowed typing to be disabled is REJECTED and superseded.
 4. Breakup, restoration, deletion, cooldown and recovery semantics are unchanged. Copy and layout may change; deadlines, the one-hour initiator cancellation, irreversible restore intent, the single day-ten extension, view-only rules, per-call consent, and cooldowns are read from server state and never re-derived or altered. The concept ideas of a one-hour consent-request cooldown, an export offer, and pausing scheduled letters during breakup are STALE: PRD says scheduled For You and Future Us items still release while `breakup_pending` (strictly before the effective deadline), and no export or new cooldown exists.
@@ -37,7 +37,7 @@ Six non-negotiable rules bind every UX agent. Each agent must acknowledge all si
 | Our Year edits, chapter naming, Two Sides second author note | `PRODUCT_EXTENSION` unless expressible with existing item and curation fields | Present existing single-author memory and curation only |
 | Quick-reply messages on declined calls | `PRODUCT_EXTENSION` | None |
 | Call "Message" shortcut from call screen | `PRESENTATION_ONLY` (navigation only) | Deep link to Talk |
-| Home or Talk hint such as "Something is waiting for you" derived from unreleased items | `DEFERRED_PRIVACY_BOUNDARY` | None. Never surface the existence, type, scheduled release, creator activity, countdown, hidden-item count, or teaser wording of an unreleased release-gated item (Surprise, Proposal, Future Us, scheduled For You). Only a preview the current authoritative R1 projection already authorizes before release may be presented, by UX6, under current R1 rules. Do not add a preview projection or metadata field |
+| Home or Talk hint such as "Something is waiting for you" derived from unreleased items | `DEFERRED_PRIVACY_BOUNDARY` | None. See section 11 for exactly what may and may not be shown |
 | Quiet map with custom tiles | `DEFERRED` | List first; map rendering is client behavior with no tracking |
 
 ## 3. Information architecture (frozen)
@@ -136,3 +136,21 @@ AA contrast in both themes; 200 percent text without clipping; every icon-only c
 ## 10. Signature moments (allowed scope)
 
 Ribbon (keep from a message using the existing R1 create with message reference), Memory Return (navigate from a Remember This item to its source message when the reference resolves; otherwise show unavailable), Letter Unfolds (open animation over an already-released For You item; recipient-open uses the existing release action), Our Year as a Book (paged presentation of the existing candidate recap, no metrics), Pair Mark (identity motif), Threshold Transition (Home to Ours). Two Sides is limited to moving between a memory and its source conversation context; a second author's annotation is `PRODUCT_EXTENSION`.
+
+## 11. Privacy boundary for release-gated items (`DEFERRED_PRIVACY_BOUNDARY`)
+
+Release-gated items are Surprise, Proposal, Future Us, scheduled For You, and recipient-open or creator-reveal items before release. The boundary is about what the authoritative R1 recipient projection authorizes, never about what the interface would like to show.
+
+Allowed (accepted product rule): the scheduled release timestamp the current R1 recipient projection already exposes (`release.unlockAt` on a locked scheduled item). Knowing that something will arrive at a particular future time builds suspense and anticipation without revealing the content, so it is intentionally not a leak. Present it calmly with the existing date and time formatting, for example "Arrives 14 February 2027 at 10:00 PM" on Ours rows and the same time in the sealed band of the detail view. The creator sees the time for their own items as before. The same authorized preview fields the server already returns (a preview title and a condition label) may be shown as returned.
+
+Not allowed:
+
+- the unreleased content or body, or any title or text the projection does not authorize
+- the hidden item type where the type is intentionally concealed (a recipient of a sealed item sees the neutral word "Sealed", no kind label, icon, or letter styling)
+- creator activity, for example "Maya just wrote something for you"
+- the number of unreleased items, chapter or badge counts of hidden items
+- a countdown, days-left phrase, or any clock-derived wording (the arrival time is formatted from the projected timestamp only, never computed against the current time)
+- generated teaser copy such as "Something is waiting for you"
+- anything inferred from private creator state, or any client-generated clue
+
+Home never mentions locked items. No new API field, projection, preview payload, or metadata may be added to support any of this. Lifecycle rules are unchanged: scheduled releases during breakup and deletion states follow the existing R1 and PRD rules, and the presentation stays neutral.

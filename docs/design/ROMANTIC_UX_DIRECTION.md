@@ -196,6 +196,10 @@ The following require separate product and, where applicable, architecture/secur
 
 An implementation agent that encounters one of these boundaries must stop and report the requirement rather than inventing backend behavior.
 
+## Release-gated content boundary
+
+Unreleased Surprise, Proposal, Future Us, and scheduled For You content stays hidden. The one intentional exception is the scheduled release time that the authoritative R1 recipient projection already exposes: anticipation is a feature, so a recipient may be told when something will arrive, but never what it is, what kind it is, who prepared it and when, how many exist, or any generated teaser. The precise allowed and disallowed list is in `UX0_IMPLEMENTATION_SPEC.md` section 11.
+
 ## E2EE truth boundary
 
 Reviewed E2EE remains planned under S1.
