@@ -2,11 +2,11 @@
 
 ## Status
 
-S1 architecture profile selected. Runtime implementation is not yet complete.
+S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`; closure evidence is pending.
 
 The selected protocol family is RFC 9420 Messaging Layer Security, interpreted using the application architecture in RFC 9750.
 
-OpenMLS compiled to WebAssembly is the implementation baseline for the PWA. S1-A must pin the exact OpenMLS release, source revision, cryptography provider, build flags, and transitive dependency set after security review.
+The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Final dependency/advisory review, automated closure, raw-storage inspection, physical Android acceptance, and independent security review remain required before S1 can be reported DONE.
 
 Canonical implementation design:
 
@@ -42,7 +42,7 @@ The default durable-content construction is:
 - canonical authenticated context
 - device signature over canonical metadata and ciphertext digest
 
-Recovery capsules use RFC 9180 HPKE or an equivalently reviewed profile pinned in S1-A.
+Recovery capsules use the S1 HPKE profile implemented and versioned in `@shawtie/crypto`; final cryptographic review of the pinned profile remains an S1-J closure gate.
 
 ## Separation of identities
 

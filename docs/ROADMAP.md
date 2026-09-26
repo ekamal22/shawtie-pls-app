@@ -72,7 +72,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 15 UX5 Calls Experience | DONE, integrated and physically accepted | UX1 + merged C1/C2 | Redmi call acceptance PASS |
 | 16 UX6 Memories, Letters, and Time | DONE, integrated and physically accepted | UX1 + verified R1/M3 | Redmi accepted |
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
-| 18 S1 E2EE and Cryptographic Recovery | PLANNED, architecture frozen, implementation next | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, mandatory |
+| 18 S1 E2EE and Cryptographic Recovery | IN_PROGRESS, source implementation and closure harnesses complete at `0e28675`; executed automated, raw-storage, physical Android, and final security-review evidence pending | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, mandatory |
 | 19 UX8 Encrypted UX Integration | PLANNED | S1 + redesigned UX surfaces | Yes, security-critical UX |
 | 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -97,6 +97,8 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
             |
             v
       S1 E2EE + Crypto Recovery
+      source + closure tooling complete
+      S1-J execution evidence pending
             |
             v
       UX8 Encrypted UX
@@ -108,9 +110,9 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
           STABLE
 ```
 
-C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. The active engineering frontier is S1 E2EE and Cryptographic Recovery.
+C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. The active engineering frontier is S1-J closure execution. S1-A through S1-I source implementation and the S1-J closure harnesses are committed on `feat/s1-e2ee-crypto-recovery` at `0e28675`, but S1 remains IN_PROGRESS until automated closure, raw plaintext inspections, physical Android acceptance, and final security review pass.
 
-UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 now owns the next implementation frontier. UX8 integrates verified cryptographic and recovery states into the accepted experience after S1, and R2 remains the final pre-release gate.
+UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 source implementation is now complete through S1-I with S1-J closure tooling committed; closure execution is the current frontier. UX8 integrates only verified cryptographic and recovery states into the accepted experience after S1, and R2 remains the final pre-release gate.
 
 ## UX0 through UX8 product-experience program
 

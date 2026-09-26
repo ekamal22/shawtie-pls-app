@@ -2,11 +2,13 @@
 
 ## Status
 
-Implementation-ready architecture design.
+Source implementation complete on `feat/s1-e2ee-crypto-recovery`; closure evidence pending.
 
-S1 runtime implementation has not started. The selected protocol family is Messaging Layer Security as specified by RFC 9420 and the MLS architecture in RFC 9750. OpenMLS compiled to WebAssembly is the implementation baseline for the PWA. The exact OpenMLS release, cryptography provider, build flags, and transitive dependency set must be pinned and reviewed in S1-A before production code is accepted.
+S1-A through S1-I are implemented in source. The branch now includes the OpenMLS WebAssembly binding, device trust and KeyPackage runtime, partnership MLS control plane, protected M1/R1/M3 storage and client flows, encrypted M2 offline replay, cryptographic recovery, revocation/rekey/group reset, plaintext-retirement inventory, automated closure harnesses, and the 30-scenario physical Android acceptance procedure.
 
-S1 must not invent a custom cryptographic protocol.
+The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`, AES-256-GCM content encryption, and the reviewed S1 recovery profile encoded in `@shawtie/crypto`. S1-J remains open until the generated WASM build, disposable PostgreSQL integration suite, browser E2E, production-bundle scan, plaintext inspections, dependency/security review, and physical Android acceptance execute successfully with committed evidence.
+
+S1 must not be reported DONE or used for public E2EE claims until those closure gates pass. S1 must not invent a custom cryptographic protocol.
 
 ## Goals
 
@@ -38,9 +40,9 @@ Initial ciphersuite profile:
 
 `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`
 
-OpenMLS is the implementation baseline because it implements RFC 9420 and supports WebAssembly builds through its JavaScript/WASM configuration.
+The implemented baseline pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` and a browser-targeted WebAssembly binding. The release build is generated with `wasm-pack` and is not committed as a binary artifact.
 
-The exact OpenMLS release and crypto provider are an S1-A security-freeze decision. Experimental MLS extensions are not required for the first stable release.
+Experimental MLS extensions are not required for the first stable release. Final S1-J closure still requires the pinned dependency/advisory review and browser execution evidence.
 
 ### Durable protected content
 
@@ -430,6 +432,23 @@ For development-only protected plaintext, the preferred first-stable path is:
 If real user content exists before S1 activation, migration requires explicit authorized client-side re-encryption before legacy plaintext is deleted.
 
 Once a partnership is crypto-required, protected plaintext writes fail closed.
+
+## Implemented source evidence
+
+The current feature branch owns migrations `0019` through `0021` and the implementation slices below:
+
+- S1-A: protocol/profile constants and pinned OpenMLS/Rust crypto versions
+- S1-B: `@shawtie/crypto`, OpenMLS WASM binding, canonical envelopes, content AEAD, recovery helpers, wrapped IndexedDB vault, Web Locks serialization
+- S1-C: device crypto identity, enrollment, trust/approval, KeyPackage inventory, recovery public roots
+- S1-D: partnership groups, generations, epochs, ordered control stream, CAS conflict handling, membership add/remove
+- S1-E: protected messages, edits, reactions, nicknames, ciphertext-only M2 queue/cache context, offline retry hardening
+- S1-F: independent R1 preview/main protection, release withholding, production S1 media envelopes and decrypt/render path
+- S1-G: device revocation, fail-closed rekey state, stale retry handling, recovery-authorized next-generation reset
+- S1-H: client-held Recovery Master Secret, encrypted recovery bundle, recovery proof, HPKE recovery capsules, historical restoration path
+- S1-I: plaintext inventory tooling, crypto-required database guards, production-bundle test-crypto exclusion checks
+- S1-J tooling: disposable local closure runner, S1 API/browser/security tests, real Chromium OpenMLS WASM harness, production scan, and physical Android preparation
+
+Implementation-complete source/harness anchor before execution evidence: `0e28675`.
 
 ## Implementation slices
 

@@ -2315,7 +2315,7 @@ Status: PLANNED after S1 and the main romantic UX surfaces.
 
 # S1: E2EE and Cryptographic Recovery
 
-Status: PLANNED, architecture frozen, runtime implementation not started
+Status: IN_PROGRESS. S1-A through S1-I source implementation and S1-J closure tooling are committed on `feat/s1-e2ee-crypto-recovery`; executed automated, raw-storage, physical Android, and final security-review evidence remain open.
 
 Canonical implementation design:
 
@@ -2327,6 +2327,42 @@ Security architecture:
 - `docs/security/DEVICE_AND_RECOVERY.md`
 - ADR-004
 - ADR-006
+
+## Current implementation progress
+
+Source implementation is complete through the S1-A to S1-I slices, and the S1-J automated and physical acceptance tooling is committed. The implementation/harness anchor is `0e28675`.
+
+Implemented repository evidence includes:
+
+- migrations `0019_s1_device_crypto_runtime.sql`, `0020_s1_partnership_crypto_runtime.sql`, and `0021_s1_protected_content_runtime.sql`
+- OpenMLS `0.9.0` plus `openmls_rust_crypto 0.6.0` WASM binding and browser loader
+- independent device crypto identities, KeyPackages, trust approval, revocation, and recovery-authorized enrollment/reset
+- partnership MLS groups, group generations, epochs, ordered control messages, membership changes, and fail-closed rekey state
+- protected M1 messages, edits, reactions, nicknames, and M2 frozen encrypted offline replay
+- separate R1 preview and sealed-main protected envelopes with authoritative release withholding
+- production S1 media envelopes and client decrypt/render flow
+- client-held Recovery Master Secret, encrypted recovery bundle, recovery possession proof, and per-account recovery capsules
+- database crypto-required plaintext guards and legacy plaintext inventory tooling
+- S1 API/browser/integration security tests, real Chromium OpenMLS WASM harness, production bundle scan, disposable PostgreSQL closure runner, and 30-scenario Android acceptance procedure
+
+No automated-closure, raw object-storage inspection, physical-device, or final independent cryptographic-review PASS is claimed yet.
+
+### Source implementation checklist
+
+- [x] S1-A protocol/profile implementation and dependency pins are committed
+- [x] S1-B crypto package, WASM binding, and local vault are committed
+- [x] S1-C device crypto runtime is committed
+- [x] S1-D partnership crypto control plane is committed
+- [x] S1-E M1/M2 protected messaging is committed
+- [x] S1-F R1/M3 protected content is committed
+- [x] S1-G enrollment, revocation, rekey, and group reset are committed
+- [x] S1-H cryptographic recovery is committed
+- [x] S1-I plaintext retirement guards/inventory are committed
+- [x] S1-J automated and physical closure harnesses are committed
+- [ ] `npm run test:s1:closure` executed successfully on the exact branch head
+- [ ] raw PostgreSQL/object-storage/log/outbox/push plaintext inspection evidence recorded
+- [ ] 30/30 physical Android acceptance executed and committed
+- [ ] final independent cryptographic/security review passed
 
 ## Selected architecture
 

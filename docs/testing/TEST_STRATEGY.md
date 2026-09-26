@@ -792,6 +792,57 @@ Closure evidence includes:
 
 The evidence file records the limited emulation used for 200 percent text and split-screen, plus the partial final-SHA re-verification disclosure for parts of scenarios 20 through 22. Those disclosures are part of the accepted evidence and must not be silently removed.
 
+## S1 E2EE and cryptographic recovery verification
+
+Canonical sources:
+
+- `../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
+- `../security/E2EE_ARCHITECTURE.md`
+- `../security/DEVICE_AND_RECOVERY.md`
+- `S1_ANDROID_ACCEPTANCE.md`
+
+Implemented S1 command surface:
+
+```text
+npm run test:s1:contracts
+npm run test:s1:browser
+npm run test:s1:security
+npm run test:s1:postgres
+npm run test:s1:browser:e2e
+npm run s1:plaintext:inventory
+npm run s1:plaintext:assert-clean
+npm run s1:production:scan
+npm run test:s1:local
+npm run test:s1:closure
+npm run test:s1:device:prepare
+npm run test:s1:device:cleanup
+```
+
+The S1 implementation/harness baseline is `0e28675`. The command surface is committed, but S1 closure PASS markers are not yet recorded.
+
+Automated closure must prove:
+
+- OpenMLS `0.9.0` WebAssembly builds with the pinned S1 dependency set
+- two independent browser device identities complete MLS group creation, Add/Welcome, and application-message delivery
+- protected-content authenticated context rejects partnership/object/version/role substitution
+- server-side protected writes verify the active crypto device, group generation/epoch, recovery versions, ciphertext digest, and Ed25519 content signature without decrypting application content
+- crypto-required API and database paths reject plaintext messages, reactions, nicknames, relationship content, and pre-S1 media
+- valid protected M1 writes persist ciphertext plus protected key metadata and two recovery capsules while `body_text` remains null
+- R1 preview and sealed main content remain separate cryptographic roles and sealed main ciphertext/key metadata remain withheld until R1 authorizes full visibility
+- M2 durable queues/cache namespaces preserve frozen encrypted operations and refuse cross-context replay
+- local crypto namespace revocation purges group state, pending crypto operations, and cached content keys
+- recovery requires client-held recovery material rather than account email recovery
+- production web output does not contain the legacy M3 synthetic crypto marker or its enabling environment variable
+- server source contains no recovery private key or Recovery Master Secret storage path
+- raw PostgreSQL plaintext inventory reports zero blockers before crypto-required activation
+- the full repository health, high-severity dependency audit, commit policy, no-new-em-dash rule, and git hygiene remain green
+
+The real Chromium S1 harness is `tests/e2e/s1-browser.spec.ts`. It requires the generated OpenMLS WASM artifact, which `test:s1:browser:e2e` builds first with `wasm-pack`.
+
+Physical Android acceptance is mandatory and remains separate from automated closure. The 30-scenario procedure in `S1_ANDROID_ACCEPTANCE.md` covers device enrollment, recovery, two-device MLS membership, protected M1/R1/M3 behavior, offline/lost-response/two-tab safety, revocation/rekey, Recovery Master Secret restoration, group reset, breakup/final-dissolution behavior, future-partnership isolation, and final raw plaintext inspections.
+
+S1 is not DONE until automated closure, raw PostgreSQL/object-storage/log/outbox/push inspection, 30/30 physical Android acceptance, and final independent cryptographic/security review all pass with committed evidence.
+
 ## Acceptance principle
 
 A feature is not complete merely because UI automation passes.

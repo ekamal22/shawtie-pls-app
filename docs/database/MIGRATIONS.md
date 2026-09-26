@@ -2,7 +2,9 @@
 
 ## Status
 
-The verified `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3` substrate is implemented through R1 migration `0014_relationship_space_interaction_runtime.sql`. The technical validation baseline `5db7a94183bca153d142389d7188e3887653a9ec` contains M1 migrations 0011/0012 and R1 migrations 0013/0014. Canonical migrations 0001 through 0014 apply from zero against disposable PostgreSQL 16 with `reserved=0` and database invariants green.
+The verified merged mainline is implemented through migration 0018. On `feat/s1-e2ee-crypto-recovery`, S1 source implementation adds real forward-only migrations `0019_s1_device_crypto_runtime.sql`, `0020_s1_partnership_crypto_runtime.sql`, and `0021_s1_protected_content_runtime.sql`. Those migrations are committed and covered by the S1 closure harness, but the canonical disposable PostgreSQL S1 closure has not yet been executed and recorded, so migrations 0019 through 0021 are not yet described as verified/merged mainline state.
+
+The existing verified M1/R1 baseline remains migrations 0001 through 0014 with `reserved=0`; M3/C1 later extend the merged chain through 0018 without reservations. S1 must consume 0001 through 0018 unchanged.
 
 ## Current and next migration
 
@@ -53,13 +55,13 @@ Completed ownership:
 - C1: `0017_calling_runtime.sql`, `0018_push_runtime.sql`
 - C2: no migration
 
-S1 now has accepted migration ownership for the next forward-only range:
+S1 owns and has implemented the next forward-only range on `feat/s1-e2ee-crypto-recovery`:
 
 - `0019_s1_device_crypto_runtime.sql`
 - `0020_s1_partnership_crypto_runtime.sql`
 - `0021_s1_protected_content_runtime.sql`
 
-Reservation responsibilities:
+Implemented responsibilities:
 
 ### 0019
 
@@ -317,7 +319,28 @@ Isolated C1 automated/local closure passed at `439b09f` with only M3-owned 0015/
 
 ## C2 migration position
 
-C2 Video Calling required no PostgreSQL migration and reserves none. The canonical automated/local closure first passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and re-passed at final executable SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` with physical acceptance complete, applying real migrations 0001 through 0018 from zero with `reserved=0` and `DATABASE_INVARIANTS_PASS`. The existing schema already permits `call_type IN ('voice','video')`, while C2 camera/media state remains transient client state. C2 owns no later migration. S1 now owns the accepted forward-only reservation `0019` through `0021`; C2 must not modify or consume that range.
+C2 Video Calling required no PostgreSQL migration and reserves none. The canonical automated/local closure first passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and re-passed at final executable SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` with physical acceptance complete, applying real migrations 0001 through 0018 from zero with `reserved=0` and `DATABASE_INVARIANTS_PASS`. The existing schema already permits `call_type IN ('voice','video')`, while C2 camera/media state remains transient client state. C2 owns no later migration. S1 has now materialized its owned forward-only range `0019` through `0021` on the feature branch; C2 must not modify or consume that range.
+
+## S1 migration implementation and closure
+
+S1 migration source is committed at the implementation/harness baseline `0e28675`.
+
+- `0019_s1_device_crypto_runtime.sql` implements crypto-device identities, trusted-device approvals, KeyPackage state, encrypted recovery bundle metadata, recovery challenges, and A1-linked crypto revocation.
+- `0020_s1_partnership_crypto_runtime.sql` implements partnership MLS groups, group generations, epochs, active device membership, ordered control messages, and rekey-required propagation.
+- `0021_s1_protected_content_runtime.sql` implements protected-content key metadata, per-account recovery capsules, M1/R1/M3 protected key references, and database triggers that reject protected plaintext after `crypto_required_from`.
+
+The database invariant suite now includes S1 catalog checks plus negative writes proving crypto-required plaintext message, reaction, nickname, relationship-item, and legacy media writes fail at the database layer.
+
+The executable S1 database path is:
+
+```text
+npm run test:s1:postgres
+npm run s1:plaintext:assert-clean
+npm run test:s1:local
+npm run test:s1:closure
+```
+
+`test:s1:local` creates disposable PostgreSQL, builds the OpenMLS WASM artifact, runs migrations/invariants and the S1 API integration suite, asserts the plaintext inventory is clean, runs real Chromium S1 E2E, builds the production web bundle, and runs the production crypto scan. These commands are committed but their PASS markers are not yet recorded as closure evidence.
 
 ## M1 and R1 migration ownership
 
