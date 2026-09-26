@@ -574,7 +574,7 @@ function AccountScreen({
         <HomeScreen context={conversation} accountId={session.accountId} onNavigate={navigate} />
       </RouteView>
       <RouteView active={route === "talk"} keepMounted>
-        <MessagingPanel />
+        <MessagingPanel active={route === "talk"} />
       </RouteView>
       <RouteView active={route === "ours"}>
         <RelationshipSpacePanel accountId={session.accountId} />

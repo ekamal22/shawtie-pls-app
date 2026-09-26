@@ -9,9 +9,25 @@ import {
 } from "@shawtie/contracts";
 import type { MediaAttachmentProjection } from "@shawtie/contracts";
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Icon } from "../../design/icons.tsx";
+import {
+  Avatar,
+  Badge,
+  Button,
+  ConfirmDialog,
+  Dialog,
+  EmptyState,
+  ErrorNotice,
+  IconButton,
+  Notice,
+  OfflineNotice,
+  PresenceLine,
+  Sheet,
+  Skeleton,
+  SkeletonGroup,
+} from "../../design/primitives.tsx";
 import { ApiClientError, ApiNetworkError, apiRequest } from "../../lib/api-client.ts";
 import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
-import { MediaAttachment } from "../media/MediaAttachment.tsx";
 import { VoiceRecorder } from "../media/VoiceRecorder.tsx";
 import {
   discardMediaDraft,
@@ -20,6 +36,12 @@ import {
 } from "../../lib/media/media-runtime.ts";
 import { listMediaDrafts } from "../../lib/media/media-local-db.ts";
 import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
+import type { ChatQueueOperation } from "../../lib/offline/local-db.ts";
+import { createRelationshipItem } from "../relationship-space/api.ts";
+import { TalkActions } from "./TalkActions.tsx";
+import { TalkBubble } from "./TalkBubble.tsx";
+import { buildRememberThisPayload, buildRows, deliveryLabel } from "./talk-model.ts";
+import "./talk.css";
 
 interface ConversationSummary {
   conversationId: string;
@@ -109,7 +131,6 @@ interface ConversationChange {
   changedAt: string;
 }
 
-const defaultReactions = ["❤️", "😂", "😭", "😮", "😡", "👍"];
 const M1_MESSAGE_EDIT_WINDOW_MS = 30 * 60_000;
 
 function idempotencyKey(): string {
@@ -125,9 +146,13 @@ function errorText(error: unknown): string {
       MEDIA_BINDING_DISABLED: "New attachments are temporarily unavailable.",
       MEDIA_NOT_FOUND: "That attachment is no longer available.",
       MEDIA_NOT_READY: "That attachment has not finished uploading.",
-      MEDIA_UNAVAILABLE: "Protected media storage is temporarily unavailable.",
+      MEDIA_UNAVAILABLE: "Media storage is temporarily unavailable.",
+      OFFLINE_OPERATION_REQUIRES_CONNECTION:
+        "Keeping a message needs a connection. Try again when you are back online.",
+      INVALID_REFERENCE: "That message cannot be kept right now.",
+      NO_CURRENT_PARTNERSHIP: "There is no current relationship space.",
       MEDIA_UPLOAD_DISABLED: "New media uploads are temporarily unavailable.",
-      MEDIA_CRYPTO_PROTOCOL_UNAVAILABLE: "Protected media needs the S1 production crypto adapter.",
+      MEDIA_CRYPTO_PROTOCOL_UNAVAILABLE: "Sending attachments is not available in this build yet.",
       IDEMPOTENCY_KEY_REUSED: "That retry key was already used for a different change.",
       MESSAGE_DELETED: "That message was already deleted.",
       MESSAGE_EDIT_WINDOW_EXPIRED: "The 30-minute edit window has expired.",
@@ -176,8 +201,11 @@ interface PendingSend {
   readonly draftIds: readonly string[];
 }
 
-export function MessagingPanel() {
+export function MessagingPanel({ active = true }: { readonly active?: boolean } = {}) {
   const runtime = useM2Runtime();
+  // Talk stays mounted while Home or Ours is showing so delivery, sync, and typing keep working.
+  // A message is only READ when Talk is the visible route, so the receipt code reads this ref.
+  const activeRef = useRef(active);
   const syncStatus = useM2SyncStatus();
   const [conversation, setConversation] = useState<ConversationSummary | null | undefined>(
     undefined,
@@ -194,6 +222,20 @@ export function MessagingPanel() {
   const [sendStatus, setSendStatus] = useState<"sending" | "queued" | "failed" | null>(null);
   const [mediaDrafts, setMediaDrafts] = useState<LocalMediaDraft[]>([]);
   const [mediaBusy, setMediaBusy] = useState(false);
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const [actionsFor, setActionsFor] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ message: Message; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Message | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [nicknamesOpen, setNicknamesOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [keptIds, setKeptIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [outbox, setOutbox] = useState<ChatQueueOperation[]>([]);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const stickToEndRef = useRef(true);
+  const lastEndKeyRef = useRef("");
   const changeCursorRef = useRef(0);
   const lastTypingSentRef = useRef(0);
   const pendingSendRef = useRef<PendingSend | null>(null);
@@ -251,8 +293,8 @@ export function MessagingPanel() {
       await refreshMediaDrafts(conversation.partnershipId);
       setNotice(
         navigator.onLine
-          ? "Protected attachment prepared. Send when ready."
-          : "Attachment encrypted and saved locally. Connect to upload and send it.",
+          ? "Attachment ready. Send when you are ready."
+          : "Attachment saved on this device. Connect to upload and send it.",
       );
     } catch (caught) {
       setError(
@@ -272,7 +314,7 @@ export function MessagingPanel() {
     try {
       await uploadMediaDraft(runtime.accountId, draftId);
       await refreshMediaDrafts(conversation.partnershipId);
-      setNotice("Protected attachment upload is ready to bind.");
+      setNotice("Attachment uploaded. Send when you are ready.");
     } catch (caught) {
       await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
       setError(
@@ -323,7 +365,7 @@ export function MessagingPanel() {
       });
       if (!navigator.onLine) {
         await refreshMediaDrafts(conversation.partnershipId);
-        setNotice("Voice message encrypted and saved locally. Connect to upload and send it.");
+        setNotice("Voice message saved on this device. Connect to upload and send it.");
         return;
       }
       const uploaded = await uploadMediaDraft(runtime.accountId, draft.draftId);
@@ -386,7 +428,8 @@ export function MessagingPanel() {
         partnershipId: summary.partnershipId,
         conversationId: summary.conversationId,
         deliveredThrough: throughSequence,
-        readThrough: document.visibilityState === "visible" ? throughSequence : 0,
+        readThrough:
+          document.visibilityState === "visible" && activeRef.current ? throughSequence : 0,
       });
 
       const deliveredThrough = Math.max(throughSequence, pending?.pendingDeliveredThrough ?? 0);
@@ -612,6 +655,17 @@ export function MessagingPanel() {
     [loadInitial],
   );
 
+  // Entering Talk acknowledges what is now actually visible. Leaving it stops read
+  // acknowledgment until Talk is opened again; delivered receipts are unaffected.
+  useEffect(() => {
+    const becameActive = active && !activeRef.current;
+    activeRef.current = active;
+    if (becameActive && conversation) {
+      void syncChanges().catch((caught) => void handleSyncFailure(caught));
+    }
+    // Only a change of `active` re-evaluates; sync dependencies are read at call time.
+  }, [active]);
+
   useEffect(() => {
     void loadInitial().catch((caught) => setError(errorText(caught)));
   }, [loadInitial]);
@@ -705,6 +759,82 @@ export function MessagingPanel() {
     };
   }, [conversation, refreshConversation, runtime, sendStatus]);
 
+  const closeVoice = useCallback(() => setVoiceOpen(false), []);
+
+  useEffect(() => {
+    if (!composer && composerRef.current) composerRef.current.style.height = "";
+  }, [composer]);
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  // Queued sends are shown in the thread as waiting messages. Read-only view of the M2 outbox.
+  useEffect(() => {
+    const partnershipId = conversation?.partnershipId;
+    if (!partnershipId) {
+      setOutbox([]);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      const queue = await (await runtime.database()).listChatQueue(partnershipId);
+      if (!cancelled)
+        setOutbox(queue.filter((operation) => operation.operationType === "message.send"));
+    };
+    void load().catch(() => undefined);
+    const refresh = () => void load().catch(() => undefined);
+    window.addEventListener("shawtie:chat-queue-changed", refresh);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("shawtie:chat-queue-changed", refresh);
+    };
+  }, [conversation?.partnershipId, runtime]);
+
+  // Keep the newest message in view, but never yank a reader who scrolled back.
+  useEffect(() => {
+    const onScroll = () => {
+      stickToEndRef.current =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 320;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const endKey =
+    (messages.at(-1)?.messageId ?? "") + ":" + outbox.length + ":" + (conversation ? "c" : "");
+  useEffect(() => {
+    if (endKey === lastEndKeyRef.current) return;
+    lastEndKeyRef.current = endKey;
+    const root = document.querySelector(".talk");
+    if (!root || (root as HTMLElement).offsetParent === null) return;
+    const lastOwn = messages.at(-1)?.senderAccountId === conversation?.self.accountId;
+    if (stickToEndRef.current || lastOwn) {
+      window.scrollTo({ top: document.documentElement.scrollHeight });
+    }
+  }, [endKey, messages, conversation?.self.accountId]);
+
+  // Talk stays mounted while hidden, so returning to it scrolls to the newest message.
+  useEffect(() => {
+    const onHash = () => {
+      if (!window.location.hash.includes("talk")) return;
+      window.requestAnimationFrame(() => {
+        const root = document.querySelector(".talk");
+        if (root && (root as HTMLElement).offsetParent !== null) {
+          window.scrollTo({ top: document.documentElement.scrollHeight });
+        }
+      });
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
   async function run(task: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -733,8 +863,8 @@ export function MessagingPanel() {
     });
   }
 
-  async function send(event: FormEvent) {
-    event.preventDefault();
+  async function send(event?: FormEvent) {
+    event?.preventDefault();
     if (!conversation || (!composer.trim() && mediaDrafts.length === 0)) return;
 
     const body = composer.trim() ? composer : null;
@@ -755,7 +885,7 @@ export function MessagingPanel() {
     await run(async () => {
       if (!navigator.onLine && mediaDrafts.length > 0) {
         setSendStatus(null);
-        setNotice("Protected attachments are saved locally. Connect before sending this message.");
+        setNotice("Attachments are saved on this device. Connect before sending this message.");
         return;
       }
 
@@ -769,7 +899,7 @@ export function MessagingPanel() {
           setSendStatus("failed");
           if (!(caught instanceof ApiClientError)) {
             setNotice(
-              "Upload did not finish. Your encrypted attachment is saved on this device. Retry when connected.",
+              "Upload did not finish. Your attachment is saved on this device. Retry when connected.",
             );
             return;
           }
@@ -865,10 +995,9 @@ export function MessagingPanel() {
     }).catch(() => undefined);
   }
 
-  async function editMessage(message: Message) {
+  async function editMessage(message: Message, body: string) {
     if (!conversation || !message.body) return;
-    const body = window.prompt("Edit message", message.body);
-    if (body === null || !body.trim() || body === message.body) return;
+    if (!body.trim() || body === message.body) return;
     const key = idempotencyKey();
 
     await run(async () => {
@@ -923,7 +1052,7 @@ export function MessagingPanel() {
   }
 
   async function deleteMessage(message: Message) {
-    if (!conversation || !window.confirm("Delete this message for both of you?")) return;
+    if (!conversation) return;
     const key = idempotencyKey();
 
     await run(async () => {
@@ -1052,6 +1181,28 @@ export function MessagingPanel() {
     });
   }
 
+  async function keepMessage(message: Message) {
+    if (!conversation || !message.body || message.deletedAt) return;
+    const authorName =
+      message.senderAccountId === conversation.self.accountId
+        ? conversation.self.nickname || conversation.self.displayName
+        : conversation.partner.nickname || conversation.partner.displayName;
+    await run(async () => {
+      const result = await createRelationshipItem(
+        buildRememberThisPayload({
+          messageId: message.messageId,
+          body: message.body ?? "",
+          authorName,
+          createdAt: message.createdAt,
+        }),
+      );
+      setKeptIds((current) => new Set(current).add(message.messageId));
+      setNotice(
+        result.queued ? "Kept. It will be added when you are back online." : "Kept for us.",
+      );
+    });
+  }
+
   async function saveNickname(
     subject: "self" | "partner",
     nickname: string,
@@ -1089,54 +1240,481 @@ export function MessagingPanel() {
 
   if (conversation === undefined) {
     return (
-      <section className="panel">
-        <h2>Messages</h2>
-        <p className="muted">Loading conversation...</p>
+      <section className="talk" aria-label="Conversation">
+        <SkeletonGroup label="Loading conversation">
+          <div className="talk-skeleton">
+            <Skeleton shape="block" width="60%" />
+            <Skeleton shape="block" width="45%" />
+            <Skeleton shape="block" width="70%" />
+          </div>
+        </SkeletonGroup>
       </section>
     );
   }
 
   if (!conversation) {
     return (
-      <section className="panel">
-        <h2>Messages</h2>
-        <p className="muted">Your private conversation appears after a partnership is formed.</p>
+      <section className="talk" aria-label="Conversation">
+        <EmptyState title="Your conversation is waiting">
+          It appears after a partnership is formed.
+        </EmptyState>
       </section>
     );
   }
 
   const partnerName = conversation.partner.nickname || conversation.partner.displayName;
   const selfName = conversation.self.nickname || conversation.self.displayName;
+  const canSend = conversation.capabilities.sendMessage;
+  const hasContent = composer.trim().length > 0 || mediaDrafts.length > 0;
+  const rows = buildRows(messages, conversation.self.accountId);
+  const actionMessage = actionsFor
+    ? (messages.find((message) => message.messageId === actionsFor) ?? null)
+    : null;
+  const actionOwn = actionMessage?.senderAccountId === conversation.self.accountId;
+  const actionMutable = actionMessage ? messageMutable(actionMessage, conversation) : false;
+  const actionMyReaction =
+    actionMessage?.reactions.find((reaction) => reaction.accountId === conversation.self.accountId)
+      ?.emoji ?? null;
+  const replyAuthorName = (accountId: string) =>
+    accountId === conversation.self.accountId ? "You" : partnerName;
+
+  function jumpTo(messageId: string) {
+    const element = document.getElementById("talk-msg-" + messageId);
+    if (!element) {
+      setNotice(
+        hasOlder
+          ? "That message is further back. Load older messages to see it."
+          : "That message is not available.",
+      );
+      return;
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    element.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+    setHighlightedId(messageId);
+    window.setTimeout(
+      () => setHighlightedId((current) => (current === messageId ? null : current)),
+      1800,
+    );
+  }
+
+  function startVoice() {
+    setAddOpen(false);
+    setVoiceOpen(true);
+  }
 
   return (
-    <section className="panel messaging-panel">
-      <div className="messaging-header">
-        <div>
-          <h2>{partnerName}</h2>
-          <p className="muted">
-            {conversation.partner.presence.online
-              ? "Online"
-              : conversation.partner.presence.lastSeenAt
-                ? "Last seen " + new Date(conversation.partner.presence.lastSeenAt).toLocaleString()
-                : "Offline"}
-            {conversation.partner.typing ? " · typing..." : ""}
-          </p>
+    <section className="talk" aria-label="Conversation">
+      <header className="talk-header">
+        <Avatar name={partnerName} size={40} />
+        <div className="talk-header__who">
+          <h2 className="talk-header__name">{partnerName}</h2>
+          <PresenceLine
+            presence={conversation.partner.presence}
+            typing={conversation.partner.typing}
+          />
         </div>
         {conversation.interactionMode !== "normal" ? (
-          <span className="pill">
+          <Badge tone="candle">
             {conversation.interactionMode === "breakup_restricted"
               ? "Breakup reconsideration"
               : "View only"}
-          </span>
+          </Badge>
         ) : null}
+        <IconButton label="Chat nicknames" icon="more" onClick={() => setNicknamesOpen(true)} />
+      </header>
+
+      {!online ? (
+        <OfflineNotice>
+          You are offline. Messages you write will send when you are back. Attachments wait on this
+          device until you are connected.
+        </OfflineNotice>
+      ) : null}
+      {error ? (
+        <ErrorNotice
+          action={
+            <Button variant="quiet" compact onClick={() => setError("")}>
+              Dismiss
+            </Button>
+          }
+        >
+          {error}
+        </ErrorNotice>
+      ) : null}
+      {notice ? (
+        <Notice
+          tone={notice === "Kept for us." ? "success" : "info"}
+          action={
+            <Button variant="quiet" compact onClick={() => setNotice("")}>
+              Dismiss
+            </Button>
+          }
+        >
+          {notice}
+        </Notice>
+      ) : null}
+
+      {hasOlder ? (
+        <Button variant="quiet" onClick={() => void loadOlder()} disabled={busy}>
+          Load older messages
+        </Button>
+      ) : null}
+
+      <div className="talk-list" role="log" aria-live="polite" aria-label="Messages">
+        {messages.length === 0 && outbox.length === 0 ? (
+          <EmptyState title="Nothing here yet">
+            {canSend ? "Say hello whenever you like." : "Messages will appear here."}
+          </EmptyState>
+        ) : null}
+        {rows.map((row) => {
+          if (row.type === "separator") {
+            return (
+              <p className="talk-separator" key={row.key}>
+                <span>{row.label}</span>
+              </p>
+            );
+          }
+          const { message, own, position } = row;
+          const endOfGroup = position === "last" || position === "single";
+          return (
+            <TalkBubble
+              key={row.key}
+              message={message}
+              own={own}
+              position={position}
+              authorName={own ? selfName : partnerName}
+              selfAccountId={conversation.self.accountId}
+              replyAuthorName={replyAuthorName}
+              delivery={
+                own && endOfGroup && !message.deletedAt
+                  ? deliveryLabel(conversation.receipts, message.serverSequence)
+                  : null
+              }
+              showTime={endOfGroup}
+              kept={keptIds.has(message.messageId)}
+              highlighted={highlightedId === message.messageId}
+              canOpenActions={conversation.interactionMode !== "account_deletion_view_only"}
+              onOpenActions={setActionsFor}
+              onJumpTo={jumpTo}
+            />
+          );
+        })}
+        {outbox.map((operation) => {
+          const queuedBody = (operation.requestBody as { body?: unknown } | null)?.body;
+          const body = typeof queuedBody === "string" ? queuedBody : null;
+          const blocked = operation.status === "blocked";
+          return (
+            <article
+              className="talk-message"
+              data-own="true"
+              data-position="single"
+              data-pending="true"
+              key={"outbox-" + operation.operationId}
+            >
+              <div className="talk-bubble">
+                <p className="talk-text">{body ?? "Attachment"}</p>
+              </div>
+              <p className="talk-meta">
+                <span data-delivery={blocked ? "failed" : "waiting"}>
+                  {blocked ? "Not sent" : "Waiting to send"}
+                </span>
+                {blocked ? (
+                  <Button
+                    variant="quiet"
+                    compact
+                    onClick={() => void runtime.retryQueuedOperation("chat", operation.operationId)}
+                  >
+                    Retry
+                  </Button>
+                ) : null}
+              </p>
+            </article>
+          );
+        })}
       </div>
 
-      {error ? <p className="banner error">{error}</p> : null}
-      {notice ? <p className="banner success">{notice}</p> : null}
+      <div className="talk-composer-wrap">
+        {replyingTo ? (
+          <div className="talk-replying">
+            <span className="talk-replying__text">
+              <strong>Replying to {replyAuthorName(replyingTo.senderAccountId)}</strong>
+              <span>{replyingTo.body ?? "Attachment"}</span>
+            </span>
+            <IconButton label="Cancel reply" icon="close" onClick={() => setReplyingTo(null)} />
+          </div>
+        ) : null}
 
-      <details className="nickname-settings">
-        <summary>Chat nicknames</summary>
-        <div className="two-column">
+        {sendStatus ? (
+          <div className="talk-sendstatus" role="status">
+            {sendStatus === "sending" ? (
+              "Sending..."
+            ) : sendStatus === "queued" ? (
+              "Waiting to send. It will go out when you are back online."
+            ) : (
+              <>
+                <span>Could not send. Trying again reuses the same request.</span>
+                <Button variant="secondary" compact onClick={() => void send()} disabled={busy}>
+                  Retry
+                </Button>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        {mediaDrafts.length > 0 ? (
+          <div className="talk-drafts">
+            {mediaDrafts.map((draft) => (
+              <div className="talk-draft" key={draft.draftId}>
+                <span>
+                  {draft.kind === "voice" ? "Voice message" : draft.kind.replace("_", " ")} ·{" "}
+                  {Math.ceil(draft.ciphertextBytes / 1024)} KB ·{" "}
+                  {draft.state === "prepared"
+                    ? "Saved on this device"
+                    : draft.state === "uploading"
+                      ? "Uploading"
+                      : draft.state === "ready"
+                        ? "Ready to send"
+                        : "Upload failed"}
+                </span>
+                <span className="talk-draft__actions">
+                  {draft.state === "failed" ? (
+                    <Button
+                      variant="secondary"
+                      compact
+                      disabled={mediaBusy || busy || !online}
+                      onClick={() => void retryDraft(draft.draftId)}
+                    >
+                      Retry upload
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="quiet"
+                    compact
+                    disabled={mediaBusy || busy}
+                    onClick={() => void removeDraft(draft.draftId)}
+                  >
+                    Remove
+                  </Button>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {voiceOpen ? (
+          <div className="talk-voicebar">
+            <VoiceRecorder
+              autoStart
+              disabled={!canSend || busy || mediaBusy}
+              onReady={sendVoice}
+              onIdle={closeVoice}
+              onError={setError}
+            />
+          </div>
+        ) : null}
+
+        <form className="talk-composer" onSubmit={send}>
+          <IconButton
+            label="Add photo, file, or voice message"
+            icon="plus"
+            variant="secondary"
+            disabled={!canSend || busy || mediaBusy || voiceOpen}
+            onClick={() => setAddOpen(true)}
+          />
+          <textarea
+            ref={composerRef}
+            className="talk-composer__input"
+            aria-label="Message"
+            value={composer}
+            onChange={(event) => composerChanged(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && hasContent) {
+                void send();
+              }
+            }}
+            onBlur={() => {
+              if (!conversation.capabilities.typing) return;
+              if (runtime.sendTyping(false)) return;
+              void apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
+                method: "POST",
+                body: { typing: false },
+              }).catch(() => undefined);
+            }}
+            placeholder={canSend ? "Message..." : "Messaging is currently view-only."}
+            disabled={!canSend || busy}
+            rows={1}
+            maxLength={M1_MESSAGE_MAX_CHARACTERS}
+          />
+          {hasContent ? (
+            <button
+              type="submit"
+              className="ds-icon-button talk-send"
+              aria-label="Send"
+              disabled={!canSend || busy || mediaBusy}
+            >
+              <Icon name="send" size={22} />
+            </button>
+          ) : (
+            <IconButton
+              label="Record a voice message"
+              icon="mic"
+              disabled={!canSend || busy || mediaBusy || voiceOpen}
+              onClick={startVoice}
+            />
+          )}
+        </form>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        hidden
+        disabled={!canSend || busy || mediaBusy}
+        accept="image/*,video/mp4,video/webm,application/pdf,text/plain,application/zip,.zip"
+        onChange={(event) => void prepareFiles(event)}
+      />
+
+      <Sheet open={addOpen} onClose={() => setAddOpen(false)} title="Add to message">
+        <div className="talk-actionlist">
+          <button
+            type="button"
+            className="talk-action"
+            disabled={!canSend || busy || mediaBusy}
+            onClick={() => {
+              setAddOpen(false);
+              fileInputRef.current?.click();
+            }}
+          >
+            <Icon name="image" size={22} />
+            <span>
+              <span className="talk-action__label">Photo, video, or file</span>
+              <span className="talk-action__hint">Saved on this device until it is sent.</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="talk-action"
+            disabled={!canSend || busy || mediaBusy}
+            onClick={startVoice}
+          >
+            <Icon name="mic" size={22} />
+            <span>
+              <span className="talk-action__label">Voice message</span>
+              <span className="talk-action__hint">You can listen before it sends.</span>
+            </span>
+          </button>
+        </div>
+      </Sheet>
+
+      <TalkActions
+        open={actionMessage !== null}
+        onClose={() => setActionsFor(null)}
+        canReact={actionMutable}
+        myReaction={actionMyReaction}
+        canReply={Boolean(actionMessage && !actionMessage.deletedAt && canSend)}
+        canEdit={Boolean(
+          actionMessage &&
+          actionOwn &&
+          messageEditable(actionMessage, conversation) &&
+          actionMessage.body,
+        )}
+        canDelete={Boolean(actionMessage && actionOwn && actionMutable)}
+        canKeep={Boolean(
+          actionMessage &&
+          actionMessage.body &&
+          !actionMessage.deletedAt &&
+          conversation.interactionMode === "normal",
+        )}
+        kept={actionMessage ? keptIds.has(actionMessage.messageId) : false}
+        busy={busy}
+        onReact={(emoji) => {
+          const target = actionMessage;
+          setActionsFor(null);
+          if (target) void react(target, emoji);
+        }}
+        onRemoveReaction={() => {
+          const target = actionMessage;
+          setActionsFor(null);
+          if (target) void removeReaction(target);
+        }}
+        onReply={() => {
+          const target = actionMessage;
+          setActionsFor(null);
+          if (target) {
+            setReplyingTo(target);
+            composerRef.current?.focus();
+          }
+        }}
+        onEdit={() => {
+          const target = actionMessage;
+          setActionsFor(null);
+          if (target?.body) setEditing({ message: target, text: target.body });
+        }}
+        onDelete={() => {
+          const target = actionMessage;
+          setActionsFor(null);
+          if (target) setConfirmDelete(target);
+        }}
+        onKeep={() => {
+          const target = actionMessage;
+          setActionsFor(null);
+          if (target) void keepMessage(target);
+        }}
+      />
+
+      <Dialog
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title="Edit message"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!editing || !editing.text.trim() || editing.text === editing.message.body}
+              onClick={() => {
+                if (!editing) return;
+                const { message, text } = editing;
+                setEditing(null);
+                void editMessage(message, text);
+              }}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <textarea
+          className="talk-edit-input"
+          aria-label="Edited message"
+          value={editing?.text ?? ""}
+          onChange={(event) =>
+            setEditing((current) => (current ? { ...current, text: event.target.value } : current))
+          }
+          maxLength={M1_MESSAGE_MAX_CHARACTERS}
+          rows={4}
+        />
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          const target = confirmDelete;
+          setConfirmDelete(null);
+          if (target) void deleteMessage(target);
+        }}
+        title="Delete this message for both of you?"
+        confirmLabel="Delete message"
+        destructive
+      >
+        It will show as deleted for both of you, and its content will no longer be visible.
+      </ConfirmDialog>
+
+      <Sheet open={nicknamesOpen} onClose={() => setNicknamesOpen(false)} title="Chat nicknames">
+        <div className="talk-nicknames">
           <label className="field">
             <span>Your nickname</span>
             <input
@@ -1148,19 +1726,18 @@ export function MessagingPanel() {
               maxLength={M1_NICKNAME_MAX_CHARACTERS}
               disabled={!conversation.capabilities.changeNickname || busy}
             />
-            <button
-              className="secondary compact"
-              type="button"
+            <Button
+              compact
               disabled={!conversation.capabilities.changeNickname || busy}
               onClick={() =>
                 void saveNickname("self", selfNickname, conversation.self.nicknameVersion)
               }
             >
               Save
-            </button>
+            </Button>
           </label>
           <label className="field">
-            <span>{conversation.partner.displayName}'s nickname</span>
+            <span>{conversation.partner.displayName}&apos;s nickname</span>
             <input
               value={partnerNickname}
               onChange={(event) => {
@@ -1170,266 +1747,18 @@ export function MessagingPanel() {
               maxLength={M1_NICKNAME_MAX_CHARACTERS}
               disabled={!conversation.capabilities.changeNickname || busy}
             />
-            <button
-              className="secondary compact"
-              type="button"
+            <Button
+              compact
               disabled={!conversation.capabilities.changeNickname || busy}
               onClick={() =>
                 void saveNickname("partner", partnerNickname, conversation.partner.nicknameVersion)
               }
             >
               Save
-            </button>
+            </Button>
           </label>
         </div>
-      </details>
-
-      {hasOlder ? (
-        <button className="link" type="button" onClick={() => void loadOlder()} disabled={busy}>
-          Load older messages
-        </button>
-      ) : null}
-
-      <div className="message-list" aria-live="polite">
-        {messages.length === 0 ? <p className="muted">No messages yet.</p> : null}
-        {messages.map((message) => {
-          const own = message.senderAccountId === conversation.self.accountId;
-          const mutable = messageMutable(message, conversation);
-          const myReaction = message.reactions.find(
-            (reaction) => reaction.accountId === conversation.self.accountId,
-          );
-          const delivery = own
-            ? conversation.receipts.partnerReadThrough >= message.serverSequence
-              ? "Read"
-              : conversation.receipts.partnerDeliveredThrough >= message.serverSequence
-                ? "Delivered"
-                : "Sent"
-            : null;
-
-          return (
-            <article
-              className={"message-bubble " + (own ? "message-own" : "message-partner")}
-              key={message.messageId}
-            >
-              <div className="message-meta">
-                <strong>{own ? selfName : partnerName}</strong>
-                <span>{new Date(message.createdAt).toLocaleString()}</span>
-              </div>
-
-              {message.replyContext ? (
-                <div className="reply-context">
-                  {message.replyContext.deleted
-                    ? "Replying to a deleted message"
-                    : (message.replyContext.body ?? "Replying to a protected message")}
-                </div>
-              ) : null}
-
-              <p className={message.deletedAt ? "message-deleted" : ""}>
-                {message.deletedAt ? "This message has been deleted" : message.body}
-              </p>
-
-              {!message.deletedAt && (message.attachments?.length ?? 0) > 0 ? (
-                <div className="message-media-list">
-                  {(message.attachments ?? []).map((attachment) => (
-                    <MediaAttachment
-                      key={attachment.mediaId}
-                      mediaId={attachment.mediaId}
-                      projection={attachment}
-                    />
-                  ))}
-                </div>
-              ) : null}
-
-              {message.editedAt && !message.deletedAt ? (
-                <span className="message-edited">edited</span>
-              ) : null}
-
-              {!message.deletedAt && message.reactions.length > 0 ? (
-                <div className="reaction-list">
-                  {message.reactions.map((reaction) => (
-                    <span key={reaction.accountId}>{reaction.emoji}</span>
-                  ))}
-                </div>
-              ) : null}
-
-              <div className="message-actions">
-                {!message.deletedAt && conversation.capabilities.sendMessage ? (
-                  <button
-                    className="link compact"
-                    type="button"
-                    onClick={() => setReplyingTo(message)}
-                  >
-                    Reply
-                  </button>
-                ) : null}
-                {own && messageEditable(message, conversation) && message.body ? (
-                  <button
-                    className="link compact"
-                    type="button"
-                    onClick={() => void editMessage(message)}
-                    disabled={busy}
-                  >
-                    Edit
-                  </button>
-                ) : null}
-                {own && mutable ? (
-                  <button
-                    className="link compact"
-                    type="button"
-                    onClick={() => void deleteMessage(message)}
-                    disabled={busy}
-                  >
-                    Delete
-                  </button>
-                ) : null}
-              </div>
-
-              {mutable ? (
-                <div className="reaction-picker">
-                  {defaultReactions.map((emoji) => (
-                    <button
-                      type="button"
-                      className={myReaction?.emoji === emoji ? "active" : ""}
-                      key={emoji}
-                      onClick={() => void react(message, emoji)}
-                      disabled={busy}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const emoji = window.prompt("Emoji reaction");
-                      if (emoji?.trim()) void react(message, emoji.trim());
-                    }}
-                    disabled={busy}
-                  >
-                    +
-                  </button>
-                  {myReaction ? (
-                    <button
-                      type="button"
-                      className="link compact"
-                      onClick={() => void removeReaction(message)}
-                      disabled={busy}
-                    >
-                      remove
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {delivery ? <div className="message-delivery">{delivery}</div> : null}
-            </article>
-          );
-        })}
-      </div>
-
-      {replyingTo ? (
-        <div className="replying-banner">
-          <span>
-            Replying to{" "}
-            {replyingTo.senderAccountId === conversation.self.accountId ? selfName : partnerName}
-          </span>
-          <button className="link compact" type="button" onClick={() => setReplyingTo(null)}>
-            Cancel
-          </button>
-        </div>
-      ) : null}
-
-      {sendStatus ? (
-        <div className="message-delivery" role="status">
-          {sendStatus === "sending"
-            ? "Sending..."
-            : "Send failed. Retry will reuse the same request."}
-        </div>
-      ) : null}
-
-      {mediaDrafts.length > 0 ? (
-        <div className="media-draft-list">
-          {mediaDrafts.map((draft) => (
-            <div className="media-draft-chip" key={draft.draftId}>
-              <span>
-                {draft.kind.replace("_", " ")} · {Math.ceil(draft.ciphertextBytes / 1024)} KB
-                encrypted · {draft.state}
-              </span>
-              <span className="media-draft-actions">
-                {draft.state === "failed" ? (
-                  <button
-                    type="button"
-                    className="secondary compact"
-                    disabled={mediaBusy || busy || !navigator.onLine}
-                    onClick={() => void retryDraft(draft.draftId)}
-                  >
-                    Retry upload
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="link compact"
-                  disabled={mediaBusy || busy}
-                  onClick={() => void removeDraft(draft.draftId)}
-                >
-                  remove
-                </button>
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="media-composer-actions">
-        <label className="secondary compact media-picker-label">
-          Add media/file
-          <input
-            type="file"
-            multiple
-            hidden
-            disabled={!conversation.capabilities.sendMessage || busy || mediaBusy}
-            accept="image/*,video/mp4,video/webm,application/pdf,text/plain,application/zip,.zip"
-            onChange={(event) => void prepareFiles(event)}
-          />
-        </label>
-        <VoiceRecorder
-          disabled={!conversation.capabilities.sendMessage || busy || mediaBusy}
-          onReady={sendVoice}
-        />
-      </div>
-
-      <form className="message-composer" onSubmit={send}>
-        <textarea
-          value={composer}
-          onChange={(event) => composerChanged(event.target.value)}
-          onBlur={() => {
-            if (!conversation.capabilities.typing) return;
-            if (runtime.sendTyping(false)) return;
-            void apiRequest("/api/v1/conversations/" + conversation.conversationId + "/typing", {
-              method: "POST",
-              body: { typing: false },
-            }).catch(() => undefined);
-          }}
-          placeholder={
-            conversation.capabilities.sendMessage
-              ? "Write a message..."
-              : "Messaging is currently view-only."
-          }
-          disabled={!conversation.capabilities.sendMessage || busy}
-          rows={3}
-          maxLength={M1_MESSAGE_MAX_CHARACTERS}
-        />
-        <button
-          className="primary"
-          disabled={
-            !conversation.capabilities.sendMessage ||
-            busy ||
-            mediaBusy ||
-            (!composer.trim() && mediaDrafts.length === 0)
-          }
-        >
-          Send
-        </button>
-      </form>
+      </Sheet>
     </section>
   );
 }

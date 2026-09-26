@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MediaAttachmentProjection } from "@shawtie/contracts";
+import { Dialog, Skeleton } from "../../design/primitives.tsx";
 import { loadDecryptedMedia } from "../../lib/media/media-runtime.ts";
 import type { MediaServerProjection } from "../../lib/media/media-types.ts";
 
@@ -36,6 +37,7 @@ export function MediaAttachment({
   } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [viewing, setViewing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -64,20 +66,40 @@ export function MediaAttachment({
   }, [mediaId]);
 
   const kind = loaded?.media.kind ?? projection?.kind;
-  if (loading) return <div className="media-card muted">Loading protected media...</div>;
+  if (loading) {
+    return (
+      <div className="media-card talk-media-loading" role="status" aria-label="Loading attachment">
+        <Skeleton shape="block" />
+      </div>
+    );
+  }
   if (error || !loaded) {
     return (
-      <div className="media-card media-unavailable">
-        Protected media unavailable.
+      <div className="media-card media-unavailable talk-media-unavailable">
+        This attachment can't be opened right now.
         <span className="hint">
-          {error.includes("S1") ? " Production media decryption activates with S1." : ""}
+          {error.includes("S1") ? " Opening shared media is not available in this build yet." : ""}
         </span>
       </div>
     );
   }
 
   if (kind === "image") {
-    return <img className="media-image" src={loaded.url} alt="Shared attachment" />;
+    return (
+      <>
+        <button
+          type="button"
+          className="talk-image-button"
+          aria-label="Open photo"
+          onClick={() => setViewing(true)}
+        >
+          <img className="media-image" src={loaded.url} alt="Shared attachment" />
+        </button>
+        <Dialog open={viewing} onClose={() => setViewing(false)} title="Photo">
+          <img className="talk-image-viewer" src={loaded.url} alt="Shared attachment, full size" />
+        </Dialog>
+      </>
+    );
   }
   if (kind === "video") {
     return (
@@ -85,11 +107,25 @@ export function MediaAttachment({
     );
   }
   if (kind === "voice") {
-    return <audio className="media-audio" src={loaded.url} controls preload="metadata" />;
+    const seconds = loaded.media.durationSeconds;
+    return (
+      <div className="talk-voice-note">
+        <span className="talk-voice-note__label">
+          Voice message{seconds ? " · " + seconds + "s" : ""}
+        </span>
+        <audio
+          className="media-audio"
+          src={loaded.url}
+          controls
+          preload="metadata"
+          aria-label="Voice message"
+        />
+      </div>
+    );
   }
   return (
     <a className="media-file" href={loaded.url} download={fileName(loaded.media)}>
-      Download protected file
+      Download file
     </a>
   );
 }

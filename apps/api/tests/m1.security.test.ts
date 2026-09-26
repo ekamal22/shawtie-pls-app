@@ -151,12 +151,22 @@ test("M1 browser exposes the required chat affordances and advances receipts onl
     "utf8",
   );
 
+  // UX3 moved the reaction tray and the edited marker into Talk sub-components. The same six
+  // quick reactions, the free emoji entry, and the edited marker remain.
+  const actions = await readFile(
+    new URL("../../web/src/features/messaging/TalkActions.tsx", import.meta.url),
+    "utf8",
+  );
+  const bubble = await readFile(
+    new URL("../../web/src/features/messaging/TalkBubble.tsx", import.meta.url),
+    "utf8",
+  );
   assert.equal(
-    panel.includes('const defaultReactions = ["❤️", "😂", "😭", "😮", "😡", "👍"]'),
+    actions.includes('export const QUICK_REACTIONS = ["❤️", "😂", "😭", "😮", "😡", "👍"]'),
     true,
   );
-  assert.equal(panel.includes('window.prompt("Emoji reaction")'), true);
-  assert.equal(panel.includes("message.editedAt"), true);
+  assert.equal(actions.includes("Other emoji"), true);
+  assert.equal(bubble.includes("message.editedAt"), true);
   assert.equal(
     panel.includes('body: { type: "delivered", throughSequence: deliveredThrough }'),
     true,
@@ -173,7 +183,7 @@ test("M1 browser exposes the required chat affordances and advances receipts onl
   assert.equal(panel.includes("M1_NICKNAME_MAX_CHARACTERS"), true);
   assert.equal(panel.includes("pendingSendRef.current = pending"), true);
   assert.equal(panel.includes('"idempotency-key": pending.key'), true);
-  assert.equal(panel.includes("messageEditable(message, conversation)"), true);
+  assert.equal(panel.includes("messageEditable(actionMessage, conversation)"), true);
   assert.equal(panel.includes("M1_MESSAGE_EDIT_WINDOW_MS"), true);
   assert.equal(
     panel.includes('conversation.interactionMode === "account_deletion_view_only"'),
@@ -183,7 +193,7 @@ test("M1 browser exposes the required chat affordances and advances receipts onl
   assert.equal(panel.includes('caught.code === "CONVERSATION_NOT_FOUND"'), true);
   assert.equal(panel.includes("await loadInitial()"), true);
 
-  const sendStart = panel.indexOf("async function send(event: FormEvent)");
+  const sendStart = panel.indexOf("async function send(event?: FormEvent)");
   const sendRefresh = panel.indexOf(
     "await refreshMessage(conversation.conversationId, created.messageId)",
     sendStart,
