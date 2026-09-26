@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
 import { useM2Runtime } from "../../lib/realtime/runtime-context.tsx";
+import { Avatar, Button, ConfirmDialog } from "../../design/primitives.tsx";
 import { NotificationsPanel } from "../notifications/NotificationsPanel.tsx";
 import { FormerPartnershipsPanel } from "./FormerPartnershipsPanel.tsx";
 
@@ -70,6 +71,7 @@ export function PartnershipPanel() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState<"breakup" | "restore" | null>(null);
 
   async function load() {
     const response = await apiRequest<{ partnership: CurrentPartnership | null }>(
@@ -153,13 +155,6 @@ export function PartnershipPanel() {
 
   async function initiateBreakup() {
     if (!partnership || !partnership.capabilities.initiateBreakup) return;
-    if (
-      !window.confirm(
-        "Start the breakup process? You can cancel directly only during the first hour.",
-      )
-    ) {
-      return;
-    }
     await runMutation(async () => {
       await apiRequest("/api/v1/partnerships/" + partnership.partnershipId + "/breakup", {
         method: "POST",
@@ -193,13 +188,6 @@ export function PartnershipPanel() {
     const current = partnership;
     const breakup = current?.breakup;
     if (!current || !breakup || !current.capabilities.submitRestoreIntent) return;
-    if (
-      !window.confirm(
-        "Submit your restore request? It cannot be withdrawn during this breakup process.",
-      )
-    ) {
-      return;
-    }
     await runMutation(async () => {
       const result = await apiRequest<{ restored: boolean }>(
         "/api/v1/partnerships/" +
@@ -229,22 +217,27 @@ export function PartnershipPanel() {
     const breakup = partnership.breakup;
     content = (
       <div className="stack">
-        <div>
-          <strong>{partnership.otherMember.displayName}</strong>
-          <p className="muted">@{partnership.otherMember.username}</p>
+        <div className="us-identity">
+          <Avatar name={partnership.otherMember.displayName} size={44} />
+          <div className="us-identity__name">
+            <strong>{partnership.otherMember.displayName}</strong>
+            <span className="muted">@{partnership.otherMember.username}</span>
+          </div>
         </div>
 
         {partnership.accountDeletion ? (
-          <p className="banner error">
-            This partnership is view-only while{" "}
-            {partnership.accountDeletion.deletingMember === "self" ? "your" : "your partner's"}{" "}
-            account deletion is pending. Recovery closes at{" "}
-            {deadlineLabel(partnership.accountDeletion.recoverUntil)}.
-          </p>
+          <div className="us-lifecycle" role="status">
+            <p>
+              This partnership is view-only while{" "}
+              {partnership.accountDeletion.deletingMember === "self" ? "your" : "your partner's"}{" "}
+              account deletion is pending. Recovery closes at{" "}
+              {deadlineLabel(partnership.accountDeletion.recoverUntil)}.
+            </p>
+          </div>
         ) : null}
 
         {breakup ? (
-          <div className="lifecycle-card">
+          <div className="us-lifecycle">
             <strong>Breakup in progress</strong>
             <p>
               {breakup.initiatedBy === "self" ? "You started" : "Your partner started"} this process
@@ -252,28 +245,22 @@ export function PartnershipPanel() {
             </p>
             <p className="hint">Current final deadline: {deadlineLabel(breakup.finalDeadline)}</p>
             {partnership.capabilities.cancelBreakup ? (
-              <button
-                className="secondary"
-                type="button"
-                disabled={busy}
-                onClick={() => void cancelBreakup()}
-              >
-                Cancel breakup
-              </button>
+              <div>
+                <Button disabled={busy} onClick={() => void cancelBreakup()}>
+                  Cancel breakup
+                </Button>
+              </div>
             ) : null}
             {breakup.selfRestoreIntentAt ? (
-              <p className="banner success">
+              <p className="hint">
                 Your restore request is final for this breakup. Waiting for your partner.
               </p>
             ) : partnership.capabilities.submitRestoreIntent ? (
-              <button
-                className="primary"
-                type="button"
-                disabled={busy}
-                onClick={() => void restorePartnership()}
-              >
-                Restore partnership
-              </button>
+              <div>
+                <Button variant="primary" disabled={busy} onClick={() => setConfirming("restore")}>
+                  Restore partnership
+                </Button>
+              </div>
             ) : (
               <p className="hint">
                 Restore becomes available after the one-hour cancellation window if the breakup is
@@ -299,30 +286,28 @@ export function PartnershipPanel() {
             onChange={(event) => setRelationshipStartDate(event.target.value)}
           />
         </label>
-        <button
-          className="primary"
-          type="button"
-          disabled={
-            busy || !partnership.capabilities.changeRelationshipStartDate || !relationshipStartDate
-          }
-          onClick={() => void updateRelationshipDate()}
-        >
-          Save relationship date
-        </button>
+        <div>
+          <Button
+            variant="primary"
+            disabled={
+              busy ||
+              !partnership.capabilities.changeRelationshipStartDate ||
+              !relationshipStartDate
+            }
+            onClick={() => void updateRelationshipDate()}
+          >
+            Save relationship date
+          </Button>
+        </div>
         {!partnership.capabilities.changeRelationshipStartDate ? (
           <p className="hint">Relationship metadata is currently view-only.</p>
         ) : null}
 
         {partnership.capabilities.initiateBreakup ? (
-          <div className="danger-zone-inline">
-            <button
-              className="danger"
-              type="button"
-              disabled={busy}
-              onClick={() => void initiateBreakup()}
-            >
+          <div>
+            <Button variant="danger" disabled={busy} onClick={() => setConfirming("breakup")}>
               Start breakup
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -331,14 +316,48 @@ export function PartnershipPanel() {
 
   return (
     <>
-      <section className="panel">
+      <section className="us-block">
         <h2>Partnership</h2>
-        {error ? <p className="banner error">{error}</p> : null}
-        {notice ? <p className="banner success">{notice}</p> : null}
+        {error ? (
+          <p className="banner error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {notice ? (
+          <p className="banner success" role="status">
+            {notice}
+          </p>
+        ) : null}
         {content}
       </section>
       <FormerPartnershipsPanel />
       <NotificationsPanel />
+
+      <ConfirmDialog
+        open={confirming === "breakup"}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => {
+          setConfirming(null);
+          void initiateBreakup();
+        }}
+        title="Start the breakup process?"
+        confirmLabel="Start breakup"
+        destructive
+      >
+        Start the breakup process? You can cancel directly only during the first hour.
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={confirming === "restore"}
+        onCancel={() => setConfirming(null)}
+        onConfirm={() => {
+          setConfirming(null);
+          void restorePartnership();
+        }}
+        title="Restore the partnership?"
+        confirmLabel="Submit restore request"
+      >
+        Submit your restore request? It cannot be withdrawn during this breakup process.
+      </ConfirmDialog>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
+import { Button } from "../../design/primitives.tsx";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
 
 interface DiscoveryResult {
@@ -230,7 +231,7 @@ export function PartnerRequestsPanel() {
 
   if (partnershipOccupied === undefined) {
     return (
-      <section className="panel">
+      <section className="us-block">
         <h2>Find your partner</h2>
         <p className="muted">Checking partnership availability...</p>
       </section>
@@ -239,7 +240,7 @@ export function PartnerRequestsPanel() {
 
   if (partnershipOccupied) {
     return (
-      <section className="panel">
+      <section className="us-block">
         <h2>Partner requests</h2>
         <p className="hint">
           New discovery, requests, and acceptance are unavailable while this partnership occupies
@@ -249,12 +250,82 @@ export function PartnerRequestsPanel() {
     );
   }
 
+  const requestList = (
+    direction: "incoming" | "outgoing",
+    items: RequestItem[],
+    cursor: string | null,
+  ) => (
+    <div className="stack">
+      <h3>{direction === "incoming" ? "Incoming" : "Outgoing"}</h3>
+      {items.length === 0 ? (
+        <p className="muted">No {direction === "incoming" ? "incoming" : "outgoing"} requests.</p>
+      ) : (
+        <ul className="us-list">
+          {items.map((item) => (
+            <li className="us-list__item" key={item.requestId}>
+              <strong>{item.counterpart.displayName}</strong>
+              <p className="muted">
+                {requestLabel(item)} @{item.counterpart.username} · relationship since{" "}
+                {item.relationshipStartDate}
+              </p>
+              <p className="hint">Expires {new Date(item.expiresAt).toLocaleString()}</p>
+              <div className="ours-actions">
+                {direction === "incoming" ? (
+                  <>
+                    <Button
+                      variant="primary"
+                      compact
+                      disabled={busy}
+                      onClick={() => void acceptRequest(item.requestId)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      compact
+                      disabled={busy}
+                      onClick={() => void mutate(item.requestId, "decline")}
+                    >
+                      Decline
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    compact
+                    disabled={busy}
+                    onClick={() => void mutate(item.requestId, "cancel")}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {cursor ? (
+        <div>
+          <Button variant="quiet" compact disabled={busy} onClick={() => void loadMore(direction)}>
+            Load more {direction}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
-    <section className="panel">
+    <section className="us-block">
       <h2>Find your partner</h2>
       <p className="hint">Search an exact username. Private account details are never shown.</p>
-      {error ? <p className="banner error">{error}</p> : null}
-      {notice ? <p className="banner success">{notice}</p> : null}
+      {error ? (
+        <p className="banner error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {notice ? (
+        <p className="banner success" role="status">
+          {notice}
+        </p>
+      ) : null}
 
       <form className="stack" onSubmit={search}>
         <label className="field">
@@ -266,13 +337,15 @@ export function PartnerRequestsPanel() {
             required
           />
         </label>
-        <button className="secondary" disabled={busy}>
-          Search
-        </button>
+        <div>
+          <Button type="submit" disabled={busy}>
+            Search
+          </Button>
+        </div>
       </form>
 
       {result ? (
-        <article className="profile-card">
+        <div className="us-list__item">
           <div>
             <strong>{result.displayName}</strong>
             <p className="muted">
@@ -293,85 +366,20 @@ export function PartnerRequestsPanel() {
               required
             />
           </label>
-          <button
-            type="button"
-            className="primary"
-            disabled={busy || !relationshipStartDate}
-            onClick={() => void sendRequest()}
-          >
-            Send partner request
-          </button>
-        </article>
+          <div>
+            <Button
+              variant="primary"
+              disabled={busy || !relationshipStartDate}
+              onClick={() => void sendRequest()}
+            >
+              Send partner request
+            </Button>
+          </div>
+        </div>
       ) : null}
 
-      <div className="partner-grid">
-        <div>
-          <h3>Incoming</h3>
-          <div className="request-list">
-            {incoming.length === 0 ? <p className="muted">No incoming requests.</p> : null}
-            {incoming.map((item) => (
-              <article className="request-card" key={item.requestId}>
-                <strong>{item.counterpart.displayName}</strong>
-                <p className="muted">
-                  {requestLabel(item)} @{item.counterpart.username} · relationship since{" "}
-                  {item.relationshipStartDate}
-                </p>
-                <p className="hint">Expires {new Date(item.expiresAt).toLocaleString()}</p>
-                <div className="button-row">
-                  <button
-                    className="primary compact"
-                    disabled={busy}
-                    onClick={() => void acceptRequest(item.requestId)}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    className="secondary compact"
-                    disabled={busy}
-                    onClick={() => void mutate(item.requestId, "decline")}
-                  >
-                    Decline
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-          {incomingCursor ? (
-            <button className="link" disabled={busy} onClick={() => void loadMore("incoming")}>
-              Load more incoming
-            </button>
-          ) : null}
-        </div>
-
-        <div>
-          <h3>Outgoing</h3>
-          <div className="request-list">
-            {outgoing.length === 0 ? <p className="muted">No outgoing requests.</p> : null}
-            {outgoing.map((item) => (
-              <article className="request-card" key={item.requestId}>
-                <strong>{item.counterpart.displayName}</strong>
-                <p className="muted">
-                  {requestLabel(item)} @{item.counterpart.username} · relationship since{" "}
-                  {item.relationshipStartDate}
-                </p>
-                <p className="hint">Expires {new Date(item.expiresAt).toLocaleString()}</p>
-                <button
-                  className="secondary compact"
-                  disabled={busy}
-                  onClick={() => void mutate(item.requestId, "cancel")}
-                >
-                  Cancel
-                </button>
-              </article>
-            ))}
-          </div>
-          {outgoingCursor ? (
-            <button className="link" disabled={busy} onClick={() => void loadMore("outgoing")}>
-              Load more outgoing
-            </button>
-          ) : null}
-        </div>
-      </div>
+      {requestList("incoming", incoming, incomingCursor)}
+      {requestList("outgoing", outgoing, outgoingCursor)}
     </section>
   );
 }

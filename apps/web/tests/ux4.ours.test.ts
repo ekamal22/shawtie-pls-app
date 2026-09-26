@@ -287,3 +287,38 @@ test("UX4 adds no teaser, countdown, or scheduled-release hint for unreleased re
   assert.equal(chapters.includes("if (!isChapterContent(item)) continue;"), true);
   assert.equal(/\.length\s*\+?\s*"?\s*(waiting|sealed|hidden)/i.test(screen), false);
 });
+
+test("UX4 lifecycle copy stays neutral and Us keeps every action reachable", async () => {
+  const partnership = await source("../src/features/partnership/PartnershipPanel.tsx");
+  const notifications = await source("../src/features/notifications/NotificationsPanel.tsx");
+  for (const action of [
+    "Start breakup",
+    "Cancel breakup",
+    "Restore partnership",
+    "Save relationship date",
+  ]) {
+    assert.equal(partnership.includes(action), true, "missing " + action);
+  }
+  // Confirmation consequence text is unchanged even though it now lives in a shared dialog.
+  assert.equal(
+    partnership.includes(
+      "Start the breakup process? You can cancel directly only during the first hour.",
+    ),
+    true,
+  );
+  assert.equal(
+    partnership.includes(
+      "Submit your restore request? It cannot be withdrawn during this breakup process.",
+    ),
+    true,
+  );
+  assert.equal(partnership.includes("window.confirm"), false);
+  const urgency = [/hurry/i, /last chance/i, /too late/i, /approaching/i, /running out/i];
+  for (const pattern of urgency) {
+    assert.equal(pattern.test(partnership), false, "partnership " + pattern);
+    assert.equal(pattern.test(notifications), false, "notifications " + pattern);
+  }
+  const us = await source("../src/features/ours/us/UsScreen.tsx");
+  assert.equal(us.includes("window.confirm"), false);
+  assert.equal(us.includes("Request account deletion now?"), true);
+});

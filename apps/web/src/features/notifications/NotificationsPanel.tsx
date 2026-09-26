@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button } from "../../design/primitives.tsx";
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
 
 type NotificationEventType =
@@ -31,7 +32,7 @@ function label(item: NotificationItem): string {
     breakup_cancelled: "The breakup process was cancelled.",
     restoration_requested: "Your partner requested restoration.",
     partnership_restored: "Your partnership was restored.",
-    breakup_deadline_reminder: "Your breakup deadline is approaching.",
+    breakup_deadline_reminder: "A reminder about the breakup deadline.",
     partnership_dissolved: "Your partnership reached final dissolution.",
     partner_account_deletion_started: "Your partner requested account deletion.",
     partner_account_recovered: "Your partner recovered their account.",
@@ -83,30 +84,35 @@ export function NotificationsPanel() {
   }
 
   return (
-    <section className="panel">
+    <section className="us-block">
       <h2>Notifications</h2>
-      {error ? <p className="banner error">{error.replaceAll("_", " ").toLowerCase()}</p> : null}
-      <div className="request-list">
-        {items.length === 0 ? <p className="muted">No notifications yet.</p> : null}
+      {error ? (
+        <p className="banner error" role="alert">
+          {error.replaceAll("_", " ").toLowerCase()}
+        </p>
+      ) : null}
+      {items.length === 0 ? <p className="muted">No notifications yet.</p> : null}
+      <ul className="us-list">
         {items.map((item) => (
-          <article className="request-card" key={item.notificationId}>
+          <li className="us-list__item" key={item.notificationId}>
             <strong>{label(item)}</strong>
             <p className="hint">{new Date(item.createdAt).toLocaleString()}</p>
             {!item.readAt ? (
-              <button
-                className="secondary compact"
-                type="button"
-                disabled={busyId === item.notificationId}
-                onClick={() => void markRead(item.notificationId)}
-              >
-                Mark read
-              </button>
+              <div>
+                <Button
+                  compact
+                  disabled={busyId === item.notificationId}
+                  onClick={() => void markRead(item.notificationId)}
+                >
+                  Mark read
+                </Button>
+              </div>
             ) : (
               <span className="pill">Read</span>
             )}
-          </article>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

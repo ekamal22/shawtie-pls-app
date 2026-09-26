@@ -22,6 +22,10 @@ interface Scenario {
   posted: Item[];
   released: string[];
   deleted: string[];
+  partnership: Record<string, unknown> | null;
+  calls: string[];
+  former: unknown[];
+  notifications: unknown[];
 }
 
 let counter = 0;
@@ -58,6 +62,10 @@ function scenario(overrides: Partial<Scenario> = {}): Scenario {
     posted: [],
     released: [],
     deleted: [],
+    partnership: null,
+    calls: [],
+    former: [],
+    notifications: [],
     ...overrides,
   };
 }
@@ -93,7 +101,7 @@ const conversation = {
   capabilities: { sendMessage: true, changeNickname: true, typing: true, viewMessages: true },
 };
 
-const partnership = {
+const basePartnership = {
   partnershipId: "d0000000-0000-4000-8000-000000000001",
   lifecycleState: "active",
   interactionMode: "normal",
@@ -151,7 +159,18 @@ async function mockApi(page: Page, state: Scenario) {
         reauthenticatedAt: null,
       });
     }
-    if (path === "/api/v1/partnerships/current") return json(route, { partnership });
+    if (path === "/api/v1/partnerships/current") {
+      return json(route, { partnership: state.partnership ?? basePartnership });
+    }
+    if (path === "/api/v1/partnerships/former") return json(route, { items: state.former });
+    if (method === "POST" && /breakup|restore|account-deletion|cancel|read$|logout/.test(path)) {
+      state.calls.push(path);
+      return json(route, { restored: false });
+    }
+    if (method === "DELETE" && path.startsWith("/api/v1/me/devices/")) {
+      state.calls.push(path);
+      return json(route, {});
+    }
     if (path === "/api/v1/me") {
       return json(route, {
         accountId: ME,
@@ -212,7 +231,7 @@ async function mockApi(page: Page, state: Scenario) {
       return json(route, {});
     }
     if (path.startsWith("/api/v1/notifications")) {
-      return json(route, { items: [], nextCursor: null });
+      return json(route, { items: state.notifications, nextCursor: null });
     }
     if (path.startsWith("/api/v1/partner-requests")) {
       return json(route, { items: [], nextCursor: null });
@@ -269,9 +288,7 @@ test("Ours is one scroll of Then, Now, and Next with a few curated items and See
   for (const name of ["Then", "Now", "Next"] as const) {
     await expect(page.getByRole("heading", { name, level: 2 })).toBeVisible();
   }
-  await expect(chapter(page, "Then").getByRole("button", { name: /Memory number/ })).toHaveCount(
-    3,
-  );
+  await expect(chapter(page, "Then").getByRole("button", { name: /Memory number/ })).toHaveCount(3);
   await expect(chapter(page, "Now").getByRole("button", { name: /Morning letter/ })).toBeVisible();
   await expect(
     chapter(page, "Next").getByRole("button", { name: /See the sea in winter/ }),
@@ -451,4 +468,189 @@ test("Ours fits a 320px phone and reduced motion swaps movement for a fade", asy
     () => getComputedStyle(document.querySelector(".ours") as Element).animationName,
   );
   expect(name).toBe("ours-arrive-still");
+});
+
+async function openUs(page: Page, state: Scenario) {
+  await mockApi(page, state);
+  await page.goto("/index.html#/us");
+  await expect(page.getByRole("heading", { name: "Partnership", exact: true })).toBeVisible();
+}
+
+test("Us keeps profile, security, devices, and account deletion reachable and calm", async ({
+  page,
+}) => {
+  const state = scenario();
+  await openUs(page, state);
+  for (const name of [
+    "Appearance",
+    "Account",
+    "Username",
+    "Date of birth",
+    "Security confirmation",
+    "Verified email",
+    "Devices",
+    "Delete account",
+    "Notifications",
+  ]) {
+    await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(page.getByText("This device")).toBeVisible();
+
+  // Presence, typing, last seen, and receipts are always on and never appear as settings.
+  const text = (await page.locator("#main").innerText()).toLowerCase();
+  for (const word of ["read receipt", "typing indicator", "last seen", "online status"]) {
+    expect(text).not.toContain(word);
+  }
+  await expect(page.getByRole("switch")).toHaveCount(0);
+});
+
+test("Breakup start keeps its confirmation text and calls the unchanged endpoint", async ({
+  page,
+}) => {
+  const state = scenario();
+  await openUs(page, state);
+  await page.getByRole("button", { name: "Start breakup" }).click();
+  const dialog = page.getByRole("dialog", { name: "Start the breakup process?" });
+  await expect(
+    dialog.getByText(
+      "Start the breakup process? You can cancel directly only during the first hour.",
+    ),
+  ).toBeVisible();
+  // The destructive choice is never the initially focused control.
+  await expect(dialog.getByRole("button", { name: "Start breakup" })).not.toBeFocused();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  expect(state.calls).toEqual([]);
+  await page.getByRole("button", { name: "Start breakup" }).click();
+  await dialog.getByRole("button", { name: "Start breakup" }).click();
+  await expect.poll(() => state.calls.filter((path) => path.endsWith("/breakup")).length).toBe(1);
+});
+
+test("Breakup in progress shows cancel and restore neutrally, with the irreversible restore text", async ({
+  page,
+}) => {
+  const breakup = {
+    breakupId: "e0000000-0000-4000-8000-000000000001",
+    initiatedBy: "self",
+    initiatedAt: "2026-09-01T00:00:00.000Z",
+    initiatorCancelUntil: "2026-09-01T01:00:00.000Z",
+    baseDeadline: "2026-09-30T00:00:00.000Z",
+    finalDeadline: "2026-09-30T00:00:00.000Z",
+    selfRestoreIntentAt: null,
+    partnerRestoreIntentAt: null,
+  };
+  const state = scenario({
+    partnership: {
+      ...basePartnership,
+      lifecycleState: "breakup_pending",
+      interactionMode: "breakup_restricted",
+      breakup,
+      capabilities: {
+        changeRelationshipStartDate: false,
+        initiateBreakup: false,
+        cancelBreakup: true,
+        submitRestoreIntent: true,
+        viewSharedData: true,
+      },
+    },
+  });
+  await openUs(page, state);
+  await expect(page.getByText("Breakup in progress", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Current final deadline:/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancel breakup" })).toBeVisible();
+  await expect(page.getByText("Relationship metadata is currently view-only.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start breakup" })).toHaveCount(0);
+  const main = (await page.locator("#main").innerText()).toLowerCase();
+  for (const bad of ["hurry", "last chance", "too late", "don't leave"]) {
+    expect(main).not.toContain(bad);
+  }
+
+  await page.getByRole("button", { name: "Restore partnership" }).click();
+  const dialog = page.getByRole("dialog", { name: "Restore the partnership?" });
+  await expect(
+    dialog.getByText(
+      "Submit your restore request? It cannot be withdrawn during this breakup process.",
+    ),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Submit restore request" }).click();
+  await expect.poll(() => state.calls.filter((path) => path.endsWith("/restore")).length).toBe(1);
+  await page.getByRole("button", { name: "Cancel breakup" }).click();
+  await expect.poll(() => state.calls.filter((path) => path.endsWith("/cancel")).length).toBe(1);
+});
+
+test("Account deletion keeps its consequence text and is confirmed in a dialog", async ({
+  page,
+}) => {
+  const state = scenario();
+  await openUs(page, state);
+  await page.getByRole("button", { name: "Request account deletion" }).click();
+  const dialog = page.getByRole("dialog", { name: "Request account deletion?" });
+  await expect(dialog.getByText(/Access is removed immediately/)).toBeVisible();
+  await expect(dialog.getByText(/exactly seven days/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  expect(state.calls).toEqual([]);
+});
+
+test("Deletion recovery notice, former partners, and notifications are calm and reachable", async ({
+  page,
+}) => {
+  const state = scenario({
+    partnership: {
+      ...basePartnership,
+      interactionMode: "account_deletion_view_only",
+      accountDeletion: { deletingMember: "partner", recoverUntil: "2026-10-01T00:00:00.000Z" },
+    },
+    former: [
+      {
+        partnershipId: "f0000000-0000-4000-8000-000000000001",
+        terminatedAt: "2025-01-01T00:00:00.000Z",
+        terminationReason: "breakup",
+        formerPartner: { accountId: "x", username: "sam", displayName: "Sam" },
+        blockedByMe: false,
+      },
+    ],
+    notifications: [
+      {
+        notificationId: "n1",
+        eventType: "breakup_deadline_reminder",
+        actorAccountId: null,
+        partnershipId: null,
+        createdAt: "2026-09-20T00:00:00.000Z",
+        readAt: null,
+      },
+    ],
+  });
+  await openUs(page, state);
+  await expect(
+    page.getByText(/view-only while your partner's account deletion is pending/),
+  ).toBeVisible();
+  await expect(page.getByText(/Recovery closes at/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Former partnerships" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Block former partner" })).toBeVisible();
+  await expect(page.getByText("A reminder about the breakup deadline.")).toBeVisible();
+  await expect(page.getByText(/approaching/i)).toHaveCount(0);
+  await page.getByRole("button", { name: "Mark read" }).click();
+  await expect.poll(() => state.calls.filter((path) => path.endsWith("/read")).length).toBe(1);
+});
+
+test("Unpaired accounts reach partner requests in Us", async ({ page }) => {
+  await mockApi(page, scenario());
+  await page.route("**/api/v1/partnerships/current", (route) => json(route, { partnership: null }));
+  await page.route("**/api/v1/conversations/current", (route) =>
+    json(route, { conversation: null }),
+  );
+  await page.goto("/index.html#/us");
+  await expect(page.getByRole("heading", { name: "Find your partner" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Incoming" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Outgoing" })).toBeVisible();
+});
+
+test("Us fits a 320px phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await openUs(page, scenario());
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
 });

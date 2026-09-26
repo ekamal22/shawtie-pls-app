@@ -215,6 +215,8 @@ test("UX1 keeps presence, typing, last seen, and read receipts non-optional", as
 test("UX1 shell exposes Home, Talk, Ours navigation and keeps Talk and calls mounted", async () => {
   const shell = await source("../src/app/shell/AppShell.tsx");
   const app = await source("../src/app/App.tsx");
+  const us = await source("../src/features/ours/us/UsScreen.tsx");
+  assert.equal(app.includes("<UsScreen"), true);
   assert.equal(shell.includes('aria-label="Primary"'), true);
   assert.equal(shell.includes('aria-current={route === name ? "page" : undefined}'), true);
   assert.equal(app.includes('<RouteView active={route === "talk"} keepMounted>'), true);
@@ -224,6 +226,7 @@ test("UX1 shell exposes Home, Talk, Ours navigation and keeps Talk and calls mou
     "<PartnerRequestsPanel />",
     "Request account deletion",
   ]) {
-    assert.equal(app.includes(reachable), true, "Us must keep " + reachable);
+    // UX4 moved the Us account sections into UsScreen; reachability is the invariant.
+    assert.equal(us.includes(reachable), true, "Us must keep " + reachable);
   }
 });
