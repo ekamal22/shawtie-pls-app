@@ -682,10 +682,10 @@ export class MessagingService {
     input: MessageSendInput,
     idempotencyKey: string,
   ): Promise<unknown> {
-    const messageId = input.messageId ?? randomUUID();
+    const requestedMessageId = input.messageId ?? null;
     const payload = this.#privateFingerprintPayload("message.send", {
       conversationId,
-      messageId,
+      messageId: requestedMessageId,
       body: input.body,
       protectedBody: input.protectedBody,
       replyToMessageId: input.replyToMessageId,
@@ -734,6 +734,8 @@ export class MessagingService {
             createdAt: existing.createdAt.toISOString(),
           };
         }
+
+        const messageId = requestedMessageId ?? randomUUID();
 
         this.#assertCapability(
           auth,

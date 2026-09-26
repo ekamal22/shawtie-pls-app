@@ -1439,10 +1439,6 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
 
   async function keepMessage(message: Message) {
     if (!conversation || !message.body || message.deletedAt) return;
-    if (conversation.cryptoRequired) {
-      setError("Protected Remember This is still being prepared.");
-      return;
-    }
     const authorName =
       message.senderAccountId === conversation.self.accountId
         ? conversation.self.nickname || conversation.self.displayName
