@@ -545,3 +545,51 @@ html.call-open body {
 .call-preview[data-corner="bottom-left"] {
   inset: auto auto calc(var(--safe-bottom) + 11.5rem) var(--space-3);
 }
+
+/*
+ * Short landscape screens (a phone turned sideways, about 300 CSS px tall with the browser
+ * bars). The stacked layout pushed Answer and Decline below the fold, which is unusable for an
+ * incoming call. Here the person and status sit on the left and the controls on the right, so
+ * every call control is on screen without scrolling. Found on a physical Redmi Note 9S.
+ */
+@media (orientation: landscape) and (max-height: 520px) {
+  .call-surface:not(.call-surface--video) .call-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding: var(--space-3) var(--gutter);
+  }
+
+  .call-surface:not(.call-surface--video) .call-head {
+    flex: 1;
+    gap: var(--space-1);
+  }
+
+  .call-surface:not(.call-surface--video) .call-portrait {
+    margin-bottom: var(--space-2);
+  }
+
+  .call-surface:not(.call-surface--video) .call-portrait .ds-avatar,
+  .call-surface:not(.call-surface--video) .call-portrait__blank {
+    width: 4.5rem !important;
+    height: 4.5rem !important;
+    font-size: 1.75rem !important;
+  }
+
+  .call-surface:not(.call-surface--video) .call-title {
+    font-size: var(--type-section);
+    line-height: var(--type-section-lh);
+  }
+
+  .call-surface:not(.call-surface--video) .call-privacy {
+    margin-top: var(--space-1);
+  }
+
+  .call-surface:not(.call-surface--video) .call-lower {
+    width: auto;
+    max-width: 22rem;
+    margin-inline: 0;
+    flex: none;
+  }
+}

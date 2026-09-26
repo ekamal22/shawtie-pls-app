@@ -161,6 +161,22 @@ test("the idle call entry stays compact on a small phone and survives large text
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test("incoming call controls stay on screen on a short landscape phone", async ({ page }) => {
+  // A Redmi Note 9S turned sideways in Chrome is about 788 by 299 CSS pixels. Found on the
+  // device: Answer and Decline started below the fold.
+  await page.setViewportSize({ width: 788, height: 299 });
+  await openApp(page, projection());
+  const dialog = surface(page);
+  for (const name of ["Decline", "Answer"]) {
+    const button = dialog.getByRole("button", { name });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.y ?? -1) >= 0).toBe(true);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(299);
+  }
+});
+
 test("incoming voice call is a full-screen dialog with Decline and Answer", async ({ page }) => {
   await openApp(page, projection());
   const dialog = surface(page);
@@ -383,4 +399,17 @@ test("call surface uses the Midnight palette even when the phone is in light mod
     .getByRole("dialog")
     .evaluate((element) => getComputedStyle(element).backgroundColor);
   expect(background).toBe("rgb(21, 18, 26)");
+});
+
+test("incoming video choices also stay on screen on a short landscape phone", async ({ page }) => {
+  await page.setViewportSize({ width: 788, height: 299 });
+  await openApp(page, projection({ kind: "video" }));
+  const dialog = surface(page);
+  for (const name of ["Decline", "Accept with camera off", "Accept video"]) {
+    const button = dialog.getByRole("button", { name });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect((box?.y ?? -1) >= 0).toBe(true);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(299);
+  }
 });
