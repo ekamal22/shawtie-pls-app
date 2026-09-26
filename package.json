@@ -81,6 +81,7 @@
     "test:ux4:browser:e2e": "playwright test --config=playwright.ux4.config.ts",
     "test:ux6": "node --test apps/web/tests/ux6.content.test.ts",
     "test:ux6:browser:e2e": "playwright test --config=playwright.ux6.config.ts",
+    "test:uxint:browser:e2e": "playwright test --config=playwright.uxint.config.ts",
     "test:ux1:browser:e2e": "playwright test --config=playwright.ux1.config.ts",
     "test:ux2:browser:e2e": "playwright test --config=playwright.ux2.config.ts",
     "test:ux3:browser:e2e": "playwright test --config=playwright.ux3.config.ts",

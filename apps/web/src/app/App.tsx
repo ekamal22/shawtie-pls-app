@@ -395,6 +395,12 @@ function AccountScreen({
   refreshSession: () => Promise<void>;
 }) {
   const [route, navigate] = useRoute();
+  useEffect(() => {
+    // Memory Return: opening a source message from Ours brings Talk forward.
+    const toTalk = () => navigate("talk");
+    window.addEventListener("shawtie:open-message", toTalk);
+    return () => window.removeEventListener("shawtie:open-message", toTalk);
+  }, [navigate]);
   const conversation = useConversationContext();
 
   const lifecycleBanner =

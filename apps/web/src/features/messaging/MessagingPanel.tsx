@@ -666,6 +666,39 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     // Only a change of `active` re-evaluates; sync dependencies are read at call time.
   }, [active]);
 
+  // Memory Return: a kept item asks Talk to show its source message. The app shell brings Talk
+  // forward; once Talk is active and the message is rendered, it is scrolled into view and
+  // highlighted with the same treatment as a reply jump.
+  const pendingJumpRef = useRef<string | null>(null);
+  const [jumpTick, setJumpTick] = useState(0);
+  useEffect(() => {
+    const onOpenMessage = (event: Event) => {
+      const messageId = (event as CustomEvent<{ messageId?: string }>).detail?.messageId;
+      if (!messageId) return;
+      pendingJumpRef.current = messageId;
+      setJumpTick((value) => value + 1);
+    };
+    window.addEventListener("shawtie:open-message", onOpenMessage);
+    return () => window.removeEventListener("shawtie:open-message", onOpenMessage);
+  }, []);
+  useEffect(() => {
+    const messageId = pendingJumpRef.current;
+    if (!messageId || !active || !conversation) return;
+    const element = document.getElementById("talk-msg-" + messageId);
+    pendingJumpRef.current = null;
+    if (!element) {
+      setNotice("That message is further back or no longer available.");
+      return;
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    element.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+    setHighlightedId(messageId);
+    window.setTimeout(
+      () => setHighlightedId((current) => (current === messageId ? null : current)),
+      1800,
+    );
+  }, [jumpTick, active, conversation, messages]);
+
   useEffect(() => {
     void loadInitial().catch((caught) => setError(errorText(caught)));
   }, [loadInitial]);
