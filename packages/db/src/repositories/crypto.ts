@@ -258,6 +258,34 @@ export interface AvailableCryptoKeyPackage {
   readonly keyPackage: Buffer;
 }
 
+export async function listPartnershipCryptoDevices(
+  executor: QueryExecutor,
+  partnershipId: string,
+): Promise<readonly DeviceCryptoIdentity[]> {
+  const result = await executor.query<DeviceCryptoIdentityRow>(
+    `SELECT
+       identities.crypto_device_id,
+       identities.device_id,
+       identities.account_id,
+       identities.crypto_profile,
+       identities.mls_signing_public_key,
+       identities.content_signing_public_key,
+       identities.trust_state,
+       identities.approved_by_crypto_device_id,
+       identities.approved_at,
+       identities.created_at,
+       identities.revoked_at
+     FROM device_crypto_identities AS identities
+     JOIN partnership_members AS members
+       ON members.account_id = identities.account_id
+      AND members.partnership_id = $1
+      AND members.released_at IS NULL
+     ORDER BY identities.account_id, identities.created_at, identities.crypto_device_id`,
+    [partnershipId],
+  );
+  return result.rows.map(mapIdentity);
+}
+
 export async function listPartnershipTrustedCryptoDevices(
   executor: QueryExecutor,
   partnershipId: string,

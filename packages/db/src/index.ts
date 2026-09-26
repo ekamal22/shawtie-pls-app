@@ -340,6 +340,7 @@ export {
   listAccountCryptoDevices,
   listAvailablePartnershipKeyPackages,
   listPartnershipCryptoControlMessages,
+  listPartnershipCryptoDevices,
   listPartnershipCryptoMembers,
   listPartnershipTrustedCryptoDevices,
   loadActivePartnershipCryptoGroup,

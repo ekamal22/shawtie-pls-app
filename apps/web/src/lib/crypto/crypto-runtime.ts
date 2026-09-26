@@ -20,6 +20,7 @@ import {
   envelopeContext,
   generateRecoveryMasterSecret,
   restoreMlsEngine,
+  sha256,
   utf8,
   utf8Decode,
   withCryptoLock,
@@ -1155,11 +1156,37 @@ export class S1CryptoRuntime {
       senderCryptoDeviceId: envelope.senderCryptoDeviceId,
       schemaVersion: envelope.schemaVersion,
     });
+
+    const state = await this.ensurePartnership(contextInput.partnershipId);
+    const sender = state.devices.find(
+      (device) => device.cryptoDeviceId === envelope.senderCryptoDeviceId,
+    );
+    if (!sender) throw new Error("CRYPTO_SIGNATURE_INVALID");
+    const ciphertext = base64UrlDecode(protectedContent.ciphertext);
+    const digest = await sha256(ciphertext);
+    if (base64UrlEncode(digest) !== envelope.ciphertextSha256) {
+      throw new Error("CRYPTO_CIPHERTEXT_INVALID");
+    }
+    const verifier = await this.#deviceEngine();
+    if (
+      !verifier.verifyContent(
+        base64UrlDecode(sender.contentSigningPublicKey),
+        contentSignatureInput(
+          context,
+          envelope.contentKeyId,
+          base64UrlDecode(envelope.nonce),
+          digest,
+        ),
+        base64UrlDecode(envelope.contentSignature),
+      )
+    ) {
+      throw new Error("CRYPTO_SIGNATURE_INVALID");
+    }
+
     let key = await this.#vault.contentKey(envelope.contentKeyId);
 
     if (!key) {
       try {
-        await this.ensurePartnership(contextInput.partnershipId);
         await withCryptoLock(
           contextInput.partnershipId,
           this.#device.cryptoDeviceId,

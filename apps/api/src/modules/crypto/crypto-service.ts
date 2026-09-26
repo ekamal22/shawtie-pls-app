@@ -33,6 +33,7 @@ import {
   listAccountCryptoDevices,
   listAvailablePartnershipKeyPackages,
   listPartnershipCryptoControlMessages,
+  listPartnershipCryptoDevices,
   listPartnershipCryptoMembers,
   listPartnershipRecoveryRecipients,
   listPartnershipTrustedCryptoDevices,
@@ -394,7 +395,7 @@ export class CryptoService {
       const current = await this.#currentIdentity(transaction, auth, "trusted");
       const policy = await loadPartnershipCryptoPolicy(transaction, partnershipId);
       const group = await loadActivePartnershipCryptoGroup(transaction, partnershipId);
-      const devices = await listPartnershipTrustedCryptoDevices(transaction, partnershipId);
+      const devices = await listPartnershipCryptoDevices(transaction, partnershipId);
       const members = group
         ? await listPartnershipCryptoMembers(
             transaction,
