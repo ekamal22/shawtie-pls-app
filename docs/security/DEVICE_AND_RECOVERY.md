@@ -10,7 +10,7 @@ Canonical S1 design:
 
 `../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
 
-Implementation status: S1 device trust, recovery setup/proof, HPKE recovery capsules, device revocation/rekey, and recovery-authorized group reset are implemented in source on `feat/s1-e2ee-crypto-recovery` at `0e28675`. Executed S1-J closure and physical-device evidence remain pending.
+Implementation status: S1 device trust, recovery setup/proof, HPKE recovery capsules, device revocation/rekey, and recovery-authorized group reset are implemented in source on `feat/s1-e2ee-crypto-recovery` at `c85fdb1`. Executed S1-J closure and physical-device evidence remain pending.
 
 ## Account recovery
 

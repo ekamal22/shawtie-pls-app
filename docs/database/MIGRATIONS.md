@@ -323,7 +323,7 @@ C2 Video Calling required no PostgreSQL migration and reserves none. The canonic
 
 ## S1 migration implementation and closure
 
-S1 migration source is committed at the implementation/harness baseline `0e28675`.
+S1 migration source is committed at the implementation/harness baseline `c85fdb1`.
 
 - `0019_s1_device_crypto_runtime.sql` implements crypto-device identities, trusted-device approvals, KeyPackage state, encrypted recovery bundle metadata, recovery challenges, and A1-linked crypto revocation.
 - `0020_s1_partnership_crypto_runtime.sql` implements partnership MLS groups, group generations, epochs, active device membership, ordered control messages, and rekey-required propagation.

@@ -818,7 +818,7 @@ npm run test:s1:device:prepare
 npm run test:s1:device:cleanup
 ```
 
-The S1 implementation/harness baseline is `0e28675`. The command surface is committed, but S1 closure PASS markers are not yet recorded.
+The S1 implementation/harness baseline is `c85fdb1`. The command surface is committed, but S1 closure PASS markers are not yet recorded.
 
 Automated closure must prove:
 

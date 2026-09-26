@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted security baseline. The S1 source implementation and closure harnesses are committed on `feat/s1-e2ee-crypto-recovery` at `0e28675`; S1-J automated, raw-storage, physical Android, and final independent security-review evidence remain pending.
+Accepted security baseline. The S1 source implementation and closure harnesses are committed on `feat/s1-e2ee-crypto-recovery` at `c85fdb1`; S1-J automated, raw-storage, physical Android, and final independent security-review evidence remain pending.
 
 This document identifies the assets Shawtie pls must protect, the actors and failure modes that can threaten them, the trust boundaries where controls must exist, and the mitigations that must be verified before stable release.
 

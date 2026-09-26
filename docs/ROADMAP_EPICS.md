@@ -2330,7 +2330,7 @@ Security architecture:
 
 ## Current implementation progress
 
-Source implementation is complete through the S1-A to S1-I slices, and the S1-J automated and physical acceptance tooling is committed. The implementation/harness anchor is `0e28675`.
+Source implementation is complete through the S1-A to S1-I slices, and the S1-J automated and physical acceptance tooling is committed. The implementation/harness anchor is `c85fdb1`.
 
 Implemented repository evidence includes:
 

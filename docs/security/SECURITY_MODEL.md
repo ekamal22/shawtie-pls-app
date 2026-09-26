@@ -54,7 +54,7 @@ Therefore:
 
 Browser hardening is part of the E2EE security boundary.
 
-S1 implementation status: the RFC 9420/OpenMLS runtime, device trust/control plane, protected M1/M2/R1/M3 flows, cryptographic recovery, and closure tooling are committed on `feat/s1-e2ee-crypto-recovery` at source/harness anchor `0e28675`. This is not yet verified-release evidence. Public E2EE claims remain blocked until S1-J automated, raw-storage, physical-device, and independent security-review gates pass.
+S1 implementation status: the RFC 9420/OpenMLS runtime, device trust/control plane, protected M1/M2/R1/M3 flows, cryptographic recovery, and closure tooling are committed on `feat/s1-e2ee-crypto-recovery` at source/harness anchor `c85fdb1`. This is not yet verified-release evidence. Public E2EE claims remain blocked until S1-J automated, raw-storage, physical-device, and independent security-review gates pass.
 
 ## Authentication
 

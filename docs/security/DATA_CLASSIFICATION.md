@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted data-handling baseline. The S1 source implementation now materializes the protected-content handling rules on `feat/s1-e2ee-crypto-recovery` at `0e28675`; raw PostgreSQL/object-storage/log/outbox/push inspection remains an S1-J closure requirement before verified-release claims.
+Accepted data-handling baseline. The S1 source implementation now materializes the protected-content handling rules on `feat/s1-e2ee-crypto-recovery` at `c85fdb1`; raw PostgreSQL/object-storage/log/outbox/push inspection remains an S1-J closure requirement before verified-release claims.
 
 This document classifies the major data handled by Shawtie pls and defines how it may be stored, logged, backed up, exposed to providers, encrypted, and deleted.
 

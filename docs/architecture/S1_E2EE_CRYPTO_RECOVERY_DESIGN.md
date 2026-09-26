@@ -448,7 +448,7 @@ The current feature branch owns migrations `0019` through `0021` and the impleme
 - S1-I: plaintext inventory tooling, crypto-required database guards, production-bundle test-crypto exclusion checks
 - S1-J tooling: disposable local closure runner, S1 API/browser/security tests, real Chromium OpenMLS WASM harness, production scan, and physical Android preparation
 
-Implementation-complete source/harness anchor before execution evidence: `0e28675`.
+Implementation-complete source/harness anchor before execution evidence: `c85fdb1`.
 
 ## Implementation slices
 
