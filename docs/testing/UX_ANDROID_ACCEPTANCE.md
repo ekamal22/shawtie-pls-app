@@ -5,7 +5,7 @@ Status: READY TO RUN. Scenarios are defined; none has been executed on a physica
 ## Frozen executable baseline
 
 - Branch: `integration/ux-romantic`
-- Executable SHA: `0ec184d` (supersedes the earlier freeze `425f493`, invalidated by a small presentation change that shows the authorized scheduled arrival time on sealed Ours rows). Physical acceptance must use only this SHA.
+- Executable SHA: `ca7cd35` (physically accepted; frozen at `0ec184d` at the start, then repaired during acceptance, see the evidence file. Earlier freezes: `0ec184d`, supersedes the earlier freeze `425f493`, invalidated by a small presentation change that shows the authorized scheduled arrival time on sealed Ours rows). Physical acceptance must use only this SHA.
 - Later commits on this branch are documentation only. Do not test a different code SHA without recording it here.
 - Prerequisite evidence at that SHA: `npm run health` pass; UX1 to UX7 node suites; M2 browser 25, M3 browser 13, C1 24, C2 16, R1 security 16 and 13; Chromium UX1 14, UX2 12, UX3 16, UX4 21, UX5 20, UX6 14 (1 opt-in skipped), UX7 12, cross-surface 4, M2 7, M3 4, C1 5, C2 6. PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2 passed at the earlier freeze `425f493`; the change since then is web presentation only (no API, database, migration, worker or projection change), so they were not re-run.
 
