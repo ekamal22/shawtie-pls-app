@@ -87,3 +87,16 @@ test("UX7 Memory Return: presentation-only shared-element transition honors redu
   // No second-author annotation (PRODUCT_EXTENSION).
   assert.equal(/annotat/i.test(panel + transition), false);
 });
+
+test("UX7 Letter Unfolds: under one second, skippable, focus moves to the letter", async () => {
+  const letters = await source("../src/features/ours/content/LetterViews.tsx");
+  const ms = Number(/export const UNFOLD_MS = (\d+)/.exec(letters)?.[1]);
+  const reducedMs = Number(/export const UNFOLD_REDUCED_MS = (\d+)/.exec(letters)?.[1]);
+  assert.ok(ms > 0 && ms < 1000, "unfold stays under one second");
+  assert.ok(reducedMs > 0 && reducedMs <= 200);
+  assert.equal(letters.includes("signatureDuration("), true);
+  assert.equal(letters.includes('event.key === "Escape"'), true);
+  assert.equal(letters.includes("revealRef.current?.focus"), true);
+  // The existing release action is still the only thing that opens a letter.
+  assert.equal(letters.includes("actions.release()"), true);
+});

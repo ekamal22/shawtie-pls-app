@@ -88,3 +88,15 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
     animation-duration: var(--dur-instant);
   }
 }
+
+/* The Letter Unfolds polish: the focused letter keeps a quiet ring and a reduced-motion
+   opening never moves. Timing itself stays with the UX6 keyframes (under one second). */
+.mem-letter__reveal:focus {
+  outline: none;
+}
+
+.mem-letter__reveal:focus-visible {
+  outline: 2px solid var(--accent-fill);
+  outline-offset: 4px;
+  border-radius: var(--radius-s);
+}
