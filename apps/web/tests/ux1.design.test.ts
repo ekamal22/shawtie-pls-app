@@ -4,6 +4,7 @@ import test from "node:test";
 import { formatPresence } from "../src/design/presence.ts";
 import { parseRoute, routeHash } from "../src/app/shell/routes.ts";
 import { resolveTheme } from "../src/design/theme-model.ts";
+import { keyboardLikelyOpen } from "../src/app/shell/keyboard-model.ts";
 
 async function source(relative: string): Promise<string> {
   return readFile(new URL(relative, import.meta.url), "utf8");
@@ -229,4 +230,28 @@ test("UX1 shell exposes Home, Talk, Ours navigation and keeps Talk and calls mou
     // UX4 moved the Us account sections into UsScreen; reachability is the invariant.
     assert.equal(us.includes(reachable), true, "Us must keep " + reachable);
   }
+});
+
+test("UX1 keyboard detection handles both visual and layout viewport shrinking", () => {
+  const base = { textFocused: true, visualHeight: 732, layoutHeight: 732, stableLayoutHeight: 732 };
+  // Nothing focused: never a keyboard, whatever the heights are.
+  assert.equal(keyboardLikelyOpen({ ...base, textFocused: false, visualHeight: 300 }), false);
+  // Visual viewport shrinks while the layout viewport stays put.
+  assert.equal(keyboardLikelyOpen({ ...base, visualHeight: 400 }), true);
+  // Chrome on Android with interactive-widget=resizes-content: both shrink together. This is the
+  // case a physical Redmi showed the old check missing.
+  assert.equal(
+    keyboardLikelyOpen({ ...base, visualHeight: 477, layoutHeight: 477, stableLayoutHeight: 732 }),
+    true,
+  );
+  // A URL bar collapsing changes the height a little; that is not a keyboard.
+  assert.equal(
+    keyboardLikelyOpen({ ...base, visualHeight: 690, layoutHeight: 690, stableLayoutHeight: 732 }),
+    false,
+  );
+  // Unknown stable height falls back to the visual check only.
+  assert.equal(
+    keyboardLikelyOpen({ ...base, visualHeight: 477, layoutHeight: 477, stableLayoutHeight: 0 }),
+    false,
+  );
 });

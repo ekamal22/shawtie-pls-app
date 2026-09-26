@@ -297,3 +297,25 @@ test("Home, Talk, Ours, and Us stay reachable and each keeps its own state", asy
   await page.goBack();
   await expect(page).toHaveURL(/#\/ours$/);
 });
+
+test.describe("touch phone", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 392, height: 732 } });
+
+  test("The bottom navigation gives way to the keyboard when the layout viewport shrinks", async ({
+    page,
+  }) => {
+    await open(page, [KEPT], "#/talk");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav).toBeVisible();
+    await page
+      .getByRole("textbox", { name: /message/i })
+      .first()
+      .focus();
+    // Chrome on Android resizes the layout viewport itself when the keyboard opens.
+    await page.setViewportSize({ width: 392, height: 477 });
+    await expect(nav).toBeHidden();
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.setViewportSize({ width: 392, height: 732 });
+    await expect(nav).toBeVisible();
+  });
+});

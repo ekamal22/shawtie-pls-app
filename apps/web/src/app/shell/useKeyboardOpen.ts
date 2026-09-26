@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { keyboardLikelyOpen } from "./keyboard-model.ts";
 
 function isTextEntry(element: Element | null): boolean {
   if (!element) return false;
@@ -13,7 +14,7 @@ function isTextEntry(element: Element | null): boolean {
 
 /**
  * True while a virtual keyboard is likely open on a touch device: a text field has focus and
- * the visual viewport has shrunk. The shell hides the bottom navigation so the composer owns
+ * either the visual viewport or the layout viewport has shrunk (see `keyboardLikelyOpen`). The shell hides the bottom navigation so the composer owns
  * the bottom edge. Never used on fine-pointer devices.
  */
 export function useKeyboardOpen(): boolean {
@@ -24,15 +25,29 @@ export function useKeyboardOpen(): boolean {
       typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
     if (!coarse) return;
     const viewport = window.visualViewport;
+    let stableHeight = window.innerHeight;
     const evaluate = () => {
-      const shrunk = viewport ? viewport.height < window.innerHeight * 0.8 : true;
-      setOpen(isTextEntry(document.activeElement) && shrunk);
+      const textFocused = isTextEntry(document.activeElement);
+      // Remember the full height whenever nothing is being typed, so a later shrink is visible.
+      if (!textFocused) stableHeight = window.innerHeight;
+      setOpen(
+        keyboardLikelyOpen({
+          textFocused,
+          visualHeight: viewport ? viewport.height : window.innerHeight,
+          layoutHeight: window.innerHeight,
+          stableLayoutHeight: stableHeight,
+        }),
+      );
     };
+    const onFocusOut = () => window.setTimeout(evaluate, 0);
     document.addEventListener("focusin", evaluate);
-    document.addEventListener("focusout", () => window.setTimeout(evaluate, 0));
+    document.addEventListener("focusout", onFocusOut);
+    window.addEventListener("resize", evaluate);
     viewport?.addEventListener("resize", evaluate);
     return () => {
       document.removeEventListener("focusin", evaluate);
+      document.removeEventListener("focusout", onFocusOut);
+      window.removeEventListener("resize", evaluate);
       viewport?.removeEventListener("resize", evaluate);
     };
   }, []);
