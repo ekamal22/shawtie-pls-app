@@ -157,6 +157,17 @@ export function isLongMessage(body: string | null): boolean {
  * client-supplied copy; the loose `message` reference records provenance only. Never sent
  * unless the person chose to keep the message.
  */
+/**
+ * The title a kept message gets in Ours and Home: the start of the words themselves, so a list
+ * of kept things reads as words worth keeping. The author's name stays only as the fallback
+ * for a message without text.
+ */
+export function keptTitle(body: string | null, authorName: string): string {
+  const text = (body ?? "").replace(/\s+/g, " ").trim();
+  if (text.length === 0) return authorName.slice(0, 512);
+  return text.length > 60 ? text.slice(0, 59).trimEnd() + "…" : text;
+}
+
 export function buildRememberThisPayload(input: {
   readonly messageId: string;
   readonly body: string;
@@ -185,7 +196,7 @@ export function buildRememberThisPayload(input: {
     links: [],
     preview: null,
     content: {
-      title: input.authorName.slice(0, 512),
+      title: keptTitle(input.body, input.authorName),
       snapshotText: input.body,
       note: null,
     },

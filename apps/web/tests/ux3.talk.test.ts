@@ -8,6 +8,7 @@ import {
   deliveryLabel,
   isLongMessage,
   timeSeparatorLabel,
+  keptTitle,
 } from "../src/features/messaging/talk-model.ts";
 
 async function source(relative: string): Promise<string> {
@@ -101,6 +102,12 @@ test("UX3 Remember This payload satisfies the existing R1 create contract", () =
   ]);
   // Snapshot is an independent client copy; provenance is only the loose reference.
   assert.equal(payload.content.snapshotText, "You are my favorite person");
+  // The title is the start of the words, not the author's name.
+  assert.equal(payload.content.title, "You are my favorite person");
+  assert.ok(keptTitle("x ".repeat(80), "Gulnur").length <= 60);
+  assert.ok(keptTitle("x ".repeat(80), "Gulnur").endsWith(String.fromCodePoint(0x2026)));
+  assert.equal(keptTitle("  ", "Gulnur"), "Gulnur");
+  assert.equal(keptTitle(null, "Gulnur"), "Gulnur");
 });
 
 async function talkFiles(): Promise<URL[]> {
