@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
 import { broadcastLocalLogout } from "../lib/offline/account-control.ts";
 import {
@@ -13,14 +13,12 @@ import {
   M2UpdateBanner,
 } from "../lib/realtime/runtime-context.tsx";
 import { MessagingPanel } from "../features/messaging/MessagingPanel.tsx";
-import { PartnerRequestsPanel } from "../features/partner-requests/PartnerRequestsPanel.tsx";
-import { PartnershipPanel } from "../features/partnership/PartnershipPanel.tsx";
-import { RelationshipSpacePanel } from "../features/relationship-space/RelationshipSpacePanel.tsx";
+import { OursScreen } from "../features/ours/OursScreen.tsx";
+import { UsScreen } from "../features/ours/us/UsScreen.tsx";
 import { CallingPanel } from "../features/calling/CallingPanel.tsx";
 import { HomeScreen } from "../features/home/HomeScreen.tsx";
-import { THEME_LABELS, type ThemePreference } from "../design/theme-model.ts";
-import { useTheme } from "../design/theme.tsx";
-import { Button, ErrorNotice, LifecycleBanner, Notice, Segmented } from "../design/primitives.tsx";
+import { Button, LifecycleBanner } from "../design/primitives.tsx";
+import { accountMessageFor } from "./account-errors.ts";
 import { AppShell, RouteView } from "./shell/AppShell.tsx";
 import { useRoute } from "./shell/routes.ts";
 import { useConversationContext } from "./shell/useConversationContext.ts";
@@ -33,56 +31,7 @@ interface Session {
   reauthenticatedAt: string | null;
 }
 
-interface Me {
-  accountId: string;
-  username: string;
-  displayName: string;
-  dateOfBirth: string;
-  status: string;
-  email: string;
-}
-
-interface Device {
-  id: string;
-  displayName: string;
-  createdAt: string;
-  lastSeenAt: string | null;
-  revokedAt: string | null;
-  activeSessionCount: number;
-  isCurrent: boolean;
-}
-
 type AuthMode = "login" | "register" | "password-recovery" | "account-recovery";
-
-const THEME_OPTIONS: ReadonlyArray<{ value: ThemePreference; label: string }> = (
-  ["system", "dawn", "midnight"] as const
-).map((value) => ({ value, label: THEME_LABELS[value] }));
-
-function messageFor(error: unknown): string {
-  if (error instanceof ApiClientError) {
-    const known: Record<string, string> = {
-      AGE_INELIGIBLE: "You must be at least 18 years old.",
-      AUTH_INVALID: "The email/username or password is incorrect.",
-      AUTH_REQUIRED: "Please sign in again.",
-      CONFLICT: "The account changed while this request was running. Try again.",
-      DOB_CORRECTION_ALREADY_USED: "The date-of-birth correction was already used.",
-      EMAIL_CHALLENGE_EXPIRED: "That verification code expired. Request a new one.",
-      EMAIL_CHALLENGE_INVALID: "That verification code is invalid.",
-      EMAIL_UNAVAILABLE: "That email address cannot be used.",
-      PASSWORD_COMMON: "Choose a less common password.",
-      PASSWORD_TOO_LONG: "That password is too long.",
-      PASSWORD_TOO_SHORT: "Use at least 15 characters.",
-      RATE_LIMITED: "Too many attempts. Try again later.",
-      REAUTH_REQUIRED: "Re-enter your password before this security-sensitive change.",
-      USERNAME_CHANGE_NOT_ALLOWED: "The username cannot be changed right now.",
-      USERNAME_INVALID: "Use 3-30 letters, numbers, dots, or underscores.",
-      USERNAME_RESERVED: "That username is reserved.",
-      USERNAME_UNAVAILABLE: "That username is unavailable.",
-    };
-    return known[error.code] ?? error.code.replaceAll("_", " ").toLowerCase();
-  }
-  return "Something went wrong.";
-}
 
 function Field({
   label,
@@ -140,7 +89,7 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
     try {
       await task();
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(accountMessageFor(caught));
     } finally {
       setBusy(false);
     }
@@ -447,88 +396,6 @@ function AccountScreen({
 }) {
   const [route, navigate] = useRoute();
   const conversation = useConversationContext();
-  const theme = useTheme();
-  const [me, setMe] = useState<Me | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const [displayName, setDisplayName] = useState("");
-  const [username, setUsername] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [reauthPassword, setReauthPassword] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [emailCode, setEmailCode] = useState("");
-
-  const currentDevice = useMemo(
-    () => devices.find((device) => device.isCurrent) ?? null,
-    [devices],
-  );
-
-  async function load() {
-    const [profile, deviceResult] = await Promise.all([
-      apiRequest<Me>("/api/v1/me"),
-      apiRequest<{ devices: Device[] }>("/api/v1/me/devices"),
-    ]);
-    setMe(profile);
-    setDisplayName(profile.displayName);
-    setUsername(profile.username);
-    setDateOfBirth(profile.dateOfBirth);
-    setDevices(deviceResult.devices);
-  }
-
-  useEffect(() => {
-    void load().catch((caught) => setError(messageFor(caught)));
-  }, []);
-
-  async function run(task: () => Promise<void>, success?: string) {
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      await task();
-      if (success) setNotice(success);
-    } catch (caught) {
-      setError(messageFor(caught));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function mutate(
-    path: string,
-    body?: unknown,
-    method: "POST" | "PATCH" | "DELETE" = "POST",
-  ) {
-    await apiRequest(path, { method, ...(body !== undefined ? { body } : {}) });
-  }
-
-  async function reauthenticate(event: FormEvent) {
-    event.preventDefault();
-    await run(async () => {
-      await mutate("/api/v1/auth/reauthenticate", { password: reauthPassword });
-      setReauthPassword("");
-      await refreshSession();
-    }, "Security confirmation refreshed for 10 minutes.");
-  }
-
-  async function logout() {
-    await run(async () => {
-      await mutate("/api/v1/auth/logout");
-      await onSignedOut();
-    });
-  }
-
-  if (!me) {
-    return (
-      <main className="shell">
-        <section className="panel">
-          <p>{error || "Loading account..."}</p>
-        </section>
-      </main>
-    );
-  }
 
   const lifecycleBanner =
     conversation && conversation.interactionMode === "account_deletion_view_only" ? (
@@ -561,8 +428,6 @@ function AccountScreen({
       onNavigate={navigate}
       status={
         <>
-          {error ? <ErrorNotice>{error}</ErrorNotice> : null}
-          {notice ? <Notice tone="success">{notice}</Notice> : null}
           <M2UpdateBanner />
           <M2QueueStatus />
           {lifecycleBanner}
@@ -577,231 +442,14 @@ function AccountScreen({
         <MessagingPanel active={route === "talk"} />
       </RouteView>
       <RouteView active={route === "ours"}>
-        <RelationshipSpacePanel accountId={session.accountId} />
+        <OursScreen accountId={session.accountId} onOpenUs={() => navigate("us")} />
       </RouteView>
       <RouteView active={route === "us"}>
-        <section className="panel us-section">
-          <div className="topbar">
-            <div>
-              <strong>{me.displayName}</strong>
-              <span>@{me.username}</span>
-            </div>
-            <Button compact onClick={() => void logout()} disabled={busy}>
-              Sign out
-            </Button>
-          </div>
-          <div className="us-section">
-            <h2 className="ds-editorial-title">Appearance</h2>
-            <Segmented
-              label="Appearance"
-              value={theme.preference}
-              options={THEME_OPTIONS}
-              onChange={theme.setPreference}
-            />
-          </div>
-        </section>
-
-        <PartnershipPanel />
-        <PartnerRequestsPanel />
-
-        <section className="panel">
-          <h2>Account</h2>
-          <p className="muted">{me.email}</p>
-          <form
-            className="stack"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void run(async () => {
-                await mutate("/api/v1/me/profile", { displayName }, "PATCH");
-                await load();
-              }, "Display name updated.");
-            }}
-          >
-            <Field
-              label="Display name"
-              name="profileDisplayName"
-              value={displayName}
-              onChange={setDisplayName}
-            />
-            <button className="primary" disabled={busy}>
-              Save display name
-            </button>
-          </form>
-        </section>
-
-        <section className="panel">
-          <h2>Security confirmation</h2>
-          <p className="hint">
-            Email changes and account deletion require a recent password confirmation.
-          </p>
-          <form className="stack" onSubmit={reauthenticate}>
-            <Field
-              label="Current password"
-              name="reauthPassword"
-              type="password"
-              value={reauthPassword}
-              onChange={setReauthPassword}
-              autoComplete="current-password"
-            />
-            <button className="secondary" disabled={busy}>
-              Confirm password
-            </button>
-            <span className="hint">
-              Last confirmed:{" "}
-              {session.reauthenticatedAt
-                ? new Date(session.reauthenticatedAt).toLocaleString()
-                : "not recently"}
-            </span>
-          </form>
-        </section>
-
-        <section className="panel">
-          <h2>Verified email</h2>
-          <div className="stack">
-            <Field
-              label="New email"
-              name="newEmail"
-              type="email"
-              value={newEmail}
-              onChange={setNewEmail}
-              autoComplete="email"
-            />
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() =>
-                void run(
-                  () => mutate("/api/v1/me/email-change/start", { email: newEmail }),
-                  "Verification code sent to the new email.",
-                )
-              }
-            >
-              Send verification code
-            </button>
-            <Field
-              label="Verification code"
-              name="emailCode"
-              value={emailCode}
-              onChange={setEmailCode}
-              autoComplete="one-time-code"
-            />
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  await mutate("/api/v1/me/email-change/complete", { code: emailCode });
-                  setEmailCode("");
-                  setNewEmail("");
-                  await Promise.all([load(), refreshSession()]);
-                }, "Email changed. Other sessions were revoked.")
-              }
-            >
-              Confirm new email
-            </button>
-          </div>
-        </section>
-
-        <section className="panel two-column">
-          <div className="stack">
-            <h2>Username</h2>
-            <Field label="Username" name="usernameChange" value={username} onChange={setUsername} />
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  await mutate("/api/v1/me/username", { username });
-                  await load();
-                }, "Username updated.")
-              }
-            >
-              Change username
-            </button>
-          </div>
-          <div className="stack">
-            <h2>Date of birth</h2>
-            <Field
-              label="One-time correction"
-              name="dateOfBirthCorrection"
-              type="date"
-              value={dateOfBirth}
-              onChange={setDateOfBirth}
-            />
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  await mutate("/api/v1/me/date-of-birth-correction", { dateOfBirth });
-                  await load();
-                }, "Date of birth corrected.")
-              }
-            >
-              Use correction
-            </button>
-          </div>
-        </section>
-
-        <section className="panel">
-          <h2>Devices</h2>
-          <p className="hint">Revoking a device immediately revokes its active sessions.</p>
-          <div className="device-list">
-            {devices.map((device) => (
-              <article className="device" key={device.id}>
-                <div>
-                  <strong>{device.displayName}</strong>
-                  {device.isCurrent ? <span className="pill">This device</span> : null}
-                  <p className="muted">
-                    {device.revokedAt
-                      ? `Revoked ${new Date(device.revokedAt).toLocaleString()}`
-                      : `${device.activeSessionCount} active session(s)`}
-                  </p>
-                </div>
-                {!device.revokedAt ? (
-                  <button
-                    className="danger compact"
-                    disabled={busy}
-                    onClick={() =>
-                      void run(
-                        async () => {
-                          await mutate(`/api/v1/me/devices/${device.id}`, undefined, "DELETE");
-                          if (device.isCurrent) onSignedOut();
-                          else await load();
-                        },
-                        device.isCurrent ? undefined : "Device revoked.",
-                      )
-                    }
-                  >
-                    Revoke
-                  </button>
-                ) : null}
-              </article>
-            ))}
-          </div>
-          {currentDevice ? <p className="hint">Current device ID: {currentDevice.id}</p> : null}
-        </section>
-
-        <section className="panel danger-zone">
-          <h2>Delete account</h2>
-          <p>
-            Access is removed immediately. You have exactly seven days to recover the account by
-            verified email.
-          </p>
-          <button
-            className="danger"
-            disabled={busy}
-            onClick={() => {
-              if (!window.confirm("Request account deletion now?")) return;
-              void run(async () => {
-                await mutate("/api/v1/me/account-deletion", {});
-                onSignedOut();
-              });
-            }}
-          >
-            Request account deletion
-          </button>
-        </section>
+        <UsScreen
+          reauthenticatedAt={session.reauthenticatedAt}
+          onSignedOut={onSignedOut}
+          refreshSession={refreshSession}
+        />
       </RouteView>
     </AppShell>
   );
