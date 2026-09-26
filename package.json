@@ -30,6 +30,8 @@
     "db:migrations:check": "node scripts/db/check-migrations.mjs",
     "db:migrate": "node scripts/db/migrate.mjs",
     "db:test:invariants": "node scripts/db/test-invariants.mjs",
+    "s1:plaintext:inventory": "node scripts/security/s1-plaintext-inventory.mjs",
+    "s1:plaintext:assert-clean": "node scripts/security/s1-plaintext-inventory.mjs --assert-clean",
     "test:api-unit": "node --test apps/api/tests/a1.security.test.ts apps/api/tests/p1.security.test.ts apps/api/tests/p2.security.test.ts apps/api/tests/p3.security.test.ts apps/api/tests/m1.security.test.ts apps/api/tests/r1.security.test.ts apps/api/tests/m2.security.test.ts apps/api/tests/m3.security.test.ts apps/api/tests/c1.security.test.ts apps/api/tests/c2.security.test.ts",
     "test:accounts": "node --test packages/domain/tests/accounts.test.ts packages/contracts/tests/accounts.test.ts apps/api/tests/a1.security.test.ts apps/worker/tests/a1.worker.test.ts",
     "test:a1:postgres": "npm run db:test:invariants && npm run build --workspace @shawtie/domain && npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/worker && node --test --test-concurrency=1 apps/api/tests/a1.integration.test.ts apps/api/tests/a1.acceptance.integration.test.ts apps/worker/tests/a1.integration.test.ts",
