@@ -80,6 +80,21 @@ export function S1CryptoRuntimeProvider({
     };
   }, [accountId, deviceId, generation]);
 
+  useEffect(() => {
+    if (!runtime) return;
+    const purge = (event: Event) => {
+      const partnershipId = (
+        event as CustomEvent<{ partnershipId?: string }>
+      ).detail?.partnershipId;
+      if (!partnershipId) return;
+      void runtime.purgePartnership(partnershipId);
+    };
+    window.addEventListener("shawtie:crypto-namespace-revoked", purge);
+    return () => {
+      window.removeEventListener("shawtie:crypto-namespace-revoked", purge);
+    };
+  }, [runtime]);
+
   const value = useMemo<S1CryptoContextValue>(
     () => ({
       runtime,

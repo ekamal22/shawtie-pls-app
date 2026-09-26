@@ -15,6 +15,18 @@ export interface StoredCryptoDeviceState {
   readonly updatedAt: number;
 }
 
+export interface StoredCryptoDeviceDirectoryEntry {
+  readonly cryptoDeviceId: string;
+  readonly contentSigningPublicKey: string;
+  readonly trustState: "pending" | "trusted" | "revoked";
+}
+
+export interface StoredRecoveryRecipient {
+  readonly accountId: string;
+  readonly recoveryKeyVersion: number;
+  readonly recoveryHpkePublicKey: string;
+}
+
 export interface StoredGroupState {
   readonly partnershipId: string;
   readonly cryptoProfile: typeof S1_CRYPTO_PROFILE;
@@ -23,6 +35,11 @@ export interface StoredGroupState {
   readonly groupId: Uint8Array<ArrayBuffer>;
   readonly state: Uint8Array<ArrayBuffer>;
   readonly controlCursor: number;
+  readonly cryptoRequired: boolean;
+  readonly rekeyRequired: boolean;
+  readonly devices: readonly StoredCryptoDeviceDirectoryEntry[];
+  readonly recoveryRecipients: readonly StoredRecoveryRecipient[];
+  readonly serverSyncedAt: number;
   readonly updatedAt: number;
 }
 

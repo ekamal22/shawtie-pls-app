@@ -34,7 +34,7 @@ import {
   type StoredGroupState,
   type StoredRecoveryState,
 } from "@shawtie/crypto";
-import { ApiClientError } from "../api-client.ts";
+import { ApiClientError, ApiNetworkError } from "../api-client.ts";
 import {
   approveCryptoDevice,
   bootstrapCryptoPartnership,
@@ -101,6 +101,24 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function serverMetadata(state: CryptoPartnershipState) {
+  return {
+    cryptoRequired: state.cryptoRequired,
+    rekeyRequired: state.group?.rekeyRequired ?? false,
+    devices: state.devices.map((device) => ({
+      cryptoDeviceId: device.cryptoDeviceId,
+      contentSigningPublicKey: device.contentSigningPublicKey,
+      trustState: device.trustState,
+    })),
+    recoveryRecipients: state.recoveryRecipients.map((recipient) => ({
+      accountId: recipient.accountId,
+      recoveryKeyVersion: recipient.recoveryKeyVersion,
+      recoveryHpkePublicKey: recipient.recoveryHpkePublicKey,
+    })),
+    serverSyncedAt: Date.now(),
+  } as const;
+}
+
 function currentGroupState(
   state: CryptoPartnershipState,
   candidateState: Uint8Array<ArrayBuffer>,
@@ -116,6 +134,7 @@ function currentGroupState(
     groupId: base64UrlDecode(state.group.groupId),
     state: candidateState,
     controlCursor,
+    ...serverMetadata(state),
     updatedAt: Date.now(),
   };
 }
@@ -651,6 +670,7 @@ export class S1CryptoRuntime {
             groupId: transition.groupId,
             state: transition.state,
             controlCursor: item.controlSequence,
+            ...serverMetadata(state),
             updatedAt: Date.now(),
           };
           await this.#vault.putGroup(joined);
@@ -705,6 +725,15 @@ export class S1CryptoRuntime {
         groupId: transition.groupId,
         state: transition.state,
         controlCursor: accepted.controlSequence,
+        cryptoRequired: accepted.cryptoRequired,
+        rekeyRequired: false,
+        devices: state.devices.map((device) => ({
+          cryptoDeviceId: device.cryptoDeviceId,
+          contentSigningPublicKey: device.contentSigningPublicKey,
+          trustState: device.trustState,
+        })),
+        recoveryRecipients: state.recoveryRecipients,
+        serverSyncedAt: Date.now(),
         updatedAt: Date.now(),
       };
       await this.#vault.promoteControlOperation(operationId, group);
@@ -746,6 +775,7 @@ export class S1CryptoRuntime {
         groupId: base64UrlDecode(state.group.groupId),
         state: operation.candidateState,
         controlCursor: 0,
+        ...serverMetadata(state),
         updatedAt: Date.now(),
       };
       await this.#vault.promoteControlOperation(operation.operationId, recovered);
@@ -902,9 +932,25 @@ export class S1CryptoRuntime {
           }
         }
 
+        local = {
+          ...local,
+          ...serverMetadata(state),
+          updatedAt: Date.now(),
+        };
+        await this.#vault.putGroup(local);
         return state;
       },
     );
+  }
+
+  async partnershipState(
+    partnershipId: string,
+  ): Promise<CryptoPartnershipState> {
+    return this.ensurePartnership(partnershipId);
+  }
+
+  async purgePartnership(partnershipId: string): Promise<void> {
+    await this.#vault.purgePartnership(partnershipId);
   }
 
   async setupRecovery(): Promise<{
@@ -1027,12 +1073,16 @@ export class S1CryptoRuntime {
     contextInput: S1ProtectionContext,
     plaintext: Uint8Array,
   ): Promise<EncryptedProtectedContentInput> {
-    const state = await this.ensurePartnership(contextInput.partnershipId);
-    if (!state.cryptoRequired) throw new Error("CRYPTO_NOT_INITIALIZED");
-    if (!state.group || state.group.rekeyRequired) {
-      throw new Error(state.group?.rekeyRequired ? "CRYPTO_REKEY_REQUIRED" : "CRYPTO_GROUP_NOT_READY");
+    try {
+      await this.ensurePartnership(contextInput.partnershipId);
+    } catch (error) {
+      if (!(error instanceof ApiNetworkError)) throw error;
     }
-    if (state.recoveryRecipients.length !== 2) {
+    const storedGroup = await this.#vault.group(contextInput.partnershipId);
+    if (!storedGroup) throw new Error("CRYPTO_GROUP_NOT_READY");
+    if (!storedGroup.cryptoRequired) throw new Error("CRYPTO_NOT_INITIALIZED");
+    if (storedGroup.rekeyRequired) throw new Error("CRYPTO_REKEY_REQUIRED");
+    if (storedGroup.recoveryRecipients.length !== 2) {
       throw new Error("CRYPTO_RECOVERY_REQUIRED");
     }
 
@@ -1072,7 +1122,7 @@ export class S1CryptoRuntime {
             encrypted.digest,
           ),
         );
-        const recoveryCapsules = state.recoveryRecipients.map((recipient) => {
+        const recoveryCapsules = group.recoveryRecipients.map((recipient) => {
           const sealed = candidate.hpkeSeal(
             base64UrlDecode(recipient.recoveryHpkePublicKey),
             recoveryCapsuleInfo(
@@ -1157,8 +1207,14 @@ export class S1CryptoRuntime {
       schemaVersion: envelope.schemaVersion,
     });
 
-    const state = await this.ensurePartnership(contextInput.partnershipId);
-    const sender = state.devices.find(
+    try {
+      await this.ensurePartnership(contextInput.partnershipId);
+    } catch (error) {
+      if (!(error instanceof ApiNetworkError)) throw error;
+    }
+    const trustedGroup = await this.#vault.group(contextInput.partnershipId);
+    if (!trustedGroup) throw new Error("CRYPTO_GROUP_NOT_READY");
+    const sender = trustedGroup.devices.find(
       (device) => device.cryptoDeviceId === envelope.senderCryptoDeviceId,
     );
     if (!sender) throw new Error("CRYPTO_SIGNATURE_INVALID");

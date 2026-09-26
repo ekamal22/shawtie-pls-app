@@ -11,6 +11,7 @@ export const M2_REALTIME_MAX_FRAME_BYTES = 4 * 1024;
 export const M2_INTERNAL_NOTIFY_MAX_BYTES = 2 * 1024;
 export const M2_LOCAL_SCHEMA_VERSION = 2 as const;
 export const M2_PRE_S1_CONTENT_CONTEXT = "pre-s1" as const;
+export const S1_CONTENT_CONTEXT = "shawtie.mls.v1" as const;
 
 const uuidSchema = z.string().uuid();
 const positiveSequenceSchema = z.number().int().safe().positive();

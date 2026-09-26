@@ -174,6 +174,9 @@ export class M2Runtime {
         database.purgePartnership(previous.partnershipId),
         purgeMediaPartnershipData(this.accountId, previous.partnershipId),
       ]);
+      dispatch("shawtie:crypto-namespace-revoked", {
+        partnershipId: previous.partnershipId,
+      });
       dispatch("shawtie:partnership-changed");
     }
     if (next.partnershipId && next.conversationId) {
@@ -206,6 +209,9 @@ export class M2Runtime {
           database.purgePartnership(frame.payload.partnershipId),
           purgeMediaPartnershipData(this.accountId, frame.payload.partnershipId),
         ]);
+        dispatch("shawtie:crypto-namespace-revoked", {
+          partnershipId: frame.payload.partnershipId,
+        });
         dispatch("shawtie:partnership-changed");
         return;
       }
