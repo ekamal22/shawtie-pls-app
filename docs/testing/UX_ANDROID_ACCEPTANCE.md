@@ -4,7 +4,7 @@ Status: DONE. All 22 mandatory scenarios passed on a physical Xiaomi Redmi Note 
 
 ## Frozen executable baseline
 
-- Branch: `integration/ux-romantic`
+- Acceptance branch at execution time: `integration/ux-romantic`; accepted history fast-forward merged to `main` at merge anchor `9f0bea4`
 - Executable SHA: `ca7cd35` (physically accepted; frozen at `0ec184d` at the start, then repaired during acceptance, see the evidence file. Earlier freezes: `0ec184d`, supersedes the earlier freeze `425f493`, invalidated by a small presentation change that shows the authorized scheduled arrival time on sealed Ours rows). Physical acceptance must use only this SHA.
 - Later commits on this branch are documentation only. Do not test a different code SHA without recording it here.
 - Final automated evidence at `ca7cd35`: `npm run health` PASS; M2 browser 25, M3 browser 13, C1 24, C2 16, R1 security 16 and 13; Chromium UX1 15, UX2 12, UX3 16, UX4 22, UX5 22, UX6 15 (1 opt-in skipped), UX7 12, cross-surface 6, M2 7, M3 4, C1 5, C2 6; audit 0 vulnerabilities. PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2 last ran at `425f493`; there is no backend runtime diff from the accepted UX repair line that would invalidate that evidence.
