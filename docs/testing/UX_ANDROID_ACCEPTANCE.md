@@ -5,9 +5,9 @@ Status: READY TO RUN. Scenarios are defined; none has been executed on a physica
 ## Frozen executable baseline
 
 - Branch: `integration/ux-romantic`
-- Executable SHA: `425f493` (UX2 through UX7 integrated, review repairs applied)
+- Executable SHA: `0ec184d` (supersedes the earlier freeze `425f493`, invalidated by a small presentation change that shows the authorized scheduled arrival time on sealed Ours rows). Physical acceptance must use only this SHA.
 - Later commits on this branch are documentation only. Do not test a different code SHA without recording it here.
-- Prerequisite evidence at that SHA: `npm run health` pass; UX1 to UX7 node suites; M2 browser 25, M3 browser 13, C1 24, C2 16; Chromium UX1 14, UX2 12, UX3 16, UX4 20, UX5 20, UX6 14 (1 opt-in skipped), UX7 12, cross-surface 4, M3 4, C1 5, C2 6, M2 7; PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2 pass with migrations 0001 through 0018 and `reserved=0`.
+- Prerequisite evidence at that SHA: `npm run health` pass; UX1 to UX7 node suites; M2 browser 25, M3 browser 13, C1 24, C2 16, R1 security 16 and 13; Chromium UX1 14, UX2 12, UX3 16, UX4 21, UX5 20, UX6 14 (1 opt-in skipped), UX7 12, cross-surface 4, M2 7, M3 4, C1 5, C2 6. PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2 passed at the earlier freeze `425f493`; the change since then is web presentation only (no API, database, migration, worker or projection change), so they were not re-run.
 
 ## Product rules to re-check on the device
 
@@ -30,7 +30,7 @@ Run in Midnight and, where practical, Dawn. Record pass or fail with observation
 6. Voice-message controls: hold or tap to record, preview before sending, cancel, send, playback.
 7. Media rendering: image messages and viewer.
 8. Read gate: open the app on Home while the partner sends messages; confirm delivered but not read; open Talk and confirm read.
-9. Ours: Then, Now and Next scroll, lenses, item sheet, create sheet.
+9. Ours: Then, Now and Next scroll, lenses, item sheet, create sheet. A scheduled letter from your partner shows Arrives and its time but no content, kind cue, count or teaser; your own scheduled letter shows Sealed for later with its time.
 10. Long letters: For You letter reading, Letter Unfolds, skip with tap.
 11. Memory surfaces: Our Story, Kept, Places, Someday, Our Year paging.
 12. Memory Return: from a kept item to the source message and back.
