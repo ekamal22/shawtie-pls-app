@@ -17,6 +17,7 @@ export interface MediaObjectRecord {
   readonly ciphertextSize: bigint;
   readonly ciphertextSha256: string;
   readonly cryptoProtocolVersion: string;
+  readonly contentKeyId: string | null;
   readonly durationSeconds: number | null;
   readonly uploadGeneration: bigint;
   readonly uploadExpiresAt: Date | null;
@@ -42,6 +43,7 @@ interface MediaRow {
   ciphertext_size: string | number | bigint;
   ciphertext_sha256: string;
   crypto_protocol_version: string;
+  content_key_id: string | null;
   duration_seconds: number | null;
   upload_generation: string | number | bigint;
   upload_expires_at: Date | null;
@@ -58,7 +60,7 @@ interface MediaRow {
 const columns = `
   id, partnership_id, uploader_account_id, uploader_device_id, storage_object_key,
   media_kind, format_code, state, ciphertext_size, ciphertext_sha256,
-  crypto_protocol_version, duration_seconds, upload_generation, upload_expires_at,
+  crypto_protocol_version, content_key_id, duration_seconds, upload_generation, upload_expires_at,
   ready_at, binding_type, binding_id, binding_role, binding_position,
   deletion_generation, created_at, deleted_at
 `;
@@ -76,6 +78,7 @@ function mapMedia(row: MediaRow): MediaObjectRecord {
     ciphertextSize: BigInt(row.ciphertext_size),
     ciphertextSha256: row.ciphertext_sha256,
     cryptoProtocolVersion: row.crypto_protocol_version,
+    contentKeyId: row.content_key_id,
     durationSeconds: row.duration_seconds,
     uploadGeneration: BigInt(row.upload_generation),
     uploadExpiresAt: row.upload_expires_at,
@@ -103,6 +106,7 @@ export async function insertMediaUpload(
     readonly ciphertextSize: bigint;
     readonly ciphertextSha256: string;
     readonly cryptoProtocolVersion: string;
+    readonly contentKeyId?: string | null;
     readonly durationSeconds: number | null;
     readonly uploadExpiresAt: Date;
     readonly createdAt: Date;
@@ -112,9 +116,9 @@ export async function insertMediaUpload(
     `INSERT INTO media_objects (
        id, partnership_id, uploader_account_id, uploader_device_id, storage_object_key,
        media_kind, format_code, state, ciphertext_size, ciphertext_sha256,
-       crypto_protocol_version, duration_seconds, upload_generation, upload_expires_at,
+       crypto_protocol_version, content_key_id, duration_seconds, upload_generation, upload_expires_at,
        deletion_generation, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'uploading',$8,$9,$10,$11,1,$12,1,$13)`,
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,'uploading',$8,$9,$10,$11,$12,1,$13,1,$14)`,
     [
       input.id,
       input.partnershipId,
@@ -126,6 +130,7 @@ export async function insertMediaUpload(
       input.ciphertextSize.toString(),
       input.ciphertextSha256,
       input.cryptoProtocolVersion,
+      input.contentKeyId ?? null,
       input.durationSeconds,
       input.uploadExpiresAt,
       input.createdAt,

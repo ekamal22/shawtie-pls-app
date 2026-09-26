@@ -4,10 +4,12 @@ import {
   allocateMessageAndChangeSequence,
   completeLifecycleIdempotency,
   consumeRateLimitBuckets,
+  deleteProtectedContentKey,
   findMessageByIdempotencyKey,
   getTransactionTimestamp,
   hasActiveMessageReaction,
   heartbeatPresence,
+  loadActiveMessageReactionContentKeyId,
   insertConversationChange,
   insertMessage,
   insertOutboxEvent,
@@ -18,7 +20,10 @@ import {
   loadConversationParticipants,
   loadCurrentConversationReadModel,
   loadMessageProjection,
+  loadPartnershipCryptoPolicy,
   loadPartnershipMemberIds,
+  loadPartnershipNicknameContentKeyId,
+  loadProtectedContentKeys,
   lockAccounts,
   lockConversationForMutation,
   lockMessageForMutation,
@@ -30,10 +35,12 @@ import {
   reserveLifecycleIdempotency,
   setConversationTypingState,
   setMessageReaction,
+  setProtectedMessageReaction,
   bindMediaObject,
   tombstoneMessage,
   updateMessageBody,
   updatePartnershipNickname,
+  updateProtectedPartnershipNickname,
   upsertConversationReceipt,
   withTransaction,
   type DatabasePool,
@@ -41,6 +48,8 @@ import {
   type LockedConversation,
   type LockedMessage,
   type LockedPartnershipLifecycle,
+  type MessageProjectionRowModel,
+  type ProtectedContentKeyRecord,
   type QueryExecutor,
 } from "@shawtie/db";
 import {
@@ -52,6 +61,7 @@ import {
 } from "@shawtie/domain";
 import {
   M1_CHANGE_MAX_LIMIT,
+  S1_CRYPTO_PROFILE,
   M1_PRESENCE_HEARTBEAT_MIN_MS,
   M1_PRESENCE_ONLINE_TTL_MS,
   M1_PRESENCE_RATE_LIMIT,
@@ -73,6 +83,11 @@ import { ApiError } from "../../lib/api-error.ts";
 import { queueRealtimeNicknameChanged, queueRealtimeReceiptChanged } from "../realtime/outbox.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import {
+  ciphertextDigest,
+  protectedContentProjection,
+  requireCryptoProtectedWrite,
+} from "../crypto/protected-content.ts";
 
 const DAY = 24 * 60 * 60_000;
 const IDEMPOTENCY_RETENTION_MS = 7 * DAY;
@@ -375,11 +390,117 @@ export class MessagingService {
     }
   }
 
+  #protectedEnvelopeProjection(
+    record: ProtectedContentKeyRecord,
+    accountId: string,
+  ): unknown {
+    return protectedContentProjection(record, accountId);
+  }
+
+  async #projectMessageRows(
+    transaction: QueryExecutor,
+    rows: readonly MessageProjectionRowModel[],
+    conversationId: string,
+    accountId: string,
+  ): Promise<readonly unknown[]> {
+    const contentKeyIds = new Set<string>();
+    for (const row of rows) {
+      if (row.protectedBody) contentKeyIds.add(row.protectedBody.contentKeyId);
+      if (row.replyContext?.protectedBody) {
+        contentKeyIds.add(row.replyContext.protectedBody.contentKeyId);
+      }
+      for (const reaction of row.reactions) {
+        if (reaction.contentKeyId) contentKeyIds.add(reaction.contentKeyId);
+      }
+    }
+    const keys = await loadProtectedContentKeys(transaction, [...contentKeyIds]);
+    const requireKey = (contentKeyId: string): ProtectedContentKeyRecord => {
+      const record = keys.get(contentKeyId);
+      if (!record) throw new Error("Protected content key metadata is missing");
+      return record;
+    };
+
+    return rows.map((row) => ({
+      messageId: row.messageId,
+      conversationId,
+      senderAccountId: row.senderAccountId,
+      senderDeviceId: row.senderDeviceId,
+      serverSequence: safeNumber(row.serverSequence),
+      contentVersion: safeNumber(row.contentVersion),
+      lastChangeSequence: safeNumber(row.lastChangeSequence),
+      replyToMessageId: row.replyToMessageId,
+      replyContext: row.replyContext
+        ? {
+            messageId: row.replyContext.messageId,
+            senderAccountId: row.replyContext.senderAccountId,
+            body: row.replyContext.body,
+            protectedBody: row.replyContext.protectedBody
+              ? {
+                  ciphertext: row.replyContext.protectedBody.ciphertext.toString("base64url"),
+                  envelope: this.#protectedEnvelopeProjection(
+                    requireKey(row.replyContext.protectedBody.contentKeyId),
+                    accountId,
+                  ),
+                }
+              : null,
+            deleted: row.replyContext.deleted,
+          }
+        : null,
+      body: row.body,
+      protectedBody: row.protectedBody
+        ? {
+            ciphertext: row.protectedBody.ciphertext.toString("base64url"),
+            envelope: this.#protectedEnvelopeProjection(
+              requireKey(row.protectedBody.contentKeyId),
+              accountId,
+            ),
+          }
+        : null,
+      createdAt: row.createdAt.toISOString(),
+      editedAt: row.editedAt?.toISOString() ?? null,
+      deletedAt: row.deletedAt?.toISOString() ?? null,
+      reactions: row.reactions.map((reaction) => ({
+        reactionId: reaction.reactionId,
+        accountId: reaction.accountId,
+        emoji: reaction.emoji,
+        protectedReaction:
+          reaction.encryptedReaction && reaction.contentKeyId
+            ? {
+                ciphertext: reaction.encryptedReaction.toString("base64url"),
+                envelope: this.#protectedEnvelopeProjection(
+                  requireKey(reaction.contentKeyId),
+                  accountId,
+                ),
+              }
+            : null,
+      })),
+      attachments: row.attachments,
+    }));
+  }
+
   async current(auth: AuthContext): Promise<unknown> {
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const row = await loadCurrentConversationReadModel(transaction, auth.session.accountId, now);
       if (!row) return { conversation: null };
+
+      const nicknameKeyIds = [
+        row.self.nicknameContentKeyId,
+        row.partner.nicknameContentKeyId,
+      ].filter((value): value is string => value !== null);
+      const nicknameKeys = await loadProtectedContentKeys(transaction, nicknameKeyIds);
+      const nicknameProjection = (
+        ciphertext: Buffer | null,
+        contentKeyId: string | null,
+      ): unknown => {
+        if (!ciphertext || !contentKeyId) return null;
+        const record = nicknameKeys.get(contentKeyId);
+        if (!record) throw new Error("Nickname protected-content metadata is missing");
+        return {
+          ciphertext: ciphertext.toString("base64url"),
+          envelope: this.#protectedEnvelopeProjection(record, auth.session.accountId),
+        };
+      };
 
       const interactionMode = row.accountDeletionViewOnly
         ? "account_deletion_view_only"
@@ -411,6 +532,10 @@ export class MessagingService {
             username: row.self.username,
             displayName: row.self.displayName,
             nickname: row.self.nickname,
+            protectedNickname: nicknameProjection(
+              row.self.nicknameCiphertext,
+              row.self.nicknameContentKeyId,
+            ),
             nicknameVersion: safeNumber(row.self.nicknameVersion),
           },
           partner: {
@@ -418,6 +543,10 @@ export class MessagingService {
             username: row.partner.username,
             displayName: row.partner.displayName,
             nickname: row.partner.nickname,
+            protectedNickname: nicknameProjection(
+              row.partner.nicknameCiphertext,
+              row.partner.nicknameContentKeyId,
+            ),
             nicknameVersion: safeNumber(row.partner.nicknameVersion),
             presence: {
               online: Boolean(
@@ -469,25 +598,15 @@ export class MessagingService {
           input.afterSequence === undefined && hasMore
             ? rows.slice(rows.length - requested)
             : rows.slice(0, requested);
+        const items = await this.#projectMessageRows(
+          transaction,
+          visible,
+          conversationId,
+          auth.session.accountId,
+        );
 
         return {
-          items: visible.map((row) => ({
-            messageId: row.messageId,
-            conversationId,
-            senderAccountId: row.senderAccountId,
-            senderDeviceId: row.senderDeviceId,
-            serverSequence: safeNumber(row.serverSequence),
-            contentVersion: safeNumber(row.contentVersion),
-            lastChangeSequence: safeNumber(row.lastChangeSequence),
-            replyToMessageId: row.replyToMessageId,
-            replyContext: row.replyContext,
-            body: row.body,
-            createdAt: row.createdAt.toISOString(),
-            editedAt: row.editedAt?.toISOString() ?? null,
-            deletedAt: row.deletedAt?.toISOString() ?? null,
-            reactions: row.reactions,
-            attachments: row.attachments,
-          })),
+          items,
           hasMore,
           oldestSequence: visible[0] ? safeNumber(visible[0].serverSequence) : null,
           newestSequence: visible.at(-1) ? safeNumber(visible.at(-1)!.serverSequence) : null,
@@ -537,9 +656,12 @@ export class MessagingService {
     input: MessageSendInput,
     idempotencyKey: string,
   ): Promise<unknown> {
+    const messageId = input.messageId ?? randomUUID();
     const payload = this.#privateFingerprintPayload("message.send", {
       conversationId,
+      messageId,
       body: input.body,
+      protectedBody: input.protectedBody,
       replyToMessageId: input.replyToMessageId,
       attachments: [...input.attachments]
         .sort((left, right) => left.position - right.position)
@@ -615,6 +737,35 @@ export class MessagingService {
           throw new ApiError(404, "MESSAGE_NOT_FOUND");
         }
 
+        const policy = await loadPartnershipCryptoPolicy(
+          transaction,
+          conversation.partnershipId,
+        );
+        if (policy?.cryptoRequiredFrom && input.body !== null) {
+          throw new ApiError(409, "CRYPTO_REQUIRED");
+        }
+
+        const protectedCiphertext = input.protectedBody
+          ? Buffer.from(input.protectedBody.ciphertext, "base64url")
+          : null;
+        if (input.protectedBody && protectedCiphertext) {
+          await requireCryptoProtectedWrite(
+            transaction,
+            auth,
+            {
+              partnershipId: conversation.partnershipId,
+              contentType: "message",
+              contentId: messageId,
+              contentVersion: 1n,
+              payloadRole: "message_body",
+              schemaVersion: 1,
+              ciphertextSha256: ciphertextDigest(protectedCiphertext),
+              at: now,
+            },
+            input.protectedBody.envelope,
+          );
+        }
+
         const mediaIds = input.attachments.map((attachment) => attachment.mediaId);
         if (new Set(mediaIds).size !== mediaIds.length) {
           throw new ApiError(400, "MEDIA_BINDING_INVALID");
@@ -637,11 +788,16 @@ export class MessagingService {
           if (!mediaRoleAllowed(media.mediaKind, attachment.role)) {
             throw new ApiError(400, "MEDIA_BINDING_INVALID");
           }
+          if (
+            policy?.cryptoRequiredFrom &&
+            (media.cryptoProtocolVersion !== S1_CRYPTO_PROFILE || !media.contentKeyId)
+          ) {
+            throw new ApiError(409, "CRYPTO_REQUIRED");
+          }
         }
 
         const fingerprint = this.keys.activeVerifier("message-request-fingerprint", payload);
         const sequences = await allocateMessageAndChangeSequence(transaction, conversationId);
-        const messageId = randomUUID();
 
         await insertMessage(transaction, {
           id: messageId,
@@ -656,6 +812,9 @@ export class MessagingService {
           serverSequence: sequences.serverSequence,
           changeSequence: sequences.changeSequence,
           body: input.body,
+          ciphertext: protectedCiphertext,
+          ciphertextVersion: input.protectedBody ? S1_CRYPTO_PROFILE : null,
+          bodyContentKeyId: input.protectedBody?.envelope.contentKeyId ?? null,
           createdAt: now,
         });
         for (const attachment of [...input.attachments].sort(
@@ -740,6 +899,7 @@ export class MessagingService {
       conversationId,
       messageId,
       body: input.body,
+      protectedBody: input.protectedBody,
       expectedContentVersion: input.expectedContentVersion,
     });
 
@@ -748,7 +908,7 @@ export class MessagingService {
       conversationId,
       null,
       messageId,
-      async ({ transaction, now, lifecycle, message }) => {
+      async ({ transaction, now, lifecycle, conversation, message }) => {
         if (!message) throw new ApiError(404, "MESSAGE_NOT_FOUND");
         const reservation = await this.#reservePrivateMutation(transaction, {
           accountId: auth.session.accountId,
@@ -770,15 +930,55 @@ export class MessagingService {
           throw new ApiError(409, "VERSION_CONFLICT");
         }
 
+        const policy = await loadPartnershipCryptoPolicy(
+          transaction,
+          conversation.partnershipId,
+        );
+        if (policy?.cryptoRequiredFrom && input.body !== null) {
+          throw new ApiError(409, "CRYPTO_REQUIRED");
+        }
+
+        const nextContentVersion = message.contentVersion + 1n;
+        const protectedCiphertext = input.protectedBody
+          ? Buffer.from(input.protectedBody.ciphertext, "base64url")
+          : null;
+        if (input.protectedBody && protectedCiphertext) {
+          await requireCryptoProtectedWrite(
+            transaction,
+            auth,
+            {
+              partnershipId: conversation.partnershipId,
+              contentType: "message",
+              contentId: messageId,
+              contentVersion: nextContentVersion,
+              payloadRole: "message_body",
+              schemaVersion: 1,
+              ciphertextSha256: ciphertextDigest(protectedCiphertext),
+              at: now,
+            },
+            input.protectedBody.envelope,
+          );
+        }
+
+        const previousContentKeyId = message.bodyContentKeyId;
         const changeSequence = await allocateChangeSequence(transaction, conversationId);
         const nextVersion = await updateMessageBody(transaction, {
           messageId,
           expectedContentVersion: message.contentVersion,
           body: input.body,
+          ciphertext: protectedCiphertext,
+          ciphertextVersion: input.protectedBody ? S1_CRYPTO_PROFILE : null,
+          bodyContentKeyId: input.protectedBody?.envelope.contentKeyId ?? null,
           changeSequence,
           editedAt: now,
         });
         if (nextVersion === null) throw new ApiError(409, "VERSION_CONFLICT");
+        if (
+          previousContentKeyId &&
+          previousContentKeyId !== input.protectedBody?.envelope.contentKeyId
+        ) {
+          await deleteProtectedContentKey(transaction, previousContentKeyId);
+        }
 
         await insertConversationChange(transaction, {
           conversationId,
@@ -899,10 +1099,13 @@ export class MessagingService {
     input: MessageReactionInput,
     idempotencyKey: string,
   ): Promise<unknown> {
+    const reactionId = input.reactionId ?? randomUUID();
     const payload = this.#privateFingerprintPayload("message.reaction.set", {
       conversationId,
       messageId,
+      reactionId,
       emoji: input.emoji,
+      protectedReaction: input.protectedReaction,
     });
 
     return this.#withConversation(
@@ -919,28 +1122,84 @@ export class MessagingService {
           payload,
           now,
         });
-        if (reservation.responseStatus !== null) {
-          return {
-            ...objectRecord(reservation.responseBody),
-            reaction: {
-              accountId: auth.session.accountId,
-              emoji: input.emoji,
-            },
-          };
-        }
+        if (reservation.responseStatus !== null) return reservation.responseBody;
 
         this.#assertCapability(auth, lifecycle, now, message, "react_message", true);
 
-        const changeSequence = await allocateChangeSequence(transaction, conversationId);
-        await setMessageReaction(transaction, {
-          id: randomUUID(),
+        const policy = await loadPartnershipCryptoPolicy(
+          transaction,
+          conversation.partnershipId,
+        );
+        if (policy?.cryptoRequiredFrom && input.emoji !== null) {
+          throw new ApiError(409, "CRYPTO_REQUIRED");
+        }
+
+        const previousContentKeyId = await loadActiveMessageReactionContentKeyId(
+          transaction,
           messageId,
-          partnershipId: conversation.partnershipId,
-          accountId: auth.session.accountId,
-          emoji: input.emoji,
-          changeSequence,
-          at: now,
-        });
+          auth.session.accountId,
+        );
+        const changeSequence = await allocateChangeSequence(transaction, conversationId);
+
+        let protectedReaction: unknown = null;
+        if (input.protectedReaction) {
+          const ciphertext = Buffer.from(input.protectedReaction.ciphertext, "base64url");
+          await requireCryptoProtectedWrite(
+            transaction,
+            auth,
+            {
+              partnershipId: conversation.partnershipId,
+              contentType: "message_reaction",
+              contentId: reactionId,
+              contentVersion: 1n,
+              payloadRole: "reaction_value",
+              schemaVersion: 1,
+              ciphertextSha256: ciphertextDigest(ciphertext),
+              at: now,
+            },
+            input.protectedReaction.envelope,
+          );
+          await setProtectedMessageReaction(transaction, {
+            id: reactionId,
+            messageId,
+            partnershipId: conversation.partnershipId,
+            accountId: auth.session.accountId,
+            ciphertext,
+            ciphertextVersion: S1_CRYPTO_PROFILE,
+            contentKeyId: input.protectedReaction.envelope.contentKeyId,
+            changeSequence,
+            at: now,
+          });
+          const key = (
+            await loadProtectedContentKeys(transaction, [
+              input.protectedReaction.envelope.contentKeyId,
+            ])
+          ).get(input.protectedReaction.envelope.contentKeyId);
+          if (!key) throw new Error("Protected reaction key metadata disappeared");
+          protectedReaction = {
+            ciphertext: input.protectedReaction.ciphertext,
+            envelope: this.#protectedEnvelopeProjection(key, auth.session.accountId),
+          };
+        } else {
+          if (input.emoji === null) throw new ApiError(400, "VALIDATION_FAILED");
+          await setMessageReaction(transaction, {
+            id: reactionId,
+            messageId,
+            partnershipId: conversation.partnershipId,
+            accountId: auth.session.accountId,
+            emoji: input.emoji,
+            changeSequence,
+            at: now,
+          });
+        }
+
+        if (
+          previousContentKeyId &&
+          previousContentKeyId !== input.protectedReaction?.envelope.contentKeyId
+        ) {
+          await deleteProtectedContentKey(transaction, previousContentKeyId);
+        }
+
         await insertConversationChange(transaction, {
           conversationId,
           changeSequence,
@@ -957,18 +1216,18 @@ export class MessagingService {
           contentVersion: message.contentVersion,
         });
 
-        const stored = {
+        const response = {
           messageId,
           changeSequence: safeNumber(changeSequence),
-        };
-        await this.#completePrivateMutation(transaction, reservation, stored, now);
-        return {
-          ...stored,
           reaction: {
+            reactionId,
             accountId: auth.session.accountId,
             emoji: input.emoji,
+            protectedReaction,
           },
         };
+        await this.#completePrivateMutation(transaction, reservation, response, now);
+        return response;
       },
     );
   }
@@ -998,15 +1257,15 @@ export class MessagingService {
           payload,
           now,
         });
-        if (reservation.responseStatus !== null) {
-          return {
-            ...objectRecord(reservation.responseBody),
-            reaction: null,
-          };
-        }
+        if (reservation.responseStatus !== null) return reservation.responseBody;
 
         this.#assertCapability(auth, lifecycle, now, message, "react_message", true);
 
+        const previousContentKeyId = await loadActiveMessageReactionContentKeyId(
+          transaction,
+          messageId,
+          auth.session.accountId,
+        );
         const exists = await hasActiveMessageReaction(
           transaction,
           messageId,
@@ -1016,9 +1275,10 @@ export class MessagingService {
           const stored = {
             messageId,
             changeSequence: safeNumber(message.lastChangeSequence),
+            reaction: null,
           };
           await this.#completePrivateMutation(transaction, reservation, stored, now);
-          return { ...stored, reaction: null };
+          return stored;
         }
 
         const changeSequence = await allocateChangeSequence(transaction, conversationId);
@@ -1029,6 +1289,9 @@ export class MessagingService {
           changeSequence,
         );
         if (!removed) throw new Error("Active reaction disappeared while message lock was held");
+        if (previousContentKeyId) {
+          await deleteProtectedContentKey(transaction, previousContentKeyId);
+        }
 
         await insertConversationChange(transaction, {
           conversationId,
@@ -1049,9 +1312,10 @@ export class MessagingService {
         const stored = {
           messageId,
           changeSequence: safeNumber(changeSequence),
+          reaction: null,
         };
         await this.#completePrivateMutation(transaction, reservation, stored, now);
-        return { ...stored, reaction: null };
+        return stored;
       },
     );
   }
@@ -1178,6 +1442,7 @@ export class MessagingService {
       partnershipId,
       subjectAccountId,
       nickname: input.nickname,
+      protectedNickname: input.protectedNickname,
       expectedVersion: input.expectedVersion,
     });
 
@@ -1197,12 +1462,7 @@ export class MessagingService {
         payload,
         now,
       });
-      if (reservation.responseStatus !== null) {
-        return {
-          ...objectRecord(reservation.responseBody),
-          nickname: input.nickname,
-        };
-      }
+      if (reservation.responseStatus !== null) return reservation.responseBody;
 
       const nicknameDecision = evaluateCapability(
         "change_nickname",
@@ -1212,32 +1472,103 @@ export class MessagingService {
         throw new ApiError(409, nicknameDecision.reason ?? "PARTNERSHIP_UNAVAILABLE");
       }
 
-      const version = await updatePartnershipNickname(transaction, {
+      const policy = await loadPartnershipCryptoPolicy(transaction, partnershipId);
+      if (policy?.cryptoRequiredFrom && input.nickname !== null) {
+        throw new ApiError(409, "CRYPTO_REQUIRED");
+      }
+
+      const previousContentKeyId = await loadPartnershipNicknameContentKeyId(
+        transaction,
         partnershipId,
         subjectAccountId,
-        actorAccountId: auth.session.accountId,
-        nickname: input.nickname,
-        expectedVersion: BigInt(input.expectedVersion),
-        at: now,
-      });
+      );
+      let protectedNickname: unknown = null;
+      let version: bigint | null;
+
+      if (input.protectedNickname) {
+        const ciphertext = Buffer.from(input.protectedNickname.ciphertext, "base64url");
+        const nextVersion = BigInt(input.expectedVersion) + 1n;
+        await requireCryptoProtectedWrite(
+          transaction,
+          auth,
+          {
+            partnershipId,
+            contentType: "partnership_nickname",
+            contentId: subjectAccountId,
+            contentVersion: nextVersion,
+            payloadRole: "nickname_value",
+            schemaVersion: 1,
+            ciphertextSha256: ciphertextDigest(ciphertext),
+            at: now,
+          },
+          input.protectedNickname.envelope,
+        );
+        version = await updateProtectedPartnershipNickname(transaction, {
+          partnershipId,
+          subjectAccountId,
+          actorAccountId: auth.session.accountId,
+          ciphertext,
+          ciphertextVersion: S1_CRYPTO_PROFILE,
+          contentKeyId: input.protectedNickname.envelope.contentKeyId,
+          expectedVersion: BigInt(input.expectedVersion),
+          at: now,
+        });
+        if (version === null) throw new ApiError(409, "VERSION_CONFLICT");
+        const key = (
+          await loadProtectedContentKeys(transaction, [
+            input.protectedNickname.envelope.contentKeyId,
+          ])
+        ).get(input.protectedNickname.envelope.contentKeyId);
+        if (!key) throw new Error("Protected nickname key metadata disappeared");
+        protectedNickname = {
+          ciphertext: input.protectedNickname.ciphertext,
+          envelope: this.#protectedEnvelopeProjection(key, auth.session.accountId),
+        };
+      } else if (policy?.cryptoRequiredFrom) {
+        version = await updateProtectedPartnershipNickname(transaction, {
+          partnershipId,
+          subjectAccountId,
+          actorAccountId: auth.session.accountId,
+          ciphertext: null,
+          ciphertextVersion: null,
+          contentKeyId: null,
+          expectedVersion: BigInt(input.expectedVersion),
+          at: now,
+        });
+      } else {
+        version = await updatePartnershipNickname(transaction, {
+          partnershipId,
+          subjectAccountId,
+          actorAccountId: auth.session.accountId,
+          nickname: input.nickname,
+          expectedVersion: BigInt(input.expectedVersion),
+          at: now,
+        });
+      }
       if (version === null) throw new ApiError(409, "VERSION_CONFLICT");
 
-      const stored = {
+      if (
+        previousContentKeyId &&
+        previousContentKeyId !== input.protectedNickname?.envelope.contentKeyId
+      ) {
+        await deleteProtectedContentKey(transaction, previousContentKeyId);
+      }
+
+      const response = {
         partnershipId,
         accountId: subjectAccountId,
         version: safeNumber(version),
         updatedAt: now.toISOString(),
+        nickname: input.nickname,
+        protectedNickname,
       };
       await queueRealtimeNicknameChanged(transaction, {
         partnershipId,
         subjectAccountId,
         version,
       });
-      await this.#completePrivateMutation(transaction, reservation, stored, now);
-      return {
-        ...stored,
-        nickname: input.nickname,
-      };
+      await this.#completePrivateMutation(transaction, reservation, response, now);
+      return response;
     });
   }
 
@@ -1250,23 +1581,13 @@ export class MessagingService {
       async ({ transaction }) => {
         const row = await loadMessageProjection(transaction, conversationId, messageId);
         if (!row) throw new ApiError(404, "MESSAGE_NOT_FOUND");
-        return {
-          messageId: row.messageId,
+        const [projected] = await this.#projectMessageRows(
+          transaction,
+          [row],
           conversationId,
-          senderAccountId: row.senderAccountId,
-          senderDeviceId: row.senderDeviceId,
-          serverSequence: safeNumber(row.serverSequence),
-          contentVersion: safeNumber(row.contentVersion),
-          lastChangeSequence: safeNumber(row.lastChangeSequence),
-          replyToMessageId: row.replyToMessageId,
-          replyContext: row.replyContext,
-          body: row.body,
-          createdAt: row.createdAt.toISOString(),
-          editedAt: row.editedAt?.toISOString() ?? null,
-          deletedAt: row.deletedAt?.toISOString() ?? null,
-          reactions: row.reactions,
-          attachments: row.attachments,
-        };
+          auth.session.accountId,
+        );
+        return projected;
       },
     );
   }

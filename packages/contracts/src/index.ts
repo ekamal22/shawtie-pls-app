@@ -295,3 +295,21 @@ export {
   type CryptoRecoveryProofInput,
   type CryptoRecoverySetupInput,
 } from "./crypto/s1.ts";
+
+
+export {
+  S1_MAX_KEY_DISTRIBUTION_BYTES,
+  S1_MAX_PROTECTED_TEXT_CIPHERTEXT_BYTES,
+  S1_MAX_RECOVERY_CAPSULE_BYTES,
+  encryptedProtectedContentProjectionSchema,
+  encryptedProtectedContentSchema,
+  protectedContentEnvelopeProjectionSchema,
+  protectedContentEnvelopeSchema,
+  recoveryCapsuleProjectionSchema,
+  recoveryCapsuleSchema,
+  type EncryptedProtectedContentInput,
+  type EncryptedProtectedContentProjection,
+  type ProtectedContentEnvelopeInput,
+  type ProtectedContentEnvelopeProjection,
+  type RecoveryCapsuleInput,
+} from "./crypto/protected-content.ts";

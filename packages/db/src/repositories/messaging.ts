@@ -28,6 +28,9 @@ export interface LockedMessage {
   readonly createdChangeSequence: bigint;
   readonly lastChangeSequence: bigint;
   readonly bodyText: string | null;
+  readonly ciphertext: Buffer | null;
+  readonly ciphertextVersion: string | null;
+  readonly bodyContentKeyId: string | null;
   readonly createdAt: Date;
   readonly editedAt: Date | null;
   readonly deletedAt: Date | null;
@@ -48,6 +51,9 @@ interface LockedMessageRow {
   created_change_sequence: string | number | bigint;
   last_change_sequence: string | number | bigint;
   body_text: string | null;
+  ciphertext: Buffer | null;
+  ciphertext_version: string | null;
+  body_content_key_id: string | null;
   created_at: Date;
   edited_at: Date | null;
   deleted_at: Date | null;
@@ -69,6 +75,9 @@ function mapLockedMessage(row: LockedMessageRow): LockedMessage {
     createdChangeSequence: BigInt(row.created_change_sequence),
     lastChangeSequence: BigInt(row.last_change_sequence),
     bodyText: row.body_text,
+    ciphertext: row.ciphertext,
+    ciphertextVersion: row.ciphertext_version,
+    bodyContentKeyId: row.body_content_key_id,
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
@@ -91,6 +100,8 @@ export interface CurrentConversationReadModel {
     readonly username: string;
     readonly displayName: string;
     readonly nickname: string | null;
+    readonly nicknameCiphertext: Buffer | null;
+    readonly nicknameContentKeyId: string | null;
     readonly nicknameVersion: bigint;
     readonly deliveredThrough: bigint;
     readonly readThrough: bigint;
@@ -264,7 +275,8 @@ export async function findMessageByIdempotencyKey(
     `SELECT id, conversation_id, partnership_id, sender_account_id, sender_device_id,
             reply_to_message_id, client_idempotency_key, request_fingerprint,
             request_fingerprint_version, server_sequence, content_version,
-            created_change_sequence, last_change_sequence, body_text, created_at, edited_at, deleted_at
+            created_change_sequence, last_change_sequence, body_text, ciphertext,
+            ciphertext_version, body_content_key_id, created_at, edited_at, deleted_at
      FROM messages
      WHERE conversation_id = $1
        AND sender_account_id = $2
@@ -285,7 +297,8 @@ export async function lockMessageForMutation(
     `SELECT id, conversation_id, partnership_id, sender_account_id, sender_device_id,
             reply_to_message_id, client_idempotency_key, request_fingerprint,
             request_fingerprint_version, server_sequence, content_version,
-            created_change_sequence, last_change_sequence, body_text, created_at, edited_at, deleted_at
+            created_change_sequence, last_change_sequence, body_text, ciphertext,
+            ciphertext_version, body_content_key_id, created_at, edited_at, deleted_at
      FROM messages
      WHERE id = $2 AND conversation_id = $1
      FOR UPDATE`,
@@ -322,6 +335,9 @@ export async function insertMessage(
     readonly serverSequence: bigint;
     readonly changeSequence: bigint;
     readonly body: string | null;
+    readonly ciphertext: Buffer | null;
+    readonly ciphertextVersion: string | null;
+    readonly bodyContentKeyId: string | null;
     readonly createdAt: Date;
   },
 ): Promise<void> {
@@ -329,9 +345,10 @@ export async function insertMessage(
     `INSERT INTO messages (
        id, conversation_id, partnership_id, sender_account_id, sender_device_id,
        reply_to_message_id, client_idempotency_key, server_sequence,
-       body_text, content_version, request_fingerprint, request_fingerprint_version,
+       body_text, ciphertext, ciphertext_version, body_content_key_id,
+       content_version, request_fingerprint, request_fingerprint_version,
        created_change_sequence, last_change_sequence, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$10,$11,$12,$12,$13)`,
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,1,$13,$14,$15,$15,$16)`,
     [
       input.id,
       input.conversationId,
@@ -342,6 +359,9 @@ export async function insertMessage(
       input.idempotencyKey,
       input.serverSequence.toString(),
       input.body,
+      input.ciphertext,
+      input.ciphertextVersion,
+      input.bodyContentKeyId,
       input.requestFingerprint,
       input.requestFingerprintVersion,
       input.changeSequence.toString(),
@@ -355,7 +375,10 @@ export async function updateMessageBody(
   input: {
     readonly messageId: string;
     readonly expectedContentVersion: bigint;
-    readonly body: string;
+    readonly body: string | null;
+    readonly ciphertext: Buffer | null;
+    readonly ciphertextVersion: string | null;
+    readonly bodyContentKeyId: string | null;
     readonly changeSequence: bigint;
     readonly editedAt: Date;
   },
@@ -363,11 +386,12 @@ export async function updateMessageBody(
   const result = await executor.query<{ content_version: string | number | bigint }>(
     `UPDATE messages
      SET body_text = $3,
-         ciphertext = NULL,
-         ciphertext_version = NULL,
+         ciphertext = $4,
+         ciphertext_version = $5,
+         body_content_key_id = $6,
          content_version = content_version + 1,
-         last_change_sequence = $4,
-         edited_at = $5
+         last_change_sequence = $7,
+         edited_at = $8
      WHERE id = $1
        AND content_version = $2
        AND deleted_at IS NULL
@@ -376,6 +400,9 @@ export async function updateMessageBody(
       input.messageId,
       input.expectedContentVersion.toString(),
       input.body,
+      input.ciphertext,
+      input.ciphertextVersion,
+      input.bodyContentKeyId,
       input.changeSequence.toString(),
       input.editedAt,
     ],
@@ -397,6 +424,7 @@ export async function tombstoneMessage(
      SET body_text = NULL,
          ciphertext = NULL,
          ciphertext_version = NULL,
+         body_content_key_id = NULL,
          content_version = content_version + 1,
          last_change_sequence = $2,
          deleted_at = $3
@@ -449,11 +477,15 @@ interface MessageProjectionRow {
   content_version: string | number | bigint;
   last_change_sequence: string | number | bigint;
   body_text: string | null;
+  ciphertext: Buffer | null;
+  body_content_key_id: string | null;
   created_at: Date;
   edited_at: Date | null;
   deleted_at: Date | null;
   reply_sender_account_id: string | null;
   reply_body_text: string | null;
+  reply_ciphertext: Buffer | null;
+  reply_body_content_key_id: string | null;
   reply_deleted_at: Date | null;
   reactions: unknown;
   attachments: unknown;
@@ -468,6 +500,10 @@ export interface MessageProjectionRowModel {
   readonly contentVersion: bigint;
   readonly lastChangeSequence: bigint;
   readonly body: string | null;
+  readonly protectedBody: {
+    readonly ciphertext: Buffer;
+    readonly contentKeyId: string;
+  } | null;
   readonly createdAt: Date;
   readonly editedAt: Date | null;
   readonly deletedAt: Date | null;
@@ -475,11 +511,18 @@ export interface MessageProjectionRowModel {
     readonly messageId: string;
     readonly senderAccountId: string;
     readonly body: string | null;
+    readonly protectedBody: {
+      readonly ciphertext: Buffer;
+      readonly contentKeyId: string;
+    } | null;
     readonly deleted: boolean;
   } | null;
   readonly reactions: readonly {
+    readonly reactionId: string;
     readonly accountId: string;
-    readonly emoji: string;
+    readonly emoji: string | null;
+    readonly encryptedReaction: Buffer | null;
+    readonly contentKeyId: string | null;
   }[];
   readonly attachments: readonly {
     readonly mediaId: string;
@@ -489,16 +532,24 @@ export interface MessageProjectionRowModel {
     readonly position: number;
     readonly ciphertextBytes: number;
     readonly cryptoProtocolVersion: string;
+    readonly contentKeyId: string | null;
   }[];
 }
 
-function reactionList(value: unknown): readonly { accountId: string; emoji: string }[] {
+function reactionList(value: unknown): MessageProjectionRowModel["reactions"] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
-    const accountId = "accountId" in item ? item.accountId : null;
-    const emoji = "emoji" in item ? item.emoji : null;
-    return typeof accountId === "string" && typeof emoji === "string" ? [{ accountId, emoji }] : [];
+    const row = item as Record<string, unknown>;
+    if (typeof row.reactionId !== "string" || typeof row.accountId !== "string") return [];
+    const emoji = typeof row.emoji === "string" ? row.emoji : null;
+    const encryptedReaction =
+      typeof row.ciphertextBase64 === "string"
+        ? Buffer.from(row.ciphertextBase64, "base64")
+        : null;
+    const contentKeyId = typeof row.contentKeyId === "string" ? row.contentKeyId : null;
+    if (emoji === null && (encryptedReaction === null || contentKeyId === null)) return [];
+    return [{ reactionId: row.reactionId, accountId: row.accountId, emoji, encryptedReaction, contentKeyId }];
   });
 }
 
@@ -527,6 +578,7 @@ function mediaAttachmentList(value: unknown): MessageProjectionRowModel["attachm
         position: row.position,
         ciphertextBytes: row.ciphertextBytes,
         cryptoProtocolVersion: row.cryptoProtocolVersion,
+        contentKeyId: typeof row.contentKeyId === "string" ? row.contentKeyId : null,
       },
     ];
   });
@@ -542,6 +594,10 @@ function mapMessageProjection(row: MessageProjectionRow): MessageProjectionRowMo
     contentVersion: BigInt(row.content_version),
     lastChangeSequence: BigInt(row.last_change_sequence),
     body: row.deleted_at ? null : row.body_text,
+    protectedBody:
+      !row.deleted_at && row.ciphertext && row.body_content_key_id
+        ? { ciphertext: row.ciphertext, contentKeyId: row.body_content_key_id }
+        : null,
     createdAt: row.created_at,
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
@@ -551,6 +607,13 @@ function mapMessageProjection(row: MessageProjectionRow): MessageProjectionRowMo
             messageId: row.reply_to_message_id,
             senderAccountId: row.reply_sender_account_id,
             body: row.reply_deleted_at ? null : row.reply_body_text,
+            protectedBody:
+              !row.reply_deleted_at && row.reply_ciphertext && row.reply_body_content_key_id
+                ? {
+                    ciphertext: row.reply_ciphertext,
+                    contentKeyId: row.reply_body_content_key_id,
+                  }
+                : null,
             deleted: row.reply_deleted_at !== null,
           }
         : null,
@@ -568,25 +631,35 @@ const messageProjectionSql = `
          message.content_version,
          message.last_change_sequence,
          message.body_text,
+         message.ciphertext,
+         message.body_content_key_id,
          message.created_at,
          message.edited_at,
          message.deleted_at,
          reply.sender_account_id AS reply_sender_account_id,
          reply.body_text AS reply_body_text,
+         reply.ciphertext AS reply_ciphertext,
+         reply.body_content_key_id AS reply_body_content_key_id,
          reply.deleted_at AS reply_deleted_at,
          COALESCE(
            (
              SELECT jsonb_agg(
                jsonb_build_object(
+                 'reactionId', reaction.id,
                  'accountId', reaction.reactor_account_id,
-                 'emoji', reaction.emoji_text
+                 'emoji', reaction.emoji_text,
+                 'ciphertextBase64',
+                   CASE
+                     WHEN reaction.encrypted_reaction IS NULL THEN NULL
+                     ELSE encode(reaction.encrypted_reaction, 'base64')
+                   END,
+                 'contentKeyId', reaction.content_key_id
                )
                ORDER BY reaction.created_at, reaction.reactor_account_id
              )
              FROM message_reactions AS reaction
              WHERE reaction.message_id = message.id
                AND reaction.removed_at IS NULL
-               AND reaction.emoji_text IS NOT NULL
            ),
            '[]'::jsonb
          ) AS reactions,
@@ -600,7 +673,8 @@ const messageProjectionSql = `
                  'role', media.binding_role,
                  'position', media.binding_position,
                  'ciphertextBytes', media.ciphertext_size,
-                 'cryptoProtocolVersion', media.crypto_protocol_version
+                 'cryptoProtocolVersion', media.crypto_protocol_version,
+                 'contentKeyId', media.content_key_id
                )
                ORDER BY media.binding_position, media.id
              )
@@ -725,12 +799,14 @@ export async function setMessageReaction(
   await executor.query(
     `INSERT INTO message_reactions (
        id, message_id, reactor_account_id, partnership_id,
-       encrypted_reaction, emoji_text, created_at, removed_at
-     ) VALUES ($1,$2,$3,$4,NULL,$5,$6,NULL)
+       encrypted_reaction, ciphertext_version, content_key_id,
+       emoji_text, created_at, removed_at
+     ) VALUES ($1,$2,$3,$4,NULL,NULL,NULL,$5,$6,NULL)
      ON CONFLICT (message_id, reactor_account_id) WHERE removed_at IS NULL
      DO UPDATE SET
        encrypted_reaction = NULL,
        ciphertext_version = NULL,
+       content_key_id = NULL,
        emoji_text = EXCLUDED.emoji_text,
        created_at = EXCLUDED.created_at,
        removed_at = NULL`,
@@ -740,6 +816,70 @@ export async function setMessageReaction(
     "UPDATE messages SET last_change_sequence = $2 WHERE id = $1 AND deleted_at IS NULL",
     [input.messageId, input.changeSequence.toString()],
   );
+}
+
+
+export async function setProtectedMessageReaction(
+  executor: QueryExecutor,
+  input: {
+    readonly id: string;
+    readonly messageId: string;
+    readonly partnershipId: string;
+    readonly accountId: string;
+    readonly ciphertext: Buffer;
+    readonly ciphertextVersion: string;
+    readonly contentKeyId: string;
+    readonly changeSequence: bigint;
+    readonly at: Date;
+  },
+): Promise<void> {
+  await executor.query(
+    `INSERT INTO message_reactions (
+       id, message_id, reactor_account_id, partnership_id,
+       encrypted_reaction, ciphertext_version, content_key_id,
+       emoji_text, created_at, removed_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,$8,NULL)
+     ON CONFLICT (message_id, reactor_account_id) WHERE removed_at IS NULL
+     DO UPDATE SET
+       id = EXCLUDED.id,
+       encrypted_reaction = EXCLUDED.encrypted_reaction,
+       ciphertext_version = EXCLUDED.ciphertext_version,
+       content_key_id = EXCLUDED.content_key_id,
+       emoji_text = NULL,
+       created_at = EXCLUDED.created_at,
+       removed_at = NULL`,
+    [
+      input.id,
+      input.messageId,
+      input.accountId,
+      input.partnershipId,
+      input.ciphertext,
+      input.ciphertextVersion,
+      input.contentKeyId,
+      input.at,
+    ],
+  );
+  await executor.query(
+    "UPDATE messages SET last_change_sequence = $2 WHERE id = $1 AND deleted_at IS NULL",
+    [input.messageId, input.changeSequence.toString()],
+  );
+}
+
+export async function loadActiveMessageReactionContentKeyId(
+  executor: QueryExecutor,
+  messageId: string,
+  accountId: string,
+): Promise<string | null> {
+  const result = await executor.query<{ content_key_id: string | null }>(
+    `SELECT content_key_id
+     FROM message_reactions
+     WHERE message_id = $1
+       AND reactor_account_id = $2
+       AND removed_at IS NULL
+     LIMIT 1`,
+    [messageId, accountId],
+  );
+  return result.rows[0]?.content_key_id ?? null;
 }
 
 export async function hasActiveMessageReaction(
@@ -848,6 +988,9 @@ export async function updatePartnershipNickname(
   const updated = await executor.query<{ version: string | number | bigint }>(
     `UPDATE partnership_chat_nicknames
      SET nickname = $4,
+         encrypted_nickname = NULL,
+         ciphertext_version = NULL,
+         content_key_id = NULL,
          version = version + 1,
          updated_by_account_id = $3,
          updated_at = $6
@@ -871,15 +1014,96 @@ export async function updatePartnershipNickname(
 
   const inserted = await executor.query<{ version: string | number | bigint }>(
     `INSERT INTO partnership_chat_nicknames (
-       partnership_id, subject_account_id, nickname, version,
-       updated_by_account_id, updated_at
-     ) VALUES ($1,$2,$4,2,$3,$5)
+       partnership_id, subject_account_id, nickname,
+       encrypted_nickname, ciphertext_version, content_key_id,
+       version, updated_by_account_id, updated_at
+     ) VALUES ($1,$2,$4,NULL,NULL,NULL,2,$3,$5)
      ON CONFLICT (partnership_id, subject_account_id) DO NOTHING
      RETURNING version`,
     [input.partnershipId, input.subjectAccountId, input.actorAccountId, input.nickname, input.at],
   );
   const insertedRow = inserted.rows[0];
   return insertedRow ? BigInt(insertedRow.version) : null;
+}
+
+
+export async function updateProtectedPartnershipNickname(
+  executor: QueryExecutor,
+  input: {
+    readonly partnershipId: string;
+    readonly subjectAccountId: string;
+    readonly actorAccountId: string;
+    readonly ciphertext: Buffer | null;
+    readonly ciphertextVersion: string | null;
+    readonly contentKeyId: string | null;
+    readonly expectedVersion: bigint;
+    readonly at: Date;
+  },
+): Promise<bigint | null> {
+  const updated = await executor.query<{ version: string | number | bigint }>(
+    `UPDATE partnership_chat_nicknames
+     SET nickname = NULL,
+         encrypted_nickname = $4,
+         ciphertext_version = $5,
+         content_key_id = $6,
+         version = version + 1,
+         updated_by_account_id = $3,
+         updated_at = $8
+     WHERE partnership_id = $1
+       AND subject_account_id = $2
+       AND version = $7
+     RETURNING version`,
+    [
+      input.partnershipId,
+      input.subjectAccountId,
+      input.actorAccountId,
+      input.ciphertext,
+      input.ciphertextVersion,
+      input.contentKeyId,
+      input.expectedVersion.toString(),
+      input.at,
+    ],
+  );
+  const updatedRow = updated.rows[0];
+  if (updatedRow) return BigInt(updatedRow.version);
+
+  if (input.expectedVersion !== 1n) return null;
+
+  const inserted = await executor.query<{ version: string | number | bigint }>(
+    `INSERT INTO partnership_chat_nicknames (
+       partnership_id, subject_account_id, nickname,
+       encrypted_nickname, ciphertext_version, content_key_id,
+       version, updated_by_account_id, updated_at
+     ) VALUES ($1,$2,NULL,$4,$5,$6,2,$3,$7)
+     ON CONFLICT (partnership_id, subject_account_id) DO NOTHING
+     RETURNING version`,
+    [
+      input.partnershipId,
+      input.subjectAccountId,
+      input.actorAccountId,
+      input.ciphertext,
+      input.ciphertextVersion,
+      input.contentKeyId,
+      input.at,
+    ],
+  );
+  const insertedRow = inserted.rows[0];
+  return insertedRow ? BigInt(insertedRow.version) : null;
+}
+
+export async function loadPartnershipNicknameContentKeyId(
+  executor: QueryExecutor,
+  partnershipId: string,
+  subjectAccountId: string,
+): Promise<string | null> {
+  const result = await executor.query<{ content_key_id: string | null }>(
+    `SELECT content_key_id
+     FROM partnership_chat_nicknames
+     WHERE partnership_id = $1 AND subject_account_id = $2
+     LIMIT 1`,
+    [partnershipId, subjectAccountId],
+  );
+  return result.rows[0]?.content_key_id ?? null;
 }
 
 export interface PresenceSnapshot {
@@ -1025,6 +1249,8 @@ export async function loadCurrentConversationReadModel(
     self_username: string;
     self_display_name: string;
     self_nickname: string | null;
+    self_nickname_ciphertext: Buffer | null;
+    self_nickname_content_key_id: string | null;
     self_nickname_version: string | number | bigint;
     self_delivered_through: string | number | bigint;
     self_read_through: string | number | bigint;
@@ -1032,6 +1258,8 @@ export async function loadCurrentConversationReadModel(
     partner_username: string;
     partner_display_name: string;
     partner_nickname: string | null;
+    partner_nickname_ciphertext: Buffer | null;
+    partner_nickname_content_key_id: string | null;
     partner_nickname_version: string | number | bigint;
     partner_last_seen_at: Date | null;
     partner_online_until: Date | null;
@@ -1071,6 +1299,8 @@ export async function loadCurrentConversationReadModel(
             self_account.username_display AS self_username,
             self_profile.display_name AS self_display_name,
             self_nickname.nickname AS self_nickname,
+            self_nickname.encrypted_nickname AS self_nickname_ciphertext,
+            self_nickname.content_key_id AS self_nickname_content_key_id,
             COALESCE(self_nickname.version, 1) AS self_nickname_version,
             COALESCE(self_state.delivered_through, 0) AS self_delivered_through,
             COALESCE(self_state.read_through, 0) AS self_read_through,
@@ -1078,6 +1308,8 @@ export async function loadCurrentConversationReadModel(
             partner_account.username_display AS partner_username,
             partner_profile.display_name AS partner_display_name,
             partner_nickname.nickname AS partner_nickname,
+            partner_nickname.encrypted_nickname AS partner_nickname_ciphertext,
+            partner_nickname.content_key_id AS partner_nickname_content_key_id,
             COALESCE(partner_nickname.version, 1) AS partner_nickname_version,
             CASE
               WHEN partner_presence.last_seen_at >= partnership.activated_at

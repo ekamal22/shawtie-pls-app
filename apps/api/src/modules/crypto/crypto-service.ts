@@ -21,6 +21,7 @@ import {
   consumeCryptoRecoveryChallenge,
   countTrustedCryptoDevices,
   cryptoDeviceIsActiveGroupMember,
+  getCurrentPartnershipForAccount,
   getTransactionTimestamp,
   insertCryptoDeviceApproval,
   insertCryptoKeyPackage,
@@ -32,6 +33,7 @@ import {
   listAvailablePartnershipKeyPackages,
   listPartnershipCryptoControlMessages,
   listPartnershipCryptoMembers,
+  listPartnershipRecoveryRecipients,
   listPartnershipTrustedCryptoDevices,
   loadActivePartnershipCryptoGroup,
   loadCurrentCryptoRecovery,
@@ -380,6 +382,7 @@ export class CryptoService {
           )
         : [];
       const packages = await listAvailablePartnershipKeyPackages(transaction, partnershipId);
+      const recoveryRecipients = await listPartnershipRecoveryRecipients(transaction, partnershipId);
       const memberIds = new Set(
         members.filter((item) => item.removedAt === null).map((item) => item.cryptoDeviceId),
       );
@@ -415,6 +418,11 @@ export class CryptoService {
             accountId: item.accountId,
             keyPackage: encode(item.keyPackage),
           })),
+        recoveryRecipients: recoveryRecipients.map((item) => ({
+          accountId: item.accountId,
+          recoveryKeyVersion: item.recoveryKeyVersion,
+          recoveryHpkePublicKey: encode(item.recoveryHpkePublicKey),
+        })),
       };
     });
   }
@@ -744,10 +752,32 @@ export class CryptoService {
         createdByCryptoDeviceId: current.cryptoDeviceId,
         createdAt: now,
       });
+
+      let cryptoRequired = false;
+      const partnership = await getCurrentPartnershipForAccount(
+        transaction,
+        auth.session.accountId,
+      );
+      if (partnership) {
+        const group = await loadActivePartnershipCryptoGroup(
+          transaction,
+          partnership.partnershipId,
+        );
+        if (group) {
+          cryptoRequired = await activatePartnershipCryptoIfReady(transaction, {
+            partnershipId: partnership.partnershipId,
+            groupGeneration: group.groupGeneration,
+            cryptoProfile: S1_CRYPTO_PROFILE,
+            activatedAt: now,
+          });
+        }
+      }
+
       return {
         cryptoProfile: input.cryptoProfile,
         recoveryKeyVersion: input.recoveryKeyVersion,
         createdAt: now.toISOString(),
+        cryptoRequired,
       };
     });
   }

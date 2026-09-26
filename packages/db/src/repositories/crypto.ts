@@ -845,6 +845,15 @@ export async function activatePartnershipCryptoIfReady(
          FROM partnership_members AS members
          WHERE members.partnership_id = $1
            AND members.released_at IS NULL
+       ) = 2
+       AND (
+         SELECT count(DISTINCT recovery.account_id)
+         FROM account_crypto_recovery AS recovery
+         JOIN partnership_members AS recovery_members
+           ON recovery_members.account_id = recovery.account_id
+          AND recovery_members.partnership_id = $1
+          AND recovery_members.released_at IS NULL
+         WHERE recovery.replaced_at IS NULL
        ) = 2`,
     [input.partnershipId, input.groupGeneration, input.cryptoProfile, input.activatedAt],
   );
