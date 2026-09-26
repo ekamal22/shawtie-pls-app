@@ -353,3 +353,19 @@ test("Consequential entry points are outlined, not filled alarms", async ({ page
     expect(background).toBe("rgba(0, 0, 0, 0)");
   }
 });
+
+test("The Talk composer stays usable at 200 percent text", async ({ page }) => {
+  // Found on a physical Redmi: touch target sizes were rem based, so at 200 percent text the
+  // buttons doubled and squeezed the message field into a one letter column.
+  await page.setViewportSize({ width: 392, height: 732 });
+  await openApp(page, PAIRED, "#/talk");
+  await page.addStyleTag({ content: "html { font-size: 32px !important; }" });
+  await page.waitForTimeout(300);
+  const input = await page.locator("textarea.talk-composer__input").boundingBox();
+  expect(input?.width ?? 0).toBeGreaterThan(160);
+  const add = await page
+    .getByRole("button", { name: /Add photo, file, or voice message/ })
+    .boundingBox();
+  expect(add?.width ?? 999).toBeLessThan(64);
+  expect(add?.width ?? 0).toBeGreaterThanOrEqual(43.5);
+});

@@ -186,9 +186,9 @@
 
   /* Layout. */
   --content-max: 40rem;
-  --nav-height: 3.5rem;
-  --header-height: 3.25rem;
-  --tap: 2.75rem;
+  --nav-height: 56px;
+  --header-height: 52px;
+  --tap: 44px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
@@ -213,7 +213,7 @@
 
 @media (pointer: coarse) {
   :root {
-    --tap: 3rem;
+    --tap: 48px;
   }
 }
 
