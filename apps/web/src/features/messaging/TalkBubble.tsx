@@ -1,5 +1,5 @@
 import type { MediaAttachmentProjection } from "@shawtie/contracts";
-import { type MouseEvent, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { Icon } from "../../design/icons.tsx";
 import { MediaAttachment } from "../media/MediaAttachment.tsx";
 import {
@@ -66,6 +66,20 @@ export function TalkBubble({
   onJumpTo,
 }: TalkBubbleProps) {
   const [expanded, setExpanded] = useState(false);
+  // The Ribbon: settle once when this message becomes kept while it is on screen. A message
+  // that is already kept when it renders (reload, scrolling back) shows the still mark only.
+  const wasKept = useRef(kept);
+  const [settling, setSettling] = useState(false);
+  useEffect(() => {
+    if (kept && !wasKept.current) {
+      setSettling(true);
+      const timer = window.setTimeout(() => setSettling(false), 700);
+      wasKept.current = true;
+      return () => window.clearTimeout(timer);
+    }
+    wasKept.current = kept;
+    return undefined;
+  }, [kept]);
   const deleted = message.deletedAt !== null;
   const long = !deleted && isLongMessage(message.body);
   const created = new Date(message.createdAt);
@@ -97,9 +111,12 @@ export function TalkBubble({
       data-position={position}
       data-deleted={deleted ? "true" : "false"}
       data-highlighted={highlighted ? "true" : "false"}
+      data-kept={kept ? "true" : "false"}
+      data-ribbon={settling ? "settling" : undefined}
       aria-label={authorName + ", " + messageTimeLabel(created)}
     >
       <div className="talk-bubble" onClick={onBubbleClick} data-actionable={actionable}>
+        {kept && !deleted ? <span className="talk-ribbon" aria-hidden="true" /> : null}
         {message.replyContext && !deleted ? (
           <button
             type="button"

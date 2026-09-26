@@ -1,0 +1,58 @@
+/*
+ * UX7 signature moments. Additive and presentation only. Every moving rule has a
+ * prefers-reduced-motion counterpart at the bottom of its section that removes movement and
+ * leaves at most a short fade. Colors, durations and easings come from the shared tokens.
+ */
+
+/* The Ribbon: a quiet ribbon on the bubble that a person kept */
+.talk-ribbon {
+  position: absolute;
+  top: -1px;
+  inset-inline-end: var(--space-4);
+  width: 10px;
+  height: 16px;
+  background: var(--accent-fill);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+  border-radius: 0 0 1px 1px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.talk-message[data-ribbon="settling"] .talk-ribbon {
+  animation: ux7-ribbon-settle var(--dur-move) var(--ease-settle) both;
+}
+
+.talk-message[data-ribbon="settling"] .talk-kept {
+  animation: ux7-fade-in var(--dur-move) var(--ease-settle) both;
+}
+
+@keyframes ux7-ribbon-settle {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  70% {
+    opacity: 0.85;
+    transform: translateY(1px);
+  }
+  to {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ux7-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talk-message[data-ribbon="settling"] .talk-ribbon {
+    animation: ux7-fade-in var(--dur-instant) linear both;
+  }
+
+  .talk-message[data-ribbon="settling"] .talk-kept {
+    animation: none;
+  }
+}

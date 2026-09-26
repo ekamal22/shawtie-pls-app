@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { publishKeptSources } from "../../messaging/kept-registry.ts";
 import { listRelationshipItems } from "../../relationship-space/api.ts";
 import type { RelationshipItem, RelationshipItemKind } from "../../relationship-space/model.ts";
 import { messageFor } from "./errors.ts";
@@ -47,6 +48,7 @@ export function useRelationshipItems(
       const page = await listRelationshipItems(query);
       if (mine !== generation.current) return;
       setItems(page.items);
+      publishKeptSources(page.items, query.kind === "remember_this" && !query.storyOnly);
       setCursor(page.nextCursor);
       setStatus("ready");
       setError("");
@@ -62,6 +64,7 @@ export function useRelationshipItems(
     setLoadingMore(true);
     try {
       const page = await listRelationshipItems({ ...query, cursor });
+      publishKeptSources(page.items, false);
       setItems((current) => {
         const seen = new Set(current.map((item) => item.itemId));
         return [...current, ...page.items.filter((item) => !seen.has(item.itemId))];

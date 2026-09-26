@@ -8,7 +8,15 @@ import {
   M1_VISIBLE_CHANGE_POLL_MS,
 } from "@shawtie/contracts";
 import type { MediaAttachmentProjection } from "@shawtie/contracts";
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Icon } from "../../design/icons.tsx";
 import {
   Avatar,
@@ -38,6 +46,7 @@ import { listMediaDrafts } from "../../lib/media/media-local-db.ts";
 import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
 import type { ChatQueueOperation } from "../../lib/offline/local-db.ts";
 import { createRelationshipItem } from "../relationship-space/api.ts";
+import { keptSourcesSnapshot, subscribeKeptSources } from "./kept-registry.ts";
 import { TalkActions } from "./TalkActions.tsx";
 import { TalkBubble } from "./TalkBubble.tsx";
 import { buildRememberThisPayload, buildRows, deliveryLabel } from "./talk-model.ts";
@@ -229,7 +238,17 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
   const [addOpen, setAddOpen] = useState(false);
   const [nicknamesOpen, setNicknamesOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
-  const [keptIds, setKeptIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [sessionKeptIds, setKeptIds] = useState<ReadonlySet<string>>(() => new Set());
+  // Kept marks also come from Remember This lists Ours already loaded (no extra requests).
+  const [knownKeptIds, setKnownKeptIds] = useState<ReadonlySet<string>>(keptSourcesSnapshot);
+  useEffect(() => {
+    setKnownKeptIds(keptSourcesSnapshot());
+    return subscribeKeptSources(() => setKnownKeptIds(keptSourcesSnapshot()));
+  }, []);
+  const keptIds = useMemo(
+    () => new Set([...sessionKeptIds, ...knownKeptIds]),
+    [sessionKeptIds, knownKeptIds],
+  );
   const [outbox, setOutbox] = useState<ChatQueueOperation[]>([]);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
