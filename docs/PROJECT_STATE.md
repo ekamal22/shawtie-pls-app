@@ -133,7 +133,7 @@ Current epic status:
 - C2 Video Calling: DONE and fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. The final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`; the first automated/local closure passed earlier at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The canonical closure passed real migrations 0001 through 0018 with `reserved=0`, retained M3 and C1 coverage, C2 focused 15/15, C2 PostgreSQL/API 9/9, C1 Chromium 5/5, C2 Chromium 4/4, full health, zero high-severity vulnerabilities, and git hygiene. No PostgreSQL migration is added or reserved. The discovery sweep found two defects, fixed before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame). `npm run test:c2:closure` re-passed at `ecbb2e1` with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`, and mandatory physical Redmi Note 9S acceptance is COMPLETE: every scenario (1 through 31 and 33 through 36) PASSED (`C2_ANDROID_ACCEPTANCE_PASS`, `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`). Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - UX0 Romantic Experience Specification: DONE. The frozen implementation specification is `docs/design/UX0_IMPLEMENTATION_SPEC.md`, merged to `main` with the mutual presence, last-seen, typing, and read-receipt rules locked (always on, not configurable).
 - UX1 Romantic Design Foundation: DONE. Tokens, Midnight and Dawn themes, self-hosted OFL fonts, primitives, and the Home, Talk, Ours shell are implemented over unchanged product semantics; see `docs/design/UX1_FOUNDATION.md`. It is included in the physically accepted romantic integration.
-- UX2 through UX7: DONE on `integration/ux-romantic` and physically accepted at executable SHA `ca7cd35` (started at `0ec184d`; not yet merged to `main`). Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+- UX2 through UX7: DONE, physically accepted at executable SHA `ca7cd35` (started at `0ec184d`), and fast-forward merged to `main` at merge anchor `9f0bea4`. Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - S1 E2EE and Cryptographic Recovery: PLANNED and still mandatory before stable release. UX copy must not claim E2EE until S1 is implemented and verified.
 - UX8 Encrypted UX Integration: PLANNED after S1 and the main romantic UX surfaces, to integrate device enrollment, recovery, revocation, and encryption states into the redesigned experience.
 - R2 Public Readiness: PLANNED after pre-release implementation and V1 hosted verification.
@@ -157,12 +157,12 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
-- `main` -> current verified mainline at `f53eb00f176f1b75705ea20e006d26f48ffa75fc`, containing completed M1/R1, M2, M3, C1, C2, and the UX0 specification documentation
+- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, and the physically accepted UX0 through UX7 romantic overhaul; fast-forward merge anchor `9f0bea4`, accepted executable `ca7cd35`
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
 - `feat/c2-video-calling` -> historical completed branch; C2 fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi Note 9S acceptance complete
-- `integration/ux-romantic` -> UX0 through UX7 complete and physically accepted; final executable `ca7cd35`, documentation head `c6a00b1` before this reconciliation, 22/22 Redmi Note 9S scenarios PASS
+- `integration/ux-romantic` -> preserved historical integration line for UX0 through UX7; final executable `ca7cd35`, 22/22 Redmi Note 9S scenarios PASS; fast-forward merged to `main` at `9f0bea4`
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -184,16 +184,17 @@ Epic completion is governed by the acceptance gates in `docs/ROADMAP_EPICS.md`.
 
 ## Next engineering work
 
-UX0 through UX7 are complete and physically accepted on the romantic integration line. The remaining pre-release sequence is:
+UX0 through UX7 are complete, physically accepted, documented, and merged to `main`.
 
-1. merge the documentation-reconciled `integration/ux-romantic` line to `main`
-2. implement S1 E2EE and Cryptographic Recovery with reviewed protocol and physical-device evidence
-3. implement UX8 Encrypted UX Integration over verified S1 states
-4. complete V1 Hosted CI Verification when Actions capacity is available
-5. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-6. cut Stable Release only after S1, UX8, V1, and R2 are closed
+The remaining pre-release sequence is:
 
-The accepted UX executable remains `ca7cd35`; documentation-only reconciliation does not change that runtime SHA.
+1. implement S1 E2EE and Cryptographic Recovery with reviewed protocol and physical-device evidence
+2. implement UX8 Encrypted UX Integration over verified S1 states
+3. complete V1 Hosted CI Verification when Actions capacity is available
+4. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+5. cut Stable Release only after S1, UX8, V1, and R2 are closed
+
+The accepted UX executable remains `ca7cd35`; merge and documentation-only commits do not change that runtime SHA.
 
 ## Deferred heavy feature policy
 
