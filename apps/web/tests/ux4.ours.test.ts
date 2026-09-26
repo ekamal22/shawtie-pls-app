@@ -209,14 +209,17 @@ test("UX4 adds no teaser, countdown, or scheduled-release hint for unreleased re
   const items = await source("../src/features/ours/OursItems.tsx");
   const screen = await source("../src/features/ours/OursScreen.tsx");
   for (const text of [items, screen]) {
-    for (const teaser of [
-      /Sealed/,
-      /Scheduled for/,
-      /Opens \w/,
-      /This will open/,
-      /coming soon/i,
-    ]) {
+    for (const teaser of [/Scheduled for/, /Opens \w/, /This will open/, /coming soon/i]) {
       assert.equal(teaser.test(text), false, "teaser wording matches " + teaser);
+    }
+  }
+  // The only sealed wording is the neutral word for a recipient and the creator's own heading.
+  for (const text of [items, screen]) {
+    for (const match of text.matchAll(/Sealed[^"<]*/g)) {
+      assert.ok(
+        ["Sealed", "Sealed for later"].includes(match[0].trim()),
+        "unexpected sealed wording: " + match[0],
+      );
     }
   }
   // Locked items are never chapter content and never counted.

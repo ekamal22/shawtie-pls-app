@@ -151,6 +151,14 @@ export function OursScreen({
 
   const buckets = useMemo(() => bucketItems(data?.items ?? []), [data]);
   const waiting = useMemo(() => (data ? data.home.upcomingReleases.filter(isLocked) : []), [data]);
+  const waitingForMe = useMemo(
+    () => waiting.filter((item) => item.creatorAccountId !== accountId),
+    [waiting, accountId],
+  );
+  const waitingMine = useMemo(
+    () => waiting.filter((item) => item.creatorAccountId === accountId),
+    [waiting, accountId],
+  );
 
   async function afterChange(message?: string) {
     await reload();
@@ -295,12 +303,33 @@ export function OursScreen({
               </div>
             ) : null}
 
-            {chapter === "now" && waiting.length > 0 ? (
+            {chapter === "now" && waitingForMe.length > 0 ? (
               <div className="ours-block">
                 <h3 className="ours-block__title">Waiting for you</h3>
                 <ul className="ours-list">
-                  {waiting.map((item) => (
-                    <OursItemRow key={item.itemId} item={item} onOpen={setSelected} />
+                  {waitingForMe.map((item) => (
+                    <OursItemRow
+                      key={item.itemId}
+                      item={item}
+                      accountId={accountId}
+                      onOpen={setSelected}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {chapter === "now" && waitingMine.length > 0 ? (
+              <div className="ours-block">
+                <h3 className="ours-block__title">Sealed for later</h3>
+                <ul className="ours-list">
+                  {waitingMine.map((item) => (
+                    <OursItemRow
+                      key={item.itemId}
+                      item={item}
+                      accountId={accountId}
+                      onOpen={setSelected}
+                    />
                   ))}
                 </ul>
               </div>
@@ -311,7 +340,12 @@ export function OursScreen({
                 <h3 className="ours-block__title">This day in us</h3>
                 <ul className="ours-list">
                   {curate("now", nowItems).map((item) => (
-                    <OursItemRow key={item.itemId} item={item} onOpen={setSelected} />
+                    <OursItemRow
+                      key={item.itemId}
+                      item={item}
+                      accountId={accountId}
+                      onOpen={setSelected}
+                    />
                   ))}
                 </ul>
               </div>
@@ -342,7 +376,12 @@ export function OursScreen({
             {shown.length > 0 ? (
               <ul className="ours-list">
                 {shown.map((item) => (
-                  <OursItemRow key={item.itemId} item={item} onOpen={setSelected} />
+                  <OursItemRow
+                    key={item.itemId}
+                    item={item}
+                    accountId={accountId}
+                    onOpen={setSelected}
+                  />
                 ))}
               </ul>
             ) : null}
@@ -391,7 +430,12 @@ export function OursScreen({
         {listChapter ? (
           <ul className="ours-list">
             {listFor(listChapter).map((item) => (
-              <OursItemRow key={item.itemId} item={item} onOpen={setSelected} />
+              <OursItemRow
+                key={item.itemId}
+                item={item}
+                accountId={accountId}
+                onOpen={setSelected}
+              />
             ))}
           </ul>
         ) : null}

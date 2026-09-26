@@ -466,11 +466,36 @@ test("Sealed letters wait quietly and the recipient opens them", async ({ page }
   await openOurs(page, state);
   const now = chapter(page, "Now");
   await expect(now.getByText("Waiting for you")).toBeVisible();
-  await now.getByRole("button", { name: /For a hard day/ }).click();
-  const sheet = page.getByRole("dialog", { name: "A letter for you" });
+  const row = now.getByRole("button", { name: /For a hard day/ });
+  // A recipient of a sealed item gets no type cue: neutral kicker, no letter wording.
+  await expect(row).toContainText("Sealed");
+  await expect(row).not.toContainText("A letter for you");
+  await expect(row).not.toHaveClass(/ours-row--paper/);
+  await row.click();
+  const sheet = page.getByRole("dialog", { name: "Sealed" });
   await expect(sheet.getByText("Open when you need reassurance")).toBeVisible();
   await sheet.getByRole("button", { name: "Open the letter" }).click();
   await expect.poll(() => state.released.length).toBe(1);
+});
+
+test("A creator's own sealed letter is not presented as waiting for them", async ({ page }) => {
+  const mine = item({
+    kind: "for_you",
+    creatorAccountId: ME,
+    content: { title: "For March", body: "Hello" },
+    preview: { title: "For March", conditionLabel: null },
+    release: {
+      mode: "scheduled",
+      generation: 1,
+      unlockAt: "2027-03-01T09:00:00.000Z",
+      releasedAt: null,
+      state: "locked",
+    },
+  });
+  await openOurs(page, scenario({ upcoming: [mine], items: [mine] }));
+  const now = chapter(page, "Now");
+  await expect(now.getByText("Sealed for later")).toBeVisible();
+  await expect(now.getByText("Waiting for you")).toHaveCount(0);
 });
 
 test("Create sheet groups by intent and uses the existing create flow", async ({ page }) => {

@@ -27,15 +27,19 @@ function rowIcon(item: RelationshipItem): IconName | null {
 /** One quiet row for a chapter. Unreleased items never show content, only the authorized preview. */
 export function OursItemRow({
   item,
+  accountId,
   onOpen,
 }: {
   readonly item: RelationshipItem;
+  readonly accountId: string;
   readonly onOpen: (item: RelationshipItem) => void;
 }) {
   const locked = isLocked(item);
+  // A recipient of a sealed item sees no type cue: no kind label, icon, or paper styling.
+  const sealedForMe = locked && item.creatorAccountId !== accountId;
   const icon = locked ? null : rowIcon(item);
   const date = occurrenceText(item);
-  const paper = LETTER_KINDS.has(item.kind);
+  const paper = LETTER_KINDS.has(item.kind) && !sealedForMe;
   // Unreleased items show only the authorized preview the server already exposes: the title
   // and the opening line. No date, countdown, or extra wording is added before release.
   const sealedNote = locked ? readString(item.preview, "conditionLabel") : null;
@@ -44,7 +48,7 @@ export function OursItemRow({
       <button
         type="button"
         className={"ours-row" + (paper ? " ours-row--paper" : "")}
-        data-kind={item.kind}
+        data-kind={sealedForMe ? undefined : item.kind}
         data-sealed={locked ? "true" : undefined}
         onClick={() => onOpen(item)}
       >
@@ -55,7 +59,7 @@ export function OursItemRow({
         ) : null}
         <span className="ours-row__text">
           <span className="ours-row__kicker">
-            {kindLabel(item.kind)}
+            {sealedForMe ? "Sealed" : kindLabel(item.kind)}
             {hasVoiceLetter(item) && !locked ? " · Voice letter" : ""}
           </span>
           <span className="ours-row__title">{locked ? previewTitle(item) : itemTitle(item)}</span>
@@ -86,7 +90,17 @@ export function OursItemSheet({
   readonly onChanged: (message?: string) => Promise<void>;
 }) {
   return (
-    <Sheet open={item !== null} onClose={onClose} title={item ? kindLabel(item.kind) : "Ours"}>
+    <Sheet
+      open={item !== null}
+      onClose={onClose}
+      title={
+        item
+          ? isLocked(item) && item.creatorAccountId !== accountId
+            ? "Sealed"
+            : kindLabel(item.kind)
+          : "Ours"
+      }
+    >
       {item ? (
         <ItemDetail
           key={item.itemId + ":" + item.version}
