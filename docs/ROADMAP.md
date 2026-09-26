@@ -92,11 +92,8 @@ main @ f53eb00
             |
             v
       UX0 through UX7 ✅
-      integration/ux-romantic
+      main @ 9f0bea4 merge anchor
       physical 22/22 @ ca7cd35
-            |
-            v
-      merge romantic UX to main
             |
             v
       S1 E2EE + Crypto Recovery
@@ -111,7 +108,7 @@ main @ f53eb00
           STABLE
 ```
 
-C2 is closed and merged. UX0 through UX7 are now complete on `integration/ux-romantic`, with final physical acceptance 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`. The romantic integration is merge-ready but is not yet on `main`. The next engineering frontier is S1 E2EE and Cryptographic Recovery.
+C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. The active engineering frontier is S1 E2EE and Cryptographic Recovery.
 
 UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 now owns the next implementation frontier. UX8 integrates verified cryptographic and recovery states into the accepted experience after S1, and R2 remains the final pre-release gate.
 
