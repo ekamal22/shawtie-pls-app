@@ -223,7 +223,24 @@ async function mockApi(page: Page, state: Scenario) {
       return json(route, { on: "2026-09-26", items: [] });
     }
     if (/\/api\/v1\/relationship-space\/items\/[^/]+\/release$/.test(path)) {
-      state.released.push(path.split("/").at(-2) as string);
+      const id = path.split("/").at(-2) as string;
+      state.released.push(id);
+      // Like the real server: the item is now released and its content is readable.
+      for (const list of [state.items, state.upcoming]) {
+        for (const entry of list) {
+          if (entry.itemId === id) {
+            entry.release = {
+              mode: "recipient_open",
+              generation: 1,
+              unlockAt: null,
+              releasedAt: new Date().toISOString(),
+              state: "released",
+            };
+            entry.content = { body: "You are loved. That is the whole message." };
+            entry.version = 2;
+          }
+        }
+      }
       return json(route, { itemId: "x", version: 2, releasedAt: new Date().toISOString() });
     }
     if (/\/api\/v1\/relationship-space\/items\/[^/]+$/.test(path) && method === "DELETE") {

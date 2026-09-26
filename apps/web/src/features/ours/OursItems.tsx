@@ -110,7 +110,7 @@ export function OursItemSheet({
     >
       {item ? (
         <ItemDetail
-          key={item.itemId + ":" + item.version}
+          key={item.itemId}
           item={item}
           accountId={accountId}
           viewOnly={viewOnly}

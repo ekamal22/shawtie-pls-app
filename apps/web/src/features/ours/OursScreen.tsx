@@ -154,6 +154,14 @@ export function OursScreen({
   // plus recipient-open letters (Open when...), which the summary does not list but which must
   // stay reachable so the recipient can open them. Creator-reveal items (Surprise, Proposal)
   // are never surfaced here.
+  // The open sheet follows the freshly loaded copy of its item, so opening a letter shows the
+  // opened letter instead of the sealed card it started from.
+  const liveSelected = useMemo(() => {
+    if (!selected || !data) return selected;
+    const pool = [...data.items, ...data.home.upcomingReleases, ...data.thisDay];
+    return pool.find((entry) => entry.itemId === selected.itemId) ?? selected;
+  }, [selected, data]);
+
   const waiting = useMemo(() => {
     if (!data) return [];
     const byId = new Map<string, RelationshipItem>();
@@ -454,7 +462,7 @@ export function OursScreen({
       </Sheet>
 
       <OursItemSheet
-        item={selected}
+        item={liveSelected}
         accountId={accountId}
         viewOnly={viewOnly}
         onClose={() => setSelected(null)}
