@@ -84,7 +84,7 @@ const api = {
     return {
       plaintext,
       substitutionRejected,
-      ciphertextContainsPlaintext: Array.from(encrypted.ciphertext).join(",").includes(text),
+      ciphertextContainsPlaintext: new TextDecoder().decode(encrypted.ciphertext).includes(text),
     };
   },
 
