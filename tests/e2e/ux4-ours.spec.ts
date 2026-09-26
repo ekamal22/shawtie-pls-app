@@ -439,6 +439,63 @@ test("Create sheet groups by intent and uses the existing create flow", async ({
   });
 });
 
+test("Create sheet keeps the existing request bodies for letters, surprises, and signals", async ({
+  page,
+}) => {
+  const state = scenario();
+  await openOurs(page, state);
+  await page.getByRole("button", { name: "Add to Ours" }).first().click();
+  const picker = page.getByRole("dialog", { name: "Add to Ours" });
+
+  await picker.getByRole("button", { name: "A letter for you" }).click();
+  const letter = page.getByRole("dialog", { name: "A letter for you" });
+  await letter.getByLabel("Your letter").fill("Hi");
+  await letter.getByLabel("Opening").selectOption("recipient_open");
+  await letter.getByLabel("Opening label").fill("Open when you miss me");
+  await letter.getByRole("button", { name: "Add to Ours" }).click();
+  await expect.poll(() => state.posted.length).toBe(1);
+  expect(state.posted[0]).toMatchObject({
+    kind: "for_you",
+    release: { mode: "recipient_open", unlockAt: null },
+    preview: { conditionLabel: "Open when you miss me" },
+  });
+
+  await page.getByRole("button", { name: "Add to Ours" }).first().click();
+  await page
+    .getByRole("dialog", { name: "Add to Ours" })
+    .getByRole("button", { name: "A surprise" })
+    .click();
+  const surprise = page.getByRole("dialog", { name: "A surprise" });
+  await surprise.getByLabel("Pages, one per line").fill("one\n\n two ");
+  await surprise.getByRole("button", { name: "Add to Ours" }).click();
+  await expect.poll(() => state.posted.length).toBe(2);
+  expect(state.posted[1]).toMatchObject({
+    kind: "surprise",
+    release: { mode: "creator_reveal", unlockAt: null },
+    content: {
+      steps: [
+        { type: "text", text: "one" },
+        { type: "text", text: "two" },
+      ],
+    },
+  });
+
+  await page.getByRole("button", { name: "Add to Ours" }).first().click();
+  await page
+    .getByRole("dialog", { name: "Add to Ours" })
+    .getByRole("button", { name: "A small signal" })
+    .click();
+  const signal = page.getByRole("dialog", { name: "A small signal" });
+  await signal.getByLabel("Signal").selectOption({ label: "Hug" });
+  await signal.getByRole("button", { name: "Add to Ours" }).click();
+  await expect.poll(() => state.posted.length).toBe(3);
+  expect(state.posted[2]).toMatchObject({
+    kind: "relationship_signal",
+    featureState: { type: "relationship_signal", signalKind: "hug" },
+    occurrence: null,
+  });
+});
+
 test("View-only Ours is neutral: everything can be read and nothing offers a change", async ({
   page,
 }) => {

@@ -404,10 +404,9 @@ export function OursScreen({
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={afterChange}
-        onOpenFullEditor={() => {
-          setCreateOpen(false);
-          setFullOpen(true);
-        }}
+        accountId={accountId}
+        partnershipId={runtime.realtime.scope.partnershipId}
+        disabled={viewOnly}
       />
 
       <Sheet

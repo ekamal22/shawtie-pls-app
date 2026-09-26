@@ -13,12 +13,7 @@ import {
   lensKinds,
   occurrenceText,
 } from "../src/features/ours/chapters.ts";
-import {
-  buildCreatePayload,
-  CREATE_INTENTS,
-  draftProblem,
-  emptyDraft,
-} from "../src/features/ours/create-payload.ts";
+import { CREATE_INTENTS } from "../src/features/ours/create-payload.ts";
 import type { RelationshipItem } from "../src/features/relationship-space/model.ts";
 
 const ME = "a0000000-0000-4000-8000-000000000001";
@@ -171,70 +166,12 @@ test("UX4 voice letters are detected from the existing media role", () => {
   assert.equal(hasVoiceLetter(item()), false);
 });
 
-test("UX4 create intents cover every creatable kind once and use the existing request bodies", () => {
+test("UX4 create intents cover every creatable kind exactly once", () => {
   const kinds = CREATE_INTENTS.flatMap((intent) => intent.kinds.map((entry) => entry.kind));
   assert.equal(new Set(kinds).size, kinds.length);
   assert.equal(kinds.length, 12);
   assert.equal(kinds.includes("our_year" as never), false);
-
-  const memory = {
-    ...emptyDraft("memory"),
-    title: " Rain ",
-    note: "",
-    precision: "day" as const,
-    date: "2026-03-04",
-  };
-  assert.deepEqual(buildCreatePayload(memory), {
-    kind: "memory",
-    contentSchemaVersion: 1,
-    occurrence: { precision: "day", year: 2026, month: 3, day: 4 },
-    storyIncluded: false,
-    references: [],
-    links: [],
-    preview: null,
-    content: { title: "Rain", note: null },
-    release: null,
-    featureState: null,
-  });
-
-  const surprise = { ...emptyDraft("surprise"), text: "one\n\n two " };
-  const built = buildCreatePayload(surprise) as { release: unknown; content: { steps: unknown } };
-  assert.deepEqual(built.release, { mode: "creator_reveal", unlockAt: null });
-  assert.deepEqual(built.content.steps, [
-    { type: "text", text: "one" },
-    { type: "text", text: "two" },
-  ]);
-
-  const letter = {
-    ...emptyDraft("for_you"),
-    text: "Hi",
-    releaseMode: "recipient_open" as const,
-    conditionLabel: "Open when you miss me",
-  };
-  const payload = buildCreatePayload(letter) as { release: unknown; preview: unknown };
-  assert.deepEqual(payload.release, { mode: "recipient_open", unlockAt: null });
-  assert.deepEqual(payload.preview, { title: null, conditionLabel: "Open when you miss me" });
-
-  const signal = buildCreatePayload({
-    ...emptyDraft("relationship_signal"),
-    signalKind: "hug",
-  }) as {
-    featureState: unknown;
-    occurrence: unknown;
-  };
-  assert.deepEqual(signal.featureState, { type: "relationship_signal", signalKind: "hug" });
-  assert.equal(signal.occurrence, null);
-});
-
-test("UX4 drafts report a plain reason instead of sending incomplete content", () => {
-  assert.equal(draftProblem(emptyDraft("memory")), "Give it a short title.");
-  assert.equal(draftProblem(emptyDraft("for_you")), "Add a few words.");
-  assert.equal(draftProblem(emptyDraft("reunion")), "Choose the reunion date.");
-  assert.equal(draftProblem({ ...emptyDraft("reunion"), reunionDate: "2027-01-01" }), null);
-  assert.equal(
-    draftProblem({ ...emptyDraft("for_you"), text: "x", releaseMode: "scheduled" }),
-    "Choose when it should open.",
-  );
+  assert.equal(kinds.includes("anniversary" as never), false);
 });
 
 test("UX4 surfaces never make privacy claims the runtime cannot support", async () => {
