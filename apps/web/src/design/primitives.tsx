@@ -634,8 +634,13 @@ export function Segmented<T extends string>({
     if (!delta) return;
     event.preventDefault();
     const index = options.findIndex((option) => option.value === value);
-    const next = options[(index + delta + options.length) % options.length];
-    if (next) onChange(next.value);
+    const nextIndex = (index + delta + options.length) % options.length;
+    const next = options[nextIndex];
+    if (!next) return;
+    onChange(next.value);
+    // Arrow keys move both selection and focus, as in the radio and tab patterns.
+    const buttons = event.currentTarget.querySelectorAll<HTMLElement>("[role=radio], [role=tab]");
+    buttons[nextIndex]?.focus();
   }
   return (
     <div

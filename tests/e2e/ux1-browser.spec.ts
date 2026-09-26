@@ -305,3 +305,15 @@ test("Route changes move focus to the new content for keyboard users", async ({ 
     .click();
   await expect(page.locator("#main")).toBeFocused();
 });
+
+test("Segmented controls move focus with the arrow keys", async ({ page }) => {
+  await openApp(page, PAIRED, "#/us");
+  const system = page.getByRole("radio", { name: "Follow my phone" });
+  await system.focus();
+  await page.keyboard.press("ArrowRight");
+  const dawn = page.getByRole("radio", { name: "Dawn" });
+  await expect(dawn).toBeFocused();
+  await expect(dawn).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("ArrowLeft");
+  await expect(system).toBeFocused();
+});
