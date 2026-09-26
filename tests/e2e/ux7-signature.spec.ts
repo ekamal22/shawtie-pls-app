@@ -378,6 +378,8 @@ for (const motion of MOTIONS) {
     const [name, duration] = seen[0]!.split("|");
     const ms = Number(duration!.replace("s", "")) * 1000;
     expect(ms).toBeLessThan(400);
+    // Reduced motion is a short fade of about 120ms, never the full doorway duration.
+    if (motion === "reduce") expect(ms).toBeLessThanOrEqual(130);
     expect(name).toBe(motion === "reduce" ? "ds-fade-in" : "ux7-threshold");
   });
 

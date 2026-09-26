@@ -174,5 +174,7 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
   /* Same fade the shared shell already uses, so reduced motion stays uniform. */
   .app-shell[data-route="ours"] .app-route.is-entering {
     animation-name: ds-fade-in;
+    /* The base rule's 360ms would make a slow fade; reduced-motion tokens collapse to 120ms. */
+    animation-duration: var(--dur-move);
   }
 }
