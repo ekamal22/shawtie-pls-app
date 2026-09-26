@@ -164,6 +164,8 @@ function fixtures(): Item[] {
 interface Scenario {
   items: Item[];
   mode?: "active" | "breakup_pending_view_only";
+  /** What the summary lists as upcoming releases (the real server lists scheduled ones). */
+  upcoming?: Item[];
   writes: Array<{ method: string; path: string; body: any; key: string | undefined }>;
 }
 
@@ -184,7 +186,7 @@ function homeFor(scenario: Scenario) {
         sendSignal: true,
       },
       recentItems: [],
-      upcomingReleases: [],
+      upcomingReleases: scenario.upcoming ?? [],
       reunion: null,
       anniversary: { date: "2026-06-01", savedCurationItemId: null },
       recentSignals: [],
@@ -642,4 +644,24 @@ test("The full space header leaves most of a small phone for content", async ({ 
     .locator(".mem-lens-body")
     .evaluate((element) => element.getBoundingClientRect().top);
   expect(top).toBeLessThan(400);
+});
+
+test("A letter is listed once on the For you lens even when the summary also lists it", async ({
+  page,
+}) => {
+  const scheduled = item({
+    kind: "for_you",
+    creatorAccountId: THEM,
+    preview: { title: "For your birthday", conditionLabel: null },
+    release: {
+      mode: "scheduled",
+      generation: 1,
+      unlockAt: "2027-03-01T09:00:00.000Z",
+      releasedAt: null,
+      state: "locked",
+    },
+  });
+  const scenario = { items: [scheduled], upcoming: [scheduled], writes: [] } as Scenario;
+  await openOurs(page, scenario, "For you");
+  await expect(full(page).getByText("For your birthday")).toHaveCount(1);
 });

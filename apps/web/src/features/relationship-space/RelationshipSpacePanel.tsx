@@ -87,6 +87,15 @@ const LENSES: ReadonlyArray<{ value: Lens; label: string; create: RelationshipIt
   { value: "proposal", label: "Proposal", create: "proposal" },
 ];
 
+const LENSES_LISTING_LOCKED: ReadonlySet<Lens> = new Set<Lens>([
+  "recent",
+  "for_you",
+  "voice",
+  "future_us",
+  "surprise",
+  "proposal",
+]);
+
 export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
   const runtime = useM2Runtime();
   const [home, setHome] = useState<RelationshipSpaceHome | null | undefined>(undefined);
@@ -283,12 +292,16 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       {error ? <ErrorNotice>{error}</ErrorNotice> : null}
       {notice ? <Notice tone="success">{notice}</Notice> : null}
 
-      <WaitingView
-        accountId={accountId}
-        disabled={viewOnly}
-        items={home.upcomingReleases}
-        onChanged={() => refresh()}
-      />
+      {/* These lenses already list every locked item they hold, so the summary block would show
+          the same letters twice. */}
+      {LENSES_LISTING_LOCKED.has(lens) ? null : (
+        <WaitingView
+          accountId={accountId}
+          disabled={viewOnly}
+          items={home.upcomingReleases}
+          onChanged={() => refresh()}
+        />
+      )}
 
       <nav className="mem-lenses" aria-label="Relationship Space">
         <div className="mem-lenses__strip">
