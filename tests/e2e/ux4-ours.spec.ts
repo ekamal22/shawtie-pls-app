@@ -372,6 +372,8 @@ test("Remember This is shared to read and creator-only to change", async ({ page
   await sheet.getByRole("button", { name: "More for this item" }).click();
   await expect(sheet.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
   await expect(sheet.getByRole("menuitem", { name: "Edit" })).toHaveCount(0);
+  // Adding it to Our Story is shared curation of the story, kept available by product decision.
+  await expect(sheet.getByRole("menuitem", { name: /Our Story/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await sheet.getByRole("button", { name: "Close" }).first().click();
 
