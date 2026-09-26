@@ -194,7 +194,7 @@ test("UX4 surfaces never make privacy claims the runtime cannot support", async 
     /end[- ]to[- ]end/i,
     /only (we|you|the two of you) can read/i,
     /\bencrypted\b/i,
-    /2014/,
+    /—/,
   ];
   for (const file of files) {
     if (file.pathname.includes("/content/")) continue;
