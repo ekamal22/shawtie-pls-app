@@ -16,7 +16,7 @@
     "format": "prettier --write \"apps/**/*.{ts,tsx,html,json}\" \"packages/**/*.{ts,tsx,json}\" \"*.{json,mjs}\"",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,html,json}\" \"packages/**/*.{ts,tsx,json}\" \"*.{json,mjs}\"",
     "deps:check": "node scripts/ci/check-dependencies.mjs",
-    "test": "npm run test:domain && npm run test:contracts && npm run test:api-unit && npm run test:worker && npm run test:m3:storage && npm run test:m3:browser && npm run test:ux1 && npm run test:ux2 && npm run test:ux3 && npm run test:ux4 && npm run test:ux6",
+    "test": "npm run test:domain && npm run test:contracts && npm run test:api-unit && npm run test:worker && npm run test:m3:storage && npm run test:m3:browser && npm run test:ux1 && npm run test:ux2 && npm run test:ux3 && npm run test:ux4 && npm run test:ux5 && npm run test:ux6",
     "test:domain": "node --test packages/domain/tests/*.test.ts",
     "test:contracts": "node --test packages/contracts/tests/*.test.ts",
     "test:worker": "node --test apps/worker/tests/runtime.test.ts apps/worker/tests/a1.worker.test.ts apps/worker/tests/m2.realtime.test.ts apps/worker/tests/c1.worker.test.ts",
