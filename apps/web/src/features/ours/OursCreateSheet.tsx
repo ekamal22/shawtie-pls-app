@@ -67,6 +67,7 @@ export function OursCreateSheet({
           partnershipId={partnershipId}
           disabled={disabled}
           initialKind={kind}
+          collapseKinds
           onCreated={async () => {
             onClose();
             await onCreated("Added to Ours.");

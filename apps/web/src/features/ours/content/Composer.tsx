@@ -65,12 +65,15 @@ export function RelationshipComposer({
   disabled,
   onCreated,
   initialKind = "memory",
+  collapseKinds = false,
 }: {
   readonly accountId: string;
   readonly partnershipId: string | null;
   readonly disabled: boolean;
   readonly onCreated: () => Promise<void> | void;
   readonly initialKind?: RelationshipItemKind;
+  /** Collapses the type chooser once the caller has already asked the person what to add. */
+  readonly collapseKinds?: boolean;
 }) {
   const [kind, setKind] = useState<RelationshipItemKind>(initialKind);
   const [title, setTitle] = useState("");
@@ -418,36 +421,47 @@ export function RelationshipComposer({
           ? "Your letter"
           : "Text";
 
+  const kindChooser = (
+    <fieldset className="mem-kinds">
+      <legend className="mem-legend">What would you like to add?</legend>
+      {COMPOSER_GROUPS.map((group) => (
+        <div
+          key={group.label}
+          className="mem-kinds__group"
+          role="radiogroup"
+          aria-label={group.label}
+        >
+          <p className="mem-kinds__label">{group.label}</p>
+          <div className="mem-kinds__row">
+            {group.kinds.map((entry) => (
+              <button
+                key={entry.value}
+                type="button"
+                role="radio"
+                aria-checked={kind === entry.value}
+                disabled={locked}
+                className={cx("mem-kind", kind === entry.value && "is-selected")}
+                onClick={() => setKind(entry.value)}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </fieldset>
+  );
+
   return (
     <form className="mem-composer" onSubmit={submit}>
-      <fieldset className="mem-kinds">
-        <legend className="mem-legend">What would you like to add?</legend>
-        {COMPOSER_GROUPS.map((group) => (
-          <div
-            key={group.label}
-            className="mem-kinds__group"
-            role="radiogroup"
-            aria-label={group.label}
-          >
-            <p className="mem-kinds__label">{group.label}</p>
-            <div className="mem-kinds__row">
-              {group.kinds.map((entry) => (
-                <button
-                  key={entry.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={kind === entry.value}
-                  disabled={locked}
-                  className={cx("mem-kind", kind === entry.value && "is-selected")}
-                  onClick={() => setKind(entry.value)}
-                >
-                  {entry.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </fieldset>
+      {collapseKinds ? (
+        <details className="mem-details mem-kinds-details">
+          <summary>Change type</summary>
+          {kindChooser}
+        </details>
+      ) : (
+        kindChooser
+      )}
 
       {kind !== "relationship_signal" ? (
         <label className="mem-field">

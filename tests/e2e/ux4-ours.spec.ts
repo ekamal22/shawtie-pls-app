@@ -394,6 +394,25 @@ test("Remember This is shared to read and creator-only to change", async ({ page
   await expect.poll(() => state.deleted.length).toBe(1);
 });
 
+test("A chosen kind opens its fields first and keeps the type chooser one tap away", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await openOurs(page, scenario());
+  await page.getByRole("button", { name: "Add to Ours" }).first().click();
+  await page
+    .getByRole("dialog", { name: "Add to Ours" })
+    .getByRole("button", { name: "A memory" })
+    .click();
+  const form = page.getByRole("dialog", { name: "A memory" });
+  const title = form.getByLabel("Title");
+  await expect(title).toBeVisible();
+  expect((await title.boundingBox())?.y ?? 999).toBeLessThan(360);
+  await expect(form.getByRole("radio", { name: "First", exact: true })).toBeHidden();
+  await form.getByText("Change type").click();
+  await expect(form.getByRole("radio", { name: "First", exact: true })).toBeVisible();
+});
+
 test("Paper rows keep a readable glyph in Midnight and Dawn", async ({ page }) => {
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
