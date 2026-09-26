@@ -452,6 +452,54 @@ test("Paper rows keep a readable glyph in Midnight and Dawn", async ({ page }) =
   }
 });
 
+test("An Open when letter the summary does not list is still reachable, and no Surprise appears", async ({
+  page,
+}) => {
+  // The real server lists scheduled releases in the summary but not recipient-open letters;
+  // found on a physical device where such a letter was unreachable from Ours.
+  const openWhen = item({
+    kind: "for_you",
+    creatorAccountId: PARTNER,
+    content: null,
+    preview: { title: "For a hard day", conditionLabel: "Open when you need reassurance" },
+    release: {
+      mode: "recipient_open",
+      generation: 1,
+      unlockAt: null,
+      releasedAt: null,
+      state: "locked",
+    },
+  });
+  const surprise = item({
+    kind: "surprise",
+    creatorAccountId: PARTNER,
+    content: null,
+    preview: { title: "Something for you" },
+    release: {
+      mode: "creator_reveal",
+      generation: 1,
+      unlockAt: null,
+      releasedAt: null,
+      state: "locked",
+    },
+  });
+  const state = scenario({ upcoming: [], items: [openWhen, surprise] });
+  await openOurs(page, state);
+  const now = chapter(page, "Now");
+  await expect(now.getByText("Waiting for you")).toBeVisible();
+  const row = now.getByRole("button", { name: /For a hard day/ });
+  await expect(row).toContainText("Sealed");
+  await expect(row).toContainText("Open when you need reassurance");
+  const text = (await page.locator("body").innerText()).toLowerCase();
+  expect(text).not.toContain("something for you");
+  await row.click();
+  await page
+    .getByRole("dialog", { name: "Sealed" })
+    .getByRole("button", { name: "Open the letter" })
+    .click();
+  await expect.poll(() => state.released.length).toBe(1);
+});
+
 test("Sealed letters wait quietly and the recipient opens them", async ({ page }) => {
   const sealed = item({
     kind: "for_you",

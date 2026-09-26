@@ -150,7 +150,19 @@ export function OursScreen({
   }, [reload, runtime]);
 
   const buckets = useMemo(() => bucketItems(data?.items ?? []), [data]);
-  const waiting = useMemo(() => (data ? data.home.upcomingReleases.filter(isLocked) : []), [data]);
+  // Sealed items the server exposes to this person: scheduled releases from the home summary,
+  // plus recipient-open letters (Open when...), which the summary does not list but which must
+  // stay reachable so the recipient can open them. Creator-reveal items (Surprise, Proposal)
+  // are never surfaced here.
+  const waiting = useMemo(() => {
+    if (!data) return [];
+    const byId = new Map<string, RelationshipItem>();
+    for (const item of data.home.upcomingReleases) if (isLocked(item)) byId.set(item.itemId, item);
+    for (const item of data.items) {
+      if (isLocked(item) && item.release?.mode === "recipient_open") byId.set(item.itemId, item);
+    }
+    return [...byId.values()];
+  }, [data]);
   const waitingForMe = useMemo(
     () => waiting.filter((item) => item.creatorAccountId !== accountId),
     [waiting, accountId],
