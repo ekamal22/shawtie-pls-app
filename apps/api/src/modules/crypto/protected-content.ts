@@ -250,3 +250,30 @@ export function protectedContentProjection(
 export function ciphertextDigest(ciphertext: Uint8Array): Buffer {
   return createHash("sha256").update(ciphertext).digest();
 }
+
+
+export function protectedContentInputProjection(
+  record: ProtectedContentKeyRecord,
+  ciphertext: Buffer,
+): unknown {
+  return {
+    ciphertext: ciphertext.toString("base64url"),
+    envelope: {
+      cryptoProfile: record.cryptoProfile,
+      groupGeneration: record.groupGeneration,
+      mlsEpoch: Number(record.mlsEpoch),
+      senderCryptoDeviceId: record.senderCryptoDeviceId,
+      contentKeyId: record.id,
+      nonce: encode(record.nonce),
+      ciphertextSha256: encode(record.ciphertextSha256),
+      keyDistributionMessage: encode(record.keyDistributionMessage),
+      contentSignature: encode(record.contentSignature),
+      recoveryCapsules: record.recoveryCapsules.map((capsule) => ({
+        accountId: capsule.accountId,
+        recoveryKeyVersion: capsule.recoveryKeyVersion,
+        encapsulation: encode(capsule.hpkeEncapsulation),
+        ciphertext: encode(capsule.hpkeCiphertext),
+      })),
+    },
+  };
+}

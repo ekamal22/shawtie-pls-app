@@ -28,6 +28,11 @@ export interface RelationshipItemRecord {
   readonly contentSchemaVersion: number;
   readonly developmentPreviewPayload: unknown | null;
   readonly developmentPlaintextPayload: unknown | null;
+  readonly encryptedPreviewPayload: Buffer | null;
+  readonly encryptedPayload: Buffer | null;
+  readonly ciphertextVersion: string | null;
+  readonly previewContentKeyId: string | null;
+  readonly mainContentKeyId: string | null;
   readonly occurredPrecision: "day" | "month" | "year" | "unknown" | null;
   readonly occurredYear: number | null;
   readonly occurredMonth: number | null;
@@ -50,6 +55,11 @@ interface RelationshipItemRow {
   content_schema_version: number;
   development_preview_payload: unknown | null;
   development_plaintext_payload: unknown | null;
+  encrypted_preview_payload: Buffer | null;
+  encrypted_payload: Buffer | null;
+  ciphertext_version: string | null;
+  preview_content_key_id: string | null;
+  main_content_key_id: string | null;
   occurred_precision: RelationshipItemRecord["occurredPrecision"];
   occurred_year: number | null;
   occurred_month: number | null;
@@ -73,6 +83,11 @@ function mapItem(row: RelationshipItemRow): RelationshipItemRecord {
     contentSchemaVersion: row.content_schema_version,
     developmentPreviewPayload: row.development_preview_payload,
     developmentPlaintextPayload: row.development_plaintext_payload,
+    encryptedPreviewPayload: row.encrypted_preview_payload,
+    encryptedPayload: row.encrypted_payload,
+    ciphertextVersion: row.ciphertext_version,
+    previewContentKeyId: row.preview_content_key_id,
+    mainContentKeyId: row.main_content_key_id,
     occurredPrecision: row.occurred_precision,
     occurredYear: row.occurred_year,
     occurredMonth: row.occurred_month,
@@ -96,6 +111,11 @@ const itemColumns = `
   item.content_schema_version,
   item.development_preview_payload,
   item.development_plaintext_payload,
+  item.encrypted_preview_payload,
+  item.encrypted_payload,
+  item.ciphertext_version,
+  item.preview_content_key_id,
+  item.main_content_key_id,
   item.occurred_precision,
   item.occurred_year,
   item.occurred_month,
@@ -145,6 +165,11 @@ export async function insertRelationshipItem(
     readonly contentSchemaVersion: number;
     readonly preview: unknown | null;
     readonly content: unknown | null;
+    readonly encryptedPreview: Buffer | null;
+    readonly encryptedContent: Buffer | null;
+    readonly ciphertextVersion: string | null;
+    readonly previewContentKeyId: string | null;
+    readonly mainContentKeyId: string | null;
     readonly occurredPrecision: RelationshipItemRecord["occurredPrecision"];
     readonly occurredYear: number | null;
     readonly occurredMonth: number | null;
@@ -160,11 +185,13 @@ export async function insertRelationshipItem(
     `INSERT INTO relationship_items (
        id, partnership_id, creator_account_id, kind, lifecycle, version,
        content_schema_version, development_preview_payload, development_plaintext_payload,
+       encrypted_preview_payload, encrypted_payload, ciphertext_version,
+       preview_content_key_id, main_content_key_id,
        occurred_date, occurred_precision, occurred_year, occurred_month, occurred_day,
        release_mode, release_generation, unlock_at, released_at, created_at, updated_at
      ) VALUES (
-       $1,$2,$3,$4,'active',1,$5,$6::jsonb,$7::jsonb,$8::date,$9,$10,$11,$12,
-       $13,$14,$15,$16,$17,$17
+       $1,$2,$3,$4,'active',1,$5,$6::jsonb,$7::jsonb,$8,$9,$10,$11,$12,
+       $13::date,$14,$15,$16,$17,$18,$19,$20,$21,$22,$22
      )`,
     [
       input.id,
@@ -174,6 +201,11 @@ export async function insertRelationshipItem(
       input.contentSchemaVersion,
       input.preview === null ? null : JSON.stringify(input.preview),
       input.content === null ? null : JSON.stringify(input.content),
+      input.encryptedPreview,
+      input.encryptedContent,
+      input.ciphertextVersion,
+      input.previewContentKeyId,
+      input.mainContentKeyId,
       occurredDate({
         precision: input.occurredPrecision,
         year: input.occurredYear,
@@ -356,6 +388,11 @@ export async function updateRelationshipItemRoot(
     readonly expectedVersion: bigint;
     readonly preview: unknown | null;
     readonly content: unknown | null;
+    readonly encryptedPreview: Buffer | null;
+    readonly encryptedContent: Buffer | null;
+    readonly ciphertextVersion: string | null;
+    readonly previewContentKeyId: string | null;
+    readonly mainContentKeyId: string | null;
     readonly occurredPrecision: RelationshipItemRecord["occurredPrecision"];
     readonly occurredYear: number | null;
     readonly occurredMonth: number | null;
@@ -371,16 +408,21 @@ export async function updateRelationshipItemRoot(
     `UPDATE relationship_items
      SET development_preview_payload = $4::jsonb,
          development_plaintext_payload = $5::jsonb,
-         occurred_date = $6::date,
-         occurred_precision = $7,
-         occurred_year = $8,
-         occurred_month = $9,
-         occurred_day = $10,
-         release_mode = $11,
-         release_generation = $12,
-         unlock_at = $13,
-         released_at = $14,
-         updated_at = $15,
+         encrypted_preview_payload = $6,
+         encrypted_payload = $7,
+         ciphertext_version = $8,
+         preview_content_key_id = $9,
+         main_content_key_id = $10,
+         occurred_date = $11::date,
+         occurred_precision = $12,
+         occurred_year = $13,
+         occurred_month = $14,
+         occurred_day = $15,
+         release_mode = $16,
+         release_generation = $17,
+         unlock_at = $18,
+         released_at = $19,
+         updated_at = $20,
          version = version + 1
      WHERE partnership_id = $1
        AND id = $2
@@ -393,6 +435,11 @@ export async function updateRelationshipItemRoot(
       input.expectedVersion.toString(),
       input.preview === null ? null : JSON.stringify(input.preview),
       input.content === null ? null : JSON.stringify(input.content),
+      input.encryptedPreview,
+      input.encryptedContent,
+      input.ciphertextVersion,
+      input.previewContentKeyId,
+      input.mainContentKeyId,
       occurredDate({
         precision: input.occurredPrecision,
         year: input.occurredYear,

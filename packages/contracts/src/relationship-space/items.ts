@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  encryptedProtectedContentProjectionSchema,
+  encryptedProtectedContentSchema,
+} from "../crypto/protected-content.ts";
 
 const uuid = z.string().uuid();
 const timestamp = z.string().min(20).max(40);
@@ -456,7 +460,7 @@ const signalCreateSchema = z
   })
   .strict();
 
-export const relationshipItemCreateSchema = z.discriminatedUnion("kind", [
+const plaintextRelationshipItemCreateSchema = z.discriminatedUnion("kind", [
   memoryCreateSchema,
   rememberCreateSchema,
   firstCreateSchema,
@@ -473,6 +477,108 @@ export const relationshipItemCreateSchema = z.discriminatedUnion("kind", [
   signalCreateSchema,
 ]);
 
+const protectedRelationshipItemCreateSchema = z
+  .object({
+    itemId: uuid,
+    kind: relationshipItemKindSchema,
+    contentSchemaVersion: z.literal(1),
+    preview: z.null().default(null),
+    content: z.null().default(null),
+    protectedPreview: encryptedProtectedContentSchema.nullable().default(null),
+    protectedContent: encryptedProtectedContentSchema,
+    occurrence: relationshipOccurrenceSchema.default(null),
+    storyIncluded: z.boolean().default(false),
+    release: relationshipReleaseInputSchema.nullable().default(null),
+    featureState: relationshipFeatureStateSchema.nullable().default(null),
+    references: z.array(relationshipReferenceSchema).max(32).default([]),
+    links: z.array(relationshipLinkSchema).max(100).default([]),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const previewAllowed = ["for_you", "future_us", "surprise", "proposal"].includes(value.kind);
+    if (!previewAllowed && value.protectedPreview !== null) {
+      context.addIssue({
+        code: "custom",
+        path: ["protectedPreview"],
+        message: "protected preview is not allowed for this relationship item kind",
+      });
+    }
+
+    if (value.kind === "for_you" || value.kind === "future_us") {
+      if (
+        !value.release ||
+        !["immediate", "scheduled", "recipient_open"].includes(value.release.mode) ||
+        value.featureState !== null
+      ) {
+        context.addIssue({ code: "custom", message: "invalid protected delivery-item state" });
+      }
+      return;
+    }
+    if (value.kind === "surprise" || value.kind === "proposal") {
+      if (
+        !value.release ||
+        !["immediate", "creator_reveal"].includes(value.release.mode) ||
+        value.featureState !== null
+      ) {
+        context.addIssue({ code: "custom", message: "invalid protected sequence-item state" });
+      }
+      return;
+    }
+    if (value.kind === "someday") {
+      if (value.release !== null || value.featureState?.type !== "someday") {
+        context.addIssue({ code: "custom", message: "invalid protected someday state" });
+      }
+      return;
+    }
+    if (value.kind === "our_year") {
+      if (
+        value.release !== null ||
+        value.featureState?.type !== "curation" ||
+        value.featureState.curationType !== "our_year"
+      ) {
+        context.addIssue({ code: "custom", message: "invalid protected Our Year state" });
+      }
+      return;
+    }
+    if (value.kind === "anniversary") {
+      if (
+        value.release !== null ||
+        value.featureState?.type !== "curation" ||
+        value.featureState.curationType !== "anniversary"
+      ) {
+        context.addIssue({ code: "custom", message: "invalid protected anniversary state" });
+      }
+      return;
+    }
+    if (value.kind === "reunion") {
+      if (value.release !== null || value.featureState?.type !== "reunion") {
+        context.addIssue({ code: "custom", message: "invalid protected reunion state" });
+      }
+      return;
+    }
+    if (value.kind === "relationship_signal") {
+      if (
+        value.release !== null ||
+        value.featureState?.type !== "relationship_signal" ||
+        value.occurrence !== null ||
+        value.storyIncluded ||
+        value.references.length > 0 ||
+        value.links.length > 0
+      ) {
+        context.addIssue({ code: "custom", message: "invalid protected relationship signal state" });
+      }
+      return;
+    }
+    if (value.release !== null || value.featureState !== null) {
+      context.addIssue({ code: "custom", message: "invalid protected relationship item state" });
+    }
+  });
+
+export const relationshipItemCreateSchema = z.union([
+  plaintextRelationshipItemCreateSchema,
+  protectedRelationshipItemCreateSchema,
+]);
+
 export type RelationshipItemCreateInput = z.infer<typeof relationshipItemCreateSchema>;
 
 export const relationshipItemPatchSchema = z
@@ -480,6 +586,8 @@ export const relationshipItemPatchSchema = z
     expectedVersion: version,
     preview: z.record(z.string(), z.unknown()).nullable().optional(),
     content: z.record(z.string(), z.unknown()).optional(),
+    protectedPreview: encryptedProtectedContentSchema.nullable().optional(),
+    protectedContent: encryptedProtectedContentSchema.optional(),
     occurrence: relationshipOccurrenceSchema.optional(),
     storyIncluded: z.boolean().optional(),
     release: relationshipReleaseInputSchema.nullable().optional(),
@@ -492,6 +600,8 @@ export const relationshipItemPatchSchema = z
     (value) =>
       value.preview !== undefined ||
       value.content !== undefined ||
+      value.protectedPreview !== undefined ||
+      value.protectedContent !== undefined ||
       value.occurrence !== undefined ||
       value.storyIncluded !== undefined ||
       value.release !== undefined ||
@@ -499,7 +609,21 @@ export const relationshipItemPatchSchema = z
       value.references !== undefined ||
       value.links !== undefined,
     { message: "at least one mutation field is required" },
-  );
+  )
+  .superRefine((value, context) => {
+    if (value.preview !== undefined && value.protectedPreview !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "preview and protectedPreview cannot be mutated together",
+      });
+    }
+    if (value.content !== undefined && value.protectedContent !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "content and protectedContent cannot be mutated together",
+      });
+    }
+  });
 
 export type RelationshipItemPatchInput = z.infer<typeof relationshipItemPatchSchema>;
 
@@ -624,7 +748,9 @@ export const relationshipItemProjectionSchema = z.object({
   featureState: relationshipFeatureStateSchema.nullable(),
   contentSchemaVersion: version,
   preview: z.record(z.string(), z.unknown()).nullable(),
+  protectedPreview: encryptedProtectedContentProjectionSchema.nullable().default(null),
   content: z.record(z.string(), z.unknown()).nullable(),
+  protectedContent: encryptedProtectedContentProjectionSchema.nullable().default(null),
   references: z.array(relationshipReferenceSchema),
   links: z.array(relationshipLinkSchema),
 });

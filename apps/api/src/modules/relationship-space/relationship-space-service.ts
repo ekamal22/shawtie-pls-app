@@ -4,6 +4,7 @@ import {
   cancelPendingScheduledActionsByDeduplicationKey,
   completeLifecycleIdempotency,
   deleteIncomingRelationshipLinks,
+  deleteProtectedContentKey,
   deleteRelationshipItem,
   findRelationshipCurationItemId,
   getTransactionTimestamp,
@@ -15,7 +16,9 @@ import {
   listRelationshipItemsForYear,
   listUpcomingRelationshipReleases,
   loadIncomingRelationshipLinkOwnerIds,
+  loadPartnershipCryptoPolicy,
   loadPartnershipReadModelForAccount,
+  loadProtectedContentKeys,
   loadRelationshipFeatureState,
   loadRelationshipItem,
   loadRelationshipLinks,
@@ -31,6 +34,7 @@ import {
   withTransaction,
   type DatabasePool,
   type LockedPartnershipLifecycle,
+  type ProtectedContentKeyRecord,
   type QueryExecutor,
   type RelationshipFeatureState,
   type RelationshipItemRecord,
@@ -51,6 +55,7 @@ import {
   type RelationshipItemKind,
 } from "@shawtie/domain";
 import {
+  S1_CRYPTO_PROFILE,
   parseAtBoundary,
   relationshipItemCreateSchema,
   relationshipItemCursorSchema,
@@ -71,6 +76,12 @@ import { ApiError } from "../../lib/api-error.ts";
 import { queueRealtimeRelationshipChanged } from "../realtime/outbox.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import {
+  ciphertextDigest,
+  protectedContentInputProjection,
+  protectedContentProjection,
+  requireCryptoProtectedWrite,
+} from "../crypto/protected-content.ts";
 
 const DAY = 24 * 60 * 60_000;
 const IDEMPOTENCY_RETENTION = DAY;
@@ -282,7 +293,10 @@ function isFullItemVisible(item: RelationshipItemRecord, actorAccountId: string)
 }
 
 function hasPreview(item: RelationshipItemRecord): boolean {
-  return item.developmentPreviewPayload !== null;
+  return (
+    item.developmentPreviewPayload !== null ||
+    item.encryptedPreviewPayload !== null
+  );
 }
 
 function isItemVisible(item: RelationshipItemRecord, actorAccountId: string): boolean {
@@ -895,6 +909,20 @@ export class RelationshipSpaceService {
       : [];
     const links = full ? await loadRelationshipLinks(executor, item.partnershipId, item.id) : [];
 
+    const contentKeyIds = [
+      item.previewContentKeyId,
+      full ? item.mainContentKeyId : null,
+    ].filter((value): value is string => value !== null);
+    const keys = await loadProtectedContentKeys(executor, contentKeyIds);
+    const key = (contentKeyId: string | null): ProtectedContentKeyRecord | null => {
+      if (!contentKeyId) return null;
+      const record = keys.get(contentKeyId);
+      if (!record) throw new Error("Relationship protected-content metadata is missing");
+      return record;
+    };
+    const previewKey = key(item.previewContentKeyId);
+    const mainKey = full ? key(item.mainContentKeyId) : null;
+
     return {
       itemId: item.id,
       kind: item.kind,
@@ -916,9 +944,23 @@ export class RelationshipSpaceService {
       featureState: featureStateForContract(state),
       contentSchemaVersion: item.contentSchemaVersion,
       preview: (item.developmentPreviewPayload as Record<string, unknown> | null) ?? null,
+      protectedPreview:
+        item.encryptedPreviewPayload && previewKey
+          ? {
+              ciphertext: item.encryptedPreviewPayload.toString("base64url"),
+              envelope: protectedContentProjection(previewKey, actorAccountId),
+            }
+          : null,
       content: full
         ? ((item.developmentPlaintextPayload as Record<string, unknown> | null) ?? null)
         : null,
+      protectedContent:
+        full && item.encryptedPayload && mainKey
+          ? {
+              ciphertext: item.encryptedPayload.toString("base64url"),
+              envelope: protectedContentProjection(mainKey, actorAccountId),
+            }
+          : null,
       references: [...references],
       links: [...links],
     };
@@ -1238,7 +1280,59 @@ export class RelationshipSpaceService {
         };
       }
 
-      const itemId = randomUUID();
+      const protectedPreview = "protectedPreview" in input ? input.protectedPreview : null;
+      const protectedContent = "protectedContent" in input ? input.protectedContent : null;
+      const itemId = "itemId" in input ? input.itemId : randomUUID();
+      const policy = await loadPartnershipCryptoPolicy(transaction, lifecycle.partnershipId);
+      if (
+        policy?.cryptoRequiredFrom &&
+        (input.preview !== null || input.content !== null)
+      ) {
+        throw new ApiError(409, "CRYPTO_REQUIRED");
+      }
+
+      const encryptedPreview = protectedPreview
+        ? Buffer.from(protectedPreview.ciphertext, "base64url")
+        : null;
+      const encryptedContent = protectedContent
+        ? Buffer.from(protectedContent.ciphertext, "base64url")
+        : null;
+
+      if (protectedPreview && encryptedPreview) {
+        await requireCryptoProtectedWrite(
+          transaction,
+          auth,
+          {
+            partnershipId: lifecycle.partnershipId,
+            contentType: "relationship_item",
+            contentId: itemId,
+            contentVersion: 1n,
+            payloadRole: "relationship_preview",
+            schemaVersion: input.contentSchemaVersion,
+            ciphertextSha256: ciphertextDigest(encryptedPreview),
+            at: now,
+          },
+          protectedPreview.envelope,
+        );
+      }
+      if (protectedContent && encryptedContent) {
+        await requireCryptoProtectedWrite(
+          transaction,
+          auth,
+          {
+            partnershipId: lifecycle.partnershipId,
+            contentType: "relationship_item",
+            contentId: itemId,
+            contentVersion: 1n,
+            payloadRole: "relationship_main",
+            schemaVersion: input.contentSchemaVersion,
+            ciphertextSha256: ciphertextDigest(encryptedContent),
+            at: now,
+          },
+          protectedContent.envelope,
+        );
+      }
+
       const occurrence = occurrenceFields(input.occurrence);
       const release = releaseFields(input.release, now);
       await insertRelationshipItem(transaction, {
@@ -1249,6 +1343,12 @@ export class RelationshipSpaceService {
         contentSchemaVersion: input.contentSchemaVersion,
         preview: input.preview,
         content: input.content,
+        encryptedPreview,
+        encryptedContent,
+        ciphertextVersion:
+          protectedPreview || protectedContent ? S1_CRYPTO_PROFILE : null,
+        previewContentKeyId: protectedPreview?.envelope.contentKeyId ?? null,
+        mainContentKeyId: protectedContent?.envelope.contentKeyId ?? null,
         occurredPrecision: occurrence.precision,
         occurredYear: occurrence.year,
         occurredMonth: occurrence.month,
@@ -1399,6 +1499,14 @@ export class RelationshipSpaceService {
         throw new ApiError(409, "VERSION_CONFLICT");
       }
 
+      const policy = await loadPartnershipCryptoPolicy(transaction, item.partnershipId);
+      if (
+        policy?.cryptoRequiredFrom &&
+        (input.preview !== undefined || input.content !== undefined)
+      ) {
+        throw new ApiError(409, "CRYPTO_REQUIRED");
+      }
+
       const currentFeatureState = await loadRelationshipFeatureState(
         transaction,
         item.partnershipId,
@@ -1411,21 +1519,79 @@ export class RelationshipSpaceService {
       );
       const currentLinks = await loadRelationshipLinks(transaction, item.partnershipId, item.id);
 
-      const candidate = parseAtBoundary(relationshipItemCreateSchema, {
-        kind: item.kind,
-        contentSchemaVersion: item.contentSchemaVersion,
-        preview: input.preview !== undefined ? input.preview : item.developmentPreviewPayload,
-        content: input.content !== undefined ? input.content : item.developmentPlaintextPayload,
-        occurrence: input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
-        storyIncluded: input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
-        release: input.release !== undefined ? input.release : releaseFromItem(item),
-        featureState:
-          input.featureState !== undefined
-            ? input.featureState
-            : featureStateForContract(currentFeatureState),
-        references: input.references ?? currentReferences,
-        links: input.links ?? currentLinks,
-      });
+      const existingKeyIds = [
+        item.previewContentKeyId,
+        item.mainContentKeyId,
+      ].filter((value): value is string => value !== null);
+      const existingKeys = await loadProtectedContentKeys(transaction, existingKeyIds);
+      const existingProtectedPreview =
+        item.encryptedPreviewPayload && item.previewContentKeyId
+          ? protectedContentInputProjection(
+              (() => {
+                const record = existingKeys.get(item.previewContentKeyId!);
+                if (!record) throw new Error("Relationship preview key metadata is missing");
+                return record;
+              })(),
+              item.encryptedPreviewPayload,
+            )
+          : null;
+      const existingProtectedContent =
+        item.encryptedPayload && item.mainContentKeyId
+          ? protectedContentInputProjection(
+              (() => {
+                const record = existingKeys.get(item.mainContentKeyId!);
+                if (!record) throw new Error("Relationship main key metadata is missing");
+                return record;
+              })(),
+              item.encryptedPayload,
+            )
+          : null;
+
+      const encryptedMode =
+        policy?.cryptoRequiredFrom !== null &&
+        policy?.cryptoRequiredFrom !== undefined;
+      const candidate = encryptedMode
+        ? parseAtBoundary(relationshipItemCreateSchema, {
+            itemId: item.id,
+            kind: item.kind,
+            contentSchemaVersion: item.contentSchemaVersion,
+            preview: null,
+            content: null,
+            protectedPreview:
+              input.protectedPreview !== undefined
+                ? input.protectedPreview
+                : existingProtectedPreview,
+            protectedContent:
+              input.protectedContent !== undefined
+                ? input.protectedContent
+                : existingProtectedContent,
+            occurrence: input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
+            storyIncluded:
+              input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
+            release: input.release !== undefined ? input.release : releaseFromItem(item),
+            featureState:
+              input.featureState !== undefined
+                ? input.featureState
+                : featureStateForContract(currentFeatureState),
+            references: input.references ?? currentReferences,
+            links: input.links ?? currentLinks,
+          })
+        : parseAtBoundary(relationshipItemCreateSchema, {
+            kind: item.kind,
+            contentSchemaVersion: item.contentSchemaVersion,
+            preview: input.preview !== undefined ? input.preview : item.developmentPreviewPayload,
+            content: input.content !== undefined ? input.content : item.developmentPlaintextPayload,
+            occurrence: input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
+            storyIncluded:
+              input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
+            release: input.release !== undefined ? input.release : releaseFromItem(item),
+            featureState:
+              input.featureState !== undefined
+                ? input.featureState
+                : featureStateForContract(currentFeatureState),
+            references: input.references ?? currentReferences,
+            links: input.links ?? currentLinks,
+          });
       this.#validateCreateSemantics(candidate, now, {
         validateReleaseTime: input.release !== undefined,
         validateReunionTarget: input.featureState !== undefined,
@@ -1434,6 +1600,8 @@ export class RelationshipSpaceService {
       const contentChanged =
         input.preview !== undefined ||
         input.content !== undefined ||
+        input.protectedPreview !== undefined ||
+        input.protectedContent !== undefined ||
         input.occurrence !== undefined ||
         input.references !== undefined ||
         input.release !== undefined;
@@ -1507,6 +1675,63 @@ export class RelationshipSpaceService {
         );
       }
 
+      const nextItemVersion = item.version + 1n;
+      let nextEncryptedPreview = item.encryptedPreviewPayload;
+      let nextPreviewContentKeyId = item.previewContentKeyId;
+      let nextEncryptedContent = item.encryptedPayload;
+      let nextMainContentKeyId = item.mainContentKeyId;
+
+      if (input.protectedPreview !== undefined) {
+        if (input.protectedPreview === null) {
+          nextEncryptedPreview = null;
+          nextPreviewContentKeyId = null;
+        } else {
+          nextEncryptedPreview = Buffer.from(input.protectedPreview.ciphertext, "base64url");
+          await requireCryptoProtectedWrite(
+            transaction,
+            auth,
+            {
+              partnershipId: item.partnershipId,
+              contentType: "relationship_item",
+              contentId: item.id,
+              contentVersion: nextItemVersion,
+              payloadRole: "relationship_preview",
+              schemaVersion: item.contentSchemaVersion,
+              ciphertextSha256: ciphertextDigest(nextEncryptedPreview),
+              at: now,
+            },
+            input.protectedPreview.envelope,
+          );
+          nextPreviewContentKeyId = input.protectedPreview.envelope.contentKeyId;
+        }
+      } else if (input.preview !== undefined) {
+        nextEncryptedPreview = null;
+        nextPreviewContentKeyId = null;
+      }
+
+      if (input.protectedContent !== undefined) {
+        nextEncryptedContent = Buffer.from(input.protectedContent.ciphertext, "base64url");
+        await requireCryptoProtectedWrite(
+          transaction,
+          auth,
+          {
+            partnershipId: item.partnershipId,
+            contentType: "relationship_item",
+            contentId: item.id,
+            contentVersion: nextItemVersion,
+            payloadRole: "relationship_main",
+            schemaVersion: item.contentSchemaVersion,
+            ciphertextSha256: ciphertextDigest(nextEncryptedContent),
+            at: now,
+          },
+          input.protectedContent.envelope,
+        );
+        nextMainContentKeyId = input.protectedContent.envelope.contentKeyId;
+      } else if (input.content !== undefined) {
+        nextEncryptedContent = null;
+        nextMainContentKeyId = null;
+      }
+
       const occurrence = occurrenceFields(candidate.occurrence);
       const nextRelease = releaseFields(candidate.release, now);
       let releaseGeneration = item.releaseGeneration;
@@ -1530,8 +1755,14 @@ export class RelationshipSpaceService {
         partnershipId: item.partnershipId,
         itemId: item.id,
         expectedVersion: item.version,
-        preview: candidate.preview,
-        content: candidate.content,
+        preview: encryptedMode ? null : candidate.preview,
+        content: encryptedMode ? null : candidate.content,
+        encryptedPreview: nextEncryptedPreview,
+        encryptedContent: nextEncryptedContent,
+        ciphertextVersion:
+          nextEncryptedPreview || nextEncryptedContent ? S1_CRYPTO_PROFILE : null,
+        previewContentKeyId: nextPreviewContentKeyId,
+        mainContentKeyId: nextMainContentKeyId,
         occurredPrecision: occurrence.precision,
         occurredYear: occurrence.year,
         occurredMonth: occurrence.month,
@@ -1543,6 +1774,19 @@ export class RelationshipSpaceService {
         updatedAt: now,
       });
       if (nextVersion === null) throw new ApiError(409, "VERSION_CONFLICT");
+
+      if (
+        item.previewContentKeyId &&
+        item.previewContentKeyId !== nextPreviewContentKeyId
+      ) {
+        await deleteProtectedContentKey(transaction, item.previewContentKeyId);
+      }
+      if (
+        item.mainContentKeyId &&
+        item.mainContentKeyId !== nextMainContentKeyId
+      ) {
+        await deleteProtectedContentKey(transaction, item.mainContentKeyId);
+      }
 
       if (input.references !== undefined) {
         await this.#reconcileMediaReferences(
@@ -1751,6 +1995,8 @@ export class RelationshipSpaceService {
         now,
       );
 
+      const previewContentKeyId = item.previewContentKeyId;
+      const mainContentKeyId = item.mainContentKeyId;
       const deleted = await deleteRelationshipItem(
         transaction,
         item.partnershipId,
@@ -1758,6 +2004,12 @@ export class RelationshipSpaceService {
         item.version,
       );
       if (!deleted) throw new ApiError(409, "VERSION_CONFLICT");
+      if (previewContentKeyId) {
+        await deleteProtectedContentKey(transaction, previewContentKeyId);
+      }
+      if (mainContentKeyId) {
+        await deleteProtectedContentKey(transaction, mainContentKeyId);
+      }
       await queueRealtimeRelationshipChanged(transaction, {
         partnershipId: item.partnershipId,
         itemId: item.id,
@@ -1864,6 +2116,11 @@ export class RelationshipSpaceService {
         expectedVersion: item.version,
         preview: item.developmentPreviewPayload,
         content: item.developmentPlaintextPayload,
+        encryptedPreview: item.encryptedPreviewPayload,
+        encryptedContent: item.encryptedPayload,
+        ciphertextVersion: item.ciphertextVersion,
+        previewContentKeyId: item.previewContentKeyId,
+        mainContentKeyId: item.mainContentKeyId,
         occurredPrecision: item.occurredPrecision,
         occurredYear: item.occurredYear,
         occurredMonth: item.occurredMonth,
