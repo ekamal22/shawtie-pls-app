@@ -1,4 +1,9 @@
-import type { MessageProjection, RelationshipItemProjection } from "@shawtie/contracts";
+import {
+  M2_PRE_S1_CONTENT_CONTEXT,
+  S1_CONTENT_CONTEXT,
+  type MessageProjection,
+  type RelationshipItemProjection,
+} from "@shawtie/contracts";
 import { ApiClientError, ApiNetworkError, apiRequest } from "../api-client.ts";
 import type {
   ChatQueueOperation,
@@ -14,6 +19,7 @@ interface CurrentConversationAuthority {
   conversation: {
     conversationId: string;
     partnershipId: string;
+    cryptoRequired: boolean;
     capabilities: { sendMessage: boolean };
   } | null;
 }
@@ -108,6 +114,7 @@ export class M2ReplayEngine {
 
   async enqueueChat(input: {
     operationType: ChatQueueOperation["operationType"];
+    contentContextKey?: string;
     messageId?: string | null;
     requestBody: unknown;
     expectedContentVersion?: number | null;
@@ -123,6 +130,7 @@ export class M2ReplayEngine {
       partnershipId: scope.partnershipId,
       conversationId: scope.conversationId,
       operationType: input.operationType,
+      contentContextKey: input.contentContextKey ?? M2_PRE_S1_CONTENT_CONTEXT,
       messageId: input.messageId ?? null,
       idempotencyKey: input.idempotencyKey ?? "m2-" + crypto.randomUUID(),
       requestBody: input.requestBody,
@@ -264,6 +272,20 @@ export class M2ReplayEngine {
           !authority.conversation.capabilities.sendMessage)
       ) {
         await this.#blockChat(database, queued, "LIFECYCLE_CHANGED");
+        continue;
+      }
+      if (
+        authority.conversation.cryptoRequired &&
+        queued.contentContextKey !== S1_CONTENT_CONTEXT
+      ) {
+        await this.#blockChat(database, queued, "CRYPTO_REQUIRED");
+        continue;
+      }
+      if (
+        !authority.conversation.cryptoRequired &&
+        queued.contentContextKey === S1_CONTENT_CONTEXT
+      ) {
+        await this.#blockChat(database, queued, "CRYPTO_NOT_INITIALIZED");
         continue;
       }
 

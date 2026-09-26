@@ -1,7 +1,7 @@
 import type { LocalMediaDraft } from "./media-types.ts";
 
 const PREFIX = "shawtie-media-v1:";
-const VERSION = 1;
+const VERSION = 2;
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -23,11 +23,15 @@ function open(accountId: string): Promise<IDBDatabase> {
     const request = indexedDB.open(PREFIX + accountId, VERSION);
     request.onerror = () => reject(request.error ?? new Error("Unable to open media database"));
     request.onblocked = () => reject(new Error("Media database is blocked by another tab"));
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const database = request.result;
       if (!database.objectStoreNames.contains("uploadDrafts")) {
         const store = database.createObjectStore("uploadDrafts", { keyPath: "draftId" });
         store.createIndex("byPartnershipCreated", ["partnershipId", "createdAt"]);
+      }
+      const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+      if (oldVersion > 0 && oldVersion < 2 && request.transaction) {
+        request.transaction.objectStore("uploadDrafts").clear();
       }
     };
     request.onsuccess = () => resolve(request.result);

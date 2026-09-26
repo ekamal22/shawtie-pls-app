@@ -504,6 +504,10 @@ export class MessagingService {
       const row = await loadCurrentConversationReadModel(transaction, auth.session.accountId, now);
       if (!row) return { conversation: null };
 
+      const cryptoPolicy = await loadPartnershipCryptoPolicy(
+        transaction,
+        row.partnershipId,
+      );
       const nicknameKeyIds = [
         row.self.nicknameContentKeyId,
         row.partner.nicknameContentKeyId,
@@ -535,6 +539,8 @@ export class MessagingService {
           partnershipId: row.partnershipId,
           lifecycleState: row.lifecycleState,
           interactionMode,
+          cryptoRequired: Boolean(cryptoPolicy?.cryptoRequiredFrom),
+          cryptoRequiredFrom: cryptoPolicy?.cryptoRequiredFrom?.toISOString() ?? null,
           latestServerSequence: safeNumber(row.latestServerSequence),
           latestChangeSequence: safeNumber(row.latestChangeSequence),
           breakup:

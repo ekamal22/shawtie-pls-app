@@ -1,4 +1,9 @@
-import type { MediaFormatCode, MediaKind } from "@shawtie/contracts";
+import type {
+  MediaFormatCode,
+  MediaKind,
+  ProtectedContentEnvelopeInput,
+  ProtectedContentEnvelopeProjection,
+} from "@shawtie/contracts";
 
 export interface MediaServerProjection {
   readonly mediaId: string;
@@ -7,6 +12,9 @@ export interface MediaServerProjection {
   readonly state: "uploading" | "ready_unbound" | "bound" | "deletion_pending" | "failed";
   readonly ciphertextBytes: number;
   readonly cryptoProtocolVersion: string;
+  readonly protectedMedia: {
+    readonly envelope: ProtectedContentEnvelopeProjection;
+  } | null;
   readonly durationSeconds: number | null;
   readonly uploadGeneration: number;
   readonly uploadExpiresAt: string | null;
@@ -44,6 +52,7 @@ export interface LocalMediaDraft {
   readonly ciphertextBytes: number;
   readonly ciphertextSha256: string;
   readonly cryptoProtocolVersion: string;
+  readonly contentEnvelope: ProtectedContentEnvelopeInput | null;
   readonly durationSeconds: number | null;
   readonly idempotencyKey: string;
   readonly mediaId: string | null;

@@ -93,6 +93,7 @@ export class M2Runtime {
 
   async queueChat(input: {
     operationType: ChatQueueOperation["operationType"];
+    contentContextKey?: string;
     messageId?: string | null;
     requestBody: unknown;
     expectedContentVersion?: number | null;

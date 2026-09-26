@@ -6,9 +6,12 @@ import {
   M3_VIDEO_MAX_DURATION_SECONDS,
   M3_VOICE_MAX_BYTES,
   M3_VOICE_MAX_DURATION_SECONDS,
+  S1_CRYPTO_PROFILE,
   type MediaFormatCode,
   type MediaKind,
 } from "@shawtie/contracts";
+import { base64UrlDecode, base64UrlEncode } from "@shawtie/crypto";
+import type { S1CryptoRuntime } from "../crypto/crypto-runtime.ts";
 import { decryptMedia, encryptMedia } from "./crypto-port.ts";
 import {
   completeMediaUpload,
@@ -199,6 +202,8 @@ export async function prepareMediaDraft(input: {
   readonly role: LocalMediaDraft["role"];
   readonly kind?: MediaKind;
   readonly durationSeconds?: number | null;
+  readonly cryptoRequired?: boolean;
+  readonly cryptoRuntime?: S1CryptoRuntime | null;
 }): Promise<LocalMediaDraft> {
   const prepared = await validateAndProcess(input.source, input.kind, input.durationSeconds);
   if (
@@ -210,23 +215,55 @@ export async function prepareMediaDraft(input: {
   if (input.role === "attachment" && prepared.kind === "voice") {
     throw new Error("MEDIA_ROLE_INVALID");
   }
-  const encrypted = await encryptMedia(prepared.blob);
+  const draftId = crypto.randomUUID();
+  const mediaId = input.cryptoRequired ? crypto.randomUUID() : null;
+  let ciphertext: Blob;
+  let cryptoProtocolVersion: string;
+  let contentEnvelope: LocalMediaDraft["contentEnvelope"] = null;
+
+  if (input.cryptoRequired) {
+    if (!input.cryptoRuntime || !mediaId) {
+      throw new Error("CRYPTO_UNAVAILABLE");
+    }
+    const protectedMedia = await input.cryptoRuntime.protectBytes(
+      {
+        partnershipId: input.partnershipId,
+        contentType: "media",
+        contentId: mediaId,
+        contentVersion: 1,
+        payloadRole: "media_content",
+        schemaVersion: 1,
+      },
+      new Uint8Array(await prepared.blob.arrayBuffer()),
+    );
+    ciphertext = new Blob([base64UrlDecode(protectedMedia.ciphertext)], {
+      type: "application/octet-stream",
+    });
+    cryptoProtocolVersion = S1_CRYPTO_PROFILE;
+    contentEnvelope = protectedMedia.envelope;
+  } else {
+    const encrypted = await encryptMedia(prepared.blob);
+    ciphertext = encrypted.ciphertext;
+    cryptoProtocolVersion = encrypted.protocolVersion;
+  }
+
   const now = Date.now();
   const draft: LocalMediaDraft = {
-    draftId: crypto.randomUUID(),
+    draftId,
     accountId: input.accountId,
     partnershipId: input.partnershipId,
     ownerContext: input.ownerContext,
     kind: prepared.kind,
     formatCode: prepared.formatCode,
     role: input.role,
-    ciphertext: encrypted.ciphertext,
-    ciphertextBytes: encrypted.ciphertext.size,
-    ciphertextSha256: await blobSha256(encrypted.ciphertext),
-    cryptoProtocolVersion: encrypted.protocolVersion,
+    ciphertext,
+    ciphertextBytes: ciphertext.size,
+    ciphertextSha256: await blobSha256(ciphertext),
+    cryptoProtocolVersion,
+    contentEnvelope,
     durationSeconds: prepared.durationSeconds,
     idempotencyKey: "m3-" + crypto.randomUUID(),
-    mediaId: null,
+    mediaId,
     uploadGeneration: null,
     state: "prepared",
     createdAt: now,
@@ -293,11 +330,13 @@ export async function uploadMediaDraft(
           })
         : await createMediaUpload(
             {
+              mediaId: draft.mediaId ?? undefined,
               kind: draft.kind,
               formatCode: draft.formatCode,
               ciphertextBytes: draft.ciphertextBytes,
               ciphertextSha256: draft.ciphertextSha256,
               cryptoProtocolVersion: draft.cryptoProtocolVersion,
+              contentEnvelope: draft.contentEnvelope,
               durationSeconds: draft.durationSeconds,
             },
             draft.idempotencyKey,
@@ -399,7 +438,10 @@ export function mimeForFormat(format: MediaFormatCode): string {
   return values[format];
 }
 
-export async function loadDecryptedMedia(mediaId: string): Promise<{
+export async function loadDecryptedMedia(
+  mediaId: string,
+  cryptoRuntime?: S1CryptoRuntime | null,
+): Promise<{
   readonly media: MediaServerProjection;
   readonly blob: Blob;
   readonly url: string;
@@ -407,7 +449,27 @@ export async function loadDecryptedMedia(mediaId: string): Promise<{
 }> {
   const grant = await requestMediaAccess(mediaId);
   const ciphertext = await getCiphertext(grant.downloadUrl);
-  const plaintext = await decryptMedia(ciphertext, grant.media.cryptoProtocolVersion);
+  let plaintext: Blob;
+  if (grant.media.protectedMedia) {
+    if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+    const bytes = await cryptoRuntime.decryptProtectedBytes(
+      {
+        partnershipId: grant.media.protectedMedia.envelope.partnershipId,
+        contentType: "media",
+        contentId: grant.media.mediaId,
+        payloadRole: "media_content",
+      },
+      {
+        ciphertext: base64UrlEncode(
+          new Uint8Array(await ciphertext.arrayBuffer()),
+        ),
+        envelope: grant.media.protectedMedia.envelope,
+      },
+    );
+    plaintext = new Blob([bytes]);
+  } else {
+    plaintext = await decryptMedia(ciphertext, grant.media.cryptoProtocolVersion);
+  }
   await validateMagic(plaintext, grant.media.kind, grant.media.formatCode);
   const typed = new Blob([plaintext], { type: mimeForFormat(grant.media.formatCode) });
   const url = URL.createObjectURL(typed);

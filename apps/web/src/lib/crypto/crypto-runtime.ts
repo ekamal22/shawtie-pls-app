@@ -1189,6 +1189,7 @@ export class S1CryptoRuntime {
   ): Promise<Uint8Array<ArrayBuffer>> {
     const envelope = protectedContent.envelope;
     if (
+      envelope.partnershipId !== contextInput.partnershipId ||
       envelope.contentType !== contextInput.contentType ||
       envelope.contentId !== contextInput.contentId ||
       envelope.payloadRole !== contextInput.payloadRole

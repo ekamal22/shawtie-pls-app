@@ -33,14 +33,25 @@ export interface DecryptedRelationshipItemProjection
 }
 
 export async function decryptMessageProjectionForView(
-  runtime: S1CryptoRuntime,
+  runtime: S1CryptoRuntime | null,
   partnershipId: string,
   message: MessageProjection,
 ): Promise<DecryptedMessageProjection> {
+  if (
+    !runtime &&
+    (
+      Boolean(message.protectedBody) ||
+      Boolean(message.replyContext?.protectedBody) ||
+      message.reactions.some((reaction) => Boolean(reaction.protectedReaction))
+    )
+  ) {
+    throw new Error("CRYPTO_UNAVAILABLE");
+  }
+
   const body =
     message.protectedBody && !message.deletedAt
       ? utf8Decode(
-          await runtime.decryptProtectedBytes(
+          await runtime!.decryptProtectedBytes(
             {
               partnershipId,
               contentType: "message",
@@ -58,7 +69,7 @@ export async function decryptMessageProjectionForView(
         body:
           message.replyContext.protectedBody && !message.replyContext.deleted
             ? utf8Decode(
-                await runtime.decryptProtectedBytes(
+                await runtime!.decryptProtectedBytes(
                   {
                     partnershipId,
                     contentType: "message",
@@ -76,7 +87,7 @@ export async function decryptMessageProjectionForView(
     message.reactions.map(async (reaction) => {
       const emoji = reaction.protectedReaction
         ? utf8Decode(
-            await runtime.decryptProtectedBytes(
+            await runtime!.decryptProtectedBytes(
               {
                 partnershipId,
                 contentType: "message_reaction",
@@ -101,7 +112,7 @@ export async function decryptMessageProjectionForView(
 }
 
 export async function decryptMessagesForView(
-  runtime: S1CryptoRuntime,
+  runtime: S1CryptoRuntime | null,
   partnershipId: string,
   messages: readonly MessageProjection[],
 ): Promise<readonly DecryptedMessageProjection[]> {
@@ -113,13 +124,14 @@ export async function decryptMessagesForView(
 }
 
 export async function decryptNicknameForView(
-  runtime: S1CryptoRuntime,
+  runtime: S1CryptoRuntime | null,
   partnershipId: string,
   subjectAccountId: string,
   protectedNickname: EncryptedProtectedContentProjection | null | undefined,
   fallback: string | null,
 ): Promise<string | null> {
   if (!protectedNickname) return fallback;
+  if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
   return utf8Decode(
     await runtime.decryptProtectedBytes(
       {
@@ -134,12 +146,15 @@ export async function decryptNicknameForView(
 }
 
 export async function decryptRelationshipItemForView(
-  runtime: S1CryptoRuntime,
+  runtime: S1CryptoRuntime | null,
   partnershipId: string,
   item: RelationshipItemProjection,
 ): Promise<DecryptedRelationshipItemProjection> {
+  if (!runtime && (item.protectedPreview || item.protectedContent)) {
+    throw new Error("CRYPTO_UNAVAILABLE");
+  }
   const preview = item.protectedPreview
-    ? await runtime.decryptProtectedJson<Record<string, unknown>>(
+    ? await runtime!.decryptProtectedJson<Record<string, unknown>>(
         {
           partnershipId,
           contentType: "relationship_item",
@@ -150,7 +165,7 @@ export async function decryptRelationshipItemForView(
       )
     : item.preview;
   const content = item.protectedContent
-    ? await runtime.decryptProtectedJson<Record<string, unknown>>(
+    ? await runtime!.decryptProtectedJson<Record<string, unknown>>(
         {
           partnershipId,
           contentType: "relationship_item",
@@ -169,7 +184,7 @@ export async function decryptRelationshipItemForView(
 }
 
 export async function decryptRelationshipItemsForView(
-  runtime: S1CryptoRuntime,
+  runtime: S1CryptoRuntime | null,
   partnershipId: string,
   items: readonly RelationshipItemProjection[],
 ): Promise<readonly DecryptedRelationshipItemProjection[]> {

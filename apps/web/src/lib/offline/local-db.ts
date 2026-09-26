@@ -48,6 +48,7 @@ export interface ChatQueueOperation extends OfflineQueueClaim {
   readonly partnershipId: string;
   readonly conversationId: string;
   readonly operationType: ChatOperationType;
+  readonly contentContextKey: string;
   readonly messageId: string | null;
   readonly idempotencyKey: string;
   readonly requestBody: unknown;
@@ -523,7 +524,7 @@ export class ShawtieLocalDatabase {
     messages.put({
       ...message,
       partnershipId: operation.partnershipId,
-      contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
+      contentContextKey: operation.contentContextKey,
     } satisfies CachedMessage);
 
     const range = IDBKeyRange.bound(

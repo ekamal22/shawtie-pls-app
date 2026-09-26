@@ -229,6 +229,7 @@ export function protectedContentProjection(
   const recovery = record.recoveryCapsules.find((capsule) => capsule.accountId === accountId);
   return {
     cryptoProfile: record.cryptoProfile,
+    partnershipId: record.partnershipId,
     contentType: record.contentType,
     contentId: record.contentId,
     contentVersion: Number(record.contentVersion),

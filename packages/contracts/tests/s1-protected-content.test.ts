@@ -44,6 +44,7 @@ test("S1 protected projection carries the exact authenticated content context", 
     ciphertext: Buffer.from("ciphertext").toString("base64url"),
     envelope: {
       cryptoProfile: S1_CRYPTO_PROFILE,
+      partnershipId: uuid(),
       contentType: "relationship_item",
       contentId,
       contentVersion: 7,
@@ -74,6 +75,7 @@ test("S1 protected projection rejects missing authenticated context", () => {
       ciphertext: Buffer.from("ciphertext").toString("base64url"),
       envelope: {
         cryptoProfile: S1_CRYPTO_PROFILE,
+        partnershipId: uuid(),
         groupGeneration: 1,
         mlsEpoch: 1,
         senderCryptoDeviceId: uuid(),

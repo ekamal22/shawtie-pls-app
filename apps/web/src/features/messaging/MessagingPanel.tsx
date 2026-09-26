@@ -6,8 +6,12 @@ import {
   M1_PRESENCE_HEARTBEAT_MIN_MS,
   M1_TYPING_MIN_REFRESH_MS,
   M1_VISIBLE_CHANGE_POLL_MS,
+  M2_PRE_S1_CONTENT_CONTEXT,
+  S1_CONTENT_CONTEXT,
+  type EncryptedProtectedContentProjection,
+  type MessageProjection,
+  type MessageSendInput,
 } from "@shawtie/contracts";
-import type { MediaAttachmentProjection } from "@shawtie/contracts";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -36,6 +40,13 @@ import {
 } from "../../design/primitives.tsx";
 import { ApiClientError, ApiNetworkError, apiRequest } from "../../lib/api-client.ts";
 import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
+import { useS1CryptoRuntime } from "../../lib/crypto/runtime-context.tsx";
+import {
+  decryptMessageProjectionForView,
+  decryptMessagesForView,
+  decryptNicknameForView,
+  type DecryptedMessageProjection,
+} from "../../lib/crypto/projection-decryption.ts";
 import { VoiceRecorder } from "../media/VoiceRecorder.tsx";
 import {
   discardMediaDraft,
@@ -62,6 +73,8 @@ interface ConversationSummary {
   partnershipId: string;
   lifecycleState: "active" | "breakup_pending";
   interactionMode: "normal" | "breakup_restricted" | "account_deletion_view_only";
+  cryptoRequired: boolean;
+  cryptoRequiredFrom: string | null;
   latestServerSequence: number;
   latestChangeSequence: number;
   breakup: {
@@ -73,6 +86,7 @@ interface ConversationSummary {
     username: string;
     displayName: string;
     nickname: string | null;
+    protectedNickname: EncryptedProtectedContentProjection | null;
     nicknameVersion: number;
   };
   partner: {
@@ -80,6 +94,7 @@ interface ConversationSummary {
     username: string;
     displayName: string;
     nickname: string | null;
+    protectedNickname: EncryptedProtectedContentProjection | null;
     nicknameVersion: number;
     presence: {
       online: boolean;
@@ -101,36 +116,9 @@ interface ConversationSummary {
   };
 }
 
-interface ReplyContext {
-  messageId: string;
-  senderAccountId: string;
-  body: string | null;
-  deleted: boolean;
-}
-
-interface Message {
-  messageId: string;
-  conversationId: string;
-  senderAccountId: string;
-  senderDeviceId: string | null;
-  serverSequence: number;
-  contentVersion: number;
-  lastChangeSequence: number;
-  replyToMessageId: string | null;
-  replyContext: ReplyContext | null;
-  body: string | null;
-  createdAt: string;
-  editedAt: string | null;
-  deletedAt: string | null;
-  reactions: Array<{
-    accountId: string;
-    emoji: string;
-  }>;
-  attachments: MediaAttachmentProjection[];
-}
-
+type Message = DecryptedMessageProjection;
 interface MessagePage {
-  items: Message[];
+  items: MessageProjection[];
   hasMore: boolean;
   oldestSequence: number | null;
   newestSequence: number | null;
@@ -146,6 +134,7 @@ interface ConversationChange {
 }
 
 const M1_MESSAGE_EDIT_WINDOW_MS = 30 * 60_000;
+const textEncoder = new TextEncoder();
 
 function idempotencyKey(): string {
   return "m1-" + crypto.randomUUID();
@@ -176,6 +165,20 @@ function errorText(error: unknown): string {
       VERSION_CONFLICT: "This item changed on another device. Refresh and try again.",
     };
     return known[error.code] ?? error.code.replaceAll("_", " ").toLowerCase();
+  }
+  if (error instanceof Error && error.message.startsWith("CRYPTO_")) {
+    const known: Record<string, string> = {
+      CRYPTO_UNAVAILABLE: "Protected messaging is unavailable on this device.",
+      CRYPTO_DEVICE_UNTRUSTED: "This device needs cryptographic approval before it can send.",
+      CRYPTO_GROUP_NOT_READY: "Protected messaging is still preparing for this relationship.",
+      CRYPTO_REKEY_REQUIRED: "Protected messaging is updating device access. Try again shortly.",
+      CRYPTO_RECOVERY_REQUIRED: "Protected recovery must be configured for both partners first.",
+      CRYPTO_HISTORY_UNAVAILABLE: "This protected history is unavailable on this device.",
+      CRYPTO_CIPHERTEXT_INVALID: "Protected content failed integrity verification.",
+      CRYPTO_SIGNATURE_INVALID: "Protected content failed sender verification.",
+      CRYPTO_NOT_INITIALIZED: "Protected messaging is not active yet.",
+    };
+    return known[error.message] ?? error.message.replaceAll("_", " ").toLowerCase();
   }
   return "Messaging request failed.";
 }
@@ -210,13 +213,16 @@ function messageEditable(message: Message, conversation: ConversationSummary): b
 
 interface PendingSend {
   readonly key: string;
+  readonly messageId: string;
   readonly body: string | null;
   readonly replyToMessageId: string | null;
   readonly draftIds: readonly string[];
+  readonly requestBody: MessageSendInput | null;
 }
 
 export function MessagingPanel({ active = true }: { readonly active?: boolean } = {}) {
   const runtime = useM2Runtime();
+  const { runtime: cryptoRuntime, status: cryptoStatus } = useS1CryptoRuntime();
   // Talk stays mounted while Home or Ours is showing so delivery, sync, and typing keep working.
   // A message is only READ when Talk is the visible route, so the receipt code reads this ref.
   const activeRef = useRef(active);
@@ -270,17 +276,52 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     const result = await apiRequest<{ conversation: ConversationSummary | null }>(
       "/api/v1/conversations/current",
     );
-    setConversation(result.conversation);
-    if (result.conversation) {
-      if (!selfNicknameDirtyRef.current) {
-        setSelfNickname(result.conversation.self.nickname ?? "");
-      }
-      if (!partnerNicknameDirtyRef.current) {
-        setPartnerNickname(result.conversation.partner.nickname ?? "");
-      }
+    if (!result.conversation) {
+      setConversation(null);
+      return null;
     }
-    return result.conversation;
-  }, []);
+
+    const raw = result.conversation;
+    const contentContextKey = raw.cryptoRequired
+      ? S1_CONTENT_CONTEXT
+      : M2_PRE_S1_CONTENT_CONTEXT;
+    const database = await runtime.database();
+    await database.ensureNamespaceContentContext(
+      raw.partnershipId,
+      raw.conversationId,
+      contentContextKey,
+    );
+
+    const [selfNicknameValue, partnerNicknameValue] = await Promise.all([
+      decryptNicknameForView(
+        cryptoRuntime,
+        raw.partnershipId,
+        raw.self.accountId,
+        raw.self.protectedNickname,
+        raw.self.nickname,
+      ),
+      decryptNicknameForView(
+        cryptoRuntime,
+        raw.partnershipId,
+        raw.partner.accountId,
+        raw.partner.protectedNickname,
+        raw.partner.nickname,
+      ),
+    ]);
+    const summary: ConversationSummary = {
+      ...raw,
+      self: { ...raw.self, nickname: selfNicknameValue },
+      partner: { ...raw.partner, nickname: partnerNicknameValue },
+    };
+    setConversation(summary);
+    if (!selfNicknameDirtyRef.current) {
+      setSelfNickname(summary.self.nickname ?? "");
+    }
+    if (!partnerNicknameDirtyRef.current) {
+      setPartnerNickname(summary.partner.nickname ?? "");
+    }
+    return summary;
+  }, [cryptoRuntime, runtime]);
 
   const refreshMediaDrafts = useCallback(
     async (partnershipId: string | null) => {
@@ -312,6 +353,8 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           ownerContext: "chat",
           source: file,
           role: "attachment",
+          cryptoRequired: conversation.cryptoRequired,
+          cryptoRuntime,
         });
       }
       await refreshMediaDrafts(conversation.partnershipId);
@@ -386,6 +429,8 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         role: "voice_message",
         kind: "voice",
         durationSeconds,
+        cryptoRequired: conversation.cryptoRequired,
+        cryptoRuntime,
       });
       if (!navigator.onLine) {
         await refreshMediaDrafts(conversation.partnershipId);
@@ -416,6 +461,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "message.send",
+            contentContextKey: conversation.cryptoRequired
+              ? S1_CONTENT_CONTEXT
+              : M2_PRE_S1_CONTENT_CONTEXT,
             requestBody,
             idempotencyKey: key,
           });
@@ -434,13 +482,22 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
 
   const refreshMessage = useCallback(
     async (conversationId: string, messageId: string): Promise<Message> => {
-      const message = await apiRequest<Message>(
+      const summary = conversation;
+      if (!summary || summary.conversationId !== conversationId) {
+        throw new Error("CONVERSATION_NOT_FOUND");
+      }
+      const canonical = await apiRequest<MessageProjection>(
         "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
+      );
+      const message = await decryptMessageProjectionForView(
+        cryptoRuntime,
+        summary.partnershipId,
+        canonical,
       );
       setMessages((current) => mergeMessages(current, [message]));
       return message;
     },
-    [],
+    [conversation, cryptoRuntime],
   );
 
   const acknowledge = useCallback(
@@ -512,6 +569,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       partnershipId: summary.partnershipId,
       conversationId: summary.conversationId,
       messages: page.items,
+      contentContextKey: summary.cryptoRequired
+        ? S1_CONTENT_CONTEXT
+        : M2_PRE_S1_CONTENT_CONTEXT,
       sync: {
         partnershipId: summary.partnershipId,
         conversationId: summary.conversationId,
@@ -524,11 +584,16 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         lastSyncedAt: new Date().toISOString(),
       },
     });
-    setMessages(page.items);
+    const visible = await decryptMessagesForView(
+      cryptoRuntime,
+      summary.partnershipId,
+      page.items,
+    );
+    setMessages([...visible]);
     setHasOlder(page.hasMore);
     changeCursorRef.current = summary.latestChangeSequence;
     await acknowledge(summary, newest);
-  }, [acknowledge, refreshConversation, runtime]);
+  }, [acknowledge, cryptoRuntime, refreshConversation, runtime]);
 
   const syncChanges = useCallback(async () => {
     const summary = conversation;
@@ -554,10 +619,10 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           M1_CHANGE_DEFAULT_LIMIT,
       );
 
-      const canonical: Message[] = [];
+      const canonical: MessageProjection[] = [];
       for (const change of result.items) {
         canonical.push(
-          await apiRequest<Message>(
+          await apiRequest<MessageProjection>(
             "/api/v1/conversations/" + summary.conversationId + "/messages/" + change.messageId,
           ),
         );
@@ -577,6 +642,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           partnershipId: summary.partnershipId,
           conversationId: summary.conversationId,
           messages: canonical,
+          contentContextKey: summary.cryptoRequired
+            ? S1_CONTENT_CONTEXT
+            : M2_PRE_S1_CONTENT_CONTEXT,
           sync: {
             partnershipId: summary.partnershipId,
             conversationId: summary.conversationId,
@@ -599,7 +667,12 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
             lastSyncedAt: new Date().toISOString(),
           },
         });
-        setMessages((current) => mergeMessages(current, canonical));
+        const visibleCanonical = await decryptMessagesForView(
+          cryptoRuntime,
+          summary.partnershipId,
+          canonical,
+        );
+        setMessages((current) => mergeMessages(current, [...visibleCanonical]));
         changeCursorRef.current = cursor;
       }
 
@@ -628,6 +701,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           partnershipId: refreshed.partnershipId,
           conversationId: refreshed.conversationId,
           messages: page.items,
+          contentContextKey: refreshed.cryptoRequired
+            ? S1_CONTENT_CONTEXT
+            : M2_PRE_S1_CONTENT_CONTEXT,
           sync: {
             partnershipId: refreshed.partnershipId,
             conversationId: refreshed.conversationId,
@@ -650,7 +726,12 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
             lastSyncedAt: new Date().toISOString(),
           },
         });
-        setMessages((current) => mergeMessages(current, page.items));
+        const visiblePage = await decryptMessagesForView(
+          cryptoRuntime,
+          refreshed.partnershipId,
+          page.items,
+        );
+        setMessages((current) => mergeMessages(current, [...visiblePage]));
         if (!page.hasMore) break;
       }
       refreshed = await refreshConversation();
@@ -660,7 +741,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       await acknowledge(refreshed, highestLoadedSequence);
     }
     return { latestChangeSequence: changeCursorRef.current };
-  }, [acknowledge, conversation, messages, refreshConversation, runtime]);
+  }, [acknowledge, conversation, cryptoRuntime, messages, refreshConversation, runtime]);
 
   const handleSyncFailure = useCallback(
     async (caught: unknown) => {
@@ -922,7 +1003,12 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           "&beforeSequence=" +
           messages[0]!.serverSequence,
       );
-      setMessages((current) => mergeMessages(current, page.items));
+      const visible = await decryptMessagesForView(
+        cryptoRuntime,
+        conversation.partnershipId,
+        page.items,
+      );
+      setMessages((current) => mergeMessages(current, [...visible]));
       setHasOlder(page.hasMore);
     });
   }
@@ -935,49 +1021,89 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     const replyToMessageId = replyingTo?.messageId ?? null;
     const draftIds = mediaDrafts.map((draft) => draft.draftId);
     const existing = pendingSendRef.current;
-    const pending =
+    const pending: PendingSend =
       existing &&
       existing.body === body &&
       existing.replyToMessageId === replyToMessageId &&
       existing.draftIds.join(",") === draftIds.join(",")
         ? existing
-        : { key: idempotencyKey(), body, replyToMessageId, draftIds };
+        : {
+            key: idempotencyKey(),
+            messageId: crypto.randomUUID(),
+            body,
+            replyToMessageId,
+            draftIds,
+            requestBody: null,
+          };
     pendingSendRef.current = pending;
     setSendStatus("sending");
     setNotice("");
 
     await run(async () => {
-      if (!navigator.onLine && mediaDrafts.length > 0) {
+      if (!pending.requestBody && !navigator.onLine && mediaDrafts.length > 0) {
         setSendStatus(null);
         setNotice("Attachments are saved on this device. Connect before sending this message.");
         return;
       }
 
-      let attachments: Array<{ mediaId: string; role: "attachment"; position: number }> = [];
-      if (mediaDrafts.length > 0) {
-        setMediaBusy(true);
-        try {
-          attachments = await uploadDrafts();
-        } catch (caught) {
-          await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
-          setSendStatus("failed");
-          if (!(caught instanceof ApiClientError)) {
-            setNotice(
-              "Upload did not finish. Your attachment is saved on this device. Retry when connected.",
-            );
-            return;
+      let requestBody = pending.requestBody;
+      if (!requestBody) {
+        let attachments: Array<{ mediaId: string; role: "attachment"; position: number }> = [];
+        if (mediaDrafts.length > 0) {
+          setMediaBusy(true);
+          try {
+            attachments = await uploadDrafts();
+          } catch (caught) {
+            await refreshMediaDrafts(conversation.partnershipId).catch(() => undefined);
+            setSendStatus("failed");
+            if (!(caught instanceof ApiClientError)) {
+              setNotice(
+                "Upload did not finish. Your attachment is saved on this device. Retry when connected.",
+              );
+              return;
+            }
+            throw caught;
+          } finally {
+            setMediaBusy(false);
           }
-          throw caught;
-        } finally {
-          setMediaBusy(false);
         }
+
+        const protectedBody =
+          conversation.cryptoRequired && body
+            ? await (() => {
+                if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+                return cryptoRuntime.protectBytes(
+                  {
+                    partnershipId: conversation.partnershipId,
+                    contentType: "message",
+                    contentId: pending.messageId,
+                    contentVersion: 1,
+                    payloadRole: "message_body",
+                    schemaVersion: 1,
+                  },
+                  textEncoder.encode(body),
+                );
+              })()
+            : null;
+
+        requestBody = {
+          messageId: pending.messageId,
+          body: conversation.cryptoRequired ? null : body,
+          protectedBody,
+          replyToMessageId,
+          attachments,
+        };
+        pendingSendRef.current = { ...pending, requestBody };
       }
 
-      const requestBody = { body, replyToMessageId, attachments };
+      const contentContextKey = conversation.cryptoRequired
+        ? S1_CONTENT_CONTEXT
+        : M2_PRE_S1_CONTENT_CONTEXT;
 
       if (!navigator.onLine) {
         await runtime.queueChat({
           operationType: "message.send",
+          contentContextKey,
           requestBody,
           idempotencyKey: pending.key,
         });
@@ -1022,6 +1148,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "message.send",
+            contentContextKey,
             requestBody,
             idempotencyKey: pending.key,
           });
@@ -1036,12 +1163,14 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           setNotice("Message queued after the final send request lost connection.");
           return;
         }
+        if (caught.status < 500 && caught.status !== 429) {
+          pendingSendRef.current = null;
+        }
         setSendStatus("failed");
         throw caught;
       }
     });
   }
-
   function composerChanged(value: string) {
     setComposer(value);
     if (pendingSendRef.current && pendingSendRef.current.body !== (value.trim() ? value : null)) {
@@ -1065,14 +1194,38 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     const key = idempotencyKey();
 
     await run(async () => {
+      const protectedBody =
+        conversation.cryptoRequired
+          ? await (() => {
+              if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+              return cryptoRuntime.protectBytes(
+                {
+                  partnershipId: conversation.partnershipId,
+                  contentType: "message",
+                  contentId: message.messageId,
+                  contentVersion: message.contentVersion + 1,
+                  payloadRole: "message_body",
+                  schemaVersion: 1,
+                },
+                textEncoder.encode(body),
+              );
+            })()
+          : null;
+      const requestBody = {
+        body: conversation.cryptoRequired ? null : body,
+        protectedBody,
+        expectedContentVersion: message.contentVersion,
+      };
+      const contentContextKey = conversation.cryptoRequired
+        ? S1_CONTENT_CONTEXT
+        : M2_PRE_S1_CONTENT_CONTEXT;
+
       if (!navigator.onLine) {
         await runtime.queueChat({
           operationType: "message.edit",
+          contentContextKey,
           messageId: message.messageId,
-          requestBody: {
-            body,
-            expectedContentVersion: message.contentVersion,
-          },
+          requestBody,
           expectedContentVersion: message.contentVersion,
           idempotencyKey: key,
         });
@@ -1085,21 +1238,16 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           {
             method: "PATCH",
             headers: { "idempotency-key": key },
-            body: {
-              body,
-              expectedContentVersion: message.contentVersion,
-            },
+            body: requestBody,
           },
         );
       } catch (caught) {
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "message.edit",
+            contentContextKey,
             messageId: message.messageId,
-            requestBody: {
-              body,
-              expectedContentVersion: message.contentVersion,
-            },
+            requestBody,
             expectedContentVersion: message.contentVersion,
             idempotencyKey: key,
           });
@@ -1123,6 +1271,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       if (!navigator.onLine) {
         await runtime.queueChat({
           operationType: "message.delete",
+          contentContextKey: conversation.cryptoRequired
+            ? S1_CONTENT_CONTEXT
+            : M2_PRE_S1_CONTENT_CONTEXT,
           messageId: message.messageId,
           requestBody: null,
           idempotencyKey: key,
@@ -1142,6 +1293,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "message.delete",
+            contentContextKey: conversation.cryptoRequired
+              ? S1_CONTENT_CONTEXT
+              : M2_PRE_S1_CONTENT_CONTEXT,
             messageId: message.messageId,
             requestBody: null,
             idempotencyKey: key,
@@ -1161,12 +1315,38 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
   async function react(message: Message, emoji: string) {
     if (!conversation) return;
     const key = idempotencyKey();
+    const reactionId = crypto.randomUUID();
     await run(async () => {
+      const protectedReaction =
+        conversation.cryptoRequired
+          ? await (() => {
+              if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+              return cryptoRuntime.protectBytes(
+                {
+                  partnershipId: conversation.partnershipId,
+                  contentType: "message_reaction",
+                  contentId: reactionId,
+                  contentVersion: 1,
+                  payloadRole: "reaction_value",
+                  schemaVersion: 1,
+                },
+                textEncoder.encode(emoji),
+              );
+            })()
+          : null;
+      const requestBody = conversation.cryptoRequired
+        ? { reactionId, emoji: null, protectedReaction }
+        : { emoji };
+      const contentContextKey = conversation.cryptoRequired
+        ? S1_CONTENT_CONTEXT
+        : M2_PRE_S1_CONTENT_CONTEXT;
+
       if (!navigator.onLine) {
         await runtime.queueChat({
           operationType: "reaction.set",
+          contentContextKey,
           messageId: message.messageId,
-          requestBody: { emoji },
+          requestBody,
           idempotencyKey: key,
         });
         setNotice("Reaction queued.");
@@ -1182,15 +1362,16 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           {
             method: "PUT",
             headers: { "idempotency-key": key },
-            body: { emoji },
+            body: requestBody,
           },
         );
       } catch (caught) {
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "reaction.set",
+            contentContextKey,
             messageId: message.messageId,
-            requestBody: { emoji },
+            requestBody,
             idempotencyKey: key,
           });
           setNotice("Reaction queued after the network request failed.");
@@ -1201,7 +1382,6 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       await refreshMessage(conversation.conversationId, message.messageId);
     });
   }
-
   async function removeReaction(message: Message) {
     if (!conversation) return;
     const key = idempotencyKey();
@@ -1209,6 +1389,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       if (!navigator.onLine) {
         await runtime.queueChat({
           operationType: "reaction.remove",
+          contentContextKey: conversation.cryptoRequired
+            ? S1_CONTENT_CONTEXT
+            : M2_PRE_S1_CONTENT_CONTEXT,
           messageId: message.messageId,
           requestBody: null,
           idempotencyKey: key,
@@ -1232,6 +1415,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         if (!(caught instanceof ApiClientError)) {
           await runtime.queueChat({
             operationType: "reaction.remove",
+            contentContextKey: conversation.cryptoRequired
+              ? S1_CONTENT_CONTEXT
+              : M2_PRE_S1_CONTENT_CONTEXT,
             messageId: message.messageId,
             requestBody: null,
             idempotencyKey: key,
@@ -1247,6 +1433,10 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
 
   async function keepMessage(message: Message) {
     if (!conversation || !message.body || message.deletedAt) return;
+    if (conversation.cryptoRequired) {
+      setError("Protected Remember This is still being prepared.");
+      return;
+    }
     const authorName =
       message.senderAccountId === conversation.self.accountId
         ? conversation.self.nickname || conversation.self.displayName
@@ -1275,6 +1465,24 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     if (!conversation) return;
     const target = subject === "self" ? conversation.self : conversation.partner;
     await run(async () => {
+      const value = nickname.trim() || null;
+      const protectedNickname =
+        conversation.cryptoRequired && value
+          ? await (() => {
+              if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+              return cryptoRuntime.protectBytes(
+                {
+                  partnershipId: conversation.partnershipId,
+                  contentType: "partnership_nickname",
+                  contentId: target.accountId,
+                  contentVersion: expectedVersion + 1,
+                  payloadRole: "nickname_value",
+                  schemaVersion: 1,
+                },
+                textEncoder.encode(value),
+              );
+            })()
+          : null;
       try {
         await apiRequest(
           "/api/v1/partnerships/" + conversation.partnershipId + "/nicknames/" + target.accountId,
@@ -1282,7 +1490,8 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
             method: "PATCH",
             headers: { "idempotency-key": idempotencyKey() },
             body: {
-              nickname: nickname.trim() || null,
+              nickname: conversation.cryptoRequired ? null : value,
+              protectedNickname,
               expectedVersion,
             },
           },
@@ -1328,7 +1537,14 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
 
   const partnerName = conversation.partner.nickname || conversation.partner.displayName;
   const selfName = conversation.self.nickname || conversation.self.displayName;
-  const canSend = conversation.capabilities.sendMessage;
+  const cryptoWritable =
+    !conversation.cryptoRequired ||
+    Boolean(
+      cryptoRuntime &&
+      cryptoStatus.available &&
+      cryptoStatus.trustState === "trusted",
+    );
+  const canSend = conversation.capabilities.sendMessage && cryptoWritable;
   const hasContent = composer.trim().length > 0 || mediaDrafts.length > 0;
   const rows = buildRows(messages, conversation.self.accountId);
   const actionMessage = actionsFor
@@ -1481,8 +1697,21 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
           );
         })}
         {outbox.map((operation) => {
-          const queuedBody = (operation.requestBody as { body?: unknown } | null)?.body;
-          const body = typeof queuedBody === "string" ? queuedBody : null;
+          const queuedRequest = operation.requestBody as {
+            body?: unknown;
+            protectedBody?: unknown;
+            attachments?: unknown[];
+          } | null;
+          const queuedBody = queuedRequest?.body;
+          const body =
+            typeof queuedBody === "string"
+              ? queuedBody
+              : queuedRequest?.protectedBody
+                ? "Encrypted message"
+                : Array.isArray(queuedRequest?.attachments) &&
+                    queuedRequest.attachments.length > 0
+                  ? "Attachment"
+                  : "Waiting message";
           const blocked = operation.status === "blocked";
           return (
             <article
@@ -1493,7 +1722,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
               key={"outbox-" + operation.operationId}
             >
               <div className="talk-bubble">
-                <p className="talk-text">{body ?? "Attachment"}</p>
+                <p className="talk-text">{body}</p>
               </div>
               <p className="talk-meta">
                 <span data-delivery={blocked ? "failed" : "waiting"}>
@@ -1807,11 +2036,11 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
                 setSelfNickname(event.target.value);
               }}
               maxLength={M1_NICKNAME_MAX_CHARACTERS}
-              disabled={!conversation.capabilities.changeNickname || busy}
+              disabled={!conversation.capabilities.changeNickname || !cryptoWritable || busy}
             />
             <Button
               compact
-              disabled={!conversation.capabilities.changeNickname || busy}
+              disabled={!conversation.capabilities.changeNickname || !cryptoWritable || busy}
               onClick={() =>
                 void saveNickname("self", selfNickname, conversation.self.nicknameVersion)
               }
@@ -1828,11 +2057,11 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
                 setPartnerNickname(event.target.value);
               }}
               maxLength={M1_NICKNAME_MAX_CHARACTERS}
-              disabled={!conversation.capabilities.changeNickname || busy}
+              disabled={!conversation.capabilities.changeNickname || !cryptoWritable || busy}
             />
             <Button
               compact
-              disabled={!conversation.capabilities.changeNickname || busy}
+              disabled={!conversation.capabilities.changeNickname || !cryptoWritable || busy}
               onClick={() =>
                 void saveNickname("partner", partnerNickname, conversation.partner.nicknameVersion)
               }

@@ -57,6 +57,7 @@ export const recoveryCapsuleProjectionSchema = recoveryCapsuleSchema;
 
 export const protectedContentEnvelopeProjectionSchema = z.object({
   cryptoProfile: z.literal(S1_CRYPTO_PROFILE),
+  partnershipId: z.string().uuid(),
   contentType: z.enum([
     "message",
     "message_reaction",

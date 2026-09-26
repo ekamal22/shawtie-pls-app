@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { MediaAttachmentProjection } from "@shawtie/contracts";
 import { Dialog, Skeleton } from "../../design/primitives.tsx";
 import { loadDecryptedMedia } from "../../lib/media/media-runtime.ts";
+import { useS1CryptoRuntime } from "../../lib/crypto/runtime-context.tsx";
 import type { MediaServerProjection } from "../../lib/media/media-types.ts";
 
 function fileName(media: MediaServerProjection): string {
@@ -30,6 +31,7 @@ export function MediaAttachment({
   mediaId: string;
   projection?: MediaAttachmentProjection;
 }) {
+  const { runtime: cryptoRuntime } = useS1CryptoRuntime();
   const [loaded, setLoaded] = useState<{
     media: MediaServerProjection;
     url: string;
@@ -44,7 +46,7 @@ export function MediaAttachment({
     let revoke: (() => void) | null = null;
     setLoading(true);
     setError("");
-    void loadDecryptedMedia(mediaId)
+    void loadDecryptedMedia(mediaId, cryptoRuntime)
       .then((value) => {
         if (!active) {
           value.revoke();
@@ -63,7 +65,7 @@ export function MediaAttachment({
       active = false;
       revoke?.();
     };
-  }, [mediaId]);
+  }, [cryptoRuntime, mediaId]);
 
   const kind = loaded?.media.kind ?? projection?.kind;
   if (loading) {
@@ -78,7 +80,7 @@ export function MediaAttachment({
       <div className="media-card media-unavailable talk-media-unavailable">
         This attachment can't be opened right now.
         <span className="hint">
-          {error.includes("S1") ? " Opening shared media is not available in this build yet." : ""}
+          {error.includes("CRYPTO") ? " Protected media is unavailable on this device." : ""}
         </span>
       </div>
     );
