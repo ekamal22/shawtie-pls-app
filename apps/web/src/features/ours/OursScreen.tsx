@@ -150,7 +150,7 @@ export function OursScreen({
   }, [reload, runtime]);
 
   const buckets = useMemo(() => bucketItems(data?.items ?? []), [data]);
-  // Sealed items the server exposes to this person: scheduled releases from the home summary,
+  // Locked items the server exposes to this person: scheduled releases from the home summary,
   // plus recipient-open letters (Open when...), which the summary does not list but which must
   // stay reachable so the recipient can open them. Creator-reveal items (Surprise, Proposal)
   // are never surfaced here.
