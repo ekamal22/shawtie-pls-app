@@ -414,6 +414,9 @@ function useModalDialog(open: boolean, onClose: () => void) {
     if (open && !element.open) {
       if (typeof element.showModal === "function") element.showModal();
       else element.setAttribute("open", "");
+      // A native dialog focuses its first control (the Close button). Callers mark the safest
+      // starting control, such as Cancel in a confirmation, with data-autofocus.
+      element.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     }
     if (!open && element.open) element.close();
   }, [open]);
@@ -502,7 +505,7 @@ export function ConfirmDialog({
       title={title}
       footer={
         <>
-          <Button variant="secondary" onClick={onCancel} autoFocus>
+          <Button variant="secondary" onClick={onCancel} data-autofocus>
             {cancelLabel}
           </Button>
           <Button variant={destructive ? "danger" : "primary"} onClick={onConfirm}>

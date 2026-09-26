@@ -386,6 +386,8 @@ test("Remember This is shared to read and creator-only to change", async ({ page
   await expect(
     confirm.getByText("This removes it from your shared space for both of you."),
   ).toBeVisible();
+  // A confirmation never starts on the destructive action.
+  await expect(confirm.getByRole("button", { name: "Keep it" })).toBeFocused();
   await confirm.getByRole("button", { name: "Keep it" }).click();
   expect(state.deleted).toEqual([]);
   await sheet.getByRole("button", { name: "More for this item" }).click();

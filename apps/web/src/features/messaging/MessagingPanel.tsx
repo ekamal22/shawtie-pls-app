@@ -1770,6 +1770,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       >
         <textarea
           className="talk-edit-input"
+          data-autofocus
           aria-label="Edited message"
           value={editing?.text ?? ""}
           onChange={(event) =>
