@@ -73,22 +73,30 @@ M2 Realtime and Offline
     +---+---+
     |       |
     v       v
-M3 Media  C1 Calling
-    |       |
-    +---+---+
-        v
+M3 Media  C1 Voice Calling
+            |
+            v
+       C2 Video Calling
+            |
+            v
+     UX0 through UX7
+            |
+            v
 S1 E2EE and Crypto Recovery
-        |
-        v
+            |
+            v
+UX8 Encrypted UX Integration
+            |
+            v
 R2 Public Readiness
-        |
-        v
+            |
+            v
 STABLE RELEASE
-        |
-        v
+            |
+            v
 X1 Post-stable Maturity
-        |
-        v
+            |
+            v
 X2 Deferred Heavy Features
 ```
 
@@ -1098,7 +1106,7 @@ M1 is DONE at 18/18 acceptance gates, has passed combined integration validation
 
 # M2: Realtime and Offline Reliability
 
-Status: DONE, 41/41 acceptance gates closed. Not yet merged to `main`.
+Status: DONE, 41/41 acceptance gates closed and fast-forward merged to `main @ b6183158`.
 
 Branch:
 
@@ -1306,7 +1314,7 @@ Implementation and all automated/local acceptance gates are verified at `4bbffdf
 
 # M3: Media and Voice Messages
 
-Status: DONE. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850`. Not yet merged to `main`.
+Status: DONE and fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. Automated closure green; physical Android acceptance 20/20 at final code SHA `ee59850`.
 
 Branch: `feat/m3-media-voice`
 
@@ -1525,7 +1533,7 @@ M3 is DONE: automated/local and physical Android closure are both green, and the
 
 # C1: Voice Calling
 
-Status: DONE AND READY TO MERGE, UNMERGED. SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ACCEPTANCE COMPLETE.
+Status: DONE and fast-forward merged to `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. SOURCE IMPLEMENTATION, FINAL INTEGRATED AUTOMATED/LOCAL CLOSURE AND PHYSICAL ACCEPTANCE COMPLETE.
 
 Branch: `feat/c1-voice-calling`
 
@@ -2196,7 +2204,7 @@ Integrated closure evidence: `integration/m1-r1 @ 5db7a94183bca153d142389d7188e3
 
 # UX0: Romantic Experience Specification
 
-Status: IN_PROGRESS. The romantic UX concept is accepted as the product-experience direction; this epic freezes the canonical implementation-ready specification without changing runtime behavior.
+Status: DONE. The canonical implementation-ready specification is frozen and UX0 through UX7 have completed against it.
 
 Canonical direction:
 
@@ -2204,93 +2212,95 @@ Canonical direction:
 
 ## Acceptance gates
 
-- [ ] Home, Talk, and Ours information architecture is frozen
-- [ ] Ours maps relationship features into Then, Now, and Next without changing R1 authority
-- [ ] visual tokens, typography, surfaces, iconography, spacing, motion, and accessibility rules are frozen
-- [ ] every proposal is classified as presentation-only, separate product work, or deferred
-- [ ] no design text claims verified E2EE before S1
-- [ ] no UX proposal silently changes lifecycle, messaging, R1, M3, C1, or C2 semantics
-- [ ] mobile-first screen and component inventories are complete
-- [ ] implementation ownership map supports parallel work without shared-component conflicts
+- [x] Home, Talk, and Ours information architecture is frozen
+- [x] Ours maps relationship features into Then, Now, and Next without changing R1 authority
+- [x] visual tokens, typography, surfaces, iconography, spacing, motion, and accessibility rules are frozen
+- [x] every proposal is classified as presentation-only, separate product work, or deferred
+- [x] no design text claims verified E2EE before S1
+- [x] no UX proposal silently changes lifecycle, messaging, R1, M3, C1, or C2 semantics
+- [x] mobile-first screen and component inventories are complete
+- [x] implementation ownership map supports parallel work without shared-component conflicts
 
 # UX1: Romantic Design Foundation
 
-Status: PLANNED after UX0.
+Status: DONE. Integrated into `integration/ux-romantic` and included in physical acceptance at `ca7cd35`.
 
 ## Acceptance gates
 
-- [ ] shared Midnight/Dawn token system implemented
-- [ ] shared typography, spacing, radius, surface, icon, and motion primitives implemented
-- [ ] accessible buttons, inputs, sheets, dialogs, cards, navigation, empty/loading/error states implemented
-- [ ] reduced-motion and contrast behavior verified
-- [ ] existing product flows remain functionally unchanged
+- [x] shared Midnight/Dawn token system implemented
+- [x] shared typography, spacing, radius, surface, icon, and motion primitives implemented
+- [x] accessible buttons, inputs, sheets, dialogs, cards, navigation, empty/loading/error states implemented
+- [x] reduced-motion and contrast behavior verified
+- [x] existing product flows remain functionally unchanged
 
 # UX2: Home - The Threshold
 
-Status: PLANNED after UX1.
+Status: DONE. Integrated into `integration/ux-romantic` and included in physical acceptance at `ca7cd35`.
 
 ## Acceptance gates
 
-- [ ] partner-first Home replaces dashboard-like density
-- [ ] one curated shared moment can surface without engagement ranking
-- [ ] Talk and Ours remain immediately reachable
-- [ ] no new backend state is required
+- [x] partner-first Home replaces dashboard-like density
+- [x] one curated shared moment can surface without engagement ranking
+- [x] Talk and Ours remain immediately reachable
+- [x] no new backend state is required
 
 # UX3: Talk
 
-Status: PLANNED after UX1.
+Status: DONE. Integrated into `integration/ux-romantic` and included in physical acceptance at `ca7cd35`.
 
 ## Acceptance gates
 
-- [ ] messaging hierarchy and compact composer implemented
-- [ ] progressive attachment disclosure implemented
-- [ ] Remember This ribbon uses existing R1/M1 semantics
-- [ ] M1/M2/M3 behavior and offline/realtime guarantees remain unchanged
-- [ ] mobile density and accessibility verified
+- [x] messaging hierarchy and compact composer implemented
+- [x] progressive attachment disclosure implemented
+- [x] Remember This ribbon uses existing R1/M1 semantics
+- [x] M1/M2/M3 behavior and offline/realtime guarantees remain unchanged
+- [x] mobile density and accessibility verified
 
 # UX4: Ours
 
-Status: PLANNED after UX1 and verified R1.
+Status: DONE. Integrated into `integration/ux-romantic` over verified R1 and included in physical acceptance at `ca7cd35`.
 
 ## Acceptance gates
 
-- [ ] user-facing Relationship Space becomes Ours
-- [ ] Then, Now, and Next presentation maps existing R1 feature kinds without schema change
-- [ ] lifecycle view-only states remain authoritative and neutral
-- [ ] no relationship scoring, surveillance, or engagement ranking is introduced
+- [x] user-facing Relationship Space becomes Ours
+- [x] Then, Now, and Next presentation maps existing R1 feature kinds without schema change
+- [x] lifecycle view-only states remain authoritative and neutral
+- [x] no relationship scoring, surveillance, or engagement ranking is introduced
 
 # UX5: Calls Experience
 
-Status: PLANNED after UX1 and merged C1/C2.
+Status: DONE. Integrated into `integration/ux-romantic` over merged C1/C2 and physically accepted at `ca7cd35`.
 
 ## Acceptance gates
 
-- [ ] voice calling presentation feels partner-first while preserving C1
-- [ ] video presentation preserves C2 Accept video, Accept camera off, camera privacy, switching, mute, and recovery states
-- [ ] remote media remains dominant and controls remain accessible
-- [ ] no voice-to-video upgrade or new call state is introduced
-- [ ] physical Redmi smoke confirms call UX changes do not regress accepted behavior
+- [x] voice calling presentation feels partner-first while preserving C1
+- [x] video presentation preserves C2 Accept video, Accept camera off, camera privacy, switching, mute, and recovery states
+- [x] remote media remains dominant and controls remain accessible
+- [x] no voice-to-video upgrade or new call state is introduced
+- [x] physical Redmi smoke confirms call UX changes do not regress accepted behavior
 
 # UX6: Memories, Letters, and Time
 
-Status: PLANNED after UX1 with verified R1/M3.
+Status: DONE. Integrated into `integration/ux-romantic` over verified R1/M3 and included in physical acceptance at `ca7cd35`.
 
 ## Acceptance gates
 
-- [ ] Our Story, Remember This, For You, Voice Letters, Future Us, This Day in Us, Our Year, Places, Someday, Firsts, reunion, anniversary, surprise, and proposal receive coherent presentation
-- [ ] editorial/photo treatment remains restrained and content-led
-- [ ] release, ownership, privacy, and lifecycle semantics remain unchanged
-- [ ] product extensions such as synchronized Open Together remain out of scope unless separately approved
+- [x] Our Story, Remember This, For You, Voice Letters, Future Us, This Day in Us, Our Year, Places, Someday, Firsts, reunion, anniversary, surprise, and proposal receive coherent presentation
+- [x] editorial/photo treatment remains restrained and content-led
+- [x] release, ownership, privacy, and lifecycle semantics remain unchanged
+- [x] product extensions such as synchronized Open Together remain out of scope unless separately approved
 
 # UX7: Signature Shawtie Moments
 
-Status: PLANNED after UX2 through UX6.
+Status: DONE. Integrated into `integration/ux-romantic`; UX0 through UX7 physical acceptance passed 22/22 at final executable `ca7cd35`.
+
+Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers `UX_ANDROID_ACCEPTANCE_PASS` and `UX_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The romantic integration is not yet merged to `main`.
 
 ## Acceptance gates
 
-- [ ] Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return are coherent with UX1
-- [ ] signature interactions respect reduced motion
-- [ ] no signature moment creates hidden durable state or new backend semantics
+- [x] Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return are coherent with UX1
+- [x] signature interactions respect reduced motion
+- [x] no signature moment creates hidden durable state or new backend semantics
 
 # UX8: Encrypted UX Integration
 

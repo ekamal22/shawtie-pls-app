@@ -27,7 +27,7 @@ M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward
 
 M3 Media and Voice Messages is complete on `feat/m3-media-voice` (created from merged-M2 `main @ 54b8659a`) and is fast-forward merged to `main` at `1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The implementation includes migrations 0015/0016, media contracts/repositories, private S3-compatible object storage, API/worker integration, M1/R1 binding, encrypted browser drafts, image/video/file/voice flows, and cleanup. Automated closure passed and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S, final physical acceptance code SHA `ee59850`, recorded in `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed three real defects, each with a regression test. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
 
-For still-open milestones, implementation-complete does not mean acceptance-complete or DONE. M3 is now fully closed and merged because both automated/local and physical acceptance are complete.
+C1 Voice Calling and C2 Video Calling are also DONE and merged to `main`. UX0 through UX7 are implemented on `integration/ux-romantic` and physically accepted at executable SHA `ca7cd35`; all 22 mandatory UX scenarios passed on the Xiaomi Redmi Note 9S. The romantic UX integration is not yet merged to `main`. The next engineering milestone is S1 E2EE and Cryptographic Recovery, followed by UX8 Encrypted UX Integration and R2 Public Readiness.
 
 Governance:
 
@@ -102,6 +102,8 @@ The selected architecture is:
 - `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - `testing/C2_ANDROID_ACCEPTANCE.md`
 - `testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
+- `testing/UX_ANDROID_ACCEPTANCE.md`
+- `testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`
 - `testing/CI_AND_REPOSITORY_HEALTH.md`
 - `database/MIGRATIONS.md`
 
@@ -129,7 +131,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages, C1 Voice Calling, and C2 Video Calling are DONE and merged. C2 is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`; final executable `ecbb2e1` passed `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi scenario (1 through 31 and 33 through 36). Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, `testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`, and ADR-015. The accepted next product-experience direction is UX0 through UX8 in `design/ROMANTIC_UX_DIRECTION.md`. Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages, C1 Voice Calling, and C2 Video Calling are DONE and merged. C2 is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`; final executable `ecbb2e1` passed `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi scenario (1 through 31 and 33 through 36). Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, `testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`, and ADR-015. UX0 through UX7 are DONE on the romantic integration line and physically accepted at `ca7cd35` with 22/22 Redmi Note 9S scenarios passing. The accepted direction remains in `design/ROMANTIC_UX_DIRECTION.md`; S1 is the next engineering milestone, UX8 follows verified S1 behavior, and Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

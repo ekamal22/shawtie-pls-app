@@ -65,21 +65,15 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         C2 Video Calling ✅
                 |
                 v
-        UX0 Romantic Spec 🟡
+     UX0 through UX7 Romantic UX ✅
+     physical Redmi acceptance 22/22
+     final executable: ca7cd35
                 |
                 v
-        UX1 Design Foundation ⚪
-          /      |       \
-         v       v        v
-      UX2/3    UX4/5     UX6/7
-          \      |       /
-           +-----+------+
-                 |
-                 v
-        UX8 Encrypted UX ⚪
-                 ^
-                 |
         S1 E2EE + Crypto Recovery ⚪
+                |
+                v
+        UX8 Encrypted UX ⚪
                 |
                 v
         R2 Public Readiness ⚪
@@ -121,14 +115,14 @@ flowchart TD
     M2 --> C1["C1 Voice Calling ✅"]
     C1 --> C2["C2 Video Calling ✅ merged"]
 
-    C2 --> UX0["UX0 Romantic Experience Spec 🟡"]
-    UX0 --> UX1["UX1 Design Foundation ⚪"]
-    UX1 --> UX2["UX2 Home ⚪"]
-    UX1 --> UX3["UX3 Talk ⚪"]
-    UX1 --> UX4["UX4 Ours ⚪"]
-    UX1 --> UX5["UX5 Calls UX ⚪"]
-    UX1 --> UX6["UX6 Memories + Letters ⚪"]
-    UX2 --> UX7["UX7 Signature Moments ⚪"]
+    C2 --> UX0["UX0 Romantic Experience Spec ✅"]
+    UX0 --> UX1["UX1 Design Foundation ✅"]
+    UX1 --> UX2["UX2 Home ✅"]
+    UX1 --> UX3["UX3 Talk ✅"]
+    UX1 --> UX4["UX4 Ours ✅"]
+    UX1 --> UX5["UX5 Calls UX ✅"]
+    UX1 --> UX6["UX6 Memories + Letters ✅"]
+    UX2 --> UX7["UX7 Signature Moments ✅"]
     UX3 --> UX7
     UX4 --> UX7
     UX5 --> UX7

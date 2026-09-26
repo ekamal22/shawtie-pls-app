@@ -64,14 +64,14 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 7 M3 Media and Voice Messages | DONE, merged to `main @ 1d3535f`; physical Android acceptance 20/20 at `ee59850` | M2 | Yes |
 | 8 C1 Voice Calling | DONE, fast-forward merged to `main @ d44c595`; final executable `b29aaa1`, integrated closure re-pass with `reserved=0`, Redmi acceptance 25/25, all focused follow-up evidence complete | M2 and merged M3 | Yes, mandatory |
 | 9 C2 Video Calling | DONE and fast-forward merged to `main @ fed2db7`; final executable `ecbb2e1`; automated closure and all mandatory Redmi scenarios PASS | merged C1 | Yes, mandatory |
-| 10 UX0 Romantic Experience Specification | IN_PROGRESS; romantic UX direction accepted, canonical implementation spec being frozen | merged C2 | No code |
-| 11 UX1 Romantic Design Foundation | PLANNED | UX0 | Browser/device visual validation |
-| 12 UX2 Home: The Threshold | PLANNED | UX1 | Mobile-first |
-| 13 UX3 Talk | PLANNED | UX1 | Mobile-first |
-| 14 UX4 Ours | PLANNED | UX1 + verified R1 | Mobile-first |
-| 15 UX5 Calls Experience | PLANNED | UX1 + merged C1/C2 | Physical call smoke required |
-| 16 UX6 Memories, Letters, and Time | PLANNED | UX1 + verified R1/M3 | Mobile-first |
-| 17 UX7 Signature Shawtie Moments | PLANNED | UX2 through UX6 | Mobile-first |
+| 10 UX0 Romantic Experience Specification | DONE | merged C2 | No runtime code |
+| 11 UX1 Romantic Design Foundation | DONE, integrated and physically accepted | UX0 | Redmi accepted |
+| 12 UX2 Home: The Threshold | DONE, integrated and physically accepted | UX1 | Redmi accepted |
+| 13 UX3 Talk | DONE, integrated and physically accepted | UX1 | Redmi accepted |
+| 14 UX4 Ours | DONE, integrated and physically accepted | UX1 + verified R1 | Redmi accepted |
+| 15 UX5 Calls Experience | DONE, integrated and physically accepted | UX1 + merged C1/C2 | Redmi call acceptance PASS |
+| 16 UX6 Memories, Letters, and Time | DONE, integrated and physically accepted | UX1 + verified R1/M3 | Redmi accepted |
+| 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | PLANNED; may run in parallel with UX2 through UX7 | M3, C1, C2 | Yes, mandatory |
 | 19 UX8 Encrypted UX Integration | PLANNED | S1 + redesigned UX surfaces | Yes, security-critical UX |
 | 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
@@ -84,38 +84,36 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The verified implementation frontier is:
 
 ```text
-main @ fed2db7
+main @ f53eb00
    |
    +--> M3 Media ✅
    +--> C1 Voice ✅
    +--> C2 Video ✅
             |
             v
-      UX0 specification
+      UX0 through UX7 ✅
+      integration/ux-romantic
+      physical 22/22 @ ca7cd35
             |
             v
-      UX1 foundation
-       /    |    \
-      v     v     v
-    UX2   UX3   UX4/UX5/UX6
-      \     |     /
-       +---- UX7
-            |
-            +----------------+
-            |                |
-            v                v
-          UX8 <----------- S1 E2EE
+      merge romantic UX to main
             |
             v
-            R2
+      S1 E2EE + Crypto Recovery
+            |
+            v
+      UX8 Encrypted UX
+            |
+            v
+      R2 Public Readiness
             |
             v
           STABLE
 ```
 
-C2 is closed and merged. The next product-experience frontier is UX0, using the accepted romantic direction in `docs/design/ROMANTIC_UX_DIRECTION.md`. UX0 freezes the implementation-ready design system and classifies every proposal as presentation-only, separate product work, or deferred. UX1 establishes the shared design foundation before parallel surface work begins.
+C2 is closed and merged. UX0 through UX7 are now complete on `integration/ux-romantic`, with final physical acceptance 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`. The romantic integration is merge-ready but is not yet on `main`. The next engineering frontier is S1 E2EE and Cryptographic Recovery.
 
-After UX1, UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, and UX6 Memories may proceed in parallel on isolated branches/worktrees with one design lead/integrator. UX7 consolidates signature Shawtie interactions. S1 E2EE may run in parallel with UX2 through UX7. UX8 integrates verified cryptographic and recovery states into the redesigned experience after S1. R2 remains the final pre-release gate.
+UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 now owns the next implementation frontier. UX8 integrates verified cryptographic and recovery states into the accepted experience after S1, and R2 remains the final pre-release gate.
 
 ## UX0 through UX8 product-experience program
 
@@ -133,7 +131,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX8 Encrypted UX Integration:** device enrollment, recovery, revocation, unavailable-history states, encryption errors, and privacy language integrated into the romantic experience.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure.
 
-Parallel UX implementation is allowed only after UX1 establishes shared tokens/components. Recommended ownership is one UX lead/integrator plus separate Home, Talk, Ours, Calls, Memories, and read-only QA/reviewer agents. Every implementation branch must preserve `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent backend semantics when a design concept crosses the presentation boundary.
+UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed. Future S1 and UX8 work must preserve the accepted UX authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
 
 # Milestone 5A: M1 Messaging Core
 

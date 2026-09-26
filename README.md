@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video Calling is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. Its final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where `npm run test:c2:closure` passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi Note 9S scenario (1 through 31 and 33 through 36) passed with `C2_ANDROID_ACCEPTANCE_PASS` and `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The discovery sweep found and fixed two physical-only defects before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame). The canonical migration chain remains real 0001 through 0018 with `reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`. The next product-experience program is UX0 through UX8, governed by `docs/design/ROMANTIC_UX_DIRECTION.md`; S1 E2EE remains a required stable-release milestone and the UX program must not claim E2EE before S1 is implemented and verified.
+The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video Calling is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. Its final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where `npm run test:c2:closure` passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi Note 9S scenario (1 through 31 and 33 through 36) passed with `C2_ANDROID_ACCEPTANCE_PASS` and `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The discovery sweep found and fixed two physical-only defects before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame). The canonical migration chain remains real 0001 through 0018 with `reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX0 through UX7 are now implemented, integrated on `integration/ux-romantic`, and physically accepted on a Xiaomi Redmi Note 9S at executable SHA `ca7cd35` with 22/22 mandatory scenarios passing. Evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`. The next engineering milestone is S1 E2EE and Cryptographic Recovery; UX8 follows S1 to integrate verified cryptographic states into the accepted romantic experience. The product must not claim E2EE before S1 is implemented and verified.
 
 ## Product direction
 
@@ -41,7 +41,9 @@ Start with:
 - `docs/README.md` for document authority and navigation
 - `docs/PROJECT_STATE.md` for verified current implementation state
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
-- `docs/design/ROMANTIC_UX_DIRECTION.md` for the accepted romantic UX direction, implementation boundaries, and UX0 through UX8 program
+- `docs/design/ROMANTIC_UX_DIRECTION.md` for the implemented UX0 through UX7 direction, implementation boundaries, and the remaining UX8 integration boundary
+- `docs/testing/UX_ANDROID_ACCEPTANCE.md` for the completed UX physical-device acceptance procedure
+- `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` for the 22/22 Redmi Note 9S UX acceptance evidence at `ca7cd35`
 - `docs/architecture/A1_ACCOUNTS_DEVICES_DESIGN.md` for the completed A1 implementation design
 - `docs/architecture/P1_DISCOVERY_REQUESTS_DESIGN.md` for the completed, verified P1 implementation design
 - `docs/architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md` for the completed, locally verified P2 implementation design
