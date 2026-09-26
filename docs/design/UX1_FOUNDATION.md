@@ -1,6 +1,6 @@
 # UX1 Romantic Design Foundation
 
-Status: implemented on `feat/ux1-romantic-foundation`. Governed by `ROMANTIC_UX_DIRECTION.md` and `UX0_IMPLEMENTATION_SPEC.md`. Presentation only: no API, schema, lifecycle, messaging, presence, receipt, or call semantics changed.
+Status: DONE and integrated into the physically accepted romantic UX baseline. Final accepted executable: `ca7cd35`; evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`. Governed by `ROMANTIC_UX_DIRECTION.md` and `UX0_IMPLEMENTATION_SPEC.md`. Presentation only: no API, schema, lifecycle, messaging, presence, receipt, or call semantics changed.
 
 ## Where things live
 
@@ -33,10 +33,8 @@ Bottom navigation with Home, Talk, and Ours, labelled and with `aria-current`. O
 
 Presence, typing, last seen, and read receipts are mutual, always on, and cannot be turned off. Home shows the authoritative `partner.presence` and `partner.typing` from the existing conversation contract through `PresenceLine`: "Online", "Last seen recently" (under ten minutes), "Last seen 10:42 PM", "Last seen yesterday 10:42 PM", or a dated form. When the server reports neither online nor a last-seen time the line reads "Offline". A repository test rejects any code that describes hiding or toggling these states.
 
-## Known visual debt handed to surface branches
+## Closure
 
-- Call panel is still the legacy stacked card (UX5). It hides on non-Talk routes while idle.
-- Talk header and bubbles still use the legacy panel and a locale timestamp for last seen (UX3 should reuse `PresenceLine`).
-- Ours still renders the legacy Relationship Space panel (UX4 and UX6).
-- Existing forms still use legacy `.field`, `.primary`, `.secondary`, and `.danger` classes mapped to tokens; migrate to `Button` and field primitives per surface.
-- Native `window.confirm` remains in lifecycle and deletion flows (`ConfirmDialog` is ready).
+The legacy surface debt identified at the UX1 handoff was addressed through UX2 to UX7 and the subsequent visual/accessibility review repairs. Remaining accepted polish debt is documented in `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` and does not reopen UX1.
+
+UX1 is part of the UX0 through UX7 physical acceptance at executable `ca7cd35`.

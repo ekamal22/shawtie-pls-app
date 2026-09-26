@@ -1,15 +1,15 @@
 # UX Physical Device Acceptance (Redmi Note 9S)
 
-Status: READY TO RUN. Scenarios are defined; none has been executed on a physical device yet.
+Status: DONE. All 22 mandatory scenarios passed on a physical Xiaomi Redmi Note 9S on 2026-09-26 at final executable SHA `ca7cd35`. Canonical evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 ## Frozen executable baseline
 
 - Branch: `integration/ux-romantic`
 - Executable SHA: `ca7cd35` (physically accepted; frozen at `0ec184d` at the start, then repaired during acceptance, see the evidence file. Earlier freezes: `0ec184d`, supersedes the earlier freeze `425f493`, invalidated by a small presentation change that shows the authorized scheduled arrival time on sealed Ours rows). Physical acceptance must use only this SHA.
 - Later commits on this branch are documentation only. Do not test a different code SHA without recording it here.
-- Prerequisite evidence at that SHA: `npm run health` pass; UX1 to UX7 node suites; M2 browser 25, M3 browser 13, C1 24, C2 16, R1 security 16 and 13; Chromium UX1 14, UX2 12, UX3 16, UX4 21, UX5 20, UX6 14 (1 opt-in skipped), UX7 12, cross-surface 4, M2 7, M3 4, C1 5, C2 6. PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2 passed at the earlier freeze `425f493`; the change since then is web presentation only (no API, database, migration, worker or projection change), so they were not re-run.
+- Final automated evidence at `ca7cd35`: `npm run health` PASS; M2 browser 25, M3 browser 13, C1 24, C2 16, R1 security 16 and 13; Chromium UX1 15, UX2 12, UX3 16, UX4 22, UX5 22, UX6 15 (1 opt-in skipped), UX7 12, cross-surface 6, M2 7, M3 4, C1 5, C2 6; audit 0 vulnerabilities. PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2 last ran at `425f493`; there is no backend runtime diff from the accepted UX repair line that would invalidate that evidence.
 
-## Product rules to re-check on the device
+## Product rules checked on the device
 
 1. Remember This is shared to read; only the creator can edit or delete.
 2. Read receipts are mutual and always on; a message becomes read only while Talk is the active route.
@@ -20,7 +20,7 @@ Status: READY TO RUN. Scenarios are defined; none has been executed on a physica
 
 ## Scenarios
 
-Run in Midnight and, where practical, Dawn. Record pass or fail with observations for each.
+All scenarios below passed. Detailed observations, disclosed emulation boundaries, defects, repairs, and regression coverage are recorded in `UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 1. Home density: partner identity, presence or last seen, one latest-message context, one quiet moment, Ours door; nothing crowded.
 2. Bottom navigation: Home, Talk, Ours reachable one-handed; the Us pair mark opens account and partnership.
@@ -45,6 +45,6 @@ Run in Midnight and, where practical, Dawn. Record pass or fail with observation
 21. 200 percent text: Talk, Us and call entry keep everything on screen.
 22. Dawn and Midnight parity, follow-my-phone switching.
 
-## Recording results
+## Result
 
-Add an evidence file `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with the device model, Android and Chrome versions, the executable SHA, each scenario result, defects found, and fixes with regression tests.
+`docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` records the device model, Android and Chrome versions, executable SHA, every scenario result, defects found, repairs, regression tests, and the final markers `UX_ANDROID_ACCEPTANCE_PASS` and `UX_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`.

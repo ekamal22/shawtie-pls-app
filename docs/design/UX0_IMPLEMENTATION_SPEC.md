@@ -1,6 +1,6 @@
 # UX0 Implementation Specification
 
-Status: FROZEN FOR UX1 THROUGH UX7 unless the UX lead amends it in this file. This document converts `ROMANTIC_UX_DIRECTION.md` into implementation-ready rules. It is presentation authority only. It never overrides the PRD, architecture documents, API documents, ADRs, or source behavior.
+Status: FROZEN, IMPLEMENTED, AND PHYSICALLY ACCEPTED FOR UX1 THROUGH UX7. Final accepted executable: `ca7cd35`; physical evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`. This document remains the presentation authority for the completed romantic UX program. It never overrides the PRD, architecture documents, API documents, ADRs, or source behavior.
 
 Every concept carries one label:
 

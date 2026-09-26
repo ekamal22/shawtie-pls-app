@@ -1,6 +1,6 @@
 # Romantic UX Direction
 
-Status: ACCEPTED DESIGN DIRECTION. UX0 canonicalization and implementation planning are in progress. Runtime implementation has not started.
+Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery is the next engineering milestone; UX8 remains planned after verified S1 behavior.
 
 This document records the accepted product-experience direction for Shawtie pls after completion and merge of C2 Video Calling. It is deliberately separate from architecture, API, database, lifecycle, and cryptographic authority.
 
@@ -214,6 +214,9 @@ UX8 exists specifically to integrate verified S1 states into the redesigned expe
 
 ## Implementation program
 
+UX0 through UX7 below are DONE on `integration/ux-romantic` and physically accepted at `ca7cd35`. The descriptions remain the canonical scope of what each milestone delivered. S1 and UX8 remain future work.
+
+
 ### UX0 Romantic Experience Specification
 
 Freeze:
@@ -276,7 +279,7 @@ Integrate the accepted signature interactions that remain presentation-only.
 
 ### S1 E2EE and Cryptographic Recovery
 
-May proceed in parallel with UX2 through UX7 after C2 is merged.
+This was permitted to proceed in parallel with UX2 through UX7 after C2 merged. UX0 through UX7 are now closed; S1 is the current frontier.
 
 ### UX8 Encrypted UX Integration
 
@@ -288,7 +291,7 @@ Final accessibility, security, browser, device, operational, hosted verification
 
 ## Parallel-agent implementation model
 
-After UX0 is frozen and UX1 is implemented, parallel work is encouraged.
+UX0 through UX7 used parallel isolated worktrees after UX1 established the shared foundation. That parallel implementation phase is now closed.
 
 Recommended ownership:
 

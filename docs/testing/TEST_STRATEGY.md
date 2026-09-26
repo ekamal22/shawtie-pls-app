@@ -654,6 +654,27 @@ Automated/local coverage must include:
 
 Physical Android closure followed the mandatory scenario matrix in `C2_ANDROID_ACCEPTANCE.md` and included real Redmi camera permission, bidirectional audio/video, front/back switching, background privacy, stale camera-operation fencing, old-client compatibility, multi-m-line ICE association and relay-only network evidence.
 
+## UX0 through UX7 romantic UX acceptance
+
+The romantic UX program is physically accepted on the Xiaomi Redmi Note 9S at executable SHA `ca7cd35`.
+
+Canonical evidence:
+
+- `UX_ANDROID_ACCEPTANCE.md`
+- `UX_ANDROID_ACCEPTANCE_EVIDENCE.md`
+
+Closure evidence includes:
+
+- 22/22 mandatory physical scenarios PASS
+- `UX_ANDROID_ACCEPTANCE_PASS`
+- `UX_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`
+- final full repository health PASS with 0 audit vulnerabilities
+- Chromium UX1 15, UX2 12, UX3 16, UX4 22, UX5 22, UX6 15 with one opt-in skip, UX7 12, cross-surface 6, M2 7, M3 4, C1 5, and C2 6
+- retained M2 browser 25, M3 browser 13, C1 24, C2 16, and R1 security 16 and 13
+- eight physical/device UX defects plus two smaller presentation issues repaired with focused regression coverage before the final executable was accepted
+
+The evidence file records the limited emulation used for 200 percent text and split-screen, plus the partial final-SHA re-verification disclosure for parts of scenarios 20 through 22. Those disclosures are part of the accepted evidence and must not be silently removed.
+
 ## Acceptance principle
 
 A feature is not complete merely because UI automation passes.
