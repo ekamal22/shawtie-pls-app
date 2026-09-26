@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import {
+  afterNavigationSettles,
+  runSignatureTransition,
+} from "../../../design/motion/view-transition.ts";
 import { apiRequest } from "../../../lib/api-client.ts";
 
 /*
@@ -73,6 +77,16 @@ export function useMessageSource(messageId: string | null): SourceState {
  * event lets the conversation surface scroll to and highlight the message when it supports it.
  */
 export function openSourceMessage(messageId: string): void {
-  window.location.hash = "#/talk/message/" + messageId;
-  window.dispatchEvent(new CustomEvent("shawtie:open-message", { detail: { messageId } }));
+  const from = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const card = from?.closest<HTMLElement>(".mem-kept") ?? null;
+  runSignatureTransition(
+    "memory-return",
+    () => {
+      const settled = afterNavigationSettles();
+      window.location.hash = "#/talk/message/" + messageId;
+      window.dispatchEvent(new CustomEvent("shawtie:open-message", { detail: { messageId } }));
+      return settled;
+    },
+    card,
+  );
 }

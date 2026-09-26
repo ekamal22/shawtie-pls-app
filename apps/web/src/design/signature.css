@@ -56,3 +56,35 @@
     animation: none;
   }
 }
+
+/* Two Sides / Memory Return: a short shared-element move between a kept memory and its place
+   in the conversation. Only drawn where the View Transitions API exists and motion is allowed. */
+html[data-ux7-transition] ::view-transition-old(root),
+html[data-ux7-transition] ::view-transition-new(root) {
+  animation-duration: var(--dur-quick);
+  animation-timing-function: var(--ease-settle);
+}
+
+html[data-ux7-transition] ::view-transition-group(ux7-shared) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-unfold);
+}
+
+html[data-ux7-transition] ::view-transition-old(ux7-shared),
+html[data-ux7-transition] ::view-transition-new(ux7-shared) {
+  height: 100%;
+  object-fit: cover;
+}
+
+.talk-return {
+  display: flex;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-ux7-transition] ::view-transition-group(*),
+  html[data-ux7-transition] ::view-transition-old(*),
+  html[data-ux7-transition] ::view-transition-new(*) {
+    animation-duration: var(--dur-instant);
+  }
+}

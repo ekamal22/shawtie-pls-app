@@ -71,3 +71,19 @@ test("UX7 sources never contain the Unicode em dash", async () => {
     assert.equal((await source(file)).includes(EM_DASH), false, file);
   }
 });
+
+test("UX7 Memory Return: presentation-only shared-element transition honors reduced motion", async () => {
+  const transition = await source("../src/design/motion/view-transition.ts");
+  assert.equal(transition.includes("prefersReducedMotion()"), true);
+  assert.equal(/apiRequest|fetch\(/.test(transition), false);
+  const sourceModule = await source("../src/features/ours/content/source.ts");
+  // The existing navigation and event are unchanged; the transition only wraps them.
+  assert.equal(sourceModule.includes('"#/talk/message/"'), true);
+  assert.equal(sourceModule.includes('"shawtie:open-message"'), true);
+  const css = await source("../src/design/signature.css");
+  assert.match(css, /prefers-reduced-motion: reduce[\s\S]*view-transition-group/);
+  const panel = await source("../src/features/messaging/MessagingPanel.tsx");
+  assert.equal(panel.includes("Back to what we kept"), true);
+  // No second-author annotation (PRODUCT_EXTENSION).
+  assert.equal(/annotat/i.test(panel + transition), false);
+});
