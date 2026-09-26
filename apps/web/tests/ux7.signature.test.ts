@@ -113,3 +113,14 @@ test("UX7 Our Year book: keyboard, swipe and status paging with no metrics", asy
   const paging = book.slice(book.indexOf("export function Book("));
   assert.equal(/score|rank|streak|total|most /i.test(paging), false);
 });
+
+test("UX7 Pair Mark: together in Ours or when the partner is online, never a metric", async () => {
+  const shell = await source("../src/app/shell/AppShell.tsx");
+  assert.equal(shell.includes('route === "ours" || partnerOnline'), true);
+  const app = await source("../src/app/App.tsx");
+  assert.equal(app.includes("conversation?.partner.presence.online === true"), true);
+  const css = await source("../src/design/signature.css");
+  const block = css.slice(css.indexOf("Pair Mark: when"));
+  assert.match(block, /prefers-reduced-motion: reduce[\s\S]*animation: none/);
+  assert.equal(/infinite/.test(css), false, "no looping signature animation");
+});

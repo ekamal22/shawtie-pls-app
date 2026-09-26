@@ -119,3 +119,26 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
 .mem-book__stage {
   touch-action: pan-y;
 }
+
+/* Pair Mark: when the two rings come together (both in Ours, or the partner is online) they
+   settle once. Nothing loops and nothing counts. */
+.app-header__identity[data-together="true"] .ds-pair-mark {
+  animation: ux7-pair-settle var(--dur-reveal) var(--ease-settle) both;
+}
+
+@keyframes ux7-pair-settle {
+  from {
+    opacity: 0.7;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header__identity[data-together="true"] .ds-pair-mark {
+    animation: none;
+  }
+}
