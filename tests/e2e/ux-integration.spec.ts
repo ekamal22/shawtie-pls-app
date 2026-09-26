@@ -177,12 +177,13 @@ async function mockApi(page: Page, items: Json[]) {
         : json(route, { error: { code: "MESSAGE_NOT_FOUND" } }, 404);
     }
     if (path.startsWith("/api/v1/conversations/") && path.endsWith("/messages")) {
+      const newestOnly = url.searchParams.get("limit") === "1";
       return json(route, {
-        items: MESSAGES,
+        items: newestOnly ? MESSAGES.slice(-1) : MESSAGES,
         hasMore: false,
         oldestSequence: 1,
-        newestSequence: 2,
-        latestServerSequence: 2,
+        newestSequence: MESSAGES.length,
+        latestServerSequence: MESSAGES.length,
       });
     }
     if (path.startsWith("/api/v1/conversations/") && path.endsWith("/changes")) {
@@ -241,6 +242,22 @@ async function open(page: Page, items: Json[], hash = "") {
   await page.goto("/index.html" + hash);
   await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
 }
+
+test("Home shows a new latest message as soon as realtime reports it", async ({ page }) => {
+  await open(page, [KEPT]);
+  const home = page.getByRole("region", { name: "Your partner" });
+  await expect(page.locator(".app-route:not([hidden])")).toContainText("Landed");
+  MESSAGES.push(message("e0000000-0000-4000-8000-0000000000f1", 3, PARTNER, "A brand new message"));
+  try {
+    await page.evaluate(() =>
+      window.dispatchEvent(new CustomEvent("shawtie:message-changed", { detail: {} })),
+    );
+    await expect(page.locator(".app-route:not([hidden])")).toContainText("A brand new message");
+    await expect(home).toBeVisible();
+  } finally {
+    MESSAGES.pop();
+  }
+});
 
 test("Memory Return takes a kept item to its source message in Talk", async ({ page }) => {
   await open(page, [KEPT], "#/ours");

@@ -25,6 +25,9 @@ export interface HomeData {
 const REFRESH_EVENTS = [
   "shawtie:partnership-changed",
   "shawtie:chat-queue-changed",
+  // Realtime reports: a new, edited, or removed message and a changed relationship item.
+  "shawtie:message-changed",
+  "shawtie:relationship-changed",
   "online",
   "focus",
 ] as const;
