@@ -11,6 +11,7 @@ import {
   scheduledArrival,
   itemTitle,
   kindLabel,
+  kindLabelFor,
   occurrenceText,
   readString,
 } from "./chapters.ts";
@@ -64,7 +65,7 @@ export function OursItemRow({
         ) : null}
         <span className="ours-row__text">
           <span className="ours-row__kicker">
-            {sealedForMe ? "Sealed" : kindLabel(item.kind)}
+            {sealedForMe ? "Sealed" : kindLabelFor(item, accountId)}
             {hasVoiceLetter(item) && !locked ? " · Voice letter" : ""}
           </span>
           <span className="ours-row__title">{locked ? previewTitle(item) : itemTitle(item)}</span>
@@ -103,7 +104,7 @@ export function OursItemSheet({
         item
           ? isLocked(item) && item.creatorAccountId !== accountId
             ? "Sealed"
-            : kindLabel(item.kind)
+            : kindLabelFor(item, accountId)
           : "Ours"
       }
     >

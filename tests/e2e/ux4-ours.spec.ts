@@ -601,6 +601,7 @@ test("A creator's own sealed letter is not presented as waiting for them", async
   await expect(now.getByText("Sealed for later")).toBeVisible();
   // The creator keeps seeing when their own letter is scheduled to arrive.
   await expect(now.getByRole("button", { name: /For March/ })).toContainText(/Arrives .*2027/);
+  await expect(now.getByRole("button", { name: /For March/ })).toContainText("A letter from you");
   await expect(now.getByText("Waiting for you")).toHaveCount(0);
 });
 

@@ -11,6 +11,7 @@ import {
   durationText,
   hasVoiceLetter,
   itemAuthority,
+  kindLabelFor,
   scheduledArrival,
   lensKinds,
   occurrenceText,
@@ -205,6 +206,14 @@ test("UX4 surfaces never make privacy claims the runtime cannot support", async 
       assert.equal(pattern.test(text), false, file.pathname + " matches " + pattern);
     }
   }
+});
+
+test("UX4 labels a letter you wrote as from you, not for you", () => {
+  const mine = item({ kind: "for_you", creatorAccountId: ME });
+  const theirs = item({ kind: "for_you", creatorAccountId: PARTNER });
+  assert.equal(kindLabelFor(mine, ME), "A letter from you");
+  assert.equal(kindLabelFor(theirs, ME), "A letter for you");
+  assert.equal(kindLabelFor(item({ kind: "memory" }), ME), "Memory");
 });
 
 test("UX4 shows only the scheduled arrival time the projection already exposes", () => {

@@ -75,6 +75,15 @@ export function kindLabel(kind: RelationshipItemKind): string {
   return KIND_LABELS[kind] ?? kind;
 }
 
+/**
+ * The label for an item as this person sees it. A letter you wrote is not "a letter for you";
+ * it is a letter from you. Everything else keeps the shared kind label.
+ */
+export function kindLabelFor(item: RelationshipItem, accountId: string): string {
+  if (item.kind === "for_you" && item.creatorAccountId === accountId) return "A letter from you";
+  return kindLabel(item.kind);
+}
+
 export function chapterOf(kind: RelationshipItemKind): Chapter {
   for (const chapter of CHAPTERS) {
     if (CHAPTER_KINDS[chapter].includes(kind)) return chapter;
