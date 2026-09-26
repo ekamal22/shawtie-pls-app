@@ -184,6 +184,13 @@
   opacity: 0;
 }
 
+/* The visible control is small; its hit area still reaches the 44px target. */
+.talk-more::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
 .talk-more:focus-visible,
 .talk-bubble:hover .talk-more {
   opacity: 1;

@@ -1154,3 +1154,8 @@
 .mem-view > * {
   min-width: 0;
 }
+
+/* Inside a sheet the header stays tight so content starts high on a small phone. */
+.ds-overlay .mem-space {
+  gap: var(--space-3);
+}

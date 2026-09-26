@@ -317,3 +317,16 @@ test("Segmented controls move focus with the arrow keys", async ({ page }) => {
   await page.keyboard.press("ArrowLeft");
   await expect(system).toBeFocused();
 });
+
+test("Compact buttons, chips, and segmented options meet the 44px touch target", async ({
+  page,
+}) => {
+  await openApp(page, PAIRED, "#/us");
+  for (const locator of [
+    page.getByRole("button", { name: "Sign out" }),
+    page.getByRole("radio", { name: "Dawn" }),
+  ]) {
+    const box = await locator.boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(43.5);
+  }
+});
