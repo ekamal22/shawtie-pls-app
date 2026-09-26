@@ -42,6 +42,7 @@ import {
   lensKinds,
   newestFirst,
 } from "./chapters.ts";
+import { publishKeptSources } from "../messaging/kept-registry.ts";
 import { oursMessageFor } from "./messages.ts";
 import { OursCreateSheet } from "./OursCreateSheet.tsx";
 import { OursItemRow, OursItemSheet } from "./OursItems.tsx";
@@ -74,6 +75,10 @@ async function loadOurs(): Promise<OursData | null> {
     Promise.all(FETCHED_KINDS.map((kind) => listRelationshipItems({ kind }))),
     loadThisDay(home.serverDate).catch(() => ({ on: home.serverDate, items: [] })),
   ]);
+  // The Ribbon: Talk reads kept message sources from this already loaded first page.
+  const keptIndex = FETCHED_KINDS.indexOf("remember_this");
+  const keptList = lists[keptIndex];
+  if (keptList) publishKeptSources(keptList.items, true);
   return {
     home,
     items: [...lists.flatMap((list) => list.items), ...home.recentSignals],

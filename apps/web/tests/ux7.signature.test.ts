@@ -138,3 +138,44 @@ test("UX7 Threshold: arrival into Ours is a distinct beat under 400ms with a red
     /prefers-reduced-motion: reduce[\s\S]*ux7-fade-in var\(--dur-instant\)/,
   );
 });
+
+test("UX7 every signature transition has a reduced-motion counterpart", async () => {
+  const css = await source("../src/design/signature.css");
+  const reduced = css.split("@media (prefers-reduced-motion: reduce)").slice(1).join("\n");
+  for (const selector of [
+    ".talk-message[data-ribbon",
+    "view-transition",
+    ".app-header__identity[data-together",
+    '.app-shell[data-route="ours"]',
+  ]) {
+    assert.equal(reduced.includes(selector), true, selector);
+  }
+  // Book and letter counterparts live with the UX6 keyframes they refine.
+  const mem = await source("../src/features/ours/content/mem.css");
+  assert.match(
+    mem,
+    /prefers-reduced-motion: reduce[\s\S]*mem-letter__reveal--unfold[\s\S]*mem-fade/,
+  );
+  assert.match(mem, /prefers-reduced-motion: reduce[\s\S]*mem-book__stage/);
+  const helper = await source("../src/design/motion/reduced.ts");
+  assert.equal(helper.includes("prefers-reduced-motion: reduce"), true);
+});
+
+test("UX7 the Ribbon registry is fed by Ours and read by Talk without new requests", async () => {
+  const ours = await source("../src/features/ours/OursScreen.tsx");
+  assert.equal(ours.includes("publishKeptSources(keptList.items, true)"), true);
+  const talk = await source("../src/features/messaging/MessagingPanel.tsx");
+  assert.equal(talk.includes("subscribeKeptSources"), true);
+});
+
+test("UX7 spec sources contain no Unicode em dash", async () => {
+  for (const file of [
+    "../../../tests/e2e/ux7-signature.spec.ts",
+    "../../../playwright.ux7.config.ts",
+    "../src/design/motion/view-transition.ts",
+    "../src/features/ours/content/curation.tsx",
+    "../src/features/ours/content/LetterViews.tsx",
+  ]) {
+    assert.equal((await source(file)).includes(EM_DASH), false, file);
+  }
+});
