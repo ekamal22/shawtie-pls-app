@@ -85,4 +85,4 @@ UX_ANDROID_ACCEPTANCE_PASS
 
 UX_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 
-`integration/ux-romantic` is physically accepted for UX0 to UX7. It has not been merged to `main`.
+UX0 through UX7 are physically accepted at executable `ca7cd35` and the accepted integration history was fast-forward merged to `main` at merge anchor `9f0bea4`.
