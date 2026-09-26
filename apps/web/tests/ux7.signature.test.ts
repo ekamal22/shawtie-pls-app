@@ -135,7 +135,7 @@ test("UX7 Threshold: arrival into Ours is a distinct beat under 400ms with a red
   assert.ok(Number(rule[1]) < 400);
   assert.match(
     css.slice(css.indexOf("Threshold Transition")),
-    /prefers-reduced-motion: reduce[\s\S]*ux7-fade-in var\(--dur-instant\)/,
+    /prefers-reduced-motion: reduce[\s\S]*animation-name: ds-fade-in/,
   );
 });
 
