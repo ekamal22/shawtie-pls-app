@@ -394,6 +394,39 @@ test("Remember This is shared to read and creator-only to change", async ({ page
   await expect.poll(() => state.deleted.length).toBe(1);
 });
 
+test("Paper rows keep a readable glyph in Midnight and Dawn", async ({ page }) => {
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("about:blank");
+    const letter = item({
+      kind: "for_you",
+      creatorAccountId: PARTNER,
+      content: { title: "A letter", body: "Hello" },
+    });
+    await openOurs(page, scenario({ items: [letter] }));
+    await expect(page.locator(".ours-row--paper").first()).toBeVisible();
+    const measured = await page.evaluate(() => {
+      const icon = document.querySelector(".ours-row--paper .ours-row__icon");
+      const row = document.querySelector(".ours-row--paper");
+      if (!icon || !row) return null;
+      const parse = (value: string) => (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+      const luminance = ([r, g, b]: number[]) => {
+        const channel = (v: number) => {
+          const c = (v ?? 0) / 255;
+          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * channel(r!) + 0.7152 * channel(g!) + 0.0722 * channel(b!);
+      };
+      const fg = luminance(parse(getComputedStyle(icon).color));
+      const bg = luminance(parse(getComputedStyle(row).backgroundColor));
+      const [hi, lo] = fg > bg ? [fg, bg] : [bg, fg];
+      return (hi + 0.05) / (lo + 0.05);
+    });
+    expect(measured).not.toBeNull();
+    expect(measured as number).toBeGreaterThanOrEqual(3);
+  }
+});
+
 test("Sealed letters wait quietly and the recipient opens them", async ({ page }) => {
   const sealed = item({
     kind: "for_you",
