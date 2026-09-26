@@ -545,6 +545,14 @@ test("Sealed letters wait quietly and the recipient opens them", async ({ page }
   await expect(sheet.getByText("Open when you need reassurance")).toBeVisible();
   await sheet.getByRole("button", { name: "Open the letter" }).click();
   await expect.poll(() => state.released.length).toBe(1);
+  // Found on a physical device: the sheet kept showing the sealed card. It now shows the
+  // opened letter and no longer offers to open it again.
+  await expect(
+    page.getByRole("dialog").getByText("You are loved. That is the whole message."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog").getByRole("button", { name: "Open the letter" }),
+  ).toHaveCount(0);
 });
 
 test("A recipient sees when a scheduled letter will arrive and nothing more, in both themes", async ({
