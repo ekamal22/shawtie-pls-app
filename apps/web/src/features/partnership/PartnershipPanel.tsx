@@ -305,7 +305,7 @@ export function PartnershipPanel() {
 
         {partnership.capabilities.initiateBreakup ? (
           <div>
-            <Button variant="danger" disabled={busy} onClick={() => setConfirming("breakup")}>
+            <Button variant="dangerQuiet" disabled={busy} onClick={() => setConfirming("breakup")}>
               Start breakup
             </Button>
           </div>

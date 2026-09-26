@@ -140,7 +140,7 @@ export function MomentCard({
       </div>
       <h3 className="mem-letter__title">{heading}</h3>
       {framing === "proposal" && !seal ? (
-        <p className="mem-hint">A private moment, shared only when it is time.</p>
+        <p className="mem-hint">A moment kept aside until it is time.</p>
       ) : null}
       {seal ? <SealedBand band={seal.band} detail={seal.detail} /> : null}
       <div className="mem-letter__actions">

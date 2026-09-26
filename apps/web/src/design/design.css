@@ -145,6 +145,14 @@
   color: var(--on-end);
 }
 
+/* Outlined destructive entry point: names a consequential action without shouting. The
+   filled danger style stays for the final confirmation. */
+.ds-button--dangerQuiet {
+  background: transparent;
+  color: var(--end-text);
+  border-color: var(--end-line);
+}
+
 .ds-button:disabled,
 .ds-icon-button:disabled {
   opacity: 0.55;

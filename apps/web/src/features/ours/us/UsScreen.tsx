@@ -395,7 +395,7 @@ export function UsScreen({
             verified email.
           </p>
           <div>
-            <Button variant="danger" disabled={busy} onClick={() => setConfirmDeletion(true)}>
+            <Button variant="dangerQuiet" disabled={busy} onClick={() => setConfirmDeletion(true)}>
               Request account deletion
             </Button>
           </div>

@@ -343,3 +343,13 @@ test("Talk and Us keep everything on screen at 200 percent text", async ({ page 
     await noHorizontalScroll(page);
   }
 });
+
+test("Consequential entry points are outlined, not filled alarms", async ({ page }) => {
+  await openApp(page, PAIRED, "#/us");
+  for (const name of ["Start breakup", "Request account deletion"]) {
+    const background = await page
+      .getByRole("button", { name, exact: true })
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(background).toBe("rgba(0, 0, 0, 0)");
+  }
+});

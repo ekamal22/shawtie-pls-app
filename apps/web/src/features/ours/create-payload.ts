@@ -51,7 +51,7 @@ export const CREATE_INTENTS: readonly CreateIntent[] = [
   {
     id: "surprise",
     title: "Plan a surprise",
-    hint: "Kept private until you reveal it.",
+    hint: "Hidden from them until you reveal it.",
     kinds: [
       { kind: "surprise", label: "A surprise" },
       { kind: "proposal", label: "A proposal" },

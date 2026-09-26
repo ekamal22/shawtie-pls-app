@@ -22,7 +22,7 @@ function cx(...parts: Array<string | false | null | undefined>): string {
 
 /* Buttons */
 
-export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger" | "dangerQuiet";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant;
