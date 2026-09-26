@@ -2,58 +2,75 @@
 
 ## Status
 
-Accepted as an architecture boundary. Exact protocol and library selection remains subject to dedicated security review.
+Accepted and refined for S1.
+
+RFC 9420 MLS is the selected protocol family. OpenMLS compiled to WebAssembly is the implementation baseline, with the exact release, crypto provider, build flags, and dependency set frozen only after S1-A security review.
 
 ## Context
 
 Shawtie pls handles private messages, media, letters, memories, relationship objects, and calls.
 
-Stable release requires end-to-end protection of private content while allowing the server to route and synchronize the service.
+Stable release requires end-to-end protection of private content while allowing the server to route, order, synchronize, authorize, and delete data without reading protected plaintext.
 
-Calls also create network privacy concerns because direct peer-to-peer WebRTC can expose peer IP addresses.
+Calls also create network privacy concerns because direct peer-to-peer WebRTC can expose peer network addresses.
 
 ## Decision
 
-Use a reviewed E2EE protocol or construction. Do not create a custom cryptographic protocol.
+Use RFC 9420 Messaging Layer Security with the RFC 9750 application architecture for live partnership device membership and group key agreement.
 
-Each device has separate cryptographic identity material.
+Do not create a custom cryptographic protocol.
 
-Account recovery and historical key recovery are separate. Verified-email recovery must not automatically disclose historical E2EE content.
+Each device has independent cryptographic identity material.
 
-Partnership cryptographic state uses explicit epochs for reviewed rotation, device revocation, and protocol migration.
+Long-lived protected Shawtie objects use fresh per-content-version encryption keys so durable recoverable history does not require retention of old MLS epoch secrets.
 
-Each partnership gets a new cryptographic context, even if the same two accounts pair again later.
+Current-device delivery uses MLS-protected key distribution.
 
-Protected media is encrypted on the client before upload.
+Historical recovery uses client-controlled encrypted recovery material and per-account encrypted recovery capsules. The server never receives the Recovery Master Secret.
 
-Private object storage receives ciphertext and random object identifiers.
+Account recovery and historical-key recovery remain separate. Verified-email recovery must not automatically disclose historical protected content.
 
-Use WebRTC for calls.
+Every partnership receives fresh cryptographic state. A later partnership between the same two accounts does not inherit old keys.
 
-The historical baseline prefers TURN relay-first behavior where practical to reduce direct peer IP exposure. ADR-014 refines this to mandatory relay-only behavior for C1 voice calling, and C2 inherits that verified call substrate unless a later accepted ADR changes it.
+Protected media is encrypted on the client before upload. Object storage receives ciphertext and random object identifiers.
 
-TURN credentials are short-lived and issued by the authenticated API only after call authorization. Permanent TURN credentials must never be embedded in the PWA.
+Use the existing WebRTC C1/C2 architecture for calls. Relay-only TURN remains the required call transport policy unless a later accepted ADR changes it.
 
-TURN should support restrictive-network fallbacks, including TCP and TLS on port 443 where supported.
-
-The server may retain only operationally necessary metadata and must not receive plaintext protected content.
+The server may retain only operationally necessary metadata and must not receive protected plaintext after S1 activation.
 
 ## Consequences
 
 Benefits:
 
-- server compromise does not directly reveal protected content
-- past partnership keys do not carry into future partnerships
-- storage provider sees ciphertext
-- relay-first calls reduce peer IP exposure
+- server/database compromise does not directly reveal protected content
+- storage provider sees media ciphertext
+- device membership and revocation use a reviewed group-security protocol
+- old partnership state does not carry into new partnerships
+- email-only account recovery does not automatically reveal encrypted history
+- recovery does not require the server to hold plaintext recovery secrets
 
-Costs:
+Costs and limitations:
 
+- browser-origin compromise can still access decrypted application state
+- key recovery and multi-device state are security-critical
+- recoverable historical content cannot honestly claim unlimited forward secrecy
 - encrypted attachment malware scanning is limited
-- key recovery and multi-device design become security-critical
-- TURN relay bandwidth can become a meaningful operating cost
 - metadata is minimized but not eliminated
+- OpenMLS/WASM and crypto-provider dependencies become part of the trusted computing base
 
 ## Stable-release gate
 
-Stable release requires documented protocol selection, key management, attachment encryption, device enrollment, recovery, partnership termination, and security testing.
+Stable release requires S1 closure evidence for:
+
+- exact library/provider pin and security review
+- device enrollment
+- MLS group bootstrap and epoch transitions
+- revocation and rekey
+- encrypted M1/R1/M3 content
+- cryptographic recovery
+- plaintext retirement
+- partnership termination
+- raw database/object-store/log inspection
+- browser tests
+- physical Android tests
+- final cryptographic review

@@ -117,9 +117,9 @@ Examples:
 | Device ID | SENSITIVE | Yes | No | May log opaque ID | Account backup | No ordinary provider exposure | Device removal or permanent account deletion |
 | Device display name | SENSITIVE | Yes | No | Avoid routine logs | Account backup | No | Device removal or permanent account deletion |
 | Device public crypto key | SENSITIVE | Yes | No | Never log raw key by default | Required crypto backup/state | No ordinary provider exposure | Device revocation plus required protocol retention |
-| Device private crypto key | SECRET | No | Client-side protected state | Never | Only client-encrypted recovery design if approved | Never plaintext to provider | Device removal, revocation, permanent account deletion |
-| High-entropy recovery secret | SECRET | No | Client-only | Never | Never server-side | Never | User destroys or account permanently deleted |
-| Encrypted recovery material | HIGHLY_SENSITIVE | Yes as ciphertext | Already encrypted | Never log payload | Restricted encrypted backup | Storage provider may hold ciphertext | Permanent account deletion |
+| Device private crypto key | SECRET | No | Client-side wrapped state only | Never | Never as server-readable backup; independent device identities are not server-restored | Never plaintext to provider | Device removal, revocation, permanent account deletion |
+| Recovery Master Secret | SECRET | No | Client-only | Never | Never server-side | Never | User destroys secret or account permanently deleted |
+| Encrypted recovery bundle | HIGHLY_SENSITIVE | Yes as ciphertext | Already encrypted under Recovery Master Secret derived key | Never log payload | Restricted encrypted backup | Storage provider may hold ciphertext | Permanent account deletion |
 | Partnership ID | SENSITIVE | Yes | No | Opaque ID may appear in structured logs | Operational backup | Push or realtime systems may receive opaque ID where required | Final dissolution subject to bounded audit retention |
 | Partnership membership | SENSITIVE | Yes | No | Minimal audit only | Operational backup | No unnecessary provider exposure | Final dissolution subject to bounded lifecycle-event retention |
 | Relationship start date | SENSITIVE | Yes unless later encrypted by design | Optional | Never routine log | Partnership backup before deletion | No unnecessary provider exposure | Final dissolution |
@@ -132,12 +132,12 @@ Examples:
 | Message ciphertext | HIGHLY_SENSITIVE | Yes as ciphertext | Yes | Never log payload | Encrypted application backup until deletion | Hosting/database provider may hold ciphertext | Message deletion or final dissolution |
 | Message mutation change metadata | SENSITIVE | Yes | Metadata only | Opaque IDs/cursors only where operationally required; never content | Operational backup only while conversation exists | Realtime delivery may receive opaque IDs/cursors | Conversation or final partnership deletion |
 | Private mutation keyed fingerprint | HIGHLY_SENSITIVE | Yes as verifier only | No | Never log | Bounded operational retention only | No | Idempotency retention expiry, message/account/partnership deletion as applicable |
-| Partnership chat nickname | HIGHLY_SENSITIVE | Pre-S1 server-readable; S1 representation requires explicit review | Yes target | Never log content | Partnership-scoped backup before S1; encrypted target after S1 | No unnecessary provider exposure | Clear nickname or final dissolution |
+| Partnership chat nickname | HIGHLY_SENSITIVE | Pre-S1 development only; ciphertext after S1 activation | Yes | Never log content | Encrypted application backup after S1 | No unnecessary provider exposure | Clear nickname or final dissolution |
 | Message sender and server timestamp | SENSITIVE | Yes | Metadata only | Minimal structured logging if needed | Operational backup | Push provider should not need sender identity unless explicitly required | Message or partnership lifecycle plus bounded operational retention |
 | Read receipt | SENSITIVE | Yes where required | Metadata | Avoid routine logs | Minimal operational backup | Push provider should not receive unnecessary detail | Conversation or partnership deletion |
 | Typing indicator | SENSITIVE | Transiently | Metadata | Never persist in logs | No backup | Realtime provider if external, preferably none | Immediate expiry |
 | Online presence | SENSITIVE | Transiently | Metadata | Avoid history logs | No long-term backup | Realtime infrastructure only | Immediate or short expiry; disclosure is limited to the current partnership and cannot reveal pre-partnership last-seen activity |
-| Reaction content | HIGHLY_SENSITIVE or SENSITIVE depending final crypto design | Prefer encrypted | Yes where practical | Never log content | Encrypted backup with message | No provider plaintext | Reaction deletion or final dissolution |
+| Reaction content | HIGHLY_SENSITIVE | Ciphertext after S1 activation | Yes | Never log content | Encrypted backup with message | No provider plaintext | Reaction deletion or final dissolution |
 | Original filename | HIGHLY_SENSITIVE | Prefer no | Encrypt where practical | Never log | Inside encrypted descriptor only | Never provider plaintext | Media deletion or final dissolution |
 | Attachment MIME type | SENSITIVE | Minimize, encrypt where practical | Prefer yes | Avoid routine logs | Minimal | Storage may infer some properties from transport unless normalized | Media deletion or final dissolution |
 | Media plaintext | HIGHLY_SENSITIVE | No | Yes | Never | Never plaintext server backup | Never provider plaintext | Media deletion or final dissolution |
@@ -171,6 +171,14 @@ Examples:
 | Storage credential | SECRET | Only trusted runtime | No | Never | Secret manager only | Storage provider as infrastructure | Rotation |
 | Email-provider credential | SECRET | Only worker/runtime | No | Never | Secret manager only | Email provider | Rotation |
 | Production backup | HIGHLY_SENSITIVE | Infrastructure readable according to encryption model | Mixed | Never inspect casually | Encrypted, access-restricted, bounded retention | Backup provider may hold encrypted copy | Retention expiry with deletion obligations |
+
+| MLS KeyPackage | SENSITIVE | Yes as public protocol material | No | Never log full package by default | Operational crypto-state backup | No unnecessary provider exposure | Consumption, device revocation, expiry, or account deletion |
+| MLS control message | SENSITIVE or HIGHLY_SENSITIVE ciphertext | Yes as protocol bytes | Yes where MLS PrivateMessage applies | Log IDs/sequence only, never raw protocol payload | Partnership-scoped encrypted/protocol backup | Realtime transport may carry opaque bytes | Partnership deletion subject to required security retention |
+| Local serialized MLS state | SECRET | No | Client-only wrapped state | Never | Never server-readable backup | Never | Device removal, revocation, local reset, account deletion |
+| Protected content key plaintext | SECRET | No | Client-only transient/wrapped state | Never | Never server plaintext backup | Never | Content deletion, partnership deletion, local cache purge |
+| Content-key recovery capsule | HIGHLY_SENSITIVE | Yes as HPKE ciphertext | Already encrypted | Never log payload | Encrypted application backup until content/account deletion | Storage provider may hold ciphertext | Content deletion, partnership deletion, or account deletion |
+| Content signature | SENSITIVE | Yes | No | May log only digest/reference where required | Stored with encrypted content | Database provider may hold signature bytes | Content deletion or final dissolution |
+| Group generation and MLS epoch | SENSITIVE | Yes | Metadata | Minimal operational logs allowed | Operational backup | Realtime routing may expose bounded values | Partnership deletion subject to bounded security retention |
 
 ## Repository data policy
 

@@ -72,6 +72,8 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 |
                 v
         S1 E2EE + Crypto Recovery ⚪
+        architecture frozen
+        RFC 9420 MLS + OpenMLS WASM baseline
                 |
                 v
         UX8 Encrypted UX ⚪

@@ -44,17 +44,39 @@ If a client is too old to safely mutate data, the server must reject unsafe oper
 
 ## Crypto compatibility
 
-Every encrypted envelope must identify the cryptographic protocol version required to process it.
+S1 defines a versioned protected-content profile.
 
-A client must never guess how to decrypt an unknown protocol version.
+The first implementation profile is conceptually `shawtie.mls.v1` and binds:
+
+- RFC 9420 MLS protocol version
+- selected ciphersuite
+- exact OpenMLS/provider implementation pin
+- protected-envelope schema
+- canonical serialization version
+- recovery-capsule profile
+- group-generation semantics
+
+Every protected envelope identifies the crypto profile, group generation, MLS epoch, and payload schema version required to process it.
+
+A client must never guess how to decrypt an unknown profile or version.
+
+Unknown crypto versions fail closed.
 
 Protocol migration must define:
 
 - read compatibility
 - write compatibility
 - device upgrade ordering
+- group-generation transition behavior
 - recovery behavior
+- plaintext-retirement behavior
 - rollback limitations
+
+A protocol migration must never merge namespaces from different accounts, partnerships, conversations, group generations, or payload roles.
+
+R1 preview and sealed main envelopes use distinct authenticated payload roles even when they share a content schema version.
+
+After crypto-required activation, compatibility behavior must never fall back to server-readable protected plaintext.
 
 ## Local schema compatibility
 

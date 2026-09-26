@@ -2,274 +2,306 @@
 
 ## Status
 
-Architecture boundary accepted. Exact protocol and library selection remains an implementation decision that requires dedicated review.
+S1 architecture profile selected. Runtime implementation is not yet complete.
 
-## Non-negotiable rule
+The selected protocol family is RFC 9420 Messaging Layer Security, interpreted using the application architecture in RFC 9750.
 
-Do not invent a custom cryptographic protocol.
+OpenMLS compiled to WebAssembly is the implementation baseline for the PWA. S1-A must pin the exact OpenMLS release, source revision, cryptography provider, build flags, and transitive dependency set after security review.
 
-Use a reviewed, maintained protocol or construction with an implementation appropriate to the supported browser environment.
+Canonical implementation design:
+
+`../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
+
+## Non-negotiable rules
+
+- do not invent a custom cryptographic protocol
+- protected plaintext exists only on authorized clients after S1 activation
+- device authentication and device cryptographic trust are distinct
+- account recovery and historical cryptographic recovery are distinct
+- a new partnership always receives unrelated cryptographic state
+- unknown crypto versions fail closed
+- there is no plaintext fallback after crypto-required activation
+
+## Protocol profile
+
+S1 uses RFC 9420 MLS for live group key agreement and membership security.
+
+Initial ciphersuite:
+
+`MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`
+
+Experimental MLS extensions are not required for first stable release.
+
+Long-lived Shawtie content is encrypted with fresh per-content-version keys rather than retaining old MLS epoch secrets for history.
+
+The default durable-content construction is:
+
+- random 256-bit content key
+- AES-256-GCM
+- fresh 96-bit nonce
+- canonical authenticated context
+- device signature over canonical metadata and ciphertext digest
+
+Recovery capsules use RFC 9180 HPKE or an equivalently reviewed profile pinned in S1-A.
 
 ## Separation of identities
 
-Application authentication and cryptographic identity are separate concepts.
+Each A1 device has independent cryptographic identity material.
 
-An account may have multiple authorized devices.
-
-Each device should have its own cryptographic identity material.
-
-Logical model:
+Representative logical model:
 
 ```text
 account
   device A
-    device identity keys
-    session state
+    MLS identity
+    content-signing identity
+    local MLS state
   device B
-    device identity keys
-    session state
+    independent MLS identity
+    independent content-signing identity
+    independent local MLS state
 ```
 
-Private key material must never be stored in PostgreSQL in plaintext.
+Private device keys must never be stored in PostgreSQL in plaintext.
 
-## Authentication recovery is not key recovery
-
-Verified-email account recovery must not automatically reveal historical encrypted content.
-
-Account access and cryptographic history recovery are separate.
-
-Historical key recovery requires:
-
-- an already trusted device, or
-- client-encrypted recovery material protected by a high-entropy recovery secret, or
-- another reviewed cryptographic recovery design
-
-The server must not possess the secret required to decrypt client recovery material.
+A server-authenticated device is not automatically a trusted crypto device.
 
 ## Partnership cryptographic boundary
 
-Every partnership receives a new cryptographic context.
+Every partnership receives a fresh MLS group.
 
-A later partnership between the same two accounts must still use new partnership cryptographic state.
+The partnership ID is an application namespace, not a key.
 
-Each partnership also has an explicit cryptographic epoch.
+S1 distinguishes:
 
-The epoch supports reviewed key rotation, device revocation, and protocol migration within the same partnership.
+- group generation: a complete MLS group instance inside one partnership
+- MLS epoch: normal protocol evolution inside one group generation
 
-P2 uses the fresh immutable partnership ID itself as the namespace identifier before S1 cryptography is implemented. The partnership ID is not a key, does not prove encryption exists, and must not be used as authentication authority. S1 later binds reviewed cryptographic state to that partnership namespace.
+Normal add/remove/update operations advance the MLS epoch.
 
-P2 does not create a second security namespace identifier and must not insert a fake cryptographic epoch merely to satisfy namespace creation. Real `partnership_crypto_epochs` begin only when the reviewed S1 protocol provisions actual cryptographic state.
+A complete group-generation reset is reserved for catastrophic state recovery, incompatible protocol migration, or another explicitly reviewed reset.
 
-A new partnership always starts from a new cryptographic root and must never inherit:
+A later partnership between the same two accounts must not inherit any old:
 
-- old message keys
-- old attachment keys
-- old relationship-object keys
-- old local decryption state
-- old notification encryption state
-- old call-recording keys
-- old crypto epochs as active key material
+- MLS state
+- message content keys
+- relationship-object content keys
+- media content keys
+- recovery capsules
+- local decryption cache
+- notification key state
 
-## Package boundary
+## Protected content envelope
 
-`packages/crypto` exposes high-level operations such as:
+The `@shawtie/crypto` package owns canonical serialization and envelope processing.
 
-```text
-encryptMessage
-decryptMessage
-encryptAttachment
-decryptAttachment
-encryptRelationshipObject
-decryptRelationshipObject
-rotateSession
-destroyPartnershipState
-```
+Authenticated context binds at least:
 
-The rest of the application should not manipulate low-level nonces, ratchets, or key schedules directly.
+- crypto profile
+- partnership ID
+- group generation
+- MLS epoch
+- content type
+- content ID
+- content version
+- payload role
+- sender crypto-device ID
+- content schema version
 
-## Protected content
+Ciphertext substitution across any of these contexts must fail.
 
-The server must not receive plaintext for:
+## Durable content keys
 
-- message bodies
-- message reaction content
-- partnership chat nicknames
-- image contents
-- video contents
-- file contents
-- voice-message contents
-- relationship-object contents
-- For You letters
-- Future Us contents
-- memory captions and private notes
-- call media
-- deferred post-stable call recordings, if ever implemented
+Each protected content version receives a fresh random content key.
 
-M1 may use explicitly named server-readable development plaintext only before S1. S1 must define the migration or wipe path for that pre-E2EE messaging content and must not silently grandfather chat nicknames or reactions as permanent plaintext exceptions.
+The content key is distributed to current authorized devices inside an MLS-protected application message.
+
+For historical recovery, the same content key receives encrypted per-account recovery capsules. The server cannot decrypt those capsules.
+
+This design deliberately separates live MLS state from long-lived recoverable history.
+
+## Recovery security limitation
+
+Recoverable history and destruction of every historical decryption path are competing goals.
+
+S1 may claim protocol forward secrecy and post-compromise security for live MLS state according to the selected profile.
+
+S1 must not claim unlimited forward secrecy for retained historical content that remains recoverable through the user's Recovery Master Secret.
 
 ## R1 preview and sealed-content handoff
 
-R1 defines two protected relationship-content roles:
+R1 preview and sealed main content use separate content keys and distinct authenticated roles.
 
-- preview content that may be visible before release
-- sealed main content that must remain unavailable to the intended recipient until release
+The intended recipient may receive preview ciphertext when R1 authorizes it.
 
-S1 must preserve this distinction cryptographically and at the API projection boundary.
+Before release, the intended recipient must not receive:
 
-Requirements:
+- sealed main ciphertext
+- the sealed main content key
+- an MLS distribution carrying that key
+- a recovery path made available through normal recipient reads
 
-- preview and main content are encrypted separately when both exist
-- the reviewed protocol authenticates item ID, partnership ID, item kind, content schema version, and payload role
-- preview ciphertext cannot be substituted for main ciphertext or vice versa
-- the server may return preview ciphertext before release
-- the server must withhold sealed main ciphertext from the intended recipient before release
-- creator-authorized reads may receive both while product state allows editing
-- release state is server-authoritative metadata and does not require the server to decrypt either envelope
-- final dissolution destroys relationship-object cryptographic access along with normal P3 deletion
-- S1 migration either client-reencrypts or wipes all pre-S1 development preview/main plaintext
+The server may retain the authoritative release timestamp required for R1 workers.
 
 ## Metadata minimization
 
-Some server-visible metadata is operationally necessary.
+Operational metadata may remain server visible when required for routing, ordering, authorization, lifecycle, or recovery control.
 
-Potentially visible metadata includes:
+Examples include:
 
 - account and device routing IDs
-- opaque partnership and conversation IDs
+- partnership and conversation IDs
 - server receipt time
-- delivery state
 - immutable message server sequence
-- durable content-free mutation change sequence
+- durable change sequence
+- delivery and read receipt state
 - ciphertext size
-- encrypted-object identifier
 - object size
-- push token and routing state
+- crypto profile
+- group generation
+- MLS epoch
+- control sequence
+- push routing state
 - presence and typing routing state
-- call signaling state
-- bounded security metadata
+- call signaling metadata
 
-Descriptive metadata should be encrypted when practical.
-
-Examples:
+Encrypt descriptive metadata when practical, including:
 
 - filenames
 - captions
 - attachment descriptions
+- reaction values
+- chat nicknames
 - relationship text
-- reaction content
-- partnership chat nicknames
+- private notes
 
 Do not claim that E2EE hides all metadata.
 
 ## Attachment encryption
 
-Recommended flow:
+The M3 production path is:
 
 ```text
-select file
-validate locally
-resize or compress when appropriate
-generate random media key
-encrypt locally
-upload ciphertext
-send encrypted descriptor through conversation
+select media
+  -> validate and preprocess locally
+  -> generate random media content key
+  -> encrypt locally
+  -> upload ciphertext
+  -> distribute key through S1 protected-content path
 ```
 
-The object store receives ciphertext and a random object key.
-
-The encrypted descriptor carries decryption material through the E2EE channel.
+Object storage receives ciphertext and opaque object keys.
 
 ## Device storage
 
-Use browser-supported secure primitives and IndexedDB for persisted encrypted state.
+Persist encrypted/wrapped S1 state in a dedicated versioned IndexedDB crypto namespace.
 
-Prefer non-exportable WebCrypto key material where it fits the selected protocol and recovery design.
+Prefer non-exportable WebCrypto wrapping keys where browser capabilities permit.
 
-The threat model must recognize that a compromised browser origin can access decrypted application state.
+Hostile JavaScript executing in the trusted application origin may still access decrypted state. Browser hardening remains part of the E2EE security boundary.
 
 ## Device revocation
-
-A device record is a first-class security principal.
 
 Revocation must:
 
 - revoke authentication sessions
-- stop future partnership key delivery
-- revoke cryptographic authorization
-- trigger required rotation or epoch transition according to the reviewed protocol
+- mark the crypto identity revoked
+- invalidate unused KeyPackages
+- prevent future protected-key delivery
+- remove the device from active MLS groups
+- advance the MLS epoch
+- block protected writes while required rekeying is unresolved
+
+Revocation cannot erase plaintext already copied from an endpoint.
 
 ## Device enrollment
 
-New-device enrollment must not be implemented by simply downloading plaintext private keys from the server.
+A new device must generate its own cryptographic identity.
 
-Acceptable future patterns include:
+It becomes cryptographically trusted only after:
 
-- approval from an existing trusted device
-- client-encrypted key backup protected by a high-entropy recovery secret
+- approval from an existing trusted device, or
+- proof using authorized recovery material
+
+New-device enrollment must never download plaintext private device keys from the server.
 
 ## Recovery
 
-Plan for encrypted key backup so device loss does not necessarily destroy years of content.
+The server may store:
 
-The server may store encrypted recovery material but must not possess the recovery secret required to decrypt it.
+- recovery public keys
+- encrypted recovery bundle
+- encrypted per-content recovery capsules
+- recovery protocol metadata
+
+The server must never possess:
+
+- the Recovery Master Secret
+- unencrypted private recovery keys
+- protected content keys in plaintext
+
+Email-only account recovery does not restore historical E2EE content.
 
 ## Deletion
 
-At final dissolution:
+Final dissolution and permanent account deletion must integrate:
 
-- delete partnership cryptographic state locally
-- delete decryptable server-held encrypted key envelopes where applicable
-- invalidate device authorization for that partnership
-- delete encrypted media objects
-- delete ciphertext message and relationship data according to product deletion rules
+- synchronous authorization revocation
+- local MLS/group-state purge
+- local content-key purge
+- recovery-capsule deletion
+- server crypto-control deletion according to retention policy
+- message and R1 ciphertext deletion
+- encrypted media deletion
+- existing P3 physical deletion manifests
 
-Cryptographic erasure complements storage deletion. It does not replace required data deletion.
+Cryptographic erasure complements storage deletion. It does not replace required physical deletion.
 
 ## Push metadata
 
-Push services should receive opaque routing data whenever practical.
+Push payloads remain content-free.
 
-Protected message plaintext, media plaintext, relationship content, and cryptographic keys must not be placed in provider push payloads.
-
-Detailed previews should be produced client-side after authenticated fetch and decryption where platform capabilities permit.
+Protected plaintext, content keys, MLS secrets, recovery material, and detailed relationship content must never be placed in push-provider payloads.
 
 ## Protocol versioning
 
-Encrypted envelopes identify their crypto protocol version.
+Every protected envelope identifies its crypto profile.
 
-Unknown protocol versions fail closed.
+Unknown versions fail closed.
 
-Protocol migration must define read compatibility, write compatibility, device upgrade ordering, recovery, and rollback limits.
+Version migration must define:
+
+- read compatibility
+- write compatibility
+- client upgrade ordering
+- group-generation behavior
+- recovery behavior
+- rollback limitations
+- plaintext-retirement rules
 
 ## Calls
 
-Use WebRTC with end-to-end protected media appropriate to the chosen topology.
+C1 and C2 retain the verified relay-only WebRTC architecture.
 
-TURN relays may observe connection metadata but must not receive plaintext audio or video.
+S1 does not add a second call-media encryption system.
 
-If an SFU is introduced later, the E2EE design must be reviewed again.
+Any future SFU or server-side media-processing design requires a new security review.
 
-## Protocol review gate
+## S1 review gate
 
-Before implementation of stable-release E2EE, document:
+Before S1 implementation leaves S1-A, record:
 
-- selected protocol
-- selected library
-- browser support
-- device model
-- prekey or session setup
-- multi-device behavior
-- crypto epoch model
-- device revocation behavior
-- key rotation
-- recovery
-- backup
-- attachment encryption
-- partnership termination
-- account deletion
-- migration or secure wipe of pre-E2EE M1 message, reaction, and nickname plaintext
-- compatibility of M1 server-sequence and durable change-sequence metadata under encrypted payloads
-- test vectors
-- failure behavior
-
-Stable release must not proceed on an improvised or partially reviewed cryptographic design.
+- exact OpenMLS release and source revision
+- exact crypto provider
+- exact build features
+- ciphersuite
+- recovery HPKE profile
+- canonical serialization
+- device enrollment proofs
+- MLS control-stream semantics
+- epoch conflict behavior
+- group-generation reset behavior
+- local-state persistence and locking
+- migration/wipe treatment for pre-S1 plaintext
+- official protocol vectors
+- current security advisories and transitive dependency review

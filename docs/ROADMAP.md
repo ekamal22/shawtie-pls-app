@@ -72,7 +72,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 15 UX5 Calls Experience | DONE, integrated and physically accepted | UX1 + merged C1/C2 | Redmi call acceptance PASS |
 | 16 UX6 Memories, Letters, and Time | DONE, integrated and physically accepted | UX1 + verified R1/M3 | Redmi accepted |
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
-| 18 S1 E2EE and Cryptographic Recovery | PLANNED; may run in parallel with UX2 through UX7 | M3, C1, C2 | Yes, mandatory |
+| 18 S1 E2EE and Cryptographic Recovery | PLANNED, architecture frozen, implementation next | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, mandatory |
 | 19 UX8 Encrypted UX Integration | PLANNED | S1 + redesigned UX surfaces | Yes, security-critical UX |
 | 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -84,7 +84,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 The verified implementation frontier is:
 
 ```text
-main @ f53eb00
+runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
    |
    +--> M3 Media ✅
    +--> C1 Voice ✅
@@ -124,7 +124,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX5 Calls Experience:** intimate voice/video presentation over the accepted C1/C2 behavior. No voice-to-video upgrade or new call state in this milestone.
 - **UX6 Memories, Letters, and Time:** Our Story, Remember This, For You, Voice Letters, Future Us, This Day in Us, Our Year, Places, Someday, Firsts, reunion, anniversary, surprise, and proposal presentation.
 - **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
-- **S1 E2EE and Cryptographic Recovery:** reviewed cryptographic protocol and recovery implementation. No UX copy may claim verified E2EE before this closes.
+- **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** device enrollment, recovery, revocation, unavailable-history states, encryption errors, and privacy language integrated into the romantic experience.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure.
 
@@ -521,38 +521,84 @@ Add private one-to-one video calling on the verified C1 authority without reopen
 
 # Milestone 10: S1 E2EE and Cryptographic Recovery
 
-Status: PLANNED.
+Status: PLANNED, architecture frozen, implementation next.
 
-Depends on verified messaging/media/calling semantics and requires protocol review before implementation.
+Canonical architecture:
+
+`docs/architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
 
 ## Goal
 
-Protect stable-release private content with reviewed end-to-end encryption while keeping account recovery distinct from cryptographic recovery.
+Add reviewed end-to-end protection and recoverable device/key management without changing the product authority already proven by A1, P3, M1, R1, M2, M3, C1, and C2.
+
+## Selected architecture
+
+- RFC 9420 MLS with RFC 9750 application architecture
+- OpenMLS WASM implementation baseline, exact release/provider pin in S1-A
+- fresh per-content-version AES-256-GCM keys
+- RFC 9180 recovery capsules, exact HPKE profile pin in S1-A
+- independent per-device crypto identity
+- fresh MLS group for every partnership
+- group generation plus MLS epoch
+- Recovery Master Secret held only by the user
+- no protected-plaintext fallback after activation
 
 ## Core scope
 
-- reviewed maintained protocol selection
-- per-device cryptographic identity
-- per-partnership cryptographic roots
-- crypto epochs
-- message encryption
-- relationship-object encryption
-- attachment encryption
+- protocol/dependency security freeze
+- device identity and KeyPackages
+- partnership MLS bootstrap/control stream
+- M1 messages, reactions, and nicknames
+- R1 preview and sealed-main content
+- M3 production media key envelopes
+- M2 encrypted offline queue integration
 - trusted-device enrollment
-- device revocation
-- encrypted recovery material
-- high-entropy recovery secret
-- metadata minimization
+- device revocation/rekey
+- cryptographic recovery
 - protocol versioning
+- pre-S1 plaintext retirement
 - lifecycle cryptographic deletion
+
+## Implementation slices
+
+1. S1-A protocol and security freeze
+2. S1-B crypto package and local vault
+3. S1-C migration 0019 and device crypto runtime
+4. S1-D migration 0020 and partnership MLS control plane
+5. S1-E migration 0021 plus M1/M2 protected messaging
+6. S1-F R1/M3 protected content
+7. S1-G enrollment, revocation, and rekey
+8. S1-H cryptographic recovery
+9. S1-I plaintext retirement
+10. S1-J automated, browser, storage-inspection, Redmi, and security closure
 
 ## Non-negotiable boundary
 
-Email-only account recovery must never recover historical protected plaintext.
+S1 does not replace:
+
+- A1 authentication/device authority
+- P3 lifecycle/deletion authority
+- M1 message ordering and mutation authority
+- R1 release/visibility authority
+- M2 realtime/offline reconciliation authority
+- M3 media lifecycle authority
+- C1/C2 verified call semantics
+
+S1 inserts cryptographic protection underneath those semantics.
+
+Email/account recovery must never silently restore historical protected plaintext.
+
+## Migration ownership
+
+S1 reserves:
+
+- `0019_s1_device_crypto_runtime.sql`
+- `0020_s1_partnership_crypto_runtime.sql`
+- `0021_s1_protected_content_runtime.sql`
 
 ## Closure boundary
 
-S1 requires protocol review, test vectors where available, ciphertext-at-rest evidence, device enrollment/revocation tests, recovery-secret tests, future-content denial after revocation, previous-partnership isolation, cryptographic deletion, updated threat model, and physical-device validation.
+S1 is DONE only after protocol review, all protected-content paths, recovery, revocation, plaintext retirement, raw storage/log inspection, browser closure, physical Redmi Note 9S acceptance, and final security review pass.
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 

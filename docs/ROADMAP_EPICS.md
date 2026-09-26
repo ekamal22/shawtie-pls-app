@@ -2315,45 +2315,204 @@ Status: PLANNED after S1 and the main romantic UX surfaces.
 
 # S1: E2EE and Cryptographic Recovery
 
-Status: PLANNED
+Status: PLANNED, architecture frozen, runtime implementation not started
+
+Canonical implementation design:
+
+`docs/architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
+
+Security architecture:
+
+- `docs/security/E2EE_ARCHITECTURE.md`
+- `docs/security/DEVICE_AND_RECOVERY.md`
+- ADR-004
+- ADR-006
+
+## Selected architecture
+
+- RFC 9420 MLS for live partnership device membership and group key agreement
+- RFC 9750 application architecture
+- OpenMLS compiled to WebAssembly as the implementation baseline
+- exact OpenMLS release, crypto provider, build flags, and dependency set pinned during S1-A review
+- initial MLS ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`
+- fresh AES-256-GCM content key for every protected content version
+- RFC 9180 HPKE recovery capsules with the exact profile pinned during S1-A
+- independent crypto identity for each device
+- fresh MLS group for every partnership
+- explicit group generation plus MLS epoch
+- high-entropy client-held Recovery Master Secret
+- no server plaintext fallback after crypto-required activation
 
 ## Scope
 
-- reviewed protocol selection
+- protocol and dependency security freeze
+- OpenMLS WASM adapter
 - device cryptographic identity
-- partnership cryptographic roots
-- crypto epochs
-- message encryption
-- relationship-object encryption
-- attachment encryption
-- device enrollment
-- device revocation
-- encrypted recovery material
-- recovery secret
+- KeyPackage lifecycle
+- partnership MLS groups
+- crypto control stream
+- group generation and epoch conflict handling
+- M1 message encryption
+- reaction and nickname encryption
+- R1 preview/main encryption
+- M3 production content-key envelopes
+- M2 encrypted-outbox integration
+- trusted-device enrollment
+- device revocation and rekey
+- encrypted recovery bundle
+- per-account recovery capsules
+- trusted-device restoration
+- Recovery Master Secret restoration
 - metadata minimization
 - protocol versioning
+- pre-S1 plaintext retirement
 - lifecycle cryptographic deletion
+- browser and physical-device closure
+
+## Implementation sequence
+
+### S1-A Protocol and security freeze
+
+- pin exact OpenMLS version/source revision
+- select crypto provider and WASM build features
+- freeze ciphersuite and recovery HPKE profile
+- review current security advisories and transitive dependencies
+- freeze envelope schemas and canonical serialization
+- freeze group-reset and recovery semantics
+
+### S1-B Crypto package and local vault
+
+- OpenMLS WASM adapter
+- canonical serialization
+- device identity and content signing
+- versioned IndexedDB crypto vault
+- Web Locks serialization for MLS state mutation
+- protocol vectors
+
+### S1-C Device crypto runtime
+
+Migration ownership:
+
+- `0019_s1_device_crypto_runtime.sql`
+
+Implement:
+
+- device crypto identities
+- KeyPackages
+- trusted-device approval evidence
+- recovery public roots
+- encrypted recovery bundle metadata
+
+### S1-D Partnership crypto control plane
+
+Migration ownership:
+
+- `0020_s1_partnership_crypto_runtime.sql`
+
+Implement:
+
+- MLS group bootstrap
+- group generation
+- epoch CAS
+- ordered control stream
+- multi-device membership
+- conflicting Commit behavior
+
+### S1-E M1 and M2 protected messaging
+
+Migration ownership begins in:
+
+- `0021_s1_protected_content_runtime.sql`
+
+Implement:
+
+- message body encryption
+- fresh-key edits
+- reaction encryption
+- nickname encryption
+- frozen encrypted offline requests
+- retry-safe M2 replay
+- realtime canonical refetch compatibility
+
+### S1-F R1 and M3 protected content
+
+- separate R1 preview and sealed-main envelopes
+- release withholding
+- production media content-key envelopes
+- encrypted media descriptors
+- object-store ciphertext-only verification
+
+### S1-G Enrollment, revocation, and rekey
+
+- trusted-device approval
+- recovery-authorized enrollment
+- MLS removal
+- fail-closed rekey-required state
+- group-generation reset
+- stale-epoch and concurrency coverage
+
+### S1-H Cryptographic recovery
+
+- Recovery Master Secret
+- encrypted recovery bundle
+- recovery possession proof
+- RFC 9180 recovery capsules
+- trusted-device historical restoration
+- recovery-secret historical restoration
+- email-only recovery separation
+
+### S1-I Plaintext retirement
+
+- legacy protected-plaintext inventory
+- synthetic/development wipe or authorized client-side migration
+- crypto-required cutoff
+- schema/API plaintext rejection
+- test-only production crypto path removal
+
+### S1-J Closure
+
+- protocol/adversarial tests
+- PostgreSQL plaintext inspection
+- object-storage ciphertext inspection
+- log/outbox/push plaintext inspection
+- browser E2E
+- Xiaomi Redmi Note 9S physical acceptance
+- final security review
 
 ## Acceptance gates
 
-- [ ] exact protocol and maintained implementation are documented and reviewed
+- [x] S1 implementation architecture is documented repo-wide
+- [x] RFC 9420 MLS is selected as the protocol family
+- [x] OpenMLS WASM is selected as the implementation baseline
+- [x] S1 owns migration range 0019 through 0021
+- [ ] exact OpenMLS release/source revision is pinned and reviewed
+- [ ] exact crypto provider/build features are pinned and reviewed
 - [ ] no custom cryptographic protocol is introduced
-- [ ] every device has independent cryptographic identity
-- [ ] every new partnership starts with new cryptographic root state
-- [ ] crypto epoch transition is defined and tested
+- [ ] every trusted device has independent cryptographic identity
+- [ ] every new partnership starts with unrelated MLS group state
+- [ ] group generation and MLS epoch transitions are implemented and race tested
 - [ ] server cannot read protected message plaintext
 - [ ] server cannot read protected relationship-object plaintext
+- [ ] reaction and nickname values are encrypted
 - [ ] media is encrypted before upload
 - [ ] database and object-storage inspection shows ciphertext for protected content
-- [ ] email-only account recovery cannot decrypt historical E2EE data
-- [ ] trusted-device or recovery-secret restoration is tested
-- [ ] server never possesses the plaintext recovery secret
-- [ ] revoked device stops receiving future protected content
+- [ ] M2 offline queue persists frozen encrypted requests rather than plaintext drafts
+- [ ] email-only account recovery cannot decrypt historical protected content
+- [ ] trusted-device historical restoration passes
+- [ ] Recovery Master Secret restoration passes
+- [ ] server never possesses the Recovery Master Secret
+- [ ] revoked device stops receiving future decryptable content after MLS removal/rotation
 - [ ] future partnership cannot decrypt previous partnership data
-- [ ] deletion integrates cryptographic erasure and physical cleanup
-- [ ] official or reviewed protocol test vectors pass where available
-- [ ] threat model and data classification are updated for the selected protocol
-- [ ] stable-release cryptographic review passes
+- [ ] R1 preview/main substitution fails and unreleased main content remains withheld
+- [ ] deletion integrates cryptographic erasure and physical P3 cleanup
+- [ ] unknown crypto profiles and versions fail closed
+- [ ] official or reviewed protocol test vectors pass
+- [ ] raw logs, outbox payloads, push payloads, PostgreSQL, and object storage contain no protected plaintext
+- [ ] pre-S1 protected plaintext is wiped or client-reencrypted and plaintext writes are prohibited
+- [ ] browser E2E closure passes
+- [ ] physical Redmi Note 9S S1 acceptance passes
+- [ ] threat model and data classification match the implemented protocol
+- [ ] final stable-release cryptographic review passes
 
 # R2: Public Readiness
 

@@ -42,7 +42,9 @@ Accepted architecture decisions include:
 - relay-first TURN privacy
 - short-lived TURN credentials
 - no Redis in the initial architecture
-- reviewed E2EE before stable release
+- RFC 9420 MLS selected for S1 live group security, with RFC 9750 application architecture
+- OpenMLS WASM selected as the S1 implementation baseline, with exact release/provider pin required in S1-A
+- per-content durable encryption keys and client-held Recovery Master Secret recovery architecture frozen for S1
 - formal threat model
 - repository-wide data classification and handling matrix
 - architecture freeze and change-control governance
@@ -134,7 +136,7 @@ Current epic status:
 - UX0 Romantic Experience Specification: DONE. The frozen implementation specification is `docs/design/UX0_IMPLEMENTATION_SPEC.md`, merged to `main` with the mutual presence, last-seen, typing, and read-receipt rules locked (always on, not configurable).
 - UX1 Romantic Design Foundation: DONE. Tokens, Midnight and Dawn themes, self-hosted OFL fonts, primitives, and the Home, Talk, Ours shell are implemented over unchanged product semantics; see `docs/design/UX1_FOUNDATION.md`. It is included in the physically accepted romantic integration.
 - UX2 through UX7: DONE, physically accepted at executable SHA `ca7cd35` (started at `0ec184d`), and fast-forward merged to `main` at merge anchor `9f0bea4`. Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
-- S1 E2EE and Cryptographic Recovery: PLANNED and still mandatory before stable release. UX copy must not claim E2EE until S1 is implemented and verified.
+- S1 E2EE and Cryptographic Recovery: PLANNED with implementation architecture frozen in `docs/architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`. RFC 9420 MLS and OpenMLS WASM are the selected baseline; exact dependency/provider pin, runtime implementation, tests, security review, and physical acceptance remain open. UX copy must not claim E2EE until S1 is implemented and verified.
 - UX8 Encrypted UX Integration: PLANNED after S1 and the main romantic UX surfaces, to integrate device enrollment, recovery, revocation, and encryption states into the redesigned experience.
 - R2 Public Readiness: PLANNED after pre-release implementation and V1 hosted verification.
 
@@ -163,6 +165,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
 - `feat/c2-video-calling` -> historical completed branch; C2 fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi Note 9S acceptance complete
 - `integration/ux-romantic` -> preserved historical integration line for UX0 through UX7; final executable `ca7cd35`, 22/22 Redmi Note 9S scenarios PASS; fast-forward merged to `main` at `9f0bea4`
+- `design/s1-e2ee-crypto-recovery` -> S1 architecture-freeze documentation line; documentation-only and intended to fast-forward into `main` before S1 runtime implementation
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -188,7 +191,7 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. implement S1 E2EE and Cryptographic Recovery with reviewed protocol and physical-device evidence
+1. implement the frozen S1 E2EE and Cryptographic Recovery architecture, beginning with S1-A exact OpenMLS/provider security freeze and ending with browser/storage/Redmi security closure
 2. implement UX8 Encrypted UX Integration over verified S1 states
 3. complete V1 Hosted CI Verification when Actions capacity is available
 4. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
@@ -206,7 +209,7 @@ No implementation should begin until real production evidence shows sufficient u
 
 Stable release remains blocked until:
 
-- reviewed E2EE is implemented
+- the frozen S1 MLS/recovery architecture is implemented and passes final cryptographic review
 - partnership isolation is verified
 - deletion workflows are verified
 - account and crypto recovery are safely separated

@@ -43,27 +43,54 @@ P3 security verification pins verified migration 0009 before P3-only migration w
 
 ## Parallel feature migration reservations
 
-The verified physical schema on `main` is implemented through migration 0014.
+The verified physical schema on `main` is implemented through migration 0018.
 
-M1 owns:
+Completed ownership:
 
-- `0011_messaging_core_runtime.sql`
-- `0012_messaging_interaction_runtime.sql`
+- M1: `0011_messaging_core_runtime.sql`, `0012_messaging_interaction_runtime.sql`
+- R1: `0013_relationship_space_runtime.sql`, `0014_relationship_space_interaction_runtime.sql`
+- M3: `0015_media_runtime.sql`, `0016_media_integration_runtime.sql`
+- C1: `0017_calling_runtime.sql`, `0018_push_runtime.sql`
+- C2: no migration
 
-R1 owns:
+S1 now has accepted migration ownership for the next forward-only range:
 
-- `0013_relationship_space_runtime.sql`
-- `0014_relationship_space_interaction_runtime.sql`
+- `0019_s1_device_crypto_runtime.sql`
+- `0020_s1_partnership_crypto_runtime.sql`
+- `0021_s1_protected_content_runtime.sql`
 
-R1 migrations 0013 and 0014 are implemented and verified on the combined integration baseline.
+Reservation responsibilities:
 
-Planned 0013 responsibilities include preview/main content columns, normalized occurrence fields, supported kind/content-version and release-shape checks, positive release generation, `UNIQUE (relationship_items.id, partnership_id)`, immutable root identity, feature-state tables, and R1 query indexes.
+### 0019
 
-Planned 0014 responsibilities include composite same-partnership foreign keys, loose message/media references, curation/prepared-content links with restrictive target deletion, Our Story membership, and relationship-event hardening.
+- recovery public roots
+- device crypto identities
+- trusted-device approval evidence
+- MLS KeyPackage inventory
+- encrypted recovery bundle metadata
 
-R1 reuses existing durable scheduled actions and does not create fake crypto epochs or placeholder M1 migrations.
+It must contain no plaintext private device key and no Recovery Master Secret.
 
-The final R1 closure gate is complete: migrations 0001 through 0014 apply from zero on the approved integration baseline with no reservation and database invariants green.
+### 0020
+
+- partnership crypto groups
+- group generation
+- current MLS epoch
+- crypto membership
+- ordered crypto-control messages
+- rekey-required state
+- uniqueness preventing two authoritative groups for one partnership generation
+
+### 0021
+
+- M1 encrypted protected fields
+- encrypted reaction and nickname representation
+- R1 preview/main encrypted envelopes
+- M3 production protected key-envelope integration
+- content-key references and per-account encrypted recovery capsules
+- pre-S1 plaintext retirement constraints
+
+S1 must consume migrations 0001 through 0018 unchanged. Any need for additional S1 migration numbers must be documented before another milestone claims them.
 
 ## Policy
 
@@ -290,7 +317,7 @@ Isolated C1 automated/local closure passed at `439b09f` with only M3-owned 0015/
 
 ## C2 migration position
 
-C2 Video Calling required no PostgreSQL migration and reserves none. The canonical automated/local closure first passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and re-passed at final executable SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` with physical acceptance complete, applying real migrations 0001 through 0018 from zero with `reserved=0` and `DATABASE_INVARIANTS_PASS`. The existing schema already permits `call_type IN ('voice','video')`, while C2 camera/media state remains transient client state. If later implementation evidence proves a genuinely new durable field is necessary, update architecture and migration ownership before adding the next forward-only migration; do not speculatively reserve `0019`.
+C2 Video Calling required no PostgreSQL migration and reserves none. The canonical automated/local closure first passed at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and re-passed at final executable SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` with physical acceptance complete, applying real migrations 0001 through 0018 from zero with `reserved=0` and `DATABASE_INVARIANTS_PASS`. The existing schema already permits `call_type IN ('voice','video')`, while C2 camera/media state remains transient client state. C2 owns no later migration. S1 now owns the accepted forward-only reservation `0019` through `0021`; C2 must not modify or consume that range.
 
 ## M1 and R1 migration ownership
 

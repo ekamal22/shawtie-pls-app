@@ -1240,6 +1240,89 @@ Re-run or update the threat model when any of the following occurs:
 - deferred post-stable call recording enters implementation
 - major infrastructure provider changes
 
+## S1 E2EE and cryptographic recovery threat additions
+
+S1 uses RFC 9420 MLS plus durable per-content encryption and client-controlled recovery.
+
+### S1-T1: Malicious delivery service replays, reorders, or forks crypto control state
+
+Mitigations:
+
+- ordered per-partnership crypto-control sequence
+- expected group generation and expected MLS epoch CAS
+- client verification of MLS Commit processing
+- stale/forked transition rejection
+- explicit group-reset generation fencing
+
+### S1-T2: Account takeover enrolls a cryptographically trusted attacker device
+
+Mitigations:
+
+- authenticated account access does not equal crypto trust
+- new device generates independent keys
+- trusted-device approval or recovery possession proof is required
+- approval binds the destination crypto-device identity
+- email-only recovery cannot silently create historical decryption authority
+
+### S1-T3: Recovery Master Secret compromise exposes recoverable history
+
+Mitigations and limitation:
+
+- Recovery Master Secret is high entropy and client held
+- it is never logged or uploaded
+- encrypted recovery bundle and capsules contain no server plaintext key
+- UX must warn that the secret controls recoverable history
+- Shawtie does not claim unlimited forward secrecy for recoverable historical content
+
+### S1-T4: Revoked device receives future protected content
+
+Mitigations:
+
+- A1 session revocation
+- S1 crypto identity revocation
+- unused KeyPackage invalidation
+- MLS Remove and epoch advancement
+- fail-closed rekey-required write state
+- physical multi-device revocation acceptance
+
+### S1-T5: Local rollback, crash, or multi-tab race reuses stale MLS state
+
+Mitigations:
+
+- exclusive Web Locks ownership for MLS mutation
+- atomic IndexedDB persistence of updated MLS state plus frozen outbound operation
+- network send only after local transaction commit
+- stale epoch server rejection
+- crash and lost-response matrix
+
+### S1-T6: Valid ciphertext is substituted into another object or R1 payload role
+
+Mitigations:
+
+- canonical AAD binds partnership, generation, epoch, content type, content ID, content version, role, sender device, and schema version
+- content signature covers canonical metadata and ciphertext digest
+- preview and sealed-main roles are distinct
+- tamper/substitution regression tests
+
+### S1-T7: Recovery capsule is replayed across account, partnership, or content identity
+
+Mitigations:
+
+- capsule metadata binds account, content-key identity, content object/version, and crypto profile
+- recipient recovery key version is explicit
+- wrong-account recovery tests
+- deletion removes obsolete capsules
+
+### S1-T8: Legacy pre-S1 plaintext survives after E2EE activation
+
+Mitigations:
+
+- explicit legacy-content inventory
+- development wipe/reseed or authorized client-side re-encryption
+- crypto-required cutoff
+- database/API constraints rejecting protected plaintext writes
+- raw PostgreSQL/log/outbox/object-store marker scans
+
 ## C1 voice-calling threat additions
 
 ### C1-T1: Direct WebRTC candidate leaks peer network address

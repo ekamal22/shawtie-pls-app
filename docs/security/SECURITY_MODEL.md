@@ -148,11 +148,20 @@ Device revocation must revoke both authentication sessions and cryptographic aut
 
 Verified-email recovery restores account access only.
 
-It must not automatically restore historical E2EE decryption keys.
+It must not automatically restore historical protected-content keys.
 
-Historical protected-content recovery requires an existing trusted device, a high-entropy cryptographic recovery secret, or another reviewed recovery mechanism.
+S1 uses a high-entropy client-held Recovery Master Secret to protect an encrypted account recovery bundle.
 
-See `DEVICE_AND_RECOVERY.md`.
+The server may store recovery public keys, encrypted recovery material, and per-content encrypted recovery capsules. It must never receive the Recovery Master Secret or unencrypted recovery private keys.
+
+Historical protected-content recovery requires:
+
+- an existing trusted device transferring authorized recovery capability, or
+- local decryption of the recovery bundle using the Recovery Master Secret
+
+A recovered account without cryptographic recovery remains unable to decrypt protected history.
+
+See `DEVICE_AND_RECOVERY.md` and `../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`.
 
 ## Media
 
@@ -351,6 +360,30 @@ Required M2 security rules:
 Before S1, M2 local protected content remains development plaintext. Explicit logout, account switch, or observed revocation therefore purges the authorization-bound local protected state. M2 must not invent fake ciphertext or fake cryptographic epochs.
 
 PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notification must not weaken authorization or synchronization correctness because canonical HTTP/PostgreSQL reconciliation remains authoritative. LISTEN loss/reconnect forces connected local clients to resynchronize, and visible clients run low-frequency canonical anti-entropy to bound recovery from silent hint loss. NOTIFY publication is committed before the corresponding durable outbox claim is acknowledged delivered.
+
+## S1 E2EE and cryptographic recovery security boundary
+
+S1 selects RFC 9420 MLS with the RFC 9750 application architecture for live partnership device membership and group key agreement.
+
+OpenMLS WASM is the implementation baseline. The exact release, crypto provider, build features, and transitive dependencies remain an S1-A security-freeze gate.
+
+Long-lived protected content uses fresh per-content-version keys. Current authorized devices receive key material through MLS-protected distribution. Historical recovery uses encrypted per-account recovery capsules and a client-held Recovery Master Secret.
+
+Security invariants:
+
+- authenticated account session does not equal cryptographically trusted device
+- each device has independent runtime identity
+- every partnership has unrelated cryptographic state
+- stale epoch or conflicting Commit transitions fail closed
+- protected plaintext is encrypted before entering M2 durable queues or M3 object storage
+- R1 preview and sealed-main roles are cryptographically distinct
+- email-only recovery cannot decrypt protected history
+- revoked devices receive no future protected content after required MLS removal/rotation
+- unknown crypto versions fail closed
+- no plaintext fallback exists after crypto-required activation
+- raw server stores, logs, outbox payloads, and push payloads contain no protected plaintext after S1 activation
+
+Recoverable history is a deliberate tradeoff. Compromise of a user's Recovery Master Secret plus retained recovery capsules may expose that user's recoverable history. The product must not claim unlimited forward secrecy for recoverable historical data.
 
 ## C1 voice-calling security boundary
 

@@ -27,7 +27,7 @@ M2 Realtime and Offline Reliability is DONE and merged to `main` at fast-forward
 
 M3 Media and Voice Messages is complete on `feat/m3-media-voice` (created from merged-M2 `main @ 54b8659a`) and is fast-forward merged to `main` at `1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. The implementation includes migrations 0015/0016, media contracts/repositories, private S3-compatible object storage, API/worker integration, M1/R1 binding, encrypted browser drafts, image/video/file/voice flows, and cleanup. Automated closure passed and all 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S, final physical acceptance code SHA `ee59850`, recorded in `testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. That physical run found and fixed three real defects, each with a regression test. The canonical design is `architecture/M3_MEDIA_VOICE_DESIGN.md`, the API/storage contract is `api/M3_MEDIA_API.md`, and physical Android closure is defined in `testing/M3_ANDROID_ACCEPTANCE.md`.
 
-C1 Voice Calling and C2 Video Calling are also DONE and merged to `main`. UX0 through UX7 are DONE, physically accepted at executable SHA `ca7cd35` with all 22 mandatory UX scenarios passing on the Xiaomi Redmi Note 9S, and fast-forward merged to `main` at merge anchor `9f0bea4`. The next engineering milestone is S1 E2EE and Cryptographic Recovery, followed by UX8 Encrypted UX Integration and R2 Public Readiness.
+C1 Voice Calling and C2 Video Calling are also DONE and merged to `main`. UX0 through UX7 are DONE, physically accepted at executable SHA `ca7cd35` with all 22 mandatory UX scenarios passing on the Xiaomi Redmi Note 9S, and fast-forward merged to `main` at merge anchor `9f0bea4`. The next engineering milestone is S1 E2EE and Cryptographic Recovery. Its implementation architecture is frozen in `architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`, selecting RFC 9420 MLS and the RFC 9750 application architecture with OpenMLS WASM as the implementation baseline. UX8 follows verified S1 runtime closure, then R2 Public Readiness.
 
 Governance:
 
@@ -49,7 +49,7 @@ The selected architecture is:
 - private object storage for encrypted media
 - WebRTC for voice and video calls
 - TURN relay support, with relay-first privacy behavior
-- reviewed E2EE design with client-side encryption for protected content
+- frozen S1 RFC 9420 MLS architecture with OpenMLS WASM baseline and client-side protected-content encryption
 - centralized domain capability engine
 - explicit device model and device revocation
 - account recovery separated from cryptographic history recovery
@@ -63,6 +63,7 @@ The selected architecture is:
 ## Core architecture documents
 
 - `architecture/SYSTEM_ARCHITECTURE.md`
+- `architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
 - `architecture/A1_ACCOUNTS_DEVICES_DESIGN.md`
 - `architecture/P1_DISCOVERY_REQUESTS_DESIGN.md`
 - `architecture/P2_PARTNERSHIP_FORMATION_DESIGN.md`

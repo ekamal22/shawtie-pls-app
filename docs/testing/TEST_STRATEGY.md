@@ -472,24 +472,141 @@ Test:
 
 ## E2EE tests
 
-After protocol selection, include:
+S1 uses the architecture in `../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`.
 
-- official or reviewed test vectors where available
-- cross-device encryption and decryption
-- wrong-partnership failure
-- wrong-device failure
-- attachment encryption
-- key rotation
-- device enrollment
-- recovery
-- email-only account recovery does not reveal historical plaintext
-- trusted-device or recovery-secret key restoration
-- device revocation
-- crypto epoch rotation
-- protocol version mismatch
-- partnership termination
-- account deletion
-- future partnership cannot decrypt previous partnership content
+S1 closure requires all of the following evidence.
+
+### Protocol and crypto package
+
+- RFC 9420 / OpenMLS protocol vectors and known-answer coverage where available
+- selected ciphersuite support
+- malformed KeyPackage rejection
+- malformed Welcome/Commit/application-message rejection
+- unsupported protocol and ciphersuite failure
+- signature verification failure
+- ciphertext, nonce, tag, and AAD tamper rejection
+- canonical serialization stability
+- ciphertext substitution across partnership, content ID, content version, and R1 payload role fails
+
+### Device and group lifecycle
+
+- independent device identities
+- first partnership MLS bootstrap
+- two simultaneous bootstrap attempts produce one authoritative group
+- KeyPackage consume-once behavior
+- trusted-device enrollment
+- device approval replay rejection
+- simultaneous MLS Commit conflict handling
+- stale epoch send failure
+- device revocation removes future protected access
+- rekey-required state fails closed for protected writes
+- catastrophic group-generation reset
+- future partnership cannot decrypt previous partnership data
+
+### M1, M2, R1, and M3 integration
+
+- message send/decrypt
+- message edit uses fresh content key
+- reaction value encryption
+- chat nickname encryption
+- encrypted request is frozen before entering the M2 outbox
+- replay sends identical encrypted request bytes
+- crash after local crypto commit but before HTTP is retry safe
+- multi-tab crypto-state mutation is serialized
+- R1 preview/main substitution fails
+- recipient cannot obtain sealed main ciphertext/key before release
+- M3 media ciphertext is produced before upload
+- test-only crypto cannot be enabled in production
+
+### Recovery
+
+- email-only recovery cannot decrypt historical protected content
+- correct Recovery Master Secret restores recovery bundle
+- wrong Recovery Master Secret fails locally
+- recovery proof is bound to the intended account/device
+- account A recovery key cannot open account B recovery capsules
+- trusted-device historical restoration works
+- recovery-secret historical restoration works
+- group reset after state loss preserves historical recovery while future writes use the new generation
+- deleted recovery material is not recoverable
+
+### Server plaintext inspection
+
+Create distinctive synthetic protected values and inspect:
+
+- raw PostgreSQL tables
+- PostgreSQL dump output
+- transactional outbox rows
+- realtime/control rows
+- durable worker payloads
+- MinIO/S3 objects
+- application and error logs
+- push payloads
+
+The distinctive plaintext markers must occur zero times outside the authorized client after S1 activation.
+
+Canonical marker:
+
+`S1_SERVER_PLAINTEXT_INSPECTION_PASS`
+
+### Object-storage inspection
+
+Upload image, video, file, and voice fixtures.
+
+Direct object-store reads must show:
+
+- no recognizable plaintext media bytes
+- no original filename
+- no decryptable object without the authorized content key
+- successful authorized client decryption
+
+Canonical marker:
+
+`S1_OBJECT_STORAGE_CIPHERTEXT_PASS`
+
+### Concurrency and crash matrix
+
+At minimum test:
+
+- simultaneous group bootstraps
+- simultaneous MLS commits
+- device revoke versus send
+- device add versus send
+- group reset versus send
+- group reset versus ordinary commit
+- offline old-epoch send
+- two browser tabs sending simultaneously
+- crash before IndexedDB crypto transaction commit
+- crash after local commit before HTTP
+- HTTP accepted with response lost
+- control commit processed with acknowledgement lost
+
+### Physical Android device
+
+A Xiaomi Redmi Note 9S physical run is mandatory before S1 can be DONE.
+
+The physical matrix must cover:
+
+- first crypto setup
+- partnership provisioning
+- encrypted text, edit, reaction, and nickname
+- offline encrypted replay
+- image, video, file, and voice
+- R1 memory and sealed scheduled content
+- second-device enrollment
+- historical-key restoration
+- device revocation and future-message denial
+- email-only account recovery
+- Recovery Master Secret recovery
+- incorrect recovery secret
+- crypto-state corruption failure
+- group-generation reset
+- breakup pending
+- restoration
+- final dissolution and local purge
+- future re-pair cannot decrypt prior partnership
+
+S1 remains incomplete until automated, browser, storage-inspection, and physical-device evidence are all recorded.
 
 ## M3 Media and Voice Messages verification
 
