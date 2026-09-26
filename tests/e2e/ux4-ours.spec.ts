@@ -480,6 +480,58 @@ test("Sealed letters wait quietly and the recipient opens them", async ({ page }
   await expect.poll(() => state.released.length).toBe(1);
 });
 
+test("A recipient sees when a scheduled letter will arrive and nothing more, in both themes", async ({
+  page,
+}) => {
+  const arrivals: string[] = [];
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("about:blank");
+    const scheduled = item({
+      kind: "for_you",
+      creatorAccountId: PARTNER,
+      content: null,
+      preview: { title: "For February", conditionLabel: null },
+      release: {
+        mode: "scheduled",
+        generation: 1,
+        unlockAt: "2027-02-14T22:00:00.000Z",
+        releasedAt: null,
+        state: "locked",
+      },
+    });
+    await openOurs(page, scenario({ upcoming: [scheduled], items: [scheduled] }));
+    const now = chapter(page, "Now");
+    const row = now.getByRole("button", { name: /For February/ });
+    // The authorized scheduled release time is shown: anticipation without content.
+    await expect(row).toContainText(/Arrives .*2027/);
+    arrivals.push(((await row.innerText()) ?? "").replace(/s+/g, " "));
+    await row.click();
+    const sheet = page.getByRole("dialog", { name: "Sealed" });
+    await expect(sheet.getByText(/2027/).first()).toBeVisible();
+
+    // Nothing the projection does not authorize: no generated teaser, no count, no creator
+    // activity, no kind cue, no countdown.
+    const text = (await page.locator("body").innerText()).toLowerCase();
+    for (const forbidden of [
+      "something is waiting",
+      "just wrote",
+      "days left",
+      "days until",
+      "counting down",
+      "1 waiting",
+      "1 sealed",
+      "1 item",
+      "a letter for you",
+    ]) {
+      expect(text).not.toContain(forbidden);
+    }
+    await sheet.getByRole("button", { name: "Close" }).first().click();
+  }
+  // Midnight and Dawn present the same information.
+  expect(arrivals[0]).toBe(arrivals[1]);
+});
+
 test("A creator's own sealed letter is not presented as waiting for them", async ({ page }) => {
   const mine = item({
     kind: "for_you",
@@ -497,6 +549,8 @@ test("A creator's own sealed letter is not presented as waiting for them", async
   await openOurs(page, scenario({ upcoming: [mine], items: [mine] }));
   const now = chapter(page, "Now");
   await expect(now.getByText("Sealed for later")).toBeVisible();
+  // The creator keeps seeing when their own letter is scheduled to arrive.
+  await expect(now.getByRole("button", { name: /For March/ })).toContainText(/Arrives .*2027/);
   await expect(now.getByText("Waiting for you")).toHaveCount(0);
 });
 

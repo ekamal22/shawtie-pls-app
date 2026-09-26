@@ -119,6 +119,29 @@ export function isLocked(item: RelationshipItem): boolean {
   return item.release?.state === "locked";
 }
 
+/**
+ * The scheduled release time the authoritative R1 projection already exposes for a locked
+ * item. Knowing when something will arrive is intentional anticipation (accepted product
+ * rule); it is never computed, inferred, counted down, or read from anything but the
+ * projection's own `release.unlockAt`.
+ */
+export function scheduledArrival(item: RelationshipItem): string | null {
+  const release = item.release;
+  if (!release || release.state !== "locked" || release.mode !== "scheduled") return null;
+  return typeof release.unlockAt === "string" && release.unlockAt.length > 0
+    ? release.unlockAt
+    : null;
+}
+
+export function arrivalText(iso: string): string | null {
+  const value = new Date(iso);
+  if (Number.isNaN(value.getTime())) return null;
+  return (
+    "Arrives " +
+    new Intl.DateTimeFormat(undefined, { dateStyle: "long", timeStyle: "short" }).format(value)
+  );
+}
+
 export function hasVoiceLetter(item: RelationshipItem): boolean {
   return item.references.some(
     (reference) => reference.referenceType === "media" && reference.role === "voice_letter",

@@ -5,8 +5,10 @@ import { Sheet } from "../../design/primitives.tsx";
 import { ItemByKind, openSourceMessage } from "./content/index.ts";
 import type { RelationshipItem } from "../relationship-space/model.ts";
 import {
+  arrivalText,
   hasVoiceLetter,
   isLocked,
+  scheduledArrival,
   itemTitle,
   kindLabel,
   occurrenceText,
@@ -40,9 +42,12 @@ export function OursItemRow({
   const icon = locked ? null : rowIcon(item);
   const date = occurrenceText(item);
   const paper = LETTER_KINDS.has(item.kind) && !sealedForMe;
-  // Unreleased items show only the authorized preview the server already exposes: the title
-  // and the opening line. No date, countdown, or extra wording is added before release.
+  // Unreleased items show only what the projection already exposes: the authorized preview
+  // (title, opening line) and the scheduled release time, which builds anticipation without
+  // revealing content. Nothing is counted, computed, or teased.
   const sealedNote = locked ? readString(item.preview, "conditionLabel") : null;
+  const arrival = locked ? scheduledArrival(item) : null;
+  const arrivalLabel = arrival ? arrivalText(arrival) : null;
   return (
     <li>
       <button
@@ -64,6 +69,7 @@ export function OursItemRow({
           </span>
           <span className="ours-row__title">{locked ? previewTitle(item) : itemTitle(item)}</span>
           {sealedNote ? <span className="ours-row__meta">{sealedNote}</span> : null}
+          {arrivalLabel ? <span className="ours-row__meta">{arrivalLabel}</span> : null}
           {!locked && date ? <span className="ours-row__meta">{date}</span> : null}
         </span>
         <Icon name="forward" size={18} />

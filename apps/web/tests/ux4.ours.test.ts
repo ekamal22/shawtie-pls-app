@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  arrivalText,
   bucketItems,
   calendarDateText,
   chapterOf,
@@ -10,6 +11,7 @@ import {
   durationText,
   hasVoiceLetter,
   itemAuthority,
+  scheduledArrival,
   lensKinds,
   occurrenceText,
 } from "../src/features/ours/chapters.ts";
@@ -205,7 +207,45 @@ test("UX4 surfaces never make privacy claims the runtime cannot support", async 
   }
 });
 
-test("UX4 adds no teaser, countdown, or scheduled-release hint for unreleased release-gated items", async () => {
+test("UX4 shows only the scheduled arrival time the projection already exposes", () => {
+  const release = (overrides: Record<string, unknown>) => ({
+    mode: "scheduled",
+    generation: 1,
+    unlockAt: "2027-02-14T22:00:00.000Z",
+    releasedAt: null,
+    state: "locked",
+    ...overrides,
+  });
+  // Accepted product rule: an authorized scheduled release time builds anticipation.
+  const scheduled = item({ kind: "for_you", release: release({}) as never });
+  assert.equal(scheduledArrival(scheduled), "2027-02-14T22:00:00.000Z");
+  assert.match(arrivalText("2027-02-14T22:00:00.000Z") ?? "", /^Arrives .*2027/);
+  // Nothing else is inferred: only a locked, scheduled item with a projected time qualifies.
+  assert.equal(
+    scheduledArrival(item({ kind: "for_you", release: release({ unlockAt: null }) as never })),
+    null,
+  );
+  assert.equal(
+    scheduledArrival(
+      item({ kind: "for_you", release: release({ mode: "recipient_open" }) as never }),
+    ),
+    null,
+  );
+  assert.equal(
+    scheduledArrival(
+      item({ kind: "surprise", release: release({ mode: "creator_reveal" }) as never }),
+    ),
+    null,
+  );
+  assert.equal(
+    scheduledArrival(item({ kind: "for_you", release: release({ state: "released" }) as never })),
+    null,
+  );
+  assert.equal(scheduledArrival(item({ kind: "memory" })), null);
+  assert.equal(arrivalText("not a date"), null);
+});
+
+test("UX4 adds no teaser, countdown, count, or generated hint for unreleased release-gated items", async () => {
   const items = await source("../src/features/ours/OursItems.tsx");
   const screen = await source("../src/features/ours/OursScreen.tsx");
   for (const text of [items, screen]) {
