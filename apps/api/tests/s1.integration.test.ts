@@ -170,7 +170,11 @@ async function formPartnership(
   const accepted = await app.inject({
     method: "POST",
     url: "/api/v1/partner-requests/" + requestId + "/accept",
-    headers: headers(bob.cookie),
+    headers: {
+      origin: config.appOrigin,
+      "x-shawtie-csrf": "1",
+      cookie: bob.cookie,
+    },
   });
   assert.equal(accepted.statusCode, 200, accepted.body);
   const partnershipId = (accepted.json() as { partnershipId: string }).partnershipId;
