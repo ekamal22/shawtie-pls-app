@@ -48,13 +48,21 @@ test("M3 chat queues only small binding mutation after upload, never a Blob", as
 
 test("M3 R1 media remains online-only under M2 replay safety policy", async () => {
   const replay = await source("../src/lib/offline/replay-engine.ts");
-  const relationship = await source(
-    "../src/features/relationship-space/RelationshipSpacePanel.tsx",
-  );
+  // UX6 moved the create flow from RelationshipSpacePanel.tsx into the shared composer.
+  // The panel must keep using that composer, and the composer must keep every M3 invariant.
+  const panel = await source("../src/features/relationship-space/RelationshipSpacePanel.tsx");
+  const relationship = await source("../src/features/ours/content/Composer.tsx");
+  assert.equal(panel.includes("RelationshipComposer"), true);
   assert.equal(replay.includes('reference.referenceType === "message"'), true);
   assert.equal(relationship.includes("OFFLINE_OPERATION_REQUIRES_CONNECTION"), true);
   assert.equal(relationship.includes('role: "voice_letter"'), true);
   assert.equal(relationship.includes("position,"), true);
+  // Offline media creation must fail before any upload, and upload precedes the create call.
+  const submit = relationship.slice(relationship.indexOf("async function submit"));
+  assert.ok(
+    submit.indexOf("OFFLINE_OPERATION_REQUIRES_CONNECTION") < submit.indexOf("uploadMediaDraft"),
+  );
+  assert.ok(submit.indexOf("uploadMediaDraft") < submit.indexOf("createRelationshipItem"));
 });
 
 test("M3 voice recorder previews before send and releases microphone tracks", async () => {

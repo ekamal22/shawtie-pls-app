@@ -1,0 +1,1147 @@
+/*
+ * Ours content views (UX6). Consumes UX1 tokens only; every class is prefixed mem-.
+ * Materials: Paper (letters, light in both themes), Print (memories, photography first,
+ * captions below), Room (everything else). No decorative hearts, no fake Polaroids.
+ */
+
+.mem-space {
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* Paper text roles: Paper stays light in both themes, so its ink tokens are fixed. */
+.mem-letter,
+.mem-moment,
+.mem-book__stage,
+.mem-player__stage {
+  --paper-ink: var(--ink-onpaper);
+  --paper-ink-2: #5d5155;
+  --paper-rose: #8b3f47;
+}
+
+/* Hero */
+.mem-hero {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 0;
+}
+
+.mem-hero__title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 450;
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+}
+
+.mem-hero__meta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
+}
+
+.mem-hero__reunion {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mem-hero__phrase {
+  font-family: var(--font-editorial);
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+/* Lens strip and actions */
+.mem-lenses__strip {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.mem-lenses__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.mem-lenses__strip .ds-chip {
+  flex: none;
+  min-height: var(--tap);
+  scroll-snap-align: start;
+}
+
+.mem-lens-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mem-lens-body {
+  display: grid;
+  gap: var(--space-6);
+  min-height: 12rem;
+}
+
+/* Views */
+.mem-view {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.mem-view-header {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.mem-view-title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+.mem-more {
+  display: flex;
+  justify-content: center;
+}
+
+.mem-hint {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
+}
+
+.mem-lead {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-2);
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-body);
+}
+
+/* Forms: visible labels, one field style */
+.mem-form,
+.mem-composer {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mem-field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.mem-field > span {
+  color: var(--ink);
+  font-size: var(--type-body);
+  font-weight: 600;
+}
+
+.mem-field input,
+.mem-field select,
+.mem-field textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+}
+
+.mem-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.mem-field__letter {
+  font-family: var(--font-editorial);
+  font-size: var(--type-letter);
+  line-height: var(--type-letter-lh);
+}
+
+.mem-field input:disabled,
+.mem-field select:disabled,
+.mem-field textarea:disabled {
+  opacity: 0.6;
+}
+
+.mem-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.mem-inline .mem-field {
+  flex: 1 1 12rem;
+}
+
+.mem-details summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  color: var(--paper-rose, var(--accent-text));
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mem-coordinates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+/* Composer kind chooser */
+.mem-kinds {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mem-legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-editorial);
+  font-size: var(--type-ui-title);
+}
+
+.mem-kinds__label {
+  margin: 0 0 var(--space-1);
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mem-kinds__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.mem-kind,
+.mem-signal-choice {
+  min-height: var(--tap);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mem-kind.is-selected,
+.mem-signal-choice.is-selected {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+.mem-kind:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mem-media-composer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.mem-file-button {
+  cursor: pointer;
+}
+
+.mem-drafts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mem-draft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  font-size: var(--type-body);
+}
+
+.mem-draft__actions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+/* Print: editorial dates, photography first, captions below */
+.mem-date {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--ink);
+}
+
+.mem-date__lead {
+  font-family: var(--font-editorial);
+  font-size: var(--type-date);
+  line-height: var(--type-date-lh);
+}
+
+.mem-date__rest {
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mem-date__precision {
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  font-style: italic;
+}
+
+.mem-date--small .mem-date__lead {
+  font-size: var(--type-ui-title);
+  line-height: var(--type-ui-title-lh);
+}
+
+.mem-print {
+  display: grid;
+  gap: 0;
+  padding-block: var(--space-4);
+}
+
+.mem-print + .mem-print {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-8);
+}
+
+.mem-photos {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.mem-print > .mem-photos,
+.mem-book__page > .mem-photos {
+  margin-inline: calc(var(--gutter) * -1);
+}
+
+.mem-photo .media-image,
+.mem-photo .media-video {
+  width: 100%;
+  max-height: 32rem;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.mem-print__caption {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+}
+
+.mem-print__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mem-print__title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+.mem-print__text,
+.mem-first__note,
+.mem-place__note,
+.mem-someday__note {
+  margin: 0;
+  max-width: var(--measure-letter);
+  color: var(--ink-2);
+  font-size: var(--type-message);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.mem-print__meta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.mem-year {
+  display: grid;
+  gap: var(--space-2);
+  scroll-margin-top: calc(var(--header-height) + var(--space-12));
+}
+
+.mem-year__label {
+  margin: var(--space-8) 0 0;
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+  color: var(--ink-2);
+}
+
+.mem-rail {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 2;
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: var(--space-2) 0;
+  background: var(--room);
+  scrollbar-width: none;
+}
+
+.mem-rail__year {
+  flex: none;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-editorial);
+  font-size: var(--type-ui-title);
+  cursor: pointer;
+}
+
+.mem-rail__year:hover {
+  color: var(--ink);
+  border-bottom-color: var(--rose);
+}
+
+/* Kept: pull-quotes with a ribbon */
+.mem-kept {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mem-kept__mark {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mem-ribbon {
+  display: inline-flex;
+  color: var(--ink-3);
+}
+
+.mem-ribbon--candle {
+  color: var(--candle);
+}
+
+.mem-kept__quote {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-quote);
+  line-height: var(--type-quote-lh);
+  max-width: var(--measure-letter);
+  overflow-wrap: anywhere;
+}
+
+.mem-kept__title {
+  margin: 0;
+  font-weight: 650;
+  font-size: var(--type-body);
+}
+
+.mem-kept__note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-body);
+  line-height: var(--type-body-lh);
+}
+
+.mem-kept__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+}
+
+.mem-source-button {
+  margin-left: auto;
+}
+
+.mem-source-note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  font-style: italic;
+}
+
+/* Firsts: a typographic list */
+.mem-firsts,
+.mem-places,
+.mem-signals,
+.mem-someday-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mem-first {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mem-first__main {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.mem-first__title,
+.mem-place__title,
+.mem-someday__title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+  overflow-wrap: anywhere;
+}
+
+.mem-first__side {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: var(--space-1);
+  text-align: right;
+}
+
+.mem-place {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mem-place > .mem-photos {
+  margin-inline: calc(var(--gutter) * -1);
+}
+
+.mem-place__row,
+.mem-love__row,
+.mem-someday__row,
+.mem-signal__row,
+.mem-reunion__row,
+.mem-moment__top,
+.mem-letter__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Love: a calm deck */
+.mem-deck {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mem-love {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.mem-love__text {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+  overflow-wrap: anywhere;
+}
+
+.mem-deck__controls {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* Paper: letters */
+.mem-letters {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.mem-letter,
+.mem-moment {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  color: var(--paper-ink);
+  box-shadow: 0 6px 22px var(--shadow-ink);
+}
+
+.mem-letter .ds-button--secondary,
+.mem-moment .ds-button--secondary,
+.mem-letter .ds-button--quiet,
+.mem-moment .ds-button--quiet,
+.mem-letter .ds-icon-button,
+.mem-moment .ds-icon-button {
+  color: var(--paper-ink);
+  border-color: rgb(46 37 40 / 28%);
+  background: transparent;
+}
+
+.mem-letter .ds-button--primary,
+.mem-moment .ds-button--primary {
+  background: var(--paper-rose);
+  color: #fffbf5;
+}
+
+.mem-letter__kicker {
+  margin: 0;
+  color: var(--paper-ink-2);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mem-letter__from {
+  margin: var(--space-1) 0 0;
+  color: var(--paper-ink-2);
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-body);
+}
+
+.mem-letter__title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  font-size: var(--type-section);
+  line-height: var(--type-section-lh);
+}
+
+.mem-letter__body {
+  margin: 0;
+  color: var(--paper-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mem-letter__reveal {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mem-letter__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.mem-letter .mem-details summary,
+.mem-moment .mem-details summary {
+  color: var(--paper-rose);
+}
+
+.mem-letter .mem-field > span,
+.mem-moment .mem-field > span {
+  color: var(--paper-ink);
+}
+
+.mem-letter .mem-field input {
+  background: #ffffff;
+  color: var(--paper-ink);
+}
+
+/* Sealed band: only for items the projection already returns to this viewer */
+.mem-band {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xs);
+  background: rgb(139 63 71 / 9%);
+  color: var(--paper-ink);
+  border-inline-start: 3px solid var(--paper-rose);
+}
+
+.mem-band svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--paper-rose);
+}
+
+.mem-band__title {
+  margin: 0;
+  font-weight: 650;
+  font-size: var(--type-body);
+}
+
+.mem-band__detail {
+  margin: var(--space-1) 0 0;
+  color: var(--paper-ink-2);
+  font-size: var(--type-body);
+}
+
+.mem-letter--capsule {
+  border-top: 4px solid var(--paper-rose);
+}
+
+/* The Letter Unfolds: under one second, skippable, crossfade under reduced motion */
+.mem-letter__reveal--unfold {
+  transform-origin: top center;
+  animation: mem-unfold var(--dur-moment) var(--ease-unfold) both;
+}
+
+.mem-letter.is-unfolding {
+  cursor: pointer;
+}
+
+@keyframes mem-unfold {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.96);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mem-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Voice letters: letters you listen to */
+.mem-voice {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.mem-voice__letter {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  color: var(--ink-onpaper);
+}
+
+.mem-voice__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: #5d5155;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mem-voice__from {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-letter);
+  line-height: var(--type-letter-lh);
+}
+
+.mem-voice .media-card,
+.mem-voice .media-file,
+.mem-voice .media-unavailable {
+  color: var(--ink-onpaper);
+  background: transparent;
+}
+
+/* Surprise and Proposal: paced player */
+.mem-moment--proposal {
+  border-top: 4px solid var(--paper-rose);
+}
+
+.mem-player {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mem-player__stage {
+  display: grid;
+  place-items: center;
+  min-height: 16rem;
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  color: var(--paper-ink);
+  animation: mem-fade var(--dur-reveal) var(--ease-settle) both;
+}
+
+.mem-player__text {
+  margin: 0;
+  max-width: var(--measure-letter);
+  font-family: var(--font-editorial);
+  font-size: var(--type-letter);
+  line-height: var(--type-letter-lh);
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mem-player__closing {
+  color: var(--paper-ink-2);
+  font-style: italic;
+}
+
+.mem-player__media {
+  width: 100%;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.mem-player__stage .media-card,
+.mem-player__stage .media-file {
+  color: var(--paper-ink);
+  background: transparent;
+}
+
+.mem-player__controls {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Signals */
+.mem-signal-send {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.mem-signal-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.mem-signal {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mem-signal__label {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-size: var(--type-ui-title);
+}
+
+.mem-signal__text {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.mem-signal__meta {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+}
+
+/* Someday */
+.mem-someday-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.mem-someday-group__label {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mem-someday {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mem-someday[data-state="completed"] .mem-someday__title {
+  color: var(--ink-2);
+}
+
+/* Reunion: calm, coarse language */
+.mem-reunion {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.mem-reunion__phrase {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-size: var(--type-display);
+  line-height: var(--type-display-lh);
+}
+
+.mem-reunion__date,
+.mem-reunion__title,
+.mem-reunion__note {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--type-message);
+}
+
+.mem-reunion__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* Book: Our Year and Anniversary */
+.mem-book {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mem-book__stage {
+  display: grid;
+  min-height: 22rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  color: var(--paper-ink);
+  overflow: hidden;
+  animation: mem-fade var(--dur-reveal) var(--ease-settle) both;
+}
+
+.mem-book__cover,
+.mem-book__closing {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+}
+
+.mem-book__cover .ds-kicker {
+  color: var(--paper-ink-2);
+}
+
+.mem-book__year {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 450;
+  font-size: 2.5rem;
+  line-height: 1.1;
+}
+
+.mem-book__note,
+.mem-book__closing p {
+  margin: 0;
+  max-width: var(--measure-letter);
+  color: var(--paper-ink-2);
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-letter);
+  line-height: var(--type-letter-lh);
+}
+
+.mem-book__page {
+  display: grid;
+  align-content: start;
+}
+
+.mem-book__page .mem-print__caption {
+  padding: var(--space-4);
+}
+
+.mem-book__page .mem-date,
+.mem-book__page .mem-date__rest,
+.mem-book__page .mem-date__precision {
+  color: var(--paper-ink);
+}
+
+.mem-book__page .mem-date__rest,
+.mem-book__page .mem-date__precision,
+.mem-book__page .mem-print__text {
+  color: var(--paper-ink-2);
+}
+
+.mem-book__quote {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-size: var(--type-quote);
+  line-height: var(--type-quote-lh);
+}
+
+.mem-book__page .mem-photos {
+  margin-inline: 0;
+}
+
+.mem-book__controls {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mem-book__more {
+  display: flex;
+  justify-content: center;
+}
+
+/* Curation picker */
+.mem-pick {
+  display: grid;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mem-pick__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mem-pick__row input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: var(--accent-fill);
+}
+
+.mem-pick__title {
+  display: block;
+  font-weight: 600;
+}
+
+.mem-pick__meta {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+}
+
+.mem-thisday,
+.mem-recent {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 600px) {
+  .mem-letter,
+  .mem-moment {
+    padding: var(--space-8);
+  }
+}
+
+/* Reduced motion: every ceremonial reveal becomes a single short crossfade */
+@media (prefers-reduced-motion: reduce) {
+  .mem-letter__reveal--unfold {
+    animation: mem-fade var(--dur-instant) linear both;
+    transform: none;
+    clip-path: none;
+  }
+
+  .mem-book__stage,
+  .mem-player__stage {
+    animation: mem-fade var(--dur-instant) linear both;
+  }
+
+  .mem-lenses__strip {
+    scroll-behavior: auto;
+  }
+}
+
+.mem-letter .media-card,
+.mem-letter .media-unavailable,
+.mem-letter .media-file,
+.mem-moment .media-card,
+.mem-moment .media-unavailable,
+.mem-moment .media-file {
+  color: var(--paper-ink);
+  background: transparent;
+}
+
+.mem-letter .hint,
+.mem-moment .hint,
+.mem-voice .hint {
+  color: var(--paper-ink-2);
+}
+
+/* Grid children must be allowed to shrink so horizontal strips scroll instead of widening. */
+.mem-space > *,
+.mem-lens-body > *,
+.mem-view > * {
+  min-width: 0;
+}
