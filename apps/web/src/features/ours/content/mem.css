@@ -22,23 +22,23 @@
 /* Hero */
 .mem-hero {
   display: grid;
-  gap: var(--space-2);
-  padding: var(--space-4) 0 0;
+  gap: 2px;
+  padding: 0;
 }
 
 .mem-hero__title {
   margin: 0;
   font-family: var(--font-editorial);
   font-weight: 450;
-  font-size: var(--type-display);
-  line-height: var(--type-display-lh);
+  font-size: var(--type-ui-title);
+  line-height: var(--type-ui-title-lh);
 }
 
 .mem-hero__meta {
   margin: 0;
   color: var(--ink-2);
-  font-size: var(--type-body);
-  line-height: var(--type-body-lh);
+  font-size: var(--type-meta);
+  line-height: var(--type-meta-lh);
 }
 
 .mem-hero__reunion {
@@ -62,7 +62,16 @@
 }
 
 /* Lens strip and actions */
+.mem-lenses {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+  padding-top: var(--space-2);
+}
+
 .mem-lenses__strip {
+  scroll-padding-inline: var(--gutter);
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;

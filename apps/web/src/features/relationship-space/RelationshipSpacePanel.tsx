@@ -260,7 +260,6 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
   return (
     <section className="mem-space" aria-label="Ours">
       <header className="mem-hero">
-        <p className="ds-kicker">Us</p>
         <h2 className="mem-hero__title">
           Together for {togetherPhrase(home.relationshipDuration)}
         </h2>
@@ -308,6 +307,7 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
       <div className="mem-lens-actions">
         <Button
           variant="primary"
+          compact
           icon="plus"
           disabled={!home.capabilities.create}
           onClick={() => setComposerOpen(true)}

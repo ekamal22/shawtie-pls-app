@@ -634,3 +634,12 @@ test("Visual review screenshots (opt in)", async ({ page }) => {
     }
   }
 });
+
+test("The full space header leaves most of a small phone for content", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await openOurs(page, newScenario(), "Kept");
+  const top = await full(page)
+    .locator(".mem-lens-body")
+    .evaluate((element) => element.getBoundingClientRect().top);
+  expect(top).toBeLessThan(400);
+});
