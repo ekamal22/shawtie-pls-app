@@ -150,9 +150,11 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
   animation: ux7-threshold 360ms var(--ease-unfold) both;
 }
 
-.app-shell[data-route="ours"] .app-route.is-entering .ours,
-.app-shell[data-route="ours"] .app-route.is-entering .ours-chapter {
-  animation: none;
+@media (prefers-reduced-motion: no-preference) {
+  .app-shell[data-route="ours"] .app-route.is-entering .ours,
+  .app-shell[data-route="ours"] .app-route.is-entering .ours-chapter {
+    animation: none;
+  }
 }
 
 @keyframes ux7-threshold {
