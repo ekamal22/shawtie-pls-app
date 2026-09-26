@@ -578,6 +578,11 @@ export async function deletePartnershipCryptoState(
   executor: QueryExecutor,
   partnershipId: string,
 ): Promise<void> {
+  // S1 groups cascade to crypto members and control messages. Keep the
+  // historical pre-S1 epoch table cleanup for forward-only migration safety.
+  await executor.query("DELETE FROM partnership_crypto_groups WHERE partnership_id = $1", [
+    partnershipId,
+  ]);
   await executor.query("DELETE FROM partnership_crypto_epochs WHERE partnership_id = $1", [
     partnershipId,
   ]);

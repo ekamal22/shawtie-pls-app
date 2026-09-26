@@ -259,3 +259,39 @@ export * from "./calls/http.ts";
 export * from "./calls/signaling-v1.ts";
 export * from "./calls/signaling-v2.ts";
 export * from "./calls/push.ts";
+
+
+export {
+  S1_CONTROL_PAGE_MAX,
+  S1_CRYPTO_PROFILE,
+  S1_KEY_PACKAGE_BATCH_MAX,
+  S1_MAX_CONTROL_MESSAGE_BYTES,
+  S1_MAX_KEY_PACKAGE_BYTES,
+  S1_MAX_RECOVERY_BUNDLE_BYTES,
+  S1_MLS_CIPHERSUITE,
+  cryptoBootstrapSchema,
+  cryptoCommitKindSchema,
+  cryptoCommitSchema,
+  cryptoControlQuerySchema,
+  cryptoDeviceApprovalSchema,
+  cryptoDeviceEnrollSchema,
+  cryptoDeviceIdParamsSchema,
+  cryptoKeyPackageSchema,
+  cryptoKeyPackageUploadSchema,
+  cryptoPartnershipIdParamsSchema,
+  cryptoRecoveryChallengeSchema,
+  cryptoRecoveryProofSchema,
+  cryptoRecoverySetupSchema,
+  s1CiphersuiteSchema,
+  s1CryptoProfileSchema,
+  type CryptoBootstrapInput,
+  type CryptoCommitInput,
+  type CryptoCommitKind,
+  type CryptoControlQuery,
+  type CryptoDeviceApprovalInput,
+  type CryptoDeviceEnrollInput,
+  type CryptoKeyPackageUploadInput,
+  type CryptoRecoveryChallengeInput,
+  type CryptoRecoveryProofInput,
+  type CryptoRecoverySetupInput,
+} from "./crypto/s1.ts";

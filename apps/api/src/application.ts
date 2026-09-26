@@ -38,6 +38,8 @@ import {
 } from "./modules/partner-requests/partner-request-service.ts";
 import { registerPartnerRequestRoutes } from "./modules/partner-requests/routes.ts";
 import { registerAccountRoutes } from "./modules/auth/routes.ts";
+import { CryptoService } from "./modules/crypto/crypto-service.ts";
+import { registerCryptoRoutes } from "./modules/crypto/routes.ts";
 import { MessagingService } from "./modules/messages/messaging-service.ts";
 import { registerMessagingRoutes } from "./modules/messages/routes.ts";
 import { MediaService } from "./modules/media/media-service.ts";
@@ -110,6 +112,14 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     config: dependencies.config,
     keys,
     service,
+  });
+
+  const cryptoService = new CryptoService(dependencies.database);
+  registerCryptoRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: cryptoService,
   });
 
   const partnerRequestMode = dependencies.config.partnerRequestMode ?? "disabled";
