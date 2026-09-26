@@ -81,10 +81,12 @@ const api = {
           replyToMessageId: null,
           replyContext: null,
           body: input.body,
+          protectedBody: null,
           createdAt: "2026-09-22T18:00:00.000Z",
           editedAt: null,
           deletedAt: null,
           reactions: [],
+          attachments: [],
         },
       ],
       sync: {

@@ -1507,4 +1507,256 @@ BEGIN
 END;
 $$;
 
+
+-- S1 E2EE and cryptographic recovery invariants.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name IN ('device_crypto_identities', 'account_crypto_recovery')
+      AND (
+        column_name LIKE '%private%'
+        OR column_name LIKE '%master_secret%'
+        OR column_name LIKE '%recovery_secret%'
+      )
+  ) THEN
+    RAISE EXCEPTION 'S1 server schema must not contain private crypto or recovery secret columns';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'account_devices_s1_crypto_revoke' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 device crypto revocation trigger';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'device_crypto_identity_rekey_groups' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 group rekey trigger';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'messages_s1_plaintext_guard' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 message plaintext guard';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'message_reactions_s1_plaintext_guard' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 reaction plaintext guard';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'partnership_chat_nicknames_s1_plaintext_guard' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 nickname plaintext guard';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'relationship_items_s1_plaintext_guard' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 relationship plaintext guard';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'media_objects_s1_crypto_guard' AND NOT tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'missing S1 media crypto guard';
+  END IF;
+END;
+$$;
+
+UPDATE partnerships
+SET crypto_profile = 'shawtie.mls.v1',
+    crypto_required_from = now(),
+    crypto_group_generation = 1
+WHERE id = '20000000-0000-0000-0000-000000000001';
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO messages (
+      id, conversation_id, partnership_id, sender_account_id,
+      client_idempotency_key, server_sequence, body_text, content_version,
+      created_change_sequence, last_change_sequence, created_at
+    ) VALUES (
+      '91000000-0000-4000-8000-000000000001',
+      '78000000-0000-4000-8000-000000000001',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      's1-plaintext-message-rejected',
+      50,
+      'S1 plaintext must never persist',
+      1,
+      50,
+      50,
+      now()
+    );
+    RAISE EXCEPTION 'expected S1 plaintext message rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'crypto-required message plaintext is forbidden' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO message_reactions (
+      id, message_id, reactor_account_id, partnership_id,
+      emoji_text, created_at
+    ) VALUES (
+      '91000000-0000-4000-8000-000000000002',
+      '78100000-0000-4000-8000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      '20000000-0000-0000-0000-000000000001',
+      'plaintext-reaction',
+      now()
+    );
+    RAISE EXCEPTION 'expected S1 plaintext reaction rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'crypto-required reaction must be encrypted' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO partnership_chat_nicknames (
+      partnership_id, subject_account_id, nickname, version,
+      updated_by_account_id, updated_at
+    ) VALUES (
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      'plaintext nickname',
+      1,
+      '00000000-0000-0000-0000-000000000001',
+      now()
+    );
+    RAISE EXCEPTION 'expected S1 plaintext nickname rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'crypto-required nickname plaintext is forbidden' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO relationship_items (
+      id, partnership_id, creator_account_id, kind,
+      development_plaintext_payload, created_at, updated_at
+    ) VALUES (
+      '91000000-0000-4000-8000-000000000003',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      'memory',
+      '{"body":"S1 relationship plaintext must never persist"}'::jsonb,
+      now(),
+      now()
+    );
+    RAISE EXCEPTION 'expected S1 relationship plaintext rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'crypto-required relationship plaintext is forbidden' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO media_objects (
+      id, partnership_id, uploader_account_id, uploader_device_id,
+      storage_object_key, ciphertext_size, crypto_protocol_version,
+      media_kind, format_code, state, ciphertext_sha256,
+      upload_generation, upload_expires_at, deletion_generation, created_at
+    ) VALUES (
+      '91000000-0000-4000-8000-000000000004',
+      '20000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000001',
+      '70000000-0000-0000-0000-000000000001',
+      'media/v1/s1-legacy-rejected',
+      128,
+      'm3-test-aes-gcm-v1',
+      'image',
+      'webp',
+      'uploading',
+      repeat('c', 64),
+      1,
+      now() + interval '10 minutes',
+      1,
+      now()
+    );
+    RAISE EXCEPTION 'expected S1 legacy media rejection';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'crypto-required media requires S1 key metadata' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE indexname = 'partnership_crypto_groups_one_active'
+  ) THEN
+    RAISE EXCEPTION 'missing S1 one-active-group index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE indexname = 'device_key_packages_digest_unique'
+  ) THEN
+    RAISE EXCEPTION 'missing S1 KeyPackage digest uniqueness index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE indexname = 'account_crypto_recovery_one_current'
+  ) THEN
+    RAISE EXCEPTION 'missing S1 current recovery-root uniqueness index';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'protected_content_keys_digest_size'
+  ) THEN
+    RAISE EXCEPTION 'missing S1 protected-content digest constraint';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'content_key_recovery_capsules_recovery_fk'
+  ) THEN
+    RAISE EXCEPTION 'missing S1 recovery capsule key-version foreign key';
+  END IF;
+END;
+$$;
+
 ROLLBACK;

@@ -12,7 +12,6 @@ import {
 } from "@shawtie/contracts";
 import { base64UrlDecode, base64UrlEncode } from "@shawtie/crypto";
 import type { S1CryptoRuntime } from "../crypto/crypto-runtime.ts";
-import { decryptMedia, encryptMedia } from "./crypto-port.ts";
 import {
   completeMediaUpload,
   createMediaUpload,
@@ -26,6 +25,15 @@ import { deleteMediaDraft, loadMediaDraft, saveMediaDraft } from "./media-local-
 import type { LocalMediaDraft, MediaServerProjection } from "./media-types.ts";
 
 const IMAGE_TARGET_BYTES = 2 * 1024 * 1024;
+
+async function legacyTestCrypto() {
+  const enabled =
+    import.meta.env.DEV &&
+    (import.meta.env as ImportMetaEnv & { readonly VITE_M3_TEST_CRYPTO?: string })
+      .VITE_M3_TEST_CRYPTO === "1";
+  if (!enabled) throw new Error("CRYPTO_NOT_INITIALIZED");
+  return import("./crypto-port.ts");
+}
 
 function formatForFile(file: Blob & { readonly type: string }, kind: MediaKind): MediaFormatCode {
   const type = file.type.toLowerCase();
@@ -242,6 +250,7 @@ export async function prepareMediaDraft(input: {
     cryptoProtocolVersion = S1_CRYPTO_PROFILE;
     contentEnvelope = protectedMedia.envelope;
   } else {
+    const { encryptMedia } = await legacyTestCrypto();
     const encrypted = await encryptMedia(prepared.blob);
     ciphertext = encrypted.ciphertext;
     cryptoProtocolVersion = encrypted.protocolVersion;
@@ -468,6 +477,7 @@ export async function loadDecryptedMedia(
     );
     plaintext = new Blob([bytes]);
   } else {
+    const { decryptMedia } = await legacyTestCrypto();
     plaintext = await decryptMedia(ciphertext, grant.media.cryptoProtocolVersion);
   }
   await validateMagic(plaintext, grant.media.kind, grant.media.formatCode);

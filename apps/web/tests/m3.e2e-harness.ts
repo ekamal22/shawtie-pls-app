@@ -50,6 +50,7 @@ const api = {
       ciphertextBytes: encrypted.ciphertext.size,
       ciphertextSha256: await sha256(encrypted.ciphertext),
       cryptoProtocolVersion: encrypted.protocolVersion,
+      contentEnvelope: null,
       durationSeconds: null,
       idempotencyKey: "m3-e2e-" + input.draftId,
       mediaId: null,
