@@ -541,6 +541,7 @@
 /* Segmented */
 .ds-segmented {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
   padding: 3px;
   border-radius: var(--radius-full);
@@ -548,7 +549,7 @@
 }
 
 .ds-segmented__option {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: var(--tap);
   padding: 0 var(--space-4);
   border: 0;

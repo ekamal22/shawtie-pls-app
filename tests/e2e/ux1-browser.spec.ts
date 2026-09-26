@@ -330,3 +330,16 @@ test("Compact buttons, chips, and segmented options meet the 44px touch target",
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(43.5);
   }
 });
+
+test("Talk and Us keep everything on screen at 200 percent text", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openApp(page, PAIRED, "#/talk");
+  await page.addStyleTag({ content: "html { font-size: 32px !important; }" });
+  for (const hash of ["#/talk", "#/us"]) {
+    await page.evaluate((value) => {
+      window.location.hash = value;
+    }, hash);
+    await page.waitForTimeout(300);
+    await noHorizontalScroll(page);
+  }
+});

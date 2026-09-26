@@ -330,6 +330,13 @@
 .us {
   display: grid;
   gap: var(--space-8);
+  min-width: 0;
+}
+
+.us > *,
+.us-block,
+.us-part {
+  min-width: 0;
 }
 
 .us-block {
@@ -356,6 +363,7 @@
 
 .us-identity {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);

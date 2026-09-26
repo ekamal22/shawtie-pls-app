@@ -152,6 +152,8 @@ test("the idle call entry stays compact on a small phone and survives large text
     const button = entry.getByRole("button", { name });
     expect((await button.boundingBox())?.height ?? 0).toBeLessThan(60);
   }
+  // 200 percent text on a common 390px phone.
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.addStyleTag({ content: "html { font-size: 32px !important; }" });
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

@@ -3,6 +3,10 @@
  * .talk. Colors, type, spacing, radii, and motion come from the shared tokens.
  */
 
+.talk > * {
+  min-width: 0;
+}
+
 .talk {
   display: grid;
   gap: var(--space-3);
@@ -377,14 +381,21 @@
   }
 }
 
+.talk-composer .ds-icon-button {
+  flex: none;
+  width: min(var(--tap), 3.25rem);
+}
+
 .talk-composer {
   display: flex;
+  min-width: 0;
   align-items: flex-end;
   gap: var(--space-2);
 }
 
 .talk-composer__input {
-  flex: 1;
+  flex: 1 1 0;
+  width: 0;
   min-width: 0;
   min-height: var(--tap);
   max-height: 8.5rem;
