@@ -1,4 +1,4 @@
-import { Avatar, Button, ErrorNotice } from "../../../design/primitives.tsx";
+import { Button, ErrorNotice } from "../../../design/primitives.tsx";
 
 export type CallPushState = "unknown" | "enabled" | "denied" | "unavailable";
 
@@ -29,7 +29,6 @@ export function CallEntry({
   return (
     <section className="call-entry" aria-labelledby="call-entry-title">
       <div className="call-entry__who">
-        {partnerName ? <Avatar name={partnerName} size={48} /> : null}
         <div>
           <h2 id="call-entry-title" className="call-entry__title">
             {partnerName ? "Call " + partnerName : "Calls"}

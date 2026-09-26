@@ -139,6 +139,26 @@ test("idle calls show a warm entry with two labelled ways to call and honest pri
   expect(text).not.toContain("encrypted");
 });
 
+test("the idle call entry stays compact on a small phone and survives large text", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await openApp(page, null);
+  const entry = page.getByRole("region", { name: "Call Gulnur" });
+  await expect(entry).toBeVisible();
+  const box = await entry.boundingBox();
+  expect(box?.height ?? 999).toBeLessThan(250);
+  for (const name of ["Voice call", "Video call"]) {
+    const button = entry.getByRole("button", { name });
+    expect((await button.boundingBox())?.height ?? 0).toBeLessThan(60);
+  }
+  await page.addStyleTag({ content: "html { font-size: 32px !important; }" });
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 test("incoming voice call is a full-screen dialog with Decline and Answer", async ({ page }) => {
   await openApp(page, projection());
   const dialog = surface(page);
