@@ -98,7 +98,7 @@ function openDatabase(accountId: string): Promise<IDBDatabase> {
     const request = indexedDB.open(DATABASE_PREFIX + accountId, DATABASE_VERSION);
     request.onerror = () => reject(request.error ?? new Error("Unable to open local database"));
     request.onblocked = () => reject(new Error("Local database upgrade is blocked"));
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const database = request.result;
 
       if (!database.objectStoreNames.contains("appMeta")) {
@@ -142,6 +142,23 @@ function openDatabase(accountId: string): Promise<IDBDatabase> {
         });
         outbox.createIndex("byNamespaceQueuedAt", ["partnershipId", "queuedAt"]);
       }
+
+      const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+      if (oldVersion > 0 && oldVersion < 2 && request.transaction) {
+        for (const storeName of [
+          "namespaceMeta",
+          "conversationSync",
+          "messages",
+          "relationshipItems",
+          "relationshipMeta",
+          "chatOutbox",
+          "relationshipOutbox",
+        ]) {
+          if (database.objectStoreNames.contains(storeName)) {
+            request.transaction.objectStore(storeName).clear();
+          }
+        }
+      }
     };
     request.onsuccess = () => resolve(request.result);
   });
@@ -183,17 +200,40 @@ export class ShawtieLocalDatabase {
     await transactionDone(tx);
   }
 
-  async rememberNamespace(partnershipId: string, conversationId: string): Promise<void> {
+  async rememberNamespace(
+    partnershipId: string,
+    conversationId: string,
+    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
+  ): Promise<void> {
     const tx = this.#database.transaction(["namespaceMeta"], "readwrite");
     tx.objectStore("namespaceMeta").put({
       partnershipId,
       conversationId,
-      contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
+      contentContextKey,
       localSchemaVersion: M2_LOCAL_SCHEMA_VERSION,
       lastAuthoritativeSyncAt: new Date().toISOString(),
       revokedAt: null,
     });
     await transactionDone(tx);
+  }
+
+  async ensureNamespaceContentContext(
+    partnershipId: string,
+    conversationId: string,
+    contentContextKey: string,
+  ): Promise<boolean> {
+    const read = this.#database.transaction(["namespaceMeta"], "readonly");
+    const current = (await requestResult(
+      read.objectStore("namespaceMeta").get(partnershipId),
+    )) as { contentContextKey?: string } | undefined;
+    await transactionDone(read);
+
+    if (current?.contentContextKey === contentContextKey) return false;
+    if (current) {
+      await this.purgePartnership(partnershipId);
+    }
+    await this.rememberNamespace(partnershipId, conversationId, contentContextKey);
+    return true;
   }
 
   async getConversationSync(
@@ -234,7 +274,10 @@ export class ShawtieLocalDatabase {
     conversationId: string;
     messages: readonly MessageProjection[];
     sync: ConversationSyncState;
+    contentContextKey?: string;
   }): Promise<void> {
+    const contentContextKey =
+      input.contentContextKey ?? M2_PRE_S1_CONTENT_CONTEXT;
     const tx = this.#database.transaction(
       ["messages", "conversationSync", "namespaceMeta"],
       "readwrite",
@@ -244,7 +287,7 @@ export class ShawtieLocalDatabase {
       messages.put({
         ...message,
         partnershipId: input.partnershipId,
-        contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
+        contentContextKey,
       } satisfies CachedMessage);
     }
 
@@ -271,7 +314,7 @@ export class ShawtieLocalDatabase {
     tx.objectStore("namespaceMeta").put({
       partnershipId: input.partnershipId,
       conversationId: input.conversationId,
-      contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
+      contentContextKey,
       localSchemaVersion: M2_LOCAL_SCHEMA_VERSION,
       lastAuthoritativeSyncAt: input.sync.lastSyncedAt,
       revokedAt: null,
@@ -282,6 +325,7 @@ export class ShawtieLocalDatabase {
   async cacheRelationshipItems(
     partnershipId: string,
     items: readonly RelationshipItemProjection[],
+    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<void> {
     const tx = this.#database.transaction(["relationshipItems", "relationshipMeta"], "readwrite");
     const store = tx.objectStore("relationshipItems");
@@ -289,7 +333,7 @@ export class ShawtieLocalDatabase {
       store.put({
         ...item,
         partnershipId,
-        contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
+        contentContextKey,
       } satisfies CachedRelationshipItem);
     }
 
@@ -657,7 +701,7 @@ export class ShawtieLocalDatabase {
       items.put({
         ...item,
         partnershipId: operation.partnershipId,
-        contentContextKey: M2_PRE_S1_CONTENT_CONTEXT,
+        contentContextKey,
       } satisfies CachedRelationshipItem);
     } else if (operation.itemId) {
       items.delete([operation.partnershipId, operation.itemId]);

@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
+    "build:s1-wasm": "npm run build:wasm --workspace @shawtie/crypto",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" --max-warnings=0",
     "format": "prettier --write \"apps/**/*.{ts,tsx,html,json}\" \"packages/**/*.{ts,tsx,json}\" \"*.{json,mjs}\"",

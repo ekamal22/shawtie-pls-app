@@ -9,6 +9,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:wasm": "cd openmls-wasm && wasm-pack build . --target web --release --out-dir ../../../apps/web/public/crypto/openmls --out-name shawtie_openmls_wasm",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test tests/*.test.ts"
   }

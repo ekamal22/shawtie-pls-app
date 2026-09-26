@@ -98,6 +98,20 @@ export async function lockDeviceCryptoIdentity(
   return result.rows[0] ? mapIdentity(result.rows[0]) : null;
 }
 
+export async function listAccountCryptoDevices(
+  executor: QueryExecutor,
+  accountId: string,
+): Promise<readonly DeviceCryptoIdentity[]> {
+  const result = await executor.query<DeviceCryptoIdentityRow>(
+    `SELECT ${identityColumns}
+     FROM device_crypto_identities
+     WHERE account_id = $1
+     ORDER BY created_at, crypto_device_id`,
+    [accountId],
+  );
+  return result.rows.map(mapIdentity);
+}
+
 export async function countTrustedCryptoDevices(
   executor: QueryExecutor,
   accountId: string,

@@ -33,6 +33,7 @@ export interface MlsEngine {
   addMember(groupId: Uint8Array, keyPackage: Uint8Array): MlsTransition;
   removeMember(groupId: Uint8Array, leafIndex: number): MlsTransition;
   joinWelcome(welcome: Uint8Array): MlsTransition;
+  memberLeafIndex(groupId: Uint8Array, cryptoDeviceId: string): number | null;
   createApplicationMessage(groupId: Uint8Array, plaintext: Uint8Array): MlsTransition;
   processMessage(groupId: Uint8Array, message: Uint8Array): MlsTransition;
   signContent(payload: Uint8Array): Uint8Array<ArrayBuffer>;
@@ -90,6 +91,7 @@ interface WasmClient {
   add_member(groupId: Uint8Array, keyPackage: Uint8Array): WasmTransition;
   remove_member(groupId: Uint8Array, leafIndex: number): WasmTransition;
   join_welcome(welcome: Uint8Array): WasmTransition;
+  member_leaf_index(groupId: Uint8Array, cryptoDeviceId: string): number | undefined;
   create_application_message(groupId: Uint8Array, plaintext: Uint8Array): WasmTransition;
   process_message(groupId: Uint8Array, message: Uint8Array): WasmTransition;
   sign_content(payload: Uint8Array): WasmBytes;
@@ -193,6 +195,11 @@ class WasmMlsEngine implements MlsEngine {
 
   joinWelcome(welcome: Uint8Array): MlsTransition {
     return transition(this.#client.join_welcome(welcome));
+  }
+
+  memberLeafIndex(groupId: Uint8Array, cryptoDeviceId: string): number | null {
+    const value = this.#client.member_leaf_index(groupId, cryptoDeviceId);
+    return value === undefined ? null : value;
   }
 
   createApplicationMessage(groupId: Uint8Array, plaintext: Uint8Array): MlsTransition {

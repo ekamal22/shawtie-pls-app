@@ -30,6 +30,7 @@ import {
   insertPartnershipCryptoControlMessage,
   insertPartnershipCryptoGroup,
   insertPartnershipCryptoMember,
+  listAccountCryptoDevices,
   listAvailablePartnershipKeyPackages,
   listPartnershipCryptoControlMessages,
   listPartnershipCryptoMembers,
@@ -37,6 +38,7 @@ import {
   listPartnershipTrustedCryptoDevices,
   loadActivePartnershipCryptoGroup,
   loadCurrentCryptoRecovery,
+  loadPartnershipCryptoPolicy,
   loadDeviceCryptoIdentity,
   loadDeviceCryptoIdentityByDevice,
   lockAccounts,
@@ -196,6 +198,23 @@ export class CryptoService {
       throw new ApiError(409, "CRYPTO_DEVICE_UNTRUSTED");
     }
     return identity;
+  }
+
+  async currentDevice(auth: AuthContext): Promise<unknown> {
+    const identity = await this.#currentIdentity(
+      this.database.pool,
+      auth,
+      "any",
+    );
+    return { device: identityProjection(identity) };
+  }
+
+  async devices(auth: AuthContext): Promise<unknown> {
+    const identities = await listAccountCryptoDevices(
+      this.database.pool,
+      auth.session.accountId,
+    );
+    return { devices: identities.map(identityProjection) };
   }
 
   async enroll(auth: AuthContext, input: CryptoDeviceEnrollInput): Promise<unknown> {
@@ -373,6 +392,7 @@ export class CryptoService {
         throw new ApiError(404, "PARTNERSHIP_UNAVAILABLE");
       }
       const current = await this.#currentIdentity(transaction, auth, "trusted");
+      const policy = await loadPartnershipCryptoPolicy(transaction, partnershipId);
       const group = await loadActivePartnershipCryptoGroup(transaction, partnershipId);
       const devices = await listPartnershipTrustedCryptoDevices(transaction, partnershipId);
       const members = group
@@ -395,6 +415,8 @@ export class CryptoService {
 
       return {
         cryptoProfile: S1_CRYPTO_PROFILE,
+        cryptoRequired: Boolean(policy?.cryptoRequiredFrom),
+        cryptoRequiredFrom: policy?.cryptoRequiredFrom?.toISOString() ?? null,
         currentCryptoDeviceId: current.cryptoDeviceId,
         group: group
           ? {

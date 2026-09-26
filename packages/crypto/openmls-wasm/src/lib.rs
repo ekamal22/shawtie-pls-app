@@ -395,6 +395,17 @@ impl ShawtieMlsClient {
         candidate.transition(&group, None, None, None)
     }
 
+    pub fn member_leaf_index(
+        &self,
+        group_id: &[u8],
+        crypto_device_id: String,
+    ) -> Result<Option<u32>, JsError> {
+        let group = self.load_group(group_id)?;
+        let credential: openmls::credentials::Credential =
+            BasicCredential::new(crypto_device_id.as_bytes().to_vec()).into();
+        Ok(group.member_leaf_index(&credential).map(|index| index.u32()))
+    }
+
     pub fn create_application_message(
         &self,
         group_id: &[u8],

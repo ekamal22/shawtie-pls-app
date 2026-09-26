@@ -39,6 +39,18 @@ export function registerCryptoRoutes(
 ): void {
   const { database, config, keys, service } = deps;
 
+  app.get("/api/v1/crypto/devices/current", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    privateNoStore(reply);
+    return service.currentDevice(auth);
+  });
+
+  app.get("/api/v1/crypto/devices", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    privateNoStore(reply);
+    return service.devices(auth);
+  });
+
   app.post("/api/v1/crypto/devices/enroll", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
     await requireRecentReauthentication(auth.session, database);

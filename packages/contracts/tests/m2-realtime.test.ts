@@ -10,6 +10,7 @@ import {
   M2_REALTIME_MAX_FRAME_BYTES,
   M2_REALTIME_PROTOCOL_VERSION,
   M2_REALTIME_SUBPROTOCOL,
+  S1_CONTENT_CONTEXT,
   assertM2RealtimeFrameSize,
   m2InternalRealtimeNotificationSchema,
   m2RealtimeClientFrameSchema,
@@ -32,8 +33,9 @@ test("M2 protocol and local-schema constants are frozen at v1", () => {
   assert.equal(M2_REALTIME_SUBPROTOCOL, "shawtie.realtime.v1");
   assert.equal(M2_REALTIME_MAX_FRAME_BYTES, 4096);
   assert.equal(M2_INTERNAL_NOTIFY_MAX_BYTES, 2048);
-  assert.equal(M2_LOCAL_SCHEMA_VERSION, 1);
+  assert.equal(M2_LOCAL_SCHEMA_VERSION, 2);
   assert.equal(M2_PRE_S1_CONTENT_CONTEXT, "pre-s1");
+  assert.equal(S1_CONTENT_CONTEXT, "shawtie.mls.v1");
 });
 
 test("M2 ready frame is strict and content-free", () => {

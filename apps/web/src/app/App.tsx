@@ -22,6 +22,7 @@ import { accountMessageFor } from "./account-errors.ts";
 import { AppShell, RouteView } from "./shell/AppShell.tsx";
 import { useRoute } from "./shell/routes.ts";
 import { useConversationContext } from "./shell/useConversationContext.ts";
+import { S1CryptoRuntimeProvider } from "../lib/crypto/runtime-context.tsx";
 
 interface Session {
   authenticated: true;
@@ -548,8 +549,9 @@ export function App() {
 
   const signedOutAccountId = session.accountId;
   return (
-    <M2RuntimeProvider accountId={session.accountId}>
-      <AccountScreen
+    <S1CryptoRuntimeProvider accountId={session.accountId} deviceId={session.deviceId}>
+      <M2RuntimeProvider accountId={session.accountId}>
+        <AccountScreen
         session={session}
         onSignedOut={async () => {
           broadcastLocalLogout(signedOutAccountId);
@@ -557,8 +559,9 @@ export function App() {
           await purgeAccountLocalData(signedOutAccountId);
           setSession(null);
         }}
-        refreshSession={refreshSession}
-      />
-    </M2RuntimeProvider>
+          refreshSession={refreshSession}
+        />
+      </M2RuntimeProvider>
+    </S1CryptoRuntimeProvider>
   );
 }
