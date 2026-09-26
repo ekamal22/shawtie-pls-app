@@ -70,15 +70,54 @@ export const cryptoCommitSchema = z
   .object({
     expectedGroupGeneration: z.number().int().positive(),
     expectedEpoch: z.number().int().min(0),
-    newEpoch: z.number().int().min(1),
+    newEpoch: z.number().int().min(0),
     kind: cryptoCommitKindSchema,
     controlMessage: boundedBase64(S1_MAX_CONTROL_MESSAGE_BYTES),
     welcome: boundedBase64(S1_MAX_CONTROL_MESSAGE_BYTES).nullable().default(null),
     targetCryptoDeviceId: z.string().uuid().nullable().default(null),
     targetLeafIndex: z.number().int().min(0).nullable().default(null),
     keyPackageId: z.string().uuid().nullable().default(null),
+    resetGroupGeneration: z.number().int().positive().nullable().default(null),
+    resetGroupId: boundedBase64(256).nullable().default(null),
+    resetFounderLeafIndex: z.number().int().min(0).nullable().default(null),
+    recoveryKeyVersion: z.number().int().positive().nullable().default(null),
+    recoverySignature: boundedBase64(512).nullable().default(null),
   })
   .superRefine((value, context) => {
+    const resetFieldsPresent =
+      value.resetGroupGeneration !== null ||
+      value.resetGroupId !== null ||
+      value.resetFounderLeafIndex !== null ||
+      value.recoveryKeyVersion !== null ||
+      value.recoverySignature !== null;
+
+    if (value.kind === "reset") {
+      if (
+        value.newEpoch !== 0 ||
+        value.resetGroupGeneration !== value.expectedGroupGeneration + 1 ||
+        !value.resetGroupId ||
+        value.resetFounderLeafIndex === null ||
+        value.recoveryKeyVersion === null ||
+        !value.recoverySignature ||
+        value.welcome !== null ||
+        value.targetCryptoDeviceId !== null ||
+        value.targetLeafIndex !== null ||
+        value.keyPackageId !== null
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "reset commit requires recovery proof and a fresh next-generation group",
+        });
+      }
+      return;
+    }
+
+    if (resetFieldsPresent) {
+      context.addIssue({
+        code: "custom",
+        message: "reset fields are only valid for reset commits",
+      });
+    }
     if (value.newEpoch !== value.expectedEpoch + 1) {
       context.addIssue({
         code: "custom",
@@ -87,7 +126,12 @@ export const cryptoCommitSchema = z
       });
     }
     if (value.kind === "add") {
-      if (!value.welcome || !value.targetCryptoDeviceId || !value.keyPackageId || value.targetLeafIndex === null) {
+      if (
+        !value.welcome ||
+        !value.targetCryptoDeviceId ||
+        !value.keyPackageId ||
+        value.targetLeafIndex === null
+      ) {
         context.addIssue({
           code: "custom",
           message: "add commit requires welcome, target device, target leaf, and KeyPackage",
@@ -99,13 +143,42 @@ export const cryptoCommitSchema = z
         message: "only add commits may carry Welcome or KeyPackage identifiers",
       });
     }
-    if (value.kind === "remove" && (!value.targetCryptoDeviceId || value.targetLeafIndex === null)) {
+    if (
+      value.kind === "remove" &&
+      (!value.targetCryptoDeviceId || value.targetLeafIndex === null)
+    ) {
       context.addIssue({
         code: "custom",
         message: "remove commit requires target device and target leaf",
       });
     }
   });
+
+
+export function cryptoResetProofText(input: {
+  readonly accountId: string;
+  readonly partnershipId: string;
+  readonly cryptoDeviceId: string;
+  readonly expectedGroupGeneration: number;
+  readonly expectedEpoch: number;
+  readonly resetGroupGeneration: number;
+  readonly resetGroupId: string;
+  readonly resetFounderLeafIndex: number;
+  readonly recoveryKeyVersion: number;
+}): string {
+  return [
+    "shawtie-group-reset-v1",
+    input.accountId,
+    input.partnershipId,
+    input.cryptoDeviceId,
+    String(input.expectedGroupGeneration),
+    String(input.expectedEpoch),
+    String(input.resetGroupGeneration),
+    input.resetGroupId,
+    String(input.resetFounderLeafIndex),
+    String(input.recoveryKeyVersion),
+  ].join("\0");
+}
 
 export const cryptoRecoverySetupSchema = z.object({
   cryptoProfile: s1CryptoProfileSchema,

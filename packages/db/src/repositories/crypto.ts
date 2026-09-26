@@ -827,6 +827,71 @@ export async function advancePartnershipCryptoGroup(
   return result.rows[0] ? BigInt(result.rows[0].control_sequence) : null;
 }
 
+export async function supersedeActivePartnershipCryptoGroup(
+  executor: QueryExecutor,
+  input: {
+    readonly partnershipId: string;
+    readonly expectedGroupGeneration: number;
+    readonly expectedEpoch: bigint;
+    readonly supersededAt: Date;
+  },
+): Promise<boolean> {
+  const result = await executor.query(
+    `UPDATE partnership_crypto_groups
+     SET status = 'superseded',
+         superseded_at = $4
+     WHERE partnership_id = $1
+       AND group_generation = $2
+       AND current_epoch = $3
+       AND status = 'active'`,
+    [
+      input.partnershipId,
+      input.expectedGroupGeneration,
+      input.expectedEpoch.toString(),
+      input.supersededAt,
+    ],
+  );
+  return result.rowCount === 1;
+}
+
+export async function activateResetPartnershipCryptoGeneration(
+  executor: QueryExecutor,
+  input: {
+    readonly partnershipId: string;
+    readonly groupGeneration: number;
+    readonly controlSequence: bigint;
+    readonly updatedAt: Date;
+  },
+): Promise<boolean> {
+  const group = await executor.query(
+    `UPDATE partnership_crypto_groups
+     SET control_sequence = $3
+     WHERE partnership_id = $1
+       AND group_generation = $2
+       AND status = 'active'
+       AND current_epoch = 0
+     RETURNING partnership_id`,
+    [
+      input.partnershipId,
+      input.groupGeneration,
+      input.controlSequence.toString(),
+    ],
+  );
+  if (group.rowCount !== 1) return false;
+
+  const partnership = await executor.query(
+    `UPDATE partnerships
+     SET crypto_group_generation = $2,
+         updated_at = $3
+     WHERE id = $1
+       AND lifecycle_state <> 'terminated'
+       AND crypto_profile IS NOT NULL
+       AND crypto_required_from IS NOT NULL`,
+    [input.partnershipId, input.groupGeneration, input.updatedAt],
+  );
+  return partnership.rowCount === 1;
+}
+
 export async function refreshPartnershipCryptoRekeyRequired(
   executor: QueryExecutor,
   partnershipId: string,

@@ -283,6 +283,7 @@ export {
   cryptoRecoveryChallengeSchema,
   cryptoRecoveryProofSchema,
   cryptoRecoverySetupSchema,
+  cryptoResetProofText,
   s1CiphersuiteSchema,
   s1CryptoProfileSchema,
   type CryptoBootstrapInput,

@@ -7,6 +7,7 @@ import {
   cryptoCommitSchema,
   cryptoDeviceEnrollSchema,
   cryptoRecoverySetupSchema,
+  cryptoResetProofText,
 } from "../src/index.ts";
 
 const key = Buffer.alloc(32, 7).toString("base64url");
@@ -103,6 +104,79 @@ test("S1 commits advance exactly one epoch and enforce add/remove shape", () => 
     }).success,
     false,
   );
+});
+
+test("S1 group reset requires next generation and recovery authorization", () => {
+  const resetGroupId = Buffer.from("reset-group").toString("base64url");
+  const parsed = cryptoCommitSchema.safeParse({
+    expectedGroupGeneration: 3,
+    expectedEpoch: 9,
+    newEpoch: 0,
+    kind: "reset",
+    controlMessage: Buffer.from("reset-marker").toString("base64url"),
+    welcome: null,
+    targetCryptoDeviceId: null,
+    targetLeafIndex: null,
+    keyPackageId: null,
+    resetGroupGeneration: 4,
+    resetGroupId,
+    resetFounderLeafIndex: 0,
+    recoveryKeyVersion: 2,
+    recoverySignature: signature,
+  });
+  assert.equal(parsed.success, true);
+
+  assert.equal(
+    cryptoCommitSchema.safeParse({
+      expectedGroupGeneration: 3,
+      expectedEpoch: 9,
+      newEpoch: 0,
+      kind: "reset",
+      controlMessage: Buffer.from("reset-marker").toString("base64url"),
+      welcome: null,
+      targetCryptoDeviceId: null,
+      targetLeafIndex: null,
+      keyPackageId: null,
+      resetGroupGeneration: 5,
+      resetGroupId,
+      resetFounderLeafIndex: 0,
+      recoveryKeyVersion: 2,
+      recoverySignature: signature,
+    }).success,
+    false,
+  );
+});
+
+test("S1 group reset recovery proof text is deterministic and context bound", () => {
+  const accountId = crypto.randomUUID();
+  const partnershipId = crypto.randomUUID();
+  const cryptoDeviceId = crypto.randomUUID();
+  const first = cryptoResetProofText({
+    accountId,
+    partnershipId,
+    cryptoDeviceId,
+    expectedGroupGeneration: 2,
+    expectedEpoch: 7,
+    resetGroupGeneration: 3,
+    resetGroupId: Buffer.from("next-group").toString("base64url"),
+    resetFounderLeafIndex: 0,
+    recoveryKeyVersion: 4,
+  });
+  const second = cryptoResetProofText({
+    accountId,
+    partnershipId,
+    cryptoDeviceId,
+    expectedGroupGeneration: 2,
+    expectedEpoch: 7,
+    resetGroupGeneration: 3,
+    resetGroupId: Buffer.from("next-group").toString("base64url"),
+    resetFounderLeafIndex: 0,
+    recoveryKeyVersion: 4,
+  });
+  assert.equal(first, second);
+  assert.equal(first.startsWith("shawtie-group-reset-v1\0"), true);
+  assert.equal(first.includes(partnershipId), true);
+  assert.equal(first.includes(cryptoDeviceId), true);
 });
 
 test("S1 recovery setup carries ciphertext and public recovery material only", () => {

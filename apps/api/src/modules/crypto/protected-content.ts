@@ -6,6 +6,8 @@ import {
 import {
   cryptoDeviceIsActiveGroupMember,
   insertProtectedContentKey,
+  listPartnershipCryptoMembers,
+  listPartnershipTrustedCryptoDevices,
   listPartnershipRecoveryRecipients,
   loadActivePartnershipCryptoGroup,
   loadDeviceCryptoIdentityByDevice,
@@ -157,6 +159,26 @@ export async function requireCryptoProtectedWrite(
   });
   if (!membership || membership.accountId !== auth.session.accountId) {
     throw new ApiError(409, "CRYPTO_DEVICE_UNTRUSTED");
+  }
+
+  const [trustedDevices, groupMembers] = await Promise.all([
+    listPartnershipTrustedCryptoDevices(executor, context.partnershipId),
+    listPartnershipCryptoMembers(
+      executor,
+      context.partnershipId,
+      group.groupGeneration,
+    ),
+  ]);
+  const activeMemberIds = new Set(
+    groupMembers
+      .filter((member) => member.removedAt === null)
+      .map((member) => member.cryptoDeviceId),
+  );
+  if (
+    trustedDevices.length === 0 ||
+    trustedDevices.some((device) => !activeMemberIds.has(device.cryptoDeviceId))
+  ) {
+    throw new ApiError(409, "CRYPTO_GROUP_NOT_READY");
   }
 
   const nonce = decode(envelope.nonce);

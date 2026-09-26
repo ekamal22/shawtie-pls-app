@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
   S1_CRYPTO_PROFILE,
   S1_MLS_CIPHERSUITE,
+  cryptoResetProofText,
   type CryptoBootstrapInput,
   type CryptoCommitInput,
   type CryptoControlQuery,
@@ -16,6 +17,7 @@ import {
   POSTGRES_SQLSTATE,
   accountIsCurrentPartnershipMember,
   activatePartnershipCryptoIfReady,
+  activateResetPartnershipCryptoGeneration,
   advancePartnershipCryptoGroup,
   consumeCryptoKeyPackage,
   consumeCryptoRecoveryChallenge,
@@ -52,6 +54,7 @@ import {
   postgresSqlState,
   refreshPartnershipCryptoRekeyRequired,
   removePartnershipCryptoMember,
+  supersedeActivePartnershipCryptoGroup,
   replaceCryptoRecovery,
   withTransaction,
   type DatabasePool,
@@ -559,6 +562,125 @@ export class CryptoService {
         throw new ApiError(409, "CRYPTO_EPOCH_CONFLICT");
       }
 
+      if (input.kind === "reset") {
+        if (
+          input.resetGroupGeneration === null ||
+          input.resetGroupId === null ||
+          input.resetFounderLeafIndex === null ||
+          input.recoveryKeyVersion === null ||
+          input.recoverySignature === null
+        ) {
+          throw new ApiError(400, "VALIDATION_FAILED");
+        }
+        const policy = await loadPartnershipCryptoPolicy(transaction, partnershipId);
+        if (!policy?.cryptoRequiredFrom) {
+          throw new ApiError(409, "CRYPTO_GROUP_RESET_REQUIRED");
+        }
+        const recovery = await loadCurrentCryptoRecovery(
+          transaction,
+          auth.session.accountId,
+        );
+        if (
+          !recovery ||
+          recovery.recoveryKeyVersion !== input.recoveryKeyVersion
+        ) {
+          throw new ApiError(409, "CRYPTO_RECOVERY_VERSION_CONFLICT");
+        }
+
+        const resetGroupId = decode(input.resetGroupId);
+        if (resetGroupId.equals(group.groupId)) {
+          throw new ApiError(409, "CRYPTO_GROUP_BOOTSTRAP_CONFLICT");
+        }
+        const proof = Buffer.from(
+          cryptoResetProofText({
+            accountId: auth.session.accountId,
+            partnershipId,
+            cryptoDeviceId: actor.cryptoDeviceId,
+            expectedGroupGeneration: input.expectedGroupGeneration,
+            expectedEpoch: input.expectedEpoch,
+            resetGroupGeneration: input.resetGroupGeneration,
+            resetGroupId: input.resetGroupId,
+            resetFounderLeafIndex: input.resetFounderLeafIndex,
+            recoveryKeyVersion: input.recoveryKeyVersion,
+          }),
+          "utf8",
+        );
+        if (
+          !verifyRawEd25519(
+            recovery.recoveryAuthPublicKey,
+            proof,
+            requireSignature(input.recoverySignature),
+          )
+        ) {
+          throw new ApiError(403, "CRYPTO_RECOVERY_FAILED");
+        }
+
+        const superseded = await supersedeActivePartnershipCryptoGroup(
+          transaction,
+          {
+            partnershipId,
+            expectedGroupGeneration: group.groupGeneration,
+            expectedEpoch: group.currentEpoch,
+            supersededAt: now,
+          },
+        );
+        if (!superseded) throw new ApiError(409, "CRYPTO_EPOCH_CONFLICT");
+
+        await insertPartnershipCryptoGroup(transaction, {
+          partnershipId,
+          groupGeneration: input.resetGroupGeneration,
+          groupId: resetGroupId,
+          cryptoProfile: group.cryptoProfile,
+          ciphersuite: group.ciphersuite,
+          currentEpoch: 0n,
+          createdByCryptoDeviceId: actor.cryptoDeviceId,
+          createdAt: now,
+        });
+        await insertPartnershipCryptoMember(transaction, {
+          partnershipId,
+          groupGeneration: input.resetGroupGeneration,
+          cryptoDeviceId: actor.cryptoDeviceId,
+          accountId: auth.session.accountId,
+          leafIndex: input.resetFounderLeafIndex,
+          joinedEpoch: 0n,
+          joinedAt: now,
+        });
+
+        const controlMessage = decode(input.controlMessage);
+        await insertPartnershipCryptoControlMessage(transaction, {
+          partnershipId,
+          groupGeneration: input.resetGroupGeneration,
+          controlSequence: 1n,
+          kind: "reset",
+          epochFrom: 0n,
+          epochTo: 0n,
+          senderCryptoDeviceId: actor.cryptoDeviceId,
+          targetCryptoDeviceId: null,
+          mlsMessage: controlMessage,
+          welcome: null,
+          messageSha256: digest(controlMessage),
+          createdAt: now,
+        });
+        const activated = await activateResetPartnershipCryptoGeneration(
+          transaction,
+          {
+            partnershipId,
+            groupGeneration: input.resetGroupGeneration,
+            controlSequence: 1n,
+            updatedAt: now,
+          },
+        );
+        if (!activated) throw new ApiError(409, "CRYPTO_GROUP_RESET_REQUIRED");
+
+        return {
+          groupGeneration: input.resetGroupGeneration,
+          currentEpoch: 0,
+          controlSequence: 1,
+          rekeyRequired: false,
+          cryptoRequired: true,
+        };
+      }
+
       const actorMember = await cryptoDeviceIsActiveGroupMember(transaction, {
         partnershipId,
         groupGeneration: group.groupGeneration,
@@ -617,8 +739,6 @@ export class CryptoService {
         if (!member || member.leafIndex !== input.targetLeafIndex) {
           throw new ApiError(409, "CRYPTO_EPOCH_CONFLICT");
         }
-      } else if (input.kind === "reset") {
-        throw new ApiError(409, "CRYPTO_GROUP_RESET_REQUIRED");
       }
 
       const nextSequence = await advancePartnershipCryptoGroup(transaction, {

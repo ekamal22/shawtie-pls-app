@@ -104,7 +104,11 @@ CREATE TABLE partnership_crypto_control_messages (
     ON DELETE CASCADE,
   CONSTRAINT partnership_crypto_control_sequence_positive CHECK (control_sequence > 0),
   CONSTRAINT partnership_crypto_control_kind_valid CHECK (kind IN ('add', 'remove', 'update', 'reset')),
-  CONSTRAINT partnership_crypto_control_epoch_valid CHECK (epoch_to = epoch_from + 1),
+  CONSTRAINT partnership_crypto_control_epoch_valid
+    CHECK (
+      (kind = 'reset' AND epoch_from = 0 AND epoch_to = 0)
+      OR (kind <> 'reset' AND epoch_to = epoch_from + 1)
+    ),
   CONSTRAINT partnership_crypto_control_message_nonempty CHECK (octet_length(mls_message) > 0),
   CONSTRAINT partnership_crypto_control_digest_size CHECK (octet_length(message_sha256) = 32),
   CONSTRAINT partnership_crypto_control_welcome_shape
