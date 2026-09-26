@@ -418,7 +418,9 @@ test("Paper rows keep a readable glyph in Midnight and Dawn", async ({ page }) =
         return 0.2126 * channel(r!) + 0.7152 * channel(g!) + 0.0722 * channel(b!);
       };
       const fg = luminance(parse(getComputedStyle(icon).color));
-      const bg = luminance(parse(getComputedStyle(row).backgroundColor));
+      const iconBg = getComputedStyle(icon).backgroundColor;
+      const painted = iconBg !== "rgba(0, 0, 0, 0)" && iconBg !== "transparent";
+      const bg = luminance(parse(painted ? iconBg : getComputedStyle(row).backgroundColor));
       const [hi, lo] = fg > bg ? [fg, bg] : [bg, fg];
       return (hi + 0.05) / (lo + 0.05);
     });
