@@ -460,6 +460,7 @@ test("Ours fits a 320px phone and reduced motion swaps movement for a fade", asy
   await page.setViewportSize({ width: 320, height: 640 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openOurs(page, scenario({ items: [item()] }));
+  await expect(page.locator(".ours[data-mode]")).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
@@ -495,7 +496,7 @@ test("Us keeps profile, security, devices, and account deletion reachable and ca
     await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
   }
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-  await expect(page.getByText("This device")).toBeVisible();
+  await expect(page.getByText("This device", { exact: true })).toBeVisible();
 
   // Presence, typing, last seen, and receipts are always on and never appear as settings.
   const text = (await page.locator("#main").innerText()).toLowerCase();
