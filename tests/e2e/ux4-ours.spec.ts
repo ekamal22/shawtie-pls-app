@@ -366,23 +366,30 @@ test("Remember This is shared to read and creator-only to change", async ({ page
     .getByRole("button", { name: /Their words/ })
     .click();
   let sheet = page.getByRole("dialog", { name: "Kept" });
-  await expect(sheet.getByText("Kept for us.")).toBeVisible();
+  await expect(sheet.getByText("Kept by them")).toBeVisible();
   await expect(sheet.getByText("You made me laugh")).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Delete" })).toHaveCount(0);
-  await expect(sheet.getByRole("button", { name: "Edit" })).toHaveCount(0);
+  // The partner's kept item offers no Edit or Delete, only the shared Our Story choice.
+  await sheet.getByRole("button", { name: "More for this item" }).click();
+  await expect(sheet.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
+  await expect(sheet.getByRole("menuitem", { name: "Edit" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await sheet.getByRole("button", { name: "Close" }).first().click();
 
   await chapter(page, "Then")
     .getByRole("button", { name: /My words/ })
     .click();
   sheet = page.getByRole("dialog", { name: "Kept" });
-  await expect(sheet.getByRole("button", { name: "Edit" })).toBeVisible();
-  await sheet.getByRole("button", { name: "Delete" }).click();
-  const confirm = page.getByRole("dialog", { name: "Delete this item?" });
-  await expect(confirm.getByText("Delete this relationship item?")).toBeVisible();
-  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await sheet.getByRole("button", { name: "More for this item" }).click();
+  await expect(sheet.getByRole("menuitem", { name: "Edit" })).toBeVisible();
+  await sheet.getByRole("menuitem", { name: "Delete" }).click();
+  const confirm = page.getByRole("dialog", { name: "Delete this?" });
+  await expect(
+    confirm.getByText("This removes it from your shared space for both of you."),
+  ).toBeVisible();
+  await confirm.getByRole("button", { name: "Keep it" }).click();
   expect(state.deleted).toEqual([]);
-  await sheet.getByRole("button", { name: "Delete" }).click();
+  await sheet.getByRole("button", { name: "More for this item" }).click();
+  await sheet.getByRole("menuitem", { name: "Delete" }).click();
   await confirm.getByRole("button", { name: "Delete", exact: true }).click();
   await expect.poll(() => state.deleted.length).toBe(1);
 });
@@ -408,7 +415,7 @@ test("Sealed letters wait quietly and the recipient opens them", async ({ page }
   await now.getByRole("button", { name: /For a hard day/ }).click();
   const sheet = page.getByRole("dialog", { name: "A letter for you" });
   await expect(sheet.getByText("Open when you need reassurance")).toBeVisible();
-  await sheet.getByRole("button", { name: "Open", exact: true }).click();
+  await sheet.getByRole("button", { name: "Open the letter" }).click();
   await expect.poll(() => state.released.length).toBe(1);
 });
 
