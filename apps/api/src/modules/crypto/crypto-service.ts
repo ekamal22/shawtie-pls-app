@@ -45,6 +45,7 @@ import {
   lockCryptoRecoveryChallenge,
   lockDeviceCryptoIdentity,
   markCryptoDeviceTrusted,
+  partnershipHasLegacyProtectedPlaintext,
   postgresSqlState,
   refreshPartnershipCryptoRekeyRequired,
   removePartnershipCryptoMember,
@@ -383,6 +384,11 @@ export class CryptoService {
         : [];
       const packages = await listAvailablePartnershipKeyPackages(transaction, partnershipId);
       const recoveryRecipients = await listPartnershipRecoveryRecipients(transaction, partnershipId);
+      const legacyPlaintextBlocker = await partnershipHasLegacyProtectedPlaintext(
+        transaction,
+        partnershipId,
+        S1_CRYPTO_PROFILE,
+      );
       const memberIds = new Set(
         members.filter((item) => item.removedAt === null).map((item) => item.cryptoDeviceId),
       );
@@ -423,6 +429,7 @@ export class CryptoService {
           recoveryKeyVersion: item.recoveryKeyVersion,
           recoveryHpkePublicKey: encode(item.recoveryHpkePublicKey),
         })),
+        legacyPlaintextBlocker,
       };
     });
   }

@@ -349,6 +349,7 @@ export {
   lockCryptoRecoveryChallenge,
   lockDeviceCryptoIdentity,
   markCryptoDeviceTrusted,
+  partnershipHasLegacyProtectedPlaintext,
   refreshPartnershipCryptoRekeyRequired,
   removePartnershipCryptoMember,
   replaceCryptoRecovery,

@@ -17,6 +17,7 @@ import {
   listConversationChanges,
   listConversationMessages,
   listBoundMediaForContainer,
+  listActiveMessageReactionContentKeyIds,
   loadConversationParticipants,
   loadCurrentConversationReadModel,
   loadMessageProjection,
@@ -412,6 +413,9 @@ export class MessagingService {
       for (const reaction of row.reactions) {
         if (reaction.contentKeyId) contentKeyIds.add(reaction.contentKeyId);
       }
+      for (const attachment of row.attachments) {
+        if (attachment.contentKeyId) contentKeyIds.add(attachment.contentKeyId);
+      }
     }
     const keys = await loadProtectedContentKeys(transaction, [...contentKeyIds]);
     const requireKey = (contentKeyId: string): ProtectedContentKeyRecord => {
@@ -474,7 +478,23 @@ export class MessagingService {
               }
             : null,
       })),
-      attachments: row.attachments,
+      attachments: row.attachments.map((attachment) => ({
+        mediaId: attachment.mediaId,
+        kind: attachment.kind,
+        formatCode: attachment.formatCode,
+        role: attachment.role,
+        position: attachment.position,
+        ciphertextBytes: attachment.ciphertextBytes,
+        cryptoProtocolVersion: attachment.cryptoProtocolVersion,
+        protectedMedia: attachment.contentKeyId
+          ? {
+              envelope: this.#protectedEnvelopeProjection(
+                requireKey(attachment.contentKeyId),
+                accountId,
+              ),
+            }
+          : null,
+      })),
     }));
   }
 
@@ -1037,6 +1057,11 @@ export class MessagingService {
 
         this.#assertCapability(auth, lifecycle, now, message, "delete_message", true);
 
+        const messageContentKeyId = message.bodyContentKeyId;
+        const reactionContentKeyIds = await listActiveMessageReactionContentKeyIds(
+          transaction,
+          messageId,
+        );
         const mediaToDelete = await markBoundMediaDeletionPending(
           transaction,
           "message",
@@ -1044,6 +1069,9 @@ export class MessagingService {
           now,
         );
         for (const media of mediaToDelete) {
+          if (media.contentKeyId) {
+            await deleteProtectedContentKey(transaction, media.contentKeyId);
+          }
           await insertScheduledAction(transaction, {
             id: randomUUID(),
             actionType: "m3.media_delete",
@@ -1064,6 +1092,12 @@ export class MessagingService {
           deletedAt: now,
         });
         if (nextVersion === null) throw new ApiError(409, "MESSAGE_DELETED");
+        if (messageContentKeyId) {
+          await deleteProtectedContentKey(transaction, messageContentKeyId);
+        }
+        for (const contentKeyId of reactionContentKeyIds) {
+          await deleteProtectedContentKey(transaction, contentKeyId);
+        }
 
         await insertConversationChange(transaction, {
           conversationId,

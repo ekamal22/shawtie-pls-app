@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  protectedContentEnvelopeProjectionSchema,
+  protectedContentEnvelopeSchema,
+} from "../crypto/protected-content.ts";
 
 export const M3_ATTACHMENTS_PER_MESSAGE_MAX = 10;
 export const M3_IMAGE_SOURCE_MAX_BYTES = 10 * 1024 * 1024;
@@ -60,11 +64,13 @@ export const mediaIdParamsSchema = z.object({ mediaId: uuid }).strict();
 
 export const mediaUploadCreateSchema = z
   .object({
+    mediaId: uuid.optional(),
     kind: mediaKindSchema,
     formatCode: mediaFormatCodeSchema,
     ciphertextBytes: bytes,
     ciphertextSha256: digest,
     cryptoProtocolVersion: cryptoProtocol,
+    contentEnvelope: protectedContentEnvelopeSchema.nullable().default(null),
     durationSeconds: z
       .number()
       .int()
@@ -75,6 +81,13 @@ export const mediaUploadCreateSchema = z
   })
   .strict()
   .superRefine((value, context) => {
+    if (value.contentEnvelope !== null && value.mediaId === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["mediaId"],
+        message: "protected media requires client-generated mediaId",
+      });
+    }
     const max =
       value.kind === "image"
         ? M3_IMAGE_CIPHERTEXT_MAX_BYTES
@@ -125,6 +138,12 @@ export const mediaAttachmentProjectionSchema = z.object({
   position: z.number().int().min(0).max(31),
   ciphertextBytes: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
   cryptoProtocolVersion: z.string().min(1).max(64),
+  protectedMedia: z
+    .object({
+      envelope: protectedContentEnvelopeProjectionSchema,
+    })
+    .nullable()
+    .default(null),
 });
 
 export type MediaUploadCreateInput = z.infer<typeof mediaUploadCreateSchema>;

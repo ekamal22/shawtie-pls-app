@@ -899,6 +899,22 @@ export async function hasActiveMessageReaction(
   return result.rowCount === 1;
 }
 
+export async function listActiveMessageReactionContentKeyIds(
+  executor: QueryExecutor,
+  messageId: string,
+): Promise<readonly string[]> {
+  const result = await executor.query<{ content_key_id: string }>(
+    `SELECT content_key_id
+     FROM message_reactions
+     WHERE message_id = $1
+       AND removed_at IS NULL
+       AND content_key_id IS NOT NULL
+     ORDER BY id`,
+    [messageId],
+  );
+  return result.rows.map((row) => row.content_key_id);
+}
+
 export async function removeMessageReaction(
   executor: QueryExecutor,
   messageId: string,

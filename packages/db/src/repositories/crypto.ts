@@ -811,6 +811,66 @@ export async function refreshPartnershipCryptoRekeyRequired(
   return result.rows[0]?.rekey_required ?? false;
 }
 
+export async function partnershipHasLegacyProtectedPlaintext(
+  executor: QueryExecutor,
+  partnershipId: string,
+  cryptoProfile: string,
+): Promise<boolean> {
+  const result = await executor.query(
+    `SELECT 1
+     WHERE EXISTS (
+       SELECT 1 FROM messages
+       WHERE partnership_id = $1
+         AND deleted_at IS NULL
+         AND (
+           body_text IS NOT NULL
+           OR (ciphertext IS NOT NULL AND body_content_key_id IS NULL)
+         )
+     )
+     OR EXISTS (
+       SELECT 1 FROM message_reactions
+       WHERE partnership_id = $1
+         AND removed_at IS NULL
+         AND (
+           emoji_text IS NOT NULL
+           OR (encrypted_reaction IS NOT NULL AND content_key_id IS NULL)
+         )
+     )
+     OR EXISTS (
+       SELECT 1 FROM partnership_chat_nicknames
+       WHERE partnership_id = $1
+         AND (
+           nickname IS NOT NULL
+           OR (encrypted_nickname IS NOT NULL AND content_key_id IS NULL)
+         )
+     )
+     OR EXISTS (
+       SELECT 1 FROM relationship_items
+       WHERE partnership_id = $1
+         AND lifecycle = 'active'
+         AND (
+           development_preview_payload IS NOT NULL
+           OR development_plaintext_payload IS NOT NULL
+           OR (encrypted_preview_payload IS NOT NULL AND preview_content_key_id IS NULL)
+           OR (encrypted_payload IS NOT NULL AND main_content_key_id IS NULL)
+         )
+     )
+     OR EXISTS (
+       SELECT 1 FROM media_objects
+       WHERE partnership_id = $1
+         AND deleted_at IS NULL
+         AND state IN ('uploading', 'ready_unbound', 'bound')
+         AND (
+           crypto_protocol_version <> $2
+           OR content_key_id IS NULL
+         )
+     )
+     LIMIT 1`,
+    [partnershipId, cryptoProfile],
+  );
+  return result.rowCount === 1;
+}
+
 export async function activatePartnershipCryptoIfReady(
   executor: QueryExecutor,
   input: {
@@ -854,7 +914,71 @@ export async function activatePartnershipCryptoIfReady(
           AND recovery_members.partnership_id = $1
           AND recovery_members.released_at IS NULL
          WHERE recovery.replaced_at IS NULL
-       ) = 2`,
+       ) = 2
+       AND NOT EXISTS (
+         SELECT 1
+         FROM messages AS message
+         WHERE message.partnership_id = $1
+           AND message.deleted_at IS NULL
+           AND (
+             message.body_text IS NOT NULL
+             OR (message.ciphertext IS NOT NULL AND message.body_content_key_id IS NULL)
+           )
+       )
+       AND NOT EXISTS (
+         SELECT 1
+         FROM message_reactions AS reaction
+         WHERE reaction.partnership_id = $1
+           AND reaction.removed_at IS NULL
+           AND (
+             reaction.emoji_text IS NOT NULL
+             OR (
+               reaction.encrypted_reaction IS NOT NULL
+               AND reaction.content_key_id IS NULL
+             )
+           )
+       )
+       AND NOT EXISTS (
+         SELECT 1
+         FROM partnership_chat_nicknames AS nickname
+         WHERE nickname.partnership_id = $1
+           AND (
+             nickname.nickname IS NOT NULL
+             OR (
+               nickname.encrypted_nickname IS NOT NULL
+               AND nickname.content_key_id IS NULL
+             )
+           )
+       )
+       AND NOT EXISTS (
+         SELECT 1
+         FROM relationship_items AS item
+         WHERE item.partnership_id = $1
+           AND item.lifecycle = 'active'
+           AND (
+             item.development_preview_payload IS NOT NULL
+             OR item.development_plaintext_payload IS NOT NULL
+             OR (
+               item.encrypted_preview_payload IS NOT NULL
+               AND item.preview_content_key_id IS NULL
+             )
+             OR (
+               item.encrypted_payload IS NOT NULL
+               AND item.main_content_key_id IS NULL
+             )
+           )
+       )
+       AND NOT EXISTS (
+         SELECT 1
+         FROM media_objects AS media
+         WHERE media.partnership_id = $1
+           AND media.deleted_at IS NULL
+           AND media.state IN ('uploading', 'ready_unbound', 'bound')
+           AND (
+             media.crypto_protocol_version <> $3
+             OR media.content_key_id IS NULL
+           )
+       )`,
     [input.partnershipId, input.groupGeneration, input.cryptoProfile, input.activatedAt],
   );
   return result.rowCount === 1;

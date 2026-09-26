@@ -272,10 +272,11 @@ export async function markBoundMediaDeletionPending(
   bindingType: MediaBindingType,
   bindingId: string,
   deletedAt: Date,
-): Promise<readonly { mediaId: string; generation: bigint }[]> {
+): Promise<readonly { mediaId: string; generation: bigint; contentKeyId: string | null }[]> {
   const result = await executor.query<{
     id: string;
     deletion_generation: string | number | bigint;
+    content_key_id: string | null;
   }>(
     `UPDATE media_objects
      SET state = 'deletion_pending',
@@ -285,12 +286,13 @@ export async function markBoundMediaDeletionPending(
        AND binding_id = $2
        AND state = 'bound'
        AND deleted_at IS NULL
-     RETURNING id, deletion_generation`,
+     RETURNING id, deletion_generation, content_key_id`,
     [bindingType, bindingId, deletedAt],
   );
   return result.rows.map((row) => ({
     mediaId: row.id,
     generation: BigInt(row.deletion_generation),
+    contentKeyId: row.content_key_id,
   }));
 }
 

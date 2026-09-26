@@ -1,13 +1,16 @@
 ﻿import { randomBytes, randomUUID } from "node:crypto";
 import {
   completeLifecycleIdempotency,
+  deleteProtectedContentKey,
   getTransactionTimestamp,
   insertMediaUpload,
   insertScheduledAction,
   loadCurrentConversationReadModel,
   loadMediaObject,
   loadMessageProjection,
+  loadPartnershipCryptoPolicy,
   loadPartnershipReadModelForAccount,
+  loadProtectedContentKey,
   loadRelationshipItem,
   lockMediaObject,
   lockPartnershipLifecycle,
@@ -27,12 +30,20 @@ import {
   type CapabilityContext,
   type PartnershipState,
 } from "@shawtie/domain";
-import type { MediaUploadCreateInput, MediaUploadGenerationInput } from "@shawtie/contracts";
+import {
+  S1_CRYPTO_PROFILE,
+  type MediaUploadCreateInput,
+  type MediaUploadGenerationInput,
+} from "@shawtie/contracts";
 import type { MediaObjectStore } from "@shawtie/media-storage";
 import { ApiError } from "../../lib/api-error.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import { resolveMediaApiConfig, type ApiConfig, type MediaApiConfig } from "../../config.ts";
+import {
+  protectedContentProjection,
+  requireCryptoProtectedWrite,
+} from "../crypto/protected-content.ts";
 
 const DAY = 24 * 60 * 60_000;
 const IDEMPOTENCY_RETENTION_MS = 7 * DAY;
@@ -116,7 +127,7 @@ function fullRelationshipItemVisible(
   );
 }
 
-function projection(media: MediaObjectRecord) {
+function projection(media: MediaObjectRecord, protectedMedia: unknown = null) {
   return {
     mediaId: media.id,
     kind: media.mediaKind,
@@ -124,6 +135,7 @@ function projection(media: MediaObjectRecord) {
     state: media.state,
     ciphertextBytes: safeNumber(media.ciphertextSize),
     cryptoProtocolVersion: media.cryptoProtocolVersion,
+    protectedMedia,
     durationSeconds: media.durationSeconds,
     uploadGeneration: safeNumber(media.uploadGeneration),
     uploadExpiresAt: media.uploadExpiresAt?.toISOString() ?? null,
@@ -219,9 +231,23 @@ export class MediaService {
     throw new ApiError(409, "NO_CURRENT_PARTNERSHIP");
   }
 
-  async #grant(media: MediaObjectRecord, now: Date) {
+  async #projection(
+    executor: QueryExecutor,
+    media: MediaObjectRecord,
+    accountId: string,
+  ): Promise<ReturnType<typeof projection>> {
+    if (!media.contentKeyId) return projection(media);
+    const key = await loadProtectedContentKey(executor, media.contentKeyId);
+    if (!key) throw new Error("Media protected-content metadata is missing");
+    return projection(media, {
+      envelope: protectedContentProjection(key, accountId),
+    });
+  }
+
+  async #grant(media: MediaObjectRecord, now: Date, accountId: string) {
+    const projected = await this.#projection(this.#database.pool, media, accountId);
     if (media.state !== "uploading" || !media.uploadExpiresAt) {
-      return { ...projection(media), uploadUrl: null, requiredHeaders: null };
+      return { ...projected, uploadUrl: null, requiredHeaders: null };
     }
     if (media.uploadExpiresAt.getTime() <= now.getTime()) {
       throw new ApiError(409, "MEDIA_UPLOAD_EXPIRED");
@@ -236,7 +262,7 @@ export class MediaService {
       expiresAt: grantExpiresAt,
     });
     return {
-      ...projection(media),
+      ...projected,
       uploadUrl: grant.url,
       requiredHeaders: grant.requiredHeaders,
       grantExpiresAt: grant.expiresAt.toISOString(),
@@ -260,11 +286,13 @@ export class MediaService {
     const fingerprintPayload = JSON.stringify({
       v: 1,
       action: "m3.media.create",
+      mediaId: input.mediaId ?? null,
       kind: input.kind,
       formatCode: input.formatCode,
       ciphertextBytes: input.ciphertextBytes,
       ciphertextSha256: input.ciphertextSha256,
       cryptoProtocolVersion: input.cryptoProtocolVersion,
+      contentEnvelope: input.contentEnvelope,
       durationSeconds: input.durationSeconds,
     });
     const fingerprint = this.#keys.activeVerifier("media-request-fingerprint", fingerprintPayload);
@@ -272,6 +300,17 @@ export class MediaService {
     const media = await withTransaction(this.#database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const lifecycle = await this.#lockWritableLifecycle(transaction, auth.session.accountId, now);
+      const policy = await loadPartnershipCryptoPolicy(transaction, lifecycle.partnershipId);
+      if (
+        policy?.cryptoRequiredFrom &&
+        (
+          input.cryptoProtocolVersion !== S1_CRYPTO_PROFILE ||
+          !input.mediaId ||
+          !input.contentEnvelope
+        )
+      ) {
+        throw new ApiError(409, "CRYPTO_REQUIRED");
+      }
       const reservation = await reserveLifecycleIdempotency(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,
@@ -313,7 +352,26 @@ export class MediaService {
         return { media: existing, now };
       }
 
-      const mediaId = randomUUID();
+      const mediaId = input.mediaId ?? randomUUID();
+      if (input.contentEnvelope) {
+        const sha256 = Buffer.from(input.ciphertextSha256, "hex");
+        if (sha256.length !== 32) throw new ApiError(400, "MEDIA_OBJECT_MISMATCH");
+        await requireCryptoProtectedWrite(
+          transaction,
+          auth,
+          {
+            partnershipId: lifecycle.partnershipId,
+            contentType: "media",
+            contentId: mediaId,
+            contentVersion: 1n,
+            payloadRole: "media_content",
+            schemaVersion: 1,
+            ciphertextSha256: sha256,
+            at: now,
+          },
+          input.contentEnvelope,
+        );
+      }
       const objectKey = "media/v1/" + randomBytes(24).toString("hex");
       const uploadExpiresAt = new Date(now.getTime() + this.#media.uploadRetentionMs);
       await insertMediaUpload(transaction, {
@@ -327,6 +385,7 @@ export class MediaService {
         ciphertextSize: BigInt(input.ciphertextBytes),
         ciphertextSha256: input.ciphertextSha256,
         cryptoProtocolVersion: input.cryptoProtocolVersion,
+        contentKeyId: input.contentEnvelope?.contentKeyId ?? null,
         durationSeconds: input.durationSeconds,
         uploadExpiresAt,
         createdAt: now,
@@ -354,7 +413,7 @@ export class MediaService {
       return { media: created, now };
     });
 
-    return this.#grant(media.media, media.now);
+    return this.#grant(media.media, media.now, auth.session.accountId);
   }
 
   async refreshUpload(
@@ -404,7 +463,7 @@ export class MediaService {
       if (!refreshed) throw new Error("Media disappeared after refresh");
       return { media: refreshed, now };
     });
-    return this.#grant(result.media, result.now);
+    return this.#grant(result.media, result.now, auth.session.accountId);
   }
 
   async completeUpload(
@@ -417,7 +476,9 @@ export class MediaService {
     if (!snapshot || snapshot.uploaderAccountId !== auth.session.accountId) {
       throw new ApiError(404, "MEDIA_NOT_FOUND");
     }
-    if (snapshot.state === "ready_unbound") return projection(snapshot);
+    if (snapshot.state === "ready_unbound") {
+      return this.#projection(this.#database.pool, snapshot, auth.session.accountId);
+    }
     if (snapshot.state !== "uploading") throw new ApiError(409, "MEDIA_NOT_READY");
     if (snapshot.uploadGeneration !== BigInt(input.expectedUploadGeneration)) {
       throw new ApiError(409, "VERSION_CONFLICT");
@@ -447,7 +508,9 @@ export class MediaService {
       ) {
         throw new ApiError(404, "MEDIA_NOT_FOUND");
       }
-      if (media.state === "ready_unbound") return projection(media);
+      if (media.state === "ready_unbound") {
+        return this.#projection(transaction, media, auth.session.accountId);
+      }
       if (media.state !== "uploading") throw new ApiError(409, "MEDIA_NOT_READY");
       if (media.uploadGeneration !== BigInt(input.expectedUploadGeneration)) {
         throw new ApiError(409, "VERSION_CONFLICT");
@@ -463,13 +526,13 @@ export class MediaService {
       if (!ready) throw new ApiError(409, "VERSION_CONFLICT");
       const completed = await loadMediaObject(transaction, media.id);
       if (!completed) throw new Error("Media disappeared after completion");
-      return projection(completed);
+      return this.#projection(transaction, completed, auth.session.accountId);
     });
   }
 
   async metadata(auth: AuthContext, mediaId: string): Promise<unknown> {
     const media = await this.#authorizeRead(auth, mediaId);
-    return projection(media);
+    return this.#projection(this.#database.pool, media, auth.session.accountId);
   }
 
   async access(auth: AuthContext, mediaId: string): Promise<unknown> {
@@ -484,7 +547,7 @@ export class MediaService {
       expiresAt,
     });
     return {
-      media: projection(media),
+      media: await this.#projection(this.#database.pool, media, auth.session.accountId),
       downloadUrl: grant.url,
       expiresAt: grant.expiresAt.toISOString(),
     };
@@ -500,8 +563,12 @@ export class MediaService {
       if (media.bindingId !== null || !["uploading", "ready_unbound"].includes(media.state)) {
         throw new ApiError(409, "MEDIA_ALREADY_BOUND");
       }
+      const contentKeyId = media.contentKeyId;
       const generation = await markMediaDeletionPending(transaction, media.id, now);
       if (generation === null) return;
+      if (contentKeyId) {
+        await deleteProtectedContentKey(transaction, contentKeyId);
+      }
       await insertScheduledAction(transaction, {
         id: randomUUID(),
         actionType: "m3.media_delete",

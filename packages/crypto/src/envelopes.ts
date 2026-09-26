@@ -7,7 +7,7 @@ export type ProtectedContentType =
   | "message_reaction"
   | "partnership_nickname"
   | "relationship_item"
-  | "media_descriptor";
+  | "media";
 
 export type ProtectedPayloadRole =
   | "message_body"
@@ -15,7 +15,7 @@ export type ProtectedPayloadRole =
   | "nickname_value"
   | "relationship_preview"
   | "relationship_main"
-  | "media_descriptor";
+  | "media_content";
 
 export interface EnvelopeContext {
   readonly cryptoProfile: S1CryptoProfile;
