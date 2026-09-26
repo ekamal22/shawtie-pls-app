@@ -2223,7 +2223,7 @@ Canonical direction:
 
 # UX1: Romantic Design Foundation
 
-Status: DONE. Integrated into `integration/ux-romantic` and included in physical acceptance at `ca7cd35`.
+Status: DONE. Physically accepted at `ca7cd35` and merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
@@ -2235,7 +2235,7 @@ Status: DONE. Integrated into `integration/ux-romantic` and included in physical
 
 # UX2: Home - The Threshold
 
-Status: DONE. Integrated into `integration/ux-romantic` and included in physical acceptance at `ca7cd35`.
+Status: DONE. Physically accepted at `ca7cd35` and merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
@@ -2246,7 +2246,7 @@ Status: DONE. Integrated into `integration/ux-romantic` and included in physical
 
 # UX3: Talk
 
-Status: DONE. Integrated into `integration/ux-romantic` and included in physical acceptance at `ca7cd35`.
+Status: DONE. Physically accepted at `ca7cd35` and merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
@@ -2258,7 +2258,7 @@ Status: DONE. Integrated into `integration/ux-romantic` and included in physical
 
 # UX4: Ours
 
-Status: DONE. Integrated into `integration/ux-romantic` over verified R1 and included in physical acceptance at `ca7cd35`.
+Status: DONE. Physically accepted at `ca7cd35` over verified R1 and merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
@@ -2269,7 +2269,7 @@ Status: DONE. Integrated into `integration/ux-romantic` over verified R1 and inc
 
 # UX5: Calls Experience
 
-Status: DONE. Integrated into `integration/ux-romantic` over merged C1/C2 and physically accepted at `ca7cd35`.
+Status: DONE. Physically accepted at `ca7cd35` over merged C1/C2 and merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
@@ -2281,7 +2281,7 @@ Status: DONE. Integrated into `integration/ux-romantic` over merged C1/C2 and ph
 
 # UX6: Memories, Letters, and Time
 
-Status: DONE. Integrated into `integration/ux-romantic` over verified R1/M3 and included in physical acceptance at `ca7cd35`.
+Status: DONE. Physically accepted at `ca7cd35` over verified R1/M3 and merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
@@ -2292,9 +2292,9 @@ Status: DONE. Integrated into `integration/ux-romantic` over verified R1/M3 and 
 
 # UX7: Signature Shawtie Moments
 
-Status: DONE. Integrated into `integration/ux-romantic`; UX0 through UX7 physical acceptance passed 22/22 at final executable `ca7cd35`.
+Status: DONE. UX0 through UX7 physical acceptance passed 22/22 at final executable `ca7cd35`, and the romantic overhaul is merged to `main` at `9f0bea4`.
 
-Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers `UX_ANDROID_ACCEPTANCE_PASS` and `UX_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The romantic integration is not yet merged to `main`.
+Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers `UX_ANDROID_ACCEPTANCE_PASS` and `UX_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The romantic overhaul is merged to `main` at `9f0bea4`.
 
 ## Acceptance gates
 
