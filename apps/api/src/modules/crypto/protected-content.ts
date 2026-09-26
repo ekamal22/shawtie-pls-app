@@ -203,6 +203,7 @@ export async function requireCryptoProtectedWrite(
     contentId: context.contentId,
     contentVersion: context.contentVersion,
     payloadRole: context.payloadRole,
+    contentSchemaVersion: context.schemaVersion,
     cryptoProfile: envelope.cryptoProfile,
     groupGeneration: envelope.groupGeneration,
     mlsEpoch: BigInt(envelope.mlsEpoch),
@@ -228,6 +229,11 @@ export function protectedContentProjection(
   const recovery = record.recoveryCapsules.find((capsule) => capsule.accountId === accountId);
   return {
     cryptoProfile: record.cryptoProfile,
+    contentType: record.contentType,
+    contentId: record.contentId,
+    contentVersion: Number(record.contentVersion),
+    payloadRole: record.payloadRole,
+    schemaVersion: record.contentSchemaVersion,
     groupGeneration: record.groupGeneration,
     mlsEpoch: Number(record.mlsEpoch),
     senderCryptoDeviceId: record.senderCryptoDeviceId,

@@ -91,6 +91,7 @@ export interface InsertProtectedContentKey {
   readonly contentId: string;
   readonly contentVersion: bigint;
   readonly payloadRole: ProtectedPayloadRole;
+  readonly contentSchemaVersion: number;
   readonly cryptoProfile: string;
   readonly groupGeneration: number;
   readonly mlsEpoch: bigint;
@@ -115,10 +116,10 @@ export async function insertProtectedContentKey(
   await executor.query(
     `INSERT INTO protected_content_keys (
        id, partnership_id, content_type, content_id, content_version,
-       payload_role, crypto_profile, group_generation, mls_epoch,
+       payload_role, content_schema_version, crypto_profile, group_generation, mls_epoch,
        sender_crypto_device_id, nonce, key_distribution_message,
        ciphertext_sha256, content_signature, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
     [
       input.id,
       input.partnershipId,
@@ -126,6 +127,7 @@ export async function insertProtectedContentKey(
       input.contentId,
       input.contentVersion.toString(),
       input.payloadRole,
+      input.contentSchemaVersion,
       input.cryptoProfile,
       input.groupGeneration,
       input.mlsEpoch.toString(),
@@ -170,6 +172,7 @@ export interface ProtectedContentKeyRecord {
   readonly contentId: string;
   readonly contentVersion: bigint;
   readonly payloadRole: ProtectedPayloadRole;
+  readonly contentSchemaVersion: number;
   readonly cryptoProfile: string;
   readonly groupGeneration: number;
   readonly mlsEpoch: bigint;
@@ -197,6 +200,7 @@ export async function loadProtectedContentKey(
     content_id: string;
     content_version: string | number | bigint;
     payload_role: ProtectedPayloadRole;
+    content_schema_version: number;
     crypto_profile: string;
     group_generation: number;
     mls_epoch: string | number | bigint;
@@ -208,7 +212,7 @@ export async function loadProtectedContentKey(
   }>(
     `SELECT
        id, partnership_id, content_type, content_id, content_version,
-       payload_role, crypto_profile, group_generation, mls_epoch,
+       payload_role, content_schema_version, crypto_profile, group_generation, mls_epoch,
        sender_crypto_device_id, nonce, key_distribution_message,
        ciphertext_sha256, content_signature
      FROM protected_content_keys
@@ -237,6 +241,7 @@ export async function loadProtectedContentKey(
     contentId: row.content_id,
     contentVersion: BigInt(row.content_version),
     payloadRole: row.payload_role,
+    contentSchemaVersion: row.content_schema_version,
     cryptoProfile: row.crypto_profile,
     groupGeneration: row.group_generation,
     mlsEpoch: BigInt(row.mls_epoch),
@@ -268,6 +273,7 @@ export async function loadProtectedContentKeys(
     content_id: string;
     content_version: string | number | bigint;
     payload_role: ProtectedPayloadRole;
+    content_schema_version: number;
     crypto_profile: string;
     group_generation: number;
     mls_epoch: string | number | bigint;
@@ -279,7 +285,7 @@ export async function loadProtectedContentKeys(
   }>(
     `SELECT
        id, partnership_id, content_type, content_id, content_version,
-       payload_role, crypto_profile, group_generation, mls_epoch,
+       payload_role, content_schema_version, crypto_profile, group_generation, mls_epoch,
        sender_crypto_device_id, nonce, key_distribution_message,
        ciphertext_sha256, content_signature
      FROM protected_content_keys

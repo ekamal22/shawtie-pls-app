@@ -5,6 +5,7 @@ CREATE TABLE protected_content_keys (
   content_id uuid NOT NULL,
   content_version bigint NOT NULL,
   payload_role text NOT NULL,
+  content_schema_version integer NOT NULL,
   crypto_profile text NOT NULL,
   group_generation integer NOT NULL,
   mls_epoch bigint NOT NULL,
@@ -30,6 +31,7 @@ CREATE TABLE protected_content_keys (
       'media_content'
     )),
   CONSTRAINT protected_content_keys_version_positive CHECK (content_version > 0),
+  CONSTRAINT protected_content_keys_schema_version_positive CHECK (content_schema_version > 0),
   CONSTRAINT protected_content_keys_generation_positive CHECK (group_generation > 0),
   CONSTRAINT protected_content_keys_epoch_nonnegative CHECK (mls_epoch >= 0),
   CONSTRAINT protected_content_keys_profile_nonempty CHECK (length(crypto_profile) > 0),

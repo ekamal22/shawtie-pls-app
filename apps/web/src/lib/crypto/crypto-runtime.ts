@@ -80,6 +80,13 @@ export interface S1ProtectionContext {
   readonly schemaVersion: number;
 }
 
+export interface S1DecryptionContext {
+  readonly partnershipId: string;
+  readonly contentType: ProtectedContentType;
+  readonly contentId: string;
+  readonly payloadRole: ProtectedPayloadRole;
+}
+
 export interface S1RuntimeStatus {
   readonly available: boolean;
   readonly cryptoDeviceId: string | null;
@@ -1126,20 +1133,27 @@ export class S1CryptoRuntime {
   }
 
   async decryptProtectedBytes(
-    contextInput: S1ProtectionContext,
+    contextInput: S1DecryptionContext,
     protectedContent: EncryptedProtectedContentProjection,
   ): Promise<Uint8Array<ArrayBuffer>> {
     const envelope = protectedContent.envelope;
+    if (
+      envelope.contentType !== contextInput.contentType ||
+      envelope.contentId !== contextInput.contentId ||
+      envelope.payloadRole !== contextInput.payloadRole
+    ) {
+      throw new Error("CRYPTO_CIPHERTEXT_INVALID");
+    }
     const context = envelopeContext({
       partnershipId: contextInput.partnershipId,
       groupGeneration: envelope.groupGeneration,
       mlsEpoch: envelope.mlsEpoch,
-      contentType: contextInput.contentType,
-      contentId: contextInput.contentId,
-      contentVersion: contextInput.contentVersion,
-      payloadRole: contextInput.payloadRole,
+      contentType: envelope.contentType,
+      contentId: envelope.contentId,
+      contentVersion: envelope.contentVersion,
+      payloadRole: envelope.payloadRole,
       senderCryptoDeviceId: envelope.senderCryptoDeviceId,
-      schemaVersion: contextInput.schemaVersion,
+      schemaVersion: envelope.schemaVersion,
     });
     let key = await this.#vault.contentKey(envelope.contentKeyId);
 
@@ -1227,7 +1241,7 @@ export class S1CryptoRuntime {
   }
 
   async decryptProtectedJson<T>(
-    context: S1ProtectionContext,
+    context: S1DecryptionContext,
     protectedContent: EncryptedProtectedContentProjection,
   ): Promise<T> {
     return JSON.parse(
