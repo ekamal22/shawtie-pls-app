@@ -117,7 +117,11 @@ async function talkFiles(): Promise<URL[]> {
 test("UX3 copy claims no encryption and uses no Unicode em dash", async () => {
   for (const file of await talkFiles()) {
     const text = await readFile(file, "utf8");
-    assert.equal(text.includes("2014"), false, file.pathname + " contains an em dash");
+    assert.equal(
+      text.includes(String.fromCodePoint(0x2014)),
+      false,
+      file.pathname + " contains an em dash",
+    );
     // User-facing strings only: identifiers such as ciphertextBytes are not claims.
     const strings = [...text.matchAll(/"([^"\n]{3,})"/g)].map((match) => match[1] ?? "");
     for (const value of strings) {

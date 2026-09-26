@@ -93,7 +93,11 @@ test("UX5 call sources make no encryption claim, use no em dash, and offer no pr
   }
   for (const file of files) {
     const text = await readFile(file, "utf8");
-    assert.equal(text.includes("2014"), false, file.pathname + " contains an em dash");
+    assert.equal(
+      text.includes(String.fromCodePoint(0x2014)),
+      false,
+      file.pathname + " contains an em dash",
+    );
     assert.equal(
       /end-to-end|e2ee|encrypted/i.test(text),
       false,
