@@ -142,3 +142,34 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
     animation: none;
   }
 }
+
+/* Threshold Transition into Ours: a doorway that opens (a soft clip and settle), shorter than
+   400ms, distinct from the plain rise the other routes use. It replaces the inner arrival
+   animations while it runs so the whole arrival stays inside one short beat. */
+.app-shell[data-route="ours"] .app-route.is-entering {
+  animation: ux7-threshold 360ms var(--ease-unfold) both;
+}
+
+.app-shell[data-route="ours"] .app-route.is-entering .ours,
+.app-shell[data-route="ours"] .app-route.is-entering .ours-chapter {
+  animation: none;
+}
+
+@keyframes ux7-threshold {
+  from {
+    opacity: 0;
+    transform: scale(0.982) translateY(12px);
+    clip-path: inset(3% 3% 0 3% round var(--radius-l, 24px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0 round 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell[data-route="ours"] .app-route.is-entering {
+    animation: ux7-fade-in var(--dur-instant) linear both;
+  }
+}

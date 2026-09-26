@@ -124,3 +124,17 @@ test("UX7 Pair Mark: together in Ours or when the partner is online, never a met
   assert.match(block, /prefers-reduced-motion: reduce[\s\S]*animation: none/);
   assert.equal(/infinite/.test(css), false, "no looping signature animation");
 });
+
+test("UX7 Threshold: arrival into Ours is a distinct beat under 400ms with a reduced-motion fade", async () => {
+  const css = await source("../src/design/signature.css");
+  const rule =
+    /\.app-shell\[data-route="ours"\] \.app-route\.is-entering \{\s*animation: ux7-threshold (\d+)ms/.exec(
+      css,
+    );
+  assert.ok(rule, "threshold rule exists");
+  assert.ok(Number(rule[1]) < 400);
+  assert.match(
+    css.slice(css.indexOf("Threshold Transition")),
+    /prefers-reduced-motion: reduce[\s\S]*ux7-fade-in var\(--dur-instant\)/,
+  );
+});
