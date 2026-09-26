@@ -21,6 +21,8 @@ const UNAVAILABLE: S1RuntimeStatus = {
   errorCode: null,
 };
 
+let activeS1Runtime: S1CryptoRuntime | null = null;
+
 const S1CryptoContext = createContext<S1CryptoContextValue>({
   runtime: null,
   status: UNAVAILABLE,
@@ -60,6 +62,7 @@ export function S1CryptoRuntimeProvider({
           return;
         }
         active = created;
+        activeS1Runtime = created;
         setRuntime(created);
         setStatus(created.status());
       })
@@ -76,6 +79,7 @@ export function S1CryptoRuntimeProvider({
 
     return () => {
       disposed = true;
+      if (activeS1Runtime === active) activeS1Runtime = null;
       active?.close();
     };
   }, [accountId, deviceId, generation]);
@@ -109,4 +113,9 @@ export function S1CryptoRuntimeProvider({
 
 export function useS1CryptoRuntime(): S1CryptoContextValue {
   return useContext(S1CryptoContext);
+}
+
+
+export function getActiveS1CryptoRuntime(): S1CryptoRuntime | null {
+  return activeS1Runtime;
 }

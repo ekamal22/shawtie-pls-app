@@ -155,6 +155,7 @@ export class M2ReplayEngine {
   async enqueueRelationshipCreate(
     body: unknown,
     idempotencyKey = "m2-" + crypto.randomUUID(),
+    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<RelationshipQueueOperation> {
     if (!safeRelationshipCreate(body)) {
       throw new Error("Relationship create is not eligible for M2 offline replay");
@@ -165,6 +166,7 @@ export class M2ReplayEngine {
       requestBody: body,
       expectedVersion: null,
       idempotencyKey,
+      contentContextKey,
     });
   }
 
@@ -172,6 +174,7 @@ export class M2ReplayEngine {
     itemId: string,
     body: unknown,
     idempotencyKey = "m2-" + crypto.randomUUID(),
+    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<RelationshipQueueOperation> {
     if (!safeRelationshipPatch(body)) {
       throw new Error("Relationship patch is not eligible for M2 offline replay");
@@ -182,6 +185,7 @@ export class M2ReplayEngine {
       requestBody: body,
       expectedVersion: Number(body.expectedVersion),
       idempotencyKey,
+      contentContextKey,
     });
   }
 
@@ -189,6 +193,7 @@ export class M2ReplayEngine {
     itemId: string,
     expectedVersion: number,
     idempotencyKey = "m2-" + crypto.randomUUID(),
+    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<RelationshipQueueOperation> {
     return this.#enqueueRelationship({
       operationType: "item.delete",
@@ -196,6 +201,7 @@ export class M2ReplayEngine {
       requestBody: { expectedVersion },
       expectedVersion,
       idempotencyKey,
+      contentContextKey,
     });
   }
 
@@ -216,6 +222,7 @@ export class M2ReplayEngine {
     requestBody: unknown;
     expectedVersion: number | null;
     idempotencyKey: string;
+    contentContextKey: string;
   }): Promise<RelationshipQueueOperation> {
     const scope = this.scope();
     if (!scope.partnershipId) {
@@ -227,6 +234,7 @@ export class M2ReplayEngine {
       partnershipId: scope.partnershipId,
       itemId: input.itemId,
       operationType: input.operationType,
+      contentContextKey: input.contentContextKey,
       idempotencyKey: input.idempotencyKey,
       requestBody: input.requestBody,
       expectedVersion: input.expectedVersion,
@@ -374,6 +382,15 @@ export class M2ReplayEngine {
     if (!scope.partnershipId) return;
     const authority = await apiRequest<RelationshipAuthority>("/api/v1/relationship-space");
     if (!authority.space) return;
+    const conversationAuthority = await apiRequest<CurrentConversationAuthority>(
+      "/api/v1/conversations/current",
+    );
+    if (
+      !conversationAuthority.conversation ||
+      conversationAuthority.conversation.partnershipId !== scope.partnershipId
+    ) {
+      return;
+    }
 
     const database = await this.database();
     const queue = await database.listRelationshipQueue(scope.partnershipId);
@@ -390,6 +407,20 @@ export class M2ReplayEngine {
         (queued.operationType === "item.delete" && authority.space.capabilities.delete);
       if (!allowed) {
         await this.#blockRelationship(database, queued, "RELATIONSHIP_SPACE_VIEW_ONLY");
+        continue;
+      }
+      if (
+        conversationAuthority.conversation.cryptoRequired &&
+        queued.contentContextKey !== S1_CONTENT_CONTEXT
+      ) {
+        await this.#blockRelationship(database, queued, "CRYPTO_REQUIRED");
+        continue;
+      }
+      if (
+        !conversationAuthority.conversation.cryptoRequired &&
+        queued.contentContextKey === S1_CONTENT_CONTEXT
+      ) {
+        await this.#blockRelationship(database, queued, "CRYPTO_NOT_INITIALIZED");
         continue;
       }
 

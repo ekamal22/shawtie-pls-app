@@ -1,3 +1,4 @@
+import { S1_CRYPTO_PROFILE } from "@shawtie/contracts";
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 import { ApiClientError } from "../../../lib/api-client.ts";
 import {
@@ -8,7 +9,11 @@ import {
 import { listMediaDrafts } from "../../../lib/media/media-local-db.ts";
 import type { LocalMediaDraft } from "../../../lib/media/media-types.ts";
 import { Button, ErrorNotice, Notice } from "../../../design/primitives.tsx";
-import { createRelationshipItem } from "../../relationship-space/api.ts";
+import {
+  createRelationshipItem,
+  relationshipCryptoRequired,
+} from "../../relationship-space/api.ts";
+import { getActiveS1CryptoRuntime } from "../../../lib/crypto/runtime-context.tsx";
 import type { RelationshipItemKind } from "../../relationship-space/model.ts";
 import { VoiceRecorder } from "../../media/VoiceRecorder.tsx";
 import { messageFor, queuedMutation } from "./errors.ts";
@@ -119,6 +124,8 @@ export function RelationshipComposer({
     setMediaBusy(true);
     setError("");
     try {
+      const cryptoRequired = await relationshipCryptoRequired();
+      const cryptoRuntime = getActiveS1CryptoRuntime();
       for (const file of files) {
         await prepareMediaDraft({
           accountId,
@@ -126,6 +133,8 @@ export function RelationshipComposer({
           ownerContext: "relationship",
           source: file,
           role: "attachment",
+          cryptoRequired,
+          cryptoRuntime,
         });
       }
       await refreshMediaDrafts();
@@ -150,6 +159,8 @@ export function RelationshipComposer({
     setMediaBusy(true);
     setError("");
     try {
+      const cryptoRequired = await relationshipCryptoRequired();
+      const cryptoRuntime = getActiveS1CryptoRuntime();
       await prepareMediaDraft({
         accountId,
         partnershipId,
@@ -158,6 +169,8 @@ export function RelationshipComposer({
         role: "voice_letter",
         kind: "voice",
         durationSeconds,
+        cryptoRequired,
+        cryptoRuntime,
       });
       await refreshMediaDrafts();
       setNotice(
@@ -362,6 +375,18 @@ export function RelationshipComposer({
     setError("");
     setNotice("");
     try {
+      const cryptoRequired = await relationshipCryptoRequired();
+      if (
+        cryptoRequired &&
+        mediaDrafts.some(
+          (draft) =>
+            draft.cryptoProtocolVersion !== S1_CRYPTO_PROFILE ||
+            !draft.contentEnvelope ||
+            !draft.mediaId,
+        )
+      ) {
+        throw new ApiClientError("CRYPTO_MEDIA_DRAFT_STALE", 409);
+      }
       if (mediaDrafts.length > 0 && !navigator.onLine) {
         throw new ApiClientError("OFFLINE_OPERATION_REQUIRES_CONNECTION", 0);
       }

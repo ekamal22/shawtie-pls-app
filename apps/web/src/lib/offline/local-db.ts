@@ -67,6 +67,7 @@ export interface RelationshipQueueOperation extends OfflineQueueClaim {
   readonly partnershipId: string;
   readonly itemId: string | null;
   readonly operationType: RelationshipOperationType;
+  readonly contentContextKey: string;
   readonly idempotencyKey: string;
   readonly requestBody: unknown;
   readonly expectedVersion: number | null;
@@ -702,7 +703,7 @@ export class ShawtieLocalDatabase {
       items.put({
         ...item,
         partnershipId: operation.partnershipId,
-        contentContextKey,
+        contentContextKey: operation.contentContextKey,
       } satisfies CachedRelationshipItem);
     } else if (operation.itemId) {
       items.delete([operation.partnershipId, operation.itemId]);

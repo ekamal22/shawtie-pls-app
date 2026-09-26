@@ -949,6 +949,17 @@ export class S1CryptoRuntime {
     return this.ensurePartnership(partnershipId);
   }
 
+  async cryptoRequiredForPartnership(partnershipId: string): Promise<boolean> {
+    try {
+      return (await this.ensurePartnership(partnershipId)).cryptoRequired;
+    } catch (error) {
+      if (!(error instanceof ApiNetworkError)) throw error;
+      const cached = await this.#vault.group(partnershipId);
+      if (!cached) throw new Error("CRYPTO_GROUP_NOT_READY");
+      return cached.cryptoRequired;
+    }
+  }
+
   async purgePartnership(partnershipId: string): Promise<void> {
     await this.#vault.purgePartnership(partnershipId);
   }

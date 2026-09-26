@@ -53,7 +53,10 @@ import {
   prepareMediaDraft,
   uploadMediaDraft,
 } from "../../lib/media/media-runtime.ts";
-import { listMediaDrafts } from "../../lib/media/media-local-db.ts";
+import {
+  listMediaDrafts,
+  purgeMediaPartnershipData,
+} from "../../lib/media/media-local-db.ts";
 import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
 import type { ChatQueueOperation } from "../../lib/offline/local-db.ts";
 import { createRelationshipItem } from "../relationship-space/api.ts";
@@ -286,11 +289,14 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       ? S1_CONTENT_CONTEXT
       : M2_PRE_S1_CONTENT_CONTEXT;
     const database = await runtime.database();
-    await database.ensureNamespaceContentContext(
+    const contextChanged = await database.ensureNamespaceContentContext(
       raw.partnershipId,
       raw.conversationId,
       contentContextKey,
     );
+    if (contextChanged) {
+      await purgeMediaPartnershipData(runtime.accountId, raw.partnershipId);
+    }
 
     const [selfNicknameValue, partnerNicknameValue] = await Promise.all([
       decryptNicknameForView(

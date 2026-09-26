@@ -10,7 +10,7 @@ import {
   SkeletonGroup,
 } from "../../design/primitives.tsx";
 import { useM2Runtime } from "../../lib/realtime/runtime-context.tsx";
-import { listRelationshipItems, loadRelationshipHome } from "./api.ts";
+import { loadRelationshipHome } from "./api.ts";
 import type { RelationshipItemKind, RelationshipSpaceHome } from "./model.ts";
 import {
   AnniversaryView,
@@ -107,16 +107,8 @@ export function RelationshipSpacePanel({ accountId }: { accountId: string }) {
   const viewOnly = home ? home.mode !== "active" : true;
 
   async function load() {
-    const [homeResult, itemResult] = await Promise.all([
-      loadRelationshipHome(),
-      listRelationshipItems({}),
-    ]);
+    const homeResult = await loadRelationshipHome();
     setHome(homeResult.space);
-
-    const partnershipId = runtime.realtime.scope.partnershipId;
-    if (partnershipId && homeResult.space) {
-      await (await runtime.database()).cacheRelationshipItems(partnershipId, itemResult.items);
-    }
   }
 
   useEffect(() => {

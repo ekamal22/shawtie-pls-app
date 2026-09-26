@@ -8,6 +8,13 @@ export function messageFor(error: unknown): string {
     OFFLINE_OPERATION_REQUIRES_CONNECTION:
       "This relationship action requires an internet connection.",
     CURATION_ALREADY_EXISTS: "That curation already exists. Refresh and edit the saved version.",
+    CRYPTO_MEDIA_DRAFT_STALE:
+      "That attachment was prepared before protected sharing became active. Remove it and add it again.",
+    CRYPTO_UNAVAILABLE: "Protected sharing is unavailable on this device.",
+    CRYPTO_DEVICE_UNTRUSTED: "This device needs cryptographic approval before it can change Ours.",
+    CRYPTO_GROUP_NOT_READY: "Protected sharing is still preparing for this relationship.",
+    CRYPTO_REKEY_REQUIRED: "Protected sharing is updating device access. Try again shortly.",
+    CRYPTO_RECOVERY_REQUIRED: "Protected recovery must be configured for both partners first.",
     IDEMPOTENCY_KEY_REUSED: "That action changed. Try again.",
     INVALID_ITEM_LINK: "One selected relationship item is no longer available.",
     INVALID_OCCURRENCE: "Check the date and try again.",
