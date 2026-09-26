@@ -171,7 +171,8 @@ html[data-ux7-transition] ::view-transition-new(ux7-shared) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Same fade the shared shell already uses, so reduced motion stays uniform. */
   .app-shell[data-route="ours"] .app-route.is-entering {
-    animation: ux7-fade-in var(--dur-instant) linear both;
+    animation-name: ds-fade-in;
   }
 }

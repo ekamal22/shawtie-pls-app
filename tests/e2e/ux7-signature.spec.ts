@@ -378,7 +378,7 @@ for (const motion of MOTIONS) {
     const [name, duration] = seen[0]!.split("|");
     const ms = Number(duration!.replace("s", "")) * 1000;
     expect(ms).toBeLessThan(400);
-    expect(name).toBe(motion === "reduce" ? "ux7-fade-in" : "ux7-threshold");
+    expect(name).toBe(motion === "reduce" ? "ds-fade-in" : "ux7-threshold");
   });
 
   test(
