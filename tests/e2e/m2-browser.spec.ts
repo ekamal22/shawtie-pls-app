@@ -213,7 +213,7 @@ test("M2 runtime reconnects and replays one offline message after canonical sync
   await page.routeWebSocket("/api/v1/realtime", async (socket) => {
     socketConnections += 1;
     activeSocket = socket;
-    expect(socket.protocols()).toContain("shawtie.realtime.v1");
+    expect(socket.protocols()).toContain("shawtie.realtime.v2");
     socket.send(
       JSON.stringify({
         v: 1,
