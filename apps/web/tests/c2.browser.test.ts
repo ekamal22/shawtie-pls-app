@@ -66,7 +66,14 @@ test("C2 camera controller owns replacement, switching, background stop and loca
 });
 
 test("C2 product UI exposes explicit video consent and camera-off acceptance", async () => {
-  const panel = await source("../src/features/calling/CallingPanel.tsx");
+  // UX5 moved the call labels into presentational components under features/calling/ui. The
+  // invariant is unchanged: the labels must exist in the calling UI source (panel plus ui).
+  const panel = [
+    await source("../src/features/calling/CallingPanel.tsx"),
+    await source("../src/features/calling/ui/CallSurface.tsx"),
+    await source("../src/features/calling/ui/CallEntry.tsx"),
+    await source("../src/features/calling/ui/call-model.ts"),
+  ].join("\n");
   const api = await source("../src/features/calling/api.ts");
   const vite = await source("../vite.config.ts");
 
