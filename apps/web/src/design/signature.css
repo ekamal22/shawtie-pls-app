@@ -1,0 +1,178 @@
+/*
+ * UX7 signature moments. Additive and presentation only. Every moving rule has a
+ * prefers-reduced-motion counterpart at the bottom of its section that removes movement and
+ * leaves at most a short fade. Colors, durations and easings come from the shared tokens.
+ */
+
+/* The Ribbon: a quiet ribbon on the bubble that a person kept */
+.talk-ribbon {
+  position: absolute;
+  top: -1px;
+  inset-inline-end: var(--space-4);
+  width: 10px;
+  height: 16px;
+  background: var(--accent-fill);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+  border-radius: 0 0 1px 1px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.talk-message[data-ribbon="settling"] .talk-ribbon {
+  animation: ux7-ribbon-settle var(--dur-move) var(--ease-settle) both;
+}
+
+.talk-message[data-ribbon="settling"] .talk-kept {
+  animation: ux7-fade-in var(--dur-move) var(--ease-settle) both;
+}
+
+@keyframes ux7-ribbon-settle {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  70% {
+    opacity: 0.85;
+    transform: translateY(1px);
+  }
+  to {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ux7-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talk-message[data-ribbon="settling"] .talk-ribbon {
+    animation: ux7-fade-in var(--dur-instant) linear both;
+  }
+
+  .talk-message[data-ribbon="settling"] .talk-kept {
+    animation: none;
+  }
+}
+
+/* Two Sides / Memory Return: a short shared-element move between a kept memory and its place
+   in the conversation. Only drawn where the View Transitions API exists and motion is allowed. */
+html[data-ux7-transition] ::view-transition-old(root),
+html[data-ux7-transition] ::view-transition-new(root) {
+  animation-duration: var(--dur-quick);
+  animation-timing-function: var(--ease-settle);
+}
+
+html[data-ux7-transition] ::view-transition-group(ux7-shared) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-unfold);
+}
+
+html[data-ux7-transition] ::view-transition-old(ux7-shared),
+html[data-ux7-transition] ::view-transition-new(ux7-shared) {
+  height: 100%;
+  object-fit: cover;
+}
+
+.talk-return {
+  display: flex;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-ux7-transition] ::view-transition-group(*),
+  html[data-ux7-transition] ::view-transition-old(*),
+  html[data-ux7-transition] ::view-transition-new(*) {
+    animation-duration: var(--dur-instant);
+  }
+}
+
+/* The Letter Unfolds polish: the focused letter keeps a quiet ring and a reduced-motion
+   opening never moves. Timing itself stays with the UX6 keyframes (under one second). */
+.mem-letter__reveal:focus {
+  outline: none;
+}
+
+.mem-letter__reveal:focus-visible {
+  outline: 2px solid var(--accent-fill);
+  outline-offset: 4px;
+  border-radius: var(--radius-s);
+}
+
+/* Our Year as a Book: a quiet place marker (Cover, Page n of m, Last page), never a metric. */
+.mem-book__pager {
+  margin: 0;
+  text-align: center;
+  color: var(--ink-2);
+  font-size: var(--type-meta);
+  letter-spacing: 0.04em;
+}
+
+.mem-book:focus-visible {
+  outline: 2px solid var(--accent-fill);
+  outline-offset: 4px;
+  border-radius: var(--radius-s);
+}
+
+.mem-book__stage {
+  touch-action: pan-y;
+}
+
+/* Pair Mark: when the two rings come together (both in Ours, or the partner is online) they
+   settle once. Nothing loops and nothing counts. */
+.app-header__identity[data-together="true"] .ds-pair-mark {
+  animation: ux7-pair-settle var(--dur-reveal) var(--ease-settle) both;
+}
+
+@keyframes ux7-pair-settle {
+  from {
+    opacity: 0.7;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header__identity[data-together="true"] .ds-pair-mark {
+    animation: none;
+  }
+}
+
+/* Threshold Transition into Ours: a doorway that opens (a soft clip and settle), shorter than
+   400ms, distinct from the plain rise the other routes use. It replaces the inner arrival
+   animations while it runs so the whole arrival stays inside one short beat. */
+.app-shell[data-route="ours"] .app-route.is-entering {
+  animation: ux7-threshold 360ms var(--ease-unfold) both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-shell[data-route="ours"] .app-route.is-entering .ours,
+  .app-shell[data-route="ours"] .app-route.is-entering .ours-chapter {
+    animation: none;
+  }
+}
+
+@keyframes ux7-threshold {
+  from {
+    opacity: 0;
+    transform: scale(0.982) translateY(12px);
+    clip-path: inset(3% 3% 0 3% round var(--radius-l, 24px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0 round 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Same fade the shared shell already uses, so reduced motion stays uniform. */
+  .app-shell[data-route="ours"] .app-route.is-entering {
+    animation-name: ds-fade-in;
+  }
+}

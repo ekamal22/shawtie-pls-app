@@ -440,6 +440,7 @@ function AccountScreen({
         </>
       }
       calls={<CallingPanel deviceId={session.deviceId} />}
+      partnerOnline={conversation?.partner.presence.online === true}
     >
       <RouteView active={route === "home"}>
         <HomeScreen context={conversation} accountId={session.accountId} onNavigate={navigate} />

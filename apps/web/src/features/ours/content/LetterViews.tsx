@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { signatureDuration } from "../../../design/motion/reduced.ts";
 import { Button } from "../../../design/primitives.tsx";
 import { ItemFeedback, ItemMenu, localDateTimeInputValue, useItemActions } from "./actions.tsx";
 import { useRelationshipItems } from "./data.ts";
@@ -19,10 +20,14 @@ import type { ContentViewProps } from "./types.ts";
  * action succeeds. Total under one second, skippable by tap or Escape, never blocks input,
  * and under reduced motion it becomes a single short crossfade (see mem.css).
  */
+export const UNFOLD_MS = 800;
+export const UNFOLD_REDUCED_MS = 150;
+
 function useUnfold(active: boolean, done: () => void) {
   useEffect(() => {
     if (!active) return;
-    const timer = window.setTimeout(done, 1000);
+    // Starts once the letter is actually visible, and never exceeds the token duration.
+    const timer = window.setTimeout(done, signatureDuration(UNFOLD_MS, UNFOLD_REDUCED_MS));
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") done();
     };
@@ -67,7 +72,14 @@ export function LetterCard({
   const [rescheduling, setRescheduling] = useState(
     item.release?.unlockAt ? localDateTimeInputValue(item.release.unlockAt) : "",
   );
-  useUnfold(unfolding, () => onUnfoldDone(item.itemId));
+  const revealVisible = !seal || creator;
+  const revealRef = useRef<HTMLDivElement>(null);
+  useUnfold(unfolding && revealVisible, () => onUnfoldDone(item.itemId));
+  // The Open button disappears once the letter is released; move focus to the letter itself so
+  // keyboard and screen-reader users land on what just opened instead of the page start.
+  useEffect(() => {
+    if (unfolding && revealVisible) revealRef.current?.focus({ preventScroll: true });
+  }, [unfolding, revealVisible]);
 
   const from = creator ? "Written by you" : "From " + (partnerName ?? "your person");
 
@@ -125,7 +137,12 @@ export function LetterCard({
       ) : null}
 
       {!seal || creator ? (
-        <div className={cx("mem-letter__reveal", unfolding && "mem-letter__reveal--unfold")}>
+        <div
+          ref={revealRef}
+          tabIndex={-1}
+          aria-label={unfolding ? "Your letter, opened" : undefined}
+          className={cx("mem-letter__reveal", unfolding && "mem-letter__reveal--unfold")}
+        >
           {body ? <p className="mem-letter__body ds-letter">{body}</p> : null}
           <VoiceLetterListening item={item} from={from} />
           <PhotoStack item={item} />

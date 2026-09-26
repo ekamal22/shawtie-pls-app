@@ -17,6 +17,11 @@ export interface AppShellProps {
   readonly status?: ReactNode;
   /** Always mounted, visible on every route (incoming and active calls). */
   readonly calls?: ReactNode;
+  /**
+   * Whether the partner is online per the existing always-on presence contract. Presentation
+   * only: it draws the Pair Mark together and is never shown as a number or a streak.
+   */
+  readonly partnerOnline?: boolean;
   readonly children: ReactNode;
 }
 
@@ -26,7 +31,14 @@ export interface AppShellProps {
  * navigation becomes a left rail. Route content is provided by the caller so that panels with
  * background responsibilities (heartbeat, receipts, call signaling) stay mounted.
  */
-export function AppShell({ route, onNavigate, status, calls, children }: AppShellProps) {
+export function AppShell({
+  route,
+  onNavigate,
+  status,
+  calls,
+  partnerOnline = false,
+  children,
+}: AppShellProps) {
   const keyboardOpen = useKeyboardOpen();
   const mainRef = useRef<HTMLElement>(null);
 
@@ -50,9 +62,10 @@ export function AppShell({ route, onNavigate, status, calls, children }: AppShel
           className="app-header__identity"
           aria-label="Us: account and partnership"
           aria-current={route === "us" ? "page" : undefined}
+          data-together={route === "ours" || partnerOnline ? "true" : "false"}
           onClick={() => onNavigate("us")}
         >
-          <PairMark together={route === "ours"} />
+          <PairMark together={route === "ours" || partnerOnline} />
         </button>
         <h1 className="app-header__title">
           {route === "home" ? "Shawtie pls" : ROUTE_LABELS[route]}

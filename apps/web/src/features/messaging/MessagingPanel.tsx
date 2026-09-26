@@ -8,7 +8,15 @@ import {
   M1_VISIBLE_CHANGE_POLL_MS,
 } from "@shawtie/contracts";
 import type { MediaAttachmentProjection } from "@shawtie/contracts";
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Icon } from "../../design/icons.tsx";
 import {
   Avatar,
@@ -38,6 +46,12 @@ import { listMediaDrafts } from "../../lib/media/media-local-db.ts";
 import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
 import type { ChatQueueOperation } from "../../lib/offline/local-db.ts";
 import { createRelationshipItem } from "../relationship-space/api.ts";
+import {
+  afterNavigationSettles,
+  nameSharedElement,
+  runSignatureTransition,
+} from "../../design/motion/view-transition.ts";
+import { keptSourcesSnapshot, subscribeKeptSources } from "./kept-registry.ts";
 import { TalkActions } from "./TalkActions.tsx";
 import { TalkBubble } from "./TalkBubble.tsx";
 import { buildRememberThisPayload, buildRows, deliveryLabel } from "./talk-model.ts";
@@ -229,7 +243,17 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
   const [addOpen, setAddOpen] = useState(false);
   const [nicknamesOpen, setNicknamesOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
-  const [keptIds, setKeptIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [sessionKeptIds, setKeptIds] = useState<ReadonlySet<string>>(() => new Set());
+  // Kept marks also come from Remember This lists Ours already loaded (no extra requests).
+  const [knownKeptIds, setKnownKeptIds] = useState<ReadonlySet<string>>(keptSourcesSnapshot);
+  useEffect(() => {
+    setKnownKeptIds(keptSourcesSnapshot());
+    return subscribeKeptSources(() => setKnownKeptIds(keptSourcesSnapshot()));
+  }, []);
+  const keptIds = useMemo(
+    () => new Set([...sessionKeptIds, ...knownKeptIds]),
+    [sessionKeptIds, knownKeptIds],
+  );
   const [outbox, setOutbox] = useState<ChatQueueOperation[]>([]);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -670,12 +694,18 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
   // forward; once Talk is active and the message is rendered, it is scrolled into view and
   // highlighted with the same treatment as a reply jump.
   const pendingJumpRef = useRef<string | null>(null);
+  // Two Sides: after arriving from a kept memory, offer the way back to the kept side.
+  const [cameFromKept, setCameFromKept] = useState(false);
+  useEffect(() => {
+    if (!active) setCameFromKept(false);
+  }, [active]);
   const [jumpTick, setJumpTick] = useState(0);
   useEffect(() => {
     const onOpenMessage = (event: Event) => {
       const messageId = (event as CustomEvent<{ messageId?: string }>).detail?.messageId;
       if (!messageId) return;
       pendingJumpRef.current = messageId;
+      setCameFromKept(true);
       setJumpTick((value) => value + 1);
     };
     window.addEventListener("shawtie:open-message", onOpenMessage);
@@ -690,8 +720,9 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       setNotice("That message is further back or no longer available.");
       return;
     }
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    element.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+    // Under a running Memory Return transition the arrival lands without smooth scrolling.
+    element.scrollIntoView({ block: "center", behavior: "auto" });
+    nameSharedElement(element);
     setHighlightedId(messageId);
     window.setTimeout(
       () => setHighlightedId((current) => (current === messageId ? null : current)),
@@ -1384,6 +1415,24 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         >
           {notice}
         </Notice>
+      ) : null}
+
+      {cameFromKept && active ? (
+        <div className="talk-return">
+          <Button
+            variant="quiet"
+            compact
+            onClick={() =>
+              runSignatureTransition("memory-return", () => {
+                const settled = afterNavigationSettles();
+                window.location.hash = "#/ours";
+                return settled;
+              })
+            }
+          >
+            Back to what we kept
+          </Button>
+        </div>
       ) : null}
 
       {hasOlder ? (
