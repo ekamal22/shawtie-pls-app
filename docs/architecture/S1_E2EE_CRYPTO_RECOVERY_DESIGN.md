@@ -2,13 +2,13 @@
 
 ## Status
 
-Source implementation, automated closure, raw privacy inspection, and final independent security review complete on `feat/s1-e2ee-crypto-recovery` at `6cba504`; physical Android acceptance pending.
+Source implementation and every non-physical closure gate are complete on `feat/s1-e2ee-crypto-recovery` at final evidence SHA `e254c3c`; mandatory physical Android 30/30 acceptance is the sole remaining S1 gate.
 
 S1-A through S1-I are implemented in source. The branch now includes the OpenMLS WebAssembly binding, device trust and KeyPackage runtime, partnership MLS control plane, protected M1/R1/M3 storage and client flows, encrypted M2 offline replay, cryptographic recovery, revocation/rekey/group reset, plaintext-retirement inventory, automated closure harnesses, and the 30-scenario physical Android acceptance procedure.
 
-The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`, AES-256-GCM content encryption, and the reviewed S1 recovery profile encoded in `@shawtie/crypto`. The generated WASM build, disposable PostgreSQL suite, browser E2E, production scan, raw plaintext inspection, and dependency/security review passed at `6cba504`. S1-J remains open only for physical Android acceptance.
+The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`, AES-256-GCM content encryption, and the reviewed S1 recovery profile encoded in `@shawtie/crypto`. The generated WASM build, disposable PostgreSQL suite, browser E2E, production scan, full raw privacy matrix, dependency review, and final independent cryptographic/security review all passed at `e254c3c`. S1-J remains open only for physical Android acceptance.
 
-S1 must not be reported DONE or used for public E2EE claims until those closure gates pass. S1 must not invent a custom cryptographic protocol.
+S1 must not be reported DONE or used for verified public E2EE claims until the remaining mandatory physical Android gate passes. S1 must not invent a custom cryptographic protocol.
 
 ## Goals
 
@@ -42,7 +42,7 @@ Initial ciphersuite profile:
 
 The implemented baseline pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` and a browser-targeted WebAssembly binding. The release build is generated with `wasm-pack` and is not committed as a binary artifact.
 
-Experimental MLS extensions are not required for the first stable release. The pinned dependency/advisory review and browser execution evidence passed at `6cba504`.
+Experimental MLS extensions are not required for the first stable release. The pinned dependency/advisory review and browser execution evidence passed at `e254c3c`.
 
 ### Durable protected content
 
@@ -448,7 +448,7 @@ The current feature branch owns migrations `0019` through `0021` and the impleme
 - S1-I: plaintext inventory tooling, crypto-required database guards, production-bundle test-crypto exclusion checks
 - S1-J tooling: disposable local closure runner, S1 API/browser/security tests, real Chromium OpenMLS WASM harness, production scan, and physical Android preparation
 
-Executable automated/raw/review closure anchor: `6cba504`.
+Final non-physical executable evidence anchor: `e254c3c`. It includes `S1_AUTOMATED_CLOSURE_PASS`, `S1_RAW_PRIVACY_INSPECTION_PASS`, and the final independent security-review PASS.
 
 ## Implementation slices
 
@@ -543,7 +543,7 @@ Executable automated/raw/review closure anchor: `6cba504`.
 
 ## Closure gates
 
-S1 is DONE only when:
+Every non-physical item below has passed at `e254c3c`. S1 is DONE only when the remaining physical Redmi Note 9S acceptance item also passes:
 
 - exact protocol/library/provider versions are reviewed and pinned
 - no custom cryptographic protocol is introduced

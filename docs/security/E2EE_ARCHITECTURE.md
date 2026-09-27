@@ -2,11 +2,11 @@
 
 ## Status
 
-S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`. Automated closure, raw privacy inspection, and the final independent security review passed at `6cba504`; physical Android acceptance remains pending.
+S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`. Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated closure, the complete raw privacy matrix, and the final independent cryptographic/security review. Mandatory physical Android 30/30 acceptance is the sole remaining S1 gate.
 
 The selected protocol family is RFC 9420 Messaging Layer Security, interpreted using the application architecture in RFC 9750.
 
-The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Dependency/advisory review, automated closure, raw-storage inspection, and independent security review passed at `6cba504`. Physical Android acceptance remains required before S1 can be reported DONE.
+The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Dependency/advisory review, automated closure, the complete raw privacy matrix, and independent security review passed at `e254c3c`. Physical Android acceptance remains required before S1 can be reported DONE.
 
 Canonical implementation design:
 
@@ -42,7 +42,7 @@ The default durable-content construction is:
 - canonical authenticated context
 - device signature over canonical metadata and ciphertext digest
 
-Recovery capsules use the S1 HPKE profile implemented and versioned in `@shawtie/crypto`; the final cryptographic review of the pinned profile passed at `6cba504`.
+Recovery capsules use the S1 HPKE profile implemented and versioned in `@shawtie/crypto`; the final cryptographic review of the pinned profile passed at `e254c3c`.
 
 ## Separation of identities
 
@@ -287,9 +287,9 @@ S1 does not add a second call-media encryption system.
 
 Any future SFU or server-side media-processing design requires a new security review.
 
-## S1 review gate
+## S1-A review record
 
-Before S1 implementation leaves S1-A, record:
+The S1-A review is complete. The implemented and reviewed record includes:
 
 - exact OpenMLS release and source revision
 - exact crypto provider

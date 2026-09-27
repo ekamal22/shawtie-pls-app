@@ -395,7 +395,7 @@ M3 preserves PostgreSQL/M1/R1/M2/P3 authority rather than adding a parallel medi
 - existing M1/R1 realtime invalidations trigger canonical media refetch
 - P3/F2 deletion manifests gain module-owned media-object cleanup
 - M3 local binary state is separate encrypted draft state, not M2 chat-outbox payload
-- S1 remains the owner of reviewed production attachment-key distribution
+- S1 now implements the reviewed production attachment-key envelope, device identity, rotation, and recovery layer while M3 retains media lifecycle authority
 
 M3 owns implemented migrations 0015 and 0016 and is DONE and merged to main after automated/local and physical Android acceptance.
 ## C1 voice-calling implementation
@@ -419,6 +419,24 @@ C1 preserves the modular monolith and PostgreSQL authority while adding:
 C1 does not add Redis, an SFU/MCU, call recording, direct peer fallback, or video. C2 source implementation and automated/local closure are complete (first at `94e0e93`, final executable SHA `ecbb2e1`) on the same authority model, with `shawtie.call.v2`, stable video transceivers, generation-fenced local camera control, explicit video UI, shared relay-only transport and no new durable call aggregate or database migration. Physical Redmi Note 9S verification is complete.
 
 Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refines the frozen relay-first baseline to relay-only for C1. ADR-015 keeps C1 voice signaling on v1 and defines video signaling v2 plus camera privacy for C2.
+
+## S1 E2EE and cryptographic recovery implementation
+
+S1 is implemented on `feat/s1-e2ee-crypto-recovery` and has passed every non-physical closure gate at final evidence SHA `e254c3c`.
+
+The implemented architecture adds:
+
+- RFC 9420 MLS using OpenMLS `0.9.0` and `openmls_rust_crypto 0.6.0`
+- independent per-device cryptographic identities and KeyPackages
+- fresh MLS group state for every partnership, with explicit group generation and MLS epoch
+- per-content AES-256-GCM protection for M1 messages/reactions/nicknames, R1 preview/main content, and M3 media
+- encrypted M2 offline replay with durable content-context fencing
+- client-held Recovery Master Secret, encrypted recovery bundle, recovery proof, and per-account HPKE recovery capsules
+- device revocation, fail-closed rekey, stale-generation fencing, and recovery-authorized group reset
+- crypto-required PostgreSQL plaintext guards and lifecycle cryptographic erasure
+- raw privacy validation across PostgreSQL, pg_dump, MinIO, logs, browser durable storage/outboxes/caches, push, realtime, and control traffic
+
+Automated/local closure, the final independent cryptographic/security review, all 286 repository tests, and the high-severity dependency audit are green. S1 remains IN_PROGRESS only because mandatory 30/30 physical Android acceptance has not yet executed. Until that final gate passes, release-facing UX must not claim verified E2EE.
 
 ## Durable deadlines
 

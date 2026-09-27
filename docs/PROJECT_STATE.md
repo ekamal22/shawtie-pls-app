@@ -10,7 +10,7 @@ M2 Realtime and Offline Reliability is DONE on `feat/m2-realtime-offline`. Autom
 
 M3 Media and Voice Messages architecture/design is second-pass hardened and is complete on `feat/m3-media-voice` (final physical acceptance code SHA `ee59850`; source completed at `afc73bafec43bb7f8c0a7af3dca133e1e6045b3f`), created from merged-M2 `main @ 54b8659a101dcaeb6ff1e0b7caee76921c5b9919`. Implemented source includes real migrations 0015/0016, media contracts/domain/repository, private S3-compatible object storage, short-lived upload/download grants, server-side feature controls and rate limits, M1 attachments/media-only/voice-message binding, R1 attachments/Voice Letters, durable upload/delete/dissolution cleanup, encrypted account/partnership/feature-scoped browser drafts, worker-backed image re-encoding, voice preview/send, whole-object retry, browser rendering, and the full PostgreSQL/MinIO/Chromium/Android closure harness. Automated closure (`npm run test:m3:closure`) passed at `305891f` before device work, and every step passed again after the physical fixes (migrations 0001 through 0016 with `reserved=0`, database invariants, PostgreSQL/API/worker, MinIO, real Chromium, full health, zero-vulnerability high-severity audit, `git diff --check`). All 20 mandatory physical Android scenarios passed on a Xiaomi Redmi Note 9S (Android 12, Chrome 153.0.8010.52), final physical acceptance code SHA `ee59850`, recorded in `docs/testing/M3_ANDROID_ACCEPTANCE_EVIDENCE.md`. The run found and fixed three real defects (stale upload draft state after a failed upload, microphone capture continuing while the page was hidden, and a 500 instead of 503 MEDIA_UNAVAILABLE when the object store fails during completion), each with a regression test. M3 is DONE and fast-forward merged to `main` at `1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`. Canonical design: `docs/architecture/M3_MEDIA_VOICE_DESIGN.md`. Canonical API/storage contract: `docs/api/M3_MEDIA_API.md`. Physical Android closure procedure: `docs/testing/M3_ANDROID_ACCEPTANCE.md`.
 
-S1 E2EE and Cryptographic Recovery is IN_PROGRESS on `feat/s1-e2ee-crypto-recovery`. Automated/local closure, raw PostgreSQL/MinIO/log/browser/outbox inspection, and the final independent cryptographic/security review passed at executable SHA `6cba504`: migrations 0001 through 0021 applied from zero with `reserved=0`, PostgreSQL integration passed 4/4, real Chromium passed 4/4, full repository health passed, and the high audit reported 0 vulnerabilities. Evidence is committed in `docs/testing/S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md` and `docs/testing/S1_SECURITY_REVIEW_EVIDENCE.md`. The mandatory 30/30 physical Android acceptance is the only remaining gate. Until it passes, S1 remains IN_PROGRESS and the product must not claim verified E2EE. Physical procedure: `docs/testing/S1_ANDROID_ACCEPTANCE.md`.
+S1 E2EE and Cryptographic Recovery is IN_PROGRESS on `feat/s1-e2ee-crypto-recovery`. Every non-physical S1 gate has passed at final evidence SHA `e254c3c`: migrations 0001 through 0021 applied from zero with `reserved=0`, `DATABASE_INVARIANTS_PASS`, PostgreSQL/API integration 4/4, real Chromium 4/4, the full raw privacy matrix across 65 PostgreSQL tables, raw pg_dump, MinIO image/voice/file objects, logs, browser durable storage/outboxes/caches, push, realtime, and control traffic, all 286 repository tests, full repository health, the final independent cryptographic/security review, and `npm audit --audit-level=high` with 0 vulnerabilities. Evidence is committed in `docs/testing/S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md` and `docs/testing/S1_SECURITY_REVIEW_EVIDENCE.md`. The mandatory 30/30 physical Android acceptance is the only remaining S1 gate. Until it passes, S1 remains IN_PROGRESS and the product must not claim verified E2EE. Physical procedure: `docs/testing/S1_ANDROID_ACCEPTANCE.md`.
 
 ## Product definition
 
@@ -45,7 +45,7 @@ Accepted architecture decisions include:
 - short-lived TURN credentials
 - no Redis in the initial architecture
 - RFC 9420 MLS selected for S1 live group security, with RFC 9750 application architecture
-- OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` pinned in the S1 implementation baseline; dependency/advisory and independent security review passed at `6cba504`
+- OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` pinned in the S1 implementation baseline; dependency/advisory and independent security review passed at `e254c3c`
 - per-content durable encryption keys and client-held Recovery Master Secret recovery architecture frozen for S1
 - formal threat model
 - repository-wide data classification and handling matrix
@@ -138,7 +138,7 @@ Current epic status:
 - UX0 Romantic Experience Specification: DONE. The frozen implementation specification is `docs/design/UX0_IMPLEMENTATION_SPEC.md`, merged to `main` with the mutual presence, last-seen, typing, and read-receipt rules locked (always on, not configurable).
 - UX1 Romantic Design Foundation: DONE. Tokens, Midnight and Dawn themes, self-hosted OFL fonts, primitives, and the Home, Talk, Ours shell are implemented over unchanged product semantics; see `docs/design/UX1_FOUNDATION.md`. It is included in the physically accepted romantic integration.
 - UX2 through UX7: DONE, physically accepted at executable SHA `ca7cd35` (started at `0ec184d`), and fast-forward merged to `main` at merge anchor `9f0bea4`. Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
-- S1 E2EE and Cryptographic Recovery: IN_PROGRESS on `feat/s1-e2ee-crypto-recovery`. Automated/local closure, raw privacy inspection, and the final independent security review passed at `6cba504`, with migrations 0001 through 0021 and `reserved=0`, Chromium 4/4, full health, and 0 high-severity vulnerabilities. Physical Android acceptance remains open. UX copy must not claim verified E2EE until 30/30 physical closure passes.
+- S1 E2EE and Cryptographic Recovery: IN_PROGRESS on `feat/s1-e2ee-crypto-recovery`. Automated/local closure, raw privacy inspection, and the final independent security review passed at `e254c3c`, with migrations 0001 through 0021 and `reserved=0`, Chromium 4/4, full health, and 0 high-severity vulnerabilities. Physical Android acceptance remains open. UX copy must not claim verified E2EE until 30/30 physical closure passes.
 - UX8 Encrypted UX Integration: PLANNED after S1 and the main romantic UX surfaces, to integrate device enrollment, recovery, revocation, and encryption states into the redesigned experience.
 - R2 Public Readiness: PLANNED after pre-release implementation and V1 hosted verification.
 
@@ -168,7 +168,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/c2-video-calling` -> historical completed branch; C2 fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi Note 9S acceptance complete
 - `integration/ux-romantic` -> preserved historical integration line for UX0 through UX7; final executable `ca7cd35`, 22/22 Redmi Note 9S scenarios PASS; fast-forward merged to `main` at `9f0bea4`
 - `design/s1-e2ee-crypto-recovery` -> historical S1 architecture-freeze documentation line
-- `feat/s1-e2ee-crypto-recovery` -> active S1 branch; automated/local closure, raw privacy inspection, and final independent security-review evidence passed at `6cba504`; physical Android 30/30 remains pending
+- `feat/s1-e2ee-crypto-recovery` -> active S1 branch; automated/local closure, raw privacy inspection, and final independent security-review evidence passed at `e254c3c`; physical Android 30/30 remains pending
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -194,11 +194,12 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. implement the frozen S1 E2EE and Cryptographic Recovery architecture, beginning with S1-A exact OpenMLS/provider security freeze and ending with browser/storage/Redmi security closure
-2. implement UX8 Encrypted UX Integration over verified S1 states
-3. complete V1 Hosted CI Verification when Actions capacity is available
-4. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-5. cut Stable Release only after S1, UX8, V1, and R2 are closed
+1. execute the mandatory S1 30/30 physical Android acceptance against the frozen S1 branch and repair any physical-only defects before recording final evidence
+2. mark S1 DONE and merge only after physical acceptance passes at the exact tested SHA
+3. implement UX8 Encrypted UX Integration over verified S1 states
+4. complete V1 Hosted CI Verification when Actions capacity is available
+5. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+6. cut Stable Release only after S1, UX8, V1, and R2 are closed
 
 The accepted UX executable remains `ca7cd35`; merge and documentation-only commits do not change that runtime SHA.
 
@@ -212,13 +213,10 @@ No implementation should begin until real production evidence shows sufficient u
 
 Stable release remains blocked until:
 
-- the frozen S1 MLS/recovery architecture is implemented and passes final cryptographic review
-- partnership isolation is verified
-- deletion workflows are verified
-- account and crypto recovery are safely separated
-- browser security baseline is enforced
-- voice and video privacy behavior is verified
-- security and physical-device acceptance passes
+- S1 completes its mandatory 30/30 physical Android acceptance and is merged
+- UX8 integrates verified enrollment, recovery, revocation, encryption, and unavailable-history states
+- V1 Hosted CI Verification is complete when Actions capacity is available
+- R2 Public Readiness closes final security, accessibility, browser/device, operational, release, and rollback evidence
 
 
 ## Documentation freshness

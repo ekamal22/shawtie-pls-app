@@ -72,7 +72,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 15 UX5 Calls Experience | DONE, integrated and physically accepted | UX1 + merged C1/C2 | Redmi call acceptance PASS |
 | 16 UX6 Memories, Letters, and Time | DONE, integrated and physically accepted | UX1 + verified R1/M3 | Redmi accepted |
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
-| 18 S1 E2EE and Cryptographic Recovery | IN_PROGRESS, automated/local closure, raw privacy inspection, and final security review passed at `6cba504`; physical Android pending | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, mandatory |
+| 18 S1 E2EE and Cryptographic Recovery | IN_PROGRESS, every non-physical gate passed at `e254c3c`; only mandatory physical Android 30/30 remains | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, mandatory |
 | 19 UX8 Encrypted UX Integration | PLANNED | S1 + redesigned UX surfaces | Yes, security-critical UX |
 | 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -110,7 +110,7 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
           STABLE
 ```
 
-C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. S1 automated/local closure, raw privacy inspection, and final security review passed on `feat/s1-e2ee-crypto-recovery` at `6cba504`. S1 remains IN_PROGRESS until 30/30 physical Android acceptance passes.
+C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. Every non-physical S1 gate passed on `feat/s1-e2ee-crypto-recovery` at `e254c3c`, including the raw privacy matrix and final independent security review. S1 remains IN_PROGRESS only because mandatory 30/30 physical Android acceptance has not yet executed.
 
 UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 source implementation, automated/local closure, raw inspection, and final security review are green; physical Android acceptance is the current frontier. UX8 integrates only verified cryptographic and recovery states into the accepted experience after S1, and R2 remains the final pre-release gate.
 
@@ -523,7 +523,7 @@ Add private one-to-one video calling on the verified C1 authority without reopen
 
 # Milestone 10: S1 E2EE and Cryptographic Recovery
 
-Status: PLANNED, architecture frozen, implementation next.
+Status: IN_PROGRESS. Source implementation and every non-physical closure gate are complete at `e254c3c`; mandatory 30/30 physical Android acceptance is the sole remaining S1 gate.
 
 Canonical architecture:
 
@@ -536,9 +536,9 @@ Add reviewed end-to-end protection and recoverable device/key management without
 ## Selected architecture
 
 - RFC 9420 MLS with RFC 9750 application architecture
-- OpenMLS WASM implementation baseline, exact release/provider pin in S1-A
+- OpenMLS `0.9.0` WASM with `openmls_rust_crypto 0.6.0`, pinned and reviewed
 - fresh per-content-version AES-256-GCM keys
-- RFC 9180 recovery capsules, exact HPKE profile pin in S1-A
+- RFC 9180 recovery capsules using the reviewed S1 recovery profile
 - independent per-device crypto identity
 - fresh MLS group for every partnership
 - group generation plus MLS epoch
@@ -592,7 +592,7 @@ Email/account recovery must never silently restore historical protected plaintex
 
 ## Migration ownership
 
-S1 reserves:
+S1 owns and has verified:
 
 - `0019_s1_device_crypto_runtime.sql`
 - `0020_s1_partnership_crypto_runtime.sql`
@@ -600,7 +600,7 @@ S1 reserves:
 
 ## Closure boundary
 
-S1 is DONE only after protocol review, all protected-content paths, recovery, revocation, plaintext retirement, raw storage/log inspection, browser closure, physical Redmi Note 9S acceptance, and final security review pass.
+Protocol review, protected-content paths, recovery, revocation, plaintext retirement, raw storage/log inspection, browser closure, and final independent security review have passed at `e254c3c`. S1 is DONE only after the remaining mandatory Redmi Note 9S 30/30 physical acceptance passes with committed evidence.
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 

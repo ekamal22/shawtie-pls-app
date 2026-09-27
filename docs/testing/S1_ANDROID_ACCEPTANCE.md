@@ -2,9 +2,11 @@
 
 ## Status
 
-Not yet executed.
+READY FOR EXECUTION. Not yet executed.
 
-S1 can be marked DONE only after automated closure passes and all 30 mandatory scenarios below pass on a supported physical Android device with committed evidence tied to the exact tested SHA.
+Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated/local closure, the complete raw privacy matrix, and the final independent cryptographic/security review. The mandatory 30/30 physical Android matrix in this document is the sole remaining S1 closure gate.
+
+S1 can be marked DONE only after all 30 mandatory scenarios below pass on a supported physical Android device with committed evidence tied to the exact tested SHA.
 
 Use synthetic accounts, messages, relationship objects, media, recovery secrets, and devices only. Never commit private user content, cookies, session tokens, Recovery Master Secrets, device private keys, recovery private keys, signed URLs, or production credentials.
 
@@ -79,4 +81,4 @@ Use the actual device model in the final marker narrative if a different support
 
 ## Closure
 
-S1 remains open until all automated gates, 30/30 physical scenarios, raw plaintext inspections, final security review, documentation reconciliation, clean worktree, and local/remote SHA parity pass.
+Automated/local closure, raw plaintext/privacy inspection, final independent security review, and non-physical documentation reconciliation are already complete at `e254c3c`. S1 remains open only until the 30/30 physical scenarios pass, any physical-only defects are repaired and revalidated, the exact tested branch is clean and synchronized, and physical evidence is committed.

@@ -2034,7 +2034,7 @@ A phase item appearing below does not imply that it has been implemented.
 - progressive disclosure instead of permanently crowded action rows
 - relationship warmth without engagement scoring, streak pressure, surveillance, or manipulative lifecycle copy
 - operational, security, consent, breakup, deletion, and recovery states remain explicit and unambiguous
-- product-experience work must not claim verified E2EE until Phase 7/S1 is implemented and reviewed
+- product-experience work must not claim verified E2EE until Phase 7/S1 completes its remaining mandatory physical Android acceptance
 
 Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
 
@@ -2061,6 +2061,10 @@ Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
 
 ### Phase 7: E2EE
 
+Status: IN_PROGRESS. Source implementation, automated/local closure, the complete raw privacy matrix, and the final independent cryptographic/security review passed at `e254c3c`. Mandatory physical Android 30/30 acceptance is the only remaining S1 gate.
+
+Implemented and non-physically verified scope:
+
 - formal design
 - threat-model update
 - protocol review
@@ -2071,7 +2075,7 @@ Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
 - crypto protocol versioning
 - message and relationship-content encryption
 - attachment encryption
-- call-media encryption
+- call-media encryption boundary
 - implementation
 - migration strategy
 - security testing
@@ -2093,13 +2097,14 @@ Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
 
 The core product and lifecycle rules required for initial architecture are now sufficiently defined.
 
+The S1 E2EE protocol decision is resolved: RFC 9420 MLS with the RFC 9750 application architecture, OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, independent device identities, fresh partnership groups, per-content encryption keys, and client-held cryptographic recovery.
+
 Remaining decisions are implementation-level or post-release design decisions and do not block the initial domain and database architecture:
 
 1. Which infrastructure providers best satisfy cost, privacy, voice and video calling, email delivery, and portability requirements?
-2. What exact reviewed E2EE protocol and key-management design will be adopted?
-3. What exact retention periods should apply to bounded security and abuse-prevention metadata?
-4. For the post-release call-recording feature, what export formats and optional user-facing deletion controls should be offered in addition to mandatory partnership-lifecycle deletion?
-5. Which specific emoji picker implementation and supported Unicode range should back the add-emoji reaction action?
+2. What exact retention periods should apply to bounded security and abuse-prevention metadata?
+3. For the post-release call-recording feature, what export formats and optional user-facing deletion controls should be offered in addition to mandatory partnership-lifecycle deletion?
+4. Which specific emoji picker implementation and supported Unicode range should back the add-emoji reaction action?
 
 ---
 

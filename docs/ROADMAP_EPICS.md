@@ -2315,7 +2315,7 @@ Status: PLANNED after S1 and the main romantic UX surfaces.
 
 # S1: E2EE and Cryptographic Recovery
 
-Status: IN_PROGRESS. S1-A through S1-I source implementation and S1-J closure tooling are committed on `feat/s1-e2ee-crypto-recovery`. Automated/local closure, raw-storage inspection, and the final independent security review passed at `6cba504`; physical Android acceptance remains open.
+Status: IN_PROGRESS. S1-A through S1-I source implementation is complete and every non-physical S1-J gate passed on `feat/s1-e2ee-crypto-recovery` at `e254c3c`. The only remaining S1 gate is mandatory 30/30 physical Android acceptance.
 
 Canonical implementation design:
 
@@ -2330,7 +2330,7 @@ Security architecture:
 
 ## Current implementation progress
 
-Source implementation is complete through the S1-A to S1-I slices, and the S1-J automated and physical acceptance tooling is committed. The current executable closure and review anchor is `6cba504`.
+Source implementation is complete through S1-A to S1-I. S1-J automated/local closure, the full raw privacy matrix, and the final independent cryptographic/security review are complete at `e254c3c`; the 30-scenario Android acceptance tooling is committed and ready to execute.
 
 Implemented repository evidence includes:
 
@@ -2345,7 +2345,7 @@ Implemented repository evidence includes:
 - database crypto-required plaintext guards and legacy plaintext inventory tooling
 - S1 API/browser/integration security tests, real Chromium OpenMLS WASM harness, production bundle scan, disposable PostgreSQL closure runner, and 30-scenario Android acceptance procedure
 
-Automated/local closure passed at `6cba504` with `S1_AUTOMATED_CLOSURE_PASS`, migrations 0001 through 0021 and `reserved=0`, real Chromium 4/4, full health, and 0 high-severity vulnerabilities. Raw PostgreSQL/object-storage/log/browser/outbox inspection and the final independent cryptographic/security review also passed at that SHA. Physical-device acceptance remains open.
+Automated/local closure passed at `e254c3c` with `S1_AUTOMATED_CLOSURE_PASS`, migrations 0001 through 0021 and `reserved=0`, `DATABASE_INVARIANTS_PASS`, PostgreSQL/API integration 4/4, real Chromium 4/4, all 286 repository tests green, full health, and 0 audit vulnerabilities. The raw privacy matrix also passed across 65 PostgreSQL tables, raw pg_dump, three MinIO ciphertext objects, logs, browser durable storage/outboxes/caches, push, realtime, and control traffic. The final independent cryptographic/security review passed with no critical, high, or medium unmitigated findings. Physical-device acceptance is the only remaining gate.
 
 ### Source implementation checklist
 
@@ -2359,7 +2359,7 @@ Automated/local closure passed at `6cba504` with `S1_AUTOMATED_CLOSURE_PASS`, mi
 - [x] S1-H cryptographic recovery is committed
 - [x] S1-I plaintext retirement guards/inventory are committed
 - [x] S1-J automated and physical closure harnesses are committed
-- [x] `npm run test:s1:closure` executed successfully at `6cba504`
+- [x] `npm run test:s1:closure` executed successfully at final non-physical evidence head `e254c3c`
 - [x] raw PostgreSQL/object-storage/log/browser/outbox/push plaintext inspection evidence recorded
 - [ ] 30/30 physical Android acceptance executed and committed
 - [x] final independent cryptographic/security review passed
@@ -2521,34 +2521,34 @@ Implement:
 - [x] RFC 9420 MLS is selected as the protocol family
 - [x] OpenMLS WASM is selected as the implementation baseline
 - [x] S1 owns migration range 0019 through 0021
-- [ ] exact OpenMLS release/source revision is pinned and reviewed
-- [ ] exact crypto provider/build features are pinned and reviewed
-- [ ] no custom cryptographic protocol is introduced
-- [ ] every trusted device has independent cryptographic identity
-- [ ] every new partnership starts with unrelated MLS group state
-- [ ] group generation and MLS epoch transitions are implemented and race tested
-- [ ] server cannot read protected message plaintext
-- [ ] server cannot read protected relationship-object plaintext
-- [ ] reaction and nickname values are encrypted
-- [ ] media is encrypted before upload
-- [ ] database and object-storage inspection shows ciphertext for protected content
-- [ ] M2 offline queue persists frozen encrypted requests rather than plaintext drafts
-- [ ] email-only account recovery cannot decrypt historical protected content
-- [ ] trusted-device historical restoration passes
-- [ ] Recovery Master Secret restoration passes
-- [ ] server never possesses the Recovery Master Secret
-- [ ] revoked device stops receiving future decryptable content after MLS removal/rotation
-- [ ] future partnership cannot decrypt previous partnership data
-- [ ] R1 preview/main substitution fails and unreleased main content remains withheld
-- [ ] deletion integrates cryptographic erasure and physical P3 cleanup
-- [ ] unknown crypto profiles and versions fail closed
-- [ ] official or reviewed protocol test vectors pass
-- [ ] raw logs, outbox payloads, push payloads, PostgreSQL, and object storage contain no protected plaintext
-- [ ] pre-S1 protected plaintext is wiped or client-reencrypted and plaintext writes are prohibited
-- [ ] browser E2E closure passes
+- [x] exact OpenMLS release/source revision is pinned and reviewed
+- [x] exact crypto provider/build features are pinned and reviewed
+- [x] no custom cryptographic protocol is introduced
+- [x] every trusted device has independent cryptographic identity
+- [x] every new partnership starts with unrelated MLS group state
+- [x] group generation and MLS epoch transitions are implemented and race tested
+- [x] server cannot read protected message plaintext
+- [x] server cannot read protected relationship-object plaintext
+- [x] reaction and nickname values are encrypted
+- [x] media is encrypted before upload
+- [x] database and object-storage inspection shows ciphertext for protected content
+- [x] M2 offline queue persists frozen encrypted requests rather than plaintext drafts
+- [x] email-only account recovery cannot decrypt historical protected content
+- [x] trusted-device historical restoration passes
+- [x] Recovery Master Secret restoration passes
+- [x] server never possesses the Recovery Master Secret
+- [x] revoked device stops receiving future decryptable content after MLS removal/rotation
+- [x] future partnership cannot decrypt previous partnership data
+- [x] R1 preview/main substitution fails and unreleased main content remains withheld
+- [x] deletion integrates cryptographic erasure and physical P3 cleanup
+- [x] unknown crypto profiles and versions fail closed
+- [x] official or reviewed protocol test vectors pass
+- [x] raw logs, outbox payloads, push payloads, PostgreSQL, and object storage contain no protected plaintext
+- [x] pre-S1 protected plaintext is wiped or client-reencrypted and plaintext writes are prohibited
+- [x] browser E2E closure passes
 - [ ] physical Redmi Note 9S S1 acceptance passes
-- [ ] threat model and data classification match the implemented protocol
-- [ ] final stable-release cryptographic review passes
+- [x] threat model and data classification match the implemented protocol
+- [x] final stable-release cryptographic review passes
 
 # R2: Public Readiness
 

@@ -10,7 +10,7 @@ Canonical S1 design:
 
 `../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
 
-Implementation status: S1 device trust, recovery setup/proof, HPKE recovery capsules, device revocation/rekey, and recovery-authorized group reset are implemented. Automated closure and the independent adversarial review passed at `6cba504`, including expired and consumed recovery-challenge rejection. Physical-device evidence remains pending.
+Implementation status: S1 device trust, recovery setup/proof, HPKE recovery capsules, device revocation/rekey, and recovery-authorized group reset are implemented. Automated closure and the independent adversarial review passed at `e254c3c`, including expired and consumed recovery-challenge rejection. Physical-device evidence remains pending.
 
 ## Account recovery
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted security baseline. S1 automated closure, raw privacy inspection, and the final independent security review passed on `feat/s1-e2ee-crypto-recovery` at executable SHA `6cba504`. The mandatory 30/30 physical Android acceptance remains open, so S1 remains `IN_PROGRESS`.
+Accepted security baseline. S1 automated closure, raw privacy inspection, and the final independent security review passed on `feat/s1-e2ee-crypto-recovery` at executable SHA `e254c3c`. The mandatory 30/30 physical Android acceptance remains open, so S1 remains `IN_PROGRESS`.
 
 This document identifies the assets Shawtie pls must protect, the actors and failure modes that can threaten them, the trust boundaries where controls must exist, and the mitigations that must be verified before stable release.
 

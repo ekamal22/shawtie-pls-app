@@ -54,7 +54,7 @@ Therefore:
 
 Browser hardening is part of the E2EE security boundary.
 
-S1 implementation status: the RFC 9420/OpenMLS runtime, device trust/control plane, protected M1/M2/R1/M3 flows, cryptographic recovery, and closure tooling passed automated closure at `6cba504`. Raw privacy inspection and the final independent security review also passed at that executable SHA. This is not yet verified-release evidence: public E2EE claims remain blocked until the mandatory 30/30 physical Android gate passes.
+S1 implementation status: the RFC 9420/OpenMLS runtime, device trust/control plane, protected M1/M2/R1/M3 flows, cryptographic recovery, automated closure, the complete raw privacy matrix, and the final independent cryptographic/security review all passed at final non-physical evidence SHA `e254c3c`. This is not yet verified-release evidence: public E2EE claims remain blocked until the mandatory 30/30 physical Android gate passes.
 
 ## Authentication
 
@@ -367,7 +367,7 @@ PostgreSQL LISTEN/NOTIFY is a transient latency hint only. Missing a notificatio
 
 S1 selects RFC 9420 MLS with the RFC 9750 application architecture for live partnership device membership and group key agreement.
 
-OpenMLS WASM is the implementation baseline. The exact release, crypto provider, build features, and transitive dependencies remain an S1-A security-freeze gate.
+OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` is the implemented WASM baseline. The release, provider, build path, dependency set, advisories, and protocol boundary were reviewed during S1-A and the final independent security review.
 
 Long-lived protected content uses fresh per-content-version keys. Current authorized devices receive key material through MLS-protected distribution. Historical recovery uses encrypted per-account recovery capsules and a client-held Recovery Master Secret.
 
