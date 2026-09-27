@@ -15,6 +15,7 @@ import {
 import { apiRequest } from "../../../lib/api-client.ts";
 import { PartnerRequestsPanel } from "../../partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../../partnership/PartnershipPanel.tsx";
+import { CryptoSecurityPanel } from "../../security/CryptoSecurityPanel.tsx";
 import "../ours.css";
 
 interface Me {
@@ -273,7 +274,7 @@ export function UsScreen({
         <div className="us-part">
           <p className="us-part__title">Security</p>
 
-          <section className="us-block">
+          <section className="us-block" id="security-confirmation">
             <h2>Security confirmation</h2>
             <p className="hint">
               Email changes and account deletion require a recent password confirmation.
@@ -296,6 +297,11 @@ export function UsScreen({
               </span>
             </form>
           </section>
+
+          <CryptoSecurityPanel
+            accountDevices={devices}
+            reauthenticatedAt={reauthenticatedAt}
+          />
 
           <section className="us-block">
             <h2>Verified email</h2>
@@ -345,7 +351,11 @@ export function UsScreen({
 
           <section className="us-block">
             <h2>Devices</h2>
-            <p className="hint">Revoking a device immediately revokes its active sessions.</p>
+            <p className="hint">
+              Revoking a device immediately revokes its active sessions and is the only
+              user-facing device revocation action. Protected sharing follows the existing S1
+              revocation and rekey rules.
+            </p>
             <ul className="us-list">
               {devices.map((device) => (
                 <li className="us-list__item" key={device.id}>
