@@ -842,7 +842,7 @@ The real Chromium S1 harness is `tests/e2e/s1-browser.spec.ts`. It requires the 
 
 Physical Android acceptance is mandatory and remains separate from automated closure. The 30-scenario procedure in `S1_ANDROID_ACCEPTANCE.md` covers device enrollment, recovery, two-device MLS membership, protected M1/R1/M3 behavior, offline/lost-response/two-tab safety, revocation/rekey, Recovery Master Secret restoration, group reset, breakup/final-dissolution behavior, future-partnership isolation, and final raw plaintext inspections.
 
-Automated closure, raw PostgreSQL/object-storage/log/browser/outbox/push inspection, and the final independent cryptographic/security review are complete at `e254c3c`. S1 is not DONE until 30/30 physical Android acceptance passes with committed evidence.
+Automated closure, raw PostgreSQL/object-storage/log/browser/outbox/push inspection, and the final independent cryptographic/security review are complete at `e254c3c`. Physical Android acceptance passed 30/30 on a physical Xiaomi Redmi Note 9S at final executable SHA `039c90f`, recorded in `S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. That run found and fixed one real defect: a stale false "Protected messaging is unavailable on this device" Talk banner after a device cold start/reload race, where `loadInitial`'s own crypto-readiness retry succeeded but never cleared the earlier failed attempt's error; fixed with a focused regression test in `s1.browser.test.ts`. S1 is DONE.
 
 ## Acceptance principle
 

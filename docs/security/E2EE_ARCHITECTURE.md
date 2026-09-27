@@ -2,11 +2,11 @@
 
 ## Status
 
-S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`. Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated closure, the complete raw privacy matrix, and the final independent cryptographic/security review. Mandatory physical Android 30/30 acceptance is the sole remaining S1 gate.
+S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`. Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated closure, the complete raw privacy matrix, and the final independent cryptographic/security review. Mandatory physical Android 30/30 acceptance then passed at final executable SHA `039c90f`. S1 is DONE.
 
 The selected protocol family is RFC 9420 Messaging Layer Security, interpreted using the application architecture in RFC 9750.
 
-The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Dependency/advisory review, automated closure, the complete raw privacy matrix, and independent security review passed at `e254c3c`. Physical Android acceptance remains required before S1 can be reported DONE.
+The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Dependency/advisory review, automated closure, the complete raw privacy matrix, and independent security review passed at `e254c3c`. Physical Android acceptance passed 30/30 at `039c90f`, see `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 Canonical implementation design:
 

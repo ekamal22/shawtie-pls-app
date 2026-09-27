@@ -10,7 +10,7 @@ Canonical S1 design:
 
 `../architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md`
 
-Implementation status: S1 device trust, recovery setup/proof, HPKE recovery capsules, device revocation/rekey, and recovery-authorized group reset are implemented. Automated closure and the independent adversarial review passed at `e254c3c`, including expired and consumed recovery-challenge rejection. Physical-device evidence remains pending.
+Implementation status: S1 device trust, recovery setup/proof, HPKE recovery capsules, device revocation/rekey, and recovery-authorized group reset are implemented. Automated closure and the independent adversarial review passed at `e254c3c`, including expired and consumed recovery-challenge rejection. Physical-device acceptance passed 30/30 on a Xiaomi Redmi Note 9S at final executable SHA `039c90f`, including real trusted-device approval, revocation/rekey, wrong- and correct-Recovery-Master-Secret restoration, and catastrophic group reset; see `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 ## Account recovery
 

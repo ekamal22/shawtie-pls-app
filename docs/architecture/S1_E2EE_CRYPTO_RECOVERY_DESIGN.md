@@ -2,13 +2,13 @@
 
 ## Status
 
-Source implementation and every non-physical closure gate are complete on `feat/s1-e2ee-crypto-recovery` at final evidence SHA `e254c3c`; mandatory physical Android 30/30 acceptance is the sole remaining S1 gate.
+Source implementation and every closure gate, including mandatory physical Android 30/30 acceptance, are complete on `feat/s1-e2ee-crypto-recovery`. Non-physical closure passed at final evidence SHA `e254c3c`; physical Android acceptance then passed 30/30 on a Xiaomi Redmi Note 9S at final executable SHA `039c90f`, see `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 is DONE and not yet merged to `main`.
 
 S1-A through S1-I are implemented in source. The branch now includes the OpenMLS WebAssembly binding, device trust and KeyPackage runtime, partnership MLS control plane, protected M1/R1/M3 storage and client flows, encrypted M2 offline replay, cryptographic recovery, revocation/rekey/group reset, plaintext-retirement inventory, automated closure harnesses, and the 30-scenario physical Android acceptance procedure.
 
-The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`, AES-256-GCM content encryption, and the reviewed S1 recovery profile encoded in `@shawtie/crypto`. The generated WASM build, disposable PostgreSQL suite, browser E2E, production scan, full raw privacy matrix, dependency review, and final independent cryptographic/security review all passed at `e254c3c`. S1-J remains open only for physical Android acceptance.
+The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`, AES-256-GCM content encryption, and the reviewed S1 recovery profile encoded in `@shawtie/crypto`. The generated WASM build, disposable PostgreSQL suite, browser E2E, production scan, full raw privacy matrix, dependency review, and final independent cryptographic/security review all passed at `e254c3c`. S1-J's physical Android acceptance then passed 30/30 at final executable SHA `039c90f`.
 
-S1 must not be reported DONE or used for verified public E2EE claims until the remaining mandatory physical Android gate passes. S1 must not invent a custom cryptographic protocol.
+S1 must not invent a custom cryptographic protocol.
 
 ## Goals
 
@@ -448,7 +448,7 @@ The current feature branch owns migrations `0019` through `0021` and the impleme
 - S1-I: plaintext inventory tooling, crypto-required database guards, production-bundle test-crypto exclusion checks
 - S1-J tooling: disposable local closure runner, S1 API/browser/security tests, real Chromium OpenMLS WASM harness, production scan, and physical Android preparation
 
-Final non-physical executable evidence anchor: `e254c3c`. It includes `S1_AUTOMATED_CLOSURE_PASS`, `S1_RAW_PRIVACY_INSPECTION_PASS`, and the final independent security-review PASS.
+Final non-physical executable evidence anchor: `e254c3c`. It includes `S1_AUTOMATED_CLOSURE_PASS`, `S1_RAW_PRIVACY_INSPECTION_PASS`, and the final independent security-review PASS. Final physical executable evidence anchor: `039c90f`, including `S1_ANDROID_ACCEPTANCE_PASS scenarios=30/30`, `S1_SERVER_PLAINTEXT_INSPECTION_PASS`, `S1_OBJECT_STORAGE_CIPHERTEXT_PASS`, and `S1_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. See `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 ## Implementation slices
 
@@ -543,7 +543,7 @@ Final non-physical executable evidence anchor: `e254c3c`. It includes `S1_AUTOMA
 
 ## Closure gates
 
-Every non-physical item below has passed at `e254c3c`. S1 is DONE only when the remaining physical Redmi Note 9S acceptance item also passes:
+Every non-physical item below passed at `e254c3c`, and physical Redmi Note 9S acceptance then passed 30/30 at final executable SHA `039c90f`. S1 is DONE:
 
 - exact protocol/library/provider versions are reviewed and pinned
 - no custom cryptographic protocol is introduced

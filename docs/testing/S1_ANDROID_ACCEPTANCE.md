@@ -2,11 +2,9 @@
 
 ## Status
 
-READY FOR EXECUTION. Not yet executed.
+CLOSED. All 30 mandatory scenarios passed on a physical Xiaomi Redmi Note 9S at final executable SHA `039c90f`. Evidence: `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
-Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated/local closure, the complete raw privacy matrix, and the final independent cryptographic/security review. The mandatory 30/30 physical Android matrix in this document is the sole remaining S1 closure gate.
-
-S1 can be marked DONE only after all 30 mandatory scenarios below pass on a supported physical Android device with committed evidence tied to the exact tested SHA.
+Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated/local closure, the complete raw privacy matrix, and the final independent cryptographic/security review. That baseline needed one runtime fix during physical acceptance (a stale crypto-unavailable Talk banner after a device cold start, commits `09929ec` and `039c90f`), so the exact tested and accepted executable SHA is `039c90f`, not `e254c3c`.
 
 Use synthetic accounts, messages, relationship objects, media, recovery secrets, and devices only. Never commit private user content, cookies, session tokens, Recovery Master Secrets, device private keys, recovery private keys, signed URLs, or production credentials.
 
@@ -81,4 +79,4 @@ Use the actual device model in the final marker narrative if a different support
 
 ## Closure
 
-Automated/local closure, raw plaintext/privacy inspection, final independent security review, and non-physical documentation reconciliation are already complete at `e254c3c`. S1 remains open only until the 30/30 physical scenarios pass, any physical-only defects are repaired and revalidated, the exact tested branch is clean and synchronized, and physical evidence is committed.
+Automated/local closure, raw plaintext/privacy inspection, final independent security review, and non-physical documentation reconciliation completed at `e254c3c`. Physical acceptance then found and fixed one real defect (see the evidence document); the branch was clean and synchronized at the final tested SHA `039c90f`, and physical evidence is committed. S1 is DONE.
