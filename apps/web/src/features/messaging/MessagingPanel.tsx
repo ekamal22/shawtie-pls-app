@@ -41,6 +41,9 @@ import {
 import { ApiClientError, ApiNetworkError, apiRequest } from "../../lib/api-client.ts";
 import { useM2Runtime, useM2SyncStatus } from "../../lib/realtime/runtime-context.tsx";
 import { useS1CryptoRuntime } from "../../lib/crypto/runtime-context.tsx";
+import { useCryptoSecurity } from "../security/CryptoSecurityProvider.tsx";
+import { SecurityOperationalNotice } from "../security/SecurityTaskCard.tsx";
+import { protectedWriteReason } from "../security/crypto-copy.ts";
 import {
   decryptMessageProjectionForView,
   decryptMessagesForView,
@@ -220,9 +223,16 @@ interface PendingSend {
   readonly requestBody: MessageSendInput | null;
 }
 
-export function MessagingPanel({ active = true }: { readonly active?: boolean } = {}) {
+export function MessagingPanel({
+  active = true,
+  onOpenSecurity,
+}: {
+  readonly active?: boolean;
+  readonly onOpenSecurity: () => void;
+}) {
   const runtime = useM2Runtime();
-  const { runtime: cryptoRuntime, status: cryptoStatus } = useS1CryptoRuntime();
+  const { runtime: cryptoRuntime } = useS1CryptoRuntime();
+  const security = useCryptoSecurity();
   // Talk stays mounted while Home or Ours is showing so delivery, sync, and typing keep working.
   // A message is only READ when Talk is the visible route, so the receipt code reads this ref.
   const activeRef = useRef(active);
@@ -1551,9 +1561,12 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
   const partnerName = conversation.partner.nickname || conversation.partner.displayName;
   const selfName = conversation.self.nickname || conversation.self.displayName;
   const cryptoWritable =
-    !conversation.cryptoRequired ||
-    Boolean(cryptoRuntime && cryptoStatus.available && cryptoStatus.trustState === "trusted");
+    !conversation.cryptoRequired || security.model.protectedWrites === "allowed";
   const canSend = conversation.capabilities.sendMessage && cryptoWritable;
+  const cryptoWriteMessage =
+    conversation.cryptoRequired && !cryptoWritable
+      ? protectedWriteReason(security.model.protectedWrites)
+      : null;
   const hasContent = composer.trim().length > 0 || mediaDrafts.length > 0;
   const rows = buildRows(messages, conversation.self.accountId);
   const actionMessage = actionsFor
@@ -1611,6 +1624,8 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         ) : null}
         <IconButton label="Chat nicknames" icon="more" onClick={() => setNicknamesOpen(true)} />
       </header>
+
+      <SecurityOperationalNotice onOpenSecurity={onOpenSecurity} />
 
       {!online ? (
         <OfflineNotice>
@@ -1858,7 +1873,11 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
                 body: { typing: false },
               }).catch(() => undefined);
             }}
-            placeholder={canSend ? "Message..." : "Messaging is currently view-only."}
+            placeholder={
+              canSend
+                ? "Message..."
+                : cryptoWriteMessage ?? "Messaging is currently view-only."
+            }
             disabled={!canSend || busy}
             rows={1}
             maxLength={M1_MESSAGE_MAX_CHARACTERS}
@@ -1928,13 +1947,14 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       <TalkActions
         open={actionMessage !== null}
         onClose={() => setActionsFor(null)}
-        canReact={actionMutable}
+        canReact={actionMutable && cryptoWritable}
         myReaction={actionMyReaction}
         canReply={Boolean(actionMessage && !actionMessage.deletedAt && canSend)}
         canEdit={Boolean(
           actionMessage &&
           actionOwn &&
           messageEditable(actionMessage, conversation) &&
+          cryptoWritable &&
           actionMessage.body,
         )}
         canDelete={Boolean(actionMessage && actionOwn && actionMutable)}
@@ -2035,6 +2055,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
 
       <Sheet open={nicknamesOpen} onClose={() => setNicknamesOpen(false)} title="Chat nicknames">
         <div className="talk-nicknames">
+          {cryptoWriteMessage ? <p className="hint">{cryptoWriteMessage}</p> : null}
           <label className="field">
             <span>Your nickname</span>
             <input
