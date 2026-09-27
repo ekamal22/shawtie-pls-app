@@ -21,7 +21,7 @@ test("canonical JSON sorts object keys recursively", () => {
   );
 });
 
-test("protected content round trips and rejects AAD substitution", async () => {
+test("protected content round trips and rejects substitution of every authenticated context field", async () => {
   const context = envelopeContext({
     partnershipId: "00000000-0000-4000-8000-000000000001",
     groupGeneration: 1,
@@ -39,14 +39,24 @@ test("protected content round trips and rejects AAD substitution", async () => {
     "private hello",
   );
 
-  await assert.rejects(
-    () =>
-      decryptBytes(encrypted.payload, encrypted.key, {
-        ...context,
-        contentId: "00000000-0000-4000-8000-000000000004",
-      }),
-    /CRYPTO_CIPHERTEXT_INVALID/u,
-  );
+  const substitutions = [
+    { ...context, cryptoProfile: "shawtie.mls.v2" },
+    { ...context, partnershipId: "00000000-0000-4000-8000-000000000004" },
+    { ...context, groupGeneration: 2 },
+    { ...context, mlsEpoch: 4 },
+    { ...context, contentType: "relationship_item" },
+    { ...context, contentId: "00000000-0000-4000-8000-000000000004" },
+    { ...context, contentVersion: 2 },
+    { ...context, payloadRole: "relationship_main" },
+    { ...context, senderCryptoDeviceId: "00000000-0000-4000-8000-000000000004" },
+    { ...context, schemaVersion: 2 },
+  ] as const;
+  for (const substituted of substitutions) {
+    await assert.rejects(
+      () => decryptBytes(encrypted.payload, encrypted.key, substituted),
+      /CRYPTO_(?:CIPHERTEXT_INVALID|UNSUPPORTED_PROTOCOL)/u,
+    );
+  }
 });
 
 test("recovery bundle requires the Recovery Master Secret", async () => {

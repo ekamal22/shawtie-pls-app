@@ -126,6 +126,7 @@
     "test:s1:browser:e2e": "npm run build --workspace @shawtie/crypto && npm run build:s1-wasm && npm run test:s1:browser:e2e:prepared",
     "s1:production:scan": "node scripts/security/s1-production-scan.mjs",
     "test:s1:local": "node scripts/db/test-s1-local.mjs",
+    "test:s1:privacy": "node scripts/security/test-s1-raw-privacy.mjs",
     "test:s1:closure": "node scripts/ci/test-s1-closure.mjs",
     "test:s1:install-browser": "playwright install chromium",
     "test:s1:device:prepare": "node scripts/device/s1-android-acceptance.mjs",

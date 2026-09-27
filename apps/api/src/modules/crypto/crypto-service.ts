@@ -955,9 +955,8 @@ export class CryptoService {
       const now = await getTransactionTimestamp(transaction);
       await lockAccounts(transaction, [auth.session.accountId]);
       const current = await this.#currentIdentity(transaction, auth, "any");
-      if (current.trustState === "trusted") return { device: identityProjection(current) };
       if (current.trustState !== "pending") {
-        throw new ApiError(409, "CRYPTO_DEVICE_UNTRUSTED");
+        throw new ApiError(409, "CRYPTO_RECOVERY_FAILED");
       }
 
       const challenge = await lockCryptoRecoveryChallenge(

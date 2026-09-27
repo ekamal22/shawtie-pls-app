@@ -33,9 +33,7 @@ test("S1 protected content rejects authenticated-context substitution in Chromiu
   expect(result.ciphertextContainsPlaintext).toBe(false);
 });
 
-test("S1 local vault survives reload boundary and purges partnership keys", async ({
-  page,
-}) => {
+test("S1 local vault survives reload boundary and purges partnership keys", async ({ page }) => {
   await open(page);
   const result = await page.evaluate(() =>
     window.s1Harness.localVaultRoundTrip(
@@ -46,4 +44,23 @@ test("S1 local vault survives reload boundary and purges partnership keys", asyn
 
   expect(result.persisted).toBe(true);
   expect(result.purged).toBe(true);
+});
+
+test("S1 browser durable stores, outboxes, caches and notifications contain no plaintext", async ({
+  page,
+}) => {
+  await open(page);
+  const result = await page.evaluate(() =>
+    window.s1Harness.durablePrivacyInspection("s1-browser-raw-private-value"),
+  );
+
+  expect(result.inspectedValueCount).toBeGreaterThan(0);
+  expect(result.plaintextFindingCount).toBe(0);
+  expect(result.ciphertextContainsPlaintext).toBe(false);
+  expect(result.s1Namespace).toBe("shawtie.mls.v1");
+  expect(result.chatPurged).toBe(true);
+  expect(result.relationshipPurged).toBe(true);
+  expect(result.groupPurged).toBe(true);
+  expect(result.contentKeyPurged).toBe(true);
+  expect(result.operationsPurged).toBe(true);
 });

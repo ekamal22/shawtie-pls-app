@@ -8,7 +8,7 @@ import {
   databaseConfigFromEnv,
   type DatabasePool,
 } from "@shawtie/db";
-import { contentSignatureInput, envelopeContext } from "@shawtie/crypto";
+import { contentSignatureInput, encryptBytes, envelopeContext, utf8 } from "@shawtie/crypto";
 import { createApiApplication } from "../src/application.ts";
 import { AuthKeyRing } from "../src/security/auth-key-ring.ts";
 import type { ApiConfig } from "../src/config.ts";
@@ -339,11 +339,13 @@ function protectedMessageInput(input: {
   senderCryptoDeviceId: string;
   privateKey: KeyObject;
   accountIds: readonly [string, string];
+  ciphertext?: Buffer;
+  nonce?: Buffer;
   tamperSignature?: boolean;
 }) {
-  const ciphertext = Buffer.from("opaque-s1-ciphertext");
+  const ciphertext = input.ciphertext ?? Buffer.from("opaque-s1-ciphertext");
   const digest = createHash("sha256").update(ciphertext).digest();
-  const nonce = Buffer.alloc(12, 9);
+  const nonce = input.nonce ?? Buffer.alloc(12, 9);
   const contentKeyId = randomUUID();
   const context = envelopeContext({
     partnershipId: input.partnershipId,
@@ -475,6 +477,41 @@ test("S1 crypto-required messaging persists ciphertext only and rejects plaintex
       [tamperedMessageId],
     );
     assert.equal(tamperedStored.rows[0]?.count, "0");
+
+    await database.pool.query(
+      `UPDATE device_crypto_identities
+       SET trust_state = 'revoked', revoked_at = transaction_timestamp()
+       WHERE crypto_device_id = $1`,
+      [cryptoState.aliceCryptoDeviceId],
+    );
+    const revokedMessageId = randomUUID();
+    const revoked = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + conversationId + "/messages",
+      headers: headers(alice.cookie, "s1-revoked-device-send"),
+      payload: protectedMessageInput({
+        partnershipId,
+        messageId: revokedMessageId,
+        senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+        privateKey: cryptoState.alicePrivateKey,
+        accountIds: [alice.accountId, bob.accountId],
+      }),
+    });
+    assert.equal(revoked.statusCode, 409, revoked.body);
+    assert.equal(
+      ["CRYPTO_DEVICE_REVOKED", "CRYPTO_REKEY_REQUIRED"].includes(
+        (revoked.json() as { error: { code: string } }).error.code,
+      ),
+      true,
+    );
+    const afterRevocation = await database.pool.query<{ original: string; future: string }>(
+      `SELECT
+         count(*) FILTER (WHERE id = $1)::text AS original,
+         count(*) FILTER (WHERE id = $2)::text AS future
+       FROM messages`,
+      [messageId, revokedMessageId],
+    );
+    assert.deepEqual(afterRevocation.rows[0], { original: "1", future: "0" });
   } finally {
     await app.close();
     await closeDatabasePool(database);
@@ -695,6 +732,47 @@ test("S1 recovery possession proof trusts only the pending device that proves th
       "pending",
     );
 
+    const expiredChallengeResponse = await app.inject({
+      method: "POST",
+      url: "/api/v1/crypto/recovery/challenge",
+      headers: headers(recoveryCookie),
+      payload: { targetCryptoDeviceId: cryptoDeviceId },
+    });
+    assert.equal(expiredChallengeResponse.statusCode, 200, expiredChallengeResponse.body);
+    const expiredChallenge = expiredChallengeResponse.json() as {
+      challengeId: string;
+      challenge: string;
+      recoveryKeyVersion: number;
+    };
+    await database.pool.query(
+      `UPDATE crypto_recovery_challenges
+       SET created_at = transaction_timestamp() - interval '20 minutes',
+           expires_at = transaction_timestamp() - interval '10 minutes'
+       WHERE id = $1`,
+      [expiredChallenge.challengeId],
+    );
+    const expiredProof = recoveryProofPayload({
+      accountId: account.accountId,
+      targetCryptoDeviceId: cryptoDeviceId,
+      challengeId: expiredChallenge.challengeId,
+      challenge: Buffer.from(expiredChallenge.challenge, "base64url"),
+      recoveryKeyVersion: expiredChallenge.recoveryKeyVersion,
+    });
+    const expired = await app.inject({
+      method: "POST",
+      url: "/api/v1/crypto/recovery/prove",
+      headers: headers(recoveryCookie),
+      payload: {
+        challengeId: expiredChallenge.challengeId,
+        recoverySignature: sign(null, expiredProof, recovery.privateKey).toString("base64url"),
+      },
+    });
+    assert.equal(expired.statusCode, 409, expired.body);
+    assert.equal(
+      (expired.json() as { error: { code: string } }).error.code,
+      "CRYPTO_RECOVERY_FAILED",
+    );
+
     const challengeResponse = await app.inject({
       method: "POST",
       url: "/api/v1/crypto/recovery/challenge",
@@ -750,11 +828,94 @@ test("S1 recovery possession proof trusts only the pending device that proves th
       "trusted",
     );
 
+    const replayed = await app.inject({
+      method: "POST",
+      url: "/api/v1/crypto/recovery/prove",
+      headers: headers(recoveryCookie),
+      payload: {
+        challengeId: challenge.challengeId,
+        recoverySignature: sign(null, proof, recovery.privateKey).toString("base64url"),
+      },
+    });
+    assert.equal(replayed.statusCode, 409, replayed.body);
+    assert.equal(
+      (replayed.json() as { error: { code: string } }).error.code,
+      "CRYPTO_RECOVERY_FAILED",
+    );
+
     const consumed = await database.pool.query<{ consumed_at: Date | null }>(
       "SELECT consumed_at FROM crypto_recovery_challenges WHERE id = $1",
       [challenge.challengeId],
     );
     assert.ok(consumed.rows[0]?.consumed_at instanceof Date);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("S1 raw database inspection finds ciphertext but no protected plaintext", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const alice = await register(app, database, "raw_alice");
+    const bob = await register(app, database, "raw_bob");
+    const { partnershipId, conversationId } = await formPartnership(app, alice, bob);
+    const cryptoState = await seedCrypto(database, partnershipId, alice, bob);
+    const secret = process.env.S1_RAW_SENTINEL ?? "s1-raw-server-private-value";
+    const messageId = randomUUID();
+    const context = envelopeContext({
+      partnershipId,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      contentType: "message",
+      contentId: messageId,
+      contentVersion: 1,
+      payloadRole: "message_body",
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      schemaVersion: 1,
+    });
+    const encrypted = await encryptBytes(utf8(secret), context);
+    const protectedPayload = protectedMessageInput({
+      partnershipId,
+      messageId,
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      privateKey: cryptoState.alicePrivateKey,
+      accountIds: [alice.accountId, bob.accountId],
+      ciphertext: Buffer.from(encrypted.ciphertext),
+      nonce: Buffer.from(encrypted.nonce),
+    });
+    const sent = await app.inject({
+      method: "POST",
+      url: "/api/v1/conversations/" + conversationId + "/messages",
+      headers: headers(alice.cookie, "s1-raw-protected-send"),
+      payload: protectedPayload,
+    });
+    assert.equal(sent.statusCode, 201, sent.body);
+
+    const stored = await database.pool.query<{ body_text: string | null; ciphertext: Buffer }>(
+      "SELECT body_text, ciphertext FROM messages WHERE id = $1",
+      [messageId],
+    );
+    assert.equal(stored.rows[0]?.body_text, null);
+    assert.deepEqual(stored.rows[0]?.ciphertext, Buffer.from(encrypted.ciphertext));
+    assert.equal(stored.rows[0]?.ciphertext.includes(Buffer.from(secret)), false);
+
+    const tables = await database.pool.query<{ tablename: string }>(
+      "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
+    );
+    const findings: string[] = [];
+    for (const { tablename } of tables.rows) {
+      const quoted = '"' + tablename.replaceAll('"', '""') + '"';
+      const result = await database.pool.query<{ found: boolean }>(
+        `SELECT EXISTS (SELECT 1 FROM ${quoted} AS row WHERE to_jsonb(row)::text LIKE '%' || $1 || '%') AS found`,
+        [secret],
+      );
+      if (result.rows[0]?.found) findings.push(tablename);
+    }
+    assert.deepEqual(findings, []);
+    console.log("S1_SERVER_PLAINTEXT_INSPECTION_PASS tables=" + tables.rowCount);
   } finally {
     await app.close();
     await closeDatabasePool(database);
