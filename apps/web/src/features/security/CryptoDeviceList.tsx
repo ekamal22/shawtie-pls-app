@@ -53,11 +53,8 @@ export function CryptoDeviceList({
   return (
     <ul className="security-device-list">
       {security.devices.map((device) => {
-        const current = device.cryptoDeviceId === security.model.securityStateRevision
-          ? false
-          : device.cryptoDeviceId === security.devices.find(
-              (row) => row.deviceId === accountDevices.find((item) => item.isCurrent)?.id,
-            )?.cryptoDeviceId;
+        const current =
+          accountDevices.find((row) => row.id === device.deviceId)?.isCurrent ?? false;
         const pending = device.trustState === "pending";
         const canApprove =
           pending &&
