@@ -33,8 +33,11 @@ async function assertAbsent(root, needles, label) {
     for (const needle of needles) {
       if (content.includes(needle)) {
         throw new Error(
-          label + " contains forbidden marker " + JSON.stringify(needle)
-            + " in " + relative(repoRoot, path),
+          label +
+            " contains forbidden marker " +
+            JSON.stringify(needle) +
+            " in " +
+            relative(repoRoot, path),
         );
       }
     }
@@ -47,6 +50,8 @@ await assertAbsent(
     "m3-test-aes-gcm-v1",
     "VITE_M3_TEST_CRYPTO",
     "M3 production media crypto is unavailable until S1",
+    "VITE_S1_DEVICE_DEBUG_HOOK",
+    "__s1Debug",
   ],
   "S1 production web bundle",
 );

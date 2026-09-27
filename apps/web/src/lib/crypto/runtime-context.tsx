@@ -110,3 +110,26 @@ export function useS1CryptoRuntime(): S1CryptoContextValue {
 export function getActiveS1CryptoRuntime(): S1CryptoRuntime | null {
   return activeS1Runtime;
 }
+
+/**
+ * S1 has no UX8 device/recovery management screen yet. Physical Android acceptance still
+ * needs to exercise the real production runtime (recovery setup, device approval, recovery
+ * restoration, group reset) end to end on the device, so a narrow debug surface is exposed
+ * here strictly behind an explicit build-time flag that a production build never sets.
+ * `npm run s1:production:scan` asserts the flag string and this module's debug branch are
+ * both absent from the production web bundle; see `scripts/security/s1-production-scan.mjs`.
+ */
+// `import.meta.env.MODE` is statically replaced by Vite per file; in a production build this
+// folds to `"production" !== "production"`, so the dynamic import below is unreachable and
+// Rollup drops the whole `debug-hook.ts` chunk, including the flag string and the hook
+// itself, from production output. `npm run s1:production:scan` asserts both stay absent from
+// `apps/web/dist`; this mirrors the reviewed `VITE_M3_TEST_CRYPTO` exclusion pattern.
+if (
+  import.meta.env.MODE !== "production" &&
+  (import.meta.env as ImportMetaEnv & { readonly VITE_S1_DEVICE_DEBUG_HOOK?: string })
+    .VITE_S1_DEVICE_DEBUG_HOOK === "1"
+) {
+  void import("./debug-hook.ts").then((module) => {
+    module.installS1DebugHook(() => activeS1Runtime);
+  });
+}
