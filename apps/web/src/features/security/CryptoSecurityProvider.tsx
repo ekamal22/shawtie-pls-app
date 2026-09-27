@@ -271,10 +271,41 @@ export function CryptoSecurityProvider({
         await refreshAfterAction();
       },
       repairPartnership: async () => {
-        if (!runtime || !partnershipId) throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
-        if (!state.model.canOfferGroupRepair) throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
-        await refresh();
-        if (!state.model.canOfferGroupRepair) throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+        if (
+          !runtime ||
+          !partnershipId ||
+          lifecycleState !== "active" ||
+          interactionMode !== "normal"
+        ) {
+          throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+        }
+
+        // Re-evaluate the destructive predicate from current authority immediately before reset.
+        // A cached model is never enough to authorize repair.
+        const [authoritative, localRecovery, localGroup] = await Promise.all([
+          runtime.partnershipState(partnershipId),
+          runtime.localRecoveryStatus(),
+          runtime.localGroupStatus(partnershipId),
+        ]);
+        const currentAccountId = runtime.accountId;
+        const matchingRecovery = authoritative.recoveryRecipients.some(
+          (recipient) =>
+            recipient.accountId === currentAccountId &&
+            localRecovery.recoveryKeyVersion !== null &&
+            recipient.recoveryKeyVersion === localRecovery.recoveryKeyVersion,
+        );
+        if (
+          runtime.status().trustState !== "trusted" ||
+          !authoritative.cryptoRequired ||
+          !authoritative.group ||
+          authoritative.group.rekeyRequired ||
+          !localRecovery.configured ||
+          !matchingRecovery ||
+          localGroup.available
+        ) {
+          throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+        }
+
         await runtime.resetPartnershipGroup(partnershipId);
         await refreshAfterAction();
       },
@@ -286,7 +317,8 @@ export function CryptoSecurityProvider({
       refresh,
       refreshAfterAction,
       partnershipId,
-      state.model.canOfferGroupRepair,
+      lifecycleState,
+      interactionMode,
     ],
   );
 
