@@ -2304,13 +2304,41 @@ Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers 
 
 # UX8: Encrypted UX Integration
 
-Status: DESIGN HARDENED AND FROZEN, IMPLEMENTATION NOT STARTED.
+Status: IN PROGRESS. SOURCE IMPLEMENTATION PRESENT; AUTOMATED CLOSURE AND PHYSICAL ANDROID ACCEPTANCE PENDING.
 
 Canonical design:
 
 `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
 
 Depends on merged S1 at `main @ 71569cf`, final corrective executable `cde73a1`, and the accepted UX0 through UX7 surfaces.
+
+## Current implementation state
+
+Implemented on `feat/ux8-encrypted-ux-integration`:
+
+- canonical composed `CryptoSecurityViewModel` and provider
+- safe local recovery/group status helpers over S1
+- Home actionable security task integration
+- Talk protected-write gating and per-message unavailable/integrity placeholders
+- Ours protected-write gating and per-item unavailable/integrity placeholders while preserving R1 sealed-state authority
+- Us Protected sharing management surface
+- one-time recovery-key setup, explicit clipboard copy, acknowledgement, and in-memory secret lifetime
+- pending-device RMS restoration and trusted-device approval without false history claims
+- authoritative rekey presentation before normal S1 reconciliation
+- deterministic recovery-backed repair gating with pre-mutation authority recheck
+- protected media unavailable/integrity placeholders
+- account recovery copy separation
+- stale action/result fencing by account/device/partnership scope
+- UX8 model/static tests, real Chromium/OpenMLS recovery/approval E2E, closure wrapper, and Android preflight harness
+
+Not yet verified/closed:
+
+- complete automated UX8 closure at the final executable SHA
+- defects, if any, found by typecheck/build/lint/format/browser/health/security closure
+- mandatory Redmi Note 9S 25/25 physical acceptance
+- final evidence and DONE documentation reconciliation
+
+Physical procedure: `docs/testing/UX8_ANDROID_ACCEPTANCE.md`.
 
 ## Goal
 
