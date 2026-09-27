@@ -2315,7 +2315,7 @@ Status: PLANNED after S1 and the main romantic UX surfaces.
 
 # S1: E2EE and Cryptographic Recovery
 
-Status: IN_PROGRESS. S1-A through S1-I source implementation and S1-J closure tooling are committed on `feat/s1-e2ee-crypto-recovery`. Automated/local closure, raw-storage inspection, and the final independent security review passed at `e08b0aa`; physical Android acceptance remains open.
+Status: IN_PROGRESS. S1-A through S1-I source implementation and S1-J closure tooling are committed on `feat/s1-e2ee-crypto-recovery`. Automated/local closure, raw-storage inspection, and the final independent security review passed at `6cba504`; physical Android acceptance remains open.
 
 Canonical implementation design:
 
@@ -2330,7 +2330,7 @@ Security architecture:
 
 ## Current implementation progress
 
-Source implementation is complete through the S1-A to S1-I slices, and the S1-J automated and physical acceptance tooling is committed. The current executable closure and review anchor is `e08b0aa`.
+Source implementation is complete through the S1-A to S1-I slices, and the S1-J automated and physical acceptance tooling is committed. The current executable closure and review anchor is `6cba504`.
 
 Implemented repository evidence includes:
 
@@ -2345,7 +2345,7 @@ Implemented repository evidence includes:
 - database crypto-required plaintext guards and legacy plaintext inventory tooling
 - S1 API/browser/integration security tests, real Chromium OpenMLS WASM harness, production bundle scan, disposable PostgreSQL closure runner, and 30-scenario Android acceptance procedure
 
-Automated/local closure passed at `e08b0aa` with `S1_AUTOMATED_CLOSURE_PASS`, migrations 0001 through 0021 and `reserved=0`, real Chromium 4/4, full health, and 0 high-severity vulnerabilities. Raw PostgreSQL/object-storage/log/browser/outbox inspection and the final independent cryptographic/security review also passed at that SHA. Physical-device acceptance remains open.
+Automated/local closure passed at `6cba504` with `S1_AUTOMATED_CLOSURE_PASS`, migrations 0001 through 0021 and `reserved=0`, real Chromium 4/4, full health, and 0 high-severity vulnerabilities. Raw PostgreSQL/object-storage/log/browser/outbox inspection and the final independent cryptographic/security review also passed at that SHA. Physical-device acceptance remains open.
 
 ### Source implementation checklist
 
@@ -2359,7 +2359,7 @@ Automated/local closure passed at `e08b0aa` with `S1_AUTOMATED_CLOSURE_PASS`, mi
 - [x] S1-H cryptographic recovery is committed
 - [x] S1-I plaintext retirement guards/inventory are committed
 - [x] S1-J automated and physical closure harnesses are committed
-- [x] `npm run test:s1:closure` executed successfully at `e08b0aa`
+- [x] `npm run test:s1:closure` executed successfully at `6cba504`
 - [x] raw PostgreSQL/object-storage/log/browser/outbox/push plaintext inspection evidence recorded
 - [ ] 30/30 physical Android acceptance executed and committed
 - [x] final independent cryptographic/security review passed

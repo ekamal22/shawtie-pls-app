@@ -2,7 +2,7 @@
 
 ## Status
 
-PASS for the final non-physical S1 security-review gate on 2026-09-27 at executable commit `e08b0aadaaf8fb7e5bb3bdbdff52104caf7505e1`.
+PASS for the final non-physical S1 security-review gate on 2026-09-27 at executable commit `6cba504d885328bbd25ce8887d509248fc42e84d`.
 
 This was an independent closure review of the implemented source, database constraints, protocol boundaries, and executable adversarial behavior. It is not a claim of a third-party cryptographic audit or formal verification. S1 remains `IN_PROGRESS` because physical Android acceptance is still mandatory.
 
@@ -54,7 +54,7 @@ No other critical, high, or medium unmitigated finding remained after repair.
 
 ## Verification results
 
-`npm run test:s1:privacy` passed with `S1_RAW_PRIVACY_INSPECTION_PASS`.
+`npm run test:s1:privacy` passed with the full protected-content fixture and `S1_RAW_PRIVACY_INSPECTION_PASS`.
 
 `npm run test:s1:closure` passed at the same executable SHA with:
 

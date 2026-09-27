@@ -2,7 +2,7 @@
 
 ## Status
 
-The verified merged mainline is implemented through migration 0018. On `feat/s1-e2ee-crypto-recovery`, S1 adds real forward-only migrations `0019_s1_device_crypto_runtime.sql`, `0020_s1_partnership_crypto_runtime.sql`, and `0021_s1_protected_content_runtime.sql`. The canonical disposable PostgreSQL S1 closure passed at `e08b0aa` with all 21 migrations applied from zero, `reserved=0`, database invariants green, and PostgreSQL integration 4/4. Migrations 0019 through 0021 are verified on the feature branch but are not yet merged mainline state.
+The verified merged mainline is implemented through migration 0018. On `feat/s1-e2ee-crypto-recovery`, S1 adds real forward-only migrations `0019_s1_device_crypto_runtime.sql`, `0020_s1_partnership_crypto_runtime.sql`, and `0021_s1_protected_content_runtime.sql`. The canonical disposable PostgreSQL S1 closure passed at `6cba504` with all 21 migrations applied from zero, `reserved=0`, database invariants green, and PostgreSQL integration 4/4. Migrations 0019 through 0021 are verified on the feature branch but are not yet merged mainline state.
 
 The existing verified M1/R1 baseline remains migrations 0001 through 0014 with `reserved=0`; M3/C1 later extend the merged chain through 0018 without reservations. S1 must consume 0001 through 0018 unchanged.
 
@@ -323,7 +323,7 @@ C2 Video Calling required no PostgreSQL migration and reserves none. The canonic
 
 ## S1 migration implementation and closure
 
-S1 migration source and executable verification are anchored at `e08b0aa`.
+S1 migration source and executable verification are anchored at `6cba504`.
 
 - `0019_s1_device_crypto_runtime.sql` implements crypto-device identities, trusted-device approvals, KeyPackage state, encrypted recovery bundle metadata, recovery challenges, and A1-linked crypto revocation.
 - `0020_s1_partnership_crypto_runtime.sql` implements partnership MLS groups, group generations, epochs, active device membership, ordered control messages, and rekey-required propagation.
@@ -340,7 +340,7 @@ npm run test:s1:local
 npm run test:s1:closure
 ```
 
-`test:s1:local` creates disposable PostgreSQL, builds the OpenMLS WASM artifact, runs migrations/invariants and the S1 API integration suite, asserts the plaintext inventory is clean, runs real Chromium S1 E2E, builds the production web bundle, and runs the production crypto scan. Its PASS markers are recorded at `e08b0aa`, together with the separate raw privacy and independent security-review evidence.
+`test:s1:local` creates disposable PostgreSQL, builds the OpenMLS WASM artifact, runs migrations/invariants and the S1 API integration suite, asserts the plaintext inventory is clean, runs real Chromium S1 E2E, builds the production web bundle, and runs the production crypto scan. Its PASS markers are recorded at `6cba504`, together with the separate raw privacy and independent security-review evidence.
 
 ## M1 and R1 migration ownership
 

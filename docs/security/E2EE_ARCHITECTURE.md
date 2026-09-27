@@ -2,11 +2,11 @@
 
 ## Status
 
-S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`. Automated closure, raw privacy inspection, and the final independent security review passed at `e08b0aa`; physical Android acceptance remains pending.
+S1 architecture and source implementation are complete on `feat/s1-e2ee-crypto-recovery`. Automated closure, raw privacy inspection, and the final independent security review passed at `6cba504`; physical Android acceptance remains pending.
 
 The selected protocol family is RFC 9420 Messaging Layer Security, interpreted using the application architecture in RFC 9750.
 
-The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Dependency/advisory review, automated closure, raw-storage inspection, and independent security review passed at `e08b0aa`. Physical Android acceptance remains required before S1 can be reported DONE.
+The implementation pins OpenMLS `0.9.0` with `openmls_rust_crypto 0.6.0` in a browser-targeted WebAssembly binding. The exact source/dependency set is represented by the committed Cargo manifest/lock resolution used by the S1 build. Dependency/advisory review, automated closure, raw-storage inspection, and independent security review passed at `6cba504`. Physical Android acceptance remains required before S1 can be reported DONE.
 
 Canonical implementation design:
 
@@ -42,7 +42,7 @@ The default durable-content construction is:
 - canonical authenticated context
 - device signature over canonical metadata and ciphertext digest
 
-Recovery capsules use the S1 HPKE profile implemented and versioned in `@shawtie/crypto`; the final cryptographic review of the pinned profile passed at `e08b0aa`.
+Recovery capsules use the S1 HPKE profile implemented and versioned in `@shawtie/crypto`; the final cryptographic review of the pinned profile passed at `6cba504`.
 
 ## Separation of identities
 

@@ -819,7 +819,7 @@ npm run test:s1:device:prepare
 npm run test:s1:device:cleanup
 ```
 
-The S1 executable closure anchor is `e08b0aa`. `test:s1:privacy` passed with raw PostgreSQL table/dump, MinIO object, log, browser durable-storage, outbox, Cache API, notification, realtime, push, and control-traffic evidence. `test:s1:closure` passed at the same SHA with `S1_AUTOMATED_CLOSURE_PASS`, full health, and 0 audit vulnerabilities. See `S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md` and `S1_SECURITY_REVIEW_EVIDENCE.md`.
+The S1 executable closure anchor is `6cba504`. `test:s1:privacy` passed with populated protected message/edit/reaction/nickname/R1/media fixtures, raw PostgreSQL table/dump, MinIO image/voice/file objects, logs, browser durable storage, outbox, Cache API, notification, realtime, push, and control-traffic evidence. `test:s1:closure` passed at the same SHA with `S1_AUTOMATED_CLOSURE_PASS`, full health, and 0 audit vulnerabilities. See `S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md` and `S1_SECURITY_REVIEW_EVIDENCE.md`.
 
 Automated closure must prove:
 
@@ -842,7 +842,7 @@ The real Chromium S1 harness is `tests/e2e/s1-browser.spec.ts`. It requires the 
 
 Physical Android acceptance is mandatory and remains separate from automated closure. The 30-scenario procedure in `S1_ANDROID_ACCEPTANCE.md` covers device enrollment, recovery, two-device MLS membership, protected M1/R1/M3 behavior, offline/lost-response/two-tab safety, revocation/rekey, Recovery Master Secret restoration, group reset, breakup/final-dissolution behavior, future-partnership isolation, and final raw plaintext inspections.
 
-Automated closure, raw PostgreSQL/object-storage/log/browser/outbox/push inspection, and the final independent cryptographic/security review are complete at `e08b0aa`. S1 is not DONE until 30/30 physical Android acceptance passes with committed evidence.
+Automated closure, raw PostgreSQL/object-storage/log/browser/outbox/push inspection, and the final independent cryptographic/security review are complete at `6cba504`. S1 is not DONE until 30/30 physical Android acceptance passes with committed evidence.
 
 ## Acceptance principle
 
