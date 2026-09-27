@@ -79,6 +79,7 @@ export function CryptoSecurityProvider({
   partnershipId,
   lifecycleState,
   interactionMode,
+  cryptoRequiredHint,
   children,
 }: {
   readonly partnershipId: string | null;
@@ -88,6 +89,7 @@ export function CryptoSecurityProvider({
     | "breakup_restricted"
     | "account_deletion_view_only"
     | null;
+  readonly cryptoRequiredHint: boolean;
   readonly children: ReactNode;
 }) {
   const { runtime, status, retry: retryRuntime } = useS1CryptoRuntime();
@@ -328,9 +330,9 @@ export function CryptoSecurityProvider({
       ...state,
       ...actions,
       partnershipId,
-      partnershipCryptoRequired: state.partnershipState?.cryptoRequired ?? false,
+      partnershipCryptoRequired: state.partnershipState?.cryptoRequired ?? cryptoRequiredHint,
     }),
-    [state, actions, partnershipId],
+    [state, actions, partnershipId, cryptoRequiredHint],
   );
 
   return <CryptoSecurityContext.Provider value={value}>{children}</CryptoSecurityContext.Provider>;
