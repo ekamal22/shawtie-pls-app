@@ -19,6 +19,24 @@ test("S1 Talk encrypts protected mutations before durable replay", async () => {
   assert.equal(replay.includes("queued.contentContextKey === S1_CONTENT_CONTEXT"), true);
 });
 
+test("S1 Talk retries the crypto sync once the runtime becomes ready after a lost race", async () => {
+  const messaging = await source("../src/features/messaging/MessagingPanel.tsx");
+
+  // A cold start (WASM load, device enrollment) can make the S1 crypto runtime resolve
+  // after Talk has already become active. Without a retry, syncChanges fails closed with
+  // CRYPTO_UNAVAILABLE once and never runs again, leaving a permanent false "Protected
+  // messaging is unavailable" banner in front of messages that in fact decrypt correctly.
+  assert.equal(messaging.includes("cryptoRuntimeReadyRef"), true);
+  assert.match(
+    messaging,
+    /becameReady = Boolean\(cryptoRuntime\) && !cryptoRuntimeReadyRef\.current/,
+  );
+  assert.match(
+    messaging,
+    /if \(becameReady && active && conversation\) \{\s*setError\(""\);\s*void syncChanges\(\)/,
+  );
+});
+
 test("S1 browser decrypts only after verifying sender signature and digest", async () => {
   const runtime = await source("../src/lib/crypto/crypto-runtime.ts");
 

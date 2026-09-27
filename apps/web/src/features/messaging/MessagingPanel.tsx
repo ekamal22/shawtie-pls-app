@@ -766,6 +766,23 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     // Only a change of `active` re-evaluates; sync dependencies are read at call time.
   }, [active]);
 
+  // The S1 crypto runtime finishes starting asynchronously (WASM load, device enrollment).
+  // If Talk becomes active before it is ready, the sync above fails closed with
+  // CRYPTO_UNAVAILABLE and the effect above will not run again on its own, since it only
+  // re-evaluates on an `active` transition. Retry exactly once, and only for that lost race,
+  // as soon as the runtime becomes available, so a real device's slower cold start does not
+  // leave a permanent false "Protected messaging is unavailable" banner in front of
+  // messages that in fact decrypt correctly.
+  const cryptoRuntimeReadyRef = useRef(Boolean(cryptoRuntime));
+  useEffect(() => {
+    const becameReady = Boolean(cryptoRuntime) && !cryptoRuntimeReadyRef.current;
+    cryptoRuntimeReadyRef.current = Boolean(cryptoRuntime);
+    if (becameReady && active && conversation) {
+      setError("");
+      void syncChanges().catch((caught) => void handleSyncFailure(caught));
+    }
+  }, [cryptoRuntime, active, conversation, syncChanges, handleSyncFailure]);
+
   // Memory Return: a kept item asks Talk to show its source message. The app shell brings Talk
   // forward; once Talk is active and the message is rendered, it is scrolled into view and
   // highlighted with the same treatment as a reply jump.
