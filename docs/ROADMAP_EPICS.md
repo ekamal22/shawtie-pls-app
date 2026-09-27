@@ -2315,7 +2315,7 @@ Status: PLANNED after S1 and the main romantic UX surfaces.
 
 # S1: E2EE and Cryptographic Recovery
 
-Status: IN_PROGRESS. S1-A through S1-I source implementation and S1-J closure tooling are committed on `feat/s1-e2ee-crypto-recovery`; executed automated, raw-storage, physical Android, and final security-review evidence remain open.
+Status: IN_PROGRESS. S1-A through S1-I source implementation and S1-J closure tooling are committed on `feat/s1-e2ee-crypto-recovery`; automated/local closure passed at `cb8e67b`, while raw-storage inspection, physical Android, and final independent security-review evidence remain open.
 
 Canonical implementation design:
 
@@ -2345,7 +2345,7 @@ Implemented repository evidence includes:
 - database crypto-required plaintext guards and legacy plaintext inventory tooling
 - S1 API/browser/integration security tests, real Chromium OpenMLS WASM harness, production bundle scan, disposable PostgreSQL closure runner, and 30-scenario Android acceptance procedure
 
-No automated-closure, raw object-storage inspection, physical-device, or final independent cryptographic-review PASS is claimed yet.
+Automated/local closure passed at `cb8e67b` with `S1_AUTOMATED_CLOSURE_PASS`, migrations 0001 through 0021 and `reserved=0`, real Chromium 3/3, full health, and 0 high-severity vulnerabilities. No raw object-storage inspection, physical-device, or final independent cryptographic-review PASS is claimed yet.
 
 ### Source implementation checklist
 
@@ -2359,7 +2359,7 @@ No automated-closure, raw object-storage inspection, physical-device, or final i
 - [x] S1-H cryptographic recovery is committed
 - [x] S1-I plaintext retirement guards/inventory are committed
 - [x] S1-J automated and physical closure harnesses are committed
-- [ ] `npm run test:s1:closure` executed successfully on the exact branch head
+- [x] `npm run test:s1:closure` executed successfully at `cb8e67b`
 - [ ] raw PostgreSQL/object-storage/log/outbox/push plaintext inspection evidence recorded
 - [ ] 30/30 physical Android acceptance executed and committed
 - [ ] final independent cryptographic/security review passed

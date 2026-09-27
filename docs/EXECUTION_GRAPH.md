@@ -72,8 +72,8 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 |
                 v
         S1 E2EE + Crypto Recovery 🟡
-        source + closure tooling complete @ c85fdb1
-        S1-J execution evidence pending
+        automated/local closure PASS @ cb8e67b
+        physical and review evidence pending
                 |
                 v
         UX8 Encrypted UX ⚪
@@ -241,7 +241,7 @@ C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations 
 C1 is reconciled onto main containing real M3 0015/0016. Real migrations 0001-0018 passed with `reserved=0`; after the stale media-owner fix, integrated closure re-passed at `b29aaa1`. Redmi physical acceptance and all follow-up evidence, including audible bidirectional audio, are complete.
 C2 Video Calling is DONE and fast-forward merged to `main @ fed2db7`; source implementation and automated/local closure are complete (first at `94e0e93`, final executable SHA `ecbb2e1`) and physical Redmi Note 9S acceptance is complete. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
-S1 continues on `feat/s1-e2ee-crypto-recovery`. S1-A through S1-I source implementation plus S1-J closure tooling are committed at `c85fdb1`. S1 remains IN_PROGRESS until `npm run test:s1:closure`, raw plaintext inspections, 30/30 physical Android acceptance, and final independent security review pass.
+S1 continues on `feat/s1-e2ee-crypto-recovery`. Automated/local closure passed at `cb8e67b` with `S1_AUTOMATED_CLOSURE_PASS`. S1 remains IN_PROGRESS until raw plaintext inspections, 30/30 physical Android acceptance, and final independent security review pass.
 ~~~
 
 From P2 onward:
