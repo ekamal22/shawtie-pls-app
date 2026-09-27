@@ -854,6 +854,11 @@ UX8 is security-critical presentation work. It must not be accepted from visual/
 
 Automated UX8 coverage must prove:
 
+- the canonical composed `CryptoSecurityViewModel` is the only top-level interpretation layer consumed by Home, Talk, Ours, Us, and Auth
+- deterministic precedence yields one primary actionable task and never stacks conflicting global security warnings
+- protected-write blocking classifications exactly match existing S1 authority
+- realtime events require canonical reconciliation before UI authority changes
+- stale async results are rejected by account/device/partnership/revision scope
 - the presentation state adapter distinguishes runtime readiness, crypto-device trust, recovery readiness, partnership rekey/repair state, and per-content availability
 - pending-device approval and Recovery Master Secret restoration remain distinct
 - account/email recovery never claims protected-history recovery
@@ -864,9 +869,14 @@ Automated UX8 coverage must prove:
 - R1 sealed content remains sealed and is not reclassified as crypto-unavailable
 - A1 device revocation remains the only user-facing revoke authority
 - rekey and group repair invoke only existing S1 runtime authority
+- group repair cannot become available from timeout, retry count, backgrounding, transient network failure, or transient local-storage failure alone
+- the deterministic repair predicate is rechecked immediately before confirmation and execution
 - calls gain no false S1 E2EE claim
 - production S1 debug/test surfaces remain excluded
 - retained S1 closure suites remain green
+- the required approval/recovery/revoke/rekey/repair/lifecycle race matrix passes
+- security-sensitive copy preserves the frozen semantic contract
+- recovery-secret lifetime, clipboard, diagnostics, log, URL, storage, cache, and queue boundaries pass executable inspection
 
 Physical Android acceptance is mandatory and contains 25 scenarios. It must cover recovery-key creation and one-time reveal, wrong and correct RMS restoration, trusted-device approval, A1 revocation and rekey, pending/rekey Talk behavior, per-message and per-item history-unavailable states, sealed R1 authority, media unavailable state, deterministic group repair, account-vs-crypto recovery separation, offline/reconnect behavior, realtime revocation/rekey updates, accessibility, and final recovery-secret leakage inspection.
 
@@ -878,7 +888,7 @@ UX8_RECOVERY_SECRET_STORAGE_PASS
 UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 ```
 
-UX8 remains incomplete until focused automated coverage, retained S1 closure, full repository health, audit/production scans, and all 25 physical Android scenarios pass at the exact final executable SHA.
+UX8 remains incomplete until UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation pass in sequence at the exact final executable SHA.
 
 ## Acceptance principle
 
