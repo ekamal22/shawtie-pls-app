@@ -76,7 +76,7 @@ The selected architecture is:
 - `api/M1_MESSAGING_API.md`
 - `architecture/M2_REALTIME_OFFLINE_DESIGN.md`
 - `design/ROMANTIC_UX_DIRECTION.md`
-- `design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
+- `design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md` - hardened frozen UX8 state, recovery, repair, race, accessibility, and closure design
 - `api/M2_REALTIME_PROTOCOL.md`
 - `architecture/M3_MEDIA_VOICE_DESIGN.md`
 - `api/M3_MEDIA_API.md`
