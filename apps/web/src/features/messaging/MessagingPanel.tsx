@@ -1692,7 +1692,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
             typeof queuedBody === "string"
               ? queuedBody
               : queuedRequest?.protectedBody
-                ? "Encrypted message"
+                ? "Message"
                 : Array.isArray(queuedRequest?.attachments) && queuedRequest.attachments.length > 0
                   ? "Attachment"
                   : "Waiting message";

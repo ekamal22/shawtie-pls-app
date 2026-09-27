@@ -80,7 +80,7 @@ export function MediaAttachment({
       <div className="media-card media-unavailable talk-media-unavailable">
         This attachment can't be opened right now.
         <span className="hint">
-          {error.includes("CRYPTO") ? " Protected media is unavailable on this device." : ""}
+          {error.includes("CRYPTO") ? " This media is unavailable on this device." : ""}
         </span>
       </div>
     );
