@@ -201,7 +201,7 @@ The remaining pre-release sequence is:
 3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
 4. cut Stable Release only after UX8, V1, and R2 are closed
 
-The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`. Merge and documentation-only commits do not change either runtime evidence anchor.
+The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's automated executable evidence anchor is `39de742c8ab795137be95ecbaa685131b608e813`. Merge and documentation-only commits do not change these runtime evidence anchors.
 
 ## Deferred heavy feature policy
 
