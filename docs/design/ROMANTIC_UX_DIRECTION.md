@@ -1,6 +1,6 @@
 # Romantic UX Direction
 
-Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery is now DONE and merged to `main @ 71569cf`, with final corrective executable `cde73a1` and mandatory Android acceptance 30/30. UX8 can now integrate verified S1 behavior.
+Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery is now DONE and merged to `main @ 71569cf`, with final corrective executable `cde73a1` and mandatory Android acceptance 30/30. UX8 can now integrate verified S1 behavior. Its encrypted UX design has been hardened and frozen before implementation.
 
 This document records the accepted product-experience direction for Shawtie pls after completion and merge of C2 Video Calling. It is deliberately separate from architecture, API, database, lifecycle, and cryptographic authority.
 
