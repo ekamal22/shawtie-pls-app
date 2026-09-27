@@ -437,6 +437,7 @@ function AccountScreen({
       partnershipId={conversation?.partnershipId ?? null}
       lifecycleState={conversation?.lifecycleState ?? null}
       interactionMode={conversation?.interactionMode ?? null}
+      cryptoRequiredHint={conversation?.cryptoRequired ?? false}
     >
       <AppShell
         route={route}
