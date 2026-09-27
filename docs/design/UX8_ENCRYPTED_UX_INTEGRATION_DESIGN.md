@@ -1,6 +1,6 @@
 # UX8 Encrypted UX Integration Design
 
-Status: DESIGN FROZEN, IMPLEMENTATION NOT STARTED.
+Status: DESIGN HARDENED AND FROZEN, IMPLEMENTATION NOT STARTED.
 
 Branch: `design/ux8-encrypted-ux-integration`.
 
