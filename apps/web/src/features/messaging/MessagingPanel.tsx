@@ -1755,6 +1755,7 @@ export function MessagingPanel({
                   <Button
                     variant="quiet"
                     compact
+                    disabled={!canSend}
                     onClick={() => void runtime.retryQueuedOperation("chat", operation.operationId)}
                   >
                     Retry
@@ -1786,7 +1787,12 @@ export function MessagingPanel({
             ) : (
               <>
                 <span>Could not send. Trying again reuses the same request.</span>
-                <Button variant="secondary" compact onClick={() => void send()} disabled={busy}>
+                <Button
+                  variant="secondary"
+                  compact
+                  onClick={() => void send()}
+                  disabled={busy || !canSend}
+                >
                   Retry
                 </Button>
               </>
@@ -1962,6 +1968,7 @@ export function MessagingPanel({
           actionMessage &&
           actionMessage.body &&
           !actionMessage.deletedAt &&
+          cryptoWritable &&
           conversation.interactionMode === "normal",
         )}
         kept={actionMessage ? keptIds.has(actionMessage.messageId) : false}
