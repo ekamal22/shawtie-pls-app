@@ -2,7 +2,7 @@
 
 Shawtie pls is a privacy-focused two-person communication platform built around one active partnership at a time.
 
-The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video Calling is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. Its final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where `npm run test:c2:closure` passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi Note 9S scenario (1 through 31 and 33 through 36) passed with `C2_ANDROID_ACCEPTANCE_PASS` and `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The discovery sweep found and fixed two physical-only defects before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame). The canonical migration chain remains real 0001 through 0018 with `reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX0 through UX7 are implemented, physically accepted on a Xiaomi Redmi Note 9S at executable SHA `ca7cd35` with 22/22 mandatory scenarios passing, and fast-forward merged to `main` at merge anchor `9f0bea4`. Evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 E2EE and Cryptographic Recovery is DONE and merged to `main` at `71569cf`. The final corrective executable SHA is `cde73a1`: `npm run test:s1:closure` re-passed there with 21 migrations and `reserved=0`, database invariants green, S1 contracts 9/9, browser 9/9, security 7/7, PostgreSQL integration 4/4, real Chromium 4/4, full repository health, `S1_PRODUCTION_BUNDLE_SCAN_PASS`, and 0 audit vulnerabilities. Corrective Redmi Note 9S acceptance closed all 30 mandatory scenarios, including real lost-response retry, general-file retry, real P3 breakup/finalizer/realtime purge, future-partnership isolation, and real Web Push transport/privacy evidence. Evidence: `docs/testing/S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md`, `docs/testing/S1_SECURITY_REVIEW_EVIDENCE.md`, and `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now the next product-experience milestone.
+The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video Calling is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`. Its final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` (`ecbb2e1`), where `npm run test:c2:closure` passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi Note 9S scenario (1 through 31 and 33 through 36) passed with `C2_ANDROID_ACCEPTANCE_PASS` and `C2_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`. The discovery sweep found and fixed two physical-only defects before the final run: `e6576e9` (callee duplicate video transceiver) and `ecbb2e1` (frozen remote last frame). The canonical migration chain remains real 0001 through 0018 with `reserved=0`. Evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX0 through UX7 are implemented, physically accepted on a Xiaomi Redmi Note 9S at executable SHA `ca7cd35` with 22/22 mandatory scenarios passing, and fast-forward merged to `main` at merge anchor `9f0bea4`. Evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 E2EE and Cryptographic Recovery is DONE and merged to `main` at `71569cf`. The final corrective executable SHA is `cde73a1`: `npm run test:s1:closure` re-passed there with 21 migrations and `reserved=0`, database invariants green, S1 contracts 9/9, browser 9/9, security 7/7, PostgreSQL integration 4/4, real Chromium 4/4, full repository health, `S1_PRODUCTION_BUNDLE_SCAN_PASS`, and 0 audit vulnerabilities. Corrective Redmi Note 9S acceptance closed all 30 mandatory scenarios, including real lost-response retry, general-file retry, real P3 breakup/finalizer/realtime purge, future-partnership isolation, and real Web Push transport/privacy evidence. Evidence: `docs/testing/S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md`, `docs/testing/S1_SECURITY_REVIEW_EVIDENCE.md`, and `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now the next product-experience milestone. Its design is frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; implementation has not started.
 
 ## Product direction
 
@@ -15,7 +15,7 @@ The product combines:
 - breakup and account-deletion lifecycle rules
 - strong partnership isolation
 - PWA-first delivery
-- reviewed end-to-end encryption before stable release
+- reviewed end-to-end encryption and cryptographic recovery
 
 ## Architecture
 
@@ -41,7 +41,8 @@ Start with:
 - `docs/README.md` for document authority and navigation
 - `docs/PROJECT_STATE.md` for verified current implementation state
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
-- `docs/design/ROMANTIC_UX_DIRECTION.md` for the implemented UX0 through UX7 direction, implementation boundaries, and the remaining UX8 integration boundary
+- `docs/design/ROMANTIC_UX_DIRECTION.md` for the implemented UX0 through UX7 direction and presentation boundaries
+- `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md` for the frozen encrypted UX integration design, implementation slices, copy rules, and 25-scenario physical acceptance matrix
 - `docs/architecture/S1_E2EE_CRYPTO_RECOVERY_DESIGN.md` for the implemented S1 architecture and execution slices
 - `docs/testing/S1_ANDROID_ACCEPTANCE.md` for the mandatory 30-scenario S1 physical Android closure procedure
 - `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md` for the 30/30 Redmi Note 9S S1 acceptance evidence, corrected and finalized at executable `cde73a1`

@@ -133,7 +133,7 @@ flowchart TD
 
     M3 --> S1["S1 E2EE + Crypto Recovery ✅"]
     C2 --> S1
-    UX7 --> UX8["UX8 Encrypted UX Integration ⚪"]
+    UX7 --> UX8["UX8 Encrypted UX Integration 🟡 design frozen"]
     S1 --> UX8
 
     UX8 --> R2["R2 Public Readiness ⚪"]
@@ -172,6 +172,8 @@ C2 Video Calling ✅ DONE and fast-forward merged to `main @ fed2db7`; final exe
 UX0 through UX7 ✅ DONE, Redmi 22/22, merged to `main @ 9f0bea4`
    ->
 S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, merged to `main @ 71569cf`
+   ->
+UX8 Encrypted UX Integration 🟡 DESIGN FROZEN, implementation next
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.

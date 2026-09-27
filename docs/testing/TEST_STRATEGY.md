@@ -844,6 +844,42 @@ Physical Android acceptance is mandatory and remains separate from automated clo
 
 Raw privacy inspection and the final independent cryptographic/security review are complete at `e254c3c`. The first physical sweep found and fixed the stale false crypto-unavailable Talk banner (`09929ec`, `039c90f`). Corrective physical verification then closed the six evidence gaps identified by review and finished 30/30 at executable `cde73a1`, including real lost-response retry, general-file retry, real P3 breakup/worker dissolution/realtime purge, future-partnership isolation, and real Web Push transport/privacy evidence. Full automated closure re-passed at `cde73a1`. Evidence is recorded in `S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 is DONE and merged to `main @ 71569cf`.
 
+## UX8 Encrypted UX Integration verification
+
+Canonical design:
+
+- `../design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
+
+UX8 is security-critical presentation work. It must not be accepted from visual/browser tests alone.
+
+Automated UX8 coverage must prove:
+
+- the presentation state adapter distinguishes runtime readiness, crypto-device trust, recovery readiness, partnership rekey/repair state, and per-content availability
+- pending-device approval and Recovery Master Secret restoration remain distinct
+- account/email recovery never claims protected-history recovery
+- recovery setup requires recent reauthentication
+- Recovery Master Secret values never enter browser durable storage, M2 queues, Cache API, URL state, or logs
+- per-content `CRYPTO_HISTORY_UNAVAILABLE` does not collapse Talk or Ours
+- ciphertext/signature failures fail closed without plaintext fallback
+- R1 sealed content remains sealed and is not reclassified as crypto-unavailable
+- A1 device revocation remains the only user-facing revoke authority
+- rekey and group repair invoke only existing S1 runtime authority
+- calls gain no false S1 E2EE claim
+- production S1 debug/test surfaces remain excluded
+- retained S1 closure suites remain green
+
+Physical Android acceptance is mandatory and contains 25 scenarios. It must cover recovery-key creation and one-time reveal, wrong and correct RMS restoration, trusted-device approval, A1 revocation and rekey, pending/rekey Talk behavior, per-message and per-item history-unavailable states, sealed R1 authority, media unavailable state, deterministic group repair, account-vs-crypto recovery separation, offline/reconnect behavior, realtime revocation/rekey updates, accessibility, and final recovery-secret leakage inspection.
+
+Expected UX8 physical markers:
+
+```text
+UX8_ANDROID_ACCEPTANCE_PASS scenarios=25/25
+UX8_RECOVERY_SECRET_STORAGE_PASS
+UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
+```
+
+UX8 remains incomplete until focused automated coverage, retained S1 closure, full repository health, audit/production scans, and all 25 physical Android scenarios pass at the exact final executable SHA.
+
 ## Acceptance principle
 
 A feature is not complete merely because UI automation passes.

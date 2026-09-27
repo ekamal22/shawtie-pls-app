@@ -204,7 +204,7 @@ Unreleased Surprise, Proposal, Future Us, and scheduled For You content stays hi
 
 S1 E2EE is implemented, fully verified, and merged to `main @ 71569cf`. Final automated closure re-passed at `cde73a1`, and mandatory physical Android acceptance closed 30/30.
 
-With S1 closed, UX8 may now integrate verified enrollment, recovery, revocation, encryption, and unavailable-history states. Privacy copy must still stay precise about the implemented recovery and forward-secrecy limitations documented by S1.
+With S1 closed, UX8 now has a frozen integration design in `UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. It integrates verified device trust, recovery setup/restoration, rekey, repair, unavailable-history, integrity-failure, and precise privacy states. Privacy copy must stay within S1's documented recovery, metadata, and forward-secrecy limitations.
 
 ## Implementation program
 
@@ -277,7 +277,7 @@ This proceeded in parallel with UX2 through UX7 after C2 merged. UX0 through UX7
 
 ### UX8 Encrypted UX Integration
 
-Integrate verified enrollment, recovery, revocation, encryption, and unavailable-history states after S1.
+Design is frozen in `UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; implementation has not started. Integrate verified device trust, recovery setup/restoration, revocation/rekey, deterministic repair, per-content unavailable-history and integrity states, and privacy language into the accepted romantic experience without adding new S1 authority.
 
 ### R2 Public Readiness
 

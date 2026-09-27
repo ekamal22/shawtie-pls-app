@@ -73,7 +73,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 16 UX6 Memories, Letters, and Time | DONE, integrated and physically accepted | UX1 + verified R1/M3 | Redmi accepted |
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
-| 19 UX8 Encrypted UX Integration | PLANNED | S1 + redesigned UX surfaces | Yes, security-critical UX |
+| 19 UX8 Encrypted UX Integration | DESIGN FROZEN, implementation not started | merged S1 + redesigned UX surfaces | Yes, mandatory 25/25 |
 | 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
@@ -103,6 +103,7 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
             |
             v
       UX8 Encrypted UX
+      design frozen, implementation next
             |
             v
       R2 Public Readiness
@@ -113,7 +114,7 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
 
 C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. S1 is also DONE and merged to `main @ 71569cf`. Its final corrective executable is `cde73a1`, where the full automated closure re-passed after device-run changes and the corrected Redmi matrix closed 30/30.
 
-UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 is now the implementation frontier and integrates verified cryptographic and recovery states into the accepted experience; R2 remains the final pre-release gate.
+UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 design is frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; implementation has not started. UX8 is the current engineering frontier, followed by R2.
 
 ## UX0 through UX8 product-experience program
 
@@ -128,7 +129,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX6 Memories, Letters, and Time:** Our Story, Remember This, For You, Voice Letters, Future Us, This Day in Us, Our Year, Places, Someday, Firsts, reunion, anniversary, surprise, and proposal presentation.
 - **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
-- **UX8 Encrypted UX Integration:** device enrollment, recovery, revocation, unavailable-history states, encryption errors, and privacy language integrated into the romantic experience.
+- **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure.
 
 UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. UX8 and later work must preserve the accepted UX and S1 authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.

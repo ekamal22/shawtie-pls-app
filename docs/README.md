@@ -76,6 +76,7 @@ The selected architecture is:
 - `api/M1_MESSAGING_API.md`
 - `architecture/M2_REALTIME_OFFLINE_DESIGN.md`
 - `design/ROMANTIC_UX_DIRECTION.md`
+- `design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
 - `api/M2_REALTIME_PROTOCOL.md`
 - `architecture/M3_MEDIA_VOICE_DESIGN.md`
 - `api/M3_MEDIA_API.md`
@@ -135,7 +136,7 @@ These documents describe current planning state and execution order. They do not
 
 `EXECUTION_GRAPH.md` is the compact dependency and milestone branch-flow view.
 
-`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages, C1 Voice Calling, and C2 Video Calling are DONE and merged. C2 is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`; final executable `ecbb2e1` passed `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi scenario (1 through 31 and 33 through 36). Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, `testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`, and ADR-015. UX0 through UX7 are DONE, physically accepted at `ca7cd35` with 22/22 Redmi Note 9S scenarios passing, and merged to `main` at `9f0bea4`. The accepted direction remains in `design/ROMANTIC_UX_DIRECTION.md`; S1 is DONE and merged to `main @ 71569cf`; the final corrective executable is `cde73a1`, with full automated closure re-passed and physical Android acceptance closed 30/30. UX8 follows verified S1 behavior, and Hosted GitHub Actions verification remains separate under V1.
+`ROADMAP.md` is the canonical milestone execution sequence and explicitly identifies physical-device requirements. M3 Media and Voice Messages, C1 Voice Calling, and C2 Video Calling are DONE and merged. C2 is fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`; final executable `ecbb2e1` passed `C2_AUTOMATED_INTEGRATED_PASS reserved=0` and every mandatory Redmi scenario (1 through 31 and 33 through 36). Canonical C2 documents are `architecture/C2_VIDEO_CALLING_DESIGN.md`, `api/C2_VIDEO_CALLING_API.md`, `api/C2_VIDEO_SIGNALING_PROTOCOL.md`, `testing/C2_ANDROID_ACCEPTANCE.md`, `testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`, and ADR-015. UX0 through UX7 are DONE, physically accepted at `ca7cd35` with 22/22 Redmi Note 9S scenarios passing, and merged to `main` at `9f0bea4`. The accepted direction remains in `design/ROMANTIC_UX_DIRECTION.md`; S1 is DONE and merged to `main @ 71569cf`; the final corrective executable is `cde73a1`, with full automated closure re-passed and physical Android acceptance closed 30/30. UX8 design is frozen in `design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`, implementation has not started, and Hosted GitHub Actions verification remains separate under V1.
 
 An epic is DONE only when its required gates are verified. Partial implementation must remain IN_PROGRESS.
 

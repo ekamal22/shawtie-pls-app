@@ -2304,14 +2304,51 @@ Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers 
 
 # UX8: Encrypted UX Integration
 
-Status: PLANNED after S1 and the main romantic UX surfaces.
+Status: DESIGN FROZEN, IMPLEMENTATION NOT STARTED.
+
+Canonical design:
+
+`docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
+
+Depends on merged S1 at `main @ 71569cf`, final corrective executable `cde73a1`, and the accepted UX0 through UX7 surfaces.
+
+## Goal
+
+Integrate verified S1 device trust, cryptographic recovery, rekey, group repair, unavailable-history, integrity-failure, and truthful privacy states into the existing Home, Talk, Ours, and Us experience without adding new server authority or cryptographic semantics.
+
+## Implementation slices
+
+1. UX8-A security-state adapter
+2. UX8-B Us Protected sharing panel
+3. UX8-C recovery setup and one-time Recovery Master Secret presentation
+4. UX8-D new-device and account-recovery seam
+5. UX8-E Talk and Ours per-content protected-state handling
+6. UX8-F rekey and deterministic group repair
+7. UX8-G cross-surface polish, media, calls-copy audit, and accessibility
+8. UX8-H automated and physical closure
 
 ## Acceptance gates
 
-- [ ] device enrollment, recovery, revocation, encryption failure, and unavailable-history states are integrated into the redesigned experience
-- [ ] privacy copy accurately reflects verified S1 behavior
-- [ ] security-critical actions remain explicit and accessible
-- [ ] no romantic microcopy obscures destructive or security-sensitive consequences
+- [ ] existing S1/A1/P3/M1/R1/M2/M3/C1/C2 authority remains unchanged
+- [ ] no UX8 API route, database migration, or durable product state is introduced
+- [ ] device approval and historical recovery are presented as distinct operations
+- [ ] pending-device RMS recovery works through the existing S1 challenge/proof path
+- [ ] trusted-device approval never promises historical recovery
+- [ ] recovery setup requires recent A1 reauthentication and never persists the RMS
+- [ ] email/account recovery explicitly remains separate from cryptographic-history recovery
+- [ ] A1 device revocation remains the sole user-facing revoke authority
+- [ ] rekey state disables protected writes while preserving readable authorized content
+- [ ] group repair is exposed only under deterministic recovery-backed repair conditions
+- [ ] `CRYPTO_HISTORY_UNAVAILABLE` is rendered per content item rather than collapsing a whole surface
+- [ ] ciphertext/signature integrity failures fail closed with no plaintext fallback
+- [ ] R1 unreleased content remains sealed and is never confused with crypto-unavailable content
+- [ ] protected media missing a historical key renders a safe placeholder
+- [ ] calls receive no false S1 E2EE claim
+- [ ] recovery secret is absent from logs, URL state, localStorage, sessionStorage, IndexedDB, Cache API, and M2 durable queues
+- [ ] 200 percent text, keyboard access, screen-reader status, and reduced motion pass
+- [ ] retained S1 automated closure remains green
+- [ ] full repository health, dependency audit, production scan, and diff hygiene pass
+- [ ] mandatory Redmi Note 9S UX8 physical acceptance passes 25/25 with committed evidence
 
 # S1: E2EE and Cryptographic Recovery
 
