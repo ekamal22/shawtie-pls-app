@@ -846,11 +846,12 @@ Raw privacy inspection and the final independent cryptographic/security review a
 
 ## UX8 Encrypted UX Integration verification
 
-Canonical design:
+Canonical design and physical procedure:
 
 - `../design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
+- `UX8_ANDROID_ACCEPTANCE.md`
 
-UX8 is security-critical presentation work. It must not be accepted from visual/browser tests alone.
+UX8 source implementation is present on `feat/ux8-encrypted-ux-integration`. Verification is now the active gate. UX8 is security-critical presentation work and must not be accepted from visual/browser tests alone.
 
 Automated UX8 coverage must prove:
 
@@ -888,7 +889,7 @@ UX8_RECOVERY_SECRET_STORAGE_PASS
 UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 ```
 
-UX8 remains incomplete until UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation pass in sequence at the exact final executable SHA.
+Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8 remains incomplete until UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation pass in sequence at the exact final executable SHA.
 
 ## Acceptance principle
 
