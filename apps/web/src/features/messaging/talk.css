@@ -654,3 +654,12 @@
     animation: none;
   }
 }
+
+.talk-text--protected-unavailable {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+.talk-text--protected-unavailable[data-crypto-state="integrity_failed"] {
+  color: var(--end-text);
+}
