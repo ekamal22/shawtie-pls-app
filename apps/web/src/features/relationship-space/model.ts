@@ -1,12 +1,12 @@
 import type {
   RelationshipItemKindInput,
-  RelationshipItemProjection,
   RelationshipOccurrenceInput,
 } from "@shawtie/contracts";
+import type { DecryptedRelationshipItemProjection } from "../../lib/crypto/projection-decryption.ts";
 
 export type RelationshipItemKind = RelationshipItemKindInput;
 export type RelationshipOccurrence = NonNullable<RelationshipOccurrenceInput>;
-export type RelationshipItem = RelationshipItemProjection;
+export type RelationshipItem = DecryptedRelationshipItemProjection;
 
 export interface RelationshipSpaceHome {
   mode:
