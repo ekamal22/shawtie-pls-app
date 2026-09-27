@@ -476,6 +476,32 @@ export class S1CryptoRuntime {
     };
   }
 
+  async localRecoveryStatus(): Promise<{
+    readonly configured: boolean;
+    readonly recoveryKeyVersion: number | null;
+  }> {
+    const recovery = await this.#vault.recoveryState();
+    return {
+      configured: recovery !== null,
+      recoveryKeyVersion: recovery?.recoveryKeyVersion ?? null,
+    };
+  }
+
+  async localGroupStatus(partnershipId: string): Promise<{
+    readonly available: boolean;
+    readonly groupGeneration: number | null;
+    readonly cryptoRequired: boolean;
+    readonly rekeyRequired: boolean;
+  }> {
+    const group = await this.#vault.group(partnershipId);
+    return {
+      available: group !== null,
+      groupGeneration: group?.groupGeneration ?? null,
+      cryptoRequired: group?.cryptoRequired ?? false,
+      rekeyRequired: group?.rekeyRequired ?? false,
+    };
+  }
+
   currentDevice(): CryptoDeviceProjection {
     return this.#device;
   }
