@@ -37,6 +37,20 @@ test("S1 Talk retries the crypto sync once the runtime becomes ready after a los
   );
 });
 
+test("S1 Talk clears a stale crypto-unavailable error once loadInitial's own retry succeeds", async () => {
+  const messaging = await source("../src/features/messaging/MessagingPanel.tsx");
+
+  // loadInitial depends on cryptoRuntime, so React already reruns it once the S1 crypto
+  // runtime finishes starting after Talk mounted first. But physical acceptance found the
+  // retry's success never cleared the error the first, crypto-not-ready attempt had set,
+  // leaving a permanent false "Protected messaging is unavailable" banner in front of
+  // messages the retry in fact decrypted correctly.
+  assert.match(
+    messaging,
+    /void loadInitial\(\)\s*\.then\(\(\) => setError\(""\)\)\s*\.catch\(\(caught\) => setError\(errorText\(caught\)\)\)/,
+  );
+});
+
 test("S1 browser decrypts only after verifying sender signature and digest", async () => {
   const runtime = await source("../src/lib/crypto/crypto-runtime.ts");
 

@@ -823,8 +823,15 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     );
   }, [jumpTick, active, conversation, messages]);
 
+  // loadInitial's own dependency (cryptoRuntime) already makes this effect retry once the S1
+  // crypto runtime finishes its async start, so a lost race clears itself on the next render.
+  // But the retry must also clear a stale error from the earlier failed attempt: without this,
+  // a real device's slower cold start left a permanent false "Protected messaging is
+  // unavailable" banner in front of messages that the successful retry in fact decrypted.
   useEffect(() => {
-    void loadInitial().catch((caught) => setError(errorText(caught)));
+    void loadInitial()
+      .then(() => setError(""))
+      .catch((caught) => setError(errorText(caught)));
   }, [loadInitial]);
 
   useEffect(() => {
