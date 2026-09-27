@@ -21,6 +21,7 @@ import {
   formatMessageWhen,
 } from "./home-model.ts";
 import { useHomeData } from "./useHomeData.ts";
+import { SecurityTaskCard } from "../security/SecurityTaskCard.tsx";
 
 /**
  * Home, the threshold into the couple's private space (UX2). Curated, not a dashboard:
@@ -82,6 +83,8 @@ export function HomeScreen({
         <h2 className="home-presence__name">{name}</h2>
         <PresenceLine presence={context.partner.presence} typing={context.partner.typing} />
       </section>
+
+      <SecurityTaskCard onOpenSecurity={() => onNavigate("us")} />
 
       <button type="button" className="home-talk" onClick={() => onNavigate("talk")}>
         <span className="home-talk__body">
