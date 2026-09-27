@@ -65,6 +65,7 @@ export interface CryptoSecurityInputs {
   readonly partnershipState: CryptoPartnershipState | null;
   readonly localGroup: LocalGroupStatus | null;
   readonly partnershipRefreshError: string | null;
+  readonly reconciliationComplete: boolean;
   readonly revision: string;
 }
 
@@ -124,7 +125,7 @@ function repairEligible(
     input.interactionMode !== "normal" ||
     !state?.cryptoRequired ||
     !state.group ||
-    state.group.rekeyRequired ||
+    !input.reconciliationComplete ||
     input.partnershipRefreshError ||
     !input.localGroup ||
     input.localGroup.available
