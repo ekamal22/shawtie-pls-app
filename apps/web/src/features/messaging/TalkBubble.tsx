@@ -2,6 +2,7 @@ import type { MediaAttachmentProjection } from "@shawtie/contracts";
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { Icon } from "../../design/icons.tsx";
 import { MediaAttachment } from "../media/MediaAttachment.tsx";
+import type { ProtectedContentViewState } from "../../lib/crypto/projection-decryption.ts";
 import {
   type DeliveryLabel,
   type GroupPosition,
@@ -13,6 +14,7 @@ export interface TalkBubbleMessage {
   readonly messageId: string;
   readonly senderAccountId: string;
   readonly body: string | null;
+  readonly protectedContentState: ProtectedContentViewState;
   readonly createdAt: string;
   readonly editedAt: string | null;
   readonly deletedAt: string | null;
@@ -21,6 +23,7 @@ export interface TalkBubbleMessage {
     readonly senderAccountId: string;
     readonly body: string | null;
     readonly deleted: boolean;
+    readonly protectedContentState: ProtectedContentViewState;
   } | null;
   readonly reactions: ReadonlyArray<{ readonly accountId: string; readonly emoji: string }>;
   readonly attachments: readonly MediaAttachmentProjection[];
@@ -44,6 +47,17 @@ export interface TalkBubbleProps {
 }
 
 const INTERACTIVE = "a, button, audio, video, input, textarea, select, summary, [role=button]";
+
+function unavailableCopy(state: ProtectedContentViewState, noun: string): string | null {
+  if (state === "available") return null;
+  if (state === "history_unavailable") {
+    return `This older protected ${noun} is unavailable on this device.`;
+  }
+  if (state === "integrity_failed") {
+    return `This protected ${noun} could not be safely verified.`;
+  }
+  return `This protected ${noun} is unavailable until protected sharing is ready.`;
+}
 
 /**
  * One message. No avatars, no tails. Tapping the bubble (or the named "Message actions"
@@ -83,7 +97,8 @@ export function TalkBubble({
   const deleted = message.deletedAt !== null;
   const long = !deleted && isLongMessage(message.body);
   const created = new Date(message.createdAt);
-  const actionable = canOpenActions && !deleted;
+  const actionable =
+    canOpenActions && !deleted && message.protectedContentState === "available";
 
   function onBubbleClick(event: MouseEvent<HTMLDivElement>) {
     if (!actionable) return;
@@ -134,13 +149,24 @@ export function TalkBubble({
             <span className="talk-quote__text">
               {message.replyContext.deleted
                 ? "Deleted message"
-                : (message.replyContext.body ?? "A message from earlier")}
+                : unavailableCopy(
+                      message.replyContext.protectedContentState,
+                      "message",
+                    ) ?? message.replyContext.body ?? "A message from earlier"}
             </span>
           </button>
         ) : null}
 
         {deleted ? (
           <p className="talk-text talk-text--deleted">This message has been deleted</p>
+        ) : message.protectedContentState !== "available" ? (
+          <p
+            className="talk-text talk-text--protected-unavailable"
+            data-crypto-state={message.protectedContentState}
+            role={message.protectedContentState === "integrity_failed" ? "alert" : "status"}
+          >
+            {unavailableCopy(message.protectedContentState, "message")}
+          </p>
         ) : message.body ? (
           <>
             <p
