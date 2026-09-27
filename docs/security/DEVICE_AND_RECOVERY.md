@@ -178,7 +178,7 @@ Email recovery alone must not:
 
 ## Recovery UX boundary
 
-UX8 must distinguish:
+UX8 implements a presentation layer that must continue to distinguish:
 
 - account recovered
 - device authenticated
@@ -187,7 +187,7 @@ UX8 must distinguish:
 - encrypted history unavailable
 - rekey required
 
-The product must not say that all history is restored until cryptographic recovery succeeds.
+The implemented UX8 copy and tests must not say that all history is restored until cryptographic recovery succeeds. Trusted-device approval remains distinct from RMS-backed historical recovery, and account/email recovery remains distinct from both.
 
 ## Deletion
 
