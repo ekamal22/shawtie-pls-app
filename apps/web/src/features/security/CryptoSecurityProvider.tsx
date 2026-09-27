@@ -146,6 +146,7 @@ export function CryptoSecurityProvider({
     let refreshError: string | null = null;
 
     try {
+      await currentRuntime.refreshDevice();
       const [deviceRows, recoveryLocal, recoveryServer] = await Promise.all([
         currentRuntime.devices(),
         currentRuntime.localRecoveryStatus(),
