@@ -1,14 +1,14 @@
 # UX8 Encrypted UX Integration Design
 
-Status: DESIGN HARDENED AND FROZEN, IMPLEMENTATION NOT STARTED.
+Status: DESIGN HARDENED AND FROZEN, SOURCE IMPLEMENTATION IN PROGRESS; AUTOMATED AND PHYSICAL CLOSURE PENDING.
 
-Branch: `design/ux8-encrypted-ux-integration`.
+Implementation branch: `feat/ux8-encrypted-ux-integration`.
 
-Baseline: `main @ b1acbd692fbe02b9a04f270a960e1d61afa6964e`.
+Implementation baseline: `main @ 2b36c6258f43a39b2661ee1f48994a46945a4929`.
 
 S1 authority: DONE and merged. Final corrective executable `cde73a1a789b0768aa67f95e8f542fe98a8dfc8b`; final evidence merge anchor `71569cf68f785315c9d0f0d052639b46aad9caf9`; Android acceptance 30/30.
 
-UX8 integrates the verified S1 cryptographic states into the accepted Home, Talk, Ours, and Us experience. It does not redesign the cryptographic protocol, create new security authority, add persistence, or change product lifecycle semantics.
+UX8 integrates the verified S1 cryptographic states into the accepted Home, Talk, Ours, and Us experience. Source implementation now exists on the feature branch, but this document remains the frozen design authority until automated closure and the separate Redmi 25/25 gate complete. It does not redesign the cryptographic protocol, create new security authority, add persistence, or change product lifecycle semantics.
 
 ## 1. Authority and inputs
 
