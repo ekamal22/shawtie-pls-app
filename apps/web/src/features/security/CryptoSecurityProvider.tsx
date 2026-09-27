@@ -96,6 +96,19 @@ export function CryptoSecurityProvider({
   const { runtime, status, retry: retryRuntime } = useS1CryptoRuntime();
   const requestGeneration = useRef(0);
   const revisionCounter = useRef(0);
+  const accountScopeRef = useRef("");
+  const partnershipScopeRef = useRef("");
+  const accountScope = runtime
+    ? [runtime.accountId, runtime.deviceId, runtime.currentDevice().cryptoDeviceId].join(":")
+    : "runtime-unavailable";
+  const partnershipScope = [
+    accountScope,
+    partnershipId ?? "none",
+    lifecycleState ?? "none",
+    interactionMode ?? "none",
+  ].join(":");
+  accountScopeRef.current = accountScope;
+  partnershipScopeRef.current = partnershipScope;
   const [state, setState] = useState<CryptoSecurityState>({
     model: EMPTY_MODEL,
     devices: [],
@@ -286,10 +299,13 @@ export function CryptoSecurityProvider({
     };
   }, [refresh]);
 
-  const refreshAfterAction = useCallback(async () => {
-    window.dispatchEvent(new CustomEvent("shawtie:ux8-security-changed"));
-    await refresh();
-  }, [refresh]);
+  const refreshAfterAction = useCallback(
+    async (capturedPartnershipScope: string) => {
+      if (capturedPartnershipScope !== partnershipScopeRef.current) return;
+      await refresh();
+    },
+    [refresh],
+  );
 
   const actions = useMemo<CryptoSecurityActions>(
     () => ({
@@ -302,21 +318,32 @@ export function CryptoSecurityProvider({
       },
       approveDevice: async (cryptoDeviceId) => {
         if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
+        const capturedAccountScope = accountScopeRef.current;
+        const capturedPartnershipScope = partnershipScopeRef.current;
         await runtime.approveDevice(cryptoDeviceId);
-        await refreshAfterAction();
+        if (capturedAccountScope !== accountScopeRef.current) return;
+        await refreshAfterAction(capturedPartnershipScope);
       },
       setupRecovery: async () => {
         if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
+        const capturedAccountScope = accountScopeRef.current;
+        const capturedPartnershipScope = partnershipScopeRef.current;
         const result = await runtime.setupRecovery();
-        await refreshAfterAction();
+        if (capturedAccountScope === accountScopeRef.current) {
+          await refreshAfterAction(capturedPartnershipScope);
+        }
         return result;
       },
       recoverWithMasterSecret: async (secret) => {
         if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
+        const capturedAccountScope = accountScopeRef.current;
+        const capturedPartnershipScope = partnershipScopeRef.current;
         await runtime.recoverWithMasterSecret(secret);
-        await refreshAfterAction();
+        if (capturedAccountScope !== accountScopeRef.current) return;
+        await refreshAfterAction(capturedPartnershipScope);
       },
       repairPartnership: async () => {
+        const capturedPartnershipScope = partnershipScopeRef.current;
         if (
           !runtime ||
           !partnershipId ||
@@ -352,8 +379,11 @@ export function CryptoSecurityProvider({
           throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
         }
 
+        if (capturedPartnershipScope !== partnershipScopeRef.current) {
+          throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+        }
         await runtime.resetPartnershipGroup(partnershipId);
-        await refreshAfterAction();
+        await refreshAfterAction(capturedPartnershipScope);
       },
     }),
     [
