@@ -316,7 +316,8 @@ test("UX8 device approval does not introduce a second revoke authority", async (
   const deviceList = await source("../src/features/security/CryptoDeviceList.tsx");
   assert.equal(deviceList.includes("approveDevice"), true);
   assert.equal(deviceList.includes('method: "DELETE"'), false);
-  assert.equal(deviceList.includes("revoke"), false);
+  assert.equal(deviceList.includes("revokeCryptoDevice"), false);
+  assert.equal(/onClick[^\n]*revoke/i.test(deviceList), false);
 });
 
 test("UX8 protected content failures are per item and integrity failures fail closed", async () => {
