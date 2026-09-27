@@ -73,7 +73,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 16 UX6 Memories, Letters, and Time | DONE, integrated and physically accepted | UX1 + verified R1/M3 | Redmi accepted |
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
-| 19 UX8 Encrypted UX Integration | IN PROGRESS; source implementation present, automated closure and Redmi 25/25 pending | merged S1 + redesigned UX surfaces | Yes, mandatory 25/25 |
+| 19 UX8 Encrypted UX Integration | IN PROGRESS; automated closure PASS at `39de742c`; physical Android 25/25 pending | merged S1 + redesigned UX surfaces | Yes, mandatory 25/25 |
 | 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
@@ -103,9 +103,8 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
             |
             v
       UX8 Encrypted UX
-      source implemented on feature branch
-      automated closure next
-      then Redmi 25/25
+      automated closure PASS @ 39de742c
+      physical Redmi 25/25 pending
             |
             v
       R2 Public Readiness
@@ -116,7 +115,7 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
 
 C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. S1 is also DONE and merged to `main @ 71569cf`. Its final corrective executable is `cde73a1`, where the full automated closure re-passed after device-run changes and the corrected Redmi matrix closed 30/30.
 
-UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 source implementation is now present on `feat/ux8-encrypted-ux-integration` against the frozen design in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. The current frontier is automated closure and defect repair, followed by the separate mandatory 25-scenario Redmi Note 9S acceptance in `docs/testing/UX8_ANDROID_ACCEPTANCE.md`. UX8 remains IN PROGRESS until both are complete and evidence/docs are reconciled.
+UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 automated closure passed at executable `39de742c8ab795137be95ecbaa685131b608e813` against the frozen design in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. The current frontier is the separate mandatory 25-scenario Redmi Note 9S acceptance in `docs/testing/UX8_ANDROID_ACCEPTANCE.md`. UX8 remains IN PROGRESS until the physical gate and final evidence reconciliation complete.
 
 ## UX0 through UX8 product-experience program
 

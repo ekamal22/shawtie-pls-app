@@ -851,7 +851,7 @@ Canonical design and physical procedure:
 - `../design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
 - `UX8_ANDROID_ACCEPTANCE.md`
 
-UX8 source implementation is present on `feat/ux8-encrypted-ux-integration`. Verification is now the active gate. UX8 is security-critical presentation work and must not be accepted from visual/browser tests alone.
+UX8 automated closure passed on `feat/ux8-encrypted-ux-integration` at executable SHA `39de742c8ab795137be95ecbaa685131b608e813`. Evidence: `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. UX8 remains IN PROGRESS because security-critical presentation work must not be accepted from automated visual/browser tests alone; the physical Android gate is still pending.
 
 Automated UX8 coverage must prove:
 
@@ -889,7 +889,7 @@ UX8_RECOVERY_SECRET_STORAGE_PASS
 UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 ```
 
-Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8 remains incomplete until UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation pass in sequence at the exact final executable SHA.
+Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8-H1 model/browser closure, UX8-H2 retained security regression, and UX8-H3 repository/privacy closure passed at `39de742c8ab795137be95ecbaa685131b608e813`. UX8 remains incomplete until UX8-H4 all 25 physical Android scenarios and final UX8-H5 evidence/documentation reconciliation pass at the exact final executable SHA.
 
 ## Acceptance principle
 

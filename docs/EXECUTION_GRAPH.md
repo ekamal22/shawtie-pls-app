@@ -76,7 +76,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         final closure PASS @ cde73a1, Android 30/30, merged main @ 71569cf
                 |
                 v
-        UX8 Encrypted UX ⚪
+        UX8 Encrypted UX 🟡 automated PASS, physical pending
                 |
                 v
         R2 Public Readiness ⚪
@@ -133,7 +133,7 @@ flowchart TD
 
     M3 --> S1["S1 E2EE + Crypto Recovery ✅"]
     C2 --> S1
-    UX7 --> UX8["UX8 Encrypted UX Integration 🟡 source implemented, verification pending"]
+    UX7 --> UX8["UX8 Encrypted UX Integration 🟡 automated PASS @ 39de742c, physical pending"]
     S1 --> UX8
 
     UX8 --> R2["R2 Public Readiness ⚪"]
@@ -173,7 +173,7 @@ UX0 through UX7 ✅ DONE, Redmi 22/22, merged to `main @ 9f0bea4`
    ->
 S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, merged to `main @ 71569cf`
    ->
-UX8 Encrypted UX Integration 🟡 SOURCE IMPLEMENTED; automated closure next, then Redmi 25/25
+UX8 Encrypted UX Integration 🟡 AUTOMATED CLOSURE PASS @ 39de742c; PHYSICAL REDMI 25/25 PENDING
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -241,7 +241,7 @@ main @ 2b36c62
   +--> feat/c2-video-calling          historical DONE; merged to main @ fed2db7
   +--> integration/ux-romantic        historical DONE; merged to main @ 9f0bea4
   +--> feat/s1-e2ee-crypto-recovery   DONE; final executable cde73a1; merged to main @ 71569cf
-  +--> feat/ux8-encrypted-ux-integration current IN PROGRESS; source implementation present; automated closure and Redmi 25/25 pending
+  +--> feat/ux8-encrypted-ux-integration current IN PROGRESS; automated closure PASS @ 39de742c; Redmi 25/25 pending
 
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.

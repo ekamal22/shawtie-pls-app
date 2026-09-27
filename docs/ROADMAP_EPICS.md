@@ -2304,7 +2304,7 @@ Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers 
 
 # UX8: Encrypted UX Integration
 
-Status: IN PROGRESS. SOURCE IMPLEMENTATION PRESENT; AUTOMATED CLOSURE AND PHYSICAL ANDROID ACCEPTANCE PENDING.
+Status: IN PROGRESS. UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PENDING.
 
 Canonical design:
 
@@ -2331,12 +2331,12 @@ Implemented on `feat/ux8-encrypted-ux-integration`:
 - stale action/result fencing by account/device/partnership scope
 - UX8 model/static tests, real Chromium/OpenMLS recovery/approval E2E, closure wrapper, and Android preflight harness
 
+Automated closure passed at executable SHA `39de742c8ab795137be95ecbaa685131b608e813`; see `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`.
+
 Not yet verified/closed:
 
-- complete automated UX8 closure at the final executable SHA
-- defects, if any, found by typecheck/build/lint/format/browser/health/security closure
 - mandatory Redmi Note 9S 25/25 physical acceptance
-- final evidence and DONE documentation reconciliation
+- final physical evidence and DONE documentation reconciliation
 
 Physical procedure: `docs/testing/UX8_ANDROID_ACCEPTANCE.md`.
 
@@ -2363,36 +2363,36 @@ The hardened design freezes one composed `CryptoSecurityViewModel`, deterministi
 
 ## Acceptance gates
 
-- [ ] existing S1/A1/P3/M1/R1/M2/M3/C1/C2 authority remains unchanged
-- [ ] no UX8 API route, database migration, or durable product state is introduced
-- [ ] one canonical composed security view model owns top-level UX8 interpretation
-- [ ] Home, Talk, Ours, Us, and Auth do not independently reinterpret raw A1/S1 state
-- [ ] deterministic precedence produces only one primary actionable security task
-- [ ] protected-write blocking semantics match existing S1 authority exactly
-- [ ] realtime events trigger canonical reconciliation rather than directly granting UI authority
-- [ ] async action results are revision-scoped and stale results are discarded
-- [ ] device approval and historical recovery are presented as distinct operations
-- [ ] pending-device RMS recovery works through the existing S1 challenge/proof path
-- [ ] trusted-device approval never promises historical recovery
-- [ ] recovery setup requires recent A1 reauthentication and never persists the RMS
-- [ ] RMS lifetime, clipboard, storage, log, URL, queue, and diagnostics rules match the canonical design
-- [ ] email/account recovery explicitly remains separate from cryptographic-history recovery
-- [ ] A1 device revocation remains the sole user-facing revoke authority
-- [ ] P3 lifecycle authority wins over stale UX8 action completion
-- [ ] rekey state disables protected writes while preserving readable authorized content
-- [ ] group repair is exposed only when every deterministic repair predicate is satisfied
-- [ ] timeout, backgrounding, retry count, or transient storage/network failure alone can never expose repair
-- [ ] `CRYPTO_HISTORY_UNAVAILABLE` is rendered per content item rather than collapsing a whole surface
-- [ ] ciphertext/signature integrity failures fail closed with no plaintext fallback
-- [ ] R1 unreleased content remains sealed and is never confused with crypto-unavailable content
-- [ ] protected media missing a historical key renders a safe placeholder
-- [ ] security-sensitive copy preserves the frozen semantic contract
-- [ ] calls receive no false S1 E2EE claim
-- [ ] recovery secret is absent from logs, URL state, localStorage, sessionStorage, IndexedDB, Cache API, and M2 durable queues
-- [ ] required approval/recovery/revoke/rekey/repair/lifecycle race matrix passes
-- [ ] 200 percent text, keyboard access, screen-reader status, touch targets, focus behavior, and reduced motion pass
-- [ ] retained S1 automated closure plus relevant A1/P3/M2/M3 regressions remain green
-- [ ] full repository health, dependency audit, production scan, RMS leakage scans, and diff hygiene pass
+- [x] existing S1/A1/P3/M1/R1/M2/M3/C1/C2 authority remains unchanged
+- [x] no UX8 API route, database migration, or durable product state is introduced
+- [x] one canonical composed security view model owns top-level UX8 interpretation
+- [x] Home, Talk, Ours, Us, and Auth do not independently reinterpret raw A1/S1 state
+- [x] deterministic precedence produces only one primary actionable security task
+- [x] protected-write blocking semantics match existing S1 authority exactly
+- [x] realtime events trigger canonical reconciliation rather than directly granting UI authority
+- [x] async action results are revision-scoped and stale results are discarded
+- [x] device approval and historical recovery are presented as distinct operations
+- [x] pending-device RMS recovery works through the existing S1 challenge/proof path
+- [x] trusted-device approval never promises historical recovery
+- [x] recovery setup requires recent A1 reauthentication and never persists the RMS
+- [x] RMS lifetime, clipboard, storage, log, URL, queue, and diagnostics rules match the canonical design
+- [x] email/account recovery explicitly remains separate from cryptographic-history recovery
+- [x] A1 device revocation remains the sole user-facing revoke authority
+- [x] P3 lifecycle authority wins over stale UX8 action completion
+- [x] rekey state disables protected writes while preserving readable authorized content
+- [x] group repair is exposed only when every deterministic repair predicate is satisfied
+- [x] timeout, backgrounding, retry count, or transient storage/network failure alone can never expose repair
+- [x] `CRYPTO_HISTORY_UNAVAILABLE` is rendered per content item rather than collapsing a whole surface
+- [x] ciphertext/signature integrity failures fail closed with no plaintext fallback
+- [x] R1 unreleased content remains sealed and is never confused with crypto-unavailable content
+- [x] protected media missing a historical key renders a safe placeholder
+- [x] security-sensitive copy preserves the frozen semantic contract
+- [x] calls receive no false S1 E2EE claim
+- [x] recovery secret is absent from logs, URL state, localStorage, sessionStorage, IndexedDB, Cache API, and M2 durable queues
+- [x] required approval/recovery/revoke/rekey/repair/lifecycle race matrix passes
+- [x] 200 percent text, keyboard access, screen-reader status, touch targets, focus behavior, and reduced motion pass for the automated scope
+- [x] retained S1 automated closure plus relevant A1/P3/M2/M3 regressions remain green
+- [x] full repository health, dependency audit, production scan, RMS leakage scans, and diff hygiene pass
 - [ ] mandatory Redmi Note 9S UX8 physical acceptance passes 25/25 with committed evidence at the exact final executable SHA
 
 # S1: E2EE and Cryptographic Recovery

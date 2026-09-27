@@ -2,6 +2,8 @@
 
 Status: REQUIRED, NOT YET EXECUTED.
 
+Automated prerequisite: PASS at executable `39de742c8ab795137be95ecbaa685131b608e813`; see `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`.
+
 Milestone: UX8 Encrypted UX Integration.
 
 Target device: Xiaomi Redmi Note 9S, Android 12 / API 31.
