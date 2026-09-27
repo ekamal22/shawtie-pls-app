@@ -10,8 +10,12 @@ function run(command, args, options = {}) {
   if (result.status !== 0) {
     const detail = result.stderr?.trim() || result.stdout?.trim();
     throw new Error(
-      command + " " + args.join(" ") + " exited with status " + result.status
-        + (detail ? "\n" + detail : ""),
+      command +
+        " " +
+        args.join(" ") +
+        " exited with status " +
+        result.status +
+        (detail ? "\n" + detail : ""),
     );
   }
   return result.stdout?.trim() ?? "";
@@ -41,7 +45,9 @@ step("fetch", "git", ["fetch", "origin"]);
 const localHead = run("git", ["rev-parse", "HEAD"]);
 const remoteHead = run("git", ["rev-parse", "origin/" + expectedBranch]);
 if (localHead !== remoteHead) {
-  throw new Error("Local S1 HEAD does not match origin. local=" + localHead + " remote=" + remoteHead);
+  throw new Error(
+    "Local S1 HEAD does not match origin. local=" + localHead + " remote=" + remoteHead,
+  );
 }
 
 const commits = run("git", ["log", "--format=%H%x09%s", baseRef + "..HEAD"]);
@@ -71,4 +77,4 @@ if (finalStatus) throw new Error("S1 automated closure left a dirty worktree.\n"
 
 console.log("S1_AUTOMATED_CLOSURE_HEAD " + localHead);
 console.log("S1_AUTOMATED_CLOSURE_PASS");
-console.log("Physical Android acceptance and final independent security review remain separate required gates.");
+console.log("Physical Android acceptance remains a separate required gate.");

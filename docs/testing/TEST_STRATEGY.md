@@ -813,12 +813,13 @@ npm run s1:plaintext:inventory
 npm run s1:plaintext:assert-clean
 npm run s1:production:scan
 npm run test:s1:local
+npm run test:s1:privacy
 npm run test:s1:closure
 npm run test:s1:device:prepare
 npm run test:s1:device:cleanup
 ```
 
-The S1 implementation/harness baseline is `c85fdb1`. The command surface is committed, but S1 closure PASS markers are not yet recorded.
+The S1 executable closure anchor is `e08b0aa`. `test:s1:privacy` passed with raw PostgreSQL table/dump, MinIO object, log, browser durable-storage, outbox, Cache API, notification, realtime, push, and control-traffic evidence. `test:s1:closure` passed at the same SHA with `S1_AUTOMATED_CLOSURE_PASS`, full health, and 0 audit vulnerabilities. See `S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md` and `S1_SECURITY_REVIEW_EVIDENCE.md`.
 
 Automated closure must prove:
 
@@ -841,7 +842,7 @@ The real Chromium S1 harness is `tests/e2e/s1-browser.spec.ts`. It requires the 
 
 Physical Android acceptance is mandatory and remains separate from automated closure. The 30-scenario procedure in `S1_ANDROID_ACCEPTANCE.md` covers device enrollment, recovery, two-device MLS membership, protected M1/R1/M3 behavior, offline/lost-response/two-tab safety, revocation/rekey, Recovery Master Secret restoration, group reset, breakup/final-dissolution behavior, future-partnership isolation, and final raw plaintext inspections.
 
-S1 is not DONE until automated closure, raw PostgreSQL/object-storage/log/outbox/push inspection, 30/30 physical Android acceptance, and final independent cryptographic/security review all pass with committed evidence.
+Automated closure, raw PostgreSQL/object-storage/log/browser/outbox/push inspection, and the final independent cryptographic/security review are complete at `e08b0aa`. S1 is not DONE until 30/30 physical Android acceptance passes with committed evidence.
 
 ## Acceptance principle
 
