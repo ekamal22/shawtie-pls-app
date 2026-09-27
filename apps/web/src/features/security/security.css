@@ -29,7 +29,7 @@
 }
 
 .security-summary dt {
-  color: var(--text-muted);
+  color: var(--ink-2);
   font-size: var(--text-sm);
 }
 
@@ -41,7 +41,7 @@
   display: grid;
   gap: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--line);
 }
 
 .security-device-list {
@@ -75,8 +75,8 @@
   max-width: 100%;
   overflow-wrap: anywhere;
   padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
+  border-radius: var(--radius-s);
+  background: var(--raised);
   user-select: all;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .security-panel__repair {
-  border-color: var(--danger-border, var(--border-subtle));
+  border-color: var(--end-line);
 }
 
 @media (max-width: 32rem) {
