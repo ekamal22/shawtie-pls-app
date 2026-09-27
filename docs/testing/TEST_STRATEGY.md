@@ -819,7 +819,7 @@ npm run test:s1:device:prepare
 npm run test:s1:device:cleanup
 ```
 
-The S1 executable closure anchor is `e254c3c`. `test:s1:privacy` passed with populated protected message/edit/reaction/nickname/R1/media fixtures, raw PostgreSQL table/dump, MinIO image/voice/file objects, logs, browser durable storage, outbox, Cache API, notification, realtime, push, and control-traffic evidence. `test:s1:closure` passed at the same SHA with `S1_AUTOMATED_CLOSURE_PASS`, full health, and 0 audit vulnerabilities. See `S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md` and `S1_SECURITY_REVIEW_EVIDENCE.md`.
+The original S1 non-physical closure anchor is `e254c3c`. `test:s1:privacy` passed there with populated protected message/edit/reaction/nickname/R1/media fixtures, raw PostgreSQL table/dump, MinIO image/voice/file objects, logs, browser durable storage, outbox, Cache API, notification, realtime, push, and control-traffic evidence. After physical-run source changes, full `test:s1:closure` re-passed at final corrective executable `cde73a1` with `S1_AUTOMATED_CLOSURE_PASS`, full health, production scan PASS, and 0 audit vulnerabilities. See `S1_RAW_PRIVACY_INSPECTION_EVIDENCE.md`, `S1_SECURITY_REVIEW_EVIDENCE.md`, and `S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 Automated closure must prove:
 
@@ -842,7 +842,7 @@ The real Chromium S1 harness is `tests/e2e/s1-browser.spec.ts`. It requires the 
 
 Physical Android acceptance is mandatory and remains separate from automated closure. The 30-scenario procedure in `S1_ANDROID_ACCEPTANCE.md` covers device enrollment, recovery, two-device MLS membership, protected M1/R1/M3 behavior, offline/lost-response/two-tab safety, revocation/rekey, Recovery Master Secret restoration, group reset, breakup/final-dissolution behavior, future-partnership isolation, and final raw plaintext inspections.
 
-Automated closure, raw PostgreSQL/object-storage/log/browser/outbox/push inspection, and the final independent cryptographic/security review are complete at `e254c3c`. Physical Android acceptance passed 30/30 on a physical Xiaomi Redmi Note 9S at final executable SHA `039c90f`, recorded in `S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. That run found and fixed one real defect: a stale false "Protected messaging is unavailable on this device" Talk banner after a device cold start/reload race, where `loadInitial`'s own crypto-readiness retry succeeded but never cleared the earlier failed attempt's error; fixed with a focused regression test in `s1.browser.test.ts`. S1 is DONE.
+Raw privacy inspection and the final independent cryptographic/security review are complete at `e254c3c`. The first physical sweep found and fixed the stale false crypto-unavailable Talk banner (`09929ec`, `039c90f`). Corrective physical verification then closed the six evidence gaps identified by review and finished 30/30 at executable `cde73a1`, including real lost-response retry, general-file retry, real P3 breakup/worker dissolution/realtime purge, future-partnership isolation, and real Web Push transport/privacy evidence. Full automated closure re-passed at `cde73a1`. Evidence is recorded in `S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 is DONE and merged to `main @ 71569cf`.
 
 ## Acceptance principle
 

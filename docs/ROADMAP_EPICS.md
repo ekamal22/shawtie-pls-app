@@ -2315,7 +2315,7 @@ Status: PLANNED after S1 and the main romantic UX surfaces.
 
 # S1: E2EE and Cryptographic Recovery
 
-Status: IN_PROGRESS. S1-A through S1-I source implementation is complete and every non-physical S1-J gate passed on `feat/s1-e2ee-crypto-recovery` at `e254c3c`. The only remaining S1 gate is mandatory 30/30 physical Android acceptance.
+Status: DONE and merged to `main @ 71569cf`. S1-A through S1-J are closed. Final corrective executable: `cde73a1`; mandatory physical Android acceptance: 30/30.
 
 Canonical implementation design:
 
@@ -2330,7 +2330,7 @@ Security architecture:
 
 ## Current implementation progress
 
-Source implementation is complete through S1-A to S1-I. S1-J automated/local closure, the full raw privacy matrix, and the final independent cryptographic/security review are complete at `e254c3c`; the 30-scenario Android acceptance tooling is committed and ready to execute.
+Source implementation is complete through S1-A to S1-I. S1-J is also complete: non-physical privacy/security closure passed at `e254c3c`, the full automated closure re-passed at final corrective executable `cde73a1`, and the mandatory Redmi Note 9S matrix closed 30/30.
 
 Implemented repository evidence includes:
 
@@ -2345,7 +2345,7 @@ Implemented repository evidence includes:
 - database crypto-required plaintext guards and legacy plaintext inventory tooling
 - S1 API/browser/integration security tests, real Chromium OpenMLS WASM harness, production bundle scan, disposable PostgreSQL closure runner, and 30-scenario Android acceptance procedure
 
-Automated/local closure passed at `e254c3c` with `S1_AUTOMATED_CLOSURE_PASS`, migrations 0001 through 0021 and `reserved=0`, `DATABASE_INVARIANTS_PASS`, PostgreSQL/API integration 4/4, real Chromium 4/4, all 286 repository tests green, full health, and 0 audit vulnerabilities. The raw privacy matrix also passed across 65 PostgreSQL tables, raw pg_dump, three MinIO ciphertext objects, logs, browser durable storage/outboxes/caches, push, realtime, and control traffic. The final independent cryptographic/security review passed with no critical, high, or medium unmitigated findings. Physical-device acceptance is the only remaining gate.
+The original non-physical closure passed at `e254c3c`. After physical testing changed runtime/test source, full `npm run test:s1:closure` re-passed at `cde73a1` with 21 migrations and `reserved=0`, `DATABASE_INVARIANTS_PASS`, S1 contracts 9/9, browser 9/9, security 7/7, PostgreSQL integration 4/4, real Chromium 4/4, full health, production scan PASS, and 0 audit vulnerabilities. Corrective physical acceptance then closed all 30 mandatory scenarios.
 
 ### Source implementation checklist
 
@@ -2359,9 +2359,9 @@ Automated/local closure passed at `e254c3c` with `S1_AUTOMATED_CLOSURE_PASS`, mi
 - [x] S1-H cryptographic recovery is committed
 - [x] S1-I plaintext retirement guards/inventory are committed
 - [x] S1-J automated and physical closure harnesses are committed
-- [x] `npm run test:s1:closure` executed successfully at final non-physical evidence head `e254c3c`
+- [x] `npm run test:s1:closure` re-executed successfully at final corrective executable `cde73a1`
 - [x] raw PostgreSQL/object-storage/log/browser/outbox/push plaintext inspection evidence recorded
-- [ ] 30/30 physical Android acceptance executed and committed
+- [x] 30/30 physical Android acceptance executed and committed
 - [x] final independent cryptographic/security review passed
 
 ## Selected architecture
@@ -2546,7 +2546,7 @@ Implement:
 - [x] raw logs, outbox payloads, push payloads, PostgreSQL, and object storage contain no protected plaintext
 - [x] pre-S1 protected plaintext is wiped or client-reencrypted and plaintext writes are prohibited
 - [x] browser E2E closure passes
-- [ ] physical Redmi Note 9S S1 acceptance passes
+- [x] physical Redmi Note 9S S1 acceptance passes
 - [x] threat model and data classification match the implemented protocol
 - [x] final stable-release cryptographic review passes
 

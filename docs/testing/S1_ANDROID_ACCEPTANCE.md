@@ -2,9 +2,9 @@
 
 ## Status
 
-CLOSED. All 30 mandatory scenarios passed on a physical Xiaomi Redmi Note 9S at final executable SHA `039c90f`. Evidence: `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+CLOSED. All 30 mandatory scenarios passed on a physical Xiaomi Redmi Note 9S. The first sweep executable was `039c90f`; corrective reruns closed the reviewed evidence gaps at final executable `cde73a1`. Evidence: `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
-Every non-physical S1 gate passed at final evidence SHA `e254c3c`, including automated/local closure, the complete raw privacy matrix, and the final independent cryptographic/security review. That baseline needed one runtime fix during physical acceptance (a stale crypto-unavailable Talk banner after a device cold start, commits `09929ec` and `039c90f`), so the exact tested and accepted executable SHA is `039c90f`, not `e254c3c`.
+Every non-physical S1 gate first passed at evidence SHA `e254c3c`. Physical testing found and fixed the stale Talk crypto-unavailable banner (`09929ec`, `039c90f`); corrective verification then reran the incomplete physical cases for real and full automated closure re-passed at final executable `cde73a1`.
 
 Use synthetic accounts, messages, relationship objects, media, recovery secrets, and devices only. Never commit private user content, cookies, session tokens, Recovery Master Secrets, device private keys, recovery private keys, signed URLs, or production credentials.
 
@@ -79,4 +79,4 @@ Use the actual device model in the final marker narrative if a different support
 
 ## Closure
 
-Automated/local closure, raw plaintext/privacy inspection, final independent security review, and non-physical documentation reconciliation completed at `e254c3c`. Physical acceptance then found and fixed one real defect (see the evidence document); the branch was clean and synchronized at the final tested SHA `039c90f`, and physical evidence is committed. S1 is DONE.
+Automated/local closure, raw plaintext/privacy inspection, final independent security review, and all mandatory physical scenarios are complete. Full automated closure re-passed after physical-run source changes at `cde73a1`; final corrective evidence is committed in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 is DONE and merged to `main @ 71569cf`.

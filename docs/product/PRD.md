@@ -2034,7 +2034,7 @@ A phase item appearing below does not imply that it has been implemented.
 - progressive disclosure instead of permanently crowded action rows
 - relationship warmth without engagement scoring, streak pressure, surveillance, or manipulative lifecycle copy
 - operational, security, consent, breakup, deletion, and recovery states remain explicit and unambiguous
-- product-experience work must not claim verified E2EE until Phase 7/S1 completes its remaining mandatory physical Android acceptance
+- product-experience work may describe verified S1 E2EE only within the exact implemented and documented security/recovery limitations
 
 Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
 
@@ -2061,9 +2061,9 @@ Canonical experience direction: `../design/ROMANTIC_UX_DIRECTION.md`.
 
 ### Phase 7: E2EE
 
-Status: IN_PROGRESS. Source implementation, automated/local closure, the complete raw privacy matrix, and the final independent cryptographic/security review passed at `e254c3c`. Mandatory physical Android 30/30 acceptance is the only remaining S1 gate.
+Status: DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`; full automated closure re-passed there and mandatory physical Android acceptance closed 30/30.
 
-Implemented and non-physically verified scope:
+Implemented and verified scope:
 
 - formal design
 - threat-model update

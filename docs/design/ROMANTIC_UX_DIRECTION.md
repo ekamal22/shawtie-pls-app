@@ -1,6 +1,6 @@
 # Romantic UX Direction
 
-Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery has completed every non-physical gate at `e254c3c`; mandatory S1 physical Android acceptance remains before UX8 can integrate verified S1 behavior.
+Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery is now DONE and merged to `main @ 71569cf`, with final corrective executable `cde73a1` and mandatory Android acceptance 30/30. UX8 can now integrate verified S1 behavior.
 
 This document records the accepted product-experience direction for Shawtie pls after completion and merge of C2 Video Calling. It is deliberately separate from architecture, API, database, lifecycle, and cryptographic authority.
 
@@ -202,19 +202,13 @@ Unreleased Surprise, Proposal, Future Us, and scheduled For You content stays hi
 
 ## E2EE truth boundary
 
-S1 E2EE is implemented and has passed automated/local closure, the complete raw privacy matrix, and final independent cryptographic/security review at `e254c3c`. Mandatory physical Android 30/30 acceptance remains open.
+S1 E2EE is implemented, fully verified, and merged to `main @ 71569cf`. Final automated closure re-passed at `cde73a1`, and mandatory physical Android acceptance closed 30/30.
 
-Until S1 closes that final physical gate:
-
-- UX copy must not claim verified release-ready E2EE
-- privacy language must describe only behavior backed by the currently accepted evidence
-- romantic privacy framing must not overstate the remaining physical-device verification status
-
-UX8 exists specifically to integrate verified S1 states into the redesigned experience after S1 closes.
+With S1 closed, UX8 may now integrate verified enrollment, recovery, revocation, encryption, and unavailable-history states. Privacy copy must still stay precise about the implemented recovery and forward-secrecy limitations documented by S1.
 
 ## Implementation program
 
-UX0 through UX7 below are DONE, physically accepted at `ca7cd35`, and merged to `main` at `9f0bea4`. The descriptions remain the canonical scope of what each milestone delivered. S1 is implemented and non-physically closed at `e254c3c` but remains IN_PROGRESS until its 30/30 physical Android gate passes. UX8 remains future work after S1 closure.
+UX0 through UX7 below are DONE, physically accepted at `ca7cd35`, and merged to `main` at `9f0bea4`. The descriptions remain the canonical scope of what each milestone delivered. S1 is DONE and merged to `main @ 71569cf`, final corrective executable `cde73a1`. UX8 is now the next product-experience implementation milestone.
 
 
 ### UX0 Romantic Experience Specification
@@ -279,7 +273,7 @@ Integrate the accepted signature interactions that remain presentation-only.
 
 ### S1 E2EE and Cryptographic Recovery
 
-This proceeded in parallel with UX2 through UX7 after C2 merged. UX0 through UX7 are closed, and every non-physical S1 gate has now passed at `e254c3c`. The current S1 frontier is the mandatory 30/30 physical Android acceptance.
+This proceeded in parallel with UX2 through UX7 after C2 merged. UX0 through UX7 are closed, and S1 is now fully closed and merged to `main @ 71569cf`, with final corrective executable `cde73a1` and Android acceptance 30/30.
 
 ### UX8 Encrypted UX Integration
 

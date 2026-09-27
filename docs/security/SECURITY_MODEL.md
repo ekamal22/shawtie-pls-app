@@ -54,7 +54,7 @@ Therefore:
 
 Browser hardening is part of the E2EE security boundary.
 
-S1 implementation status: the RFC 9420/OpenMLS runtime, device trust/control plane, protected M1/M2/R1/M3 flows, cryptographic recovery, automated closure, the complete raw privacy matrix, and the final independent cryptographic/security review all passed at final non-physical evidence SHA `e254c3c`. The mandatory 30/30 physical Android acceptance then passed at final executable SHA `039c90f` (see `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`), so S1 is DONE and verified.
+S1 implementation status: the RFC 9420/OpenMLS runtime, device trust/control plane, protected M1/M2/R1/M3 flows, cryptographic recovery, raw privacy matrix, and independent cryptographic/security review are complete. The original non-physical evidence anchor is `e254c3c`; full automated closure re-passed after physical-run source changes at final corrective executable `cde73a1`, mandatory Redmi Note 9S acceptance closed 30/30, and S1 is merged to `main @ 71569cf`. S1 is DONE and verified.
 
 ## Authentication
 

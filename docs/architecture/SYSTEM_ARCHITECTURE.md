@@ -422,7 +422,7 @@ Accepted ADR-013 isolates call signaling from M2 realtime. Accepted ADR-014 refi
 
 ## S1 E2EE and cryptographic recovery implementation
 
-S1 is implemented on `feat/s1-e2ee-crypto-recovery` and has passed every non-physical closure gate at final evidence SHA `e254c3c`.
+S1 is implemented, verified, and merged to `main @ 71569cf`. The original non-physical privacy/security baseline passed at `e254c3c`; the final corrective executable is `cde73a1`.
 
 The implemented architecture adds:
 
@@ -436,7 +436,7 @@ The implemented architecture adds:
 - crypto-required PostgreSQL plaintext guards and lifecycle cryptographic erasure
 - raw privacy validation across PostgreSQL, pg_dump, MinIO, logs, browser durable storage/outboxes/caches, push, realtime, and control traffic
 
-Automated/local closure, the final independent cryptographic/security review, all 286 repository tests, and the high-severity dependency audit are green. S1 remains IN_PROGRESS only because mandatory 30/30 physical Android acceptance has not yet executed. Until that final gate passes, release-facing UX must not claim verified E2EE.
+The final `npm run test:s1:closure` re-pass at `cde73a1` is green with 21 migrations and `reserved=0`, database invariants, S1 contracts/browser/security suites, PostgreSQL integration, real Chromium, full repository health, production scan, and a zero-vulnerability audit. Mandatory Redmi Note 9S acceptance is complete 30/30. Release-facing UX may describe verified S1 E2EE only within the documented recovery, metadata, and forward-secrecy limitations.
 
 ## Durable deadlines
 

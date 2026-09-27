@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted data-handling baseline. The S1 protected-content rules and executable raw inspection passed on `feat/s1-e2ee-crypto-recovery` at `e254c3c`: PostgreSQL tables/dump, object storage, logs, browser stores/outboxes/caches, realtime, and push contained no protected plaintext sentinel. Physical Android acceptance remains required before verified-release claims.
+Accepted data-handling baseline. The S1 protected-content rules and executable raw inspection passed at `e254c3c`: PostgreSQL tables/dump, object storage, logs, browser stores/outboxes/caches, realtime, and push contained no protected plaintext sentinel. Corrective physical acceptance later closed 30/30 at final executable `cde73a1`, including real push transport/privacy evidence, and S1 is merged to `main @ 71569cf`.
 
 This document classifies the major data handled by Shawtie pls and defines how it may be stored, logged, backed up, exposed to providers, encrypted, and deleted.
 
