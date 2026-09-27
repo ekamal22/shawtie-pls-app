@@ -139,7 +139,7 @@ Current epic status:
 - UX1 Romantic Design Foundation: DONE. Tokens, Midnight and Dawn themes, self-hosted OFL fonts, primitives, and the Home, Talk, Ours shell are implemented over unchanged product semantics; see `docs/design/UX1_FOUNDATION.md`. It is included in the physically accepted romantic integration.
 - UX2 through UX7: DONE, physically accepted at executable SHA `ca7cd35` (started at `0ec184d`), and fast-forward merged to `main` at merge anchor `9f0bea4`. Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - S1 E2EE and Cryptographic Recovery: DONE and merged to `main @ 71569cf`. The original non-physical baseline passed at `e254c3c`; final automated closure re-passed at corrective executable `cde73a1`, and mandatory Redmi Note 9S acceptance closed 30/30. See `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
-- UX8 Encrypted UX Integration: DESIGN HARDENED AND FROZEN, implementation not started. Canonical design: `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. It now freezes the composed security view model, deterministic precedence/blocking rules, recovery-versus-approval truth, stale-result handling, deterministic repair predicate, lifecycle/race behavior, semantic security copy, recovery-secret lifetime, accessibility rules, and sequential closure gates. It adds no backend authority. Mandatory Redmi acceptance is 25/25 before DONE.
+- UX8 Encrypted UX Integration: IN PROGRESS on `feat/ux8-encrypted-ux-integration`. Source implementation covers the canonical security-state model/provider, safe S1 status helpers, Home/Talk/Ours/Us integration, recovery-key setup and RMS restoration, trusted-device approval, authoritative rekey presentation, deterministic repair gating, per-message/per-item/media unavailable and integrity states, lifecycle/race fencing, accessibility-oriented security copy, UX8 model tests, real Chromium/OpenMLS recovery/approval E2E, automated closure tooling, and Android preflight tooling. No new backend authority, API route, schema, or migration was added. Automated closure is not yet recorded as PASS on the current source head. Mandatory Redmi Note 9S acceptance remains 25/25 before DONE; procedure: `docs/testing/UX8_ANDROID_ACCEPTANCE.md`.
 - R2 Public Readiness: PLANNED after pre-release implementation and V1 hosted verification.
 
 
@@ -168,7 +168,8 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/c2-video-calling` -> historical completed branch; C2 fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi Note 9S acceptance complete
 - `integration/ux-romantic` -> preserved historical integration line for UX0 through UX7; final executable `ca7cd35`, 22/22 Redmi Note 9S scenarios PASS; fast-forward merged to `main` at `9f0bea4`
 - `design/s1-e2ee-crypto-recovery` -> historical S1 architecture-freeze documentation line
-- `design/ux8-encrypted-ux-integration` -> hardened and frozen UX8 design line; implementation not started
+- `design/ux8-encrypted-ux-integration` -> historical hardened/frozen UX8 design line
+- `feat/ux8-encrypted-ux-integration` -> current UX8 implementation line; source implementation present, automated closure and Redmi 25/25 pending
 - `feat/s1-e2ee-crypto-recovery` -> DONE S1 branch; final corrective executable `cde73a1`; 30/30 physical Android acceptance; merged to `main @ 71569cf`
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
@@ -195,10 +196,11 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. implement the frozen UX8 Encrypted UX Integration design over verified S1 states
-2. complete V1 Hosted CI Verification when Actions capacity is available
-3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-4. cut Stable Release only after UX8, V1, and R2 are closed
+1. finish UX8 automated closure and defect repair on `feat/ux8-encrypted-ux-integration`
+2. execute the separate mandatory UX8 Redmi Note 9S 25/25 acceptance and reconcile evidence
+3. complete V1 Hosted CI Verification when Actions capacity is available
+4. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+5. cut Stable Release only after UX8, V1, and R2 are closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`. Merge and documentation-only commits do not change either runtime evidence anchor.
 
