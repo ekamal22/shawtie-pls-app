@@ -10,6 +10,7 @@ import {
 } from "react";
 import { ApiClientError } from "../../lib/api-client.ts";
 import {
+  loadCryptoPartnershipState,
   loadCryptoRecoveryBundle,
   type CryptoDeviceProjection,
   type CryptoPartnershipState,
@@ -170,6 +171,48 @@ export function CryptoSecurityProvider({
 
       if (partnershipId && currentRuntime.status().trustState === "trusted") {
         try {
+          const authoritativeBeforeReconcile = await loadCryptoPartnershipState(partnershipId);
+          localGroup = await currentRuntime.localGroupStatus(partnershipId);
+
+          // Preserve the real server rekey state long enough for the user-facing model to
+          // observe it before S1 performs its normal automatic membership reconciliation.
+          if (
+            authoritativeBeforeReconcile.group?.rekeyRequired &&
+            ticket === requestGeneration.current
+          ) {
+            const interimModel = deriveCryptoSecurityViewModel({
+              runtimePresent: true,
+              runtimeStatus: currentRuntime.status(),
+              serverRecovery:
+                serverRecovery?.configured === true
+                  ? {
+                      configured: true,
+                      recoveryKeyVersion: serverRecovery.recoveryKeyVersion ?? 0,
+                    }
+                  : serverRecovery?.configured === false
+                    ? { configured: false }
+                    : null,
+              localRecovery,
+              partnershipId,
+              lifecycleState,
+              interactionMode,
+              partnershipState: authoritativeBeforeReconcile,
+              localGroup,
+              partnershipRefreshError: null,
+              revision: revision + ":rekey",
+            });
+            setState({
+              model: interimModel,
+              devices,
+              partnershipState: authoritativeBeforeReconcile,
+              localRecovery,
+              serverRecovery,
+              localGroup,
+              refreshError: null,
+              refreshing: true,
+            });
+          }
+
           partnershipState = await currentRuntime.partnershipState(partnershipId);
           localGroup = await currentRuntime.localGroupStatus(partnershipId);
         } catch (error) {
