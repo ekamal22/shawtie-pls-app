@@ -180,13 +180,13 @@ P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is 
 
 M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source head `b29b095`. R1 source head `9bc9ba4` is also DONE. Both are source-integrated at `01fa182` and exhaustively validated together on `integration/m1-r1 @ 5db7a94`; canonical migrations, full health, audit, and git hygiene are green.
 
-## Most recently completed milestone
+## Most recently fully completed milestone
 
 ### S1 E2EE and Cryptographic Recovery
 
 Verified historical branch: `feat/s1-e2ee-crypto-recovery`.
 
-S1 is DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`: migrations 0001 through 0021 apply with `reserved=0`, database invariants pass, full automated closure re-passed, and mandatory Redmi Note 9S acceptance closed 30/30. Canonical evidence is in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now the next dependent milestone.
+S1 is DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`: migrations 0001 through 0021 apply with `reserved=0`, database invariants pass, full automated closure re-passed, and mandatory Redmi Note 9S acceptance closed 30/30. Canonical evidence is in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 automated closure has passed at executable `39de742c8ab795137be95ecbaa685131b608e813`; the current frontier is the mandatory Redmi Note 9S 25/25 physical acceptance.
 
 ## Earlier completed milestone detail
 
