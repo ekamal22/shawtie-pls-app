@@ -72,7 +72,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 |
                 v
         S1 E2EE + Crypto Recovery ✅
-        automated/raw/review PASS @ 6cba504
+        non-physical privacy/review PASS @ e254c3c
         final closure PASS @ cde73a1, Android 30/30, merged main @ 71569cf
                 |
                 v
@@ -168,6 +168,10 @@ M3 ✅ DONE, merged to `main @ 1d3535f`; Android 20/20 at `ee59850`
 C1 ✅ DONE and merged to `main @ d44c595`; final executable `b29aaa1`; full physical acceptance complete
    ->
 C2 Video Calling ✅ DONE and fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi acceptance complete
+   ->
+UX0 through UX7 ✅ DONE, Redmi 22/22, merged to `main @ 9f0bea4`
+   ->
+S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, merged to `main @ 71569cf`
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -176,13 +180,11 @@ M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source
 
 ## Most recently completed milestone
 
-### M3 Media and Voice Messages
+### S1 E2EE and Cryptographic Recovery
 
-Verified branch: `feat/m3-media-voice`.
+Verified historical branch: `feat/s1-e2ee-crypto-recovery`.
 
-Automated closure is green; all 20 mandatory physical Android scenarios passed at final code SHA `ee59850`. M3 is complete and fast-forward merged to `main @ 1d3535f`.
-
-M3 real migrations 0015/0016 and C1 migrations 0017/0018 are on `main`. C2 is merged and physically closed. S1 migrations 0019/0020/0021 are now also on `main @ 71569cf`; final automated closure re-passed at `cde73a1` and mandatory Android acceptance closed 30/30.
+S1 is DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`: migrations 0001 through 0021 apply with `reserved=0`, database invariants pass, full automated closure re-passed, and mandatory Redmi Note 9S acceptance closed 30/30. Canonical evidence is in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now the next dependent milestone.
 
 ## Earlier completed milestone detail
 
@@ -230,11 +232,13 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 54b8659
+main @ 71569cf
   |
-  +--> feat/m3-media-voice      DONE, Android 20/20, merged to main @ 1d3535f
-  |
-  +--> feat/c1-voice-calling   historical completed branch; merged to main @ d44c595
+  +--> feat/m3-media-voice             historical DONE; merged to main @ 1d3535f
+  +--> feat/c1-voice-calling          historical DONE; merged to main @ d44c595
+  +--> feat/c2-video-calling          historical DONE; merged to main @ fed2db7
+  +--> integration/ux-romantic        historical DONE; merged to main @ 9f0bea4
+  +--> feat/s1-e2ee-crypto-recovery   DONE; final executable cde73a1; merged to main @ 71569cf
 
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.

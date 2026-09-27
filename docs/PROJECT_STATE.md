@@ -161,7 +161,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
-- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, and the physically accepted UX0 through UX7 romantic overhaul; fast-forward merge anchor `9f0bea4`, accepted executable `ca7cd35`
+- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, UX0 through UX7, and S1; UX merge anchor `9f0bea4`, S1 merge anchor `71569cf`, S1 final corrective executable `cde73a1`
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
@@ -194,13 +194,12 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. merge S1 to `main` when a merge is explicitly requested
-2. implement UX8 Encrypted UX Integration over verified S1 states
-3. complete V1 Hosted CI Verification when Actions capacity is available
-4. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-5. cut Stable Release only after S1, UX8, V1, and R2 are closed
+1. implement UX8 Encrypted UX Integration over verified S1 states
+2. complete V1 Hosted CI Verification when Actions capacity is available
+3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+4. cut Stable Release only after UX8, V1, and R2 are closed
 
-The accepted UX executable remains `ca7cd35`; merge and documentation-only commits do not change that runtime SHA.
+The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`. Merge and documentation-only commits do not change either runtime evidence anchor.
 
 ## Deferred heavy feature policy
 

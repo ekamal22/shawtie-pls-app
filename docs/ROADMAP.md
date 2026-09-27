@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified mainline now includes C1 at `main @ d44c595cd6ea5107d8c33e11b4bb04f39a5c8185`. M2, M3, and C1 are DONE and merged. C1's final executable baseline is `b29aaa1`, where the integrated closure re-passed with `reserved=0` after the stale media-owner fix. Redmi Note 9S acceptance is 25/25 and rejected-notification cleanup, stale-owner fencing, and audible bidirectional audio are complete.
+The verified mainline now includes completed M2, M3, C1, C2, UX0 through UX7, and S1. S1 is merged at `main @ 71569cf`; its final corrective executable is `cde73a1`, where full automated closure re-passed and mandatory Redmi Note 9S acceptance closed 30/30. The current implementation frontier is UX8 Encrypted UX Integration.
 
 Completed milestones:
 
@@ -131,7 +131,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX8 Encrypted UX Integration:** device enrollment, recovery, revocation, unavailable-history states, encryption errors, and privacy language integrated into the romantic experience.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure.
 
-UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed. Future S1 and UX8 work must preserve the accepted UX authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
+UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. UX8 and later work must preserve the accepted UX and S1 authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
 
 # Milestone 5A: M1 Messaging Core
 
