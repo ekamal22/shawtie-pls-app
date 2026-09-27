@@ -205,7 +205,7 @@ export class ShawtieLocalDatabase {
   async rememberNamespace(
     partnershipId: string,
     conversationId: string,
-    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
+    contentContextKey: string = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<void> {
     const tx = this.#database.transaction(["namespaceMeta"], "readwrite");
     tx.objectStore("namespaceMeta").put({
@@ -225,9 +225,8 @@ export class ShawtieLocalDatabase {
     contentContextKey: string,
   ): Promise<boolean> {
     const read = this.#database.transaction(["namespaceMeta"], "readonly");
-    const current = (await requestResult(
-      read.objectStore("namespaceMeta").get(partnershipId),
-    )) as { contentContextKey?: string } | undefined;
+    const current = (await requestResult(read.objectStore("namespaceMeta").get(partnershipId))) as
+      { contentContextKey?: string } | undefined;
     await transactionDone(read);
 
     if (current?.contentContextKey === contentContextKey) return false;
@@ -278,8 +277,7 @@ export class ShawtieLocalDatabase {
     sync: ConversationSyncState;
     contentContextKey?: string;
   }): Promise<void> {
-    const contentContextKey =
-      input.contentContextKey ?? M2_PRE_S1_CONTENT_CONTEXT;
+    const contentContextKey = input.contentContextKey ?? M2_PRE_S1_CONTENT_CONTEXT;
     const tx = this.#database.transaction(
       ["messages", "conversationSync", "namespaceMeta"],
       "readwrite",

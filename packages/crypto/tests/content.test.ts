@@ -34,7 +34,10 @@ test("protected content round trips and rejects AAD substitution", async () => {
     schemaVersion: 1,
   });
   const encrypted = await encryptBytes(utf8("private hello"), context);
-  assert.equal(utf8Decode(await decryptBytes(encrypted.payload, encrypted.key, context)), "private hello");
+  assert.equal(
+    utf8Decode(await decryptBytes(encrypted.payload, encrypted.key, context)),
+    "private hello",
+  );
 
   await assert.rejects(
     () =>

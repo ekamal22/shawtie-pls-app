@@ -95,15 +95,11 @@ export function enrollCryptoDevice(input: CryptoDeviceEnrollInput) {
 }
 
 export function loadCurrentCryptoDevice() {
-  return apiRequest<{ device: CryptoDeviceProjection }>(
-    "/api/v1/crypto/devices/current",
-  );
+  return apiRequest<{ device: CryptoDeviceProjection }>("/api/v1/crypto/devices/current");
 }
 
 export function listCryptoDevices() {
-  return apiRequest<{ devices: readonly CryptoDeviceProjection[] }>(
-    "/api/v1/crypto/devices",
-  );
+  return apiRequest<{ devices: readonly CryptoDeviceProjection[] }>("/api/v1/crypto/devices");
 }
 
 export function uploadCryptoKeyPackages(
@@ -116,28 +112,18 @@ export function uploadCryptoKeyPackages(
   );
 }
 
-export function approveCryptoDevice(
-  cryptoDeviceId: string,
-  input: CryptoDeviceApprovalInput,
-) {
+export function approveCryptoDevice(cryptoDeviceId: string, input: CryptoDeviceApprovalInput) {
   return apiRequest<{ device: CryptoDeviceProjection }>(
     "/api/v1/crypto/devices/" + cryptoDeviceId + "/approve",
     { method: "POST", body: input },
   );
 }
 
-export function loadCryptoPartnershipState(
-  partnershipId: string,
-): Promise<CryptoPartnershipState> {
-  return apiRequest(
-    "/api/v1/crypto/partnerships/" + partnershipId + "/state",
-  );
+export function loadCryptoPartnershipState(partnershipId: string): Promise<CryptoPartnershipState> {
+  return apiRequest("/api/v1/crypto/partnerships/" + partnershipId + "/state");
 }
 
-export function bootstrapCryptoPartnership(
-  partnershipId: string,
-  input: CryptoBootstrapInput,
-) {
+export function bootstrapCryptoPartnership(partnershipId: string, input: CryptoBootstrapInput) {
   return apiRequest<{
     groupGeneration: number;
     currentEpoch: number;
@@ -149,10 +135,7 @@ export function bootstrapCryptoPartnership(
   });
 }
 
-export function commitCryptoPartnership(
-  partnershipId: string,
-  input: CryptoCommitInput,
-) {
+export function commitCryptoPartnership(partnershipId: string, input: CryptoCommitInput) {
   return apiRequest<{
     groupGeneration: number;
     currentEpoch: number;
@@ -171,12 +154,7 @@ export function loadCryptoControls(
   limit = 100,
 ): Promise<CryptoControlPage> {
   return apiRequest(
-    "/api/v1/crypto/partnerships/" +
-      partnershipId +
-      "/control?after=" +
-      after +
-      "&limit=" +
-      limit,
+    "/api/v1/crypto/partnerships/" + partnershipId + "/control?after=" + after + "&limit=" + limit,
   );
 }
 
@@ -196,9 +174,7 @@ export function loadCryptoRecoveryBundle(): Promise<CryptoRecoveryBundleProjecti
   return apiRequest("/api/v1/crypto/recovery/bundle");
 }
 
-export function createCryptoRecoveryChallenge(
-  input: CryptoRecoveryChallengeInput,
-) {
+export function createCryptoRecoveryChallenge(input: CryptoRecoveryChallengeInput) {
   return apiRequest<{
     challengeId: string;
     challenge: string;
@@ -211,8 +187,8 @@ export function createCryptoRecoveryChallenge(
 }
 
 export function proveCryptoRecovery(input: CryptoRecoveryProofInput) {
-  return apiRequest<{ device: CryptoDeviceProjection }>(
-    "/api/v1/crypto/recovery/prove",
-    { method: "POST", body: input },
-  );
+  return apiRequest<{ device: CryptoDeviceProjection }>("/api/v1/crypto/recovery/prove", {
+    method: "POST",
+    body: input,
+  });
 }

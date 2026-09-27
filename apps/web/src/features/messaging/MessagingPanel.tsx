@@ -53,10 +53,7 @@ import {
   prepareMediaDraft,
   uploadMediaDraft,
 } from "../../lib/media/media-runtime.ts";
-import {
-  listMediaDrafts,
-  purgeMediaPartnershipData,
-} from "../../lib/media/media-local-db.ts";
+import { listMediaDrafts, purgeMediaPartnershipData } from "../../lib/media/media-local-db.ts";
 import type { LocalMediaDraft } from "../../lib/media/media-types.ts";
 import type { ChatQueueOperation } from "../../lib/offline/local-db.ts";
 import { createRelationshipItem } from "../relationship-space/api.ts";
@@ -285,9 +282,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     }
 
     const raw = result.conversation;
-    const contentContextKey = raw.cryptoRequired
-      ? S1_CONTENT_CONTEXT
-      : M2_PRE_S1_CONTENT_CONTEXT;
+    const contentContextKey = raw.cryptoRequired ? S1_CONTENT_CONTEXT : M2_PRE_S1_CONTENT_CONTEXT;
     const database = await runtime.database();
     const contextChanged = await database.ensureNamespaceContentContext(
       raw.partnershipId,
@@ -575,9 +570,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
       partnershipId: summary.partnershipId,
       conversationId: summary.conversationId,
       messages: page.items,
-      contentContextKey: summary.cryptoRequired
-        ? S1_CONTENT_CONTEXT
-        : M2_PRE_S1_CONTENT_CONTEXT,
+      contentContextKey: summary.cryptoRequired ? S1_CONTENT_CONTEXT : M2_PRE_S1_CONTENT_CONTEXT,
       sync: {
         partnershipId: summary.partnershipId,
         conversationId: summary.conversationId,
@@ -590,11 +583,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
         lastSyncedAt: new Date().toISOString(),
       },
     });
-    const visible = await decryptMessagesForView(
-      cryptoRuntime,
-      summary.partnershipId,
-      page.items,
-    );
+    const visible = await decryptMessagesForView(cryptoRuntime, summary.partnershipId, page.items);
     setMessages([...visible]);
     setHasOlder(page.hasMore);
     changeCursorRef.current = summary.latestChangeSequence;
@@ -1200,23 +1189,22 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     const key = idempotencyKey();
 
     await run(async () => {
-      const protectedBody =
-        conversation.cryptoRequired
-          ? await (() => {
-              if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
-              return cryptoRuntime.protectBytes(
-                {
-                  partnershipId: conversation.partnershipId,
-                  contentType: "message",
-                  contentId: message.messageId,
-                  contentVersion: message.contentVersion + 1,
-                  payloadRole: "message_body",
-                  schemaVersion: 1,
-                },
-                textEncoder.encode(body),
-              );
-            })()
-          : null;
+      const protectedBody = conversation.cryptoRequired
+        ? await (() => {
+            if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+            return cryptoRuntime.protectBytes(
+              {
+                partnershipId: conversation.partnershipId,
+                contentType: "message",
+                contentId: message.messageId,
+                contentVersion: message.contentVersion + 1,
+                payloadRole: "message_body",
+                schemaVersion: 1,
+              },
+              textEncoder.encode(body),
+            );
+          })()
+        : null;
       const requestBody = {
         body: conversation.cryptoRequired ? null : body,
         protectedBody,
@@ -1323,23 +1311,22 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
     const key = idempotencyKey();
     const reactionId = crypto.randomUUID();
     await run(async () => {
-      const protectedReaction =
-        conversation.cryptoRequired
-          ? await (() => {
-              if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
-              return cryptoRuntime.protectBytes(
-                {
-                  partnershipId: conversation.partnershipId,
-                  contentType: "message_reaction",
-                  contentId: reactionId,
-                  contentVersion: 1,
-                  payloadRole: "reaction_value",
-                  schemaVersion: 1,
-                },
-                textEncoder.encode(emoji),
-              );
-            })()
-          : null;
+      const protectedReaction = conversation.cryptoRequired
+        ? await (() => {
+            if (!cryptoRuntime) throw new Error("CRYPTO_UNAVAILABLE");
+            return cryptoRuntime.protectBytes(
+              {
+                partnershipId: conversation.partnershipId,
+                contentType: "message_reaction",
+                contentId: reactionId,
+                contentVersion: 1,
+                payloadRole: "reaction_value",
+                schemaVersion: 1,
+              },
+              textEncoder.encode(emoji),
+            );
+          })()
+        : null;
       const requestBody = conversation.cryptoRequired
         ? { reactionId, emoji: null, protectedReaction }
         : { emoji };
@@ -1541,11 +1528,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
   const selfName = conversation.self.nickname || conversation.self.displayName;
   const cryptoWritable =
     !conversation.cryptoRequired ||
-    Boolean(
-      cryptoRuntime &&
-      cryptoStatus.available &&
-      cryptoStatus.trustState === "trusted",
-    );
+    Boolean(cryptoRuntime && cryptoStatus.available && cryptoStatus.trustState === "trusted");
   const canSend = conversation.capabilities.sendMessage && cryptoWritable;
   const hasContent = composer.trim().length > 0 || mediaDrafts.length > 0;
   const rows = buildRows(messages, conversation.self.accountId);
@@ -1710,8 +1693,7 @@ export function MessagingPanel({ active = true }: { readonly active?: boolean } 
               ? queuedBody
               : queuedRequest?.protectedBody
                 ? "Encrypted message"
-                : Array.isArray(queuedRequest?.attachments) &&
-                    queuedRequest.attachments.length > 0
+                : Array.isArray(queuedRequest?.attachments) && queuedRequest.attachments.length > 0
                   ? "Attachment"
                   : "Waiting message";
           const blocked = operation.status === "blocked";

@@ -552,13 +552,13 @@ export function App() {
     <S1CryptoRuntimeProvider accountId={session.accountId} deviceId={session.deviceId}>
       <M2RuntimeProvider accountId={session.accountId}>
         <AccountScreen
-        session={session}
-        onSignedOut={async () => {
-          broadcastLocalLogout(signedOutAccountId);
-          await closeActiveM2Runtime(signedOutAccountId);
-          await purgeAccountLocalData(signedOutAccountId);
-          setSession(null);
-        }}
+          session={session}
+          onSignedOut={async () => {
+            broadcastLocalLogout(signedOutAccountId);
+            await closeActiveM2Runtime(signedOutAccountId);
+            await purgeAccountLocalData(signedOutAccountId);
+            setSession(null);
+          }}
           refreshSession={refreshSession}
         />
       </M2RuntimeProvider>

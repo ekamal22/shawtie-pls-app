@@ -6,18 +6,18 @@ import type {
 import { utf8Decode } from "@shawtie/crypto";
 import type { S1CryptoRuntime } from "./crypto-runtime.ts";
 
-export interface DecryptedMessageProjection
-  extends Omit<MessageProjection, "body" | "replyContext" | "reactions"> {
+export interface DecryptedMessageProjection extends Omit<
+  MessageProjection,
+  "body" | "replyContext" | "reactions"
+> {
   readonly body: string | null;
-  readonly replyContext:
-    | {
-        readonly messageId: string;
-        readonly senderAccountId: string;
-        readonly body: string | null;
-        readonly protectedBody: EncryptedProtectedContentProjection | null;
-        readonly deleted: boolean;
-      }
-    | null;
+  readonly replyContext: {
+    readonly messageId: string;
+    readonly senderAccountId: string;
+    readonly body: string | null;
+    readonly protectedBody: EncryptedProtectedContentProjection | null;
+    readonly deleted: boolean;
+  } | null;
   readonly reactions: readonly {
     readonly reactionId: string;
     readonly accountId: string;
@@ -26,8 +26,10 @@ export interface DecryptedMessageProjection
   }[];
 }
 
-export interface DecryptedRelationshipItemProjection
-  extends Omit<RelationshipItemProjection, "preview" | "content"> {
+export interface DecryptedRelationshipItemProjection extends Omit<
+  RelationshipItemProjection,
+  "preview" | "content"
+> {
   readonly preview: Record<string, unknown> | null;
   readonly content: Record<string, unknown> | null;
 }
@@ -39,11 +41,9 @@ export async function decryptMessageProjectionForView(
 ): Promise<DecryptedMessageProjection> {
   if (
     !runtime &&
-    (
-      Boolean(message.protectedBody) ||
+    (Boolean(message.protectedBody) ||
       Boolean(message.replyContext?.protectedBody) ||
-      message.reactions.some((reaction) => Boolean(reaction.protectedReaction))
-    )
+      message.reactions.some((reaction) => Boolean(reaction.protectedReaction)))
   ) {
     throw new Error("CRYPTO_UNAVAILABLE");
   }

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import {
   S1_CRYPTO_PROFILE,
   type ProtectedContentEnvelopeInput,
+  type ProtectedContentEnvelopeProjection,
 } from "@shawtie/contracts";
 import {
   cryptoDeviceIsActiveGroupMember,
@@ -24,7 +25,8 @@ import { verifyRawEd25519 } from "./ed25519.ts";
 interface CanonicalObject {
   readonly [key: string]: CanonicalValue;
 }
-type CanonicalValue = null | boolean | number | string | readonly CanonicalValue[] | CanonicalObject;
+type CanonicalValue =
+  null | boolean | number | string | readonly CanonicalValue[] | CanonicalObject;
 
 function canonicalJson(value: CanonicalValue): string {
   if (value === null) return "null";
@@ -163,11 +165,7 @@ export async function requireCryptoProtectedWrite(
 
   const [trustedDevices, groupMembers] = await Promise.all([
     listPartnershipTrustedCryptoDevices(executor, context.partnershipId),
-    listPartnershipCryptoMembers(
-      executor,
-      context.partnershipId,
-      group.groupGeneration,
-    ),
+    listPartnershipCryptoMembers(executor, context.partnershipId, group.groupGeneration),
   ]);
   const activeMemberIds = new Set(
     groupMembers
@@ -204,10 +202,7 @@ export async function requireCryptoProtectedWrite(
     throw new ApiError(409, "CRYPTO_RECOVERY_REQUIRED");
   }
   const expected = new Map(
-    recipients.map((recipient) => [
-      recipient.accountId,
-      recipient.recoveryKeyVersion,
-    ] as const),
+    recipients.map((recipient) => [recipient.accountId, recipient.recoveryKeyVersion] as const),
   );
   for (const capsule of envelope.recoveryCapsules) {
     const version = expected.get(capsule.accountId);
@@ -247,10 +242,13 @@ export async function requireCryptoProtectedWrite(
 export function protectedContentProjection(
   record: ProtectedContentKeyRecord,
   accountId: string,
-): unknown {
+): ProtectedContentEnvelopeProjection {
+  if (record.cryptoProfile !== S1_CRYPTO_PROFILE) {
+    throw new Error("Unsupported protected-content crypto profile");
+  }
   const recovery = record.recoveryCapsules.find((capsule) => capsule.accountId === accountId);
   return {
-    cryptoProfile: record.cryptoProfile,
+    cryptoProfile: S1_CRYPTO_PROFILE,
     partnershipId: record.partnershipId,
     contentType: record.contentType,
     contentId: record.contentId,
@@ -279,7 +277,6 @@ export function protectedContentProjection(
 export function ciphertextDigest(ciphertext: Uint8Array): Buffer {
   return createHash("sha256").update(ciphertext).digest();
 }
-
 
 export function protectedContentInputProjection(
   record: ProtectedContentKeyRecord,

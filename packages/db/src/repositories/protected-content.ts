@@ -1,11 +1,7 @@
 import type { QueryExecutor } from "../types/query-executor.ts";
 
 export type ProtectedContentType =
-  | "message"
-  | "message_reaction"
-  | "partnership_nickname"
-  | "relationship_item"
-  | "media";
+  "message" | "message_reaction" | "partnership_nickname" | "relationship_item" | "media";
 
 export type ProtectedPayloadRole =
   | "message_body"
@@ -259,7 +255,6 @@ export async function loadProtectedContentKey(
   };
 }
 
-
 export async function loadProtectedContentKeys(
   executor: QueryExecutor,
   contentKeyIds: readonly string[],
@@ -328,6 +323,7 @@ export async function loadProtectedContentKeys(
         contentId: row.content_id,
         contentVersion: BigInt(row.content_version),
         payloadRole: row.payload_role,
+        contentSchemaVersion: row.content_schema_version,
         cryptoProfile: row.crypto_profile,
         groupGeneration: row.group_generation,
         mlsEpoch: BigInt(row.mls_epoch),

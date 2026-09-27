@@ -30,7 +30,7 @@ export function generateContentKey(): Uint8Array<ArrayBuffer> {
 }
 
 export async function encryptBytes(
-  plaintext: BufferSource,
+  plaintext: Uint8Array,
   context: EnvelopeContext,
   suppliedKey?: Uint8Array,
 ): Promise<ProtectedEncryptionResult> {
@@ -41,7 +41,7 @@ export async function encryptBytes(
     await crypto.subtle.encrypt(
       { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
       await importAesKey(key, "encrypt"),
-      plaintext,
+      asArrayBuffer(plaintext),
     ),
   );
   const digest = await sha256(encrypted);

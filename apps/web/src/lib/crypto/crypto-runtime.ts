@@ -1,5 +1,7 @@
 import { cryptoResetProofText } from "@shawtie/contracts";
 import type {
+  CryptoBootstrapInput,
+  CryptoCommitInput,
   EncryptedProtectedContentInput,
   EncryptedProtectedContentProjection,
   ProtectedContentEnvelopeInput,
@@ -323,12 +325,8 @@ async function exportEd25519RecoveryKeys(): Promise<{
     "verify",
   ])) as CryptoKeyPair;
   return {
-    privateKeyPkcs8: new Uint8Array(
-      await crypto.subtle.exportKey("pkcs8", pair.privateKey),
-    ),
-    publicKey: new Uint8Array(
-      await crypto.subtle.exportKey("raw", pair.publicKey),
-    ),
+    privateKeyPkcs8: new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey)),
+    publicKey: new Uint8Array(await crypto.subtle.exportKey("raw", pair.publicKey)),
   };
 }
 
@@ -338,14 +336,12 @@ async function signRecoveryProof(
 ): Promise<Uint8Array<ArrayBuffer>> {
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyPkcs8,
+    new Uint8Array(privateKeyPkcs8),
     "Ed25519",
     false,
     ["sign"],
   );
-  return new Uint8Array(
-    await crypto.subtle.sign("Ed25519", privateKey, payload),
-  );
+  return new Uint8Array(await crypto.subtle.sign("Ed25519", privateKey, new Uint8Array(payload)));
 }
 
 export class S1CryptoRuntime {
@@ -382,13 +378,10 @@ export class S1CryptoRuntime {
     if (!stored) {
       const cryptoDeviceId = crypto.randomUUID();
       const engine = createMlsEngine(module, cryptoDeviceId);
-      const keyPackages = Array.from(
-        { length: INITIAL_KEY_PACKAGE_COUNT },
-        () => ({
-          keyPackageId: crypto.randomUUID(),
-          keyPackage: base64UrlEncode(engine.keyPackage()),
-        }),
-      );
+      const keyPackages = Array.from({ length: INITIAL_KEY_PACKAGE_COUNT }, () => ({
+        keyPackageId: crypto.randomUUID(),
+        keyPackage: base64UrlEncode(engine.keyPackage()),
+      }));
       const mlsSigningPublicKey = base64UrlEncode(engine.mlsSigningPublicKey);
       const contentSigningPublicKey = base64UrlEncode(engine.contentSigningPublicKey);
       const identityProofSignature = base64UrlEncode(
@@ -422,10 +415,7 @@ export class S1CryptoRuntime {
       try {
         device = (await loadCurrentCryptoDevice()).device;
       } catch (error) {
-        if (
-          error instanceof ApiClientError &&
-          error.code === "CRYPTO_NOT_INITIALIZED"
-        ) {
+        if (error instanceof ApiClientError && error.code === "CRYPTO_NOT_INITIALIZED") {
           const engine = restoreMlsEngine(module, stored.state);
           const keyPackage = engine.keyPackage();
           stored = {
@@ -435,9 +425,7 @@ export class S1CryptoRuntime {
           };
           await vault.putDeviceState(stored);
           const mlsSigningPublicKey = base64UrlEncode(engine.mlsSigningPublicKey);
-          const contentSigningPublicKey = base64UrlEncode(
-            engine.contentSigningPublicKey,
-          );
+          const contentSigningPublicKey = base64UrlEncode(engine.contentSigningPublicKey);
           const enrolled = await enrollCryptoDevice({
             cryptoDeviceId: stored.cryptoDeviceId,
             cryptoProfile: S1_CRYPTO_PROFILE,
@@ -584,17 +572,8 @@ export class S1CryptoRuntime {
     let group = local;
     let hasMore = true;
     while (hasMore) {
-      const page = await loadCryptoControls(
-        partnershipId,
-        group.controlCursor,
-        CONTROL_PAGE_SIZE,
-      );
-      group = await this.#promoteAcceptedPendingControl(
-        partnershipId,
-        state,
-        page.items,
-        group,
-      );
+      const page = await loadCryptoControls(partnershipId, group.controlCursor, CONTROL_PAGE_SIZE);
+      group = await this.#promoteAcceptedPendingControl(partnershipId, state, page.items, group);
 
       for (const item of page.items) {
         if (item.controlSequence <= group.controlCursor) continue;
@@ -625,10 +604,7 @@ export class S1CryptoRuntime {
             item.epochTo,
             item.controlSequence,
           );
-          await this.#vault.promoteControlOperation(
-            acceptedPending.operationId,
-            group,
-          );
+          await this.#vault.promoteControlOperation(acceptedPending.operationId, group);
           continue;
         }
 
@@ -659,17 +635,10 @@ export class S1CryptoRuntime {
     let after = 0;
     let hasMore = true;
     while (hasMore) {
-      const page = await loadCryptoControls(
-        partnershipId,
-        after,
-        CONTROL_PAGE_SIZE,
-      );
+      const page = await loadCryptoControls(partnershipId, after, CONTROL_PAGE_SIZE);
       for (const item of page.items) {
         after = item.controlSequence;
-        if (
-          item.targetCryptoDeviceId === this.#device.cryptoDeviceId &&
-          item.welcome
-        ) {
+        if (item.targetCryptoDeviceId === this.#device.cryptoDeviceId && item.welcome) {
           const engine = await this.#deviceEngine();
           const transition = engine.joinWelcome(base64UrlDecode(item.welcome));
           const joined: StoredGroupState = {
@@ -707,7 +676,7 @@ export class S1CryptoRuntime {
     );
     if (founderLeafIndex === null) throw new Error("CRYPTO_GROUP_NOT_READY");
 
-    const body = {
+    const body: CryptoBootstrapInput = {
       cryptoProfile: S1_CRYPTO_PROFILE,
       ciphersuite: S1_MLS_CIPHERSUITE,
       groupGeneration: 1,
@@ -749,10 +718,7 @@ export class S1CryptoRuntime {
       await this.#vault.promoteControlOperation(operationId, group);
       return group;
     } catch (error) {
-      if (
-        error instanceof ApiClientError &&
-        error.code === "CRYPTO_GROUP_BOOTSTRAP_CONFLICT"
-      ) {
+      if (error instanceof ApiClientError && error.code === "CRYPTO_GROUP_BOOTSTRAP_CONFLICT") {
         await this.#vault.completeOperation(operationId);
         return null;
       }
@@ -860,19 +826,22 @@ export class S1CryptoRuntime {
         : input.targetLeafIndex;
     if (targetLeafIndex === null) throw new Error("CRYPTO_GROUP_NOT_READY");
 
-    const body = {
+    const body: CryptoCommitInput = {
       expectedGroupGeneration: local.groupGeneration,
       expectedEpoch: local.mlsEpoch,
       newEpoch: transition.epoch,
       kind: input.kind,
       controlMessage: base64UrlEncode(transition.controlMessage),
       welcome:
-        input.kind === "add" && transition.welcome
-          ? base64UrlEncode(transition.welcome)
-          : null,
+        input.kind === "add" && transition.welcome ? base64UrlEncode(transition.welcome) : null,
       targetCryptoDeviceId: input.targetCryptoDeviceId,
       targetLeafIndex,
       keyPackageId: input.kind === "add" ? input.keyPackageId : null,
+      resetGroupGeneration: null,
+      resetGroupId: null,
+      resetFounderLeafIndex: null,
+      recoveryKeyVersion: null,
+      recoverySignature: null,
     };
     const operationId = crypto.randomUUID();
     await this.#vault.stageControlOutbound({
@@ -898,9 +867,7 @@ export class S1CryptoRuntime {
     } catch (error) {
       if (
         error instanceof ApiClientError &&
-        ["CRYPTO_EPOCH_CONFLICT", "CRYPTO_KEY_PACKAGE_REQUIRED"].includes(
-          error.code,
-        )
+        ["CRYPTO_EPOCH_CONFLICT", "CRYPTO_KEY_PACKAGE_REQUIRED"].includes(error.code)
       ) {
         await this.#vault.completeOperation(operationId);
       }
@@ -912,218 +879,196 @@ export class S1CryptoRuntime {
     if (this.#device.trustState !== "trusted") {
       throw new Error("CRYPTO_DEVICE_UNTRUSTED");
     }
-    return withCryptoLock(
-      partnershipId,
-      this.#device.cryptoDeviceId,
-      async () => {
-        let state = await loadCryptoPartnershipState(partnershipId);
-        let local = await this.#vault.group(partnershipId);
+    return withCryptoLock(partnershipId, this.#device.cryptoDeviceId, async () => {
+      let state = await loadCryptoPartnershipState(partnershipId);
+      let local = await this.#vault.group(partnershipId);
 
-        if (!state.group) {
-          local = await this.#bootstrap(partnershipId, state);
-          state = await loadCryptoPartnershipState(partnershipId);
-        } else if (
-          local &&
-          (
-            local.groupGeneration !== state.group.groupGeneration ||
-            base64UrlEncode(local.groupId) !== state.group.groupId
-          )
-        ) {
-          const reset = await this.#recoverAcceptedReset(partnershipId, state);
-          if (reset) {
-            local = reset;
-          } else {
-            await this.#vault.purgePartnership(partnershipId);
-            local = null;
-          }
-        }
-
-        if (state.group && !local) {
-          local =
-            (await this.#recoverAcceptedReset(partnershipId, state)) ??
-            (await this.#recoverAcceptedBootstrap(partnershipId, state)) ??
-            (await this.#joinFromWelcome(partnershipId, state));
-        }
-        if (!state.group || !local) {
-          return state;
-        }
-
-        local = await this.#processControls(partnershipId, state, local);
+      if (!state.group) {
+        local = await this.#bootstrap(partnershipId, state);
         state = await loadCryptoPartnershipState(partnershipId);
+      } else if (
+        local &&
+        (local.groupGeneration !== state.group.groupGeneration ||
+          base64UrlEncode(local.groupId) !== state.group.groupId)
+      ) {
+        const reset = await this.#recoverAcceptedReset(partnershipId, state);
+        if (reset) {
+          local = reset;
+        } else {
+          await this.#vault.purgePartnership(partnershipId);
+          local = null;
+        }
+      }
 
-        const trustedIds = new Set(
-          state.devices
-            .filter((device) => device.trustState === "trusted")
-            .map((device) => device.cryptoDeviceId),
-        );
-        const revokedMembers = state.members.filter(
-          (member) =>
-            member.removedAt === null &&
-            !trustedIds.has(member.cryptoDeviceId),
-        );
-        for (const member of revokedMembers) {
-          if (member.cryptoDeviceId === this.#device.cryptoDeviceId) continue;
+      if (state.group && !local) {
+        local =
+          (await this.#recoverAcceptedReset(partnershipId, state)) ??
+          (await this.#recoverAcceptedBootstrap(partnershipId, state)) ??
+          (await this.#joinFromWelcome(partnershipId, state));
+      }
+      if (!state.group || !local) {
+        return state;
+      }
+
+      local = await this.#processControls(partnershipId, state, local);
+      state = await loadCryptoPartnershipState(partnershipId);
+
+      const trustedIds = new Set(
+        state.devices
+          .filter((device) => device.trustState === "trusted")
+          .map((device) => device.cryptoDeviceId),
+      );
+      const revokedMembers = state.members.filter(
+        (member) => member.removedAt === null && !trustedIds.has(member.cryptoDeviceId),
+      );
+      for (const member of revokedMembers) {
+        if (member.cryptoDeviceId === this.#device.cryptoDeviceId) continue;
+        local = await this.#commitControl(partnershipId, state, local, {
+          kind: "remove",
+          targetCryptoDeviceId: member.cryptoDeviceId,
+          targetLeafIndex: member.leafIndex,
+        });
+        state = await loadCryptoPartnershipState(partnershipId);
+      }
+
+      if (!state.group?.rekeyRequired) {
+        for (const target of state.keyPackages) {
           local = await this.#commitControl(partnershipId, state, local, {
-            kind: "remove",
-            targetCryptoDeviceId: member.cryptoDeviceId,
-            targetLeafIndex: member.leafIndex,
+            kind: "add",
+            targetCryptoDeviceId: target.cryptoDeviceId,
+            keyPackageId: target.keyPackageId,
+            keyPackage: target.keyPackage,
           });
           state = await loadCryptoPartnershipState(partnershipId);
         }
+      }
 
-        if (!state.group?.rekeyRequired) {
-          for (const target of state.keyPackages) {
-            local = await this.#commitControl(partnershipId, state, local, {
-              kind: "add",
-              targetCryptoDeviceId: target.cryptoDeviceId,
-              keyPackageId: target.keyPackageId,
-              keyPackage: target.keyPackage,
-            });
-            state = await loadCryptoPartnershipState(partnershipId);
-          }
-        }
-
-        local = {
-          ...local,
-          ...serverMetadata(state),
-          updatedAt: Date.now(),
-        };
-        await this.#vault.putGroup(local);
-        return state;
-      },
-    );
+      local = {
+        ...local,
+        ...serverMetadata(state),
+        updatedAt: Date.now(),
+      };
+      await this.#vault.putGroup(local);
+      return state;
+    });
   }
 
-  async resetPartnershipGroup(
-    partnershipId: string,
-  ): Promise<CryptoPartnershipState> {
+  async resetPartnershipGroup(partnershipId: string): Promise<CryptoPartnershipState> {
     if (this.#device.trustState !== "trusted") {
       throw new Error("CRYPTO_DEVICE_UNTRUSTED");
     }
 
-    await withCryptoLock(
-      partnershipId,
-      this.#device.cryptoDeviceId,
-      async () => {
-        let state = await loadCryptoPartnershipState(partnershipId);
-        if (!state.group || !state.cryptoRequired) {
-          throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
-        }
+    await withCryptoLock(partnershipId, this.#device.cryptoDeviceId, async () => {
+      let state = await loadCryptoPartnershipState(partnershipId);
+      if (!state.group || !state.cryptoRequired) {
+        throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+      }
 
-        const recovered = await this.#recoverAcceptedReset(partnershipId, state);
-        if (recovered) return;
+      const recovered = await this.#recoverAcceptedReset(partnershipId, state);
+      if (recovered) return;
 
-        const recovery = await this.#vault.recoveryState();
-        const recipient = state.recoveryRecipients.find(
-          (item) => item.accountId === this.accountId,
-        );
+      const recovery = await this.#vault.recoveryState();
+      const recipient = state.recoveryRecipients.find((item) => item.accountId === this.accountId);
+      if (!recovery || !recipient || recipient.recoveryKeyVersion !== recovery.recoveryKeyVersion) {
+        throw new Error("CRYPTO_RECOVERY_REQUIRED");
+      }
+
+      const engine = await this.#deviceEngine();
+      const requestedGroupId = crypto.getRandomValues(new Uint8Array(32));
+      const transition = engine.createGroup(requestedGroupId);
+      const candidate = restoreMlsEngine(this.#module, transition.state);
+      const founderLeafIndex = candidate.memberLeafIndex(
+        transition.groupId,
+        this.#device.cryptoDeviceId,
+      );
+      if (founderLeafIndex === null) {
+        throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+      }
+
+      const resetGroupGeneration = state.group.groupGeneration + 1;
+      const resetGroupId = base64UrlEncode(transition.groupId);
+      const proofText = cryptoResetProofText({
+        accountId: this.accountId,
+        partnershipId,
+        cryptoDeviceId: this.#device.cryptoDeviceId,
+        expectedGroupGeneration: state.group.groupGeneration,
+        expectedEpoch: state.group.currentEpoch,
+        resetGroupGeneration,
+        resetGroupId,
+        resetFounderLeafIndex: founderLeafIndex,
+        recoveryKeyVersion: recovery.recoveryKeyVersion,
+      });
+      const recoverySignature = await signRecoveryProof(
+        recovery.recoveryAuthPrivateKeyPkcs8,
+        utf8(proofText),
+      );
+      const body = {
+        expectedGroupGeneration: state.group.groupGeneration,
+        expectedEpoch: state.group.currentEpoch,
+        newEpoch: 0,
+        kind: "reset" as const,
+        controlMessage: base64UrlEncode(utf8(proofText)),
+        welcome: null,
+        targetCryptoDeviceId: null,
+        targetLeafIndex: null,
+        keyPackageId: null,
+        resetGroupGeneration,
+        resetGroupId,
+        resetFounderLeafIndex: founderLeafIndex,
+        recoveryKeyVersion: recovery.recoveryKeyVersion,
+        recoverySignature: base64UrlEncode(recoverySignature),
+      };
+      const operationId = crypto.randomUUID();
+      await this.#vault.stageControlOutbound({
+        operationId,
+        partnershipId,
+        cryptoProfile: S1_CRYPTO_PROFILE,
+        requestBody: { type: "control", body } satisfies PendingControlBody,
+        candidateState: transition.state,
+        createdAt: Date.now(),
+      });
+
+      try {
+        const accepted = await commitCryptoPartnership(partnershipId, body);
+        state = await loadCryptoPartnershipState(partnershipId);
         if (
-          !recovery ||
-          !recipient ||
-          recipient.recoveryKeyVersion !== recovery.recoveryKeyVersion
+          !state.group ||
+          state.group.groupGeneration !== accepted.groupGeneration ||
+          state.group.groupId !== resetGroupId
         ) {
-          throw new Error("CRYPTO_RECOVERY_REQUIRED");
-        }
-
-        const engine = await this.#deviceEngine();
-        const requestedGroupId = crypto.getRandomValues(new Uint8Array(32));
-        const transition = engine.createGroup(requestedGroupId);
-        const candidate = restoreMlsEngine(this.#module, transition.state);
-        const founderLeafIndex = candidate.memberLeafIndex(
-          transition.groupId,
-          this.#device.cryptoDeviceId,
-        );
-        if (founderLeafIndex === null) {
           throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
         }
-
-        const resetGroupGeneration = state.group.groupGeneration + 1;
-        const resetGroupId = base64UrlEncode(transition.groupId);
-        const proofText = cryptoResetProofText({
-          accountId: this.accountId,
-          partnershipId,
-          cryptoDeviceId: this.#device.cryptoDeviceId,
-          expectedGroupGeneration: state.group.groupGeneration,
-          expectedEpoch: state.group.currentEpoch,
-          resetGroupGeneration,
-          resetGroupId,
-          resetFounderLeafIndex: founderLeafIndex,
-          recoveryKeyVersion: recovery.recoveryKeyVersion,
-        });
-        const recoverySignature = await signRecoveryProof(
-          recovery.recoveryAuthPrivateKeyPkcs8,
-          utf8(proofText),
-        );
-        const body = {
-          expectedGroupGeneration: state.group.groupGeneration,
-          expectedEpoch: state.group.currentEpoch,
-          newEpoch: 0,
-          kind: "reset" as const,
-          controlMessage: base64UrlEncode(utf8(proofText)),
-          welcome: null,
-          targetCryptoDeviceId: null,
-          targetLeafIndex: null,
-          keyPackageId: null,
-          resetGroupGeneration,
-          resetGroupId,
-          resetFounderLeafIndex: founderLeafIndex,
-          recoveryKeyVersion: recovery.recoveryKeyVersion,
-          recoverySignature: base64UrlEncode(recoverySignature),
-        };
-        const operationId = crypto.randomUUID();
-        await this.#vault.stageControlOutbound({
-          operationId,
+        const next: StoredGroupState = {
           partnershipId,
           cryptoProfile: S1_CRYPTO_PROFILE,
-          requestBody: { type: "control", body } satisfies PendingControlBody,
-          candidateState: transition.state,
-          createdAt: Date.now(),
-        });
-
-        try {
-          const accepted = await commitCryptoPartnership(partnershipId, body);
-          state = await loadCryptoPartnershipState(partnershipId);
-          if (
-            !state.group ||
-            state.group.groupGeneration !== accepted.groupGeneration ||
-            state.group.groupId !== resetGroupId
-          ) {
-            throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
-          }
-          const next: StoredGroupState = {
-            partnershipId,
-            cryptoProfile: S1_CRYPTO_PROFILE,
-            groupGeneration: accepted.groupGeneration,
-            mlsEpoch: accepted.currentEpoch,
-            groupId: transition.groupId,
-            state: transition.state,
-            controlCursor: accepted.controlSequence,
-            ...serverMetadata(state),
-            updatedAt: Date.now(),
-          };
-          await this.#vault.promoteControlOperation(operationId, next);
-        } catch (error) {
-          if (
-            error instanceof ApiClientError &&
-            [
-              "CRYPTO_EPOCH_CONFLICT",
-              "CRYPTO_RECOVERY_VERSION_CONFLICT",
-              "CRYPTO_RECOVERY_FAILED",
-            ].includes(error.code)
-          ) {
-            await this.#vault.completeOperation(operationId);
-          }
-          throw error;
+          groupGeneration: accepted.groupGeneration,
+          mlsEpoch: accepted.currentEpoch,
+          groupId: transition.groupId,
+          state: transition.state,
+          controlCursor: accepted.controlSequence,
+          ...serverMetadata(state),
+          updatedAt: Date.now(),
+        };
+        await this.#vault.promoteControlOperation(operationId, next);
+      } catch (error) {
+        if (
+          error instanceof ApiClientError &&
+          [
+            "CRYPTO_EPOCH_CONFLICT",
+            "CRYPTO_RECOVERY_VERSION_CONFLICT",
+            "CRYPTO_RECOVERY_FAILED",
+          ].includes(error.code)
+        ) {
+          await this.#vault.completeOperation(operationId);
         }
-      },
-    );
+        throw error;
+      }
+    });
 
     return this.ensurePartnership(partnershipId);
   }
 
-  async partnershipState(
-    partnershipId: string,
-  ): Promise<CryptoPartnershipState> {
+  async partnershipState(partnershipId: string): Promise<CryptoPartnershipState> {
     return this.ensurePartnership(partnershipId);
   }
 
@@ -1164,18 +1109,13 @@ export class S1CryptoRuntime {
       recoveryAuthPrivateKeyPkcs8: base64UrlEncode(auth.privateKeyPkcs8),
       recoveryAuthPublicKey: base64UrlEncode(auth.publicKey),
     };
-    const encrypted = await encryptRecoveryBundle(
-      utf8(JSON.stringify(plaintext)),
-      rms,
-    );
+    const encrypted = await encryptRecoveryBundle(utf8(JSON.stringify(plaintext)), rms);
     await setupCryptoRecovery({
       cryptoProfile: S1_CRYPTO_PROFILE,
       recoveryKeyVersion,
       recoveryHpkePublicKey: plaintext.recoveryHpkePublicKey,
       recoveryAuthPublicKey: plaintext.recoveryAuthPublicKey,
-      encryptedBundle: base64UrlEncode(
-        utf8(JSON.stringify(encrypted)),
-      ),
+      encryptedBundle: base64UrlEncode(utf8(JSON.stringify(encrypted))),
     });
     const stored: StoredRecoveryState = {
       key: "recovery",
@@ -1249,9 +1189,7 @@ export class S1CryptoRuntime {
       recoveryKeyVersion: bundle.recoveryKeyVersion,
       recoveryHpkePrivateKey: base64UrlDecode(bundle.recoveryHpkePrivateKey),
       recoveryHpkePublicKey: base64UrlDecode(bundle.recoveryHpkePublicKey),
-      recoveryAuthPrivateKeyPkcs8: base64UrlDecode(
-        bundle.recoveryAuthPrivateKeyPkcs8,
-      ),
+      recoveryAuthPrivateKeyPkcs8: base64UrlDecode(bundle.recoveryAuthPrivateKeyPkcs8),
       recoveryAuthPublicKey: base64UrlDecode(bundle.recoveryAuthPublicKey),
       updatedAt: Date.now(),
     });
@@ -1275,94 +1213,77 @@ export class S1CryptoRuntime {
       throw new Error("CRYPTO_RECOVERY_REQUIRED");
     }
 
-    return withCryptoLock(
-      contextInput.partnershipId,
-      this.#device.cryptoDeviceId,
-      async () => {
-        const { engine, group } = await this.#groupEngine(
-          contextInput.partnershipId,
-        );
-        const context = envelopeContext({
-          partnershipId: contextInput.partnershipId,
-          groupGeneration: group.groupGeneration,
-          mlsEpoch: group.mlsEpoch,
-          contentType: contextInput.contentType,
-          contentId: contextInput.contentId,
-          contentVersion: contextInput.contentVersion,
-          payloadRole: contextInput.payloadRole,
-          senderCryptoDeviceId: this.#device.cryptoDeviceId,
-          schemaVersion: contextInput.schemaVersion,
-        });
-        const contentKeyId = crypto.randomUUID();
-        const encrypted = await encryptBytes(plaintext, context);
-        const distribution = engine.createApplicationMessage(
-          group.groupId,
-          keyDistributionBytes(context, contentKeyId, encrypted.key),
-        );
-        if (!distribution.applicationMessage) {
-          throw new Error("CRYPTO_GROUP_NOT_READY");
-        }
-        const candidate = restoreMlsEngine(this.#module, distribution.state);
-        const signature = candidate.signContent(
-          contentSignatureInput(
+    return withCryptoLock(contextInput.partnershipId, this.#device.cryptoDeviceId, async () => {
+      const { engine, group } = await this.#groupEngine(contextInput.partnershipId);
+      const context = envelopeContext({
+        partnershipId: contextInput.partnershipId,
+        groupGeneration: group.groupGeneration,
+        mlsEpoch: group.mlsEpoch,
+        contentType: contextInput.contentType,
+        contentId: contextInput.contentId,
+        contentVersion: contextInput.contentVersion,
+        payloadRole: contextInput.payloadRole,
+        senderCryptoDeviceId: this.#device.cryptoDeviceId,
+        schemaVersion: contextInput.schemaVersion,
+      });
+      const contentKeyId = crypto.randomUUID();
+      const encrypted = await encryptBytes(plaintext, context);
+      const distribution = engine.createApplicationMessage(
+        group.groupId,
+        keyDistributionBytes(context, contentKeyId, encrypted.key),
+      );
+      if (!distribution.applicationMessage) {
+        throw new Error("CRYPTO_GROUP_NOT_READY");
+      }
+      const candidate = restoreMlsEngine(this.#module, distribution.state);
+      const signature = candidate.signContent(
+        contentSignatureInput(context, contentKeyId, encrypted.nonce, encrypted.digest),
+      );
+      const recoveryCapsules = group.recoveryRecipients.map((recipient) => {
+        const sealed = candidate.hpkeSeal(
+          base64UrlDecode(recipient.recoveryHpkePublicKey),
+          recoveryCapsuleInfo(
             context,
             contentKeyId,
-            encrypted.nonce,
-            encrypted.digest,
+            recipient.accountId,
+            recipient.recoveryKeyVersion,
           ),
-        );
-        const recoveryCapsules = group.recoveryRecipients.map((recipient) => {
-          const sealed = candidate.hpkeSeal(
-            base64UrlDecode(recipient.recoveryHpkePublicKey),
-            recoveryCapsuleInfo(
-              context,
-              contentKeyId,
-              recipient.accountId,
-              recipient.recoveryKeyVersion,
-            ),
-            recoveryCapsuleAad(context, contentKeyId),
-            encrypted.key,
-          );
-          return {
-            accountId: recipient.accountId,
-            recoveryKeyVersion: recipient.recoveryKeyVersion,
-            encapsulation: base64UrlEncode(sealed.encapsulation),
-            ciphertext: base64UrlEncode(sealed.ciphertext),
-          };
-        });
-
-        const nextGroup: StoredGroupState = {
-          ...group,
-          state: distribution.state,
-          updatedAt: Date.now(),
-        };
-        await this.#vault.putGroup(nextGroup);
-        await this.#vault.putContentKey(
-          contentKeyId,
-          contextInput.partnershipId,
+          recoveryCapsuleAad(context, contentKeyId),
           encrypted.key,
         );
-
-        const envelope: ProtectedContentEnvelopeInput = {
-          cryptoProfile: S1_CRYPTO_PROFILE,
-          groupGeneration: context.groupGeneration,
-          mlsEpoch: context.mlsEpoch,
-          senderCryptoDeviceId: context.senderCryptoDeviceId,
-          contentKeyId,
-          nonce: base64UrlEncode(encrypted.nonce),
-          ciphertextSha256: base64UrlEncode(encrypted.digest),
-          keyDistributionMessage: base64UrlEncode(
-            distribution.applicationMessage,
-          ),
-          contentSignature: base64UrlEncode(signature),
-          recoveryCapsules,
-        };
         return {
-          ciphertext: base64UrlEncode(encrypted.ciphertext),
-          envelope,
+          accountId: recipient.accountId,
+          recoveryKeyVersion: recipient.recoveryKeyVersion,
+          encapsulation: base64UrlEncode(sealed.encapsulation),
+          ciphertext: base64UrlEncode(sealed.ciphertext),
         };
-      },
-    );
+      });
+
+      const nextGroup: StoredGroupState = {
+        ...group,
+        state: distribution.state,
+        updatedAt: Date.now(),
+      };
+      await this.#vault.putGroup(nextGroup);
+      await this.#vault.putContentKey(contentKeyId, contextInput.partnershipId, encrypted.key);
+
+      const envelope: ProtectedContentEnvelopeInput = {
+        cryptoProfile: S1_CRYPTO_PROFILE,
+        groupGeneration: context.groupGeneration,
+        mlsEpoch: context.mlsEpoch,
+        senderCryptoDeviceId: context.senderCryptoDeviceId,
+        contentKeyId,
+        nonce: base64UrlEncode(encrypted.nonce),
+        ciphertextSha256: base64UrlEncode(encrypted.digest),
+        keyDistributionMessage: base64UrlEncode(distribution.applicationMessage),
+        contentSignature: base64UrlEncode(signature),
+        recoveryCapsules,
+      };
+      return {
+        ciphertext: base64UrlEncode(encrypted.ciphertext),
+        envelope,
+      };
+    });
   }
 
   async protectJson(
@@ -1433,36 +1354,28 @@ export class S1CryptoRuntime {
 
     if (!key) {
       try {
-        await withCryptoLock(
-          contextInput.partnershipId,
-          this.#device.cryptoDeviceId,
-          async () => {
-            const current = await this.#vault.group(contextInput.partnershipId);
-            if (!current) throw new Error("CRYPTO_GROUP_NOT_READY");
-            const engine = restoreMlsEngine(this.#module, current.state);
-            const transition = engine.processMessage(
-              current.groupId,
-              base64UrlDecode(envelope.keyDistributionMessage),
-            );
-            if (!transition.applicationMessage) {
-              throw new Error("CRYPTO_CIPHERTEXT_INVALID");
-            }
-            key = parseKeyDistribution(transition.applicationMessage, {
-              context,
-              contentKeyId: envelope.contentKeyId,
-            });
-            await this.#vault.putGroup({
-              ...current,
-              state: transition.state,
-              updatedAt: Date.now(),
-            });
-            await this.#vault.putContentKey(
-              envelope.contentKeyId,
-              contextInput.partnershipId,
-              key,
-            );
-          },
-        );
+        await withCryptoLock(contextInput.partnershipId, this.#device.cryptoDeviceId, async () => {
+          const current = await this.#vault.group(contextInput.partnershipId);
+          if (!current) throw new Error("CRYPTO_GROUP_NOT_READY");
+          const engine = restoreMlsEngine(this.#module, current.state);
+          const transition = engine.processMessage(
+            current.groupId,
+            base64UrlDecode(envelope.keyDistributionMessage),
+          );
+          if (!transition.applicationMessage) {
+            throw new Error("CRYPTO_CIPHERTEXT_INVALID");
+          }
+          key = parseKeyDistribution(transition.applicationMessage, {
+            context,
+            contentKeyId: envelope.contentKeyId,
+          });
+          await this.#vault.putGroup({
+            ...current,
+            state: transition.state,
+            updatedAt: Date.now(),
+          });
+          await this.#vault.putContentKey(envelope.contentKeyId, contextInput.partnershipId, key);
+        });
       } catch {
         const recovery = await this.#vault.recoveryState();
         if (!recovery || !envelope.recoveryCapsule) {
@@ -1485,21 +1398,15 @@ export class S1CryptoRuntime {
           ),
           recoveryCapsuleAad(context, envelope.contentKeyId),
           {
-            encapsulation: base64UrlDecode(
-              envelope.recoveryCapsule.encapsulation,
-            ),
-            ciphertext: base64UrlDecode(
-              envelope.recoveryCapsule.ciphertext,
-            ),
+            encapsulation: base64UrlDecode(envelope.recoveryCapsule.encapsulation),
+            ciphertext: base64UrlDecode(envelope.recoveryCapsule.ciphertext),
           },
         );
-        await this.#vault.putContentKey(
-          envelope.contentKeyId,
-          contextInput.partnershipId,
-          key,
-        );
+        await this.#vault.putContentKey(envelope.contentKeyId, contextInput.partnershipId, key);
       }
     }
+
+    if (!key) throw new Error("CRYPTO_HISTORY_UNAVAILABLE");
 
     return decryptBytes(
       {
@@ -1517,8 +1424,6 @@ export class S1CryptoRuntime {
     context: S1DecryptionContext,
     protectedContent: EncryptedProtectedContentProjection,
   ): Promise<T> {
-    return JSON.parse(
-      utf8Decode(await this.decryptProtectedBytes(context, protectedContent)),
-    ) as T;
+    return JSON.parse(utf8Decode(await this.decryptProtectedBytes(context, protectedContent))) as T;
   }
 }

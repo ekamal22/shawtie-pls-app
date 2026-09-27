@@ -33,10 +33,7 @@ function privateNoStore(reply: { header(name: string, value: string): unknown })
   reply.header("cache-control", "private, no-store");
 }
 
-export function registerCryptoRoutes(
-  app: FastifyInstance,
-  deps: CryptoRouteDependencies,
-): void {
+export function registerCryptoRoutes(app: FastifyInstance, deps: CryptoRouteDependencies): void {
   const { database, config, keys, service } = deps;
 
   app.get("/api/v1/crypto/devices/current", async (request, reply) => {

@@ -9,10 +9,7 @@ import {
 import { ApiClientError, apiRequest } from "../../lib/api-client.ts";
 import { getActiveS1CryptoRuntime } from "../../lib/crypto/runtime-context.tsx";
 import { purgeMediaPartnershipData } from "../../lib/media/media-local-db.ts";
-import {
-  decryptRelationshipItemForView,
-  decryptRelationshipItemsForView,
-} from "../../lib/crypto/projection-decryption.ts";
+import { decryptRelationshipItemsForView } from "../../lib/crypto/projection-decryption.ts";
 import { getActiveM2Runtime } from "../../lib/realtime/runtime-context.tsx";
 import type {
   RelationshipItem,
@@ -70,18 +67,13 @@ async function relationshipCryptoPolicy(): Promise<{
     const authority = await apiRequest<CurrentConversationCryptoAuthority>(
       "/api/v1/conversations/current",
     );
-    if (
-      !authority.conversation ||
-      authority.conversation.partnershipId !== partnershipId
-    ) {
+    if (!authority.conversation || authority.conversation.partnershipId !== partnershipId) {
       throw new ApiClientError("NO_CURRENT_PARTNERSHIP", 409);
     }
     cryptoRequired = authority.conversation.cryptoRequired;
   }
 
-  const contentContextKey = cryptoRequired
-    ? S1_CONTENT_CONTEXT
-    : M2_PRE_S1_CONTENT_CONTEXT;
+  const contentContextKey = cryptoRequired ? S1_CONTENT_CONTEXT : M2_PRE_S1_CONTENT_CONTEXT;
   const conversationId = m2.realtime.scope.conversationId;
   if (conversationId) {
     const database = await m2.database();
@@ -120,8 +112,7 @@ async function protectCreateBody(
 
   const content = record(source.content);
   const previewValue = source.preview;
-  const preview =
-    previewValue === null || previewValue === undefined ? null : record(previewValue);
+  const preview = previewValue === null || previewValue === undefined ? null : record(previewValue);
   const kind = typeof source.kind === "string" ? source.kind : null;
   const schemaVersion =
     typeof source.contentSchemaVersion === "number" &&
@@ -133,8 +124,7 @@ async function protectCreateBody(
     throw new ApiClientError("VALIDATION_FAILED", 400);
   }
 
-  const itemId =
-    typeof source.itemId === "string" ? source.itemId : crypto.randomUUID();
+  const itemId = typeof source.itemId === "string" ? source.itemId : crypto.randomUUID();
   const [protectedContent, protectedPreview] = await Promise.all([
     cryptoRuntime.protectJson(
       {
@@ -245,13 +235,7 @@ async function decryptItems(
     null;
   if (!partnershipId) return [...items];
   const cryptoRuntime = getActiveS1CryptoRuntime();
-  return [
-    ...(await decryptRelationshipItemsForView(
-      cryptoRuntime,
-      partnershipId,
-      items,
-    )),
-  ];
+  return [...(await decryptRelationshipItemsForView(cryptoRuntime, partnershipId, items))];
 }
 
 async function decryptItem(
@@ -444,9 +428,7 @@ export function releaseRelationshipItem(
   });
 }
 
-export async function loadThisDay(
-  on: string,
-): Promise<{ on: string; items: RelationshipItem[] }> {
+export async function loadThisDay(on: string): Promise<{ on: string; items: RelationshipItem[] }> {
   const result = await apiRequest<{ on: string; items: RelationshipItemProjection[] }>(
     "/api/v1/relationship-space/experiences/this-day?on=" + encodeURIComponent(on),
   );

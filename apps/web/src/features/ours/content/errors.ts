@@ -5,7 +5,8 @@ export function messageFor(error: unknown): string {
   if (error instanceof Error && error.message.startsWith("CRYPTO_")) {
     const cryptoKnown: Record<string, string> = {
       CRYPTO_UNAVAILABLE: "Protected sharing is unavailable on this device.",
-      CRYPTO_DEVICE_UNTRUSTED: "This device needs cryptographic approval before it can change Ours.",
+      CRYPTO_DEVICE_UNTRUSTED:
+        "This device needs cryptographic approval before it can change Ours.",
       CRYPTO_GROUP_NOT_READY: "Protected sharing is still preparing for this relationship.",
       CRYPTO_REKEY_REQUIRED: "Protected sharing is updating device access. Try again shortly.",
       CRYPTO_RECOVERY_REQUIRED: "Protected recovery must be configured for both partners first.",

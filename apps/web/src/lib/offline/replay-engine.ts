@@ -155,7 +155,7 @@ export class M2ReplayEngine {
   async enqueueRelationshipCreate(
     body: unknown,
     idempotencyKey = "m2-" + crypto.randomUUID(),
-    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
+    contentContextKey: string = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<RelationshipQueueOperation> {
     if (!safeRelationshipCreate(body)) {
       throw new Error("Relationship create is not eligible for M2 offline replay");
@@ -174,7 +174,7 @@ export class M2ReplayEngine {
     itemId: string,
     body: unknown,
     idempotencyKey = "m2-" + crypto.randomUUID(),
-    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
+    contentContextKey: string = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<RelationshipQueueOperation> {
     if (!safeRelationshipPatch(body)) {
       throw new Error("Relationship patch is not eligible for M2 offline replay");
@@ -193,7 +193,7 @@ export class M2ReplayEngine {
     itemId: string,
     expectedVersion: number,
     idempotencyKey = "m2-" + crypto.randomUUID(),
-    contentContextKey = M2_PRE_S1_CONTENT_CONTEXT,
+    contentContextKey: string = M2_PRE_S1_CONTENT_CONTEXT,
   ): Promise<RelationshipQueueOperation> {
     return this.#enqueueRelationship({
       operationType: "item.delete",

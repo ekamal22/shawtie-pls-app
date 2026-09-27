@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  S1_CRYPTO_PROFILE,
-  S1_MAX_CONTROL_MESSAGE_BYTES,
-} from "./s1.ts";
+import { S1_CRYPTO_PROFILE, S1_MAX_CONTROL_MESSAGE_BYTES } from "./s1.ts";
 
 const base64Url = z
   .string()

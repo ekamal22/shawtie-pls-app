@@ -69,9 +69,7 @@ const api = {
       schemaVersion: 1,
     });
     const encrypted = await encryptBytes(utf8(text), context);
-    const plaintext = utf8Decode(
-      await decryptBytes(encrypted.payload, encrypted.key, context),
-    );
+    const plaintext = utf8Decode(await decryptBytes(encrypted.payload, encrypted.key, context));
     let substitutionRejected = false;
     try {
       await decryptBytes(encrypted.payload, encrypted.key, {

@@ -241,13 +241,7 @@ export async function insertCryptoKeyPackage(
        id, crypto_device_id, key_package, key_package_sha256, created_at
      ) VALUES ($1,$2,$3,$4,$5)
      ON CONFLICT (key_package_sha256) DO NOTHING`,
-    [
-      input.id,
-      input.cryptoDeviceId,
-      input.keyPackage,
-      input.keyPackageSha256,
-      input.createdAt,
-    ],
+    [input.id, input.cryptoDeviceId, input.keyPackage, input.keyPackageSha256, input.createdAt],
   );
 }
 
@@ -871,11 +865,7 @@ export async function activateResetPartnershipCryptoGeneration(
        AND status = 'active'
        AND current_epoch = 0
      RETURNING partnership_id`,
-    [
-      input.partnershipId,
-      input.groupGeneration,
-      input.controlSequence.toString(),
-    ],
+    [input.partnershipId, input.groupGeneration, input.controlSequence.toString()],
   );
   if (group.rowCount !== 1) return false;
 

@@ -261,7 +261,6 @@ export * from "./calls/signaling-v1.ts";
 export * from "./calls/signaling-v2.ts";
 export * from "./calls/push.ts";
 
-
 export {
   S1_CONTROL_PAGE_MAX,
   S1_CRYPTO_PROFILE,
@@ -297,7 +296,6 @@ export {
   type CryptoRecoveryProofInput,
   type CryptoRecoverySetupInput,
 } from "./crypto/s1.ts";
-
 
 export {
   S1_MAX_KEY_DISTRIBUTION_BYTES,

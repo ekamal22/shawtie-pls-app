@@ -7,7 +7,6 @@ import {
 } from "../src/index.ts";
 
 const uuid = () => crypto.randomUUID();
-const key = Buffer.alloc(32, 1).toString("base64url");
 const nonce = Buffer.alloc(12, 2).toString("base64url");
 const digest = Buffer.alloc(32, 3).toString("base64url");
 const signature = Buffer.alloc(64, 4).toString("base64url");

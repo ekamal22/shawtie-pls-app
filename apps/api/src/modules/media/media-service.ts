@@ -303,11 +303,9 @@ export class MediaService {
       const policy = await loadPartnershipCryptoPolicy(transaction, lifecycle.partnershipId);
       if (
         policy?.cryptoRequiredFrom &&
-        (
-          input.cryptoProtocolVersion !== S1_CRYPTO_PROFILE ||
+        (input.cryptoProtocolVersion !== S1_CRYPTO_PROFILE ||
           !input.mediaId ||
-          !input.contentEnvelope
-        )
+          !input.contentEnvelope)
       ) {
         throw new ApiError(409, "CRYPTO_REQUIRED");
       }

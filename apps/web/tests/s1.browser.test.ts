@@ -52,7 +52,10 @@ test("S1 crypto namespace revocation purges local crypto state", async () => {
 test("S1 production media path has no static legacy test-crypto dependency", async () => {
   const runtime = await source("../src/lib/media/media-runtime.ts");
 
-  assert.equal(runtime.includes('import { decryptMedia, encryptMedia } from "./crypto-port.ts"'), false);
+  assert.equal(
+    runtime.includes('import { decryptMedia, encryptMedia } from "./crypto-port.ts"'),
+    false,
+  );
   assert.equal(runtime.includes('import("./crypto-port.ts")'), true);
   assert.equal(runtime.includes("import.meta.env.DEV"), true);
   assert.equal(runtime.includes('VITE_M3_TEST_CRYPTO === "1"'), true);

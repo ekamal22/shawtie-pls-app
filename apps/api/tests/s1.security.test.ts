@@ -28,7 +28,9 @@ test("S1 message writes reject plaintext after the crypto cutoff", async () => {
 });
 
 test("S1 relationship projections withhold sealed main ciphertext until R1 visibility allows it", async () => {
-  const relationship = await source("../src/modules/relationship-space/relationship-space-service.ts");
+  const relationship = await source(
+    "../src/modules/relationship-space/relationship-space-service.ts",
+  );
 
   assert.equal(relationship.includes("isFullItemVisible"), true);
   assert.equal(relationship.includes("protectedContent"), true);

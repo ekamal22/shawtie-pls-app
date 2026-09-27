@@ -111,6 +111,8 @@ export interface CurrentConversationReadModel {
     readonly username: string;
     readonly displayName: string;
     readonly nickname: string | null;
+    readonly nicknameCiphertext: Buffer | null;
+    readonly nicknameContentKeyId: string | null;
     readonly nicknameVersion: bigint;
     readonly lastSeenAt: Date | null;
     readonly onlineUntil: Date | null;
@@ -544,12 +546,18 @@ function reactionList(value: unknown): MessageProjectionRowModel["reactions"] {
     if (typeof row.reactionId !== "string" || typeof row.accountId !== "string") return [];
     const emoji = typeof row.emoji === "string" ? row.emoji : null;
     const encryptedReaction =
-      typeof row.ciphertextBase64 === "string"
-        ? Buffer.from(row.ciphertextBase64, "base64")
-        : null;
+      typeof row.ciphertextBase64 === "string" ? Buffer.from(row.ciphertextBase64, "base64") : null;
     const contentKeyId = typeof row.contentKeyId === "string" ? row.contentKeyId : null;
     if (emoji === null && (encryptedReaction === null || contentKeyId === null)) return [];
-    return [{ reactionId: row.reactionId, accountId: row.accountId, emoji, encryptedReaction, contentKeyId }];
+    return [
+      {
+        reactionId: row.reactionId,
+        accountId: row.accountId,
+        emoji,
+        encryptedReaction,
+        contentKeyId,
+      },
+    ];
   });
 }
 
@@ -818,7 +826,6 @@ export async function setMessageReaction(
   );
 }
 
-
 export async function setProtectedMessageReaction(
   executor: QueryExecutor,
   input: {
@@ -1041,7 +1048,6 @@ export async function updatePartnershipNickname(
   const insertedRow = inserted.rows[0];
   return insertedRow ? BigInt(insertedRow.version) : null;
 }
-
 
 export async function updateProtectedPartnershipNickname(
   executor: QueryExecutor,
@@ -1412,6 +1418,8 @@ export async function loadCurrentConversationReadModel(
           username: row.self_username,
           displayName: row.self_display_name,
           nickname: row.self_nickname,
+          nicknameCiphertext: row.self_nickname_ciphertext,
+          nicknameContentKeyId: row.self_nickname_content_key_id,
           nicknameVersion: BigInt(row.self_nickname_version),
           deliveredThrough: BigInt(row.self_delivered_through),
           readThrough: BigInt(row.self_read_through),
@@ -1421,6 +1429,8 @@ export async function loadCurrentConversationReadModel(
           username: row.partner_username,
           displayName: row.partner_display_name,
           nickname: row.partner_nickname,
+          nicknameCiphertext: row.partner_nickname_ciphertext,
+          nicknameContentKeyId: row.partner_nickname_content_key_id,
           nicknameVersion: BigInt(row.partner_nickname_version),
           lastSeenAt: row.partner_last_seen_at,
           onlineUntil: row.partner_online_until,

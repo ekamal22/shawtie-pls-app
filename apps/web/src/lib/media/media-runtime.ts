@@ -469,9 +469,7 @@ export async function loadDecryptedMedia(
         payloadRole: "media_content",
       },
       {
-        ciphertext: base64UrlEncode(
-          new Uint8Array(await ciphertext.arrayBuffer()),
-        ),
+        ciphertext: base64UrlEncode(new Uint8Array(await ciphertext.arrayBuffer())),
         envelope: grant.media.protectedMedia.envelope,
       },
     );

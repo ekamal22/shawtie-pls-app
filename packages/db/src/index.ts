@@ -231,6 +231,7 @@ export {
   insertPrimaryConversation,
   listConversationChanges,
   listConversationMessages,
+  listActiveMessageReactionContentKeyIds,
   loadConversationParticipants,
   loadCurrentConversationReadModel,
   loadMessageProjection,
@@ -303,7 +304,6 @@ export {
   getMediaUploadGeneration,
   insertMediaUpload,
   listBoundMediaForContainer,
-  listActiveMessageReactionContentKeyIds,
   listPartnershipMediaForDeletion,
   loadMediaForDeletion,
   loadMediaObject,
@@ -319,7 +319,6 @@ export {
   type MediaObjectRecord,
   type MediaState,
 } from "./repositories/media.ts";
-
 
 export {
   accountBelongsToPartnership,
@@ -370,7 +369,6 @@ export {
   type PartnershipCryptoGroup,
   type PartnershipCryptoMember,
 } from "./repositories/crypto.ts";
-
 
 export {
   deleteProtectedContentKey,

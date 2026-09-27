@@ -565,7 +565,10 @@ const protectedRelationshipItemCreateSchema = z
         value.references.length > 0 ||
         value.links.length > 0
       ) {
-        context.addIssue({ code: "custom", message: "invalid protected relationship signal state" });
+        context.addIssue({
+          code: "custom",
+          message: "invalid protected relationship signal state",
+        });
       }
       return;
     }

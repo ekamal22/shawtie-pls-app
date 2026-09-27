@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { S1CryptoRuntime, type S1RuntimeStatus } from "./crypto-runtime.ts";
 
 interface S1CryptoContextValue {
@@ -87,9 +80,8 @@ export function S1CryptoRuntimeProvider({
   useEffect(() => {
     if (!runtime) return;
     const purge = (event: Event) => {
-      const partnershipId = (
-        event as CustomEvent<{ partnershipId?: string }>
-      ).detail?.partnershipId;
+      const partnershipId = (event as CustomEvent<{ partnershipId?: string }>).detail
+        ?.partnershipId;
       if (!partnershipId) return;
       void runtime.purgePartnership(partnershipId);
     };
@@ -114,7 +106,6 @@ export function S1CryptoRuntimeProvider({
 export function useS1CryptoRuntime(): S1CryptoContextValue {
   return useContext(S1CryptoContext);
 }
-
 
 export function getActiveS1CryptoRuntime(): S1CryptoRuntime | null {
   return activeS1Runtime;

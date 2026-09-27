@@ -75,7 +75,10 @@ export const messageSendSchema = z
       });
     }
     if (value.body !== null && value.protectedBody !== null) {
-      context.addIssue({ code: "custom", message: "message cannot contain plaintext and protected body" });
+      context.addIssue({
+        code: "custom",
+        message: "message cannot contain plaintext and protected body",
+      });
     }
     if (value.body === null && value.protectedBody === null && value.attachments.length === 0) {
       context.addIssue({ code: "custom", message: "message cannot be empty" });
@@ -91,12 +94,10 @@ export const messageSendSchema = z
     const voice = value.attachments.filter((attachment) => attachment.role === "voice_message");
     if (
       voice.length > 0 &&
-      (
-        voice.length !== 1 ||
+      (voice.length !== 1 ||
         value.attachments.length !== 1 ||
         value.body !== null ||
-        value.protectedBody !== null
-      )
+        value.protectedBody !== null)
     ) {
       context.addIssue({
         code: "custom",
@@ -230,7 +231,10 @@ export const messageProjectionSchema = z.object({
       reactionId: uuid,
       accountId: uuid,
       emoji: reactionEmojiSchema.nullable(),
-      protectedReaction: encryptedProtectedContentProjectionSchema.nullable().optional().default(null),
+      protectedReaction: encryptedProtectedContentProjectionSchema
+        .nullable()
+        .optional()
+        .default(null),
     }),
   ),
   attachments: z.array(mediaAttachmentProjectionSchema).max(M3_ATTACHMENTS_PER_MESSAGE_MAX),

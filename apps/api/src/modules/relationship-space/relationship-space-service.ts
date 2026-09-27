@@ -293,10 +293,7 @@ function isFullItemVisible(item: RelationshipItemRecord, actorAccountId: string)
 }
 
 function hasPreview(item: RelationshipItemRecord): boolean {
-  return (
-    item.developmentPreviewPayload !== null ||
-    item.encryptedPreviewPayload !== null
-  );
+  return item.developmentPreviewPayload !== null || item.encryptedPreviewPayload !== null;
 }
 
 function isItemVisible(item: RelationshipItemRecord, actorAccountId: string): boolean {
@@ -909,10 +906,9 @@ export class RelationshipSpaceService {
       : [];
     const links = full ? await loadRelationshipLinks(executor, item.partnershipId, item.id) : [];
 
-    const contentKeyIds = [
-      item.previewContentKeyId,
-      full ? item.mainContentKeyId : null,
-    ].filter((value): value is string => value !== null);
+    const contentKeyIds = [item.previewContentKeyId, full ? item.mainContentKeyId : null].filter(
+      (value): value is string => value !== null,
+    );
     const keys = await loadProtectedContentKeys(executor, contentKeyIds);
     const key = (contentKeyId: string | null): ProtectedContentKeyRecord | null => {
       if (!contentKeyId) return null;
@@ -1284,10 +1280,7 @@ export class RelationshipSpaceService {
       const protectedContent = "protectedContent" in input ? input.protectedContent : null;
       const itemId = "itemId" in input ? input.itemId : randomUUID();
       const policy = await loadPartnershipCryptoPolicy(transaction, lifecycle.partnershipId);
-      if (
-        policy?.cryptoRequiredFrom &&
-        (input.preview !== null || input.content !== null)
-      ) {
+      if (policy?.cryptoRequiredFrom && (input.preview !== null || input.content !== null)) {
         throw new ApiError(409, "CRYPTO_REQUIRED");
       }
 
@@ -1345,8 +1338,7 @@ export class RelationshipSpaceService {
         content: input.content,
         encryptedPreview,
         encryptedContent,
-        ciphertextVersion:
-          protectedPreview || protectedContent ? S1_CRYPTO_PROFILE : null,
+        ciphertextVersion: protectedPreview || protectedContent ? S1_CRYPTO_PROFILE : null,
         previewContentKeyId: protectedPreview?.envelope.contentKeyId ?? null,
         mainContentKeyId: protectedContent?.envelope.contentKeyId ?? null,
         occurredPrecision: occurrence.precision,
@@ -1519,10 +1511,9 @@ export class RelationshipSpaceService {
       );
       const currentLinks = await loadRelationshipLinks(transaction, item.partnershipId, item.id);
 
-      const existingKeyIds = [
-        item.previewContentKeyId,
-        item.mainContentKeyId,
-      ].filter((value): value is string => value !== null);
+      const existingKeyIds = [item.previewContentKeyId, item.mainContentKeyId].filter(
+        (value): value is string => value !== null,
+      );
       const existingKeys = await loadProtectedContentKeys(transaction, existingKeyIds);
       const existingProtectedPreview =
         item.encryptedPreviewPayload && item.previewContentKeyId
@@ -1548,8 +1539,7 @@ export class RelationshipSpaceService {
           : null;
 
       const encryptedMode =
-        policy?.cryptoRequiredFrom !== null &&
-        policy?.cryptoRequiredFrom !== undefined;
+        policy?.cryptoRequiredFrom !== null && policy?.cryptoRequiredFrom !== undefined;
       const candidate = encryptedMode
         ? parseAtBoundary(relationshipItemCreateSchema, {
             itemId: item.id,
@@ -1565,7 +1555,8 @@ export class RelationshipSpaceService {
               input.protectedContent !== undefined
                 ? input.protectedContent
                 : existingProtectedContent,
-            occurrence: input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
+            occurrence:
+              input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
             storyIncluded:
               input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
             release: input.release !== undefined ? input.release : releaseFromItem(item),
@@ -1581,7 +1572,8 @@ export class RelationshipSpaceService {
             contentSchemaVersion: item.contentSchemaVersion,
             preview: input.preview !== undefined ? input.preview : item.developmentPreviewPayload,
             content: input.content !== undefined ? input.content : item.developmentPlaintextPayload,
-            occurrence: input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
+            occurrence:
+              input.occurrence !== undefined ? input.occurrence : occurrenceFromItem(item),
             storyIncluded:
               input.storyIncluded !== undefined ? input.storyIncluded : item.storyIncluded,
             release: input.release !== undefined ? input.release : releaseFromItem(item),
@@ -1759,8 +1751,7 @@ export class RelationshipSpaceService {
         content: encryptedMode ? null : candidate.content,
         encryptedPreview: nextEncryptedPreview,
         encryptedContent: nextEncryptedContent,
-        ciphertextVersion:
-          nextEncryptedPreview || nextEncryptedContent ? S1_CRYPTO_PROFILE : null,
+        ciphertextVersion: nextEncryptedPreview || nextEncryptedContent ? S1_CRYPTO_PROFILE : null,
         previewContentKeyId: nextPreviewContentKeyId,
         mainContentKeyId: nextMainContentKeyId,
         occurredPrecision: occurrence.precision,
@@ -1775,16 +1766,10 @@ export class RelationshipSpaceService {
       });
       if (nextVersion === null) throw new ApiError(409, "VERSION_CONFLICT");
 
-      if (
-        item.previewContentKeyId &&
-        item.previewContentKeyId !== nextPreviewContentKeyId
-      ) {
+      if (item.previewContentKeyId && item.previewContentKeyId !== nextPreviewContentKeyId) {
         await deleteProtectedContentKey(transaction, item.previewContentKeyId);
       }
-      if (
-        item.mainContentKeyId &&
-        item.mainContentKeyId !== nextMainContentKeyId
-      ) {
+      if (item.mainContentKeyId && item.mainContentKeyId !== nextMainContentKeyId) {
         await deleteProtectedContentKey(transaction, item.mainContentKeyId);
       }
 

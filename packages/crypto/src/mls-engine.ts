@@ -37,11 +37,7 @@ export interface MlsEngine {
   createApplicationMessage(groupId: Uint8Array, plaintext: Uint8Array): MlsTransition;
   processMessage(groupId: Uint8Array, message: Uint8Array): MlsTransition;
   signContent(payload: Uint8Array): Uint8Array<ArrayBuffer>;
-  verifyContent(
-    publicKey: Uint8Array,
-    payload: Uint8Array,
-    signature: Uint8Array,
-  ): boolean;
+  verifyContent(publicKey: Uint8Array, payload: Uint8Array, signature: Uint8Array): boolean;
   deriveRecoveryKeyPair(ikm: Uint8Array): HpkeRecoveryKeyPair;
   hpkeSeal(
     publicKey: Uint8Array,

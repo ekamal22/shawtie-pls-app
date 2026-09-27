@@ -38,7 +38,6 @@ import {
   listPartnershipCryptoDevices,
   listPartnershipCryptoMembers,
   listPartnershipRecoveryRecipients,
-  listPartnershipTrustedCryptoDevices,
   loadActivePartnershipCryptoGroup,
   loadCurrentCryptoRecovery,
   loadPartnershipCryptoPolicy,
@@ -120,7 +119,7 @@ function enrollmentProofPayload(
       input.cryptoProfile,
       input.mlsSigningPublicKey,
       input.contentSigningPublicKey,
-    ].join("\\0"),
+    ].join("\0"),
     "utf8",
   );
 }
@@ -205,19 +204,12 @@ export class CryptoService {
   }
 
   async currentDevice(auth: AuthContext): Promise<unknown> {
-    const identity = await this.#currentIdentity(
-      this.database.pool,
-      auth,
-      "any",
-    );
+    const identity = await this.#currentIdentity(this.database.pool, auth, "any");
     return { device: identityProjection(identity) };
   }
 
   async devices(auth: AuthContext): Promise<unknown> {
-    const identities = await listAccountCryptoDevices(
-      this.database.pool,
-      auth.session.accountId,
-    );
+    const identities = await listAccountCryptoDevices(this.database.pool, auth.session.accountId);
     return { devices: identities.map(identityProjection) };
   }
 
@@ -229,11 +221,7 @@ export class CryptoService {
     if (
       !verifyRawEd25519(
         contentSigningPublicKey,
-        enrollmentProofPayload(
-          auth.session.accountId,
-          auth.session.deviceId,
-          input,
-        ),
+        enrollmentProofPayload(auth.session.accountId, auth.session.deviceId, input),
         identityProofSignature,
       )
     ) {
@@ -400,14 +388,13 @@ export class CryptoService {
       const group = await loadActivePartnershipCryptoGroup(transaction, partnershipId);
       const devices = await listPartnershipCryptoDevices(transaction, partnershipId);
       const members = group
-        ? await listPartnershipCryptoMembers(
-            transaction,
-            partnershipId,
-            group.groupGeneration,
-          )
+        ? await listPartnershipCryptoMembers(transaction, partnershipId, group.groupGeneration)
         : [];
       const packages = await listAvailablePartnershipKeyPackages(transaction, partnershipId);
-      const recoveryRecipients = await listPartnershipRecoveryRecipients(transaction, partnershipId);
+      const recoveryRecipients = await listPartnershipRecoveryRecipients(
+        transaction,
+        partnershipId,
+      );
       const legacyPlaintextBlocker = await partnershipHasLegacyProtectedPlaintext(
         transaction,
         partnershipId,
@@ -576,14 +563,8 @@ export class CryptoService {
         if (!policy?.cryptoRequiredFrom) {
           throw new ApiError(409, "CRYPTO_GROUP_RESET_REQUIRED");
         }
-        const recovery = await loadCurrentCryptoRecovery(
-          transaction,
-          auth.session.accountId,
-        );
-        if (
-          !recovery ||
-          recovery.recoveryKeyVersion !== input.recoveryKeyVersion
-        ) {
+        const recovery = await loadCurrentCryptoRecovery(transaction, auth.session.accountId);
+        if (!recovery || recovery.recoveryKeyVersion !== input.recoveryKeyVersion) {
           throw new ApiError(409, "CRYPTO_RECOVERY_VERSION_CONFLICT");
         }
 
@@ -615,15 +596,12 @@ export class CryptoService {
           throw new ApiError(403, "CRYPTO_RECOVERY_FAILED");
         }
 
-        const superseded = await supersedeActivePartnershipCryptoGroup(
-          transaction,
-          {
-            partnershipId,
-            expectedGroupGeneration: group.groupGeneration,
-            expectedEpoch: group.currentEpoch,
-            supersededAt: now,
-          },
-        );
+        const superseded = await supersedeActivePartnershipCryptoGroup(transaction, {
+          partnershipId,
+          expectedGroupGeneration: group.groupGeneration,
+          expectedEpoch: group.currentEpoch,
+          supersededAt: now,
+        });
         if (!superseded) throw new ApiError(409, "CRYPTO_EPOCH_CONFLICT");
 
         await insertPartnershipCryptoGroup(transaction, {
@@ -661,15 +639,12 @@ export class CryptoService {
           messageSha256: digest(controlMessage),
           createdAt: now,
         });
-        const activated = await activateResetPartnershipCryptoGeneration(
-          transaction,
-          {
-            partnershipId,
-            groupGeneration: input.resetGroupGeneration,
-            controlSequence: 1n,
-            updatedAt: now,
-          },
-        );
+        const activated = await activateResetPartnershipCryptoGeneration(transaction, {
+          partnershipId,
+          groupGeneration: input.resetGroupGeneration,
+          controlSequence: 1n,
+          updatedAt: now,
+        });
         if (!activated) throw new ApiError(409, "CRYPTO_GROUP_RESET_REQUIRED");
 
         return {
@@ -703,11 +678,7 @@ export class CryptoService {
           throw new ApiError(409, "CRYPTO_DEVICE_UNTRUSTED");
         }
         if (
-          !(await accountIsCurrentPartnershipMember(
-            transaction,
-            target.accountId,
-            partnershipId,
-          ))
+          !(await accountIsCurrentPartnershipMember(transaction, target.accountId, partnershipId))
         ) {
           throw new ApiError(409, "CRYPTO_DEVICE_UNTRUSTED");
         }
@@ -881,10 +852,7 @@ export class CryptoService {
       await lockAccounts(transaction, [auth.session.accountId]);
       const current = await this.#currentIdentity(transaction, auth, "trusted");
       const existing = await loadCurrentCryptoRecovery(transaction, auth.session.accountId);
-      if (
-        existing &&
-        input.recoveryKeyVersion !== existing.recoveryKeyVersion + 1
-      ) {
+      if (existing && input.recoveryKeyVersion !== existing.recoveryKeyVersion + 1) {
         throw new ApiError(409, "CRYPTO_RECOVERY_VERSION_CONFLICT");
       }
       if (!existing && input.recoveryKeyVersion !== 1) {
@@ -933,10 +901,7 @@ export class CryptoService {
   }
 
   async recoveryBundle(auth: AuthContext): Promise<unknown> {
-    const recovery = await loadCurrentCryptoRecovery(
-      this.database.pool,
-      auth.session.accountId,
-    );
+    const recovery = await loadCurrentCryptoRecovery(this.database.pool, auth.session.accountId);
     if (!recovery) throw new ApiError(404, "CRYPTO_RECOVERY_UNAVAILABLE");
     return {
       cryptoProfile: recovery.cryptoProfile,
@@ -1008,10 +973,7 @@ export class CryptoService {
         throw new ApiError(409, "CRYPTO_RECOVERY_FAILED");
       }
       const recovery = await loadCurrentCryptoRecovery(transaction, auth.session.accountId);
-      if (
-        !recovery ||
-        recovery.recoveryKeyVersion !== challenge.recoveryKeyVersion
-      ) {
+      if (!recovery || recovery.recoveryKeyVersion !== challenge.recoveryKeyVersion) {
         throw new ApiError(409, "CRYPTO_RECOVERY_FAILED");
       }
 

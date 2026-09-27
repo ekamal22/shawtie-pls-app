@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 export const S1_CRYPTO_PROFILE = "shawtie.mls.v1" as const;
-export const S1_MLS_CIPHERSUITE =
-  "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519" as const;
+export const S1_MLS_CIPHERSUITE = "MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519" as const;
 export const S1_MAX_KEY_PACKAGE_BYTES = 64 * 1024;
 export const S1_MAX_CONTROL_MESSAGE_BYTES = 1024 * 1024;
 export const S1_MAX_RECOVERY_BUNDLE_BYTES = 1024 * 1024;
@@ -153,7 +152,6 @@ export const cryptoCommitSchema = z
       });
     }
   });
-
 
 export function cryptoResetProofText(input: {
   readonly accountId: string;

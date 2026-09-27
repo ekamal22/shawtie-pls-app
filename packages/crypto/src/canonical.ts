@@ -2,9 +2,7 @@ import { utf8 } from "./bytes.ts";
 
 type CanonicalPrimitive = null | boolean | number | string;
 export type CanonicalValue =
-  | CanonicalPrimitive
-  | readonly CanonicalValue[]
-  | { readonly [key: string]: CanonicalValue };
+  CanonicalPrimitive | readonly CanonicalValue[] | { readonly [key: string]: CanonicalValue };
 
 function encode(value: CanonicalValue): string {
   if (value === null) return "null";
@@ -21,11 +19,7 @@ function encode(value: CanonicalValue): string {
     left < right ? -1 : left > right ? 1 : 0,
   );
   return (
-    "{" +
-    entries
-      .map(([key, item]) => JSON.stringify(key) + ":" + encode(item))
-      .join(",") +
-    "}"
+    "{" + entries.map(([key, item]) => JSON.stringify(key) + ":" + encode(item)).join(",") + "}"
   );
 }
 

@@ -3,11 +3,7 @@ import { canonicalBytes, type CanonicalValue } from "./canonical.ts";
 import { S1_CRYPTO_PROFILE, type S1CryptoProfile } from "./profile.ts";
 
 export type ProtectedContentType =
-  | "message"
-  | "message_reaction"
-  | "partnership_nickname"
-  | "relationship_item"
-  | "media";
+  "message" | "message_reaction" | "partnership_nickname" | "relationship_item" | "media";
 
 export type ProtectedPayloadRole =
   | "message_body"

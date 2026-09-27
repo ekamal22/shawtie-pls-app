@@ -119,12 +119,6 @@ function addMs(value: Date, milliseconds: number): Date {
   return new Date(value.getTime() + milliseconds);
 }
 
-function objectRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
 function lifecycleContext(
   actorAccountId: string,
   lifecycle: LockedPartnershipLifecycle,
@@ -391,10 +385,7 @@ export class MessagingService {
     }
   }
 
-  #protectedEnvelopeProjection(
-    record: ProtectedContentKeyRecord,
-    accountId: string,
-  ): unknown {
+  #protectedEnvelopeProjection(record: ProtectedContentKeyRecord, accountId: string): unknown {
     return protectedContentProjection(record, accountId);
   }
 
@@ -504,10 +495,7 @@ export class MessagingService {
       const row = await loadCurrentConversationReadModel(transaction, auth.session.accountId, now);
       if (!row) return { conversation: null };
 
-      const cryptoPolicy = await loadPartnershipCryptoPolicy(
-        transaction,
-        row.partnershipId,
-      );
+      const cryptoPolicy = await loadPartnershipCryptoPolicy(transaction, row.partnershipId);
       const nicknameKeyIds = [
         row.self.nicknameContentKeyId,
         row.partner.nicknameContentKeyId,
@@ -765,10 +753,7 @@ export class MessagingService {
           throw new ApiError(404, "MESSAGE_NOT_FOUND");
         }
 
-        const policy = await loadPartnershipCryptoPolicy(
-          transaction,
-          conversation.partnershipId,
-        );
+        const policy = await loadPartnershipCryptoPolicy(transaction, conversation.partnershipId);
         if (policy?.cryptoRequiredFrom && input.body !== null) {
           throw new ApiError(409, "CRYPTO_REQUIRED");
         }
@@ -958,10 +943,7 @@ export class MessagingService {
           throw new ApiError(409, "VERSION_CONFLICT");
         }
 
-        const policy = await loadPartnershipCryptoPolicy(
-          transaction,
-          conversation.partnershipId,
-        );
+        const policy = await loadPartnershipCryptoPolicy(transaction, conversation.partnershipId);
         if (policy?.cryptoRequiredFrom && input.body !== null) {
           throw new ApiError(409, "CRYPTO_REQUIRED");
         }
@@ -1168,10 +1150,7 @@ export class MessagingService {
 
         this.#assertCapability(auth, lifecycle, now, message, "react_message", true);
 
-        const policy = await loadPartnershipCryptoPolicy(
-          transaction,
-          conversation.partnershipId,
-        );
+        const policy = await loadPartnershipCryptoPolicy(transaction, conversation.partnershipId);
         if (policy?.cryptoRequiredFrom && input.emoji !== null) {
           throw new ApiError(409, "CRYPTO_REQUIRED");
         }
