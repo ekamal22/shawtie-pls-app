@@ -139,6 +139,7 @@ export function CryptoSecurityProvider({
           partnershipState: null,
           localGroup: null,
           partnershipRefreshError: status.errorCode,
+          reconciliationComplete: false,
           revision,
         }),
         devices: [],
@@ -212,6 +213,7 @@ export function CryptoSecurityProvider({
               partnershipState: authoritativeBeforeReconcile,
               localGroup,
               partnershipRefreshError: null,
+              reconciliationComplete: false,
               revision: revision + ":rekey",
             });
             setState({
@@ -261,6 +263,10 @@ export function CryptoSecurityProvider({
       partnershipState,
       localGroup,
       partnershipRefreshError: refreshError,
+      reconciliationComplete:
+        !partnershipId ||
+        latestStatus.trustState !== "trusted" ||
+        (partnershipState !== null && refreshError === null),
       revision,
     });
 
@@ -371,7 +377,6 @@ export function CryptoSecurityProvider({
           runtime.status().trustState !== "trusted" ||
           !authoritative.cryptoRequired ||
           !authoritative.group ||
-          authoritative.group.rekeyRequired ||
           !localRecovery.configured ||
           !matchingRecovery ||
           localGroup.available
