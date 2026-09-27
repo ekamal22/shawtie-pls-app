@@ -1,15 +1,16 @@
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder("utf-8", { fatal: true });
 
+type ByteSource = ArrayBufferLike | ArrayBufferView<ArrayBufferLike>;
+
 export function utf8(value: string): Uint8Array<ArrayBuffer> {
   return new Uint8Array(textEncoder.encode(value));
 }
 
-export function utf8Decode(value: BufferSource): string {
-  const view =
-    value instanceof ArrayBuffer
-      ? new Uint8Array(value)
-      : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+export function utf8Decode(value: ByteSource): string {
+  const view = ArrayBuffer.isView(value)
+    ? new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+    : new Uint8Array(value);
   return textDecoder.decode(view);
 }
 
@@ -24,11 +25,10 @@ export function concatBytes(...parts: readonly Uint8Array[]): Uint8Array<ArrayBu
   return result;
 }
 
-export function base64UrlEncode(value: BufferSource): string {
-  const bytes =
-    value instanceof ArrayBuffer
-      ? new Uint8Array(value)
-      : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+export function base64UrlEncode(value: ByteSource): string {
+  const bytes = ArrayBuffer.isView(value)
+    ? new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+    : new Uint8Array(value);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
@@ -36,10 +36,10 @@ export function base64UrlEncode(value: BufferSource): string {
 
 export function base64UrlDecode(value: string): Uint8Array<ArrayBuffer> {
   if (!/^[A-Za-z0-9_-]*$/u.test(value)) throw new Error("Invalid base64url");
-  const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(
-    Math.ceil(value.length / 4) * 4,
-    "=",
-  );
+  const padded = value
+    .replaceAll("-", "+")
+    .replaceAll("_", "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
   const binary = atob(padded);
   const output = new Uint8Array(new ArrayBuffer(binary.length));
   for (let index = 0; index < binary.length; index += 1) {

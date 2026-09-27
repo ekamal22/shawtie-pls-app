@@ -17,7 +17,7 @@ function configuredModuleUrl(): string {
 }
 
 async function loadGeneratedModule(): Promise<OpenMlsWasmModule> {
-  const url = configuredModuleUrl();
+  const url = new URL(configuredModuleUrl(), globalThis.location.href).href;
   let loaded: GeneratedOpenMlsModule;
   try {
     loaded = (await import(/* @vite-ignore */ url)) as GeneratedOpenMlsModule;

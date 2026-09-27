@@ -123,7 +123,7 @@
     "test:s1:security": "npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/crypto && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/web && npm run test:s1:contracts && npm run test:s1:browser && node --test apps/api/tests/s1.security.test.ts",
     "test:s1:postgres": "npm run db:migrations:check && npm run test:s1:security && npm run db:test:invariants && npm run build --workspace @shawtie/testkit && node --test --test-concurrency=1 apps/api/tests/s1.integration.test.ts",
     "test:s1:browser:e2e:prepared": "playwright test --config=playwright.s1.config.ts",
-    "test:s1:browser:e2e": "npm run build:s1-wasm && npm run test:s1:browser:e2e:prepared",
+    "test:s1:browser:e2e": "npm run build --workspace @shawtie/crypto && npm run build:s1-wasm && npm run test:s1:browser:e2e:prepared",
     "s1:production:scan": "node scripts/security/s1-production-scan.mjs",
     "test:s1:local": "node scripts/db/test-s1-local.mjs",
     "test:s1:closure": "node scripts/ci/test-s1-closure.mjs",

@@ -35,7 +35,10 @@ export function decodeRecoveryMasterSecret(value: string): Uint8Array<ArrayBuffe
   return exactSecret(base64UrlDecode(value.slice(prefix.length)));
 }
 
-async function deriveBundleKey(secret: Uint8Array, salt: Uint8Array): Promise<CryptoKey> {
+async function deriveBundleKey(
+  secret: Uint8Array,
+  salt: Uint8Array<ArrayBuffer>,
+): Promise<CryptoKey> {
   const material = await crypto.subtle.importKey("raw", exactSecret(secret), "HKDF", false, [
     "deriveKey",
   ]);

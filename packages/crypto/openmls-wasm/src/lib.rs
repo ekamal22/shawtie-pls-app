@@ -17,7 +17,7 @@ use openmls_traits::{
     OpenMlsProvider,
 };
 use serde::{Deserialize, Serialize};
-use tls_codec::{Deserialize as _, DeserializeBytes as _, Serialize as _};
+use tls_codec::{Deserialize as _, Serialize as _};
 use wasm_bindgen::prelude::*;
 
 const SNAPSHOT_VERSION: u32 = 1;
@@ -473,7 +473,9 @@ impl ShawtieMlsClient {
     }
 
     pub fn sign_content(&self, payload: &[u8]) -> Result<Vec<u8>, JsError> {
-        self.content_signer()?.sign(payload).map_err(js_error)
+        self.content_signer()?
+            .sign(payload)
+            .map_err(|_| binding_error("Content signing failed"))
     }
 
     pub fn verify_content(
@@ -525,8 +527,8 @@ impl ShawtieMlsClient {
             )
             .map_err(js_error)?;
         Ok(ShawtieHpkeCiphertext {
-            encapsulation: ciphertext.kem_output.to_vec(),
-            ciphertext: ciphertext.ciphertext.to_vec(),
+            encapsulation: ciphertext.kem_output.as_slice().to_vec(),
+            ciphertext: ciphertext.ciphertext.as_slice().to_vec(),
         })
     }
 

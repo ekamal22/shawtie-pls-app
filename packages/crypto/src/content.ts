@@ -1,10 +1,6 @@
 import { base64UrlDecode, base64UrlEncode, utf8, utf8Decode } from "./bytes.ts";
 import { envelopeAad, type EncryptedPayload, type EnvelopeContext } from "./envelopes.ts";
-import {
-  S1_CONTENT_KEY_BYTES,
-  S1_CRYPTO_PROFILE,
-  S1_GCM_NONCE_BYTES,
-} from "./profile.ts";
+import { S1_CONTENT_KEY_BYTES, S1_CRYPTO_PROFILE, S1_GCM_NONCE_BYTES } from "./profile.ts";
 
 export interface ProtectedEncryptionResult {
   readonly key: Uint8Array<ArrayBuffer>;
@@ -15,7 +11,9 @@ export interface ProtectedEncryptionResult {
 }
 
 function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  const owned = new Uint8Array(bytes.byteLength);
+  owned.set(bytes);
+  return owned.buffer;
 }
 
 async function importAesKey(key: Uint8Array, usage: KeyUsage): Promise<CryptoKey> {
@@ -36,9 +34,7 @@ export async function encryptBytes(
   context: EnvelopeContext,
   suppliedKey?: Uint8Array,
 ): Promise<ProtectedEncryptionResult> {
-  const key = suppliedKey
-    ? new Uint8Array(suppliedKey)
-    : generateContentKey();
+  const key = suppliedKey ? new Uint8Array(suppliedKey) : generateContentKey();
   const nonce = crypto.getRandomValues(new Uint8Array(S1_GCM_NONCE_BYTES));
   const aad = envelopeAad(context);
   const encrypted = new Uint8Array(

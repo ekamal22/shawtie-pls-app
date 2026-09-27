@@ -1,5 +1,5 @@
 import { utf8 } from "./bytes.ts";
-import { S1_CRYPTO_PROFILE } from "./profile.ts";
+import type { S1_CRYPTO_PROFILE } from "./profile.ts";
 
 const DATABASE_PREFIX = "shawtie-crypto-v1:";
 const DATABASE_VERSION = 2;
@@ -76,12 +76,10 @@ interface StoredGroupRow extends Omit<StoredGroupState, "state"> {
   readonly state: SealedBytes;
 }
 
-interface StoredRecoveryRow
-  extends Omit<
-    StoredRecoveryState,
-    | "recoveryHpkePrivateKey"
-    | "recoveryAuthPrivateKeyPkcs8"
-  > {
+interface StoredRecoveryRow extends Omit<
+  StoredRecoveryState,
+  "recoveryHpkePrivateKey" | "recoveryAuthPrivateKeyPkcs8"
+> {
   readonly recoveryHpkePrivateKey: SealedBytes;
   readonly recoveryAuthPrivateKeyPkcs8: SealedBytes;
 }
@@ -156,7 +154,9 @@ function openCryptoDatabase(accountId: string): Promise<IDBDatabase> {
 }
 
 function arrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  const owned = new Uint8Array(bytes.byteLength);
+  owned.set(bytes);
+  return owned.buffer;
 }
 
 function sealed(value: unknown): value is SealedBytes {
@@ -166,10 +166,7 @@ function sealed(value: unknown): value is SealedBytes {
 }
 
 function queueRange(partnershipId: string): IDBKeyRange {
-  return IDBKeyRange.bound(
-    [partnershipId, 0],
-    [partnershipId, Number.MAX_SAFE_INTEGER],
-  );
+  return IDBKeyRange.bound([partnershipId, 0], [partnershipId, Number.MAX_SAFE_INTEGER]);
 }
 
 export class CryptoLocalVault {
@@ -199,17 +196,15 @@ export class CryptoLocalVault {
       { mode: "exclusive" },
       async () => {
         const read = this.#database.transaction(["vaultKey"], "readonly");
-        const existing = (await requestResult(
-          read.objectStore("vaultKey").get("local"),
-        )) as { key: "local"; value: CryptoKey } | undefined;
+        const existing = (await requestResult(read.objectStore("vaultKey").get("local"))) as
+          { key: "local"; value: CryptoKey } | undefined;
         await transactionDone(read);
         if (existing?.value) return existing.value;
 
-        const generated = await crypto.subtle.generateKey(
-          { name: "AES-GCM", length: 256 },
-          false,
-          ["encrypt", "decrypt"],
-        );
+        const generated = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, [
+          "encrypt",
+          "decrypt",
+        ]);
         const write = this.#database.transaction(["vaultKey"], "readwrite");
         write.objectStore("vaultKey").put({ key: "local", value: generated });
         await transactionDone(write);
@@ -220,16 +215,10 @@ export class CryptoLocalVault {
   }
 
   #aad(purpose: string, recordId: string): Uint8Array<ArrayBuffer> {
-    return utf8(
-      [LOCAL_WRAP_AAD_PREFIX, this.accountId, purpose, recordId].join("\0"),
-    );
+    return utf8([LOCAL_WRAP_AAD_PREFIX, this.accountId, purpose, recordId].join("\0"));
   }
 
-  async #seal(
-    value: Uint8Array,
-    purpose: string,
-    recordId: string,
-  ): Promise<SealedBytes> {
+  async #seal(value: Uint8Array, purpose: string, recordId: string): Promise<SealedBytes> {
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ciphertext = new Uint8Array(
       await crypto.subtle.encrypt(
@@ -271,9 +260,8 @@ export class CryptoLocalVault {
 
   async deviceState(): Promise<StoredCryptoDeviceState | null> {
     const tx = this.#database.transaction(["deviceState"], "readonly");
-    const value = (await requestResult(
-      tx.objectStore("deviceState").get("device"),
-    )) as StoredDeviceRow | StoredCryptoDeviceState | undefined;
+    const value = (await requestResult(tx.objectStore("deviceState").get("device"))) as
+      StoredDeviceRow | StoredCryptoDeviceState | undefined;
     await transactionDone(tx);
     if (!value) return null;
     if (!sealed(value.state)) {
@@ -297,9 +285,8 @@ export class CryptoLocalVault {
 
   async recoveryState(): Promise<StoredRecoveryState | null> {
     const tx = this.#database.transaction(["recoveryState"], "readonly");
-    const value = (await requestResult(
-      tx.objectStore("recoveryState").get("recovery"),
-    )) as StoredRecoveryRow | undefined;
+    const value = (await requestResult(tx.objectStore("recoveryState").get("recovery"))) as
+      StoredRecoveryRow | undefined;
     await transactionDone(tx);
     if (!value) return null;
     return {
@@ -338,9 +325,8 @@ export class CryptoLocalVault {
 
   async group(partnershipId: string): Promise<StoredGroupState | null> {
     const tx = this.#database.transaction(["groups"], "readonly");
-    const value = (await requestResult(
-      tx.objectStore("groups").get(partnershipId),
-    )) as StoredGroupRow | StoredGroupState | undefined;
+    const value = (await requestResult(tx.objectStore("groups").get(partnershipId))) as
+      StoredGroupRow | StoredGroupState | undefined;
     await transactionDone(tx);
     if (!value) return null;
     if (!sealed(value.state)) {
@@ -401,10 +387,7 @@ export class CryptoLocalVault {
     await transactionDone(tx);
   }
 
-  async promoteControlOperation(
-    operationId: string,
-    group: StoredGroupState,
-  ): Promise<void> {
+  async promoteControlOperation(operationId: string, group: StoredGroupState): Promise<void> {
     const groupRow: StoredGroupRow = {
       ...group,
       state: await this.#seal(group.state, "group", group.partnershipId),
@@ -417,9 +400,8 @@ export class CryptoLocalVault {
 
   async pendingOperation(operationId: string): Promise<FrozenCryptoOperation | null> {
     const tx = this.#database.transaction(["pendingOperations"], "readonly");
-    const value = (await requestResult(
-      tx.objectStore("pendingOperations").get(operationId),
-    )) as StoredOperationRow | FrozenCryptoOperation | undefined;
+    const value = (await requestResult(tx.objectStore("pendingOperations").get(operationId))) as
+      StoredOperationRow | FrozenCryptoOperation | undefined;
     await transactionDone(tx);
     if (!value) return null;
     if (!sealed(value.candidateState)) {
@@ -427,20 +409,14 @@ export class CryptoLocalVault {
     }
     return {
       ...value,
-      candidateState: await this.#open(
-        value.candidateState,
-        "operation",
-        value.operationId,
-      ),
+      candidateState: await this.#open(value.candidateState, "operation", value.operationId),
     };
   }
 
   async pendingOperations(partnershipId: string): Promise<readonly FrozenCryptoOperation[]> {
     const tx = this.#database.transaction(["pendingOperations"], "readonly");
     const rows = (await requestResult(
-      tx.objectStore("pendingOperations").index("byPartnership").getAll(
-        queueRange(partnershipId),
-      ),
+      tx.objectStore("pendingOperations").index("byPartnership").getAll(queueRange(partnershipId)),
     )) as Array<StoredOperationRow | FrozenCryptoOperation>;
     await transactionDone(tx);
     const output: FrozenCryptoOperation[] = [];
@@ -450,11 +426,7 @@ export class CryptoLocalVault {
       }
       output.push({
         ...row,
-        candidateState: await this.#open(
-          row.candidateState,
-          "operation",
-          row.operationId,
-        ),
+        candidateState: await this.#open(row.candidateState, "operation", row.operationId),
       });
     }
     return output.sort((left, right) => left.createdAt - right.createdAt);
@@ -484,13 +456,10 @@ export class CryptoLocalVault {
 
   async contentKey(contentKeyId: string): Promise<Uint8Array<ArrayBuffer> | null> {
     const tx = this.#database.transaction(["contentKeys"], "readonly");
-    const value = (await requestResult(
-      tx.objectStore("contentKeys").get(contentKeyId),
-    )) as StoredContentKeyRow | undefined;
+    const value = (await requestResult(tx.objectStore("contentKeys").get(contentKeyId))) as
+      StoredContentKeyRow | undefined;
     await transactionDone(tx);
-    return value
-      ? this.#open(value.wrappedKey, "content-key", contentKeyId)
-      : null;
+    return value ? this.#open(value.wrappedKey, "content-key", contentKeyId) : null;
   }
 
   async purgePartnership(partnershipId: string): Promise<void> {
@@ -532,8 +501,7 @@ export async function purgeCryptoAccountData(accountId: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const request = indexedDB.deleteDatabase(DATABASE_PREFIX + accountId);
     request.onsuccess = () => resolve();
-    request.onerror = () =>
-      reject(request.error ?? new Error("Unable to delete crypto database"));
+    request.onerror = () => reject(request.error ?? new Error("Unable to delete crypto database"));
     request.onblocked = () => {
       // Other tabs release their handles through the existing logout broadcast.
     };
