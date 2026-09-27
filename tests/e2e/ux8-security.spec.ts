@@ -259,7 +259,7 @@ test.describe.serial("UX8 encrypted UX integration", () => {
   };
   let recoveryKey = "";
 
-  test("trusted device creates a one-time recovery key with no durable RMS leak", async ({
+  test("trusted device creates recovery, avoids RMS persistence and approves another device", async ({
     page,
   }) => {
     await openUs(page, state, DEVICE_ONE);
@@ -282,12 +282,7 @@ test.describe.serial("UX8 encrypted UX integration", () => {
     await expect(reveal).toBeHidden();
     await expect(page.getByText("Recovery setup complete.")).toBeVisible();
     expect(await durableText(page)).not.toContain(recoveryKey);
-  });
 
-  test("trusted device approves another device without claiming history recovery", async ({
-    page,
-  }) => {
-    await openUs(page, state, DEVICE_ONE);
     const row = page.locator(".security-device-row").filter({ hasText: "Other browser" });
     await expect(row).toContainText("Waiting for protected-sharing approval");
     await row.getByRole("button", { name: "Approve" }).click();
