@@ -82,6 +82,17 @@ export function registerMessagingRoutes(
       input,
       idempotencyKey(request.headers),
     );
+    if (
+      config.s1TestFaultInjectionEnabled === true &&
+      request.headers["x-s1-test-force-response-loss"] === "1"
+    ) {
+      // The write above already committed durably. Destroying the raw connection here, instead
+      // of writing the response, reproduces a genuine lost-response-after-commit condition for
+      // S1 physical acceptance without inventing a fake network fault at the client. See
+      // ApiConfig.s1TestFaultInjectionEnabled: this path cannot exist in production.
+      request.raw.socket?.destroy();
+      return reply;
+    }
     void reply.status(201);
     return result;
   });

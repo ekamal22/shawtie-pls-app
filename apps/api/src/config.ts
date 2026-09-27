@@ -37,6 +37,16 @@ export interface ApiConfig {
   readonly partnerRequestMode?: PartnerRequestMode;
   readonly media?: MediaApiConfig;
   readonly calling?: CallingConfig;
+  /**
+   * S1 physical device acceptance needs to reproduce a genuine lost-response-after-commit
+   * condition (the server durably commits a protected write, but the client never receives the
+   * success response) without relying on unreliable network-layer fault injection. When this
+   * flag and the request header `x-s1-test-force-response-loss: 1` are both present, the
+   * message-send route commits the write exactly as normal and then destroys the raw connection
+   * before writing the HTTP response, so the client observes a real network failure. It is
+   * refused outright in production, the same way `allowInsecureLoopbackCookies` is.
+   */
+  readonly s1TestFaultInjectionEnabled?: boolean;
 }
 
 function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): AuthKeyConfig {
@@ -219,8 +229,13 @@ export function apiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ApiConfi
   if (environment === "production" && allowInsecureLoopbackCookies) {
     throw new Error("Insecure loopback cookies are forbidden in production");
   }
+  const s1TestFaultInjectionEnabled = env.S1_TEST_FAULT_INJECTION === "1";
+  if (environment === "production" && s1TestFaultInjectionEnabled) {
+    throw new Error("S1 test fault injection is forbidden in production");
+  }
   return {
     environment,
+    s1TestFaultInjectionEnabled,
     appOrigin: parseOrigin(env.APP_ORIGIN, environment),
     allowInsecureLoopbackCookies,
     trustedProxy: parseTrustedProxy(env.TRUSTED_PROXY),

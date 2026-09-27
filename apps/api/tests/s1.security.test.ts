@@ -1,10 +1,52 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { apiConfigFromEnv } from "../src/config.ts";
 
 async function source(relative: string): Promise<string> {
   return readFile(new URL(relative, import.meta.url), "utf8");
 }
+
+function baseEnv(): NodeJS.ProcessEnv {
+  return {
+    APP_ORIGIN: "http://127.0.0.1:4173",
+    AUTH_HMAC_KEYS: "1:" + Buffer.alloc(32, 7).toString("base64"),
+    AUTH_HMAC_ACTIVE_VERSION: "1",
+  };
+}
+
+test("S1 test fault injection is refused outright in production, like insecure loopback cookies", () => {
+  assert.throws(
+    () =>
+      apiConfigFromEnv({
+        ...baseEnv(),
+        NODE_ENV: "production",
+        S1_TEST_FAULT_INJECTION: "1",
+      }),
+    /S1 test fault injection is forbidden in production/,
+  );
+  const devConfig = apiConfigFromEnv({
+    ...baseEnv(),
+    NODE_ENV: "development",
+    S1_TEST_FAULT_INJECTION: "1",
+  });
+  assert.equal(devConfig.s1TestFaultInjectionEnabled, true);
+  const defaultConfig = apiConfigFromEnv(baseEnv());
+  assert.equal(defaultConfig.s1TestFaultInjectionEnabled, false);
+});
+
+test("S1 lost-response physical fault path only fires behind the explicit test flag and header", async () => {
+  const routes = await source("../src/modules/messages/routes.ts");
+
+  assert.equal(routes.includes("s1TestFaultInjectionEnabled === true"), true);
+  assert.equal(routes.includes('"x-s1-test-force-response-loss"'), true);
+  assert.equal(routes.includes("request.raw.socket?.destroy()"), true);
+  // The commit happens before the fault check, so the fault path can only ever discard an
+  // already-durable response, never skip the write itself.
+  const sendIndex = routes.indexOf("await service.send(");
+  const faultIndex = routes.indexOf("s1TestFaultInjectionEnabled === true");
+  assert.ok(sendIndex > -1 && faultIndex > sendIndex);
+});
 
 test("S1 API verifies protected write authorization without decrypting content", async () => {
   const protectedContent = await source("../src/modules/crypto/protected-content.ts");
