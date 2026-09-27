@@ -97,6 +97,7 @@ export function cryptoErrorCopy(error: unknown): string {
     CRYPTO_DEVICE_UNTRUSTED:
       "This device must be approved or recovered before it can use protected sharing.",
     CRYPTO_RECOVERY_UNAVAILABLE: "No recovery key is configured for this account.",
+    REAUTH_REQUIRED: "Confirm your password again before changing protected-sharing recovery.",
     CRYPTO_RECOVERY_FAILED: "That recovery key could not be verified. Nothing was restored.",
     CRYPTO_RECOVERY_REQUIRED: "Recovery must be configured before this protected action can continue.",
     CRYPTO_GROUP_NOT_READY: "Protected sharing is still preparing for this relationship.",
