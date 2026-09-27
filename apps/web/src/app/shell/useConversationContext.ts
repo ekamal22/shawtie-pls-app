@@ -10,6 +10,8 @@ export interface ConversationContext {
   readonly partnershipId: string;
   readonly lifecycleState: "active" | "breakup_pending";
   readonly interactionMode: "normal" | "breakup_restricted" | "account_deletion_view_only";
+  readonly cryptoRequired: boolean;
+  readonly cryptoRequiredFrom: string | null;
   readonly partner: {
     readonly displayName: string;
     readonly nickname: string | null;
