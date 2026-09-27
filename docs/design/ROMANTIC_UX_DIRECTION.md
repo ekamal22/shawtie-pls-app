@@ -1,6 +1,6 @@
 # Romantic UX Direction
 
-Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery is now DONE and merged to `main @ 71569cf`, with final corrective executable `cde73a1` and mandatory Android acceptance 30/30. UX8 can now integrate verified S1 behavior. Its encrypted UX design has been hardened and frozen before implementation.
+Status: IMPLEMENTED AND PHYSICALLY ACCEPTED FOR UX0 THROUGH UX7. Final accepted executable: `ca7cd35`, with 22/22 mandatory Redmi Note 9S scenarios passing. S1 E2EE and Cryptographic Recovery is now DONE and merged to `main @ 71569cf`, with final corrective executable `cde73a1` and mandatory Android acceptance 30/30. UX8 is now being implemented over verified S1 behavior on `feat/ux8-encrypted-ux-integration`. The encrypted UX design remains hardened and frozen; source integration is present, with automated closure and mandatory Redmi 25/25 still pending.
 
 This document records the accepted product-experience direction for Shawtie pls after completion and merge of C2 Video Calling. It is deliberately separate from architecture, API, database, lifecycle, and cryptographic authority.
 
@@ -208,7 +208,7 @@ With S1 closed, UX8 now has a frozen integration design in `UX8_ENCRYPTED_UX_INT
 
 ## Implementation program
 
-UX0 through UX7 below are DONE, physically accepted at `ca7cd35`, and merged to `main` at `9f0bea4`. The descriptions remain the canonical scope of what each milestone delivered. S1 is DONE and merged to `main @ 71569cf`, final corrective executable `cde73a1`. UX8 is now the next product-experience implementation milestone.
+UX0 through UX7 below are DONE, physically accepted at `ca7cd35`, and merged to `main` at `9f0bea4`. The descriptions remain the canonical scope of what each milestone delivered. S1 is DONE and merged to `main @ 71569cf`, final corrective executable `cde73a1`. UX8 is the active product-experience implementation milestone; its source implementation is present and verification/physical closure remain.
 
 
 ### UX0 Romantic Experience Specification
@@ -277,7 +277,7 @@ This proceeded in parallel with UX2 through UX7 after C2 merged. UX0 through UX7
 
 ### UX8 Encrypted UX Integration
 
-Design is frozen in `UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; implementation has not started. Integrate verified device trust, recovery setup/restoration, revocation/rekey, deterministic repair, per-content unavailable-history and integrity states, and privacy language into the accepted romantic experience without adding new S1 authority.
+Design is frozen in `UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; source implementation is present on `feat/ux8-encrypted-ux-integration`. It integrates verified device trust, recovery setup/restoration, revocation/rekey, deterministic repair, per-content unavailable-history and integrity states, and privacy language into the accepted romantic experience without adding new S1 authority. Automated closure and Redmi 25/25 remain mandatory before DONE.
 
 ### R2 Public Readiness
 
