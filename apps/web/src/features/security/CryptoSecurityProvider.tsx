@@ -71,6 +71,7 @@ const EMPTY_MODEL = deriveCryptoSecurityViewModel({
   partnershipState: null,
   localGroup: null,
   partnershipRefreshError: null,
+  reconciliationComplete: false,
   revision: "initial",
 });
 
