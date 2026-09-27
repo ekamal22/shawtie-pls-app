@@ -94,7 +94,9 @@ export function OursItemRow({
             {hasVoiceLetter(item) && !locked && !unavailable ? " · Voice letter" : ""}
           </span>
           <span className="ours-row__title">
-            {locked ? previewTitle(item) : unavailable?.title ?? itemTitle(item)}
+            {locked
+              ? previewTitle(item, sealedForMe)
+              : unavailable?.title ?? itemTitle(item)}
           </span>
           {sealedNote ? <span className="ours-row__meta">{sealedNote}</span> : null}
           {arrivalLabel ? <span className="ours-row__meta">{arrivalLabel}</span> : null}
@@ -106,8 +108,8 @@ export function OursItemRow({
   );
 }
 
-function previewTitle(item: RelationshipItem): string {
-  return readString(item.preview, "title") ?? kindLabel(item.kind);
+function previewTitle(item: RelationshipItem, sealedForMe: boolean): string {
+  return readString(item.preview, "title") ?? (sealedForMe ? "For later" : kindLabel(item.kind));
 }
 
 export function OursItemSheet({
