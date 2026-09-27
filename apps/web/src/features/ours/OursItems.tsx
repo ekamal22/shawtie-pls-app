@@ -18,6 +18,28 @@ import {
 
 const LETTER_KINDS = new Set(["for_you", "future_us", "surprise", "proposal"]);
 
+function cryptoUnavailableCopy(
+  state: RelationshipItem["cryptoContentState"],
+): { readonly kicker: string; readonly title: string } | null {
+  if (state === "available") return null;
+  if (state === "history_unavailable") {
+    return {
+      kicker: "Protected history",
+      title: "This older protected item is unavailable on this device.",
+    };
+  }
+  if (state === "integrity_failed") {
+    return {
+      kicker: "Protected item",
+      title: "This protected item could not be safely verified.",
+    };
+  }
+  return {
+    kicker: "Protected item",
+    title: "This protected item is unavailable until protected sharing is ready.",
+  };
+}
+
 function rowIcon(item: RelationshipItem): IconName | null {
   if (hasVoiceLetter(item)) return "mic";
   if (item.kind === "remember_this") return "ribbon";
@@ -40,7 +62,8 @@ export function OursItemRow({
   const locked = isLocked(item);
   // A recipient of a sealed item sees no type cue: no kind label, icon, or paper styling.
   const sealedForMe = locked && item.creatorAccountId !== accountId;
-  const icon = locked ? null : rowIcon(item);
+  const unavailable = locked ? null : cryptoUnavailableCopy(item.cryptoContentState);
+  const icon = locked || unavailable ? null : rowIcon(item);
   const date = occurrenceText(item);
   const paper = LETTER_KINDS.has(item.kind) && !sealedForMe;
   // Unreleased items show only what the projection already exposes: the authorized preview
@@ -65,10 +88,14 @@ export function OursItemRow({
         ) : null}
         <span className="ours-row__text">
           <span className="ours-row__kicker">
-            {sealedForMe ? "Sealed" : kindLabelFor(item, accountId)}
-            {hasVoiceLetter(item) && !locked ? " · Voice letter" : ""}
+            {sealedForMe
+              ? "Sealed"
+              : unavailable?.kicker ?? kindLabelFor(item, accountId)}
+            {hasVoiceLetter(item) && !locked && !unavailable ? " · Voice letter" : ""}
           </span>
-          <span className="ours-row__title">{locked ? previewTitle(item) : itemTitle(item)}</span>
+          <span className="ours-row__title">
+            {locked ? previewTitle(item) : unavailable?.title ?? itemTitle(item)}
+          </span>
           {sealedNote ? <span className="ours-row__meta">{sealedNote}</span> : null}
           {arrivalLabel ? <span className="ours-row__meta">{arrivalLabel}</span> : null}
           {!locked && date ? <span className="ours-row__meta">{date}</span> : null}
@@ -142,22 +169,39 @@ function ItemDetail({
   readonly onChanged: (message?: string) => Promise<void>;
 }) {
   const [unfoldingId, setUnfoldingId] = useState<string | null>(null);
+  const locked = isLocked(item);
+  const unavailable = locked ? null : cryptoUnavailableCopy(item.cryptoContentState);
   return (
     <div className="ours-detail">
-      <ItemByKind
-        item={item}
-        accountId={accountId}
-        disabled={viewOnly}
-        onChanged={async () => {
-          await onChanged();
-        }}
-        onOpenMessage={(messageId) => {
-          onClose();
-          openSourceMessage(messageId);
-        }}
-        unfoldingId={unfoldingId}
-        setUnfoldingId={setUnfoldingId}
-      />
+      {unavailable ? (
+        <div
+          className="ours-crypto-unavailable"
+          data-crypto-state={item.cryptoContentState}
+          role={item.cryptoContentState === "integrity_failed" ? "alert" : "status"}
+        >
+          <strong>{unavailable.kicker}</strong>
+          <p>{unavailable.title}</p>
+          <p className="hint">
+            Other relationship content remains available. Shawtie will not fall back to an
+            unverified plaintext copy.
+          </p>
+        </div>
+      ) : (
+        <ItemByKind
+          item={item}
+          accountId={accountId}
+          disabled={viewOnly}
+          onChanged={async () => {
+            await onChanged();
+          }}
+          onOpenMessage={(messageId) => {
+            onClose();
+            openSourceMessage(messageId);
+          }}
+          unfoldingId={unfoldingId}
+          setUnfoldingId={setUnfoldingId}
+        />
+      )}
       {viewOnly ? (
         <p className="ours-detail__meta">
           Ours is view-only right now, so this can be read but not changed.
