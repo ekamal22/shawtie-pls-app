@@ -23,6 +23,7 @@ import { AppShell, RouteView } from "./shell/AppShell.tsx";
 import { useRoute } from "./shell/routes.ts";
 import { useConversationContext } from "./shell/useConversationContext.ts";
 import { S1CryptoRuntimeProvider } from "../lib/crypto/runtime-context.tsx";
+import { CryptoSecurityProvider } from "../features/security/CryptoSecurityProvider.tsx";
 
 interface Session {
   authenticated: true;
@@ -168,7 +169,9 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
           method: "POST",
           body: { identifier, code },
         });
-        setNotice("Account recovered. Sign in normally.");
+        setNotice(
+          "Account access recovered. Sign in normally. Protected history still requires a trusted crypto device and, where needed, your recovery key.",
+        );
         setMode("login");
       }
       setCode("");
@@ -430,36 +433,46 @@ function AccountScreen({
     ) : null;
 
   return (
-    <AppShell
-      route={route}
-      onNavigate={navigate}
-      status={
-        <>
-          <M2UpdateBanner />
-          <M2QueueStatus />
-          {lifecycleBanner}
-        </>
-      }
-      calls={<CallingPanel deviceId={session.deviceId} />}
-      partnerOnline={conversation?.partner.presence.online === true}
+    <CryptoSecurityProvider
+      partnershipId={conversation?.partnershipId ?? null}
+      lifecycleState={conversation?.lifecycleState ?? null}
+      interactionMode={conversation?.interactionMode ?? null}
     >
-      <RouteView active={route === "home"}>
-        <HomeScreen context={conversation} accountId={session.accountId} onNavigate={navigate} />
-      </RouteView>
-      <RouteView active={route === "talk"} keepMounted>
-        <MessagingPanel active={route === "talk"} />
-      </RouteView>
-      <RouteView active={route === "ours"}>
-        <OursScreen accountId={session.accountId} onOpenUs={() => navigate("us")} />
-      </RouteView>
-      <RouteView active={route === "us"}>
-        <UsScreen
-          reauthenticatedAt={session.reauthenticatedAt}
-          onSignedOut={onSignedOut}
-          refreshSession={refreshSession}
-        />
-      </RouteView>
-    </AppShell>
+      <AppShell
+        route={route}
+        onNavigate={navigate}
+        status={
+          <>
+            <M2UpdateBanner />
+            <M2QueueStatus />
+            {lifecycleBanner}
+          </>
+        }
+        calls={<CallingPanel deviceId={session.deviceId} />}
+        partnerOnline={conversation?.partner.presence.online === true}
+      >
+        <RouteView active={route === "home"}>
+          <HomeScreen context={conversation} accountId={session.accountId} onNavigate={navigate} />
+        </RouteView>
+        <RouteView active={route === "talk"} keepMounted>
+          <MessagingPanel active={route === "talk"} onOpenSecurity={() => navigate("us")} />
+        </RouteView>
+        <RouteView active={route === "ours"}>
+          <OursScreen
+            accountId={session.accountId}
+            onOpenUs={() => navigate("us")}
+            onOpenSecurity={() => navigate("us")}
+          />
+        </RouteView>
+        <RouteView active={route === "us"}>
+          <UsScreen
+            reauthenticatedAt={session.reauthenticatedAt}
+            onSignedOut={onSignedOut}
+            refreshSession={refreshSession}
+          />
+        </RouteView>
+      </AppShell>
+    </CryptoSecurityProvider>
   );
 }
 
