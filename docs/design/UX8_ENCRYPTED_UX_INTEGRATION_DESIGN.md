@@ -238,6 +238,138 @@ These must remain distinct.
 
 A single unavailable old message must not make the whole conversation disappear.
 
+### 5.6 Canonical composed presentation model
+
+All UX8 surfaces consume one derived presentation model. Home, Talk, Ours, Us, and Auth must not independently reinterpret raw A1 or S1 state.
+
+The implementation contract is:
+
+```ts
+type SecurityTaskKind =
+  | "none"
+  | "session_invalid"
+  | "runtime_unavailable"
+  | "device_pending"
+  | "recovery_not_configured"
+  | "partnership_waiting_for_recovery"
+  | "rekeying"
+  | "repair_required";
+
+type ProtectedWriteState =
+  | "allowed"
+  | "blocked_session"
+  | "blocked_runtime"
+  | "blocked_device_pending"
+  | "blocked_recovery_prerequisite"
+  | "blocked_rekey"
+  | "blocked_repair";
+
+interface CryptoSecurityViewModel {
+  runtime: "starting" | "ready" | "unavailable";
+  currentDeviceTrust: "pending" | "trusted" | "revoked" | "unavailable";
+  recovery:
+    | "not_configured"
+    | "configured_here"
+    | "configured_elsewhere"
+    | "pending_can_recover"
+    | "unavailable";
+  partnership:
+    | "none"
+    | "preparing"
+    | "waiting_for_recovery"
+    | "ready"
+    | "rekeying"
+    | "repair_required"
+    | "unavailable";
+  primaryTask: SecurityTaskKind;
+  protectedWrites: ProtectedWriteState;
+  canApproveOtherDevices: boolean;
+  canUseRecoveryKeyHere: boolean;
+  canOfferGroupRepair: boolean;
+  securityStateRevision: string;
+}
+```
+
+`securityStateRevision` is an opaque client reconciliation revision used only to reject stale async UI results. It is not a new server authority, database field, or security credential.
+
+A surface may render content-specific availability in addition to this model, but it must not invent a second account or partnership crypto state machine.
+
+### 5.7 Deterministic resolution precedence
+
+The composed model resolves top-level conditions in this order:
+
+1. invalid authentication or A1 current-device revocation
+2. S1 runtime unavailable after startup has conclusively failed
+3. current cryptographic device pending
+4. trusted device with recovery not configured
+5. partnership waiting for required recovery recipients
+6. rekey in progress
+7. deterministic repair required
+8. healthy
+
+`starting` and `preparing` are bounded progress states, not warning states by themselves.
+
+When several raw inputs are true at once, only the highest-priority actionable state becomes `primaryTask`. Lower-priority facts remain available in the detailed Us surface but must not create stacked global banners.
+
+### 5.8 Blocking semantics
+
+The view model freezes operational behavior rather than leaving it to screen copy:
+
+| Condition | Protected writes | Existing readable protected content | Historical unavailable item | Primary action |
+| --- | --- | --- | --- | --- |
+| healthy | allowed | available | per-item placeholder only | none |
+| runtime starting/preparing | temporarily blocked only where runtime cannot safely encrypt | keep already verified content visible | unchanged | wait/retry only if bounded startup fails |
+| runtime unavailable | blocked | keep only already verified in-memory content for the current session; never decrypt new content | unchanged | Retry or Sign out |
+| device pending | blocked | no newly decrypted protected history until authorized path succeeds | per-item | Recover or wait for trusted-device approval |
+| recovery not configured | allowed if existing S1 authority permits writes | available | unchanged | Save recovery key |
+| waiting for recovery recipients | blocked where S1 activation requires recipients | readable verified content remains | unchanged | Complete recovery setup |
+| rekeying | blocked | readable verified content remains | unchanged | automatic, no destructive action |
+| repair required | blocked | readable verified content remains where keys exist | per-item | explicit protected-sharing repair |
+| integrity failed content | account state unchanged | unaffected items stay visible | affected item fails closed | none or retry fetch, never plaintext fallback |
+
+No surface may convert an informational condition into a broader write block than the S1 runtime actually enforces.
+
+### 5.9 Transition and stabilization contract
+
+UX8 state changes may be triggered only by:
+
+- authenticated A1 session/device refresh
+- S1 runtime startup or authoritative refresh
+- realtime invalidation followed by canonical HTTP/S1 reconciliation
+- foreground/resume reconciliation
+- explicit trusted-device approval result
+- explicit RMS recovery result
+- A1 device revocation
+- S1 rekey completion/failure
+- deterministic group-repair completion/failure
+- partnership lifecycle changes already authorized by P3
+
+Realtime events are hints, not direct authority. A realtime frame may schedule refresh, but the visible security state must be committed only from canonical reconciled state.
+
+Every async action captures the current `securityStateRevision`. Its result may update UI only if it still applies to the current account, A1 device, crypto device, partnership generation, and revision. Otherwise the result is discarded and a fresh reconciliation runs.
+
+To avoid flicker:
+
+- `starting` does not become `unavailable` from a single transient fetch failure
+- `rekeying` does not become `repair_required` because of elapsed time alone
+- a temporary missing device row during refresh does not become `revoked` without authoritative A1/S1 evidence
+- success screens do not remain visible after a later authoritative revoke, dissolution, or session invalidation
+
+### 5.10 Lifecycle composition
+
+P3 remains authoritative. UX8 does not create lifecycle permissions.
+
+| Partnership/account lifecycle | UX8 behavior |
+| --- | --- |
+| active | normal S1-derived behavior |
+| breakup_pending | preserve P3 read/write capabilities exactly; crypto warnings must not imply restoration or relationship pressure |
+| restored partnership | reconcile current S1 group/generation before protected writes resume |
+| finalized/terminated partnership | remove partnership-scoped security actions and purge local partnership crypto projections according to S1/P3 behavior |
+| account_deletion_pending | account access restrictions win; UX8 does not offer recovery/approval actions that bypass A1 deletion state |
+| account restored before deletion deadline | sign-in/account restoration does not imply historical crypto recovery; normal device trust/recovery evaluation runs again |
+
+A partnership lifecycle transition always outranks stale UX8 action completion.
+
 ## 6. Security task priority
 
 When multiple security conditions exist, UX8 surfaces only the highest actionable task first:
@@ -508,6 +640,19 @@ Action calls `S1CryptoRuntime.approveDevice(targetCryptoDeviceId)`.
 
 The existing S1 group self-healing logic handles membership.
 
+### Recovery and approval truth table
+
+The user-facing promises are frozen:
+
+| Path | Trusts pending crypto device | Future protected content | Recoverable historical content | Restores local recovery capability |
+| --- | --- | --- | --- | --- |
+| trusted-device approval | yes | yes after normal S1 reconciliation | not guaranteed | no |
+| correct RMS recovery | yes | yes after normal S1 reconciliation | yes where S1 recovery capsules make it recoverable | yes |
+| email/account recovery | no by itself | no by itself | no | no |
+| password reset only | no by itself | no by itself | no | no |
+
+Copy and tests must preserve this distinction. In particular, successful trusted-device approval must never say that old messages or memories were restored.
+
 ### Important sequencing rule
 
 A pending device that needs historical recovery should use the recovery-key path before it is separately approved.
@@ -589,6 +734,28 @@ After success:
 > Protected sharing repaired.
 
 The UI must not promise that all historical content will be recoverable. Per-content availability remains authoritative.
+
+### 13.1 Deterministic repair eligibility predicate
+
+UX8 may expose a destructive protected-sharing repair action only when all of the following are true at the same reconciled revision:
+
+1. the authenticated A1 session is valid
+2. the current A1 device is not revoked
+3. the current S1 crypto device is trusted
+4. the partnership is active under P3
+5. the authoritative S1 partnership group is crypto-required and has a current active generation
+6. authoritative control-message and group-state reconciliation has completed
+7. protected writes still fail with the S1 equivalent of `CRYPTO_GROUP_NOT_READY`
+8. the client has determined that the required current local group state is absent or unusable, rather than merely delayed
+9. valid local recovery capability exists on this device
+10. no rekey is currently making forward progress
+11. a fresh reconciliation immediately before rendering the destructive action reaches the same conclusion
+
+A timer, retry count, network failure, tab suspension, backgrounding, or one failed IndexedDB read is never sufficient.
+
+Immediately before confirmation and again before execution, UX8 rechecks the predicate. If any input changed, the repair action aborts without mutation and the UI returns to reconciled state.
+
+The confirmation copy must state that repair creates a new protected-sharing generation for future protected content and may not make unavailable older content recoverable.
 
 ## 14. Talk content behavior
 
@@ -712,6 +879,25 @@ Stable mappings:
 
 Do not expose raw crypto error codes in normal UI.
 
+### 18.1 Security copy contract
+
+Security-sensitive copy is semantic product behavior. Implementations may make small grammatical adjustments for layout or localization, but must preserve these meanings:
+
+| State/action | Required meaning |
+| --- | --- |
+| device pending | this device cannot use protected sharing yet; recover with the recovery key or have another trusted device approve it |
+| trusted-device approval success | this device is trusted for protected sharing; old protected history is not promised |
+| recovery setup | the recovery key can restore recoverable protected history on a new device; Shawtie does not store the readable key for the user |
+| wrong RMS | the key did not verify; nothing was restored and the device remains pending |
+| account recovery | account access was restored; protected history still requires crypto-device trust and, where needed, the recovery key |
+| history unavailable | this specific older protected item cannot be opened on this device |
+| integrity failure | the protected item could not be safely verified and will not be shown |
+| rekeying | protected sharing is updating after a device/security change; existing verified content remains readable where available |
+| repair | create a new protected-sharing generation for future content; this may not recover older unavailable content |
+| revoke device | revocation removes that device's future account/protected access according to A1/S1; do not imply remote deletion of already seen plaintext |
+
+Forbidden copy includes claims that approval restores history, account recovery restores encryption keys, all devices share one identity, calls use S1 E2EE, or a repair guarantees historical recovery.
+
 ## 19. Visual design
 
 Reuse UX1 tokens and primitives.
@@ -762,6 +948,21 @@ Mandatory:
 
 The Recovery Master Secret must not be duplicated into hidden ARIA text.
 
+### 20.1 Security-flow accessibility contract
+
+In addition to global UX1 accessibility rules:
+
+- recovery and repair dialogs place initial focus on the dialog heading, not the destructive action
+- validation failures move screen-reader attention to a concise error summary while preserving the entered non-secret context
+- after device approval or recovery succeeds, focus moves to the updated status heading
+- rekey completion uses a polite live-region announcement only when the user is currently on an affected surface
+- copy/reveal controls have explicit accessible names that distinguish "reveal recovery key" from "copy recovery key"
+- the RMS reveal view remains usable at 200 percent text without horizontal scrolling of surrounding controls; the secret itself may wrap or use a dedicated scrollable code field
+- destructive repair requires an explicit labeled confirmation control and cannot be triggered by Enter on initial dialog open
+- reduced-motion mode removes celebratory/security transition motion but not progress/state feedback
+- touch targets meet the existing UX1 Android target rules
+- color is never the only distinction between unavailable history, integrity failure, pending trust, and healthy state
+
 ## 21. Sensitive-data handling
 
 UX8 introduces no secret persistence.
@@ -784,6 +985,58 @@ Recovery Master Secret handling rules:
 - clipboard write only after explicit user action
 
 Browser password managers should not be encouraged to store the RMS field. Use a neutral field name and disable ordinary credential autofill where practical.
+
+### 21.1 Recovery secret lifetime contract
+
+The RMS is treated as ephemeral secret material throughout UX8.
+
+Allowed lifetime:
+
+1. returned from explicit S1 recovery-key generation or entered by the user
+2. held only in the narrow in-memory flow that needs it
+3. passed directly to the S1 runtime action
+4. cleared from component/runtime references as soon as the flow completes, is cancelled, loses account/device scope, or unmounts
+
+UX8 must not intentionally write the RMS to:
+
+- localStorage
+- sessionStorage
+- IndexedDB
+- Cache API
+- M2 queues
+- URL/query/hash state
+- React persistence libraries
+- analytics
+- logs
+- error-report payloads
+- clipboard automatically
+- downloaded files automatically
+
+Clipboard copy is allowed only after an explicit user action. UX8 cannot guarantee clipboard erasure across operating systems, so copy must not claim automatic deletion. The UI should advise the user to store the key somewhere they control and clear the clipboard when practical.
+
+Browser refresh or process loss during one-time reveal is not a reason to persist the RMS. If the existing S1 operation cannot safely re-reveal it, UX8 must fail closed and explain that the one-time reveal ended.
+
+The closure scanner must inspect browser durable storage, Cache API, M2 outbox/queues, accessible logs, URL state, and production bundles for recovery-secret leakage.
+
+### 21.2 Telemetry and diagnostics boundary
+
+UX8 diagnostics may record only non-secret operational categories needed for reliability, such as:
+
+- coarse state name
+- safe S1/A1 error code
+- success/failure class
+- retry count
+- anonymized local timing bucket where existing telemetry policy allows it
+
+Diagnostics must never include:
+
+- RMS or derived recovery secrets
+- private device key material
+- protected plaintext
+- decrypted filenames or captions
+- ciphertext bodies solely for debugging
+- recovery bundle private material
+- raw crypto-device identifiers unless an existing security logging policy explicitly authorizes a safe pseudonymous form
 
 ## 22. Client implementation architecture
 
@@ -829,6 +1082,59 @@ A small provider may compose:
 - current partnership crypto state
 
 Do not duplicate S1 state machines inside multiple feature panels.
+
+The provider/reducer is the sole owner of:
+
+- precedence resolution
+- protected-write blocking classification
+- approval/recovery action eligibility
+- repair eligibility
+- stale async result rejection
+- reconciliation revision changes
+
+Presentation components receive already-derived values and action capabilities.
+
+### 22.1 UX8 implementation dependency graph
+
+```text
+UX8-A canonical state adapter
+        |
+        +-------------------+
+        |                   |
+        v                   v
+UX8-B Us panel        UX8-E content states
+        |
+        v
+UX8-C recovery setup
+        |
+        v
+UX8-D new-device/account-recovery seam
+        |
+        +---------+---------+
+                  |
+                  v
+          UX8-F rekey/repair
+                  |
+                  v
+          UX8-G cross-surface polish
+                  |
+                  v
+          UX8-H1 model/browser closure
+                  |
+                  v
+          UX8-H2 retained S1/regression
+                  |
+                  v
+          UX8-H3 health/audit/scans
+                  |
+                  v
+          UX8-H4 Redmi 25/25
+                  |
+                  v
+          UX8-H5 evidence/docs
+```
+
+UX8-E may begin after UX8-A because per-content availability is orthogonal to recovery flow UI. UX8-F waits for A through E because it depends on the final composed state and action eligibility rules.
 
 ## 23. Implementation slices
 
@@ -885,11 +1191,38 @@ Do not duplicate S1 state machines inside multiple feature panels.
 
 ### UX8-H: closure
 
-- focused browser tests
-- retained S1 regression suites
+UX8-H is sequential and cannot be collapsed into one "tests passed" claim.
+
+#### UX8-H1: model and browser closure
+
+- exhaustive composed-state reducer tests
+- focused browser flows for recovery, approval, unavailable history, integrity failure, rekey, and repair
+- stale-response and lifecycle race tests
+
+#### UX8-H2: retained security regression
+
+- retain all S1 closure suites
+- retain relevant A1 device/session, P3 lifecycle, M2 offline/realtime, M3 protected-media, and UX accessibility regressions
+- prove no production S1 debug hook
+
+#### UX8-H3: repository and privacy closure
+
 - full repository health
-- mandatory physical Android acceptance
-- repo-wide documentation reconciliation
+- dependency audit
+- production bundle/security scans
+- RMS durable-storage/log/URL leakage scans
+
+#### UX8-H4: physical Android closure
+
+- mandatory Redmi Note 9S matrix 25/25
+- exact final executable SHA recorded
+- any defect found on-device gets a focused automated regression before final re-run
+
+#### UX8-H5: evidence and documentation
+
+- commit physical evidence at the exact final executable SHA
+- reconcile ROADMAP, ROADMAP_EPICS, PROJECT_STATE, EXECUTION_GRAPH, README, UX direction, and testing docs
+- only then may UX8 be reported DONE
 
 ## 24. Automated acceptance matrix
 
@@ -922,6 +1255,27 @@ At minimum, UX8 automated tests must prove:
 25. all UX8 security controls remain usable at 200 percent text and reduced motion
 
 Retain all existing S1 automated closure suites.
+
+### 24.1 Required transition and race matrix
+
+Automated integration coverage must include at least:
+
+| Race/transition | Required result |
+| --- | --- |
+| pending-device approval races with A1 revoke | revoke wins; stale approval success cannot restore UI authority |
+| RMS recovery races with trusted-device approval | reconcile to one authoritative trusted state; never duplicate recovery setup or claim more history than actually available |
+| logout/account switch during RMS entry or reveal | secret references are cleared and no result can apply to the next account |
+| realtime revoke arrives during rekey | canonical revoke/session authority wins |
+| partnership enters breakup_pending during rekey | P3 capabilities remain authoritative; UX8 does not invent a lifecycle block or restore permission |
+| partnership finalizes during approval/recovery | partnership-scoped action result is discarded; local partnership crypto projection follows S1/P3 cleanup |
+| app backgrounds during pending/rekey and resumes | foreground reconciliation restores the correct actionable state without requiring reload |
+| stale device-list response arrives after a newer approval/revoke refresh | stale revision is discarded |
+| group repair confirmation races with successful normal reconciliation | repair aborts before mutation |
+| group repair races with lifecycle termination | termination wins and repair does not execute |
+| integrity failure followed by successful refetch of different revision | only newly verified content renders; failed plaintext is never reused |
+| network retry returns an earlier crypto projection | monotonic/current revision guard prevents UI rollback |
+
+These tests validate UI authority and stale-result handling. They do not create new backend concurrency semantics.
 
 ## 25. Mandatory physical Android acceptance
 
@@ -1018,6 +1372,13 @@ The following are decided for UX8:
 16. RMS is never persisted by UX8.
 17. UX8 adds no backend route, schema, migration, or durable product state.
 18. Physical Redmi acceptance is mandatory before UX8 is DONE.
+19. One canonical composed `CryptoSecurityViewModel` owns top-level UX8 state interpretation.
+20. Realtime frames never directly grant or remove UX authority without canonical reconciliation.
+21. Async action results are revision-scoped and stale results are discarded.
+22. Repair eligibility uses the deterministic predicate in section 13.1 and never a timeout heuristic.
+23. Security-sensitive semantic copy is part of the frozen UX contract.
+24. Recovery-secret lifetime and diagnostics boundaries in section 21 are mandatory implementation constraints.
+25. P3 lifecycle authority always outranks stale UX8 action completion.
 
 ## 28. Definition of done
 
@@ -1039,6 +1400,11 @@ UX8 is DONE only when:
 - dependency audit is green
 - production crypto/debug scans remain green
 - mandatory Redmi Note 9S UX8 acceptance passes 25/25
+- composed-state precedence and stale-result guards are exhaustively tested
+- required transition/race matrix is green
+- deterministic repair eligibility is proven and timeout-only repair is impossible
+- security-sensitive copy matches the frozen semantic contract
+- RMS lifetime/storage/diagnostics invariants pass executable scans
 - evidence is committed at the exact final executable SHA
 - repository documentation is reconciled
 
