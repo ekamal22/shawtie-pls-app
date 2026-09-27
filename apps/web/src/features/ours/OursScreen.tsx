@@ -46,6 +46,9 @@ import { publishKeptSources } from "../messaging/kept-registry.ts";
 import { oursMessageFor } from "./messages.ts";
 import { OursCreateSheet } from "./OursCreateSheet.tsx";
 import { OursItemRow, OursItemSheet } from "./OursItems.tsx";
+import { useCryptoSecurity } from "../security/CryptoSecurityProvider.tsx";
+import { SecurityOperationalNotice } from "../security/SecurityTaskCard.tsx";
+import { protectedWriteReason } from "../security/crypto-copy.ts";
 
 /** Kinds fetched for the chapters. Signals come from the home summary. */
 const FETCHED_KINDS: readonly RelationshipItemKind[] = [
@@ -95,11 +98,14 @@ async function loadOurs(): Promise<OursData | null> {
 export function OursScreen({
   accountId,
   onOpenUs,
+  onOpenSecurity,
 }: {
   readonly accountId: string;
   readonly onOpenUs?: () => void;
+  readonly onOpenSecurity: () => void;
 }) {
   const runtime = useM2Runtime();
+  const security = useCryptoSecurity();
   const [data, setData] = useState<OursData | null | undefined>(undefined);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -228,7 +234,12 @@ export function OursScreen({
 
   const { home } = data;
   const viewOnly = home.mode !== "active";
-  const canCreate = home.capabilities.create && !viewOnly;
+  const cryptoWriteBlocked =
+    security.partnershipCryptoRequired && security.model.protectedWrites !== "allowed";
+  const canCreate = home.capabilities.create && !viewOnly && !cryptoWriteBlocked;
+  const cryptoWriteMessage = cryptoWriteBlocked
+    ? protectedWriteReason(security.model.protectedWrites)
+    : null;
   const modeMessage =
     home.mode === "breakup_pending_view_only"
       ? "Ours is view-only during the breakup process. Letters that were already scheduled may still arrive before the final deadline."
@@ -273,6 +284,11 @@ export function OursScreen({
           </Button>
         ) : null}
       </header>
+
+      <SecurityOperationalNotice onOpenSecurity={onOpenSecurity} />
+      {cryptoWriteMessage && security.model.primaryTask === "none" ? (
+        <Notice tone="warning">{cryptoWriteMessage}</Notice>
+      ) : null}
 
       {modeMessage ? (
         <div className="ours-viewonly" role="status">
