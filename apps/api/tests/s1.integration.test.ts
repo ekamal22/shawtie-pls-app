@@ -9,6 +9,11 @@ import {
   type DatabasePool,
 } from "@shawtie/db";
 import { contentSignatureInput, encryptBytes, envelopeContext, utf8 } from "@shawtie/crypto";
+import type {
+  MediaDownloadGrant,
+  MediaObjectStore,
+  MediaUploadGrant,
+} from "@shawtie/media-storage";
 import { createApiApplication } from "../src/application.ts";
 import { AuthKeyRing } from "../src/security/auth-key-ring.ts";
 import type { ApiConfig } from "../src/config.ts";
@@ -42,6 +47,39 @@ interface Account {
   readonly username: string;
   readonly password: string;
   readonly deviceId: string;
+}
+
+class RawPrivacyMediaStore implements MediaObjectStore {
+  async createUploadGrant(input: {
+    readonly objectKey: string;
+    readonly sha256: string;
+    readonly expiresAt: Date;
+  }): Promise<MediaUploadGrant> {
+    return {
+      url: "https://media.invalid/upload/" + encodeURIComponent(input.objectKey),
+      expiresAt: input.expiresAt,
+      requiredHeaders: {
+        "content-type": "application/octet-stream",
+        "x-amz-meta-sha256": input.sha256,
+      },
+    };
+  }
+
+  async verifyObject(): Promise<boolean> {
+    return true;
+  }
+
+  async createDownloadGrant(input: {
+    readonly objectKey: string;
+    readonly expiresAt: Date;
+  }): Promise<MediaDownloadGrant> {
+    return {
+      url: "https://media.invalid/download/" + encodeURIComponent(input.objectKey),
+      expiresAt: input.expiresAt,
+    };
+  }
+
+  async deleteObject(): Promise<void> {}
 }
 
 function headers(cookie?: string, key?: string): Record<string, string> {
@@ -333,9 +371,19 @@ function recoveryProofPayload(input: {
   ]);
 }
 
-function protectedMessageInput(input: {
+function protectedContentInput(input: {
   partnershipId: string;
-  messageId: string;
+  contentType:
+    "message" | "message_reaction" | "partnership_nickname" | "relationship_item" | "media";
+  contentId: string;
+  contentVersion: number;
+  payloadRole:
+    | "message_body"
+    | "reaction_value"
+    | "nickname_value"
+    | "relationship_preview"
+    | "relationship_main"
+    | "media_content";
   senderCryptoDeviceId: string;
   privateKey: KeyObject;
   accountIds: readonly [string, string];
@@ -351,10 +399,10 @@ function protectedMessageInput(input: {
     partnershipId: input.partnershipId,
     groupGeneration: 1,
     mlsEpoch: 1,
-    contentType: "message",
-    contentId: input.messageId,
-    contentVersion: 1,
-    payloadRole: "message_body",
+    contentType: input.contentType,
+    contentId: input.contentId,
+    contentVersion: input.contentVersion,
+    payloadRole: input.payloadRole,
     senderCryptoDeviceId: input.senderCryptoDeviceId,
     schemaVersion: 1,
   });
@@ -368,28 +416,47 @@ function protectedMessageInput(input: {
     signature[0] = (signature[0] ?? 0) ^ 0xff;
   }
   return {
+    ciphertext: ciphertext.toString("base64url"),
+    envelope: {
+      cryptoProfile: S1_CRYPTO_PROFILE,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      senderCryptoDeviceId: input.senderCryptoDeviceId,
+      contentKeyId,
+      nonce: nonce.toString("base64url"),
+      ciphertextSha256: digest.toString("base64url"),
+      keyDistributionMessage: Buffer.from("synthetic-mls-kdm").toString("base64url"),
+      contentSignature: signature.toString("base64url"),
+      recoveryCapsules: input.accountIds.map((accountId, index) => ({
+        accountId,
+        recoveryKeyVersion: 1,
+        encapsulation: Buffer.alloc(32, 20 + index).toString("base64url"),
+        ciphertext: Buffer.from("synthetic-recovery-" + index).toString("base64url"),
+      })),
+    },
+  };
+}
+
+function protectedMessageInput(input: {
+  partnershipId: string;
+  messageId: string;
+  senderCryptoDeviceId: string;
+  privateKey: KeyObject;
+  accountIds: readonly [string, string];
+  ciphertext?: Buffer;
+  nonce?: Buffer;
+  tamperSignature?: boolean;
+}) {
+  return {
     messageId: input.messageId,
     body: null,
-    protectedBody: {
-      ciphertext: ciphertext.toString("base64url"),
-      envelope: {
-        cryptoProfile: S1_CRYPTO_PROFILE,
-        groupGeneration: 1,
-        mlsEpoch: 1,
-        senderCryptoDeviceId: input.senderCryptoDeviceId,
-        contentKeyId,
-        nonce: nonce.toString("base64url"),
-        ciphertextSha256: digest.toString("base64url"),
-        keyDistributionMessage: Buffer.from("synthetic-mls-kdm").toString("base64url"),
-        contentSignature: signature.toString("base64url"),
-        recoveryCapsules: input.accountIds.map((accountId, index) => ({
-          accountId,
-          recoveryKeyVersion: 1,
-          encapsulation: Buffer.alloc(32, 20 + index).toString("base64url"),
-          ciphertext: Buffer.from("synthetic-recovery-" + index).toString("base64url"),
-        })),
-      },
-    },
+    protectedBody: protectedContentInput({
+      ...input,
+      contentType: "message",
+      contentId: input.messageId,
+      contentVersion: 1,
+      payloadRole: "message_body",
+    }),
     replyToMessageId: null,
     attachments: [],
   };
@@ -856,7 +923,11 @@ test("S1 recovery possession proof trusts only the pending device that proves th
 
 test("S1 raw database inspection finds ciphertext but no protected plaintext", async () => {
   const database = requireDisposableDatabase();
-  const app = createApiApplication({ database, config });
+  const app = createApiApplication({
+    database,
+    config,
+    mediaObjectStore: new RawPrivacyMediaStore(),
+  });
   try {
     await reset(database);
     const alice = await register(app, database, "raw_alice");
@@ -864,8 +935,9 @@ test("S1 raw database inspection finds ciphertext but no protected plaintext", a
     const { partnershipId, conversationId } = await formPartnership(app, alice, bob);
     const cryptoState = await seedCrypto(database, partnershipId, alice, bob);
     const secret = process.env.S1_RAW_SENTINEL ?? "s1-raw-server-private-value";
+    const accountIds = [alice.accountId, bob.accountId] as const;
     const messageId = randomUUID();
-    const context = envelopeContext({
+    const messageContext = envelopeContext({
       partnershipId,
       groupGeneration: 1,
       mlsEpoch: 1,
@@ -876,15 +948,15 @@ test("S1 raw database inspection finds ciphertext but no protected plaintext", a
       senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
       schemaVersion: 1,
     });
-    const encrypted = await encryptBytes(utf8(secret), context);
+    const encryptedMessage = await encryptBytes(utf8(secret + ":message"), messageContext);
     const protectedPayload = protectedMessageInput({
       partnershipId,
       messageId,
       senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
       privateKey: cryptoState.alicePrivateKey,
-      accountIds: [alice.accountId, bob.accountId],
-      ciphertext: Buffer.from(encrypted.ciphertext),
-      nonce: Buffer.from(encrypted.nonce),
+      accountIds,
+      ciphertext: Buffer.from(encryptedMessage.ciphertext),
+      nonce: Buffer.from(encryptedMessage.nonce),
     });
     const sent = await app.inject({
       method: "POST",
@@ -894,12 +966,228 @@ test("S1 raw database inspection finds ciphertext but no protected plaintext", a
     });
     assert.equal(sent.statusCode, 201, sent.body);
 
+    const editContext = envelopeContext({
+      partnershipId,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      contentType: "message",
+      contentId: messageId,
+      contentVersion: 2,
+      payloadRole: "message_body",
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      schemaVersion: 1,
+    });
+    const encryptedEdit = await encryptBytes(utf8(secret + ":edited-message"), editContext);
+    const edited = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId,
+      headers: headers(alice.cookie, "s1-raw-protected-edit"),
+      payload: {
+        body: null,
+        protectedBody: protectedContentInput({
+          partnershipId,
+          contentType: "message",
+          contentId: messageId,
+          contentVersion: 2,
+          payloadRole: "message_body",
+          senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+          privateKey: cryptoState.alicePrivateKey,
+          accountIds,
+          ciphertext: Buffer.from(encryptedEdit.ciphertext),
+          nonce: Buffer.from(encryptedEdit.nonce),
+        }),
+        expectedContentVersion: 1,
+      },
+    });
+    assert.equal(edited.statusCode, 200, edited.body);
+
+    const reactionId = randomUUID();
+    const reactionContext = envelopeContext({
+      partnershipId,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      contentType: "message_reaction",
+      contentId: reactionId,
+      contentVersion: 1,
+      payloadRole: "reaction_value",
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      schemaVersion: 1,
+    });
+    const encryptedReaction = await encryptBytes(utf8(secret + ":reaction"), reactionContext);
+    const reacted = await app.inject({
+      method: "PUT",
+      url: "/api/v1/conversations/" + conversationId + "/messages/" + messageId + "/reaction",
+      headers: headers(alice.cookie, "s1-raw-protected-reaction"),
+      payload: {
+        reactionId,
+        emoji: null,
+        protectedReaction: protectedContentInput({
+          partnershipId,
+          contentType: "message_reaction",
+          contentId: reactionId,
+          contentVersion: 1,
+          payloadRole: "reaction_value",
+          senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+          privateKey: cryptoState.alicePrivateKey,
+          accountIds,
+          ciphertext: Buffer.from(encryptedReaction.ciphertext),
+          nonce: Buffer.from(encryptedReaction.nonce),
+        }),
+      },
+    });
+    assert.equal(reacted.statusCode, 200, reacted.body);
+
+    const nicknameContext = envelopeContext({
+      partnershipId,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      contentType: "partnership_nickname",
+      contentId: bob.accountId,
+      contentVersion: 2,
+      payloadRole: "nickname_value",
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      schemaVersion: 1,
+    });
+    const encryptedNickname = await encryptBytes(utf8(secret + ":nickname"), nicknameContext);
+    const nicknamed = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/partnerships/" + partnershipId + "/nicknames/" + bob.accountId,
+      headers: headers(alice.cookie, "s1-raw-protected-nickname"),
+      payload: {
+        nickname: null,
+        protectedNickname: protectedContentInput({
+          partnershipId,
+          contentType: "partnership_nickname",
+          contentId: bob.accountId,
+          contentVersion: 2,
+          payloadRole: "nickname_value",
+          senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+          privateKey: cryptoState.alicePrivateKey,
+          accountIds,
+          ciphertext: Buffer.from(encryptedNickname.ciphertext),
+          nonce: Buffer.from(encryptedNickname.nonce),
+        }),
+        expectedVersion: 1,
+      },
+    });
+    assert.equal(nicknamed.statusCode, 200, nicknamed.body);
+
+    const relationshipItemId = randomUUID();
+    const relationshipPreviewContext = envelopeContext({
+      partnershipId,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      contentType: "relationship_item",
+      contentId: relationshipItemId,
+      contentVersion: 1,
+      payloadRole: "relationship_preview",
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      schemaVersion: 1,
+    });
+    const relationshipMainContext = envelopeContext({
+      ...relationshipPreviewContext,
+      payloadRole: "relationship_main",
+    });
+    const encryptedPreview = await encryptBytes(
+      utf8(secret + ":relationship-preview"),
+      relationshipPreviewContext,
+    );
+    const encryptedMain = await encryptBytes(
+      utf8(secret + ":relationship-main"),
+      relationshipMainContext,
+    );
+    const relationshipItem = await app.inject({
+      method: "POST",
+      url: "/api/v1/relationship-space/items",
+      headers: headers(alice.cookie, "s1-raw-protected-relationship-item"),
+      payload: {
+        itemId: relationshipItemId,
+        kind: "surprise",
+        contentSchemaVersion: 1,
+        preview: null,
+        content: null,
+        protectedPreview: protectedContentInput({
+          partnershipId,
+          contentType: "relationship_item",
+          contentId: relationshipItemId,
+          contentVersion: 1,
+          payloadRole: "relationship_preview",
+          senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+          privateKey: cryptoState.alicePrivateKey,
+          accountIds,
+          ciphertext: Buffer.from(encryptedPreview.ciphertext),
+          nonce: Buffer.from(encryptedPreview.nonce),
+        }),
+        protectedContent: protectedContentInput({
+          partnershipId,
+          contentType: "relationship_item",
+          contentId: relationshipItemId,
+          contentVersion: 1,
+          payloadRole: "relationship_main",
+          senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+          privateKey: cryptoState.alicePrivateKey,
+          accountIds,
+          ciphertext: Buffer.from(encryptedMain.ciphertext),
+          nonce: Buffer.from(encryptedMain.nonce),
+        }),
+        occurrence: null,
+        storyIncluded: false,
+        release: { mode: "creator_reveal" },
+        featureState: null,
+        references: [],
+        links: [],
+      },
+    });
+    assert.equal(relationshipItem.statusCode, 201, relationshipItem.body);
+
+    const mediaId = randomUUID();
+    const mediaContext = envelopeContext({
+      partnershipId,
+      groupGeneration: 1,
+      mlsEpoch: 1,
+      contentType: "media",
+      contentId: mediaId,
+      contentVersion: 1,
+      payloadRole: "media_content",
+      senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+      schemaVersion: 1,
+    });
+    const encryptedMedia = await encryptBytes(utf8(secret + ":media-metadata"), mediaContext);
+    const mediaCiphertext = Buffer.from(encryptedMedia.ciphertext);
+    const mediaUpload = await app.inject({
+      method: "POST",
+      url: "/api/v1/media/uploads",
+      headers: headers(alice.cookie, "s1-raw-protected-media"),
+      payload: {
+        mediaId,
+        kind: "image",
+        formatCode: "webp",
+        ciphertextBytes: mediaCiphertext.length,
+        ciphertextSha256: createHash("sha256").update(mediaCiphertext).digest("hex"),
+        cryptoProtocolVersion: S1_CRYPTO_PROFILE,
+        contentEnvelope: protectedContentInput({
+          partnershipId,
+          contentType: "media",
+          contentId: mediaId,
+          contentVersion: 1,
+          payloadRole: "media_content",
+          senderCryptoDeviceId: cryptoState.aliceCryptoDeviceId,
+          privateKey: cryptoState.alicePrivateKey,
+          accountIds,
+          ciphertext: mediaCiphertext,
+          nonce: Buffer.from(encryptedMedia.nonce),
+        }).envelope,
+        durationSeconds: null,
+      },
+    });
+    assert.equal(mediaUpload.statusCode, 201, mediaUpload.body);
+
     const stored = await database.pool.query<{ body_text: string | null; ciphertext: Buffer }>(
       "SELECT body_text, ciphertext FROM messages WHERE id = $1",
       [messageId],
     );
     assert.equal(stored.rows[0]?.body_text, null);
-    assert.deepEqual(stored.rows[0]?.ciphertext, Buffer.from(encrypted.ciphertext));
+    assert.deepEqual(stored.rows[0]?.ciphertext, Buffer.from(encryptedEdit.ciphertext));
     assert.equal(stored.rows[0]?.ciphertext.includes(Buffer.from(secret)), false);
 
     const tables = await database.pool.query<{ tablename: string }>(

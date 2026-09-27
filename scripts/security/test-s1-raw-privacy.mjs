@@ -246,10 +246,11 @@ try {
         minioUser +
         " " +
         minioPassword +
-        " >/dev/null && mc cat local/" +
+        " >/dev/null && for kind in image voice file; do mc cat local/" +
         bucket +
         "/" +
-        objectKey,
+        objectKey +
+        "-$kind; done",
     ],
     { encoding: null },
   );
