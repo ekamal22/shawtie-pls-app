@@ -5,6 +5,39 @@ import { loadDecryptedMedia } from "../../lib/media/media-runtime.ts";
 import { useS1CryptoRuntime } from "../../lib/crypto/runtime-context.tsx";
 import type { MediaServerProjection } from "../../lib/media/media-types.ts";
 
+function mediaUnavailableCopy(error: string): {
+  readonly text: string;
+  readonly state: string;
+  readonly alert: boolean;
+} {
+  if (error === "CRYPTO_HISTORY_UNAVAILABLE") {
+    return {
+      text: "This older protected attachment is unavailable on this device.",
+      state: "history_unavailable",
+      alert: false,
+    };
+  }
+  if (error === "CRYPTO_CIPHERTEXT_INVALID" || error === "CRYPTO_SIGNATURE_INVALID") {
+    return {
+      text: "This protected attachment could not be safely verified.",
+      state: "integrity_failed",
+      alert: true,
+    };
+  }
+  if (error.startsWith("CRYPTO_")) {
+    return {
+      text: "This protected attachment is unavailable until protected sharing is ready.",
+      state: "temporarily_unavailable",
+      alert: false,
+    };
+  }
+  return {
+    text: "This attachment can't be opened right now.",
+    state: "media_unavailable",
+    alert: false,
+  };
+}
+
 function fileName(media: MediaServerProjection): string {
   const extension: Record<string, string> = {
     jpeg: "jpg",
@@ -76,12 +109,14 @@ export function MediaAttachment({
     );
   }
   if (error || !loaded) {
+    const unavailable = mediaUnavailableCopy(error || "MEDIA_UNAVAILABLE");
     return (
-      <div className="media-card media-unavailable talk-media-unavailable">
-        This attachment can't be opened right now.
-        <span className="hint">
-          {error.includes("CRYPTO") ? " This media is unavailable on this device." : ""}
-        </span>
+      <div
+        className="media-card media-unavailable talk-media-unavailable"
+        data-crypto-state={unavailable.state}
+        role={unavailable.alert ? "alert" : "status"}
+      >
+        {unavailable.text}
       </div>
     );
   }
