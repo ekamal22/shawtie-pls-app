@@ -574,7 +574,10 @@ test("UX8 protected content failures are per item and integrity failures fail cl
   assert.equal(relationshipApi.includes('cryptoContentState: "available" as const'), true);
   assert.equal(talk.includes("talk-text--protected-unavailable"), true);
   assert.equal(ours.includes("ours-crypto-unavailable"), true);
-  assert.equal(media.includes("This protected attachment could not be safely verified."), true);
+  assert.equal(
+    media.includes("This attachment from protected sharing could not be safely verified."),
+    true,
+  );
 });
 
 test("UX8 sealed R1 items never fall back to an internal kind label for recipients", async () => {

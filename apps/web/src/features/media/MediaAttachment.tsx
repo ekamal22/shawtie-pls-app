@@ -12,21 +12,21 @@ function mediaUnavailableCopy(error: string): {
 } {
   if (error === "CRYPTO_HISTORY_UNAVAILABLE") {
     return {
-      text: "This older protected attachment is unavailable on this device.",
+      text: "This attachment from older protected history is unavailable on this device.",
       state: "history_unavailable",
       alert: false,
     };
   }
   if (error === "CRYPTO_CIPHERTEXT_INVALID" || error === "CRYPTO_SIGNATURE_INVALID") {
     return {
-      text: "This protected attachment could not be safely verified.",
+      text: "This attachment from protected sharing could not be safely verified.",
       state: "integrity_failed",
       alert: true,
     };
   }
   if (error.startsWith("CRYPTO_")) {
     return {
-      text: "This protected attachment is unavailable until protected sharing is ready.",
+      text: "This attachment is unavailable until protected sharing is ready.",
       state: "temporarily_unavailable",
       alert: false,
     };
