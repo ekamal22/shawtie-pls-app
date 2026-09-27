@@ -171,7 +171,7 @@ function primaryTask(
   recovery: CryptoRecoveryViewState,
   partnership: CryptoPartnershipViewState,
 ): SecurityTaskKind {
-  if (input.interactionMode === "account_deletion_view_only" || trust === "revoked") {
+  if (trust === "revoked") {
     return "session_invalid";
   }
   if (runtime === "unavailable") return "runtime_unavailable";
@@ -190,7 +190,7 @@ function writeState(
   trust: CryptoDeviceTrustViewState,
   partnership: CryptoPartnershipViewState,
 ): ProtectedWriteState {
-  if (input.interactionMode === "account_deletion_view_only" || trust === "revoked") {
+  if (trust === "revoked") {
     return "blocked_session";
   }
   if (runtime !== "ready") return "blocked_runtime";
@@ -226,8 +226,7 @@ export function deriveCryptoSecurityViewModel(
     protectedWrites: writeState(input, runtime, currentDeviceTrust, partnership),
     canApproveOtherDevices:
       runtime === "ready" &&
-      currentDeviceTrust === "trusted" &&
-      input.interactionMode !== "account_deletion_view_only",
+      currentDeviceTrust === "trusted",
     canUseRecoveryKeyHere:
       runtime === "ready" &&
       currentDeviceTrust === "pending" &&
