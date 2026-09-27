@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Dialog, Notice } from "../../design/primitives.tsx";
+import { Button, ConfirmDialog, Dialog, Notice } from "../../design/primitives.tsx";
 import { useCryptoSecurity } from "./CryptoSecurityProvider.tsx";
 import { cryptoErrorCopy, recoveryStatusCopy } from "./crypto-copy.ts";
 
@@ -18,6 +18,7 @@ export function CryptoRecoveryFlow({
 }) {
   const security = useCryptoSecurity();
   const [enteredSecret, setEnteredSecret] = useState("");
+  const [confirmSetup, setConfirmSetup] = useState(false);
   const [revealedSecret, setRevealedSecret] = useState("");
   const secretRef = useRef("");
   const [saved, setSaved] = useState(false);
@@ -95,7 +96,22 @@ export function CryptoRecoveryFlow({
             Create one recovery key and store it somewhere you control. Shawtie stores an encrypted
             recovery bundle, not the readable recovery key.
           </p>
-          <Button variant="primary" disabled={busy} onClick={() => void setupRecovery()}>
+          <Button
+            variant="primary"
+            disabled={busy}
+            onClick={() => {
+              if (!reauthenticatedAt) {
+                document
+                  .getElementById("security-confirmation")
+                  ?.scrollIntoView({ block: "center" });
+                onError(
+                  "Confirm your password first. Recovery setup requires a recent security confirmation.",
+                );
+                return;
+              }
+              setConfirmSetup(true);
+            }}
+          >
             Create recovery key
           </Button>
           {!reauthenticatedAt ? (
@@ -137,6 +153,20 @@ export function CryptoRecoveryFlow({
           matching account recovery bundle could be verified.
         </Notice>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmSetup}
+        onCancel={() => setConfirmSetup(false)}
+        onConfirm={() => {
+          setConfirmSetup(false);
+          void setupRecovery();
+        }}
+        title="Ready to save a recovery key?"
+        confirmLabel="Generate recovery key"
+      >
+        The readable recovery key is shown once after generation. Have a safe place ready before
+        continuing. Shawtie will not persist the readable key for you.
+      </ConfirmDialog>
 
       <Dialog
         open={revealedSecret.length > 0}
