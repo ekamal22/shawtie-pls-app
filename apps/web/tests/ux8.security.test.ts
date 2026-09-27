@@ -93,6 +93,7 @@ function inputs(
       rekeyRequired: false,
     },
     partnershipRefreshError: null,
+    reconciliationComplete: true,
     revision: "r1",
     ...overrides,
   } as CryptoSecurityInputs;
@@ -168,6 +169,44 @@ test("UX8 rekey pauses protected writes while leaving recovery healthy", () => {
   assert.equal(model.primaryTask, "rekeying");
   assert.equal(model.partnership, "rekeying");
   assert.equal(model.protectedWrites, "blocked_rekey");
+});
+
+test("UX8 shows rekey before reconciliation, then repair if rekey cannot progress", () => {
+  const reconciling = deriveCryptoSecurityViewModel(
+    inputs({
+      partnershipState: {
+        ...READY_PARTNERSHIP,
+        group: { ...READY_PARTNERSHIP.group, rekeyRequired: true },
+      },
+      localGroup: {
+        available: false,
+        groupGeneration: null,
+        cryptoRequired: false,
+        rekeyRequired: false,
+      },
+      reconciliationComplete: false,
+    }),
+  );
+  assert.equal(reconciling.partnership, "rekeying");
+  assert.equal(reconciling.canOfferGroupRepair, false);
+
+  const stalled = deriveCryptoSecurityViewModel(
+    inputs({
+      partnershipState: {
+        ...READY_PARTNERSHIP,
+        group: { ...READY_PARTNERSHIP.group, rekeyRequired: true },
+      },
+      localGroup: {
+        available: false,
+        groupGeneration: null,
+        cryptoRequired: false,
+        rekeyRequired: false,
+      },
+      reconciliationComplete: true,
+    }),
+  );
+  assert.equal(stalled.partnership, "repair_required");
+  assert.equal(stalled.canOfferGroupRepair, true);
 });
 
 test("UX8 repair requires active lifecycle, recovery and missing local group", () => {
