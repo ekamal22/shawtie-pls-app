@@ -97,8 +97,7 @@ export function TalkBubble({
   const deleted = message.deletedAt !== null;
   const long = !deleted && isLongMessage(message.body);
   const created = new Date(message.createdAt);
-  const actionable =
-    canOpenActions && !deleted && message.protectedContentState === "available";
+  const actionable = canOpenActions && !deleted && message.protectedContentState === "available";
 
   function onBubbleClick(event: MouseEvent<HTMLDivElement>) {
     if (!actionable) return;
@@ -149,10 +148,9 @@ export function TalkBubble({
             <span className="talk-quote__text">
               {message.replyContext.deleted
                 ? "Deleted message"
-                : unavailableCopy(
-                      message.replyContext.protectedContentState,
-                      "message",
-                    ) ?? message.replyContext.body ?? "A message from earlier"}
+                : (unavailableCopy(message.replyContext.protectedContentState, "message") ??
+                  message.replyContext.body ??
+                  "A message from earlier")}
             </span>
           </button>
         ) : null}

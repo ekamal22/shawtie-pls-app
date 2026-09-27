@@ -66,10 +66,12 @@ export function protectedWriteReason(state: ProtectedWriteState): string | null 
     allowed: null,
     blocked_session: "Protected sharing is unavailable for this session.",
     blocked_runtime: "Protected sharing is not ready on this device.",
-    blocked_device_pending: "Finish protected sharing on this device before sending protected content.",
+    blocked_device_pending:
+      "Finish protected sharing on this device before sending protected content.",
     blocked_recovery_prerequisite:
       "Protected sharing is waiting for recovery setup before protected content can be changed.",
-    blocked_rekey: "Protected sharing is updating device access. Protected writes will resume shortly.",
+    blocked_rekey:
+      "Protected sharing is updating device access. Protected writes will resume shortly.",
     blocked_repair: "Protected sharing needs repair before protected content can be changed.",
   };
   return copy[state];
@@ -99,7 +101,8 @@ export function cryptoErrorCopy(error: unknown): string {
     CRYPTO_RECOVERY_UNAVAILABLE: "No recovery key is configured for this account.",
     REAUTH_REQUIRED: "Confirm your password again before changing protected-sharing recovery.",
     CRYPTO_RECOVERY_FAILED: "That recovery key could not be verified. Nothing was restored.",
-    CRYPTO_RECOVERY_REQUIRED: "Recovery must be configured before this protected action can continue.",
+    CRYPTO_RECOVERY_REQUIRED:
+      "Recovery must be configured before this protected action can continue.",
     CRYPTO_GROUP_NOT_READY: "Protected sharing is still preparing for this relationship.",
     CRYPTO_GROUP_RESET_REQUIRED: "Protected sharing could not be repaired from the current state.",
     CRYPTO_REKEY_REQUIRED: "Protected sharing is updating device access.",

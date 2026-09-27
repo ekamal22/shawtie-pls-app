@@ -1,14 +1,10 @@
 import { useState } from "react";
-import {
-  Button,
-  ConfirmDialog,
-  ErrorNotice,
-  Notice,
-} from "../../design/primitives.tsx";
+import { Button, ConfirmDialog, ErrorNotice, Notice } from "../../design/primitives.tsx";
 import { CryptoDeviceList } from "./CryptoDeviceList.tsx";
 import { CryptoRecoveryFlow } from "./CryptoRecoveryFlow.tsx";
 import { useCryptoSecurity } from "./CryptoSecurityProvider.tsx";
 import { cryptoErrorCopy, recoveryStatusCopy } from "./crypto-copy.ts";
+import { isStaleSecurityAuthority } from "./security-authority.ts";
 import "./security.css";
 
 interface AccountDevice {
@@ -61,6 +57,7 @@ export function CryptoSecurityPanel({
         "Protected sharing was repaired for future content. Older unavailable content may still remain unavailable.",
       );
     } catch (caught) {
+      if (isStaleSecurityAuthority(caught)) return;
       setError(cryptoErrorCopy(caught));
     } finally {
       setBusy(false);
@@ -77,7 +74,12 @@ export function CryptoSecurityPanel({
             activation. Calls continue to use their separate private relay calling design.
           </p>
         </div>
-        <Button compact variant="quiet" disabled={busy || security.refreshing} onClick={() => void security.refresh()}>
+        <Button
+          compact
+          variant="quiet"
+          disabled={busy || security.refreshing}
+          onClick={() => void security.refresh()}
+        >
           {security.refreshing ? "Checking..." : "Refresh"}
         </Button>
       </div>
@@ -102,8 +104,8 @@ export function CryptoSecurityPanel({
 
       {security.model.currentDeviceTrust === "pending" ? (
         <Notice tone="warning">
-          This device cannot use protected sharing yet. Restore it with your recovery key, or approve
-          it from another trusted device.
+          This device cannot use protected sharing yet. Restore it with your recovery key, or
+          approve it from another trusted device.
         </Notice>
       ) : null}
 

@@ -2,11 +2,7 @@ import { Button, ErrorNotice, Notice } from "../../design/primitives.tsx";
 import { useCryptoSecurity } from "./CryptoSecurityProvider.tsx";
 import { securityTaskCopy } from "./crypto-copy.ts";
 
-export function SecurityTaskCard({
-  onOpenSecurity,
-}: {
-  readonly onOpenSecurity: () => void;
-}) {
+export function SecurityTaskCard({ onOpenSecurity }: { readonly onOpenSecurity: () => void }) {
   const { model } = useCryptoSecurity();
   const copy = securityTaskCopy(model.primaryTask);
   if (!copy) return null;

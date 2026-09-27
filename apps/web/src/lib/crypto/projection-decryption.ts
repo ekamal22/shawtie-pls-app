@@ -7,10 +7,7 @@ import { utf8Decode } from "@shawtie/crypto";
 import type { S1CryptoRuntime } from "./crypto-runtime.ts";
 
 export type ProtectedContentViewState =
-  | "available"
-  | "history_unavailable"
-  | "integrity_failed"
-  | "temporarily_unavailable";
+  "available" | "history_unavailable" | "integrity_failed" | "temporarily_unavailable";
 
 export interface DecryptedMessageProjection extends Omit<
   MessageProjection,

@@ -2,6 +2,7 @@ import { Button } from "../../design/primitives.tsx";
 import type { CryptoDeviceProjection } from "../../lib/crypto/crypto-api.ts";
 import { useCryptoSecurity } from "./CryptoSecurityProvider.tsx";
 import { cryptoErrorCopy } from "./crypto-copy.ts";
+import { isStaleSecurityAuthority } from "./security-authority.ts";
 
 interface AccountDevice {
   readonly id: string;
@@ -40,6 +41,7 @@ export function CryptoDeviceList({
         "Device approved for future protected sharing. Approval alone does not promise access to older protected history.",
       );
     } catch (error) {
+      if (isStaleSecurityAuthority(error)) return;
       onError(cryptoErrorCopy(error));
     } finally {
       onBusyChange(false);

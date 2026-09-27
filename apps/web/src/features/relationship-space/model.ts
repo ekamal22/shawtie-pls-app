@@ -1,7 +1,4 @@
-import type {
-  RelationshipItemKindInput,
-  RelationshipOccurrenceInput,
-} from "@shawtie/contracts";
+import type { RelationshipItemKindInput, RelationshipOccurrenceInput } from "@shawtie/contracts";
 import type { DecryptedRelationshipItemProjection } from "../../lib/crypto/projection-decryption.ts";
 
 export type RelationshipItemKind = RelationshipItemKindInput;

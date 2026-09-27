@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, ConfirmDialog, Dialog, Notice } from "../../design/primitives.tsx";
 import { useCryptoSecurity } from "./CryptoSecurityProvider.tsx";
 import { cryptoErrorCopy, recoveryStatusCopy } from "./crypto-copy.ts";
+import { hasRecentReauthentication, isStaleSecurityAuthority } from "./security-authority.ts";
 
 export function CryptoRecoveryFlow({
   reauthenticatedAt,
@@ -23,6 +24,7 @@ export function CryptoRecoveryFlow({
   const secretRef = useRef("");
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const recentlyReauthenticated = hasRecentReauthentication(reauthenticatedAt);
 
   useEffect(
     () => () => {
@@ -32,9 +34,11 @@ export function CryptoRecoveryFlow({
   );
 
   async function setupRecovery() {
-    if (!reauthenticatedAt) {
+    if (!hasRecentReauthentication(reauthenticatedAt)) {
       document.getElementById("security-confirmation")?.scrollIntoView({ block: "center" });
-      onError("Confirm your password first. Recovery setup requires a recent security confirmation.");
+      onError(
+        "Confirm your password first. Recovery setup requires a recent security confirmation.",
+      );
       return;
     }
 
@@ -47,6 +51,7 @@ export function CryptoRecoveryFlow({
       setSaved(false);
       setCopied(false);
     } catch (error) {
+      if (isStaleSecurityAuthority(error)) return;
       if (error instanceof Error && error.message === "REAUTH_REQUIRED") {
         document.getElementById("security-confirmation")?.scrollIntoView({ block: "center" });
       }
@@ -68,6 +73,7 @@ export function CryptoRecoveryFlow({
         "This device is trusted and recovery capability was restored. Recoverable older protected history can open as its keys are needed.",
       );
     } catch (error) {
+      if (isStaleSecurityAuthority(error)) return;
       onError(cryptoErrorCopy(error));
     } finally {
       onBusyChange(false);
@@ -100,7 +106,7 @@ export function CryptoRecoveryFlow({
             variant="primary"
             disabled={busy}
             onClick={() => {
-              if (!reauthenticatedAt) {
+              if (!hasRecentReauthentication(reauthenticatedAt)) {
                 document
                   .getElementById("security-confirmation")
                   ?.scrollIntoView({ block: "center" });
@@ -114,7 +120,7 @@ export function CryptoRecoveryFlow({
           >
             Create recovery key
           </Button>
-          {!reauthenticatedAt ? (
+          {!recentlyReauthenticated ? (
             <p className="hint">Confirm your password above before creating the key.</p>
           ) : null}
         </div>
@@ -126,6 +132,7 @@ export function CryptoRecoveryFlow({
             <span>Recovery key</span>
             <input
               name="cryptoRecoveryKey"
+              type="password"
               value={enteredSecret}
               onChange={(event) => setEnteredSecret(event.target.value)}
               autoComplete="off"
@@ -196,8 +203,8 @@ export function CryptoRecoveryFlow({
       >
         <div className="security-secret">
           <p>
-            This key can restore recoverable protected history on a new device. Shawtie cannot
-            show this readable key again from its server copy.
+            This key can restore recoverable protected history on a new device. Shawtie cannot show
+            this readable key again from its server copy.
           </p>
           <code className="security-secret__value">{revealedSecret}</code>
           <label className="security-confirm">
@@ -209,8 +216,8 @@ export function CryptoRecoveryFlow({
             <span>I saved this recovery key somewhere I control.</span>
           </label>
           <p className="hint">
-            Copying is explicit. Shawtie does not automatically save this key to browser storage,
-            a file, or the clipboard.
+            Copying is explicit. Shawtie does not automatically save this key to browser storage, a
+            file, or the clipboard.
           </p>
         </div>
       </Dialog>

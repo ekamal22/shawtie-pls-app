@@ -88,15 +88,11 @@ export function OursItemRow({
         ) : null}
         <span className="ours-row__text">
           <span className="ours-row__kicker">
-            {sealedForMe
-              ? "Sealed"
-              : unavailable?.kicker ?? kindLabelFor(item, accountId)}
+            {sealedForMe ? "Sealed" : (unavailable?.kicker ?? kindLabelFor(item, accountId))}
             {hasVoiceLetter(item) && !locked && !unavailable ? " · Voice letter" : ""}
           </span>
           <span className="ours-row__title">
-            {locked
-              ? previewTitle(item, sealedForMe)
-              : unavailable?.title ?? itemTitle(item)}
+            {locked ? previewTitle(item, sealedForMe) : (unavailable?.title ?? itemTitle(item))}
           </span>
           {sealedNote ? <span className="ours-row__meta">{sealedNote}</span> : null}
           {arrivalLabel ? <span className="ours-row__meta">{arrivalLabel}</span> : null}

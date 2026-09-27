@@ -22,6 +22,12 @@ import {
   type LocalGroupStatus,
   type LocalRecoveryStatus,
 } from "./crypto-security-model.ts";
+import {
+  assertSecurityAuthorityCurrent,
+  isCurrentSecurityRefresh,
+  runScopedSecurityMutation,
+  type SecurityAuthoritySnapshot,
+} from "./security-authority.ts";
 
 interface RecoveryServerState {
   readonly configured: boolean;
@@ -86,17 +92,14 @@ export function CryptoSecurityProvider({
 }: {
   readonly partnershipId: string | null;
   readonly lifecycleState: "active" | "breakup_pending" | null;
-  readonly interactionMode:
-    | "normal"
-    | "breakup_restricted"
-    | "account_deletion_view_only"
-    | null;
+  readonly interactionMode: "normal" | "breakup_restricted" | "account_deletion_view_only" | null;
   readonly cryptoRequiredHint: boolean;
   readonly children: ReactNode;
 }) {
   const { runtime, status, retry: retryRuntime } = useS1CryptoRuntime();
   const requestGeneration = useRef(0);
   const revisionCounter = useRef(0);
+  const activeRef = useRef(true);
   const accountScopeRef = useRef("");
   const partnershipScopeRef = useRef("");
   const accountScope = runtime
@@ -121,13 +124,25 @@ export function CryptoSecurityProvider({
     refreshing: true,
   });
 
-  const refresh = useCallback(async () => {
+  const currentAuthority = useCallback(
+    (): SecurityAuthoritySnapshot => ({
+      active: activeRef.current,
+      accountScope: accountScopeRef.current,
+      partnershipScope: partnershipScopeRef.current,
+      revision: revisionCounter.current,
+    }),
+    [],
+  );
+
+  const refresh = useCallback(async (): Promise<boolean> => {
     const ticket = ++requestGeneration.current;
     const revision = String(++revisionCounter.current);
     const currentRuntime = runtime;
 
     if (!currentRuntime) {
-      if (ticket !== requestGeneration.current) return;
+      if (!isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current)) {
+        return false;
+      }
       setState({
         model: deriveCryptoSecurityViewModel({
           runtimePresent: false,
@@ -151,7 +166,7 @@ export function CryptoSecurityProvider({
         refreshError: status.errorCode,
         refreshing: status.errorCode === "CRYPTO_STARTING",
       });
-      return;
+      return true;
     }
 
     setState((previous) => ({ ...previous, refreshing: true }));
@@ -193,7 +208,7 @@ export function CryptoSecurityProvider({
           // observe it before S1 performs its normal automatic membership reconciliation.
           if (
             authoritativeBeforeReconcile.group?.rekeyRequired &&
-            ticket === requestGeneration.current
+            isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current)
           ) {
             const interimModel = deriveCryptoSecurityViewModel({
               runtimePresent: true,
@@ -242,7 +257,9 @@ export function CryptoSecurityProvider({
       devices = await currentRuntime.devices().catch(() => []);
     }
 
-    if (ticket !== requestGeneration.current) return;
+    if (!isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current)) {
+      return false;
+    }
 
     const latestStatus = currentRuntime.status();
     const model = deriveCryptoSecurityViewModel({
@@ -281,7 +298,16 @@ export function CryptoSecurityProvider({
       refreshError,
       refreshing: false,
     });
+    return true;
   }, [runtime, status, partnershipId, lifecycleState, interactionMode]);
+
+  useEffect(() => {
+    activeRef.current = true;
+    return () => {
+      activeRef.current = false;
+      requestGeneration.current += 1;
+    };
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -306,14 +332,6 @@ export function CryptoSecurityProvider({
     };
   }, [refresh]);
 
-  const refreshAfterAction = useCallback(
-    async (capturedPartnershipScope: string) => {
-      if (capturedPartnershipScope !== partnershipScopeRef.current) return;
-      await refresh();
-    },
-    [refresh],
-  );
-
   const actions = useMemo<CryptoSecurityActions>(
     () => ({
       refresh: async () => {
@@ -325,32 +343,38 @@ export function CryptoSecurityProvider({
       },
       approveDevice: async (cryptoDeviceId) => {
         if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
-        const capturedAccountScope = accountScopeRef.current;
-        const capturedPartnershipScope = partnershipScopeRef.current;
-        await runtime.approveDevice(cryptoDeviceId);
-        if (capturedAccountScope !== accountScopeRef.current) return;
-        await refreshAfterAction(capturedPartnershipScope);
+        const captured = currentAuthority();
+        await runScopedSecurityMutation({
+          captured,
+          current: currentAuthority,
+          mutate: () => runtime.approveDevice(cryptoDeviceId),
+          reconcile: refresh,
+          resultIsCurrent: () => runtime.status().trustState === "trusted",
+        });
       },
       setupRecovery: async () => {
         if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
-        const capturedAccountScope = accountScopeRef.current;
-        const capturedPartnershipScope = partnershipScopeRef.current;
-        const result = await runtime.setupRecovery();
-        if (capturedAccountScope === accountScopeRef.current) {
-          await refreshAfterAction(capturedPartnershipScope);
-        }
-        return result;
+        const captured = currentAuthority();
+        return runScopedSecurityMutation({
+          captured,
+          current: currentAuthority,
+          mutate: () => runtime.setupRecovery(),
+          reconcile: refresh,
+          resultIsCurrent: () => runtime.status().trustState === "trusted",
+        });
       },
       recoverWithMasterSecret: async (secret) => {
         if (!runtime) throw new Error("CRYPTO_UNAVAILABLE");
-        const capturedAccountScope = accountScopeRef.current;
-        const capturedPartnershipScope = partnershipScopeRef.current;
-        await runtime.recoverWithMasterSecret(secret);
-        if (capturedAccountScope !== accountScopeRef.current) return;
-        await refreshAfterAction(capturedPartnershipScope);
+        const captured = currentAuthority();
+        await runScopedSecurityMutation({
+          captured,
+          current: currentAuthority,
+          mutate: () => runtime.recoverWithMasterSecret(secret),
+          reconcile: refresh,
+          resultIsCurrent: () => runtime.status().trustState === "trusted",
+        });
       },
       repairPartnership: async () => {
-        const capturedPartnershipScope = partnershipScopeRef.current;
         if (
           !runtime ||
           !partnershipId ||
@@ -359,37 +383,42 @@ export function CryptoSecurityProvider({
         ) {
           throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
         }
+        const captured = currentAuthority();
 
-        // Re-evaluate the destructive predicate from current authority immediately before reset.
-        // A cached model is never enough to authorize repair.
-        const [authoritative, localRecovery, localGroup] = await Promise.all([
-          runtime.partnershipState(partnershipId),
-          runtime.localRecoveryStatus(),
-          runtime.localGroupStatus(partnershipId),
-        ]);
-        const currentAccountId = runtime.accountId;
-        const matchingRecovery = authoritative.recoveryRecipients.some(
-          (recipient) =>
-            recipient.accountId === currentAccountId &&
-            localRecovery.recoveryKeyVersion !== null &&
-            recipient.recoveryKeyVersion === localRecovery.recoveryKeyVersion,
-        );
-        if (
-          runtime.status().trustState !== "trusted" ||
-          !authoritative.cryptoRequired ||
-          !authoritative.group ||
-          !localRecovery.configured ||
-          !matchingRecovery ||
-          localGroup.available
-        ) {
-          throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
-        }
-
-        if (capturedPartnershipScope !== partnershipScopeRef.current) {
-          throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
-        }
-        await runtime.resetPartnershipGroup(partnershipId);
-        await refreshAfterAction(capturedPartnershipScope);
+        await runScopedSecurityMutation({
+          captured,
+          current: currentAuthority,
+          mutate: async () => {
+            // Re-evaluate the destructive predicate from current authority immediately before
+            // reset. A cached model is never enough to authorize repair.
+            const [authoritative, localRecovery, localGroup] = await Promise.all([
+              runtime.partnershipState(partnershipId),
+              runtime.localRecoveryStatus(),
+              runtime.localGroupStatus(partnershipId),
+            ]);
+            assertSecurityAuthorityCurrent(captured, currentAuthority());
+            const currentAccountId = runtime.accountId;
+            const matchingRecovery = authoritative.recoveryRecipients.some(
+              (recipient) =>
+                recipient.accountId === currentAccountId &&
+                localRecovery.recoveryKeyVersion !== null &&
+                recipient.recoveryKeyVersion === localRecovery.recoveryKeyVersion,
+            );
+            if (
+              runtime.status().trustState !== "trusted" ||
+              !authoritative.cryptoRequired ||
+              !authoritative.group ||
+              !localRecovery.configured ||
+              !matchingRecovery ||
+              localGroup.available
+            ) {
+              throw new Error("CRYPTO_GROUP_RESET_REQUIRED");
+            }
+            return runtime.resetPartnershipGroup(partnershipId);
+          },
+          reconcile: refresh,
+          resultIsCurrent: () => runtime.status().trustState === "trusted",
+        });
       },
     }),
     [
@@ -397,7 +426,7 @@ export function CryptoSecurityProvider({
       status.errorCode,
       retryRuntime,
       refresh,
-      refreshAfterAction,
+      currentAuthority,
       partnershipId,
       lifecycleState,
       interactionMode,

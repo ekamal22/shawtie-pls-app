@@ -298,10 +298,7 @@ export function UsScreen({
             </form>
           </section>
 
-          <CryptoSecurityPanel
-            accountDevices={devices}
-            reauthenticatedAt={reauthenticatedAt}
-          />
+          <CryptoSecurityPanel accountDevices={devices} reauthenticatedAt={reauthenticatedAt} />
 
           <section className="us-block">
             <h2>Verified email</h2>
@@ -352,9 +349,9 @@ export function UsScreen({
           <section className="us-block">
             <h2>Devices</h2>
             <p className="hint">
-              Revoking a device immediately revokes its active sessions and is the only
-              user-facing device revocation action. Protected sharing follows the existing S1
-              revocation and rekey rules.
+              Revoking a device immediately revokes its active sessions and is the only user-facing
+              device revocation action. Protected sharing follows the existing S1 revocation and
+              rekey rules.
             </p>
             <ul className="us-list">
               {devices.map((device) => (

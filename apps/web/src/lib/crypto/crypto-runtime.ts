@@ -367,100 +367,102 @@ export class S1CryptoRuntime {
   }
 
   static async start(accountId: string, deviceId: string): Promise<S1CryptoRuntime> {
-    const [vault, module] = await Promise.all([
-      CryptoLocalVault.open(accountId),
-      loadOpenMlsModule(),
-    ]);
+    return withCryptoLock("device-runtime-start:" + accountId, deviceId, async () => {
+      const [vault, module] = await Promise.all([
+        CryptoLocalVault.open(accountId),
+        loadOpenMlsModule(),
+      ]);
 
-    let stored = await vault.deviceState();
-    let device: CryptoDeviceProjection;
+      let stored = await vault.deviceState();
+      let device: CryptoDeviceProjection;
 
-    if (!stored) {
-      const cryptoDeviceId = crypto.randomUUID();
-      const engine = createMlsEngine(module, cryptoDeviceId);
-      const keyPackages = Array.from({ length: INITIAL_KEY_PACKAGE_COUNT }, () => ({
-        keyPackageId: crypto.randomUUID(),
-        keyPackage: base64UrlEncode(engine.keyPackage()),
-      }));
-      const mlsSigningPublicKey = base64UrlEncode(engine.mlsSigningPublicKey);
-      const contentSigningPublicKey = base64UrlEncode(engine.contentSigningPublicKey);
-      const identityProofSignature = base64UrlEncode(
-        engine.signContent(
-          enrollmentProofPayload(accountId, deviceId, {
-            cryptoDeviceId,
-            cryptoProfile: S1_CRYPTO_PROFILE,
-            mlsSigningPublicKey,
-            contentSigningPublicKey,
-          }),
-        ),
-      );
-      stored = {
-        key: "device",
-        cryptoProfile: S1_CRYPTO_PROFILE,
-        cryptoDeviceId,
-        state: engine.exportState(),
-        updatedAt: Date.now(),
-      };
-      await vault.putDeviceState(stored);
-      const enrolled = await enrollCryptoDevice({
-        cryptoDeviceId,
-        cryptoProfile: S1_CRYPTO_PROFILE,
-        mlsSigningPublicKey,
-        contentSigningPublicKey,
-        identityProofSignature,
-        keyPackages,
-      });
-      device = enrolled.device;
-    } else {
-      try {
-        device = (await loadCurrentCryptoDevice()).device;
-      } catch (error) {
-        if (error instanceof ApiClientError && error.code === "CRYPTO_NOT_INITIALIZED") {
-          const engine = restoreMlsEngine(module, stored.state);
-          const keyPackage = engine.keyPackage();
-          stored = {
-            ...stored,
-            state: engine.exportState(),
-            updatedAt: Date.now(),
-          };
-          await vault.putDeviceState(stored);
-          const mlsSigningPublicKey = base64UrlEncode(engine.mlsSigningPublicKey);
-          const contentSigningPublicKey = base64UrlEncode(engine.contentSigningPublicKey);
-          const enrolled = await enrollCryptoDevice({
-            cryptoDeviceId: stored.cryptoDeviceId,
-            cryptoProfile: S1_CRYPTO_PROFILE,
-            mlsSigningPublicKey,
-            contentSigningPublicKey,
-            identityProofSignature: base64UrlEncode(
-              engine.signContent(
-                enrollmentProofPayload(accountId, deviceId, {
-                  cryptoDeviceId: stored.cryptoDeviceId,
-                  cryptoProfile: S1_CRYPTO_PROFILE,
-                  mlsSigningPublicKey,
-                  contentSigningPublicKey,
-                }),
+      if (!stored) {
+        const cryptoDeviceId = crypto.randomUUID();
+        const engine = createMlsEngine(module, cryptoDeviceId);
+        const keyPackages = Array.from({ length: INITIAL_KEY_PACKAGE_COUNT }, () => ({
+          keyPackageId: crypto.randomUUID(),
+          keyPackage: base64UrlEncode(engine.keyPackage()),
+        }));
+        const mlsSigningPublicKey = base64UrlEncode(engine.mlsSigningPublicKey);
+        const contentSigningPublicKey = base64UrlEncode(engine.contentSigningPublicKey);
+        const identityProofSignature = base64UrlEncode(
+          engine.signContent(
+            enrollmentProofPayload(accountId, deviceId, {
+              cryptoDeviceId,
+              cryptoProfile: S1_CRYPTO_PROFILE,
+              mlsSigningPublicKey,
+              contentSigningPublicKey,
+            }),
+          ),
+        );
+        stored = {
+          key: "device",
+          cryptoProfile: S1_CRYPTO_PROFILE,
+          cryptoDeviceId,
+          state: engine.exportState(),
+          updatedAt: Date.now(),
+        };
+        await vault.putDeviceState(stored);
+        const enrolled = await enrollCryptoDevice({
+          cryptoDeviceId,
+          cryptoProfile: S1_CRYPTO_PROFILE,
+          mlsSigningPublicKey,
+          contentSigningPublicKey,
+          identityProofSignature,
+          keyPackages,
+        });
+        device = enrolled.device;
+      } else {
+        try {
+          device = (await loadCurrentCryptoDevice()).device;
+        } catch (error) {
+          if (error instanceof ApiClientError && error.code === "CRYPTO_NOT_INITIALIZED") {
+            const engine = restoreMlsEngine(module, stored.state);
+            const keyPackage = engine.keyPackage();
+            stored = {
+              ...stored,
+              state: engine.exportState(),
+              updatedAt: Date.now(),
+            };
+            await vault.putDeviceState(stored);
+            const mlsSigningPublicKey = base64UrlEncode(engine.mlsSigningPublicKey);
+            const contentSigningPublicKey = base64UrlEncode(engine.contentSigningPublicKey);
+            const enrolled = await enrollCryptoDevice({
+              cryptoDeviceId: stored.cryptoDeviceId,
+              cryptoProfile: S1_CRYPTO_PROFILE,
+              mlsSigningPublicKey,
+              contentSigningPublicKey,
+              identityProofSignature: base64UrlEncode(
+                engine.signContent(
+                  enrollmentProofPayload(accountId, deviceId, {
+                    cryptoDeviceId: stored.cryptoDeviceId,
+                    cryptoProfile: S1_CRYPTO_PROFILE,
+                    mlsSigningPublicKey,
+                    contentSigningPublicKey,
+                  }),
+                ),
               ),
-            ),
-            keyPackages: [
-              {
-                keyPackageId: crypto.randomUUID(),
-                keyPackage: base64UrlEncode(keyPackage),
-              },
-            ],
-          });
-          device = enrolled.device;
-        } else {
-          vault.close();
-          throw error;
+              keyPackages: [
+                {
+                  keyPackageId: crypto.randomUUID(),
+                  keyPackage: base64UrlEncode(keyPackage),
+                },
+              ],
+            });
+            device = enrolled.device;
+          } else {
+            vault.close();
+            throw error;
+          }
         }
       }
-    }
 
-    if (device.deviceId !== deviceId || device.accountId !== accountId) {
-      vault.close();
-      throw new Error("CRYPTO_DEVICE_IDENTITY_CONFLICT");
-    }
-    return new S1CryptoRuntime(accountId, deviceId, vault, module, device);
+      if (device.deviceId !== deviceId || device.accountId !== accountId) {
+        vault.close();
+        throw new Error("CRYPTO_DEVICE_IDENTITY_CONFLICT");
+      }
+      return new S1CryptoRuntime(accountId, deviceId, vault, module, device);
+    });
   }
 
   close(): void {

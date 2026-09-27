@@ -1880,9 +1880,7 @@ export function MessagingPanel({
               }).catch(() => undefined);
             }}
             placeholder={
-              canSend
-                ? "Message..."
-                : cryptoWriteMessage ?? "Messaging is currently view-only."
+              canSend ? "Message..." : (cryptoWriteMessage ?? "Messaging is currently view-only.")
             }
             disabled={!canSend || busy}
             rows={1}

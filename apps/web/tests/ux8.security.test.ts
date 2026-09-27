@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import type { MessageProjection } from "@shawtie/contracts";
 import {
   deriveCryptoSecurityViewModel,
   type CryptoSecurityInputs,
 } from "../src/features/security/crypto-security-model.ts";
+import {
+  assertSecurityAuthorityCurrent,
+  hasRecentReauthentication,
+  isCurrentSecurityRefresh,
+  isStaleSecurityAuthority,
+  runScopedSecurityMutation,
+  type SecurityAuthoritySnapshot,
+} from "../src/features/security/security-authority.ts";
+import type { S1CryptoRuntime } from "../src/lib/crypto/crypto-runtime.ts";
+import { decryptMessageProjectionForView } from "../src/lib/crypto/projection-decryption.ts";
 
 async function source(relative: string): Promise<string> {
   return readFile(new URL(relative, import.meta.url), "utf8");
@@ -69,9 +80,7 @@ const READY_PARTNERSHIP = {
   legacyPlaintextBlocker: false,
 } as const;
 
-function inputs(
-  overrides: Partial<CryptoSecurityInputs> = {},
-): CryptoSecurityInputs {
+function inputs(overrides: Partial<CryptoSecurityInputs> = {}): CryptoSecurityInputs {
   return {
     runtimePresent: true,
     runtimeStatus: {
@@ -97,6 +106,27 @@ function inputs(
     revision: "r1",
     ...overrides,
   } as CryptoSecurityInputs;
+}
+
+function authority(overrides: Partial<SecurityAuthoritySnapshot> = {}): SecurityAuthoritySnapshot {
+  return {
+    active: true,
+    accountScope: "account:device:crypto-device",
+    partnershipScope: "account:device:crypto-device:partnership:active:normal",
+    revision: 4,
+    ...overrides,
+  };
+}
+
+function deferred<T>(): {
+  readonly promise: Promise<T>;
+  readonly resolve: (value: T) => void;
+} {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((complete) => {
+    resolve = complete;
+  });
+  return { promise, resolve };
 }
 
 test("UX8 healthy trusted state is quiet and writable", () => {
@@ -287,6 +317,216 @@ test("UX8 runtime starting is progress, not a false failure banner", () => {
   assert.equal(model.primaryTask, "none");
 });
 
+test("UX8 recovery setup accepts only the A1 ten-minute reauthentication window", () => {
+  const now = Date.parse("2026-09-27T12:00:00.000Z");
+  assert.equal(hasRecentReauthentication(null, now), false);
+  assert.equal(hasRecentReauthentication("invalid", now), false);
+  assert.equal(hasRecentReauthentication("2026-09-27T11:50:00.000Z", now), true);
+  assert.equal(hasRecentReauthentication("2026-09-27T11:49:59.999Z", now), false);
+});
+
+test("UX8 stale approval result cannot survive a newer revoke refresh", async () => {
+  const pendingApproval = deferred<string>();
+  const captured = authority();
+  let current = captured;
+  let reconciled = false;
+  const result = runScopedSecurityMutation({
+    captured,
+    current: () => current,
+    mutate: () => pendingApproval.promise,
+    reconcile: async () => {
+      reconciled = true;
+      return true;
+    },
+  });
+
+  current = authority({ revision: captured.revision + 1 });
+  pendingApproval.resolve("approved");
+  await assert.rejects(result, isStaleSecurityAuthority);
+  assert.equal(reconciled, false);
+});
+
+test("UX8 recovery racing approval discards the stale RMS result", async () => {
+  const pendingRecovery = deferred<{ recoveryMasterSecret: string }>();
+  const captured = authority();
+  let current = captured;
+  const result = runScopedSecurityMutation({
+    captured,
+    current: () => current,
+    mutate: () => pendingRecovery.promise,
+    reconcile: async () => true,
+  });
+
+  current = authority({ revision: captured.revision + 1 });
+  pendingRecovery.resolve({ recoveryMasterSecret: "must-not-reach-the-next-state" });
+  await assert.rejects(result, isStaleSecurityAuthority);
+
+  const canonical = deriveCryptoSecurityViewModel(inputs());
+  assert.equal(canonical.currentDeviceTrust, "trusted");
+  assert.equal(canonical.recovery, "configured_here");
+});
+
+test("UX8 account teardown clears action authority before an RMS can be revealed", async () => {
+  const pendingSetup = deferred<{ recoveryMasterSecret: string }>();
+  const captured = authority();
+  let current = captured;
+  const result = runScopedSecurityMutation({
+    captured,
+    current: () => current,
+    mutate: () => pendingSetup.promise,
+    reconcile: async () => true,
+  });
+
+  current = authority({ active: false, accountScope: "next-account" });
+  pendingSetup.resolve({ recoveryMasterSecret: "old-account-secret" });
+  await assert.rejects(result, isStaleSecurityAuthority);
+});
+
+test("UX8 partnership finalization discards approval and recovery results", async () => {
+  const captured = authority();
+  const finalized = authority({ partnershipScope: "account:device:crypto-device:none:none:none" });
+  assert.throws(
+    () => assertSecurityAuthorityCurrent(captured, finalized),
+    isStaleSecurityAuthority,
+  );
+});
+
+test("UX8 revoke and P3 lifecycle authority win while rekey is in flight", () => {
+  const rekey = {
+    ...READY_PARTNERSHIP,
+    group: { ...READY_PARTNERSHIP.group, rekeyRequired: true },
+  };
+  const revoked = deriveCryptoSecurityViewModel(
+    inputs({
+      runtimeStatus: {
+        available: true,
+        cryptoDeviceId: "crypto-current",
+        trustState: "revoked",
+        errorCode: null,
+      },
+      partnershipState: rekey,
+    }),
+  );
+  assert.equal(revoked.primaryTask, "session_invalid");
+  assert.equal(revoked.protectedWrites, "blocked_session");
+
+  const breakup = deriveCryptoSecurityViewModel(
+    inputs({
+      lifecycleState: "breakup_pending",
+      interactionMode: "breakup_restricted",
+      partnershipState: rekey,
+    }),
+  );
+  assert.equal(breakup.partnership, "rekeying");
+  assert.equal(breakup.canOfferGroupRepair, false);
+});
+
+test("UX8 foreground reconciliation restores pending and rekey states without reload", () => {
+  const pending = deriveCryptoSecurityViewModel(
+    inputs({
+      runtimeStatus: {
+        available: true,
+        cryptoDeviceId: "crypto-current",
+        trustState: "pending",
+        errorCode: null,
+      },
+      partnershipState: null,
+      localGroup: null,
+    }),
+  );
+  const rekey = deriveCryptoSecurityViewModel(
+    inputs({
+      partnershipState: {
+        ...READY_PARTNERSHIP,
+        group: { ...READY_PARTNERSHIP.group, rekeyRequired: true },
+      },
+    }),
+  );
+  const ready = deriveCryptoSecurityViewModel(inputs({ revision: "resume-current" }));
+  assert.equal(pending.primaryTask, "device_pending");
+  assert.equal(rekey.primaryTask, "rekeying");
+  assert.equal(ready.primaryTask, "none");
+  assert.equal(ready.securityStateRevision, "resume-current");
+});
+
+test("UX8 request tickets reject stale device lists and older network projections", () => {
+  assert.equal(isCurrentSecurityRefresh(7, 8), false);
+  assert.equal(isCurrentSecurityRefresh(8, 8), true);
+  assert.equal(isCurrentSecurityRefresh(8, 8, false), false);
+});
+
+test("UX8 repair aborts before mutation after reconciliation or lifecycle authority changes", async () => {
+  for (const next of [
+    authority({ revision: 5 }),
+    authority({ partnershipScope: "account:device:crypto-device:partnership:breakup_pending" }),
+  ]) {
+    const preflight = deferred<void>();
+    const captured = authority();
+    let current = captured;
+    let resets = 0;
+    const action = runScopedSecurityMutation({
+      captured,
+      current: () => current,
+      mutate: async () => {
+        await preflight.promise;
+        assertSecurityAuthorityCurrent(captured, current);
+        resets += 1;
+      },
+      reconcile: async () => true,
+    });
+    current = next;
+    preflight.resolve();
+    await assert.rejects(action, isStaleSecurityAuthority);
+    assert.equal(resets, 0);
+  }
+});
+
+test("UX8 a newer verified message revision never reuses failed plaintext", async () => {
+  let decryptAttempt = 0;
+  const runtime = {
+    decryptProtectedBytes: async () => {
+      decryptAttempt += 1;
+      if (decryptAttempt === 1) throw new Error("CRYPTO_SIGNATURE_INVALID");
+      return new TextEncoder().encode("verified-new-revision");
+    },
+  } as unknown as S1CryptoRuntime;
+  const protectedBody = {
+    ciphertext: "ciphertext",
+    envelope: {},
+  } as MessageProjection["protectedBody"];
+  const base = {
+    messageId: "10000000-0000-4000-8000-000000000001",
+    conversationId: "10000000-0000-4000-8000-000000000002",
+    senderAccountId: "10000000-0000-4000-8000-000000000003",
+    senderDeviceId: null,
+    serverSequence: 1,
+    contentVersion: 1,
+    lastChangeSequence: 1,
+    replyToMessageId: null,
+    replyContext: null,
+    body: "unverified-plaintext-must-not-render",
+    protectedBody,
+    createdAt: "2026-09-27T00:00:00.000Z",
+    editedAt: null,
+    deletedAt: null,
+    reactions: [],
+    attachments: [],
+  } as MessageProjection;
+
+  const failed = await decryptMessageProjectionForView(runtime, "partnership", base);
+  assert.equal(failed.protectedContentState, "integrity_failed");
+  assert.equal(failed.body, null);
+
+  const verified = await decryptMessageProjectionForView(runtime, "partnership", {
+    ...base,
+    contentVersion: 2,
+    lastChangeSequence: 2,
+  });
+  assert.equal(verified.protectedContentState, "available");
+  assert.equal(verified.body, "verified-new-revision");
+  assert.notEqual(verified.body, base.body);
+});
+
 test("UX8 provider reconciles the cached crypto device before deriving state", async () => {
   const provider = await source("../src/features/security/CryptoSecurityProvider.tsx");
   assert.equal(provider.includes("await currentRuntime.refreshDevice()"), true);
@@ -322,6 +562,7 @@ test("UX8 device approval does not introduce a second revoke authority", async (
 
 test("UX8 protected content failures are per item and integrity failures fail closed", async () => {
   const decrypt = await source("../src/lib/crypto/projection-decryption.ts");
+  const relationshipApi = await source("../src/features/relationship-space/api.ts");
   const talk = await source("../src/features/messaging/TalkBubble.tsx");
   const ours = await source("../src/features/ours/OursItems.tsx");
   const media = await source("../src/features/media/MediaAttachment.tsx");
@@ -329,6 +570,8 @@ test("UX8 protected content failures are per item and integrity failures fail cl
   assert.equal(decrypt.includes('"history_unavailable"'), true);
   assert.equal(decrypt.includes('"integrity_failed"'), true);
   assert.equal(decrypt.includes("protectedContentStateForError"), true);
+  assert.equal(relationshipApi.includes('cryptoPreviewState: "available" as const'), true);
+  assert.equal(relationshipApi.includes('cryptoContentState: "available" as const'), true);
   assert.equal(talk.includes("talk-text--protected-unavailable"), true);
   assert.equal(ours.includes("ours-crypto-unavailable"), true);
   assert.equal(media.includes("This protected attachment could not be safely verified."), true);
@@ -336,10 +579,7 @@ test("UX8 protected content failures are per item and integrity failures fail cl
 
 test("UX8 sealed R1 items never fall back to an internal kind label for recipients", async () => {
   const ours = await source("../src/features/ours/OursItems.tsx");
-  assert.equal(
-    ours.includes('sealedForMe ? "For later" : kindLabel(item.kind)'),
-    true,
-  );
+  assert.equal(ours.includes('sealedForMe ? "For later" : kindLabel(item.kind)'), true);
 });
 
 test("UX8 account recovery copy explicitly separates protected history recovery", async () => {
@@ -367,6 +607,7 @@ test("UX8 source additions contain no Unicode em dash", async () => {
     "../src/features/security/CryptoDeviceList.tsx",
     "../src/features/security/CryptoSecurityPanel.tsx",
     "../src/features/security/SecurityTaskCard.tsx",
+    "../src/features/security/security-authority.ts",
     "./ux8.security.test.ts",
   ]) {
     assert.equal((await source(file)).includes(EM_DASH), false, file);

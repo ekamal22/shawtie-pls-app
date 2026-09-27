@@ -233,7 +233,13 @@ async function decryptItems(
     items.find((item) => item.protectedContent)?.protectedContent?.envelope.partnershipId ??
     items.find((item) => item.protectedPreview)?.protectedPreview?.envelope.partnershipId ??
     null;
-  if (!partnershipId) return [...items];
+  if (!partnershipId) {
+    return items.map((item) => ({
+      ...item,
+      cryptoPreviewState: "available" as const,
+      cryptoContentState: "available" as const,
+    }));
+  }
   const cryptoRuntime = getActiveS1CryptoRuntime();
   return [...(await decryptRelationshipItemsForView(cryptoRuntime, partnershipId, items))];
 }

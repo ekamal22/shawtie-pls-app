@@ -15,6 +15,7 @@ interface Json {
 interface MockState {
   cryptoDevices: Json[];
   recoveryBundle: Json | null;
+  enrollmentRequests: number;
   accountDevices: Array<{
     id: string;
     displayName: string;
@@ -33,11 +34,7 @@ function json(route: Route, body: unknown, status = 200) {
   });
 }
 
-function deviceProjection(
-  body: Json,
-  deviceId: string,
-  trustState: "pending" | "trusted",
-): Json {
+function deviceProjection(body: Json, deviceId: string, trustState: "pending" | "trusted"): Json {
   return {
     cryptoDeviceId: body.cryptoDeviceId,
     deviceId,
@@ -114,6 +111,14 @@ async function mockApi(page: Page, state: MockState, sessionDeviceId: string) {
     if (path === "/api/v1/presence/heartbeat") return json(route, {});
 
     if (path === "/api/v1/crypto/devices/enroll" && method === "POST") {
+      state.enrollmentRequests += 1;
+      const existing = state.cryptoDevices.find((device) => device.deviceId === sessionDeviceId);
+      if (existing) {
+        return json(route, {
+          device: existing,
+          initialTrust: existing.trustState === "trusted",
+        });
+      }
       const body = request.postDataJSON() as Json;
       const first = state.cryptoDevices.length === 0;
       const projection = deviceProjection(body, sessionDeviceId, first ? "trusted" : "pending");
@@ -240,7 +245,13 @@ async function durableText(page: Page): Promise<string> {
       for (const request of await cache.keys()) {
         values.push(request.url);
         const response = await cache.match(request);
-        if (response) values.push(await response.clone().text().catch(() => ""));
+        if (response)
+          values.push(
+            await response
+              .clone()
+              .text()
+              .catch(() => ""),
+          );
       }
     }
     return values.join("\n");
@@ -251,6 +262,7 @@ test.describe.serial("UX8 encrypted UX integration", () => {
   const state: MockState = {
     cryptoDevices: [],
     recoveryBundle: null,
+    enrollmentRequests: 0,
     accountDevices: [
       accountDevice(DEVICE_ONE, "Main browser"),
       accountDevice(DEVICE_OTHER, "Other browser"),
@@ -262,9 +274,12 @@ test.describe.serial("UX8 encrypted UX integration", () => {
   test("trusted device creates recovery, avoids RMS persistence and approves another device", async ({
     page,
   }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await openUs(page, state, DEVICE_ONE);
 
-    await expect(page.getByText("No recovery key has been saved yet.")).toBeVisible();
+    await expect(
+      page.getByRole("paragraph").filter({ hasText: "No recovery key has been saved yet." }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Create recovery key" }).click();
     await expect(page.getByRole("dialog", { name: "Ready to save a recovery key?" })).toBeVisible();
     await page.getByRole("button", { name: "Generate recovery key" }).click();
@@ -273,6 +288,19 @@ test.describe.serial("UX8 encrypted UX integration", () => {
     await expect(reveal).toBeVisible();
     recoveryKey = (await reveal.locator(".security-secret__value").innerText()).trim();
     expect(recoveryKey.length).toBeGreaterThan(20);
+    expect(state.enrollmentRequests).toBe(1);
+
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "200%";
+    });
+    expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(
+      true,
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await expect(reveal.getByRole("button", { name: "Copy recovery key" })).toBeVisible();
+    await expect(reveal.getByRole("button", { name: "Done" })).toBeVisible();
 
     const durable = await durableText(page);
     expect(durable).not.toContain(recoveryKey);
@@ -304,7 +332,7 @@ test.describe.serial("UX8 encrypted UX integration", () => {
     try {
       await openUs(page, state, DEVICE_NEW);
       await expect(page.getByText("Waiting for approval", { exact: true })).toBeVisible();
-      const input = page.getByLabel("Recovery key");
+      const input = page.getByLabel("Recovery key", { exact: true });
 
       await input.fill("wrong-recovery-key");
       await page.getByRole("button", { name: "Restore with recovery key" }).click();
@@ -314,9 +342,7 @@ test.describe.serial("UX8 encrypted UX integration", () => {
       await input.fill(recoveryKey);
       await page.getByRole("button", { name: "Restore with recovery key" }).click();
       await expect(page.getByText("Trusted", { exact: true })).toBeVisible();
-      await expect(
-        page.getByText(/recovery capability was restored/i),
-      ).toBeVisible();
+      await expect(page.getByText(/recovery capability was restored/i)).toBeVisible();
       expect(await durableText(page)).not.toContain(recoveryKey);
     } finally {
       await context.close();

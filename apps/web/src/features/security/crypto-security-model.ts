@@ -57,11 +57,7 @@ export interface CryptoSecurityInputs {
   readonly localRecovery: LocalRecoveryStatus | null;
   readonly partnershipId: string | null;
   readonly lifecycleState: "active" | "breakup_pending" | null;
-  readonly interactionMode:
-    | "normal"
-    | "breakup_restricted"
-    | "account_deletion_view_only"
-    | null;
+  readonly interactionMode: "normal" | "breakup_restricted" | "account_deletion_view_only" | null;
   readonly partnershipState: CryptoPartnershipState | null;
   readonly localGroup: LocalGroupStatus | null;
   readonly partnershipRefreshError: string | null;
@@ -139,9 +135,9 @@ function repairEligible(
     localVersion !== undefined &&
     state.recoveryRecipients.some(
       (recipient) =>
-        recipient.accountId === state.devices.find(
-          (device) => device.cryptoDeviceId === state.currentCryptoDeviceId,
-        )?.accountId && recipient.recoveryKeyVersion === localVersion,
+        recipient.accountId ===
+          state.devices.find((device) => device.cryptoDeviceId === state.currentCryptoDeviceId)
+            ?.accountId && recipient.recoveryKeyVersion === localVersion,
     )
   );
 }
@@ -225,9 +221,7 @@ export function deriveCryptoSecurityViewModel(
     partnership,
     primaryTask: primary,
     protectedWrites: writeState(input, runtime, currentDeviceTrust, partnership),
-    canApproveOtherDevices:
-      runtime === "ready" &&
-      currentDeviceTrust === "trusted",
+    canApproveOtherDevices: runtime === "ready" && currentDeviceTrust === "trusted",
     canUseRecoveryKeyHere:
       runtime === "ready" &&
       currentDeviceTrust === "pending" &&
