@@ -46,6 +46,9 @@ export function CryptoRecoveryFlow({
       setSaved(false);
       setCopied(false);
     } catch (error) {
+      if (error instanceof Error && error.message === "REAUTH_REQUIRED") {
+        document.getElementById("security-confirmation")?.scrollIntoView({ block: "center" });
+      }
       onError(cryptoErrorCopy(error));
     } finally {
       onBusyChange(false);
@@ -148,7 +151,9 @@ export function CryptoRecoveryFlow({
                 void navigator.clipboard
                   .writeText(revealedSecret)
                   .then(() => setCopied(true))
-                  .catch(() => onError("The recovery key could not be copied. Select and copy it manually."));
+                  .catch(() =>
+                    onError("The recovery key could not be copied. Select and copy it manually."),
+                  );
               }}
             >
               {copied ? "Copied" : "Copy recovery key"}
