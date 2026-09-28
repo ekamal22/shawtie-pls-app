@@ -4,7 +4,7 @@
 // Source repository commit: 2e3e92569043d24297ca6c35070078e5cf41651e
 // Source Git blob SHA: 38eb37702244f55fda75cab281eb2145cd7685b6
 // Source entry count: 99839
-// Effective entries after Shawtie structural password bounds: 329
+// Effective entries after Shawtie structural password bounds: 327
 //
 // SecLists is distributed under the MIT License:
 //
@@ -32,12 +32,10 @@ export const COMMON_PASSWORD_SOURCE = {
   repositoryCommit: "2e3e92569043d24297ca6c35070078e5cf41651e",
   sourceBlobSha: "38eb37702244f55fda75cab281eb2145cd7685b6",
   sourceEntryCount: 99839,
-  effectiveEntryCount: 329,
+  effectiveEntryCount: 327,
 } as const;
 
 export const COMMON_PASSWORDS = new Set<string>([
-  "$hex[687474703a2f2f616473]",
-  "$hex[687474703a2f2f777777]",
   "000000000000000",
   "00000000000000000000",
   "010203040506070809",
