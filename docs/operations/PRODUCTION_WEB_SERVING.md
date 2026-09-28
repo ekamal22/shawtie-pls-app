@@ -39,7 +39,7 @@ The web server serves `apps/web/dist` and reverse-proxies same-origin `/api` HTT
 `NODE_ENV=production`
 
 `APP_ORIGIN`
-: Required bare public HTTPS origin, for example `https://app.example.com`. Credentials, paths, queries, fragments, and insecure non-loopback HTTP origins are rejected.
+: Required bare public HTTPS origin, for example `https://app.example.com`. Credentials, paths, queries, fragments, non-HTTP(S) schemes, and insecure non-loopback HTTP origins are rejected by both the production web adapter and API configuration.
 
 `BACKEND_PROXY_TARGET`
 : Required internal API origin using HTTP or HTTPS, for example `http://api.internal:3000`. It is not exposed to the browser.
@@ -91,7 +91,7 @@ The web adapter:
 - strips fixed and Connection-nominated hop-by-hop HTTP response headers before returning them to the browser
 - reapplies the repository-controlled browser security headers to proxied HTTP responses
 
-The Fastify deployment must keep its existing explicit `TRUSTED_PROXY` configuration. It should trust only the private web-adapter address/CIDR that actually connects to the API. Wildcard trust remains prohibited.
+The Fastify deployment must keep its explicit `TRUSTED_PROXY` configuration. SEC1 now validates that every configured API trust entry is a literal IP address or valid CIDR and rejects wildcard, boolean, hop-count, hostname, and malformed CIDR forms. The API should trust only the private web-adapter address/CIDR that actually connects to it.
 
 The two trust layers have separate jobs:
 
