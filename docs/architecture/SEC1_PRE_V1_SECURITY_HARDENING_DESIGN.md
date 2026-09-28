@@ -215,7 +215,7 @@ Requirements:
 - do not commit plaintext source password rows
 - commit only exact membership digests for source entries that can pass the structural password policy
 - source provenance, license, normalized entry count, source checksum, and generation command are committed
-- generated output is reproducible
+- generated output is reproducible and the canonical sorted digest membership set is pinned by SHA-256 `2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca`
 - tests include known blocked values that are not part of the historical ten-entry set
 
 The implementation uses a generated server-only `Set<string>` of SHA-256 digests. The candidate is NFC-normalized, case-folded, hashed in-process, and checked for exact digest membership. SHA-256 here is only a deterministic local set representation. It is not account credential storage and must not be confused with the Argon2id credential KDF. A Bloom filter remains disallowed because false-positive password rejection is unnecessary.
@@ -268,6 +268,8 @@ Three independent budgets are consumed before Argon2 verification:
 | `reauth_network` | existing normalized network prefix | 50 attempts / 15 min, block 15 min |
 
 All subjects continue through the existing versioned HMAC `rate-limit-key` derivation before persistence.
+
+Before HMAC derivation, network identity is canonicalized: IPv4 uses a `/24`, IPv4-mapped IPv6 collapses to the same IPv4 bucket, and normalized IPv6 uses a stable `/64`. Equivalent textual IPv6 spellings therefore cannot split the network budget.
 
 Raw IP addresses, passwords, cookies, session tokens, and device handles are not stored as rate-limit keys.
 
