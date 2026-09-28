@@ -182,7 +182,7 @@ S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, mer
    ->
 UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, merged to `main @ a029169`
 
-SEC1 Pre-V1 Security Hardening 🟡 PLANNED, highest remaining priority
+SEC1 Pre-V1 Security Hardening 🟡 IMPLEMENTED, AUTOMATED CLOSURE PENDING, highest remaining priority
 
 V1 Hosted CI Verification 🔒 BLOCKED until SEC1 is DONE and Actions capacity is available
 ~~~
