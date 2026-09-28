@@ -68,6 +68,18 @@ const introducedEmDash = diff
   .find((line) => line.includes(emDash));
 if (introducedEmDash) throw new Error("SEC1 diff introduces a forbidden em dash.");
 
+step("password-corpus-regenerate", process.execPath, [
+  npmCli,
+  "run",
+  "sec1:passwords:generate",
+]);
+step("password-corpus-reproducible", "git", [
+  "diff",
+  "--exit-code",
+  "--",
+  "apps/api/src/security/common-passwords.generated.ts",
+]);
+step("sec1-format", process.execPath, [npmCli, "run", "sec1:format:check"]);
 step("sec1-focused", process.execPath, [npmCli, "run", "test:sec1"]);
 step("sec1-postgres", process.execPath, [npmCli, "run", "test:sec1:local"]);
 step("sec1-browser", process.execPath, [npmCli, "run", "test:sec1:browser:e2e"]);
