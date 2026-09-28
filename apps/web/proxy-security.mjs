@@ -167,7 +167,6 @@ export function sanitizedForwardHeaders(
   return headers;
 }
 
-
 export function sanitizedProxyResponseHeaders(sourceHeaders, securityHeaders) {
   const headers = {};
   const dynamicHopByHop = connectionTokens(sourceHeaders.connection);
