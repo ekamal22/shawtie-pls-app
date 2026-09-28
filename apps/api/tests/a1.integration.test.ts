@@ -178,6 +178,60 @@ test("SEC1 expanded admission policy does not reject an existing credential at l
   }
 });
 
+test("SEC1 registration cannot complete at or after the authoritative intent expiry", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const start = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/registration/start",
+      headers,
+      payload: {
+        username: "expired_boundary",
+        displayName: "Expired Boundary",
+        dateOfBirth: "2000-01-01",
+        email: "expired-boundary@example.test",
+        password: "a unique registration boundary password",
+      },
+    });
+    assert.equal(start.statusCode, 200, start.body);
+    const registrationIntentId = (start.json() as { registrationIntentId: string })
+      .registrationIntentId;
+    const code = await latestCode(database, {
+      registrationIntentId,
+      purpose: "registration",
+    });
+
+    await database.pool.query(
+      "UPDATE registration_intents SET expires_at = clock_timestamp() WHERE id = $1",
+      [registrationIntentId],
+    );
+
+    const verify = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/registration/verify",
+      headers,
+      payload: {
+        registrationIntentId,
+        code,
+        deviceName: "Boundary Browser",
+      },
+    });
+    assert.equal(verify.statusCode, 409, verify.body);
+    assert.equal(verify.json().error.code, "EMAIL_CHALLENGE_EXPIRED");
+
+    const account = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM accounts WHERE username_normalized = $1",
+      ["expired_boundary"],
+    );
+    assert.equal(account.rows[0]?.count, "0");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("registration consumes the challenge, scrubs intent hash, and session token is not stored raw", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
