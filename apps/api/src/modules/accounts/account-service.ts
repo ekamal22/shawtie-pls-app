@@ -74,7 +74,6 @@ import {
   evaluateUsernameChange,
   isAdultOnDate,
   normalizeUsername,
-  validatePasswordPolicy,
   validateUsername,
 } from "@shawtie/domain";
 import type {
@@ -96,6 +95,7 @@ import {
 import { randomNonce, randomOpaqueToken } from "../../security/auth-key-ring.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
 import { normalizeEmail, normalizeLoginIdentifier } from "../../security/normalization.ts";
+import { PasswordAdmissionService } from "../../security/password-admission.ts";
 import type { PasswordHasher } from "../../security/password-hasher.ts";
 import type { AuthContext } from "../../plugins/authentication.ts";
 
@@ -132,11 +132,13 @@ export class AccountService {
   readonly database: DatabasePool;
   readonly keys: AuthKeyRing;
   readonly passwords: PasswordHasher;
+  readonly passwordAdmission: PasswordAdmissionService;
 
   constructor(database: DatabasePool, keys: AuthKeyRing, passwords: PasswordHasher) {
     this.database = database;
     this.keys = keys;
     this.passwords = passwords;
+    this.passwordAdmission = new PasswordAdmissionService(passwords);
   }
 
   async #queueCallTermination(transaction: QueryExecutor, call: CallSessionRecord): Promise<void> {
@@ -354,9 +356,10 @@ export class AccountService {
     const usernameDecision = validateUsername(input.username);
     if (!usernameDecision.allowed)
       throw new ApiError(400, usernameDecision.reason ?? "USERNAME_INVALID");
-    const passwordDecision = validatePasswordPolicy(input.password);
-    if (!passwordDecision.allowed)
-      throw new ApiError(400, passwordDecision.reason ?? "VALIDATION_FAILED");
+    const passwordDecision = this.passwordAdmission.validateForNewCredential(input.password);
+    if (!passwordDecision.allowed) {
+      throw new ApiError(400, passwordDecision.reason);
+    }
     let email;
     try {
       email = normalizeEmail(input.email);
@@ -388,7 +391,11 @@ export class AccountService {
       },
     ]);
 
-    const passwordHash = await this.passwords.hash(input.password);
+    const passwordHashDecision = await this.passwordAdmission.hashNewCredential(input.password);
+    if (!passwordHashDecision.allowed) {
+      throw new ApiError(400, passwordHashDecision.reason);
+    }
+    const passwordHash = passwordHashDecision.passwordHash;
     return withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       if (!isAdultOnDate(input.dateOfBirth, utcDate(now))) {
@@ -779,6 +786,10 @@ export class AccountService {
     } catch {
       throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
     }
+    const passwordDecision = this.passwordAdmission.validateForNewCredential(input.newPassword);
+    if (!passwordDecision.allowed) {
+      throw new ApiError(400, passwordDecision.reason);
+    }
     await this.consumeSecurityRateLimit([
       {
         scope: "verification_submit_network",
@@ -789,7 +800,11 @@ export class AccountService {
       },
     ]);
     const account = await findAccountByIdentifier(this.database.pool, identifier);
-    const newHash = await this.passwords.hash(input.newPassword);
+    const newHashDecision = await this.passwordAdmission.hashNewCredential(input.newPassword);
+    if (!newHashDecision.allowed) {
+      throw new ApiError(400, newHashDecision.reason);
+    }
+    const newHash = newHashDecision.passwordHash;
     if (!account || account.status !== "active") throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
 
     const decision = await withTransaction(this.database, async (transaction) => {
