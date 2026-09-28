@@ -162,13 +162,14 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
-- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, UX0 through UX7, and S1; UX merge anchor `9f0bea4`, S1 merge anchor `71569cf`, S1 final corrective executable `cde73a1`
+- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, UX0 through UX8, S1, and SEC1; UX merge anchor `9f0bea4`, UX8 merge anchor `a029169`, S1 merge anchor `71569cf`, SEC1 merge anchor `a2badf7`, SEC1 final executable `91ca920d`
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
 - `feat/c2-video-calling` -> historical completed branch; C2 fast-forward merged to `main @ fed2db7`; final executable SHA `ecbb2e1` with automated closure and mandatory Redmi Note 9S acceptance complete
 - `integration/ux-romantic` -> preserved historical integration line for UX0 through UX7; final executable `ca7cd35`, 22/22 Redmi Note 9S scenarios PASS; fast-forward merged to `main` at `9f0bea4`
 - `design/s1-e2ee-crypto-recovery` -> historical S1 architecture-freeze documentation line
+- `design/m3-media-voice` -> obsolete historical pre-S1 design line; divergent from current `main` and contains non-authoritative ADR-012. Do not merge this branch into current architecture without a new reviewed decision.
 - `design/ux8-encrypted-ux-integration` -> historical hardened/frozen UX8 design line
 - `feat/ux8-encrypted-ux-integration` -> DONE UX8 branch; final corrective executable `43ff9b1`; automated closure PASS, Redmi Note 9S 25/25 PASS; fast-forward merged to `main @ a029169`
 - `feat/s1-e2ee-crypto-recovery` -> DONE S1 branch; final corrective executable `cde73a1`; 30/30 physical Android acceptance; merged to `main @ 71569cf`
@@ -183,6 +184,18 @@ From P2 onward, each milestone uses its own branch created from the latest verif
 The persistence schema foundation has repeatable disposable PostgreSQL evidence. Earlier schema verification covered migration rerun idempotency, checksum drift, catalog inspection, occupied-slot contention, scheduled-action claim contention, and deterministic account-lock ordering. F2 then applied all six migrations from zero and passed 17/17 runtime integration tests covering transaction policy, retries, PostgreSQL clocks, stale generations, durable payload versions, rollback, outbox atomicity and duplicate safety, claim fencing and reclaim, lifecycle privacy, deletion recovery, queue plans, and graceful worker shutdown. Product-specific API and lifecycle integration remain work for later epics.
 
 Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks. GitHub-hosted validation has not yet been executed and is tracked separately under V1. Current repository commits intentionally use `[skip ci]` while hosted Actions execution is being conserved.
+
+## Repository audit concerns
+
+The 2026-09-29 repository-wide audit found no new implementation or SEC1 security blocker. The following release-governance items need attention and are assigned to V1/R2 rather than reopened feature milestones:
+
+- `main` is currently unprotected in GitHub. Required status checks are off and the repository has no rulesets. R2 must add protection suitable for the verified fast-forward workflow and prevent force pushes and branch deletion. Once V1 proves the hosted Baseline CI status, release-relevant changes must be gated by the appropriate hosted check.
+- GitHub Actions has zero runs on `main`. V1 remains the first hosted execution and evidence gate.
+- The repository is public and has no project-level license. R2 must record an explicit licensing decision before public readiness.
+- `design/m3-media-voice` is a divergent obsolete design branch. Its stranded ADR-012 describes a pre-S1 server-recoverable media-key bridge that was not adopted by current `main`; it is non-authoritative and must not be merged as current architecture.
+- production provider, deployment, release, rollback, backup/recovery, and operational automation remain incomplete or placeholder-only and are already owned by R2.
+
+As of this audit, `main` differs from SEC1 final executable `91ca920d` only by documentation commits, so these findings do not require another SEC1 local closure or Redmi physical run.
 
 ## Progress reporting rule
 

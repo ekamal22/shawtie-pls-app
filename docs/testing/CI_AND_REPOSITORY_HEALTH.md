@@ -12,6 +12,18 @@ GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
+## Repository audit concerns
+
+A repository-wide audit on 2026-09-29 found no new source-code or SEC1 security blocker, but it identified release-governance work that must remain visible:
+
+- GitHub reports `main` as unprotected, with required status checks disabled and no repository rulesets. R2 must establish protection that prevents force pushes and branch deletion and, after V1 establishes the hosted check, requires the appropriate CI status for release-relevant changes. The protection design must preserve the repository's verified fast-forward milestone history rather than silently changing merge semantics.
+- GitHub Actions reports zero workflow runs on `main`. This is consistent with the deliberate `[skip ci]` period, but it means V1 Hosted CI Verification is still completely unexecuted on hosted infrastructure.
+- The public repository has no project-level license. Before public readiness, the owner must explicitly choose and record a licensing policy, including the intentional choice to remain unlicensed if that is preferred.
+- `design/m3-media-voice` is a divergent historical design branch and contains `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`, which is not present on current `main` and does not describe the final production architecture. It must not be merged as current architecture. R2 should record an explicit archive, deletion, or non-authoritative disposition.
+- `infra/cloudflare`, `infra/docker`, `infra/local`, and `scripts/release` remain placeholder-only surfaces. Production provider configuration, deployment, release, rollback, backup/recovery, and operational evidence remain R2 work.
+
+These concerns do not reopen SEC1. Current `main` has no source-code changes after SEC1 final executable `91ca920d`; subsequent changes through this audit are documentation-only.
+
 ## Baseline workflow
 
 The baseline workflow is:
@@ -90,7 +102,7 @@ The isolated `test:c1:closure` passed at `439b09f` using only the documented 001
 
 C2 source implementation and automated/local closure are complete on `feat/c2-video-calling` at executable SHA `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978`. The repository contains focused C2 contract/security/browser tests, disposable PostgreSQL/API integration coverage, a real-Chromium camera-race harness, `test:c2:local`, `test:c2:closure`, and Android device prepare/cleanup tooling. The C2 closure wrapper rejects migration reservations, requires branch/main parity rules and `[skip ci]`, retains M3/C1 local gates and C1 Chromium coverage, then runs C2 PostgreSQL/API and Chromium coverage plus full health, audit and git hygiene.
 
-The C2 automated/local closure passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`: retained M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 Chromium 4/4, retained C1 focused 24/24, integrated 111/111, C1 Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit with 0 vulnerabilities, and git hygiene. That was the first closure, at `94e0e93`. After two physical-sweep defects were fixed (`e6576e9`, `ecbb2e1`), `test:c2:closure` re-passed at final executable SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`, and mandatory physical Redmi Note 9S acceptance is complete (scenarios 1 through 31 and 33 through 36 PASSED; evidence in `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`). C2 is DONE on the branch, ready to merge, not merged.
+The C2 automated/local closure passed with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`: retained M3 PostgreSQL/API/worker 63/63, MinIO 1/1, M3 Chromium 4/4, retained C1 focused 24/24, integrated 111/111, C1 Chromium 5/5, C2 focused 15/15, C2 PostgreSQL/API 9/9, C2 Chromium 4/4, full health, audit with 0 vulnerabilities, and git hygiene. That was the first closure, at `94e0e93`. After two physical-sweep defects were fixed (`e6576e9`, `ecbb2e1`), `test:c2:closure` re-passed at final executable SHA `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143` with `C2_AUTOMATED_INTEGRATED_PASS reserved=0`, and mandatory physical Redmi Note 9S acceptance is complete (scenarios 1 through 31 and 33 through 36 PASSED; evidence in `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`). C2 is DONE and fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`.
 
 ## M2 automated closure status
 

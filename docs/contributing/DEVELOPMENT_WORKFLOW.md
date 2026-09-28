@@ -50,6 +50,8 @@ Branch rules:
 
 Historical reconstruction must never rewrite commits merely to manufacture old merge commits. When earlier work was developed linearly, preserve genuine milestone closure commits with branch refs and fast-forward `main` to the latest verified closure where ancestry permits.
 
+Repository protection note: the 2026-09-29 audit found `main` unprotected, with required status checks disabled and no repository rulesets. R2 must add protection before public readiness. Protection must prevent force pushes and branch deletion and, after V1 establishes the hosted Baseline CI status, require the appropriate check for release-relevant changes. Configure the rule deliberately so it does not accidentally invalidate the repository's accepted fast-forward milestone workflow.
+
 The legacy branch `feat/m1-executable-foundation` refers to an earlier executable-foundation naming scheme. It is not the future M1 Messaging Core branch and must not be reused for M1 Messaging work.
 
 Future branch examples:

@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-28.
+Refreshed: 2026-09-29.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified mainline now includes completed M2, M3, C1, C2, UX0 through UX7, and S1. S1 is merged at `main @ 71569cf`; its final corrective executable is `cde73a1`, where full automated closure re-passed and mandatory Redmi Note 9S acceptance closed 30/30. UX8 Encrypted UX Integration is complete and physically accepted at final corrective executable `43ff9b1`, with mandatory Redmi Note 9S acceptance closed 25/25, and is fast-forward merged to `main` at `a029169`.
+The verified mainline now includes completed M2, M3, C1, C2, UX0 through UX8, S1, and SEC1. S1 is merged at `main @ 71569cf`; its final corrective executable is `cde73a1`, where full automated closure re-passed and mandatory Redmi Note 9S acceptance closed 30/30. UX8 Encrypted UX Integration is complete and physically accepted at final corrective executable `43ff9b1`, with mandatory Redmi Note 9S acceptance closed 25/25, and is fast-forward merged to `main` at `a029169`. SEC1 is complete and merged at `main @ a2badf7`; final executable `91ca920d` passed the complete local security closure.
 
 Completed milestones:
 
@@ -81,6 +81,18 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
+
+## Current repository attention items
+
+The 2026-09-29 repository audit adds no new feature milestone, but it makes the following V1/R2 obligations explicit:
+
+- V1 has zero GitHub-hosted runs on `main` and must execute the configured Baseline CI before hosted CI can be treated as verified.
+- `main` is currently unprotected, required status checks are off, and no repository rulesets exist. R2 must establish protection after V1 identifies the hosted status check that should gate release-relevant changes.
+- the public repository has no project-level license. R2 must record the owner's explicit licensing policy before public readiness.
+- `design/m3-media-voice` is obsolete divergent design history with a stranded non-authoritative ADR-012. It must be archived, deleted, or clearly retained as historical-only before R2 closes.
+- production provider configuration and deployment, release, rollback, backup/recovery, and operational automation remain R2 work.
+
+These items do not reopen SEC1 and do not require a new Redmi run.
 
 ## Immediate execution sequence
 
@@ -636,6 +648,9 @@ Turn the verified private product into an operationally releasable system.
 ## Core scope
 
 - hosted CI verification
+- `main` branch protection and required-check enforcement
+- explicit public-repository licensing decision
+- historical branch and obsolete ADR disposition
 - dependency and secret scanning
 - privacy documentation
 - abuse/reporting controls

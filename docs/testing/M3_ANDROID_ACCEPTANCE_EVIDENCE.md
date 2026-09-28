@@ -283,4 +283,4 @@ the device above with Chrome 153.0.8010.52.
 
 Automated closure re-run after the fixes and the repository state are recorded
 in `docs/PROJECT_STATE.md`. M3 source, automated and physical acceptance are
-complete. M3 is ready for an explicit merge decision and has not been merged.
+complete. M3 was subsequently fast-forward merged to `main @ 1d3535f1c4d2d16e66c3bfa4c9c8cef42a95822a`.

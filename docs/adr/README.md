@@ -31,6 +31,10 @@ Accepted ADRs are authoritative for architecture decisions.
 - ADR-014: Relay-Only Call Network Privacy
 - ADR-015: C2 Video Signaling and Camera Privacy
 
+## Historical ADR-012 note
+
+ADR number 012 is intentionally absent from current `main`. `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md` exists only on the divergent historical `design/m3-media-voice` branch. It describes a temporary pre-S1 server-recoverable media-key bridge that was not adopted by the final implementation and is non-authoritative for current architecture. Do not merge or revive that ADR as an accepted current decision without a new reviewed architecture change.
+
 ## Creating a new ADR
 
 Use the architecture governance rules in:

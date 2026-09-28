@@ -6,6 +6,10 @@ The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video C
 
 **SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`.** Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed focused security 16/16, header/proxy/server 16/16, disposable PostgreSQL/API/worker 36/36, real Chromium 1/1, production scan, full repository health, a zero-vulnerability audit, and Git hygiene. The merged implementation contains canonical server-side new-password admission, a pinned hash-only common-password corpus, durable account/session/canonical-network reauthentication throttling, replica-safe expired registration-intent cleanup, and the repository-controlled production static/API/WebSocket adapter with strict CSP/HSTS, OpenMLS WebAssembly support, and explicit IP/CIDR reverse-proxy trust. No PostgreSQL migration or new scheduled-action type was required. V1 Hosted CI Verification is next, subject to Actions capacity. Evidence: `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
+## Pre-release attention
+
+The 2026-09-29 repository audit found no new source-code or SEC1 security blocker. Release-governance work remains: V1 has not yet executed on GitHub-hosted infrastructure, `main` is currently unprotected with no repository ruleset, the public repository has no project-level license decision recorded, the obsolete divergent `design/m3-media-voice` branch requires explicit disposition, and production deployment/release/rollback operations remain R2 work. Canonical details are tracked in `docs/PROJECT_STATE.md`, `docs/ROADMAP.md`, and `docs/testing/CI_AND_REPOSITORY_HEALTH.md`.
+
 ## Product direction
 
 The product combines:

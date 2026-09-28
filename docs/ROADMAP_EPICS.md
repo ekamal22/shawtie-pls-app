@@ -287,7 +287,7 @@ V1 is intentionally separate from F1 and was not a prerequisite for completed fe
 
 ## Current blocker
 
-SEC1 is DONE. V1 is blocked only because GitHub Actions capacity is unavailable through the remainder of September 2026.
+SEC1 is DONE. GitHub reports zero workflow runs on `main`, so V1 remains completely unexecuted on hosted infrastructure. The current blocker is GitHub Actions capacity through the remainder of September 2026.
 
 ## Scope
 
@@ -2715,6 +2715,9 @@ Status: PLANNED
 ## Scope
 
 - CI completion
+- `main` branch protection and required-check enforcement
+- explicit public-repository licensing decision
+- obsolete historical branch and ADR disposition
 - security scanning
 - privacy documentation
 - abuse reporting
@@ -2734,6 +2737,10 @@ Status: PLANNED
 - [ ] V1 Hosted CI Verification is DONE
 - [ ] all stable-release PRD gates are satisfied
 - [ ] required CI checks are green
+- [ ] `main` branch protection or equivalent repository rules prevent force pushes and deletion and enforce the appropriate hosted CI check for release-relevant changes
+- [ ] the public repository licensing policy is explicitly chosen and recorded
+- [ ] `design/m3-media-voice` and its stranded non-authoritative ADR-012 have an explicit archive, deletion, or historical-only disposition
+- [ ] production provider, deployment, release, rollback, backup/recovery, and operational configuration are implemented and reviewed
 - [ ] no unresolved critical or high security finding blocks release
 - [ ] dependency and secret scanning are green
 - [ ] privacy documentation matches actual implementation

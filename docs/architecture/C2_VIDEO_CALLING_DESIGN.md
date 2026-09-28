@@ -2,9 +2,9 @@
 
 ## Status
 
-**DESIGN, SOURCE IMPLEMENTATION, AUTOMATED/LOCAL VERIFICATION, AND PHYSICAL VERIFICATION COMPLETE AT FINAL EXECUTABLE SHA `ecbb2e1` (FIRST AUTOMATED CLOSURE AT `94e0e93`). DONE ON THE BRANCH, READY TO MERGE, NOT MERGED.**
+**DESIGN, SOURCE IMPLEMENTATION, AUTOMATED/LOCAL VERIFICATION, AND PHYSICAL VERIFICATION COMPLETE AT FINAL EXECUTABLE SHA `ecbb2e1` (FIRST AUTOMATED CLOSURE AT `94e0e93`). DONE AND FAST-FORWARD MERGED TO `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`.**
 
-Implementation branch:
+Historical implementation branch:
 
 `feat/c2-video-calling`
 
@@ -16,7 +16,7 @@ Verified C1 executable baseline inherited by C2:
 
 `b29aaa1dc62c9e3419c41084cddf4016a4f1bad8`
 
-C1 is DONE and merged. C2 source implementation and automated/local closure are complete on top of that verified substrate; the first automated closure passed at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and the final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`. The mandatory Redmi Note 9S acceptance matrix passed (evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`), so the branch is DONE, ready to merge, not merged.
+C1 is DONE and merged. C2 source implementation and automated/local closure are complete on top of that verified substrate; the first automated closure passed at `94e0e9329e083cb3d9bcf4e3b13ad60d4af2e978` and the final executable SHA is `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`. The mandatory Redmi Note 9S acceptance matrix passed (evidence: `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`), and the completed branch was subsequently fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`.
 
 Canonical HTTP/API delta:
 
@@ -869,4 +869,4 @@ C2 is DONE only when:
 - documentation and exact tested SHA are recorded
 - all commits retain `[skip ci]` while hosted Actions capacity is unavailable
 
-Automated/local closure passed first at `94e0e93` and again at final executable SHA `ecbb2e1`, and the mandatory physical Android acceptance gate is closed with evidence reconciled. C2 is DONE on the branch: ready to merge, not merged.
+Automated/local closure passed first at `94e0e93` and again at final executable SHA `ecbb2e1`, and the mandatory physical Android acceptance gate is closed with evidence reconciled. C2 is DONE and fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f`.

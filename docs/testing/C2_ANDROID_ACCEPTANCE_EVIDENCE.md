@@ -6,7 +6,8 @@ PHYSICAL ACCEPTANCE COMPLETE. Every mandatory scenario in `C2_ANDROID_ACCEPTANCE
 
 - Final executable SHA: `ecbb2e1877fbc8ee7bbeac0c15674a66683e8143`
 - Automated closure on that SHA: `npm run test:c2:closure` printed `C2_AUTOMATED_INTEGRATED_PASS reserved=0`
-- Branch: `feat/c2-video-calling`. Merge base with `main`: `5323d7be21e8776b45f507ec4cf60b9582544621`. `main` at that SHA is unchanged. C2 is NOT merged.
+- Execution-time branch context: `feat/c2-video-calling`. Merge base with `main`: `5323d7be21e8776b45f507ec4cf60b9582544621`. At the time of this physical run, C2 had not yet been merged.
+- Subsequent merge: C2 was fast-forward merged to `main @ fed2db7853c52ce87964dd351dd89b9a3879cd2f` after this acceptance evidence closed.
 
 ## Environment
 
