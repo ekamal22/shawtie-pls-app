@@ -5,6 +5,10 @@ import { request as httpsRequest } from "node:https";
 import { extname, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildWebSecurityHeaders } from "./server-security.mjs";
+import {
+  createTrustedProxyPolicy,
+  sanitizedForwardHeaders,
+} from "./proxy-security.mjs";
 
 const DIST_DIR = fileURLToPath(new URL("./dist/", import.meta.url));
 
@@ -32,23 +36,18 @@ function positivePort(raw) {
   return value;
 }
 
-function forwardedHeaders(request, backendTarget, appOrigin) {
-  const headers = { ...request.headers, host: backendTarget.host };
-  const remote = request.socket.remoteAddress;
-  const existing = request.headers["x-forwarded-for"];
-  if (remote) {
-    headers["x-forwarded-for"] = existing ? String(existing) + ", " + remote : remote;
-  }
-  headers["x-forwarded-host"] = request.headers.host ?? new URL(appOrigin).host;
-  headers["x-forwarded-proto"] = new URL(appOrigin).protocol.slice(0, -1);
-  return headers;
-}
-
 function backendTransport(target) {
   return target.protocol === "https:" ? httpsRequest : httpRequest;
 }
 
-function proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders) {
+function proxyHttp(
+  request,
+  reply,
+  backendTarget,
+  appOrigin,
+  securityHeaders,
+  trustedProxyPolicy,
+) {
   const target = new URL(request.url ?? "/", backendTarget);
   const proxy = backendTransport(target)({
     protocol: target.protocol,
@@ -56,7 +55,11 @@ function proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders) {
     port: target.port || undefined,
     method: request.method,
     path: target.pathname + target.search,
-    headers: forwardedHeaders(request, backendTarget, appOrigin),
+    headers: sanitizedForwardHeaders(request, {
+      backendTarget,
+      appOrigin,
+      trustedProxyPolicy,
+    }),
   });
 
   proxy.on("response", (response) => {
@@ -88,7 +91,14 @@ function writeUpgradeResponse(socket, response) {
   socket.write(head + "\r\n");
 }
 
-function proxyUpgrade(request, socket, head, backendTarget, appOrigin) {
+function proxyUpgrade(
+  request,
+  socket,
+  head,
+  backendTarget,
+  appOrigin,
+  trustedProxyPolicy,
+) {
   const target = new URL(request.url ?? "/", backendTarget);
   const proxy = backendTransport(target)({
     protocol: target.protocol,
@@ -96,7 +106,12 @@ function proxyUpgrade(request, socket, head, backendTarget, appOrigin) {
     port: target.port || undefined,
     method: "GET",
     path: target.pathname + target.search,
-    headers: forwardedHeaders(request, backendTarget, appOrigin),
+    headers: sanitizedForwardHeaders(request, {
+      backendTarget,
+      appOrigin,
+      trustedProxyPolicy,
+      upgrade: true,
+    }),
   });
 
   proxy.on("upgrade", (response, backendSocket, backendHead) => {
@@ -191,6 +206,18 @@ export function createProductionWebServer(env = process.env) {
   if (backendTarget.protocol !== "http:" && backendTarget.protocol !== "https:") {
     throw new Error("BACKEND_PROXY_TARGET must use http or https");
   }
+  if (
+    backendTarget.username ||
+    backendTarget.password ||
+    backendTarget.pathname !== "/" ||
+    backendTarget.search ||
+    backendTarget.hash
+  ) {
+    throw new Error(
+      "BACKEND_PROXY_TARGET must be a bare origin without credentials, path, query, or fragment",
+    );
+  }
+  const trustedProxyPolicy = createTrustedProxyPolicy(env.WEB_TRUSTED_PROXY);
 
   const allowInsecureLoopback =
     env.NODE_ENV !== "production" && env.ALLOW_INSECURE_LOOPBACK_WEB_ORIGIN === "1";
@@ -222,7 +249,14 @@ export function createProductionWebServer(env = process.env) {
     }
 
     if (request.url === "/api" || request.url?.startsWith("/api/")) {
-      proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders);
+      proxyHttp(
+        request,
+        reply,
+        backendTarget,
+        appOrigin,
+        securityHeaders,
+        trustedProxyPolicy,
+      );
       return;
     }
 
@@ -245,7 +279,14 @@ export function createProductionWebServer(env = process.env) {
       return;
     }
     if (request.url === "/api" || request.url?.startsWith("/api/")) {
-      proxyUpgrade(request, socket, head, backendTarget, appOrigin);
+      proxyUpgrade(
+        request,
+        socket,
+        head,
+        backendTarget,
+        appOrigin,
+        trustedProxyPolicy,
+      );
       return;
     }
     socket.destroy();
