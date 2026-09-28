@@ -9,6 +9,7 @@ const application = createProductionWebServer({
   BACKEND_PROXY_TARGET: "http://127.0.0.1:4190",
   WEB_MEDIA_CONNECT_SRC: "http://127.0.0.1:4190",
   ALLOW_INSECURE_LOOPBACK_WEB_ORIGIN: "1",
+  WEB_TRUSTED_PROXY: "127.0.0.1",
 });
 
 await application.listen();
