@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 export interface AuthKeyConfig {
   readonly activeVersion: number;
   readonly keys: ReadonlyMap<number, Buffer>;
@@ -87,9 +89,35 @@ function parseTrustedProxy(raw: string | undefined): false | string[] {
     .map((value) => value.trim())
     .filter(Boolean);
   if (values.length === 0) return false;
-  if (values.some((value) => value === "*" || value === "true" || /^\d+$/.test(value))) {
-    throw new Error("TRUSTED_PROXY must use explicit IP or CIDR entries");
+
+  for (const value of values) {
+    if (value === "*" || value === "true" || /^\d+$/.test(value)) {
+      throw new Error("TRUSTED_PROXY must use explicit IP or CIDR entries");
+    }
+
+    const slash = value.lastIndexOf("/");
+    if (slash < 0) {
+      if (isIP(value) === 0) {
+        throw new Error("TRUSTED_PROXY contains an invalid IP address");
+      }
+      continue;
+    }
+
+    const address = value.slice(0, slash);
+    const prefix = Number.parseInt(value.slice(slash + 1), 10);
+    const family = isIP(address);
+    const maximum = family === 6 ? 128 : family === 4 ? 32 : -1;
+    if (
+      maximum < 0 ||
+      !Number.isInteger(prefix) ||
+      String(prefix) !== value.slice(slash + 1) ||
+      prefix < 0 ||
+      prefix > maximum
+    ) {
+      throw new Error("TRUSTED_PROXY contains an invalid CIDR entry");
+    }
   }
+
   return values;
 }
 
