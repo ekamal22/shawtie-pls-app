@@ -59,6 +59,9 @@
 
 /* Two Sides / Memory Return: a short shared-element move between a kept memory and its place
    in the conversation. Only drawn where the View Transitions API exists and motion is allowed. */
+[data-ux7-vt] {
+  view-transition-name: ux7-shared;
+}
 html[data-ux7-transition] ::view-transition-old(root),
 html[data-ux7-transition] ::view-transition-new(root) {
   animation-duration: var(--dur-quick);
