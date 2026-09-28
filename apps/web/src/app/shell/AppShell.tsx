@@ -93,7 +93,6 @@ export function AppShell({
               <button
                 type="button"
                 className="app-nav__link"
-                style={{ width: "100%" }}
                 aria-current={route === name ? "page" : undefined}
                 onClick={() => onNavigate(name)}
               >
