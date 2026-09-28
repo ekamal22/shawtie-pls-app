@@ -206,7 +206,7 @@ Hosted GitHub Actions execution is tracked separately under V1 and is not an F1 
 
 # SEC1: Pre-V1 Security Hardening
 
-Status: DESIGN FROZEN, IMPLEMENTATION NOT STARTED
+Status: IMPLEMENTED ON FEATURE BRANCH, AUTOMATED CLOSURE PENDING
 
 Priority: highest remaining pre-release priority. SEC1 must close before intentionally spending GitHub-hosted Actions capacity on V1.
 
@@ -224,6 +224,16 @@ Canonical implementation architecture:
 
 `docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`
 
+Implementation checkpoint:
+
+- all four SEC1 remediation slices are implemented on `feat/sec1-pre-v1-security-hardening`
+- the common-password source corpus is pinned and committed offline with 99,839 source entries and checksum/license provenance
+- no PostgreSQL migration or new scheduled-action type was required
+- the repository now owns the production web serving adapter and CSP/HSTS policy
+- implementation discovered and removed additional inline-style writers beyond the three known at design time
+- focused and final closure harnesses are committed
+- no acceptance checkbox below is promoted solely from source review; final PASS evidence still requires `npm run test:sec1:closure`
+
 ## Scope
 
 - introduce one server-side password-admission boundary shared by registration and password recovery while keeping PasswordHasher verification/rehash independent
@@ -231,7 +241,7 @@ Canonical implementation architecture:
 - add durable account/session/network abuse throttling around password reauthentication while preserving session-token rotation
 - add bounded replica-safe worker maintenance that deletes expired incomplete registration intents without loading password hashes into worker memory
 - choose and commit the production web serving adapter/configuration, then enforce CSP/HSTS with OpenMLS WASM compatibility and no unsafe JavaScript execution
-- remove the three currently known React inline-style sites so style-src can remain self-only
+- remove all production inline-style writers found by the SEC1 source sweep so style-src can remain self-only
 - add focused regressions for each remediation
 - rerun the affected local security/integration/browser surface, full repository health, and the high-severity dependency audit once after implementation
 
