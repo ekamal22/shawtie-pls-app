@@ -4,6 +4,7 @@ import {
   createTrustedProxyPolicy,
   resolveClientAddress,
   sanitizedForwardHeaders,
+  sanitizedProxyResponseHeaders,
 } from "../proxy-security.mjs";
 
 test("SEC1 untrusted socket cannot spoof forwarded client address", () => {
@@ -47,7 +48,8 @@ test("SEC1 proxy overwrites forwarded metadata and strips hop-by-hop headers", (
     headers: {
       host: "app.example.test",
       cookie: "session=opaque",
-      connection: "keep-alive",
+      connection: "keep-alive, x-hop-secret",
+      "x-hop-secret": "must-not-forward",
       "x-forwarded-for": "203.0.113.8",
       "x-forwarded-host": "evil.example",
       "x-forwarded-proto": "http",
@@ -71,6 +73,32 @@ test("SEC1 proxy overwrites forwarded metadata and strips hop-by-hop headers", (
   assert.equal(headers.forwarded, undefined);
   assert.equal(headers["x-real-ip"], undefined);
   assert.equal(headers.connection, undefined);
+  assert.equal(headers["x-hop-secret"], undefined);
+});
+
+test("SEC1 proxied responses strip fixed and connection-nominated hop-by-hop headers", () => {
+  const headers = sanitizedProxyResponseHeaders(
+    {
+      "content-type": "application/json",
+      connection: "keep-alive, x-backend-hop",
+      "x-backend-hop": "must-not-forward",
+      "transfer-encoding": "chunked",
+      "x-content-type-options": "backend-value",
+      "set-cookie": ["a=1; HttpOnly", "b=2; HttpOnly"],
+    },
+    {
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'self';",
+    },
+  );
+
+  assert.equal(headers.connection, undefined);
+  assert.equal(headers["x-backend-hop"], undefined);
+  assert.equal(headers["transfer-encoding"], undefined);
+  assert.equal(headers["content-type"], "application/json");
+  assert.deepEqual(headers["set-cookie"], ["a=1; HttpOnly", "b=2; HttpOnly"]);
+  assert.equal(headers["x-content-type-options"], "nosniff");
+  assert.equal(headers["content-security-policy"], "default-src 'self';");
 });
 
 test("SEC1 websocket proxy keeps handshake headers but still overwrites forwarded metadata", () => {
