@@ -225,6 +225,8 @@ Deletion jobs must be retryable and auditable without retaining deleted private 
 
 Use durable deletion manifests and target-level completion state. Authorization and cryptographic access are revoked before asynchronous cleanup is considered complete.
 
+Follow-up audit status: server-side device/account authority revocation remains effective, but account-wide S1 browser-secret destruction is not yet wired into the current-device revocation and permanent-account-deletion paths. The existing account purge removes M2/media local data while the S1 crypto IndexedDB can remain. This is a local retention defect and must be fixed before V1. Deletion-pending accounts must keep legitimate recovery capability until the seven-day recovery deadline; permanent deletion and current-device revocation are the destructive account-wide local-crypto boundaries.
+
 ## Discovery and partner-request privacy
 
 P1 discovery is authenticated and exact-match only.

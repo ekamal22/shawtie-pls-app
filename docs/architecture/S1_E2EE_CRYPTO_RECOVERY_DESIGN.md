@@ -8,6 +8,20 @@ S1-A through S1-I are implemented in source. The branch now includes the OpenMLS
 
 The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the ciphersuite `MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519`, AES-256-GCM content encryption, and the reviewed S1 recovery profile encoded in `@shawtie/crypto`. The generated WASM build, disposable PostgreSQL suite, browser E2E, production scan, full raw privacy matrix, dependency review, and final independent cryptographic/security review passed at `e254c3c`; full automated closure re-passed at `cde73a1`, and S1-J physical Android acceptance closed 30/30 at that corrective executable.
 
+## Post-closure pre-V1 follow-up
+
+S1 remains historically DONE and merged. A 2026-09-29 follow-up audit found two implementation defects outside the original closure matrix that must be repaired before V1 release evidence is collected.
+
+### Account-wide local crypto deletion
+
+`CryptoLocalVault` already exposes `purgeCryptoAccountData(accountId)`, but the production account/device lifecycle does not currently call it. Current-device revocation and permanent account deletion correctly revoke server authority, but the account-scoped S1 IndexedDB can remain after M2/media local purge. The repair must distinguish ordinary logout from security destruction, preserve local recovery during the seven-day deletion-pending window, purge current-device revocation after authority loss, purge permanent deletion when observed, and make the offline-final-deletion case converge to local secret destruction safely.
+
+### HTTP transport boundary
+
+S1 contract maxima are expressed as decoded binary sizes, while HTTP carries base64url strings inside JSON. The API currently relies on Fastify's default 1 MiB body limit. A legal 1 MiB binary S1 field expands beyond that limit when encoded, and some S1 request shapes can contain multiple large fields. Each affected S1 route therefore needs an explicit body ceiling derived from its encoded worst-case request size rather than a global permissive increase. The API error boundary must also translate known Fastify parser/client errors into stable sanitized 4xx responses so oversized or malformed client traffic cannot appear as `500 INTERNAL_ERROR`.
+
+These follow-up repairs must add focused API/browser/integration regressions and must be green before V1. They do not change the pinned cryptographic profile or reopen the original S1 protocol design.
+
 S1 must not invent a custom cryptographic protocol.
 
 ## Goals

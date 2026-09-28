@@ -643,7 +643,23 @@ The physical matrix must cover:
 - final dissolution and local purge
 - future re-pair cannot decrypt prior partnership
 
-S1 remains incomplete until automated, browser, storage-inspection, and physical-device evidence are all recorded.
+That original S1 closure requirement is satisfied: automated, browser, storage-inspection, and physical-device evidence all passed, final corrective executable `cde73a1` closed the 30/30 Android matrix, and S1 is merged to `main @ 71569cf`. A later follow-up audit does not reopen that historical milestone, but it does add mandatory pre-V1 regression work for two newly discovered source defects.
+
+### Post-S1 pre-V1 regression additions
+
+Before V1 Hosted CI Verification can count as release evidence, focused tests must prove:
+
+- current-device revocation closes the S1 runtime and removes the account-scoped S1 crypto IndexedDB rather than only M2/media local data
+- deletion-pending retains legitimate local recovery capability throughout the seven-day recovery window
+- account recovery before the deadline preserves the valid local crypto state
+- permanent account deletion destroys account-wide local S1 recovery/device/group/key state on a client that observes final deletion
+- the offline-at-final-deletion path cannot retain obsolete local S1 secrets indefinitely only because normal authentication is gone
+- each S1 HTTP mutation route has an explicit request ceiling large enough for the legal base64url/JSON form of its contract while ordinary routes remain conservative
+- exact-boundary legal S1 payloads are accepted through the HTTP parser and then validated normally
+- payloads above the intentional ceiling return a stable sanitized 4xx response
+- malformed JSON and other known Fastify parser/client errors remain bounded 4xx responses and never fall through to `500 INTERNAL_ERROR`
+
+These are focused follow-up regressions, not a requirement to repeat the entire historical S1 matrix. Add focused physical Android evidence only if the implemented local-deletion path depends on device-specific PWA/storage behavior that desktop Chromium cannot adequately establish.
 
 ## M3 Media and Voice Messages verification
 

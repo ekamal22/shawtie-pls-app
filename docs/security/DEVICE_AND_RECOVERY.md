@@ -202,6 +202,20 @@ Permanent account deletion destroys:
 
 Partnership final dissolution destroys partnership-scoped recovery capsules and protected content through P3 deletion.
 
+### 2026-09-29 follow-up deletion gap
+
+A follow-up source audit found that the account-level local deletion requirement above is not fully wired in the browser runtime. `purgeCryptoAccountData(accountId)` exists in `packages/crypto/src/local-vault.ts`, but no production caller currently invokes it. Current-device revocation and observed authentication loss correctly revoke server authority and stop future protected access, while the ordinary account purge removes M2 and media local databases, but the account-scoped S1 crypto IndexedDB remains stored.
+
+This is a local secret-retention/privacy defect, not a bypass of server authorization or future-message revocation. The repair must preserve these lifecycle distinctions:
+
+- ordinary logout may retain an otherwise valid trusted device identity according to product policy
+- current-device revocation must close the crypto runtime and destroy the revoked account/device's local S1 vault
+- account deletion request must not destroy recovery capability during the seven-day recovery window
+- permanent account deletion must destroy account-wide local recovery/device/group/key state on clients that observe the final state
+- a client that was offline during permanent deletion needs a durable safe observation/tombstone path so obsolete local secrets are not retained indefinitely only because the account can no longer authenticate normally
+
+Focused browser/integration regression evidence is required before V1 release verification. A full S1 physical matrix is not automatically reopened; add a focused device check only if the implementation introduces Android/PWA behavior that desktop Chromium cannot adequately prove.
+
 ## Security limitation
 
 Possession of a valid Recovery Master Secret plus retained server ciphertext and recovery capsules may expose the user's recoverable historical content.

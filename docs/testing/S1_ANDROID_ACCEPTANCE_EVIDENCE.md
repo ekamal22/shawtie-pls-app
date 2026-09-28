@@ -139,7 +139,7 @@ rerun it in this session.
 `S1_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`
 
 `feat/s1-e2ee-crypto-recovery` is physically accepted for S1 E2EE and Cryptographic Recovery at executable
-SHA `039c90f`. It has not been merged to `main`.
+SHA `039c90f`. At the time of this first-sweep record it had not yet been merged to `main`; this result was later superseded by the corrective closure below, and S1 was subsequently fast-forward merged to `main @ 71569cf`.
 
 This result for scenarios 11, 14, 27, 28, 29 and 30 is superseded by the corrective section below, which
 reruns those six for real at final executable SHA `cde73a1`; scenarios 1 through 10, 12, 13, 15 through 26
@@ -346,7 +346,11 @@ UI-effect fixes from the first physical sweep, plus this pass's server-side faul
 `S1_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS`
 
 `feat/s1-e2ee-crypto-recovery` is physically accepted for S1 E2EE and Cryptographic Recovery at final
-corrective executable SHA `cde73a1a789b0768aa67f95e8f542fe98a8dfc8b`. It has not been merged to `main`.
+corrective executable SHA `cde73a1a789b0768aa67f95e8f542fe98a8dfc8b`. It was subsequently fast-forward merged to `main @ 71569cf`.
+
+### Post-closure audit note
+
+A later 2026-09-29 source audit found an account-wide local-secret deletion gap that this 30-scenario matrix did not prove. Scenario 20 proved server-side device revocation, session denial, crypto-identity revocation, and future-message rekey behavior. Scenario 28 proved partnership-scoped dissolution and local partnership-namespace purge. Neither scenario proved deletion of the entire account-scoped S1 crypto IndexedDB after current-device revocation or permanent account deletion. Current source defines `purgeCryptoAccountData(accountId)` but does not call it in production. This does not invalidate the properties those scenarios actually passed, but the new local-retention defect must be fixed and covered by focused pre-V1 regression evidence.
 
 ### Remaining physical limitations, disclosed honestly
 

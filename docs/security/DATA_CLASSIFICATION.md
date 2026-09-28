@@ -180,6 +180,10 @@ Examples:
 | Content signature | SENSITIVE | Yes | No | May log only digest/reference where required | Stored with encrypted content | Database provider may hold signature bytes | Content deletion or final dissolution |
 | Group generation and MLS epoch | SENSITIVE | Yes | Metadata | Minimal operational logs allowed | Operational backup | Realtime routing may expose bounded values | Partnership deletion subject to bounded security retention |
 
+### Known local-deletion implementation gap
+
+The deletion triggers in the matrix above remain the required policy. A 2026-09-29 follow-up audit found that current source does not yet physically delete the account-scoped S1 crypto IndexedDB when current-device revocation or permanent account deletion reaches a state that requires local secret destruction. Server-side revocation/future-access denial remains effective, but wrapped device state, recovery private material, MLS group state, pending crypto operations, or cached content keys can remain locally retained. This must be fixed before V1 release evidence is collected. Deletion-pending accounts must remain recoverable during the seven-day recovery window; the account-wide local wipe belongs at current-device revocation or permanent deletion, not at deletion request time.
+
 ## Repository data policy
 
 The public repository may contain:

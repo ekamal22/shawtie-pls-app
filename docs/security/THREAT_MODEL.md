@@ -1252,6 +1252,14 @@ Metadata retention must be minimized and documented.
 
 The post-UX8 source audit opened SEC1 Pre-V1 Security Hardening before V1 Hosted CI Verification. The five findings were password-policy bypass on password-recovery completion, missing explicit durable throttling on password reauthentication, an undersized common-password screening set, missing runtime cleanup for password hashes on expired abandoned registration intents, and absent repository-backed production CSP/HSTS serving evidence. Password storage itself uses Argon2id and was not a finding. All five findings are remediated and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`: canonical new-credential admission, layered durable reauthentication budgets, a pinned 99,839-entry source universe represented in-repo only by 327 policy-relevant SHA-256 membership digests, bounded replica-safe registration cleanup without a new scheduled-action type or migration, and a repository-controlled production serving adapter with strict CSP/HSTS and OpenMLS `wasm-unsafe-eval` support. The adapter honors forwarded client addresses only through explicit IP/CIDR trust, rewrites them before Fastify, and strips hop-by-hop headers. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed the complete local security, PostgreSQL, worker, Chromium, scan, health, audit, and Git matrix. These findings are locally closed for V1; R2 still owns deployed public HTTPS re-proof. See `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
+### Post-SEC1 follow-up findings before V1
+
+A later 2026-09-29 audit found two additional implementation defects. They do not invalidate the historical SEC1 or S1 closure results, but they must be fixed before V1 release evidence is accepted.
+
+**Local S1 secret retention after account/device authority loss.** Server-side current-device revocation and permanent account deletion correctly remove future authorization, but the browser account purge does not invoke the existing `purgeCryptoAccountData(accountId)` helper. Account-scoped device state, recovery private material, MLS group state, pending crypto operations, or cached content keys may therefore remain in IndexedDB after a lifecycle boundary that policy says destroys them. The fix must preserve the recoverable seven-day deletion-pending window, purge current-device revocation after authority is revoked, purge permanent deletion when the final state is observed, and provide a safe path for clients that were offline during final deletion.
+
+**HTTP parser and S1 contract mismatch.** The API does not configure Fastify `bodyLimit`, so the framework's 1 MiB default applies. S1 schemas permit individual binary fields up to 1 MiB before base64url and JSON expansion, and some legal request bodies contain multiple large fields. A contract-valid request can therefore be rejected before S1 boundary validation. The custom error handler also does not currently preserve known framework 4xx parser/client errors, which can misclassify malformed or oversized traffic as `500 INTERNAL_ERROR`. The fix must use explicit route-appropriate ceilings derived from encoded worst-case sizes and stable sanitized 4xx mappings.
+
 ## Required pre-stable-release security evidence
 
 Before stable release, the project must have evidence for:
@@ -1277,6 +1285,8 @@ Before stable release, the project must have evidence for:
 - durable messaging mutation-cursor recovery
 - private mutation keyed-fingerprint verification
 - current-partnership presence privacy
+- account-wide local S1 secret destruction after current-device revocation and permanent account deletion, with deletion-pending recovery preserved
+- S1 HTTP request-size boundary tests and sanitized Fastify parser/client-error mapping
 
 ## Review triggers
 
