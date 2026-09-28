@@ -206,7 +206,7 @@ Hosted GitHub Actions execution is tracked separately under V1 and is not an F1 
 
 # SEC1: Pre-V1 Security Hardening
 
-Status: PLANNED
+Status: DESIGN FROZEN, IMPLEMENTATION NOT STARTED
 
 Priority: highest remaining pre-release priority. SEC1 must close before intentionally spending GitHub-hosted Actions capacity on V1.
 
@@ -220,27 +220,40 @@ Canonical detailed scope:
 
 `docs/security/PRE_V1_SECURITY_HARDENING.md`
 
+Canonical implementation architecture:
+
+`docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`
+
 ## Scope
 
-- enforce the same password policy on password-recovery completion that registration uses
-- add durable abuse throttling around password reauthentication
-- replace the tiny hard-coded common-password set with a maintainable common/compromised-password screening strategy
-- scrub or delete password hashes from expired abandoned registration intents
-- verify and, where necessary, enforce production browser CSP and HSTS on the actual public serving path
+- introduce one server-side password-admission boundary shared by registration and password recovery while keeping PasswordHasher verification/rehash independent
+- move common-password screening to a reproducible server-only offline corpus with provenance
+- add durable account/session/network abuse throttling around password reauthentication while preserving session-token rotation
+- add bounded replica-safe worker maintenance that deletes expired incomplete registration intents without loading password hashes into worker memory
+- choose and commit the production web serving adapter/configuration, then enforce CSP/HSTS with OpenMLS WASM compatibility and no unsafe JavaScript execution
+- remove the three currently known React inline-style sites so style-src can remain self-only
 - add focused regressions for each remediation
-- rerun the affected local security/integration surface, full repository health, and the high-severity dependency audit after implementation
+- rerun the affected local security/integration/browser surface, full repository health, and the high-severity dependency audit once after implementation
 
 ## Acceptance gates
 
-- [ ] password recovery rejects passwords that normal registration would reject and accepts policy-compliant passwords
-- [ ] reauthentication has server-authoritative durable rate limits that cannot be bypassed by changing only one obvious subject
-- [ ] reauthentication failures remain generic and do not leak credential validity beyond the authenticated session context
-- [ ] common/compromised-password screening is materially stronger than the current ten-entry set and is regression-tested
-- [ ] expired abandoned registration intents cannot retain password hashes indefinitely
-- [ ] production web responses have an evidence-backed CSP and HSTS policy at the actual serving layer
+- [ ] password recovery and registration use the same server-side password-admission boundary
+- [ ] existing credential verification and login rehash remain independent of new-password admission policy
+- [ ] common/compromised-password screening uses a reproducible server-only offline corpus with source/license/checksum provenance and materially more than ten entries
+- [ ] reauthentication consumes durable account, session, and network budgets before Argon2 verification
+- [ ] successful reauthentication still rotates the session token, resets account/session reauth buckets across configured key versions, and does not reset the network compute budget
+- [ ] reauthentication failures remain generic and do not leak password or rate-limit subjects
+- [ ] bounded worker maintenance deletes expired incomplete registration intents without selecting password_hash into worker memory
+- [ ] registration cleanup is safe under multiple worker replicas and cannot create an account at or after the expiry boundary
+- [ ] no PostgreSQL migration is added unless implementation proves one is actually required
+- [ ] production-mode CSP permits OpenMLS via wasm-unsafe-eval but forbids unsafe-eval and unsafe-inline script execution
+- [ ] current inline React style attributes are removed so style-src can remain self-only
+- [ ] CSP explicitly permits the public WSS origin and approved media-storage origins without wildcard connect-src
+- [ ] HSTS and companion browser security headers are asserted against the repository-controlled production serving configuration
+- [ ] if no live public commercial environment exists during SEC1, R2 is explicitly responsible for re-proving those headers at the actual public HTTPS origin
 - [ ] the existing Argon2id password-hashing policy remains intact unless a separate reviewed change is justified
-- [ ] focused A1/authentication security and integration regressions pass
-- [ ] `npm run health` passes after the remediation code lands
+- [ ] focused A1/authentication, worker-maintenance, header, and real-Chromium regressions pass
+- [ ] `npm run health` passes once after the remediation code stabilizes
 - [ ] `npm audit --audit-level=high` reports no unresolved high-severity vulnerability
 - [ ] implementation evidence is recorded in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
 - [ ] repository-wide documentation is reconciled before SEC1 is marked DONE
