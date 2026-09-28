@@ -29,6 +29,12 @@ test("SEC1 password admission uses the pinned server-only common-password corpus
   const common = admission.validateForNewCredential("123456789987654321");
   assert.deepEqual(common, { allowed: false, reason: "PASSWORD_COMMON" });
 
+  assert.deepEqual(admission.validateForNewCredential("YfDbUfNjH10305070"), {
+    allowed: false,
+    reason: "PASSWORD_COMMON",
+  });
+  assert.equal(admission.validateForNewCredential("yfdbufnjh10305070").allowed, true);
+
   const strong = admission.validateForNewCredential("three uncommon words orbit safely");
   assert.equal(strong.allowed, true);
 
