@@ -37,6 +37,16 @@ const server = createServer((request, reply) => {
     return;
   }
 
+  if (url.pathname === "/api/v1/sec1/proxy-debug") {
+    json(reply, 200, {
+      forwardedFor: request.headers["x-forwarded-for"] ?? null,
+      forwardedHost: request.headers["x-forwarded-host"] ?? null,
+      forwardedProto: request.headers["x-forwarded-proto"] ?? null,
+      host: request.headers.host ?? null,
+    });
+    return;
+  }
+
   json(reply, 404, { error: { code: "TEST_NOT_FOUND" } });
 });
 
