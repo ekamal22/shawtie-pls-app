@@ -1,4 +1,8 @@
 import { closeDatabasePool, type DatabasePool } from "@shawtie/db";
+import {
+  AUTH_MAINTENANCE_INTERVAL_MS,
+  runAuthMaintenanceBatch,
+} from "../auth/auth-maintenance.ts";
 import type { WorkerConfig } from "../config.ts";
 import { runDeletionBatch } from "../deletion/deletion-consumer.ts";
 import type { DeletionHandlerRegistry } from "../deletion/deletion-handler-registry.ts";
@@ -57,6 +61,12 @@ export class WorkerApplication {
           this.#abortController.signal,
           common,
         ).then(() => undefined),
+      ),
+      runPollLoop(
+        "auth-maintenance",
+        this.#abortController.signal,
+        AUTH_MAINTENANCE_INTERVAL_MS,
+        () => runAuthMaintenanceBatch(database).then(() => undefined),
       ),
     ];
   }
