@@ -146,7 +146,8 @@
     "sec1:passwords:generate": "node scripts/security/generate-common-passwords.mjs",
     "sec1:format:check": "prettier --check \"apps/web/server*.mjs\" \"apps/web/tests/sec1*.mjs\" \"scripts/ci/test-sec1-closure.mjs\" \"scripts/security/*sec1*.mjs\" \"scripts/security/generate-common-passwords.mjs\" \"scripts/test/sec1-*.mjs\" \"playwright.sec1.config.ts\" \"tests/e2e/sec1-security.spec.ts\"",
     "sec1:headers:check": "node scripts/security/check-web-security-headers.mjs",
-    "sec1:passwords:check": "node scripts/security/generate-common-passwords.mjs --check"
+    "sec1:passwords:check": "node scripts/security/generate-common-passwords.mjs --check",
+    "sec1:lint": "eslint \"apps/web/server*.mjs\" \"apps/web/tests/sec1*.mjs\" \"scripts/ci/test-sec1-closure.mjs\" \"scripts/security/*sec1*.mjs\" \"scripts/security/generate-common-passwords.mjs\" \"scripts/test/sec1-*.mjs\" \"playwright.sec1.config.ts\" \"tests/e2e/sec1-security.spec.ts\" --max-warnings=0"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
