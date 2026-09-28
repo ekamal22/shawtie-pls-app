@@ -105,7 +105,7 @@ Responsibilities:
 - push delivery
 - object purge orchestration
 - outbox processing
-- bounded maintenance jobs
+- bounded maintenance jobs, including SEC1 expired-registration credential cleanup
 - retry with idempotency
 
 The worker is a first-class application. Long-lived timers must not be held only in API process memory.
@@ -200,6 +200,19 @@ Each partnership owns a cryptographic context with an explicit epoch.
 Epoch changes support reviewed key rotation, device revocation, and future protocol migration without changing the partnership identity.
 
 A completely new partnership always starts with a new cryptographic root and new epoch namespace.
+
+## SEC1 accepted security-hardening refinement
+
+SEC1 does not change the modular-monolith boundary.
+
+It refines the existing account/browser security implementation in four ways:
+
+- new credentials pass one API-side password-admission boundary before Argon2id hashing, while existing credential verification and login rehash stay independent of current admission rules
+- password reauthentication consumes durable PostgreSQL account/session/network budgets before Argon2 verification
+- expired incomplete registration intents are removed by a bounded replica-safe worker maintenance sweep, not by introducing a new scheduled-action type
+- the production PWA serving layer must enforce a repository-backed CSP/HSTS contract; CSP must permit OpenMLS WebAssembly with `wasm-unsafe-eval` while continuing to forbid general `unsafe-eval` and unsafe inline script execution
+
+Canonical design: `SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
 ## Source of truth
 
