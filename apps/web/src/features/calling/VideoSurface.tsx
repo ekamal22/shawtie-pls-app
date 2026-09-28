@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Icon } from "../../design/icons.tsx";
 import type { CameraState } from "./camera-controller.ts";
@@ -114,6 +114,8 @@ export function VideoSurface({
   const remoteRef = useRef<HTMLVideoElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const tileRef = useRef<HTMLButtonElement | null>(null);
+  const previousRect = useRef<DOMRect | null>(null);
+  const dragAnimation = useRef<Animation | null>(null);
   const drag = useRef<{
     pointerId: number;
     startX: number;
@@ -125,6 +127,7 @@ export function VideoSurface({
   const [remoteBlocked, setRemoteBlocked] = useState(false);
   const [corner, setCorner] = useState<PreviewCorner>("bottom-right");
   const [dragging, setDragging] = useState(false);
+  const [snapRevision, setSnapRevision] = useState(0);
   const remoteStalled = useRemoteFrameStall(remoteElement, remoteStream !== null);
 
   useEffect(() => {
@@ -141,7 +144,37 @@ export function VideoSurface({
     };
   }, [remoteStream]);
 
+  useLayoutEffect(() => {
+    const element = tileRef.current;
+    const before = previousRect.current;
+    previousRect.current = null;
+    if (!element || !before) return undefined;
+
+    const after = element.getBoundingClientRect();
+    const dx = before.left - after.left;
+    const dy = before.top - after.top;
+    if (!dx && !dy) return undefined;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const animation = element.animate(
+      [
+        { transform: "translate(" + dx + "px, " + dy + "px)" },
+        { transform: "translate(0, 0)" },
+      ],
+      {
+        duration: reduced ? 1 : 220,
+        easing: "cubic-bezier(0.2, 0, 0, 1)",
+      },
+    );
+    return () => animation.cancel();
+  }, [corner, snapRevision]);
+
+  function snapshot(): void {
+    previousRect.current = tileRef.current?.getBoundingClientRect() ?? null;
+  }
+
   function cycleCorner(): void {
+    snapshot();
     setCorner((current) => {
       const index = PREVIEW_CORNERS.indexOf(current);
       return PREVIEW_CORNERS[(index + 1) % PREVIEW_CORNERS.length] as PreviewCorner;
@@ -166,6 +199,13 @@ export function VideoSurface({
     if (!state.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
     state.moved = true;
     setDragging(true);
+
+    const transform = "translate(" + dx + "px, " + dy + "px)";
+    dragAnimation.current?.cancel();
+    dragAnimation.current = event.currentTarget.animate(
+      [{ transform }, { transform }],
+      { duration: 1, fill: "forwards" },
+    );
   }
 
   function onPointerEnd(event: ReactPointerEvent<HTMLButtonElement>): void {
@@ -177,13 +217,18 @@ export function VideoSurface({
       suppressClick.current = false;
     }, 0);
     const stage = stageRef.current?.getBoundingClientRect();
-    if (stage) {
-      const releaseX = event.clientX - stage.left;
-      const releaseY = event.clientY - stage.top;
-      const horizontal = releaseX < stage.width / 2 ? "left" : "right";
-      const vertical = releaseY < stage.height / 2 ? "top" : "bottom";
+    const tile = tileRef.current?.getBoundingClientRect();
+    snapshot();
+    dragAnimation.current?.cancel();
+    dragAnimation.current = null;
+    if (stage && tile) {
+      const centerX = tile.left + tile.width / 2 - stage.left;
+      const centerY = tile.top + tile.height / 2 - stage.top;
+      const horizontal = centerX < stage.width / 2 ? "left" : "right";
+      const vertical = centerY < stage.height / 2 ? "top" : "bottom";
       setCorner((vertical + "-" + horizontal) as PreviewCorner);
     }
+    setSnapRevision((revision) => revision + 1);
     setDragging(false);
   }
 
