@@ -11,6 +11,7 @@ import {
   insertEmailChallenge,
   insertOutboxEvent,
   insertPasswordCredential,
+  insertRegistrationIntent,
   insertScheduledAction,
   requestAccountDeletion,
   type DatabasePool,
@@ -27,6 +28,7 @@ import { createEmailChallengeOutboxHandler } from "../src/auth/auth-email-handle
 import { WorkerAuthKeyRing } from "../src/auth/worker-auth-key-ring.ts";
 import type { EmailDeliveryPort, SecurityEmailMessage } from "../src/auth/email-delivery-port.ts";
 import { defaultRetryPolicy } from "../src/runtime/retry-policy.ts";
+import { runAuthMaintenanceBatch } from "../src/auth/auth-maintenance.ts";
 
 function requireDisposableDatabase(): DatabasePool {
   if (process.env.DB_TEST_CONFIRM !== "1") {
@@ -115,6 +117,122 @@ test("A1 auth email outbox derives code without storing raw code", async () => {
        WHERE table_name = 'email_verifications' AND column_name LIKE '%code%'`,
     );
     assert.equal(columns.rowCount, 0);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+test("SEC1 auth maintenance deletes only expired incomplete registration intents and cascades challenges", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await resetWorkerIntegrationState(database);
+    const expiredId = randomUUID();
+    const futureId = randomUUID();
+    const completedId = randomUUID();
+
+    for (const [id, suffix] of [
+      [expiredId, "expired"],
+      [futureId, "future"],
+      [completedId, "completed"],
+    ] as const) {
+      await insertRegistrationIntent(database.pool, {
+        id,
+        usernameNormalized: "maintenance-" + suffix,
+        usernameDisplay: "maintenance-" + suffix,
+        displayName: "Maintenance " + suffix,
+        dateOfBirth: "2000-01-01",
+        emailNormalized: "maintenance-" + suffix + "@example.test",
+        emailDisplay: "maintenance-" + suffix + "@example.test",
+        passwordHash: "$argon2id$test-" + suffix,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
+      });
+    }
+
+    await database.pool.query(
+      `UPDATE registration_intents
+       SET created_at = clock_timestamp() - interval '2 days',
+           expires_at = clock_timestamp() - interval '1 day'
+       WHERE id = $1`,
+      [expiredId],
+    );
+    await database.pool.query(
+      "UPDATE registration_intents SET completed_at = clock_timestamp(), password_hash = NULL WHERE id = $1",
+      [completedId],
+    );
+
+    await insertEmailChallenge(database.pool, {
+      id: randomUUID(),
+      registrationIntentId: expiredId,
+      purpose: "registration",
+      emailNormalized: "maintenance-expired@example.test",
+      emailDisplay: "maintenance-expired@example.test",
+      verifier: Buffer.alloc(32, 1),
+      challengeNonce: Buffer.alloc(32, 2),
+      expiresAt: new Date(Date.now() + 10 * 60_000),
+      verifierKeyVersion: 1,
+    });
+
+    assert.equal(await runAuthMaintenanceBatch(database, 100), 1);
+
+    const intents = await database.pool.query<{
+      id: string;
+      password_hash: string | null;
+      completed_at: Date | null;
+    }>(
+      "SELECT id, password_hash, completed_at FROM registration_intents ORDER BY id",
+    );
+    assert.equal(intents.rows.some((row) => row.id === expiredId), false);
+    assert.equal(intents.rows.find((row) => row.id === futureId)?.password_hash, "$argon2id$test-future");
+    assert.equal(intents.rows.find((row) => row.id === completedId)?.password_hash, null);
+    assert.ok(intents.rows.find((row) => row.id === completedId)?.completed_at);
+
+    const challenge = await database.pool.query(
+      "SELECT 1 FROM email_verifications WHERE registration_intent_id = $1",
+      [expiredId],
+    );
+    assert.equal(challenge.rowCount, 0);
+  } finally {
+    await closeDatabasePool(database);
+  }
+});
+
+test("SEC1 auth maintenance is replica-safe under concurrent bounded sweeps", async () => {
+  const database = requireDisposableDatabase();
+  try {
+    await resetWorkerIntegrationState(database);
+    const ids = Array.from({ length: 20 }, () => randomUUID());
+    for (const [index, id] of ids.entries()) {
+      await insertRegistrationIntent(database.pool, {
+        id,
+        usernameNormalized: "maintenance-race-" + index,
+        usernameDisplay: "maintenance-race-" + index,
+        displayName: "Maintenance Race " + index,
+        dateOfBirth: "2000-01-01",
+        emailNormalized: "maintenance-race-" + index + "@example.test",
+        emailDisplay: "maintenance-race-" + index + "@example.test",
+        passwordHash: "$argon2id$race-" + index,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
+      });
+    }
+    await database.pool.query(
+      `UPDATE registration_intents
+       SET created_at = clock_timestamp() - interval '2 days',
+           expires_at = clock_timestamp() - interval '1 day'
+       WHERE id = ANY($1::uuid[])`,
+      [ids],
+    );
+
+    const [first, second] = await Promise.all([
+      runAuthMaintenanceBatch(database, 10),
+      runAuthMaintenanceBatch(database, 10),
+    ]);
+    assert.equal(first + second, 20);
+
+    const remaining = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM registration_intents WHERE id = ANY($1::uuid[])",
+      [ids],
+    );
+    assert.equal(remaining.rows[0]?.count, "0");
   } finally {
     await closeDatabasePool(database);
   }
