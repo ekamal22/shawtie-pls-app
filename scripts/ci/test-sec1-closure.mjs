@@ -69,6 +69,7 @@ const introducedEmDash = diff
 if (introducedEmDash) throw new Error("SEC1 diff introduces a forbidden em dash.");
 
 step("sec1-format", process.execPath, [npmCli, "run", "sec1:format:check"]);
+step("sec1-lint", process.execPath, [npmCli, "run", "sec1:lint"]);
 step("sec1-focused", process.execPath, [npmCli, "run", "test:sec1"]);
 step("sec1-postgres", process.execPath, [npmCli, "run", "test:sec1:local"]);
 step("sec1-browser", process.execPath, [npmCli, "run", "test:sec1:browser:e2e"]);
