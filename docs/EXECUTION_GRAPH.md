@@ -182,11 +182,11 @@ M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source
 
 ## Most recently fully completed milestone
 
-### S1 E2EE and Cryptographic Recovery
+### UX8 Encrypted UX Integration
 
-Verified historical branch: `feat/s1-e2ee-crypto-recovery`.
+Verified historical branch: `feat/ux8-encrypted-ux-integration`.
 
-S1 is DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`: migrations 0001 through 0021 apply with `reserved=0`, database invariants pass, full automated closure re-passed, and mandatory Redmi Note 9S acceptance closed 30/30. Canonical evidence is in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now also DONE at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` with mandatory Redmi Note 9S 25/25 physical acceptance closed, and is merged to `main @ a029169`. See `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+UX8 is DONE and fast-forward merged to `main @ a029169`. The final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`: automated closure re-passed after the physical-run defect fix, mandatory Redmi Note 9S acceptance closed 25/25, recovery-secret storage inspection passed, and the focused Scenario 18 follow-up physically proved a real recovery-backed group repair from generation 1 to 2 with new protected content working afterward. Canonical evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md` and `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. S1 remains DONE and merged to `main @ 71569cf`.
 
 ## Earlier completed milestone detail
 
@@ -234,14 +234,14 @@ milestone/p1-discovery-requests
 Current flow:
 
 ~~~text
-main @ 2b36c62
+main (UX8 merged @ a029169)
   |
   +--> feat/m3-media-voice             historical DONE; merged to main @ 1d3535f
   +--> feat/c1-voice-calling          historical DONE; merged to main @ d44c595
   +--> feat/c2-video-calling          historical DONE; merged to main @ fed2db7
   +--> integration/ux-romantic        historical DONE; merged to main @ 9f0bea4
   +--> feat/s1-e2ee-crypto-recovery   DONE; final executable cde73a1; merged to main @ 71569cf
-  +--> feat/ux8-encrypted-ux-integration current IN PROGRESS; automated closure PASS @ 39de742c; Redmi 25/25 pending
+  +--> feat/ux8-encrypted-ux-integration DONE; final executable 43ff9b1; Redmi 25/25; merged to main @ a029169
 
 M3 owns real migrations 0015/0016.
 C1 owns 0017/0018 on its branch and used only documented 0015/0016 reservations for isolated closure.
@@ -300,20 +300,12 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 
 ## Release path
 
-The shortest dependency path from the current verified mainline to stable release proceeds from the now-DONE M2 milestone merged at `main @ b6183158`:
+With UX8 closed and merged, the remaining dependency path to stable release is:
 
 ~~~text
-M1
- -> M2
- -> M3 + C1 Voice -> C2
- -> S1
- -> UX8
- -> R2
+UX8 ✅
+ -> R2 Public Readiness
  -> Stable Release
 ~~~
 
-R1 progresses alongside M1 after the verified P3 merge and must be complete before R2.
-
-R1 can progress alongside M1 once P2 and the required P3 capability boundaries are stable.
-
-V1 remains a separate verification track and must be complete before R2 closes.
+V1 remains a separate verification track and must be complete before R2 closes. R2 therefore remains the active pre-release milestone once hosted V1 evidence is available.

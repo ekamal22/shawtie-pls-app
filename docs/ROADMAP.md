@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-27.
+Refreshed: 2026-09-28.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -102,9 +102,10 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       merged main @ 71569cf
             |
             v
-      UX8 Encrypted UX
-      automated closure PASS @ 39de742c
-      physical Redmi 25/25 pending
+      UX8 Encrypted UX ✅
+      final automated closure PASS @ 43ff9b1
+      physical Redmi 25/25 PASS
+      merged main @ a029169
             |
             v
       R2 Public Readiness

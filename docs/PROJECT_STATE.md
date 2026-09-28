@@ -196,10 +196,9 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. `feat/ux8-encrypted-ux-integration` is fast-forward merged to `main @ a029169`
-2. complete V1 Hosted CI Verification when Actions capacity is available
-3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-4. cut Stable Release only after UX8, V1, and R2 are closed
+1. complete V1 Hosted CI Verification when Actions capacity is available
+2. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+3. cut Stable Release only after V1 and R2 are closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Merge and documentation-only commits do not change these runtime evidence anchors.
 
@@ -213,7 +212,6 @@ No implementation should begin until real production evidence shows sufficient u
 
 Stable release remains blocked until:
 
-- ~~UX8 is merged to `main`~~ done, at `a029169`
 - V1 Hosted CI Verification is complete when Actions capacity is available
 - R2 Public Readiness closes final security, accessibility, browser/device, operational, release, and rollback evidence
 
