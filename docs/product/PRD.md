@@ -1804,9 +1804,9 @@ The first stable release should not ship until the project has:
 - secure authentication
 - password-recovery completion enforces the same password policy as registration
 - durable abuse throttling for password reauthentication
-- materially strong common/compromised-password screening
+- materially strong common/compromised-password screening with pinned source provenance, hash-only committed membership data, and no plaintext corpus committed
 - expired abandoned registration intents do not retain password hashes indefinitely
-- production CSP and HSTS verified at the actual public serving layer
+- repository-controlled production CSP/HSTS and sanitized reverse-proxy trust verified locally during SEC1, with the actual public HTTPS origin re-proved during R2 if not available at SEC1 closure
 - SEC1 Pre-V1 Security Hardening completed before V1 Hosted CI Verification is used as release evidence
 - database-enforced partnership exclusivity
 - manual relationship start-date support with future-date rejection
@@ -2172,7 +2172,7 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The verified implementation has progressed through M2, M3, C1, C2, UX0 through UX8, and S1, with UX8 DONE and merged to `main @ a029169`. SEC1 Pre-V1 Security Hardening is the highest remaining pre-release priority; its refined implementation architecture is frozen in `docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md` and implementation is next. V1 Hosted CI Verification remains downstream of SEC1, followed by R2 Public Readiness and Stable Release.
+The verified implementation has progressed through M2, M3, C1, C2, UX0 through UX8, and S1, with UX8 DONE and merged to `main @ a029169`. SEC1 Pre-V1 Security Hardening is the highest remaining pre-release priority; its refined implementation architecture is frozen in `docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`, source implementation is complete on `feat/sec1-pre-v1-security-hardening`, and automated local closure/evidence are pending. V1 Hosted CI Verification remains downstream of genuine SEC1 closure, followed by R2 Public Readiness and Stable Release.
 
 Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 
