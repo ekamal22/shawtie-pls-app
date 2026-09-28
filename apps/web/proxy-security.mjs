@@ -90,7 +90,7 @@ export function resolveClientAddress(socketAddress, forwardedFor, policy) {
   return chain[0];
 }
 
-const REQUEST_HOP_BY_HOP = new Set([
+const HOP_BY_HOP = new Set([
   "connection",
   "keep-alive",
   "proxy-authenticate",
@@ -102,14 +102,26 @@ const REQUEST_HOP_BY_HOP = new Set([
   "upgrade",
 ]);
 
+function connectionTokens(value) {
+  if (Array.isArray(value)) value = value.join(",");
+  if (typeof value !== "string") return new Set();
+  return new Set(
+    value
+      .split(",")
+      .map((token) => token.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
 export function sanitizedForwardHeaders(
   request,
   { backendTarget, appOrigin, trustedProxyPolicy, upgrade = false },
 ) {
   const headers = {};
+  const dynamicHopByHop = connectionTokens(request.headers.connection);
   for (const [name, value] of Object.entries(request.headers)) {
     const lower = name.toLowerCase();
-    if (REQUEST_HOP_BY_HOP.has(lower)) continue;
+    if (HOP_BY_HOP.has(lower) || dynamicHopByHop.has(lower)) continue;
     if (lower === "forwarded" || lower.startsWith("x-forwarded-") || lower === "x-real-ip") {
       continue;
     }
@@ -142,6 +154,24 @@ export function sanitizedForwardHeaders(
   headers["x-forwarded-for"] = clientAddress;
   headers["x-forwarded-host"] = app.host;
   headers["x-forwarded-proto"] = app.protocol.slice(0, -1);
+
+  return headers;
+}
+
+
+export function sanitizedProxyResponseHeaders(sourceHeaders, securityHeaders) {
+  const headers = {};
+  const dynamicHopByHop = connectionTokens(sourceHeaders.connection);
+
+  for (const [name, value] of Object.entries(sourceHeaders)) {
+    const lower = name.toLowerCase();
+    if (HOP_BY_HOP.has(lower) || dynamicHopByHop.has(lower)) continue;
+    if (value !== undefined) headers[lower] = value;
+  }
+
+  for (const [name, value] of Object.entries(securityHeaders)) {
+    headers[name.toLowerCase()] = value;
+  }
 
   return headers;
 }
