@@ -4,7 +4,9 @@
 
 PASS for the final non-physical S1 security-review gate on 2026-09-27 at executable commit `6cba504d885328bbd25ce8887d509248fc42e84d`.
 
-This was an independent closure review of the implemented source, database constraints, protocol boundaries, and executable adversarial behavior. It is not a claim of a third-party cryptographic audit or formal verification. S1 remains `IN_PROGRESS` because physical Android acceptance is still mandatory.
+This was an independent closure review of the implemented source, database constraints, protocol boundaries, and executable adversarial behavior. It is not a claim of a third-party cryptographic audit or formal verification. At the time of this review, S1 remained `IN_PROGRESS` because physical Android acceptance was still mandatory.
+
+Subsequent closure note: mandatory Redmi Note 9S acceptance later closed 30/30, full automated closure re-passed at final corrective executable `cde73a1`, and S1 was fast-forward merged to `main @ 71569cf`. The original review result above remains historical execution-time evidence rather than the current milestone status.
 
 ## Review scope
 
@@ -74,4 +76,4 @@ No GitHub Actions workflow was used.
 
 The review supports the implemented S1 cryptographic and privacy boundary for the tested local environments. It does not erase the endpoint-compromise threat, does not promise unlimited forward secrecy for intentionally recoverable historical content, and does not replace physical-device verification.
 
-The raw privacy gate and final independent security-review gate are complete. The only remaining S1 closure gate is the mandatory 30/30 physical Android acceptance procedure and its committed evidence. Until that passes, S1 must remain `IN_PROGRESS` and the product must not claim verified E2EE.
+At the time of this review, the raw privacy gate and final independent security-review gate were complete and the only remaining S1 closure gate was the mandatory 30/30 physical Android acceptance procedure. That later procedure passed, corrective closure completed at `cde73a1`, and S1 is now DONE and merged to `main @ 71569cf`. See `S1_ANDROID_ACCEPTANCE_EVIDENCE.md` for the subsequent physical record.

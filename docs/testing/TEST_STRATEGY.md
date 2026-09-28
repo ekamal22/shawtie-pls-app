@@ -39,9 +39,11 @@ This is the pure domain baseline. The initial database invariant suite has separ
 
 The baseline CI and repository-health policy is defined in `CI_AND_REPOSITORY_HEALTH.md`.
 
-The current hosted workflow is configured but not yet validated by a successful GitHub Actions run. SEC1 Pre-V1 Security Hardening is DONE locally, so V1 Hosted CI Verification is next when Actions capacity is available.
+The current hosted workflow is configured but not yet validated by a successful GitHub Actions run. SEC1 Pre-V1 Security Hardening is DONE locally. Before V1 Hosted CI Verification can count as release evidence, the hosted workflow must be expanded so it cannot pass while omitting the SEC1/S1-focused header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format gates. Actions capacity is still required for the real hosted run.
 
 Local repository health and domain tests remain usable without hosted Actions.
+
+V1 release verification must distinguish the fast repository baseline from heavier security/integration evidence. `npm run health` remains the general baseline, but it is not by itself sufficient evidence for production web security or S1 production-bundle invariants. The release plan must explicitly require the focused SEC1/S1 gates and must also account for disposable PostgreSQL and real-Chromium integration coverage, whether those run in the same workflow or in separately required hosted jobs.
 
 ## Test layers
 

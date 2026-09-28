@@ -4,7 +4,9 @@
 
 PASS on 2026-09-27 at executable commit `6cba504d885328bbd25ce8887d509248fc42e84d`.
 
-This evidence covers the non-physical raw privacy gate only. S1 remains `IN_PROGRESS` until the separate 30-scenario physical Android procedure passes with committed evidence.
+This evidence covers the non-physical raw privacy gate only. At the time of this run, S1 remained `IN_PROGRESS` until the separate 30-scenario physical Android procedure passed with committed evidence.
+
+Subsequent closure note: the Redmi Note 9S procedure later closed 30/30, full automated closure re-passed at final corrective executable `cde73a1`, and S1 was fast-forward merged to `main @ 71569cf`. This file remains the historical raw-inspection record; current milestone status is DONE.
 
 ## Command
 

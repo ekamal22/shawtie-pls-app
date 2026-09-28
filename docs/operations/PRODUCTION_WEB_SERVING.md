@@ -42,7 +42,7 @@ The web server serves `apps/web/dist` and reverse-proxies same-origin `/api` HTT
 : Required bare public HTTPS origin, for example `https://app.example.com`. Credentials, paths, queries, fragments, non-HTTP(S) schemes, and insecure non-loopback HTTP origins are rejected by both the production web adapter and API configuration.
 
 `BACKEND_PROXY_TARGET`
-: Required internal API origin using HTTP or HTTPS, for example `http://api.internal:3000`. It is not exposed to the browser.
+: Required internal API origin using HTTP or HTTPS, for example `http://api.internal:3000`. It is not exposed to the browser. Plaintext HTTP is acceptable only when the web-adapter-to-API hop is confined to an explicitly trusted private or loopback transport boundary. Do not route session-bearing API traffic over an untrusted plaintext network. If the backend hop is not provably private, use HTTPS.
 
 `WEB_MEDIA_CONNECT_SRC`
 : Optional comma- or whitespace-separated list of approved HTTPS media/object-storage origins used by browser `fetch` for signed encrypted-media access. Paths collapse to origins. Credential-bearing or insecure remote origins are rejected.
@@ -63,6 +63,8 @@ The legacy `VITE_S3_CONNECT_SRC` value is accepted only as a compatibility fallb
 `apps/web/server.mjs` is an HTTP application server intended to run behind the production platform's TLS terminator or ingress.
 
 The externally visible origin must be HTTPS. `APP_ORIGIN` describes that public origin even when the internal hop from the TLS terminator to the Node process is HTTP.
+
+The follow-up repository audit also makes the internal backend hop an explicit R2 deployment gate. R2 must either enforce a private/loopback-only rule for plaintext `BACKEND_PROXY_TARGET` values or provide deployment evidence that the configured HTTP route is isolated inside the trusted platform network. HTTPS is required for any backend hop that crosses an untrusted or externally routed network boundary.
 
 SEC1 proves the repository-controlled header behavior and real Chromium compatibility. R2 must re-check the actual deployed HTTPS response after the ingress/CDN/load-balancer layer is present.
 

@@ -4,7 +4,7 @@
 
 The concrete implementation is defined in `M2_REALTIME_OFFLINE_DESIGN.md`.
 
-Implementation status: M2 offline source is complete through `6e3c019371edd96a081c71ff178b6ee82f406566`; executed local and physical-device closure are pending.
+Implementation status: M2 is DONE and fast-forward merged to `main @ b6183158dcc916589cef415b42fa9e9d2b8cc2fd`. Automated/local closure passed at `4bbffdfbcd70bd4160e50c52bb14048cf3339dc0`, and all 14 mandatory physical Android scenarios passed at final physical acceptance SHA `b83102f`.
 
 M2 local schema version 1 uses an account-bound IndexedDB database with explicit partnership and conversation keys. Before S1, the content context marker is the literal development namespace `pre-s1`; it is not a fake crypto epoch.
 
@@ -13,6 +13,12 @@ M2 provides separate chat and R1 queues. Release/open/reveal and scheduled-relea
 Final dissolution removes old partnership data from UI before replay and then purges messages, R1 cache, queues, sync metadata, and future media/crypto namespace state.
 
 Explicit logout, account switch, or observed revocation closes the active M2 runtime before deleting the account-bound IndexedDB database, then purges pre-S1 local protected plaintext. A temporary network failure does not. However, before S1, a cold start or hard reload while offline must not unlock cached protected plaintext because the HttpOnly server session cannot be revalidated; the app shows a locked offline shell until online validation succeeds.
+
+### Follow-up service-worker cache hardening
+
+The 2026-09-29 follow-up audit found a release-lifecycle weakness in the current Cache API strategy. `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`. Activation deletes differently named `shawtie-shell-*` caches, but normal releases continue to reuse that same name, so obsolete fingerprinted assets can accumulate inside the cache. The cached `/` navigation shell is also inherited by a newly activated worker until a successful online navigation rewrites it.
+
+This does not reopen M2 acceptance and is not a protected-content caching failure; private `/api` responses remain excluded. R2 must nevertheless introduce release-aware cache rotation or deterministic stale-asset pruning, preserve the controlled update/replay barrier, and add upgrade/offline regressions proving that the durable fallback shell is compatible with the active worker/client protocol.
 
 ## Goals
 

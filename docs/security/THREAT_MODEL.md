@@ -459,12 +459,18 @@ Controls:
 - minimal dependency surface
 - reviewed updates
 - protected CI
+- V1 hosted release verification includes the SEC1/S1-focused security gates rather than treating the generic repository baseline as complete security coverage
+- dedicated public-repository secret scanning complements dependency scanning and the repository-health regex checks
+- stable release provenance is tied to an immutable signed tag or equivalent signed release record
 - no install scripts from unreviewed packages where avoidable
 
 Verification:
 
 - dependency scanning in CI
 - lockfile integrity checks
+- hosted verification proves the SEC1 header/proxy/server tests, common-password corpus integrity, SEC1/S1 production scans, and dedicated SEC1 lint/format gates are required
+- dedicated secret scanning passes before public release
+- release SHA and signed provenance are recorded
 
 ### T08: Cross-partnership IDOR or guessed resource access
 
@@ -967,6 +973,28 @@ Verification:
 - multi-protocol and cross-family WebSocket offer rejection
 - oversize M2 frame remains rejected after C1 integration
 
+### T23B: Network abuse budget fragments across rotating client addresses
+
+Impact: Medium
+
+Threat:
+
+Media, realtime, and calling use authenticated account/device or partnership controls, but their network rate-limit subjects currently use exact `request.ip`. IPv6 privacy-address rotation within one client network can therefore split the intended network-wide budget even though account-level controls still apply.
+
+Controls:
+
+- use the canonical `networkPrefix()` normalization for network abuse subjects
+- collapse IPv4-mapped IPv6 to the equivalent IPv4 prefix
+- use stable IPv4 /24 and IPv6 /64 subjects
+- apply reviewed rate-limit HMAC key-version behavior consistently across feature modules
+- keep account/device/partnership limits as independent layers
+
+Verification:
+
+- equivalent IPv6 spellings and privacy addresses in one /64 consume the same network budget
+- IPv4-mapped IPv6 consumes the matching IPv4 /24 budget
+- key rotation does not unexpectedly reset an abuse budget that is intended to span active key versions
+
 ### T24: Network observer infers relationship activity from metadata
 
 Impact: Medium to High
@@ -981,6 +1009,28 @@ Controls:
 Residual risk:
 
 Traffic timing, volume, destination, and IP metadata cannot be fully hidden by the initial architecture.
+
+### T24A: Misconfigured plaintext edge-to-backend hop exposes authenticated traffic
+
+Impact: High
+
+Threat:
+
+The production web adapter accepts HTTP or HTTPS for `BACKEND_PROXY_TARGET`. HTTP is acceptable only when the hop is contained within an explicitly trusted private or loopback transport boundary. If a deployment routes that plaintext hop across an untrusted network, session cookies and authenticated API traffic can be observed or modified despite the public browser origin using HTTPS.
+
+Controls:
+
+- prefer HTTPS whenever the backend hop crosses a network boundary that is not explicitly trusted
+- if HTTP is used, constrain it to verified private or loopback topology
+- document the ingress, web-adapter, and API trust boundaries
+- keep `WEB_TRUSTED_PROXY` and API `TRUSTED_PROXY` explicit and independent
+- re-prove the actual production topology during R2
+
+Verification:
+
+- deployment review proves the backend target resolves and routes only through the intended trusted network when HTTP is configured
+- public HTTPS and proxy-header checks pass at the deployed origin
+- an untrusted external backend hop cannot be configured without an explicit reviewed exception
 
 ### T25: Deletion partially fails across systems
 
@@ -1141,6 +1191,8 @@ Verification:
 
 - interrupted update tests
 - stale-client tests
+
+Follow-up audit finding: the current service worker uses the fixed cache name `shawtie-shell-v1`. Old fingerprinted assets are not pruned within that cache, and a newly activated worker can initially inherit the previous cached `/` navigation shell until a successful online navigation replaces it. R2 must introduce release-aware cache rotation or deterministic stale-asset pruning and test the activated-worker offline fallback across upgrades.
 
 ### T35: Call-recording consent bypass after deferred post-stable implementation
 
@@ -1479,8 +1531,8 @@ Controls:
 Evidence:
 
 - real-Chromium delayed `getUserMedia` stale-completion test passes in the C2 automated closure
-- background/foreground physical acceptance remains pending
-- endpoint authority/revocation behavior remains part of the mandatory physical matrix
+- background/foreground camera privacy behavior passed the completed Redmi Note 9S physical acceptance matrix
+- endpoint authority/revocation behavior is covered by the completed C2 physical evidence in `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
 
 ### C2-T4: Camera switch/on-off leaks tracks or leaves hidden capture
 
@@ -1497,8 +1549,8 @@ Controls:
 Evidence:
 
 - automated camera-controller and Chromium stale-track coverage is green
-- Android camera indicator/hardware release remains pending physical evidence
-- repeated front/back and on/off stress remains pending physical evidence
+- Android camera indicator/hardware release behavior is covered by the completed Redmi Note 9S physical evidence
+- repeated front/back and on/off stress is covered by the completed Redmi Note 9S physical evidence
 
 ### C2-T5: Video expansion weakens C1 network privacy
 
@@ -1517,5 +1569,5 @@ Evidence:
 
 - retained C1 voice v1 regression matrix passes in the C2 closure
 - video v2 relay-only negative/API tests pass in the C2 closure
-- TURN/network fail-closed physical confirmation remains pending
+- TURN/network fail-closed physical confirmation is complete in `docs/testing/C2_ANDROID_ACCEPTANCE_EVIDENCE.md`
 
