@@ -76,8 +76,20 @@ function parseAuthKeys(raw: string | undefined, activeRaw: string | undefined): 
 function parseOrigin(raw: string | undefined, environment: ApiConfig["environment"]): string {
   if (!raw) throw new Error("APP_ORIGIN is required");
   const url = new URL(raw);
+  if (
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("APP_ORIGIN must be a bare origin without credentials, path, query, or fragment");
+  }
   if (environment === "production" && url.protocol !== "https:") {
     throw new Error("Production APP_ORIGIN must use HTTPS");
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("APP_ORIGIN must use HTTP or HTTPS");
   }
   return url.origin;
 }
