@@ -361,6 +361,10 @@ html.call-open body {
   object-fit: cover;
 }
 
+.call-surface--video .remote-video.is-stalled {
+  visibility: hidden;
+}
+
 .call-remote__placeholder {
   display: grid;
   gap: var(--space-1);
@@ -465,7 +469,7 @@ html.call-open body {
   pointer-events: auto;
 }
 
-/* Local preview tile: draggable, snaps to a corner ------------------------------------- */
+/* Local preview tile: drag/tap gesture selects a corner and snaps there ---------------- */
 
 .call-preview {
   position: absolute;
