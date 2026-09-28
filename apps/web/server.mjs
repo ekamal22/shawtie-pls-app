@@ -232,6 +232,10 @@ export function createProductionWebServer(env = process.env) {
   });
 
   server.on("upgrade", (request, socket, head) => {
+    if (!requestUsesCanonicalHost(request, appOrigin)) {
+      socket.destroy();
+      return;
+    }
     if (request.url === "/api" || request.url?.startsWith("/api/")) {
       proxyUpgrade(request, socket, head, backendTarget, appOrigin);
       return;
