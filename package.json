@@ -142,7 +142,8 @@
     "test:sec1:local": "npm run test:a1:local",
     "test:sec1:browser:e2e": "playwright test --config=playwright.sec1.config.ts",
     "test:sec1:closure": "node scripts/ci/test-sec1-closure.mjs",
-    "sec1:production:scan": "node scripts/security/sec1-production-scan.mjs"
+    "sec1:production:scan": "node scripts/security/sec1-production-scan.mjs",
+    "sec1:passwords:generate": "node scripts/security/generate-common-passwords.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
