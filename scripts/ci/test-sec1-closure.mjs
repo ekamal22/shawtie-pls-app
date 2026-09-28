@@ -51,6 +51,19 @@ if (localHead !== remoteHead) {
   );
 }
 
+const baseAncestor = spawnSync("git", ["merge-base", "--is-ancestor", baseRef, "HEAD"], {
+  encoding: "utf8",
+});
+if (baseAncestor.error) throw baseAncestor.error;
+if (baseAncestor.status !== 0) {
+  throw new Error(
+    "SEC1 feature branch is behind or diverged from " +
+      baseRef +
+      ". Reconcile the branch before closure.",
+  );
+}
+console.log("SEC1_BASE_ANCESTRY_PASS " + run("git", ["rev-parse", baseRef]));
+
 const commits = run("git", ["log", "--format=%H%x09%s", baseRef + "..HEAD"]);
 for (const line of commits.split("\n").filter(Boolean)) {
   const separator = line.indexOf("\t");
