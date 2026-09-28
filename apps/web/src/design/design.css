@@ -263,6 +263,30 @@
   font-weight: 500;
 }
 
+.ds-avatar--40 {
+  width: 40px;
+  height: 40px;
+  font-size: 16.8px;
+}
+
+.ds-avatar--44 {
+  width: 44px;
+  height: 44px;
+  font-size: 18.48px;
+}
+
+.ds-avatar--72 {
+  width: 72px;
+  height: 72px;
+  font-size: 30.24px;
+}
+
+.ds-avatar--144 {
+  width: 144px;
+  height: 144px;
+  font-size: 60.48px;
+}
+
 .ds-presence {
   display: flex;
   align-items: center;
@@ -350,6 +374,30 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: var(--radius-full);
+}
+
+.ds-skeleton--w35 {
+  width: 35%;
+}
+
+.ds-skeleton--w45 {
+  width: 45%;
+}
+
+.ds-skeleton--w50 {
+  width: 50%;
+}
+
+.ds-skeleton--w55 {
+  width: 55%;
+}
+
+.ds-skeleton--w60 {
+  width: 60%;
+}
+
+.ds-skeleton--w70 {
+  width: 70%;
 }
 
 .ds-skeleton-group {
@@ -673,6 +721,7 @@
 
 .app-nav__link {
   display: flex;
+  width: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
