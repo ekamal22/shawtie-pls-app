@@ -1,6 +1,6 @@
 # Production Web Serving
 
-Status: SEC1 IMPLEMENTED, FINAL CLOSURE PENDING.
+Status: SEC1 IMPLEMENTED AND LOCALLY VERIFIED.
 
 Canonical security design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
@@ -158,4 +158,4 @@ Public-origin verification, once deployed:
 npm run sec1:headers:check -- https://PUBLIC_ORIGIN/
 ```
 
-Do not treat this document or source review as final PASS evidence. The executable closure and `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md` own SEC1 completion.
+The final executable closure passed at `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`. `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md` is the canonical local evidence. R2 still owns verification of the actual deployed public HTTPS response after ingress, CDN, or TLS termination is present.

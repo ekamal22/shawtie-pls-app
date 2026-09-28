@@ -39,7 +39,7 @@ This is the pure domain baseline. The initial database invariant suite has separ
 
 The baseline CI and repository-health policy is defined in `CI_AND_REPOSITORY_HEALTH.md`.
 
-The current hosted workflow is configured but not yet validated by a successful GitHub Actions run. The first intentional V1 hosted release-verification run must wait until SEC1 Pre-V1 Security Hardening is DONE.
+The current hosted workflow is configured but not yet validated by a successful GitHub Actions run. SEC1 Pre-V1 Security Hardening is DONE locally, so V1 Hosted CI Verification is next when Actions capacity is available.
 
 Local repository health and domain tests remain usable without hosted Actions.
 
@@ -409,7 +409,7 @@ Critical journeys:
 
 ## SEC1 Pre-V1 Security Hardening verification
 
-SEC1 is source-implemented on `feat/sec1-pre-v1-security-hardening` and is now in final local closure. It remains the highest pre-release priority until executable evidence closes every gate, and V1 Hosted CI Verification must wait. Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
+SEC1 is DONE on `feat/sec1-pre-v1-security-hardening`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed the complete local closure. Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`; observed evidence: `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 Required focused coverage:
 
@@ -432,13 +432,13 @@ Required focused coverage:
 - a focused real-Chromium harness boots the PWA, initializes OpenMLS WASM, registers the service worker, connects realtime WebSocket, and exercises media connectivity under enforced CSP
 - secure-cookie, CSRF, session-rotation, password-reset session revocation, and Argon2id regression coverage remains green
 
-The focused implementation harnesses are committed. Final closure must run once from a clean feature-branch checkout with:
+The focused implementation harnesses are committed. Final closure ran successfully from a clean feature-branch checkout with:
 
 ```text
 npm run test:sec1:closure
 ```
 
-That wrapper verifies hash-only corpus integrity/provenance, SEC1 artifact formatting, focused unit/security/proxy tests, disposable PostgreSQL A1/worker integration, production-mode Chromium CSP/OpenMLS/service-worker/WebSocket/media/offline behavior, the SEC1 production scan, full `npm run health`, `npm audit --audit-level=high`, git diff hygiene, branch parity, `[skip ci]` commit hygiene, and the no-em-dash rule. Full corpus regeneration is intentionally separate because it requires an explicit local copy of the pinned plaintext source that must remain untracked. Record the final executable SHA and results in `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+That wrapper verified hash-only corpus integrity/provenance, formatting, focused unit/security/proxy tests, disposable PostgreSQL A1/worker integration, production-mode Chromium CSP/OpenMLS/service-worker/WebSocket/media/offline behavior, the production scan, full health, audit, Git hygiene, branch parity, commit policy, and the no-em-dash rule. Full corpus regeneration remains intentionally separate because it requires an explicit local copy of the pinned plaintext source that must remain untracked.
 
 Physical Xiaomi acceptance is not a default SEC1 gate. Add a focused device check only if implementation creates Android-specific cookie, PWA/service-worker, permission, WebRTC, or header behavior that desktop Chromium cannot adequately prove.
 

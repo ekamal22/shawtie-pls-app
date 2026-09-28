@@ -206,9 +206,9 @@ Hosted GitHub Actions execution is tracked separately under V1 and is not an F1 
 
 # SEC1: Pre-V1 Security Hardening
 
-Status: IMPLEMENTED ON FEATURE BRANCH, AUTOMATED CLOSURE PENDING
+Status: DONE ON FEATURE BRANCH
 
-Priority: highest remaining pre-release priority. SEC1 must close before intentionally spending GitHub-hosted Actions capacity on V1.
+Final executable: `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`.
 
 ## Purpose
 
@@ -232,7 +232,7 @@ Implementation checkpoint:
 - the repository now owns the production web serving adapter and CSP/HSTS policy
 - implementation discovered and removed additional inline-style writers beyond the three known at design time
 - focused and final closure harnesses are committed
-- no acceptance checkbox below is promoted solely from source review; final PASS evidence still requires `npm run test:sec1:closure`
+- `npm run test:sec1:closure` passed completely on the final executable; observed evidence is in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
 
 ## Scope
 
@@ -247,27 +247,27 @@ Implementation checkpoint:
 
 ## Acceptance gates
 
-- [ ] password recovery and registration use the same server-side password-admission boundary
-- [ ] existing credential verification and login rehash remain independent of new-password admission policy
-- [ ] common/compromised-password screening pins a 99,839-entry source universe with source/license/checksum provenance, commits no plaintext source rows, and uses the complete 327-entry structurally reachable hash-only membership set
-- [ ] reauthentication consumes durable account, session, and network budgets before Argon2 verification
-- [ ] successful reauthentication still rotates the session token, resets account/session reauth buckets across configured key versions, and does not reset the network compute budget
-- [ ] reauthentication failures remain generic and do not leak password or rate-limit subjects
-- [ ] bounded worker maintenance deletes expired incomplete registration intents without selecting password_hash into worker memory
-- [ ] registration cleanup is safe under multiple worker replicas and cannot create an account at or after the expiry boundary
-- [ ] no PostgreSQL migration is added unless implementation proves one is actually required
-- [ ] production-mode CSP permits OpenMLS via wasm-unsafe-eval but forbids unsafe-eval and unsafe-inline script execution
-- [ ] current inline React style attributes are removed so style-src can remain self-only
-- [ ] CSP explicitly permits the public WSS origin and approved media-storage origins without wildcard connect-src
-- [ ] HSTS and companion browser security headers are asserted against the repository-controlled production serving configuration
-- [ ] the production proxy accepts forwarded client addresses only from explicit `WEB_TRUSTED_PROXY` IP/CIDR peers, overwrites forwarding metadata before Fastify, and strips fixed plus Connection-nominated hop-by-hop request/response headers
-- [ ] if no live public commercial environment exists during SEC1, R2 is explicitly responsible for re-proving those headers at the actual public HTTPS origin
-- [ ] the existing Argon2id password-hashing policy remains intact unless a separate reviewed change is justified
-- [ ] focused A1/authentication, worker-maintenance, header, and real-Chromium regressions pass
-- [ ] `npm run health` passes once after the remediation code stabilizes
-- [ ] `npm audit --audit-level=high` reports no unresolved high-severity vulnerability
-- [ ] implementation evidence is recorded in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
-- [ ] repository-wide documentation is reconciled before SEC1 is marked DONE
+- [x] password recovery and registration use the same server-side password-admission boundary
+- [x] existing credential verification and login rehash remain independent of new-password admission policy
+- [x] common/compromised-password screening pins a 99,839-entry source universe with source/license/checksum provenance, commits no plaintext source rows, and uses the complete 327-entry structurally reachable hash-only membership set
+- [x] reauthentication consumes durable account, session, and network budgets before Argon2 verification
+- [x] successful reauthentication still rotates the session token, resets account/session reauth buckets across configured key versions, and does not reset the network compute budget
+- [x] reauthentication failures remain generic and do not leak password or rate-limit subjects
+- [x] bounded worker maintenance deletes expired incomplete registration intents without selecting password_hash into worker memory
+- [x] registration cleanup is safe under multiple worker replicas and cannot create an account at or after the expiry boundary
+- [x] no PostgreSQL migration is added unless implementation proves one is actually required
+- [x] production-mode CSP permits OpenMLS via wasm-unsafe-eval but forbids unsafe-eval and unsafe-inline script execution
+- [x] current inline React style attributes are removed so style-src can remain self-only
+- [x] CSP explicitly permits the public WSS origin and approved media-storage origins without wildcard connect-src
+- [x] HSTS and companion browser security headers are asserted against the repository-controlled production serving configuration
+- [x] the production proxy accepts forwarded client addresses only from explicit `WEB_TRUSTED_PROXY` IP/CIDR peers, overwrites forwarding metadata before Fastify, and strips fixed plus Connection-nominated hop-by-hop request/response headers
+- [x] if no live public commercial environment exists during SEC1, R2 is explicitly responsible for re-proving those headers at the actual public HTTPS origin
+- [x] the existing Argon2id password-hashing policy remains intact unless a separate reviewed change is justified
+- [x] focused A1/authentication, worker-maintenance, header, and real-Chromium regressions pass
+- [x] `npm run health` passes once after the remediation code stabilizes
+- [x] `npm audit --audit-level=high` reports no unresolved high-severity vulnerability
+- [x] implementation evidence is recorded in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
+- [x] repository-wide documentation is reconciled before SEC1 is marked DONE
 
 ## V1 ordering rule
 
@@ -275,7 +275,7 @@ V1 is defined separately, but its hosted run is downstream of SEC1. If GitHub Ac
 
 # V1: Hosted CI Verification
 
-Status: BLOCKED
+Status: NEXT, BLOCKED BY ACTIONS CAPACITY
 
 ## Purpose
 
@@ -285,7 +285,7 @@ V1 is intentionally separate from F1 and was not a prerequisite for completed fe
 
 ## Current blocker
 
-V1 is blocked by two conditions: SEC1 is not yet DONE, and GitHub Actions capacity is unavailable through the remainder of September 2026. SEC1 has priority even if Actions capacity returns first.
+SEC1 is DONE. V1 is blocked only because GitHub Actions capacity is unavailable through the remainder of September 2026.
 
 ## Scope
 
@@ -298,7 +298,7 @@ V1 is blocked by two conditions: SEC1 is not yet DONE, and GitHub Actions capaci
 
 ## Acceptance gates
 
-- [ ] SEC1 Pre-V1 Security Hardening is DONE before the V1 release-verification run
+- [x] SEC1 Pre-V1 Security Hardening is DONE before the V1 release-verification run
 - [ ] at least one GitHub-hosted Baseline CI run completes successfully
 - [ ] hosted `npm ci` succeeds from the committed lockfile
 - [ ] hosted `npm run ci:baseline` succeeds
@@ -2728,7 +2728,7 @@ Status: PLANNED
 
 ## Acceptance gates
 
-- [ ] SEC1 Pre-V1 Security Hardening is DONE
+- [x] SEC1 Pre-V1 Security Hardening is DONE
 - [ ] V1 Hosted CI Verification is DONE
 - [ ] all stable-release PRD gates are satisfied
 - [ ] required CI checks are green

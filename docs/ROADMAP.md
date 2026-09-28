@@ -27,7 +27,7 @@ Completed milestones:
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
-| V1 Hosted CI Verification | BLOCKED | must wait for SEC1 closure and GitHub Actions capacity |
+| V1 Hosted CI Verification | NEXT, BLOCKED | SEC1 is DONE; waiting for GitHub Actions capacity |
 
 P3 closure evidence remains:
 
@@ -75,8 +75,8 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
-| 20 SEC1 Pre-V1 Security Hardening | IMPLEMENTED on feature branch; automated closure pending | merged UX8 and post-UX8 security audit | No by default; desktop Chromium closure owns current browser changes |
-| V1 Hosted CI Verification | BLOCKED until SEC1 and Actions capacity | SEC1 | No |
+| 20 SEC1 Pre-V1 Security Hardening | DONE on feature branch; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
+| V1 Hosted CI Verification | NEXT; blocked by Actions capacity | SEC1 DONE | No |
 | 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
@@ -111,13 +111,12 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       merged main @ a029169
             |
             v
-      SEC1 Pre-V1 Security Hardening
-      source implementation complete
-      final local closure + evidence pending
+      SEC1 Pre-V1 Security Hardening ✅
+      final local closure PASS @ 91ca920d
             |
             v
       V1 Hosted CI Verification
-      run only after SEC1 closes and Actions capacity is available
+      run when Actions capacity is available
             |
             v
       R2 Public Readiness
@@ -130,7 +129,7 @@ C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22
 
 UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 is DONE on `feat/ux8-encrypted-ux-integration` against the frozen design in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`: automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` and the mandatory 25-scenario Redmi Note 9S acceptance in `docs/testing/UX8_ANDROID_ACCEPTANCE.md` closed 25/25, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. It is fast-forward merged to `main` at `a029169`.
 
-SEC1 Pre-V1 Security Hardening is source-implemented on `feat/sec1-pre-v1-security-hardening` and remains the highest pre-release priority until closure. The feature branch implements one server-side password-admission boundary, pinned provenance over a 99,839-entry source universe with only 327 policy-relevant SHA-256 membership digests committed and pinned by digest-set checksum `2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca`, layered PostgreSQL reauthentication budgets with canonical IPv4/IPv6 network subjects, bounded `SKIP LOCKED` worker maintenance without a new scheduled-action type or migration, and the repository-controlled production web adapter with strict CSP/HSTS, OpenMLS WebAssembly support, and explicit sanitized reverse-proxy trust on both the web and API boundaries. Focused regressions and the final closure wrapper are committed, but `npm run test:sec1:closure` has not yet produced final evidence. The canonical acceptance gate remains `docs/security/PRE_V1_SECURITY_HARDENING.md`.
+SEC1 Pre-V1 Security Hardening is DONE on `feat/sec1-pre-v1-security-hardening`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed focused security 16/16, header/proxy/server 16/16, PostgreSQL/API/worker 36/36, Chromium 1/1, production scan, full health, a zero-vulnerability audit, and Git hygiene. The branch implements one server-side password-admission boundary, a pinned hash-only common-password corpus, layered PostgreSQL reauthentication budgets with canonical IPv4/IPv6 network subjects, bounded `SKIP LOCKED` worker maintenance without a new scheduled-action type or migration, and the repository-controlled production web adapter with strict CSP/HSTS and explicit proxy trust. Evidence is in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 ## UX0 through UX8 product-experience program
 
@@ -146,8 +145,8 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Redmi Note 9S 25/25 acceptance is closed, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is DONE and merged to `main` at `a029169`.
-- **SEC1 Pre-V1 Security Hardening:** source implementation is complete on the feature branch; execute the committed A1/worker/browser/security closure, repair any discovered defect, record evidence, and only then promote the milestone to DONE before V1.
-- **V1 Hosted CI Verification:** execute the already-configured GitHub-hosted baseline only after SEC1 is DONE and Actions capacity is available.
+- **SEC1 Pre-V1 Security Hardening:** DONE on the feature branch at executable `91ca920d`; complete local evidence is recorded.
+- **V1 Hosted CI Verification:** next milestone; execute the already-configured GitHub-hosted baseline when Actions capacity is available.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure after SEC1 and V1.
 
 UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. UX8 and later work must preserve the accepted UX and S1 authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
@@ -672,11 +671,11 @@ Stable release requires:
 
 # Verification Track: V1 Hosted CI
 
-Status: BLOCKED until SEC1 is DONE and GitHub Actions capacity is available.
+Status: NEXT, BLOCKED by GitHub Actions capacity.
 
-V1 does not block completed feature development, but its release-evidence run is downstream of SEC1 and R2 cannot close without it.
+V1 does not block completed feature development. SEC1 is DONE, but R2 cannot close without hosted V1 evidence.
 
-When SEC1 is DONE and capacity returns:
+When capacity returns:
 
 1. run Baseline CI without a skip marker or manually dispatch it
 2. verify hosted `npm ci`

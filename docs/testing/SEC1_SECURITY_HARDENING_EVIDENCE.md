@@ -1,6 +1,6 @@
 # SEC1 Security Hardening Evidence
 
-Status: PENDING EXECUTION.
+Status: PASS.
 
 Milestone: SEC1 Pre-V1 Security Hardening.
 
@@ -14,17 +14,19 @@ Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
 Production serving contract: `../operations/PRODUCTION_WEB_SERVING.md`.
 
-## Evidence rule
+## Final execution record
 
-This file intentionally does not claim SEC1 PASS yet.
+Final executable SHA: `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`.
 
-Source implementation and executable harnesses are committed, but the final coherent local closure has not been run from a clean checkout at this checkpoint. Do not copy expected markers below into project state as observed results until the command exits successfully and the raw/local output has been reviewed.
+Final successful run time: `2026-09-28T19:18:11Z` UTC.
 
 Final closure command:
 
 ```text
 npm run test:sec1:closure
 ```
+
+The command ran from a clean `feat/sec1-pre-v1-security-hardening` checkout matching the remote branch and exited successfully. It emitted `SEC1_SECURITY_HARDENING_PASS` for the exact executable SHA above. GitHub-hosted Actions and physical Android testing were not run.
 
 ## Implemented remediation under test
 
@@ -123,31 +125,38 @@ The implementation review caught and corrected defects before any SEC1 PASS clai
 - API `APP_ORIGIN` now requires a bare HTTP(S) origin and API `TRUSTED_PROXY` now accepts only literal IP/CIDR entries, matching the web-adapter trust model
 - an API regression now proves registration cannot complete at or after the authoritative registration-intent expiry boundary
 
-These corrections are committed source changes. They are not execution evidence. The closure matrix below remains NOT RUN until the local closure actually succeeds.
+These corrections are committed source changes and were exercised by the final successful closure.
+
+## Defects found during closure
+
+The first closure attempt at `c043dc0ea0e571e8765e88de6923d5f509d11e3d` stopped at the SEC1 formatting gate because nine committed SEC1 JavaScript and TypeScript test artifacts were not in canonical Prettier form. Commit `487517c98e0ce8008e860de4172ab5d70af05939` formatted only those reported files.
+
+The next closure attempt at `487517c98e0ce8008e860de4172ab5d70af05939` passed focused security, PostgreSQL 36/36, Chromium 1/1, and the production scan, then full repository health found nine additional SEC1 implementation and test files outside the narrow SEC1 format glob that were not in canonical Prettier form. Commit `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` formatted only those reported files.
+
+Both findings were repository-hygiene defects. No production behavior, security assertion, acceptance expectation, database migration, or test semantics changed. The focused format checks passed after each repair, and the complete closure was rerun from the beginning after the final repair.
+
 ## Closure matrix
 
 | Gate | Command / evidence source | Current status |
 | --- | --- | --- |
-| Hash-only common-password corpus integrity and provenance check | `npm run sec1:passwords:check` via closure | NOT RUN |
-| SEC1 artifact formatting | `npm run sec1:format:check` | NOT RUN |
-| Proxy trust/header sanitization unit tests | `npm run test:sec1:headers` | NOT RUN |
-| Focused password/admission/security unit tests | `npm run test:sec1` | NOT RUN |
-| Disposable PostgreSQL A1/API/worker integration | `npm run test:sec1:local` | NOT RUN |
-| Real Chromium production CSP/OpenMLS/SW/WS/media smoke | `npm run test:sec1:browser:e2e` | NOT RUN |
-| Production bundle/source security scan | `npm run sec1:production:scan` | NOT RUN |
-| Full repository health | `npm run health` | NOT RUN |
-| High-severity dependency audit | `npm audit --audit-level=high` | NOT RUN |
-| Git diff hygiene | `git diff --check` | NOT RUN |
-| Feature branch local/remote parity | closure wrapper | NOT RUN |
-| Every feature commit contains `[skip ci]` | closure wrapper | NOT RUN |
-| No new Unicode em dash in feature diff | closure wrapper | NOT RUN |
+| Hash-only common-password corpus integrity and provenance check | `npm run sec1:passwords:check` via closure | PASS, 327 sorted unique digests, pinned blob and digest-set checksum |
+| SEC1 artifact formatting | `npm run sec1:format:check` | PASS |
+| Proxy trust/header sanitization unit tests | `npm run test:sec1:headers` | PASS, 16/16 |
+| Focused password/admission/security unit tests | `npm run test:sec1` | PASS, 16/16 focused unit tests plus 16/16 header/proxy/server tests |
+| Disposable PostgreSQL A1/API/worker integration | `npm run test:sec1:local` | PASS, 36/36, PostgreSQL 16 Alpine, migrations 0001 through 0021, `reserved=0`, invariants PASS |
+| Real Chromium production CSP/OpenMLS/SW/WS/media smoke | `npm run test:sec1:browser:e2e` | PASS, Chromium 1/1 |
+| Production bundle/source security scan | `npm run sec1:production:scan` | PASS, `SEC1_PRODUCTION_SCAN_PASS` |
+| Full repository health | `npm run health` | PASS |
+| High-severity dependency audit | `npm audit --audit-level=high` | PASS, 0 vulnerabilities |
+| Git diff hygiene | `git diff --check` | PASS |
+| Feature branch local/remote parity | closure wrapper | PASS at executable SHA |
+| Every feature commit contains `[skip ci]` | closure wrapper | PASS |
+| No new Unicode em dash in feature diff | closure wrapper | PASS |
 
-## Expected final markers
-
-These are the markers emitted by the committed closure wrapper on success. They are expectations, not observed evidence at this checkpoint.
+## Observed final markers
 
 ```text
-SEC1_AUTOMATED_CLOSURE_HEAD <sha>
+SEC1_AUTOMATED_CLOSURE_HEAD 91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5
 SEC1_PASSWORD_ADMISSION_PASS
 SEC1_RECOVERY_POLICY_PARITY_PASS
 SEC1_REAUTH_RATE_LIMIT_PASS
@@ -189,16 +198,6 @@ npm run sec1:headers:check -- https://PUBLIC_ORIGIN/
 
 R2 owns that deployment-layer re-proof. SEC1 owns the repository-controlled serving behavior.
 
-## Finalization procedure
+## Closure conclusion
 
-After a successful clean closure:
-
-1. replace every NOT RUN row above with the observed result
-2. record the final executable SHA and UTC run time
-3. record focused test counts and PostgreSQL/browser results from the actual output
-4. record the dependency-audit result
-5. record any defect discovered during closure and its corrective commit
-6. rerun the affected gate after every corrective source change
-7. commit this evidence with `[skip ci]`
-8. reconcile `PROJECT_STATE.md`, `ROADMAP.md`, `ROADMAP_EPICS.md`, security docs, and README
-9. only then mark SEC1 DONE and unblock V1 subject to Actions capacity
+All SEC1 acceptance gates are closed. The repository-controlled production behavior is locally proven; R2 still owns re-proof of browser headers at the actual public HTTPS origin. V1 Hosted CI Verification is the next milestone and remains subject to GitHub Actions capacity.

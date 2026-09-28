@@ -2,11 +2,11 @@
 
 ## Status
 
-FROZEN DESIGN, IMPLEMENTED ON FEATURE BRANCH.
+FROZEN DESIGN, IMPLEMENTED AND LOCALLY CLOSED ON FEATURE BRANCH.
 
-Implementation is source-complete on `feat/sec1-pre-v1-security-hardening`; automated closure is still pending, so SEC1 is not yet DONE.
+Implementation and automated local closure are complete on `feat/sec1-pre-v1-security-hardening`. The final executable SHA is `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`; observed evidence is recorded in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
-SEC1 is the highest remaining pre-release priority and must close before V1 Hosted CI Verification is intentionally run as release evidence.
+SEC1 is DONE on its feature branch. V1 Hosted CI Verification is the next pre-release milestone, subject to GitHub Actions capacity.
 
 ## Baseline
 
@@ -41,7 +41,7 @@ The implementation resolves the intentionally unfrozen details as follows:
 - no PostgreSQL migration and no new scheduled-action type were required
 - the production web adapter is `apps/web/server.mjs`, serving `dist`, proxying same-origin HTTP and WebSocket `/api` traffic, enforcing canonical Host, and applying `apps/web/server-security.mjs` headers; `apps/web/proxy-security.mjs` owns explicit upstream proxy trust, sanitized client-address forwarding, and hop-by-hop header removal
 - CSP uses `script-src 'self' 'wasm-unsafe-eval'` and `style-src 'self'`; the implementation sweep removed the initially known React style attributes plus additional video, Talk, and View Transition inline-style writers found during source audit
-- focused verification is centralized in `npm run test:sec1:closure`; the closure remains unexecuted at this documentation checkpoint
+- focused verification is centralized in `npm run test:sec1:closure`; the final complete closure passed on executable SHA `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`
 
 These are implementation choices inside the frozen SEC1 boundaries, not new architecture decisions.
 

@@ -79,10 +79,10 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         UX8 Encrypted UX 🟢 DONE, Android 25/25, merged main @ a029169
                 |
                 v
-        SEC1 Pre-V1 Security Hardening 🟡 IMPLEMENTED, CLOSURE PENDING
+        SEC1 Pre-V1 Security Hardening ✅ DONE @ 91ca920d
                 |
                 v
-        V1 Hosted CI Verification 🔒 after SEC1 + Actions capacity
+        V1 Hosted CI Verification 🔒 awaiting Actions capacity
                 |
                 v
         R2 Public Readiness ⚪
@@ -96,8 +96,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 v
         X2 Deferred Heavy Features ⏸
 
-V1 Hosted CI Verification 🔒 remains a separate verification milestone,
-but its release-evidence run must wait for SEC1 to be DONE and must finish before R2 can close.
+V1 Hosted CI Verification 🔒 remains a separate verification milestone. SEC1 is DONE, so V1 is next when Actions capacity is available and must finish before R2 can close.
 ~~~
 
 ## Mermaid dependency view
@@ -182,9 +181,9 @@ S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, mer
    ->
 UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, merged to `main @ a029169`
 
-SEC1 Pre-V1 Security Hardening 🟡 IMPLEMENTED, AUTOMATED CLOSURE PENDING, highest remaining priority
+SEC1 Pre-V1 Security Hardening ✅ DONE, final executable `91ca920d`
 
-V1 Hosted CI Verification 🔒 BLOCKED until SEC1 is DONE and Actions capacity is available
+V1 Hosted CI Verification 🔒 NEXT, blocked by Actions capacity
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -313,14 +312,14 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 
 ## Release path
 
-With UX8 closed and merged, the remaining dependency path to stable release is:
+With UX8 merged and SEC1 locally closed, the remaining dependency path to stable release is:
 
 ~~~text
 UX8 ✅
- -> SEC1 Pre-V1 Security Hardening
+ -> SEC1 Pre-V1 Security Hardening ✅
  -> V1 Hosted CI Verification
  -> R2 Public Readiness
  -> Stable Release
 ~~~
 
-SEC1 is the active highest-priority milestone. V1 must not consume the intended hosted release-verification run until SEC1 closes, even if Actions capacity becomes available first.
+SEC1 is DONE at executable `91ca920d`. V1 Hosted CI Verification is the active next milestone when Actions capacity becomes available.

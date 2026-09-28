@@ -1,8 +1,8 @@
 # SEC1 Pre-V1 Security Hardening
 
-Status: IMPLEMENTED ON FEATURE BRANCH, AUTOMATED CLOSURE PENDING
+Status: DONE ON FEATURE BRANCH.
 
-Priority: highest remaining pre-release priority.
+Final executable SHA: `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`.
 
 Canonical implementation architecture: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
@@ -20,7 +20,7 @@ V1 must not be intentionally run as release evidence before SEC1 is DONE, even i
 
 ## Implementation checkpoint
 
-SEC1 source implementation is complete on `feat/sec1-pre-v1-security-hardening`. This is not yet a DONE claim: the final coherent local closure and evidence commit have not been executed.
+SEC1 source implementation and complete local closure are complete on `feat/sec1-pre-v1-security-hardening`. The final executable passed focused security 16/16, header/proxy/server 16/16, disposable PostgreSQL/API/worker 36/36, real Chromium 1/1, production scan, full repository health, a zero-vulnerability audit, and Git hygiene. Canonical observed evidence is in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 Implemented remediation:
 
@@ -34,7 +34,7 @@ Implemented remediation:
 - strict `style-src 'self'` is supported by removing every identified production inline-style writer, including additional Talk, video-call, and View Transition sites discovered during implementation
 - the SEC1 test surface now includes focused admission tests, digest-corpus integrity checks, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, proxy-trust/header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media/offline smoke, a production scan, and one final `npm run test:sec1:closure` wrapper
 
-The remaining work is verification only: run the closure from a clean local checkout, fix any discovered defect, commit `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`, then reconcile final PASS counts before marking SEC1 DONE.
+The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. V1 Hosted CI Verification is now the next milestone, subject to GitHub Actions capacity. R2 retains the public HTTPS header re-proof.
 
 ## Purpose
 
