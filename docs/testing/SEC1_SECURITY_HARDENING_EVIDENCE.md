@@ -41,7 +41,8 @@ Implemented:
 - plaintext source corpus data is intentionally not committed
 - source provenance is pinned to SecLists commit `2e3e92569043d24297ca6c35070078e5cf41651e`, source path `Passwords/Common-Credentials/100k-most-used-passwords-NCSC.txt`, Git blob `38eb37702244f55fda75cab281eb2145cd7685b6`, and source count 99,839
 - the committed runtime corpus contains 327 sorted unique SHA-256 membership digests for structurally reachable, NFC-normalized, case-folded source entries
-- `npm run sec1:passwords:check` verifies digest count/shape/order/uniqueness, pinned metadata, and absence of plaintext sentinel values without needing the raw source
+- the canonical sorted digest-set checksum is `2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca`
+- `npm run sec1:passwords:check` verifies digest count/shape/order/uniqueness, pinned metadata, the canonical digest-set checksum, and absence of plaintext sentinel values without needing the raw source
 - regeneration requires an explicit untracked `SEC1_COMMON_PASSWORD_SOURCE_FILE`; the generator verifies the pinned Git blob SHA and source count before writing output
 - SecLists MIT provenance and license notice are preserved under `security-data/common-passwords/`
 
@@ -67,6 +68,8 @@ Implemented failure behavior:
 - requests stopped by the limiter do not amplify failure events
 
 Integration coverage includes repeated failures, success reset behavior, and concurrent guesses racing against the durable limit.
+
+The network subject is normalized before HMAC derivation: IPv4 uses a canonical `/24`, IPv4-mapped IPv6 collapses to the equivalent IPv4 bucket, and canonicalized IPv6 uses a stable `/64`. Equivalent textual IPv6 spellings therefore cannot create separate reauthentication network buckets.
 
 ### SEC1-C expired registration-intent cleanup
 
@@ -108,6 +111,18 @@ Implemented production adapter:
 
 The implementation sweep removed every production inline-style writer found in the web source, including additional Talk, video-call, and View Transition paths discovered after the initial three-site audit.
 
+## Source-audit corrections before closure
+
+The implementation review caught and corrected defects before any SEC1 PASS claim:
+
+- the generated common-password runtime file had drifted from the hash-only generator/evidence contract; the final source now contains the canonical 327 digest membership set derived from the pinned SecLists source
+- the digest pipeline is now protected by the canonical digest-set checksum above, preventing stale or accidentally double-hashed generated output from matching metadata alone
+- `PasswordAdmissionService` now performs the intended SHA-256 exact-membership lookup over the normalized lowercase candidate
+- network-prefix normalization was hardened so IPv4-mapped IPv6 and equivalent IPv6 text forms cannot split the network abuse budget
+- the final SEC1 web unit command now executes header-policy, proxy-trust, and production-server configuration tests, and SEC1 lint explicitly includes the proxy authority and public header checker
+- an API regression now proves registration cannot complete at or after the authoritative registration-intent expiry boundary
+
+These corrections are committed source changes. They are not execution evidence. The closure matrix below remains NOT RUN until the local closure actually succeeds.
 ## Closure matrix
 
 | Gate | Command / evidence source | Current status |
