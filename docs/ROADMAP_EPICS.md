@@ -2704,6 +2704,7 @@ Status: PLANNED
 
 ## Acceptance gates
 
+- [ ] SEC1 Pre-V1 Security Hardening is DONE
 - [ ] V1 Hosted CI Verification is DONE
 - [ ] all stable-release PRD gates are satisfied
 - [ ] required CI checks are green
