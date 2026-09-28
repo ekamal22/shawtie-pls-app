@@ -28,6 +28,10 @@ Source entry count: 99,839.
 
 Effective entries after Shawtie's 15 to 128 code-point structural policy, NFC normalization, case folding, UTF-8 size bound, decoding of valid `$HEX[...]` rows, and deduplication: 327.
 
+Canonical sorted digest-set SHA-256:
+
+`2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca`
+
 License: MIT, as published by SecLists.
 
 ## Regeneration
@@ -56,8 +60,9 @@ SEC1 closure does not need the plaintext source file. It runs:
 npm run sec1:passwords:check
 ```
 
-That check verifies the committed hash-only corpus shape, pinned source metadata, expected digest count, and absence of known plaintext sentinel entries.
+That check verifies the committed hash-only corpus shape, pinned source metadata, expected digest count, deterministic ordering, uniqueness, canonical digest-set checksum, and absence of known plaintext sentinel entries.
 
+The digest-set checksum is intentionally independent of the generated TypeScript formatting. It commits the exact normalized membership set produced from the pinned source, which prevents an accidentally stale or double-hashed runtime corpus from passing metadata-only checks.
 
 ## SecLists license notice
 
