@@ -22,6 +22,17 @@ function structurallyRelevant(value) {
   return length >= 15 && length <= 128 && utf8Bytes(normalized) <= 1024;
 }
 
+function decodeSourceEntry(value) {
+  const match = /^\$HEX\[([0-9a-f]+)\]$/i.exec(value);
+  if (!match) return value;
+  const hex = match[1];
+  if (!hex || hex.length % 2 !== 0) return null;
+  const bytes = Buffer.from(hex, "hex");
+  const decoded = bytes.toString("utf8");
+  if (!Buffer.from(decoded, "utf8").equals(bytes)) return null;
+  return decoded;
+}
+
 async function loadSource() {
   const local = process.env.SEC1_COMMON_PASSWORD_SOURCE_FILE?.trim();
   if (local) return readFile(local);
@@ -56,6 +67,8 @@ function generatedSource(rawBytes) {
   const effective = [
     ...new Set(
       raw
+        .map(decodeSourceEntry)
+        .filter((value) => value !== null)
         .map((value) => value.normalize("NFC").toLowerCase())
         .filter(structurallyRelevant),
     ),
