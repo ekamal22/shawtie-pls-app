@@ -33,13 +33,13 @@ No ADR is required because the design stays inside accepted architecture boundar
 The implementation resolves the intentionally unfrozen details as follows:
 
 - password admission lives in `apps/api/src/security/password-admission.ts`
-- the pinned source corpus is committed under `security-data/common-passwords/`; `scripts/security/generate-common-passwords.mjs` verifies its Git blob checksum and generates the server-only exact-match set offline
-- the committed source has 99,839 entries; only passwords that can pass Shawtie's structural 15 to 128 code-point and 1024-byte bounds are emitted into runtime membership data
+- the common-password source is pinned by SecLists repository commit, path, Git blob SHA, and entry count, but plaintext source data is intentionally not committed; `scripts/security/generate-common-passwords.mjs` requires an explicitly supplied local copy for regeneration and emits a server-only hash set
+- the pinned source has 99,839 entries; after NFC normalization, case folding, decoding valid `$HEX[...]` rows, structural filtering, and deduplication, 327 reachable entries are committed only as sorted SHA-256 membership digests
 - registration and password recovery use `PasswordAdmissionService.hashNewCredential()`; recovery performs challenge authorization before the expensive replacement-password Argon2 hash
 - reauthentication reuses `security_rate_limit_buckets` with `reauth_account`, `reauth_session`, and `reauth_network` scopes
 - registration cleanup uses a 60-second worker maintenance loop with batches of 100 and `FOR UPDATE SKIP LOCKED`; the delete returns IDs only and never selects `password_hash`
 - no PostgreSQL migration and no new scheduled-action type were required
-- the production web adapter is `apps/web/server.mjs`, serving `dist`, proxying same-origin HTTP and WebSocket `/api` traffic, enforcing canonical Host, and applying `apps/web/server-security.mjs` headers
+- the production web adapter is `apps/web/server.mjs`, serving `dist`, proxying same-origin HTTP and WebSocket `/api` traffic, enforcing canonical Host, and applying `apps/web/server-security.mjs` headers; `apps/web/proxy-security.mjs` owns explicit upstream proxy trust, sanitized client-address forwarding, and hop-by-hop header removal
 - CSP uses `script-src 'self' 'wasm-unsafe-eval'` and `style-src 'self'`; the implementation sweep removed the initially known React style attributes plus additional video, Talk, and View Transition inline-style writers found during source audit
 - focused verification is centralized in `npm run test:sec1:closure`; the closure remains unexecuted at this documentation checkpoint
 
@@ -211,15 +211,14 @@ Requirements:
 - deterministic output
 - exact normalized full-password comparison, not substring heuristics
 - materially larger than the current ten-entry set
-- initial target: at least 10,000 high-frequency common/compromised passwords
-- implementation should prefer 50,000 to 100,000 entries if repository size, startup time, and health checks remain reasonable
+- pin a source universe materially larger than the historical ten-entry list
+- do not commit plaintext source password rows
+- commit only exact membership digests for source entries that can pass the structural password policy
 - source provenance, license, normalized entry count, source checksum, and generation command are committed
 - generated output is reproducible
 - tests include known blocked values that are not part of the historical ten-entry set
 
-The implementation may use a generated server-only Set or an exact digest lookup. A Bloom filter is not allowed for SEC1 because false-positive password rejection is unnecessary complexity.
-
-If digests are used for corpus lookup, they are only an in-process membership representation. They are not password storage and must not be confused with the Argon2id credential KDF.
+The implementation uses a generated server-only `Set<string>` of SHA-256 digests. The candidate is NFC-normalized, case-folded, hashed in-process, and checked for exact digest membership. SHA-256 here is only a deterministic local set representation. It is not account credential storage and must not be confused with the Argon2id credential KDF. A Bloom filter remains disallowed because false-positive password rejection is unnecessary.
 
 ### Recovery parity
 
@@ -470,7 +469,7 @@ At the design baseline, the commercial repository did not contain a production s
 
 SEC1 must not treat Vite dev/preview headers as production evidence.
 
-The hosting provider remains unfrozen architecture. The implemented SEC1-D serving authority is now `apps/web/server.mjs` plus `apps/web/server-security.mjs`: it serves the production bundle, proxies same-origin API and WebSocket traffic, and owns the repository-level browser security headers. Deployment-layer HTTPS behavior must still be re-proved at the actual public origin during R2 if no live commercial origin exists during SEC1 closure.
+The hosting provider remains unfrozen architecture. The implemented SEC1-D serving authority is `apps/web/server.mjs` plus `apps/web/server-security.mjs`: it serves the production bundle, proxies same-origin API and WebSocket traffic, and owns the repository-level browser security headers. `apps/web/proxy-security.mjs` separately owns explicit upstream proxy trust and sanitizes forwarding metadata before requests reach Fastify. Deployment-layer HTTPS behavior must still be re-proved at the actual public origin during R2 if no live commercial origin exists during SEC1 closure.
 
 If there is no live public commercial environment yet, SEC1 may close the code/config portion against an enforced production-mode serving harness. R2 must still re-prove the headers against the actual public HTTPS origin before stable release.
 
@@ -578,6 +577,24 @@ X-Frame-Options: DENY
 
 Do not add aggressive cross-origin isolation headers in SEC1 unless required and separately proven against media, WebRTC, service workers, and browser compatibility.
 
+### Reverse-proxy trust boundary
+
+The web adapter does not trust forwarded-address metadata merely because it is present.
+
+`WEB_TRUSTED_PROXY` accepts only explicit IP or CIDR entries. Wildcard trust, boolean trust-all values, and hop-count shortcuts are rejected.
+
+For normal HTTP and WebSocket requests:
+
+- an untrusted immediate socket peer causes all incoming forwarded-address metadata to be ignored
+- a trusted socket peer permits right-to-left resolution of the supplied address chain until the first untrusted client address
+- malformed chains fail closed to the immediate socket peer
+- `Forwarded`, `X-Real-IP`, and client-supplied `X-Forwarded-*` metadata are removed
+- the adapter writes one sanitized `X-Forwarded-For`, canonical forwarded Host, and canonical forwarded protocol
+- fixed and Connection-nominated hop-by-hop headers are removed on normal HTTP request and response paths
+- the API still uses its own explicit `TRUSTED_PROXY` IP/CIDR configuration and must trust only the known web-adapter peer
+
+This keeps network-rate-limit subjects meaningful behind a deployment ingress without allowing a browser to choose its own network key.
+
 ### Header authority and drift control
 
 There must be one canonical policy representation or one executable assertion contract.
@@ -663,7 +680,7 @@ Required final evidence:
 ```text
 npm run test:sec1
 npm run test:sec1:postgres
-npm run test:sec1:browser
+npm run test:sec1:browser:e2e
 npm run test:sec1:headers
 npm run test:sec1:local
 npm run test:sec1:closure
@@ -798,7 +815,12 @@ apps/worker/tests/a1.integration.test.ts
 
 apps/web/src/app/shell/AppShell.tsx
 apps/web/src/design/primitives.tsx
-production web serving configuration                  to be selected in SEC1-D
+apps/web/server.mjs
+apps/web/server-security.mjs
+apps/web/proxy-security.mjs
+apps/web/tests/sec1.headers.test.mjs
+apps/web/tests/sec1.proxy.test.mjs
+apps/web/tests/sec1.server.test.mjs
 scripts/security/check-web-security-headers.mjs
 tests/e2e/sec1-security.spec.ts
 package.json
