@@ -227,7 +227,7 @@ Canonical implementation architecture:
 Implementation checkpoint:
 
 - all four SEC1 remediation slices are implemented on `feat/sec1-pre-v1-security-hardening`
-- the common-password source corpus is pinned and committed offline with 99,839 source entries and checksum/license provenance
+- the common-password source universe is pinned to 99,839 SecLists entries by repository commit, path, Git blob SHA, source count, and MIT provenance; plaintext source rows are intentionally not committed, and runtime data contains only 327 policy-relevant SHA-256 membership digests
 - no PostgreSQL migration or new scheduled-action type was required
 - the repository now owns the production web serving adapter and CSP/HSTS policy
 - implementation discovered and removed additional inline-style writers beyond the three known at design time
@@ -237,10 +237,10 @@ Implementation checkpoint:
 ## Scope
 
 - introduce one server-side password-admission boundary shared by registration and password recovery while keeping PasswordHasher verification/rehash independent
-- move common-password screening to a reproducible server-only offline corpus with provenance
+- move common-password screening to a reproducible server-only exact-membership corpus with pinned external source provenance and hash-only committed runtime data
 - add durable account/session/network abuse throttling around password reauthentication while preserving session-token rotation
 - add bounded replica-safe worker maintenance that deletes expired incomplete registration intents without loading password hashes into worker memory
-- choose and commit the production web serving adapter/configuration, then enforce CSP/HSTS with OpenMLS WASM compatibility and no unsafe JavaScript execution
+- choose and commit the production web serving adapter/configuration, enforce CSP/HSTS with OpenMLS WASM compatibility and no unsafe JavaScript execution, and sanitize proxy-derived client-address metadata through explicit IP/CIDR trust
 - remove all production inline-style writers found by the SEC1 source sweep so style-src can remain self-only
 - add focused regressions for each remediation
 - rerun the affected local security/integration/browser surface, full repository health, and the high-severity dependency audit once after implementation
@@ -249,7 +249,7 @@ Implementation checkpoint:
 
 - [ ] password recovery and registration use the same server-side password-admission boundary
 - [ ] existing credential verification and login rehash remain independent of new-password admission policy
-- [ ] common/compromised-password screening uses a reproducible server-only offline corpus with source/license/checksum provenance and materially more than ten entries
+- [ ] common/compromised-password screening pins a 99,839-entry source universe with source/license/checksum provenance, commits no plaintext source rows, and uses the complete 327-entry structurally reachable hash-only membership set
 - [ ] reauthentication consumes durable account, session, and network budgets before Argon2 verification
 - [ ] successful reauthentication still rotates the session token, resets account/session reauth buckets across configured key versions, and does not reset the network compute budget
 - [ ] reauthentication failures remain generic and do not leak password or rate-limit subjects
@@ -260,6 +260,7 @@ Implementation checkpoint:
 - [ ] current inline React style attributes are removed so style-src can remain self-only
 - [ ] CSP explicitly permits the public WSS origin and approved media-storage origins without wildcard connect-src
 - [ ] HSTS and companion browser security headers are asserted against the repository-controlled production serving configuration
+- [ ] the production proxy accepts forwarded client addresses only from explicit `WEB_TRUSTED_PROXY` IP/CIDR peers, overwrites forwarding metadata before Fastify, and strips fixed plus Connection-nominated hop-by-hop request/response headers
 - [ ] if no live public commercial environment exists during SEC1, R2 is explicitly responsible for re-proving those headers at the actual public HTTPS origin
 - [ ] the existing Argon2id password-hashing policy remains intact unless a separate reviewed change is justified
 - [ ] focused A1/authentication, worker-maintenance, header, and real-Chromium regressions pass
