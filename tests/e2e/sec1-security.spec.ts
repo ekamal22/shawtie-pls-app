@@ -41,11 +41,13 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
     }
   });
   expect(evalResult).not.toBe("allowed");
+  cspViolations.length = 0;
 
   const openMlsLoaded = await page.evaluate(async () => {
-    const module = (await import(
-      "/crypto/openmls/shawtie_openmls_wasm.js"
-    )) as typeof import("/crypto/openmls/shawtie_openmls_wasm.js");
+    const module = (await import("/crypto/openmls/shawtie_openmls_wasm.js")) as {
+      default?: () => Promise<unknown> | unknown;
+      ShawtieMlsClient?: unknown;
+    };
     if (typeof module.default === "function") {
       await module.default();
     }
