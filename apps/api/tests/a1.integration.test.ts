@@ -294,6 +294,63 @@ test("password recovery revokes sessions and accepts only the new password", asy
   }
 });
 
+test("SEC1 password recovery enforces the same new-credential admission policy", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const user = await register(app, database, "resetpolicy");
+    const start = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password-recovery/start",
+      headers,
+      payload: { identifier: user.email },
+    });
+    assert.equal(start.statusCode, 202);
+    const code = await latestCode(database, {
+      accountId: user.accountId,
+      purpose: "password_recovery",
+    });
+
+    const rejected = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password-recovery/complete",
+      headers,
+      payload: {
+        identifier: user.email,
+        code,
+        newPassword: "123456789987654321",
+      },
+    });
+    assert.equal(rejected.statusCode, 400, rejected.body);
+    assert.equal(rejected.json().error.code, "PASSWORD_COMMON");
+
+    const acceptedPassword = "an uncommon replacement password for sec1";
+    const accepted = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/password-recovery/complete",
+      headers,
+      payload: {
+        identifier: user.email,
+        code,
+        newPassword: acceptedPassword,
+      },
+    });
+    assert.equal(accepted.statusCode, 200, accepted.body);
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      headers,
+      payload: { identifier: user.email, password: acceptedPassword },
+    });
+    assert.equal(login.statusCode, 200, login.body);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("rejected underage DOB correction preserves the one-time correction", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
