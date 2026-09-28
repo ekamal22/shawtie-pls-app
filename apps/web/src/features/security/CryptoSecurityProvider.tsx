@@ -246,6 +246,27 @@ export function CryptoSecurityProvider({
 
           partnershipState = await currentRuntime.partnershipState(partnershipId);
           localGroup = await currentRuntime.localGroupStatus(partnershipId);
+
+          // A single reconciliation pass can land only part of a pending join (for example,
+          // right after RMS recovery trusts this device but an MLS membership commit is
+          // still in-flight elsewhere). Retry a bounded number of times, spaced out, before
+          // concluding the local group is genuinely unusable: this is a delayed-but-recoverable
+          // join, not a repair condition, and premature repair_required classification would
+          // surface a destructive action for an ordinary transient reconciliation gap. Running
+          // out of retries with the group still unavailable genuinely reflects the current
+          // authoritative state.
+          for (
+            let attempt = 0;
+            !localGroup.available &&
+            attempt < 6 &&
+            isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current);
+            attempt += 1
+          ) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            if (!isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current)) break;
+            partnershipState = await currentRuntime.partnershipState(partnershipId);
+            localGroup = await currentRuntime.localGroupStatus(partnershipId);
+          }
         } catch (error) {
           refreshError = error instanceof Error ? error.message : "CRYPTO_UNAVAILABLE";
           localGroup = await currentRuntime.localGroupStatus(partnershipId).catch(() => null);

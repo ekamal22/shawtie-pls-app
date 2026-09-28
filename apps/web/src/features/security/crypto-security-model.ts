@@ -63,7 +63,15 @@ export interface CryptoSecurityInputs {
   readonly partnershipRefreshError: string | null;
   readonly reconciliationComplete: boolean;
   readonly revision: string;
+  readonly now?: number;
 }
+
+// A device that was only just approved or recovered has never held local group state for
+// this partnership. Joining the live MLS group still requires an existing member's client to
+// process its pending key package and commit a welcome, which can lag behind this device's own
+// reconciliation by a few real network round trips. That is a delayed, self-resolving join, not
+// a broken one, so repair must not be offered until this grace window has passed.
+const RECENT_TRUST_GRACE_MS = 2 * 60_000;
 
 export interface CryptoSecurityViewModel {
   readonly runtime: CryptoRuntimeViewState;
@@ -129,6 +137,17 @@ function repairEligible(
     return false;
   }
 
+  const currentDevice = state.devices.find(
+    (device) => device.cryptoDeviceId === state.currentCryptoDeviceId,
+  );
+  if (currentDevice?.approvedAt) {
+    const now = input.now ?? Date.now();
+    const approvedAtMs = Date.parse(currentDevice.approvedAt);
+    if (Number.isFinite(approvedAtMs) && now - approvedAtMs < RECENT_TRUST_GRACE_MS) {
+      return false;
+    }
+  }
+
   const localVersion = input.localRecovery?.recoveryKeyVersion;
   return (
     localVersion !== null &&
@@ -158,6 +177,10 @@ function partnershipState(
   if (state.cryptoRequired && state.recoveryRecipients.length < 2) {
     return "waiting_for_recovery";
   }
+  // Not (yet) repair-eligible, but the local group still is not available: this device has not
+  // finished joining. Present it as an ordinary bootstrap state rather than falsely claiming the
+  // group is ready when protected content cannot actually decrypt here yet.
+  if (!input.localGroup?.available) return "preparing";
   return state.cryptoRequired ? "ready" : "preparing";
 }
 
@@ -201,6 +224,9 @@ function writeState(
   if (partnership === "rekeying") return "blocked_rekey";
   if (partnership === "repair_required") return "blocked_repair";
   if (partnership === "unavailable" && input.partnershipId) return "blocked_runtime";
+  if (partnership === "preparing" && input.localGroup && !input.localGroup.available) {
+    return "blocked_runtime";
+  }
   return "allowed";
 }
 

@@ -270,6 +270,51 @@ test("UX8 repair requires active lifecycle, recovery and missing local group", (
   assert.notEqual(breakup.primaryTask, "repair_required");
 });
 
+test("UX8 a just-approved device joining the group is preparing, not repair-eligible", () => {
+  const approvedAt = "2026-09-27T00:00:00.000Z";
+  const justApproved = deriveCryptoSecurityViewModel(
+    inputs({
+      now: Date.parse(approvedAt) + 30_000,
+      partnershipState: {
+        ...READY_PARTNERSHIP,
+        devices: READY_PARTNERSHIP.devices.map((device) =>
+          device.cryptoDeviceId === "crypto-current" ? { ...device, approvedAt } : device,
+        ),
+      },
+      localGroup: {
+        available: false,
+        groupGeneration: null,
+        cryptoRequired: false,
+        rekeyRequired: false,
+      },
+    }),
+  );
+  assert.equal(justApproved.canOfferGroupRepair, false);
+  assert.notEqual(justApproved.primaryTask, "repair_required");
+  assert.equal(justApproved.partnership, "preparing");
+  assert.notEqual(justApproved.protectedWrites, "allowed");
+
+  const stillUnjoinedAfterGrace = deriveCryptoSecurityViewModel(
+    inputs({
+      now: Date.parse(approvedAt) + 3 * 60_000,
+      partnershipState: {
+        ...READY_PARTNERSHIP,
+        devices: READY_PARTNERSHIP.devices.map((device) =>
+          device.cryptoDeviceId === "crypto-current" ? { ...device, approvedAt } : device,
+        ),
+      },
+      localGroup: {
+        available: false,
+        groupGeneration: null,
+        cryptoRequired: false,
+        rekeyRequired: false,
+      },
+    }),
+  );
+  assert.equal(stillUnjoinedAfterGrace.canOfferGroupRepair, true);
+  assert.equal(stillUnjoinedAfterGrace.primaryTask, "repair_required");
+});
+
 test("UX8 shared account-deletion view-only does not impersonate a revoked session", () => {
   const model = deriveCryptoSecurityViewModel(
     inputs({ interactionMode: "account_deletion_view_only" }),
