@@ -109,7 +109,6 @@ export async function completeRegistrationIntent(
   return result.rowCount === 1;
 }
 
-
 export async function deleteExpiredIncompleteRegistrationIntents(
   executor: QueryExecutor,
   at: Date,
