@@ -121,7 +121,7 @@ Current epic status:
 
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
-- SEC1 Pre-V1 Security Hardening: DESIGN FROZEN, IMPLEMENTATION NOT STARTED, and highest remaining pre-release priority. The refined design preserves Argon2id, adds one server-side password-admission boundary, layered durable reauthentication budgets, replica-safe worker maintenance for expired registration intents, and a production browser-header contract that explicitly supports OpenMLS WebAssembly without general unsafe-eval. Canonical architecture: `docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`; scope/gates: `docs/security/PRE_V1_SECURITY_HARDENING.md`.
+- SEC1 Pre-V1 Security Hardening: IMPLEMENTED on `feat/sec1-pre-v1-security-hardening`, AUTOMATED CLOSURE PENDING, and highest remaining pre-release priority. The feature branch now contains the canonical server-side password-admission boundary, a pinned offline 99,839-entry SecLists source corpus with reproducible exact-match generation, durable account/session/network reauthentication budgets, replica-safe worker cleanup for expired registration intents, and a repository-controlled production static/API/WebSocket serving adapter with CSP/HSTS and OpenMLS WASM compatibility. No PostgreSQL migration or new scheduled-action type was required. The source sweep also removed additional inline-style writers beyond the three known at design time so `style-src 'self'` can remain strict. Focused integration/browser/production-scan tooling and `npm run test:sec1:closure` are committed, but no final PASS is claimed until that closure is executed and evidence is recorded. Canonical architecture: `docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`; scope/gates: `docs/security/PRE_V1_SECURITY_HARDENING.md`.
 - V1 Hosted CI Verification: BLOCKED until SEC1 is DONE and GitHub Actions capacity is available. Do not intentionally spend hosted Actions capacity on V1 before SEC1 closure.
 - F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: DONE on `feat/p3-partnership-lifecycle`. All 22 acceptance gates are closed. The lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Executed evidence covers exact cancellation/restoration boundaries, generation fencing, canonical dissolution, account-deletion precedence and recovery, exact cooldowns, synchronous authorization revocation, deletion manifests, former-partner blocking and privacy, serious notices, race persistence, and A1/P1/P2 regressions. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities.
@@ -172,6 +172,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `design/ux8-encrypted-ux-integration` -> historical hardened/frozen UX8 design line
 - `feat/ux8-encrypted-ux-integration` -> DONE UX8 branch; final corrective executable `43ff9b1`; automated closure PASS, Redmi Note 9S 25/25 PASS; fast-forward merged to `main @ a029169`
 - `feat/s1-e2ee-crypto-recovery` -> DONE S1 branch; final corrective executable `cde73a1`; 30/30 physical Android acceptance; merged to `main @ 71569cf`
+- `feat/sec1-pre-v1-security-hardening` -> source implementation complete from `main @ 61a9a3485b061da4c192481739c52305a29d81d1`; closure/evidence pending; intentionally unmerged
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -197,7 +198,7 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. close SEC1 Pre-V1 Security Hardening and its focused regression evidence
+1. execute and close the committed SEC1 local closure, repair any discovered defect, and commit final regression evidence
 2. complete V1 Hosted CI Verification only after SEC1 is DONE and Actions capacity is available
 3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
 4. cut Stable Release only after SEC1, V1, and R2 are closed
