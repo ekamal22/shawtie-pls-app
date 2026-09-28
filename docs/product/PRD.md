@@ -2172,7 +2172,7 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The verified implementation has progressed through M2, M3, C1, C2, UX0 through UX8, S1, and SEC1. UX8 is DONE and merged to `main @ a029169`. SEC1 Pre-V1 Security Hardening is DONE on `feat/sec1-pre-v1-security-hardening` at final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, with complete local security, PostgreSQL, Chromium, production scan, health, audit, and Git evidence. V1 Hosted CI Verification is next when Actions capacity is available, followed by R2 Public Readiness and Stable Release.
+The verified implementation has progressed through M2, M3, C1, C2, UX0 through UX8, S1, and SEC1. UX8 is DONE and merged to `main @ a029169`. SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`; final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, with complete local security, PostgreSQL, Chromium, production scan, health, audit, and Git evidence. V1 Hosted CI Verification is next when Actions capacity is available, followed by R2 Public Readiness and Stable Release.
 
 Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 

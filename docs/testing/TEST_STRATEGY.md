@@ -409,7 +409,7 @@ Critical journeys:
 
 ## SEC1 Pre-V1 Security Hardening verification
 
-SEC1 is DONE on `feat/sec1-pre-v1-security-hardening`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed the complete local closure. Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`; observed evidence: `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+SEC1 is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed the complete local closure. Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`; observed evidence: `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 Required focused coverage:
 

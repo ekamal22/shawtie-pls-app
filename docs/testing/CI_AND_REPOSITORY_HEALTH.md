@@ -8,7 +8,7 @@ The repository workspace, TypeScript, linting, formatting, runtime-contract, dep
 
 F1 Repository Foundation and Executable Guardrails is therefore complete.
 
-GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1 Pre-V1 Security Hardening is DONE locally at executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, where focused security, PostgreSQL, Chromium, production scan, full health, audit, and Git hygiene passed. V1 is now blocked only by Actions capacity and remains required before R2 Public Readiness can be marked DONE.
+GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`; final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, where focused security, PostgreSQL, Chromium, production scan, full health, audit, and Git hygiene passed. V1 is now blocked only by Actions capacity and remains required before R2 Public Readiness can be marked DONE.
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 

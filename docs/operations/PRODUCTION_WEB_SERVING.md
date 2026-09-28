@@ -1,6 +1,6 @@
 # Production Web Serving
 
-Status: SEC1 IMPLEMENTED AND LOCALLY VERIFIED.
+Status: SEC1 MERGED AND LOCALLY VERIFIED.
 
 Canonical security design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 

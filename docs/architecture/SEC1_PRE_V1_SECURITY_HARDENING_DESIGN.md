@@ -4,9 +4,9 @@
 
 FROZEN DESIGN, IMPLEMENTED AND LOCALLY CLOSED ON FEATURE BRANCH.
 
-Implementation and automated local closure are complete on `feat/sec1-pre-v1-security-hardening`. The final executable SHA is `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`; observed evidence is recorded in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+Implementation and automated local closure are complete and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300` from the historical `feat/sec1-pre-v1-security-hardening` branch. The final executable SHA is `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`; observed evidence is recorded in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
-SEC1 is DONE on its feature branch. V1 Hosted CI Verification is the next pre-release milestone, subject to GitHub Actions capacity.
+SEC1 is DONE and merged to `main`. V1 Hosted CI Verification is the next pre-release milestone, subject to GitHub Actions capacity.
 
 ## Baseline
 
