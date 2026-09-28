@@ -32,6 +32,7 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
   expect(headers["permissions-policy"]).toContain("microphone=(self)");
 
   expect(await page.locator("[style]").count()).toBe(0);
+  expect(cspViolations).toEqual([]);
 
   const evalResult = await page.evaluate(() => {
     try {
@@ -44,16 +45,19 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
   expect(evalResult).not.toBe("allowed");
   cspViolations.length = 0;
 
-  const openMlsLoaded = await page.evaluate(async () => {
-    const module = (await import("/crypto/openmls/shawtie_openmls_wasm.js")) as {
-      default?: () => Promise<unknown> | unknown;
-      ShawtieMlsClient?: unknown;
-    };
-    if (typeof module.default === "function") {
-      await module.default();
-    }
-    return typeof module.ShawtieMlsClient === "function";
-  });
+  const openMlsLoaded = await page.evaluate(
+    async (moduleUrl) => {
+      const module = (await import(moduleUrl)) as {
+        default?: () => Promise<unknown> | unknown;
+        ShawtieMlsClient?: unknown;
+      };
+      if (typeof module.default === "function") {
+        await module.default();
+      }
+      return typeof module.ShawtieMlsClient === "function";
+    },
+    "/crypto/openmls/shawtie_openmls_wasm.js",
+  );
   expect(openMlsLoaded).toBe(true);
 
   const serviceWorkerScope = await page.evaluate(async () => {
