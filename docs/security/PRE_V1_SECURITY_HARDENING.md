@@ -1,8 +1,10 @@
 # SEC1 Pre-V1 Security Hardening
 
-Status: PLANNED
+Status: DESIGN FROZEN, IMPLEMENTATION NOT STARTED
 
 Priority: highest remaining pre-release priority.
+
+Canonical implementation architecture: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
 Ordering:
 
@@ -69,12 +71,13 @@ The current domain policy includes only a ten-entry `COMMON_PASSWORDS` set.
 
 Required remediation:
 
-- replace or augment the tiny set with a maintainable common/compromised-password screening strategy suitable for this product
-- avoid sending plaintext passwords to an external provider as part of routine validation
+- keep structural password rules pure and separate from credential verification
+- add one server-side password-admission boundary for all newly created/replaced credentials
+- move the common-password corpus to server-only security data so a large corpus cannot accidentally inflate a browser bundle
+- use a committed, reproducible, offline corpus with source/license/checksum provenance and at least 10,000 entries, preferring 50,000 to 100,000 if repository health remains reasonable
+- avoid any runtime external password-checking provider
 - preserve the product's no-composition-rule approach
 - add deterministic tests for rejected common passwords and accepted strong passphrases
-
-The implementation choice may be a reviewed bundled list or another privacy-preserving strategy. If it materially changes architecture or introduces an external dependency, document the decision before implementation.
 
 ## Finding 4: expired registration-intent password-hash cleanup
 
@@ -84,10 +87,14 @@ Successful registration clears the transient `registration_intents.password_hash
 
 Required remediation:
 
-- implement bounded cleanup for expired abandoned registration intents
-- scrub the Argon2id hash before or atomically with deletion
+- use a bounded, replica-safe worker maintenance sweep rather than a new scheduled-action type
+- delete only expired incomplete registration intents using PostgreSQL authoritative time and the existing expiry index
+- do not SELECT or return password_hash into worker application memory
+- use short transactions with FOR UPDATE SKIP LOCKED so multiple worker replicas remain safe
+- rely on the existing foreign key cascade to remove registration email challenges
 - prove completed intents still clear the transient hash immediately
 - prove expired abandoned intents cannot retain password hashes indefinitely
+- do not reserve a new PostgreSQL migration unless implementation discovers a real schema requirement
 
 ## Finding 5: production browser CSP and HSTS evidence
 
@@ -97,11 +104,14 @@ The API registers `@fastify/helmet`, secure cookies are enforced in production, 
 
 Required remediation:
 
-- determine the real public serving layer for the PWA
-- enforce strict CSP and HSTS there if they are not already provided
-- if the deployment edge already injects them, record live response evidence rather than duplicating policy blindly
-- keep required WebRTC, service-worker, media, API, and self-hosted asset behavior working without unsafe script policy expansion
-- add automated header regression coverage where the repository controls the serving layer
+- determine and commit the repository-controlled production serving adapter/configuration for the PWA
+- do not treat Vite dev/preview headers as production evidence
+- enforce CSP with script-src 'self' 'wasm-unsafe-eval' so OpenMLS WebAssembly remains usable without general JavaScript unsafe-eval
+- remove the three currently known React inline-style sites so production style-src can remain 'self' without unsafe-inline
+- explicitly allow the public WSS origin and approved media-storage origins in connect-src
+- enforce HSTS with an initial max-age of 31536000 and do not add includeSubDomains/preload until domain scope is separately reviewed
+- retain restrictive Permissions-Policy and add executable checks for CSP, HSTS, nosniff, referrer policy, and clickjacking protection
+- if no live public commercial environment exists yet, prove the enforced production-mode serving configuration in real Chromium during SEC1 and re-prove the actual public HTTPS origin during R2
 
 ## Retained strengths
 
@@ -125,15 +135,16 @@ During implementation, use focused tests while iterating. Do not repeatedly run 
 
 Before SEC1 can be marked DONE, one coherent final local closure must include:
 
-1. focused domain/contracts tests for password policy
+1. focused password structural-policy and server-side admission tests
 2. A1 authentication/security tests
-3. disposable PostgreSQL integration coverage for reauthentication throttling and registration-intent cleanup
-4. production-web header evidence or an automated equivalent for CSP/HSTS
-5. `npm run health`
-6. `npm audit --audit-level=high`
-7. `git diff --check`
-8. evidence recorded in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
-9. repository-wide documentation reconciliation
+3. disposable PostgreSQL integration coverage for reauthentication throttling
+4. bounded worker maintenance integration for expired registration-intent deletion
+5. enforced production-mode browser/header evidence including OpenMLS WASM, WebSocket, service-worker, and media-connectivity smoke
+6. `npm run health`
+7. `npm audit --audit-level=high`
+8. `git diff --check`
+9. evidence recorded in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
+10. repository-wide documentation reconciliation
 
 Physical Android testing is not required by default for SEC1. Add a focused device regression only if a remediation changes device-specific browser, cookie, PWA, or security-flow behavior that local real-browser testing cannot adequately prove.
 
