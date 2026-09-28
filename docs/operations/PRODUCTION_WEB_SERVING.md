@@ -16,6 +16,10 @@ Security-header authority:
 
 `apps/web/server-security.mjs`
 
+Reverse-proxy trust and forwarding authority:
+
+`apps/web/proxy-security.mjs`
+
 ## Build and start
 
 The OpenMLS WebAssembly output must exist before the web production build:
@@ -42,6 +46,9 @@ The web server serves `apps/web/dist` and reverse-proxies same-origin `/api` HTT
 
 `WEB_MEDIA_CONNECT_SRC`
 : Optional comma- or whitespace-separated list of approved HTTPS media/object-storage origins used by browser `fetch` for signed encrypted-media access. Paths collapse to origins. Credential-bearing or insecure remote origins are rejected.
+
+`WEB_TRUSTED_PROXY`
+: Optional comma-separated explicit IP/CIDR allowlist for the TLS terminator or ingress directly upstream of the web adapter. Wildcards, `true`, and hop-count shortcuts are rejected. If unset, incoming forwarded-address headers are ignored and the socket peer becomes the client address. Configure this only when the immediate upstream proxy is known and trusted to supply the forwarded chain.
 
 `HOST`
 : Optional bind address. Default: `0.0.0.0`.
@@ -76,11 +83,22 @@ The web adapter:
 - proxies HTTP `/api` requests to `BACKEND_PROXY_TARGET`
 - proxies `/api` WebSocket upgrades without changing the negotiated application subprotocol
 - preserves the browser Origin header for Fastify's existing exact-origin authorization
-- appends the immediate network hop to `X-Forwarded-For`
-- sets forwarded Host and protocol from the canonical public origin
+- ignores client-supplied `Forwarded`, `X-Real-IP`, and `X-Forwarded-*` metadata unless the immediate socket peer is explicitly trusted by `WEB_TRUSTED_PROXY`
+- resolves a trusted forwarded chain from right to left to the first untrusted client address
+- fails malformed forwarded chains closed to the immediate socket peer
+- overwrites `X-Forwarded-For`, forwarded Host, and forwarded protocol before sending the request to Fastify
+- strips fixed and Connection-nominated hop-by-hop request headers
+- strips fixed and Connection-nominated hop-by-hop HTTP response headers before returning them to the browser
 - reapplies the repository-controlled browser security headers to proxied HTTP responses
 
-The Fastify deployment must keep its existing explicit trusted-proxy configuration. Wildcard trust remains prohibited. Correct client-IP derivation depends on trusting only the known ingress/web-adapter hops.
+The Fastify deployment must keep its existing explicit `TRUSTED_PROXY` configuration. It should trust only the private web-adapter address/CIDR that actually connects to the API. Wildcard trust remains prohibited.
+
+The two trust layers have separate jobs:
+
+- `WEB_TRUSTED_PROXY` tells the public web adapter which upstream ingress peers may supply a client-address chain
+- API `TRUSTED_PROXY` tells Fastify which web-adapter peer may supply the already-sanitized `X-Forwarded-For`
+
+Neither layer should use wildcard or hop-count-only trust.
 
 ## Browser security headers
 
@@ -124,6 +142,7 @@ Focused SEC1 commands:
 ```text
 npm run test:sec1:headers
 npm run test:sec1:browser:e2e
+npm run sec1:passwords:check
 npm run sec1:production:scan
 ```
 
