@@ -89,6 +89,9 @@ UX8 Encrypted UX Integration
 SEC1 Pre-V1 Security Hardening
             |
             v
+Pre-V1 Follow-up Hardening
+            |
+            v
 V1 Hosted CI Verification
             |
             v
@@ -277,20 +280,23 @@ V1 is defined separately, but its hosted run is downstream of SEC1. If GitHub Ac
 
 # V1: Hosted CI Verification
 
-Status: NEXT, BLOCKED BY ACTIONS CAPACITY
+Status: NEXT, BLOCKED BY FOLLOW-UP HARDENING AND ACTIONS CAPACITY
 
 ## Purpose
 
-Verify the already-configured baseline CI workflow on GitHub-hosted infrastructure after SEC1 is DONE and once Actions capacity is available again.
+Verify the release candidate on GitHub-hosted infrastructure after SEC1 is DONE, the 2026-09-29 follow-up source defects are fixed with focused regression evidence, hosted security coverage is expanded, and Actions capacity is available again.
 
 V1 is intentionally separate from F1 and was not a prerequisite for completed feature development. It is now a pre-R2 verification gate downstream of SEC1. It must be completed before R2 Public Readiness can be marked DONE.
 
 ## Current blocker
 
-SEC1 is DONE. GitHub reports zero workflow runs on `main`, so V1 remains completely unexecuted on hosted infrastructure. The current blocker is GitHub Actions capacity through the remainder of September 2026.
+SEC1 is DONE. GitHub reports zero workflow runs on `main`, so V1 remains completely unexecuted on hosted infrastructure. Before a hosted run can count as release evidence, two follow-up source defects must close: account-wide S1 local-crypto lifecycle deletion, and S1 HTTP request-size/framework-client-error handling. The hosted workflow also needs the previously recorded security-coverage expansion. GitHub Actions capacity remains an execution blocker.
 
 ## Scope
 
+- close the post-SEC1 account-wide local-crypto lifecycle defect and prove current-device revocation plus permanent-account-deletion local secret destruction at the correct lifecycle points
+- close the API transport-boundary defect by setting explicit request ceilings compatible with encoded S1 maxima and mapping known Fastify parser/client errors to stable sanitized 4xx responses
+- add focused regressions for both follow-up source defects before hosted release evidence is collected
 - execute Baseline CI on GitHub-hosted Ubuntu
 - expand hosted coverage so a V1 green result also protects the SEC1/S1 security baseline, not only `npm run health`
 - run or separately gate `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, and `sec1:format:check`
@@ -304,6 +310,10 @@ SEC1 is DONE. GitHub reports zero workflow runs on `main`, so V1 remains complet
 ## Acceptance gates
 
 - [x] SEC1 Pre-V1 Security Hardening is DONE before the V1 release-verification run
+- [ ] current-device revocation and permanent account deletion destroy account-wide local S1 secret state at the correct lifecycle points, while deletion-pending recovery remains recoverable
+- [ ] S1 legal encoded HTTP request sizes are accepted up to the documented contract ceiling and oversized requests fail with an intentional 4xx response
+- [ ] known Fastify parser/client errors are sanitized and preserve an appropriate 4xx status rather than becoming `500 INTERNAL_ERROR`
+- [ ] focused browser/API/integration regressions for the two follow-up defects pass on the final candidate source
 - [ ] the hosted workflow is updated so a passing V1 result cannot omit the SEC1/S1-focused header, proxy, password-corpus, production-scan, lint, and format gates
 - [ ] the hosted release-verification plan explicitly covers the disposable PostgreSQL and real-Chromium security/integration boundary, either in V1 jobs or a separately required release job
 - [ ] at least one GitHub-hosted Baseline CI run completes successfully

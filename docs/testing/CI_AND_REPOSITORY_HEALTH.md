@@ -8,13 +8,16 @@ The repository workspace, TypeScript, linting, formatting, runtime-contract, dep
 
 F1 Repository Foundation and Executable Guardrails is therefore complete.
 
-GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`; final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, where focused security, PostgreSQL, Chromium, production scan, full health, audit, and Git hygiene passed. V1 remains required before R2 Public Readiness can be marked DONE. A follow-up audit found that the hosted workflow must first expand its security coverage; Actions capacity is still required for the actual hosted execution.
+GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`; final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, where focused security, PostgreSQL, Chromium, production scan, full health, audit, and Git hygiene passed. V1 remains required before R2 Public Readiness can be marked DONE. A later 2026-09-29 audit found two source defects that must be fixed before V1 release evidence is collected, in addition to the hosted security-coverage expansion. Actions capacity is still required for the actual hosted execution.
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
 ## Repository audit concerns
 
-A repository-wide audit on 2026-09-29 found no new source-code or SEC1 security blocker, but it identified release-governance work that must remain visible:
+Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass did find two concrete source defects that must be repaired before V1, alongside the existing release-governance work:
+
+- Account-wide S1 local crypto data is not currently part of the browser account purge. `purgeCryptoAccountData(accountId)` exists but has no production caller. Current-device revocation and permanent account deletion therefore revoke server authority correctly while leaving account-scoped device/recovery/group/key material in IndexedDB. The final fix must preserve the seven-day recoverable deletion-pending window, purge on permanent deletion or observed current-device revocation, and cover offline observation safely.
+- Fastify is instantiated without an explicit `bodyLimit`, so its 1 MiB default applies. Several S1 contracts permit up to 1 MiB of binary material before base64url and JSON expansion, and some request shapes can contain multiple large fields, so a legal contract payload can exceed the parser ceiling before boundary validation. The custom error handler also does not currently preserve known Fastify 4xx parser/client errors, allowing them to become `500 INTERNAL_ERROR`. V1 must not be run as final release evidence until route-appropriate limits and sanitized 4xx mapping are implemented and tested.
 
 - GitHub reports `main` as unprotected, with required status checks disabled and no repository rulesets. R2 must establish protection that prevents force pushes and branch deletion and, after V1 establishes the hosted check, requires the appropriate CI status for release-relevant changes. The protection design must preserve the repository's verified fast-forward milestone history rather than silently changing merge semantics.
 - GitHub Actions reports zero workflow runs on `main`. This is consistent with the deliberate `[skip ci]` period, but it means V1 Hosted CI Verification is still completely unexecuted on hosted infrastructure.
@@ -23,7 +26,7 @@ A repository-wide audit on 2026-09-29 found no new source-code or SEC1 security 
 - `design/m3-media-voice` is a divergent historical design branch and contains `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`, which is not present on current `main` and does not describe the final production architecture. It must not be merged as current architecture. R2 should record an explicit archive, deletion, or non-authoritative disposition.
 - `infra/cloudflare`, `infra/docker`, `infra/local`, and `scripts/release` remain placeholder-only surfaces. Production provider configuration, deployment, release, rollback, backup/recovery, and operational evidence remain R2 work.
 
-These concerns do not reopen SEC1. Current `main` has no source-code changes after SEC1 final executable `91ca920d`; subsequent changes through this audit are documentation-only.
+These findings do not reopen the historical SEC1 or S1 completion records. Current `main` still has no source-code implementation of the two newest fixes; this documentation update records the defects before code changes begin. Focused regression evidence on the eventual candidate source is required before V1.
 
 ## Baseline workflow
 

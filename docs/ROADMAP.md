@@ -27,7 +27,7 @@ Completed milestones:
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
-| V1 Hosted CI Verification | NEXT, BLOCKED | SEC1 is DONE; waiting for GitHub Actions capacity |
+| V1 Hosted CI Verification | NEXT, BLOCKED | two follow-up source repairs and hosted security-coverage expansion must close first; Actions capacity is also required |
 
 P3 closure evidence remains:
 
@@ -76,7 +76,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
 | 20 SEC1 Pre-V1 Security Hardening | DONE and merged to `main @ a2badf7`; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
-| V1 Hosted CI Verification | NEXT; workflow security coverage must be expanded, then hosted run awaits Actions capacity | SEC1 DONE | No |
+| V1 Hosted CI Verification | NEXT; first close follow-up local-crypto and HTTP-boundary defects, then expand hosted security coverage and run when Actions capacity is available | SEC1 DONE plus follow-up hardening | No by default; focused device check only if implementation proves Android-specific |
 | 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
@@ -84,7 +84,10 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 ## Current repository attention items
 
-The 2026-09-29 repository audit adds no new feature milestone, but it makes the following V1/R2 obligations explicit:
+The 2026-09-29 repository audits add no new product feature milestone, but the newest pass adds two mandatory source repairs before V1 and retains the following V1/R2 obligations:
+
+- pre-V1 follow-up hardening must wire `purgeCryptoAccountData(accountId)` into the correct account/device lifecycle boundaries. Current-device revocation must remove account-wide local S1 secret state after authority is revoked. Account-deletion request must retain recoverability during the seven-day recovery window, while permanent deletion must destroy local recovery/device/group/key state on clients that observe the final state, including an offline-safe durable observation strategy.
+- pre-V1 follow-up hardening must align Fastify HTTP request ceilings with the encoded S1 contract. The current global default parser limit is smaller than some legal base64url/JSON S1 request shapes. Known Fastify parser/client errors must map to stable sanitized 4xx responses instead of falling through to `500 INTERNAL_ERROR`.
 
 - before V1 can count as release evidence, hosted CI must cover the SEC1/S1-focused security gates that are currently outside `npm run health`, including header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format coverage.
 - R2 must replace the fixed service-worker cache lifecycle with release-version rotation or explicit stale-asset pruning and verify update/offline-shell correctness.
@@ -98,7 +101,7 @@ The 2026-09-29 repository audit adds no new feature milestone, but it makes the 
 - `design/m3-media-voice` is obsolete divergent design history with a stranded non-authoritative ADR-012. It must be archived, deleted, or clearly retained as historical-only before R2 closes.
 - production provider configuration and deployment, release, rollback, backup/recovery, and operational automation remain R2 work.
 
-These items do not reopen SEC1 and do not require a new Redmi run.
+The two new source defects do not reopen SEC1 or S1 historical closure, but they must be fixed before V1. Focused regression evidence is mandatory. A full Redmi rerun is not required by default; add a focused physical check only if the final client-lifecycle implementation cannot be adequately proved in desktop Chromium.
 
 ## Immediate execution sequence
 
@@ -133,8 +136,12 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       final local closure PASS @ 91ca920d
             |
             v
+      Pre-V1 follow-up hardening
+      local S1 purge + HTTP boundary fixes
+            |
+            v
       V1 Hosted CI Verification
-      run when Actions capacity is available
+      run after follow-up fixes and when Actions capacity is available
             |
             v
       R2 Public Readiness
@@ -164,7 +171,8 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Redmi Note 9S 25/25 acceptance is closed, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is DONE and merged to `main` at `a029169`.
 - **SEC1 Pre-V1 Security Hardening:** DONE and merged to `main @ a2badf7`; final executable `91ca920d`; complete local evidence is recorded.
-- **V1 Hosted CI Verification:** next milestone; execute the already-configured GitHub-hosted baseline when Actions capacity is available.
+- **Pre-V1 follow-up hardening:** implement the two 2026-09-29 source repairs for account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-error handling, with focused regression evidence.
+- **V1 Hosted CI Verification:** execute only after those source repairs are closed and hosted security coverage is expanded; then run when Actions capacity is available.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure after SEC1 and V1.
 
 UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. UX8 and later work must preserve the accepted UX and S1 authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
