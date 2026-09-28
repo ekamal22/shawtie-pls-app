@@ -125,7 +125,7 @@ Required remediation:
 - determine and commit the repository-controlled production serving adapter/configuration for the PWA
 - do not treat Vite dev/preview headers as production evidence
 - enforce CSP with script-src 'self' 'wasm-unsafe-eval' so OpenMLS WebAssembly remains usable without general JavaScript unsafe-eval
-- remove the three currently known React inline-style sites so production style-src can remain 'self' without unsafe-inline
+- remove every production inline-style writer found by the SEC1 source sweep so production style-src can remain 'self' without unsafe-inline
 - explicitly allow the public WSS origin and approved media-storage origins in connect-src
 - enforce HSTS with an initial max-age of 31536000 and do not add includeSubDomains/preload until domain scope is separately reviewed
 - retain restrictive Permissions-Policy and add executable checks for CSP, HSTS, nosniff, referrer policy, and clickjacking protection
