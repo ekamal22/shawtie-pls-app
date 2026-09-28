@@ -1,9 +1,10 @@
+import { createHash } from "node:crypto";
 import {
   normalizePassword,
   validatePasswordPolicy,
   type AccountRuleDenialCode,
 } from "@shawtie/domain";
-import { COMMON_PASSWORDS } from "./common-passwords.generated.ts";
+import { COMMON_PASSWORD_DIGESTS } from "./common-passwords.generated.ts";
 export type PasswordAdmissionDecision =
   | { readonly allowed: true; readonly normalizedPassword: string }
   | { readonly allowed: false; readonly reason: AccountRuleDenialCode };
