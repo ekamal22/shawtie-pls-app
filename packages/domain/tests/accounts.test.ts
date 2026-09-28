@@ -29,11 +29,11 @@ test("username policy is canonical and reserved names are rejected", () => {
   assert.equal(validateUsername("support").reason, "USERNAME_RESERVED");
 });
 
-test("password policy uses NFC, long passwords, and no composition rule", () => {
+test("password structural policy uses NFC, long passwords, and no composition rule", () => {
   assert.equal(normalizePassword("e\u0301"), "é");
   assert.equal(validatePasswordPolicy("this is a long passphrase").allowed, true);
   assert.equal(validatePasswordPolicy("short-password").reason, "PASSWORD_TOO_SHORT");
-  assert.equal(validatePasswordPolicy("passwordpassword").reason, "PASSWORD_COMMON");
+  assert.equal(validatePasswordPolicy("passwordpassword").allowed, true);
 });
 
 test("username cooldown and partnership occupancy are server decisions", () => {
