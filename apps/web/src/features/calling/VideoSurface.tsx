@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Icon } from "../../design/icons.tsx";
 import type { CameraState } from "./camera-controller.ts";
@@ -114,7 +114,6 @@ export function VideoSurface({
   const remoteRef = useRef<HTMLVideoElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const tileRef = useRef<HTMLButtonElement | null>(null);
-  const previousRect = useRef<DOMRect | null>(null);
   const drag = useRef<{
     pointerId: number;
     startX: number;
@@ -125,7 +124,7 @@ export function VideoSurface({
   const [remoteElement, setRemoteElement] = useState<HTMLVideoElement | null>(null);
   const [remoteBlocked, setRemoteBlocked] = useState(false);
   const [corner, setCorner] = useState<PreviewCorner>("bottom-right");
-  const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
   const remoteStalled = useRemoteFrameStall(remoteElement, remoteStream !== null);
 
   useEffect(() => {
@@ -142,31 +141,7 @@ export function VideoSurface({
     };
   }, [remoteStream]);
 
-  // Glide the preview tile from where it was to its new corner.
-  useLayoutEffect(() => {
-    const element = tileRef.current;
-    const before = previousRect.current;
-    previousRect.current = null;
-    if (!element || !before) return undefined;
-    const after = element.getBoundingClientRect();
-    const dx = before.left - after.left;
-    const dy = before.top - after.top;
-    if (!dx && !dy) return undefined;
-    element.style.transition = "none";
-    element.style.transform = "translate(" + dx + "px, " + dy + "px)";
-    const frame = requestAnimationFrame(() => {
-      element.style.transition = "";
-      element.style.transform = "";
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [corner]);
-
-  function snapshot(): void {
-    previousRect.current = tileRef.current?.getBoundingClientRect() ?? null;
-  }
-
   function cycleCorner(): void {
-    snapshot();
     setCorner((current) => {
       const index = PREVIEW_CORNERS.indexOf(current);
       return PREVIEW_CORNERS[(index + 1) % PREVIEW_CORNERS.length] as PreviewCorner;
@@ -190,7 +165,7 @@ export function VideoSurface({
     const dy = event.clientY - state.startY;
     if (!state.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
     state.moved = true;
-    setOffset({ x: dx, y: dy });
+    setDragging(true);
   }
 
   function onPointerEnd(event: ReactPointerEvent<HTMLButtonElement>): void {
@@ -202,16 +177,14 @@ export function VideoSurface({
       suppressClick.current = false;
     }, 0);
     const stage = stageRef.current?.getBoundingClientRect();
-    const tile = tileRef.current?.getBoundingClientRect();
-    snapshot();
-    if (stage && tile) {
-      const centerX = tile.left + tile.width / 2 - stage.left;
-      const centerY = tile.top + tile.height / 2 - stage.top;
-      const horizontal = centerX < stage.width / 2 ? "left" : "right";
-      const vertical = centerY < stage.height / 2 ? "top" : "bottom";
+    if (stage) {
+      const releaseX = event.clientX - stage.left;
+      const releaseY = event.clientY - stage.top;
+      const horizontal = releaseX < stage.width / 2 ? "left" : "right";
+      const vertical = releaseY < stage.height / 2 ? "top" : "bottom";
       setCorner((vertical + "-" + horizontal) as PreviewCorner);
     }
-    setOffset(null);
+    setDragging(false);
   }
 
   const waitingText = partnerName
@@ -227,8 +200,7 @@ export function VideoSurface({
               remoteRef.current = element;
               setRemoteElement(element);
             }}
-            className="remote-video"
-            style={remoteStalled ? { visibility: "hidden" } : undefined}
+            className={"remote-video" + (remoteStalled ? " is-stalled" : "")}
             autoPlay
             playsInline
             muted
@@ -261,12 +233,9 @@ export function VideoSurface({
       <button
         type="button"
         ref={tileRef}
-        className={"local-video-shell call-preview" + (offset ? " is-dragging" : "")}
+        className={"local-video-shell call-preview" + (dragging ? " is-dragging" : "")}
         data-corner={corner}
         aria-label="Your camera preview. Press to move it to another corner."
-        style={
-          offset ? { transform: "translate(" + offset.x + "px, " + offset.y + "px)" } : undefined
-        }
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}
