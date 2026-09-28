@@ -28,7 +28,7 @@ export default defineConfig({
     },
     {
       command:
-        "npm run build --workspace @shawtie/crypto && npm run build:s1-wasm && npm run build --workspace @shawtie/web && node scripts/test/sec1-web-server.mjs",
+        "npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/crypto && npm run build:s1-wasm && npm run build --workspace @shawtie/web && node scripts/test/sec1-web-server.mjs",
       url: "http://127.0.0.1:4180/health",
       reuseExistingServer: false,
       timeout: 180_000,
