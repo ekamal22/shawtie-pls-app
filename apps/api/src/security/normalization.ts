@@ -42,11 +42,9 @@ function expandIpv6(value: string): string[] {
   if (missing < 0 || (pieces.length === 1 && missing !== 0)) {
     throw new Error("Invalid IPv6 address");
   }
-  return [
-    ...left,
-    ...Array.from({ length: missing }, () => "0"),
-    ...right,
-  ].map((part) => Number.parseInt(part, 16).toString(16));
+  return [...left, ...Array.from({ length: missing }, () => "0"), ...right].map((part) =>
+    Number.parseInt(part, 16).toString(16),
+  );
 }
 
 export function networkPrefix(ip: string): string {

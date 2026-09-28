@@ -220,13 +220,7 @@ export function PairMark({
 
 export type AvatarSize = 40 | 44 | 72 | 144;
 
-export function Avatar({
-  name,
-  size = 40,
-}: {
-  readonly name: string;
-  readonly size?: AvatarSize;
-}) {
+export function Avatar({ name, size = 40 }: { readonly name: string; readonly size?: AvatarSize }) {
   const initial = Array.from(name.trim())[0]?.toUpperCase() ?? "?";
   return (
     <span className={cx("ds-avatar", "ds-avatar--" + size)} aria-hidden="true">

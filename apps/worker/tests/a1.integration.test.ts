@@ -178,11 +178,15 @@ test("SEC1 auth maintenance deletes only expired incomplete registration intents
       id: string;
       password_hash: string | null;
       completed_at: Date | null;
-    }>(
-      "SELECT id, password_hash, completed_at FROM registration_intents ORDER BY id",
+    }>("SELECT id, password_hash, completed_at FROM registration_intents ORDER BY id");
+    assert.equal(
+      intents.rows.some((row) => row.id === expiredId),
+      false,
     );
-    assert.equal(intents.rows.some((row) => row.id === expiredId), false);
-    assert.equal(intents.rows.find((row) => row.id === futureId)?.password_hash, "$argon2id$test-future");
+    assert.equal(
+      intents.rows.find((row) => row.id === futureId)?.password_hash,
+      "$argon2id$test-future",
+    );
     assert.equal(intents.rows.find((row) => row.id === completedId)?.password_hash, null);
     assert.ok(intents.rows.find((row) => row.id === completedId)?.completed_at);
 

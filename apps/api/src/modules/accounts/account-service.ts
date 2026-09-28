@@ -743,22 +743,10 @@ export class AccountService {
       if (!generation) return false;
 
       for (const entry of accountRateLimitHashes) {
-        await resetRateLimitBucket(
-          transaction,
-          "reauth_account",
-          entry.version,
-          entry.value,
-          now,
-        );
+        await resetRateLimitBucket(transaction, "reauth_account", entry.version, entry.value, now);
       }
       for (const entry of sessionRateLimitHashes) {
-        await resetRateLimitBucket(
-          transaction,
-          "reauth_session",
-          entry.version,
-          entry.value,
-          now,
-        );
+        await resetRateLimitBucket(transaction, "reauth_session", entry.version, entry.value, now);
       }
 
       await appendSecurityEvent(transaction, {

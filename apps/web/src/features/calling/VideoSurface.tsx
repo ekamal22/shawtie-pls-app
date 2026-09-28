@@ -157,10 +157,7 @@ export function VideoSurface({
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const animation = element.animate(
-      [
-        { transform: "translate(" + dx + "px, " + dy + "px)" },
-        { transform: "translate(0, 0)" },
-      ],
+      [{ transform: "translate(" + dx + "px, " + dy + "px)" }, { transform: "translate(0, 0)" }],
       {
         duration: reduced ? 1 : 220,
         easing: "cubic-bezier(0.2, 0, 0, 1)",
@@ -202,10 +199,10 @@ export function VideoSurface({
 
     const transform = "translate(" + dx + "px, " + dy + "px)";
     dragAnimation.current?.cancel();
-    dragAnimation.current = event.currentTarget.animate(
-      [{ transform }, { transform }],
-      { duration: 1, fill: "forwards" },
-    );
+    dragAnimation.current = event.currentTarget.animate([{ transform }, { transform }], {
+      duration: 1,
+      fill: "forwards",
+    });
   }
 
   function onPointerEnd(event: ReactPointerEvent<HTMLButtonElement>): void {

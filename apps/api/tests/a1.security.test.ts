@@ -15,7 +15,6 @@ function key(byte: number): Buffer {
   return Buffer.alloc(32, byte);
 }
 
-
 test("SEC1 password admission uses the pinned server-only common-password corpus", async () => {
   const admission = new PasswordAdmissionService({
     async hash(password) {
@@ -87,12 +86,8 @@ test("production config rejects insecure origin and unsafe proxy shortcuts", () 
     AUTH_HMAC_ACTIVE_VERSION: "1",
   };
   assert.throws(() => apiConfigFromEnv({ ...base, APP_ORIGIN: "http://example.com" }));
-  assert.throws(() =>
-    apiConfigFromEnv({ ...base, APP_ORIGIN: "https://example.com/path" }),
-  );
-  assert.throws(() =>
-    apiConfigFromEnv({ ...base, APP_ORIGIN: "https://user:secret@example.com" }),
-  );
+  assert.throws(() => apiConfigFromEnv({ ...base, APP_ORIGIN: "https://example.com/path" }));
+  assert.throws(() => apiConfigFromEnv({ ...base, APP_ORIGIN: "https://user:secret@example.com" }));
   assert.throws(() =>
     apiConfigFromEnv({ ...base, APP_ORIGIN: "https://example.com", TRUSTED_PROXY: "*" }),
   );
@@ -153,10 +148,7 @@ test("normalization avoids provider-specific rewriting and network keys are cano
   assert.equal(networkPrefix("192.168.10.44"), "192.168.10.0/24");
   assert.equal(networkPrefix("::ffff:192.168.10.44"), "192.168.10.0/24");
   assert.equal(networkPrefix("2001:db8::1234"), "2001:db8:0:0::/64");
-  assert.equal(
-    networkPrefix("2001:0db8:0000:0000:abcd:0000:0000:0001"),
-    "2001:db8:0:0::/64",
-  );
+  assert.equal(networkPrefix("2001:0db8:0000:0000:abcd:0000:0000:0001"), "2001:db8:0:0::/64");
   assert.throws(() => networkPrefix("not-an-ip"), /Invalid network address/);
 });
 

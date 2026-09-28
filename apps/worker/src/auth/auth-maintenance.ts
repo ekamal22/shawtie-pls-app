@@ -14,11 +14,7 @@ export async function runAuthMaintenanceBatch(
 ): Promise<number> {
   return withTransaction(database, async (transaction) => {
     const now = await getTransactionTimestamp(transaction);
-    const deleted = await deleteExpiredIncompleteRegistrationIntents(
-      transaction,
-      now,
-      batchSize,
-    );
+    const deleted = await deleteExpiredIncompleteRegistrationIntents(transaction, now, batchSize);
     return deleted.length;
   });
 }
