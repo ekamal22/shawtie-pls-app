@@ -107,7 +107,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
   app.post("/api/v1/auth/reauthenticate", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
     const input = parseAtBoundary(reauthenticateSchema, request.body);
-    const result = await service.reauthenticate(auth, input.password);
+    const result = await service.reauthenticate(auth, input.password, network(request));
     setSessionCookie(reply, config, result.sessionToken);
     return { ok: true };
   });
