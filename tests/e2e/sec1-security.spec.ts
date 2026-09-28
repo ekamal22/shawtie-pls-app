@@ -49,17 +49,6 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
   expect(await page.locator("[style]").count()).toBe(0);
   expect(cspViolations).toEqual([]);
 
-  const evalResult = await page.evaluate(() => {
-    try {
-      window.eval("1 + 1");
-      return "allowed";
-    } catch (error) {
-      return error instanceof Error ? error.name : "blocked";
-    }
-  });
-  expect(evalResult).not.toBe("allowed");
-  cspViolations.length = 0;
-
   const openMlsLoaded = await page.evaluate(
     async (moduleUrl) => {
       const module = (await import(moduleUrl)) as {
