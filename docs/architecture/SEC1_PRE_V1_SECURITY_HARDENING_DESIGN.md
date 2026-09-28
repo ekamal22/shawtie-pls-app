@@ -49,13 +49,13 @@ These are implementation choices inside the frozen SEC1 boundaries, not new arch
 
 The post-UX8 audit confirmed that password storage itself is sound: passwords are hashed with Argon2id rather than stored in plaintext or reversibly encrypted.
 
-The audit identified five hardening gaps:
+At the design baseline, the audit identified five hardening gaps:
 
-1. password-recovery completion bypasses the canonical password-admission policy
-2. password reauthentication has no explicit durable abuse throttle
-3. the common-password denylist contains only ten entries
-4. expired abandoned registration intents can retain Argon2id password hashes indefinitely
-5. the production PWA serving path has no repository-backed CSP/HSTS contract or evidence
+1. password-recovery completion bypassed the canonical password-admission policy
+2. password reauthentication had no explicit durable abuse throttle
+3. the common-password denylist contained only ten entries
+4. expired abandoned registration intents could retain Argon2id password hashes indefinitely
+5. the production PWA serving path had no repository-backed CSP/HSTS contract or evidence
 
 SEC1 closes these gaps without reopening unrelated product or cryptographic milestones.
 
@@ -466,11 +466,11 @@ Do not reserve migration 0022 merely to satisfy a milestone convention.
 
 ### Serving-layer authority
 
-The commercial repository currently does not contain a production static-serving adapter or deployment configuration.
+At the design baseline, the commercial repository did not contain a production static-serving adapter or deployment configuration.
 
 SEC1 must not treat Vite dev/preview headers as production evidence.
 
-The exact hosting provider remains unfrozen architecture. SEC1-D must choose or add a repository-controlled production serving adapter/configuration before closure, then test the same configuration used by deployment.
+The hosting provider remains unfrozen architecture. The implemented SEC1-D serving authority is now `apps/web/server.mjs` plus `apps/web/server-security.mjs`: it serves the production bundle, proxies same-origin API and WebSocket traffic, and owns the repository-level browser security headers. Deployment-layer HTTPS behavior must still be re-proved at the actual public origin during R2 if no live commercial origin exists during SEC1 closure.
 
 If there is no live public commercial environment yet, SEC1 may close the code/config portion against an enforced production-mode serving harness. R2 must still re-prove the headers against the actual public HTTPS origin before stable release.
 
@@ -497,12 +497,9 @@ script-src 'unsafe-eval'
 
 ### Inline-style removal
 
-The current code audit found three React inline-style sites:
+The initial code audit found three React inline-style sites in `AppShell.tsx` and `primitives.tsx`. Implementation-wide CSP review then found additional direct style writers in video calling, Talk, and View Transition presentation code.
 
-- `apps/web/src/app/shell/AppShell.tsx`
-- two sites in `apps/web/src/design/primitives.tsx`
-
-SEC1-D should remove those three inline style attributes or replace them with CSS classes/explicit bounded variants.
+SEC1-D removes every production inline-style writer found by that sweep and replaces the behavior with CSS classes, bounded variants, or data attributes.
 
 That allows:
 
@@ -512,7 +509,7 @@ style-src 'self'
 
 without `'unsafe-inline'`.
 
-Do not weaken the CSP merely to preserve three convenience style attributes.
+Do not weaken the CSP merely to preserve presentation-time convenience style writes.
 
 ### Required CSP baseline
 
