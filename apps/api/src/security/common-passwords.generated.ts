@@ -4,7 +4,7 @@
 // Source repository commit: 2e3e92569043d24297ca6c35070078e5cf41651e
 // Source Git blob SHA: 38eb37702244f55fda75cab281eb2145cd7685b6
 // Source entry count: 99839
-// Effective entries after Shawtie structural password bounds: 329
+// Effective entries after Shawtie structural password bounds: 327
 //
 // SecLists is distributed under the MIT License:
 //
