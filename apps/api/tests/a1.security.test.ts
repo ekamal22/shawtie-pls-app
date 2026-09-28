@@ -119,12 +119,19 @@ test("production session cookie uses __Host prefix and secure attributes", async
   await app.close();
 });
 
-test("normalization avoids provider-specific rewriting and network key uses prefixes", () => {
+test("normalization avoids provider-specific rewriting and network keys are canonical prefixes", () => {
   assert.deepEqual(normalizeEmail("User.Name+tag@EXAMPLE.com"), {
     display: "User.Name+tag@EXAMPLE.com",
     normalized: "user.name+tag@example.com",
   });
   assert.equal(networkPrefix("192.168.10.44"), "192.168.10.0/24");
+  assert.equal(networkPrefix("::ffff:192.168.10.44"), "192.168.10.0/24");
+  assert.equal(networkPrefix("2001:db8::1234"), "2001:db8:0:0::/64");
+  assert.equal(
+    networkPrefix("2001:0db8:0000:0000:abcd:0000:0000:0001"),
+    "2001:db8:0:0::/64",
+  );
+  assert.throws(() => networkPrefix("not-an-ip"), /Invalid network address/);
 });
 
 test("local development session cookie uses a separate insecure loopback name", async () => {
