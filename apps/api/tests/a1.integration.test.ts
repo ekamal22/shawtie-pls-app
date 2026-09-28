@@ -427,6 +427,36 @@ test("password recovery revokes sessions and accepts only the new password", asy
   }
 });
 
+test("SEC1 registration rejects a common long password before credential persistence", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/registration/start",
+      headers,
+      payload: {
+        username: "commonpass",
+        displayName: "Common Password",
+        dateOfBirth: "2000-01-01",
+        email: "commonpass@example.test",
+        password: "123456789987654321",
+      },
+    });
+    assert.equal(response.statusCode, 400, response.body);
+    assert.equal(response.json().error.code, "PASSWORD_COMMON");
+
+    const intents = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM registration_intents",
+    );
+    assert.equal(intents.rows[0]?.count, "0");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("SEC1 password recovery enforces the same new-credential admission policy", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
