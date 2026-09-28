@@ -5,6 +5,7 @@ import {
   type AccountRuleDenialCode,
 } from "@shawtie/domain";
 import { COMMON_PASSWORD_DIGESTS } from "./common-passwords.generated.ts";
+
 export type PasswordAdmissionDecision =
   | { readonly allowed: true; readonly normalizedPassword: string }
   | { readonly allowed: false; readonly reason: AccountRuleDenialCode };
