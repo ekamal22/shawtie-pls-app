@@ -14,7 +14,16 @@ function normalizeAddress(value) {
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address);
   if (mapped && isIP(mapped[1]) === 4) return mapped[1];
 
-  return isIP(address) ? address : null;
+  const family = isIP(address);
+  if (family === 4) return address;
+  if (family !== 6) return null;
+
+  try {
+    const canonical = new URL("http://[" + address + "]/").hostname;
+    return canonical.slice(1, -1);
+  } catch {
+    return null;
+  }
 }
 
 function addressFamily(address) {
