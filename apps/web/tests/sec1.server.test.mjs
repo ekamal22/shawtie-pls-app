@@ -46,5 +46,4 @@ test("SEC1 production server accepts explicit loopback test configuration", () =
   const application = createProductionWebServer(baseEnv());
   assert.equal(application.host, "127.0.0.1");
   assert.equal(application.port, 4180);
-  application.server.close();
 });
