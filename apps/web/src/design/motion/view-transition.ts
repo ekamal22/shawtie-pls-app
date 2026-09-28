@@ -12,7 +12,6 @@ interface ViewTransitionLike {
 }
 type StartViewTransition = (update: () => Promise<void> | void) => ViewTransitionLike;
 
-export const SHARED_ELEMENT_NAME = "ux7-shared";
 const MARK = "data-ux7-vt";
 
 function starter(): StartViewTransition | null {
