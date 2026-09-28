@@ -2,9 +2,9 @@
 
 ## Status
 
-FROZEN FOR IMPLEMENTATION.
+FROZEN DESIGN, IMPLEMENTED ON FEATURE BRANCH.
 
-Implementation has not started.
+Implementation is source-complete on `feat/sec1-pre-v1-security-hardening`; automated closure is still pending, so SEC1 is not yet DONE.
 
 SEC1 is the highest remaining pre-release priority and must close before V1 Hosted CI Verification is intentionally run as release evidence.
 
@@ -27,6 +27,23 @@ SEC1 preserves the frozen architecture:
 SEC1 does not introduce Redis, a new authentication service, an online password-checking provider, a password pepper, or a new cryptographic protocol.
 
 No ADR is required because the design stays inside accepted architecture boundaries. Exact schema details, hosting adapter, and bounded maintenance implementation are not frozen baseline choices as long as the accepted security boundaries remain intact.
+
+## Implemented realization
+
+The implementation resolves the intentionally unfrozen details as follows:
+
+- password admission lives in `apps/api/src/security/password-admission.ts`
+- the pinned source corpus is committed under `security-data/common-passwords/`; `scripts/security/generate-common-passwords.mjs` verifies its Git blob checksum and generates the server-only exact-match set offline
+- the committed source has 99,839 entries; only passwords that can pass Shawtie's structural 15 to 128 code-point and 1024-byte bounds are emitted into runtime membership data
+- registration and password recovery use `PasswordAdmissionService.hashNewCredential()`; recovery performs challenge authorization before the expensive replacement-password Argon2 hash
+- reauthentication reuses `security_rate_limit_buckets` with `reauth_account`, `reauth_session`, and `reauth_network` scopes
+- registration cleanup uses a 60-second worker maintenance loop with batches of 100 and `FOR UPDATE SKIP LOCKED`; the delete returns IDs only and never selects `password_hash`
+- no PostgreSQL migration and no new scheduled-action type were required
+- the production web adapter is `apps/web/server.mjs`, serving `dist`, proxying same-origin HTTP and WebSocket `/api` traffic, enforcing canonical Host, and applying `apps/web/server-security.mjs` headers
+- CSP uses `script-src 'self' 'wasm-unsafe-eval'` and `style-src 'self'`; the implementation sweep removed the initially known React style attributes plus additional video, Talk, and View Transition inline-style writers found during source audit
+- focused verification is centralized in `npm run test:sec1:closure`; the closure remains unexecuted at this documentation checkpoint
+
+These are implementation choices inside the frozen SEC1 boundaries, not new architecture decisions.
 
 ## Problem statement
 
