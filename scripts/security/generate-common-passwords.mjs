@@ -5,7 +5,8 @@ const SOURCE_REPOSITORY = "danielmiessler/SecLists";
 const SOURCE_COMMIT = "2e3e92569043d24297ca6c35070078e5cf41651e";
 const SOURCE_PATH = "Passwords/Common-Credentials/100k-most-used-passwords-NCSC.txt";
 const SOURCE_BLOB_SHA = "38eb37702244f55fda75cab281eb2145cd7685b6";
-const SOURCE_FILE = "security-data/common-passwords/100k-most-used-passwords-NCSC.txt";
+const SOURCE_ENTRY_COUNT = 99_839;
+const EFFECTIVE_ENTRY_COUNT = 327;
 const OUTPUT = "apps/api/src/security/common-passwords.generated.ts";
 
 function gitBlobSha(bytes) {
@@ -34,11 +35,6 @@ function decodeSourceEntry(value) {
   return decoded;
 }
 
-async function loadSource() {
-  const sourceFile = process.env.SEC1_COMMON_PASSWORD_SOURCE_FILE?.trim() || SOURCE_FILE;
-  return readFile(sourceFile);
-}
-
 function generatedSource(rawBytes) {
   const blobSha = gitBlobSha(rawBytes);
   if (blobSha !== SOURCE_BLOB_SHA) {
@@ -54,41 +50,41 @@ function generatedSource(rawBytes) {
     .toString("utf8")
     .split(/\r?\n/)
     .filter(Boolean);
-  const effective = [
+  if (raw.length !== SOURCE_ENTRY_COUNT) {
+    throw new Error(
+      "Pinned common-password source entry count mismatch. expected=" +
+        SOURCE_ENTRY_COUNT +
+        " actual=" +
+        raw.length,
+    );
+  }
+
+  const normalized = [
     ...new Set(
       raw
         .map(decodeSourceEntry)
         .filter((value) => value !== null)
-        .map((value) => value.normalize("NFC"))
+        .map((value) => value.normalize("NFC").toLowerCase())
         .filter(structurallyRelevant),
     ),
   ].sort();
 
-  const license = `// SecLists is distributed under the MIT License:
-//
-// Copyright (c) 2018 Daniel Miessler
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.\n`;
+  const digests = normalized
+    .map((value) => createHash("sha256").update(value, "utf8").digest("hex"))
+    .sort();
+
+  if (digests.length !== EFFECTIVE_ENTRY_COUNT) {
+    throw new Error(
+      "Effective common-password entry count changed. expected=" +
+        EFFECTIVE_ENTRY_COUNT +
+        " actual=" +
+        digests.length,
+    );
+  }
 
   return (
     "// GENERATED FILE. DO NOT EDIT BY HAND.\n" +
-    "// Regenerate: npm run sec1:passwords:generate\n" +
+    "// Regenerate with a local copy of the pinned source: npm run sec1:passwords:generate\n" +
     "// Source: https://github.com/" +
     SOURCE_REPOSITORY +
     "/blob/" +
@@ -103,13 +99,17 @@ function generatedSource(rawBytes) {
     SOURCE_BLOB_SHA +
     "\n" +
     "// Source entry count: " +
-    raw.length +
+    SOURCE_ENTRY_COUNT +
     "\n" +
-    "// Effective entries after Shawtie structural password bounds: " +
-    effective.length +
+    "// Effective entries after Shawtie structural password bounds and case folding: " +
+    EFFECTIVE_ENTRY_COUNT +
     "\n//\n" +
-    license +
-    "\nexport const COMMON_PASSWORD_SOURCE = {\n" +
+    "// The committed runtime corpus contains only SHA-256 membership digests, never the\n" +
+    "// source password strings. SHA-256 is used only as a local exact-set representation;\n" +
+    "// account credentials continue to use Argon2id.\n//\n" +
+    "// SecLists is distributed under the MIT License. Source/license provenance is\n" +
+    "// documented in security-data/common-passwords/README.md.\n\n" +
+    "export const COMMON_PASSWORD_SOURCE = {\n" +
     "  repositoryCommit: " +
     JSON.stringify(SOURCE_COMMIT) +
     ",\n" +
@@ -117,37 +117,58 @@ function generatedSource(rawBytes) {
     JSON.stringify(SOURCE_BLOB_SHA) +
     ",\n" +
     "  sourceEntryCount: " +
-    raw.length +
+    SOURCE_ENTRY_COUNT +
     ",\n" +
     "  effectiveEntryCount: " +
-    effective.length +
+    EFFECTIVE_ENTRY_COUNT +
     ",\n" +
     "} as const;\n\n" +
-    "export const COMMON_PASSWORDS = new Set<string>([\n" +
-    effective.map((value) => "  " + JSON.stringify(value) + ",").join("\n") +
+    "export const COMMON_PASSWORD_DIGESTS = new Set<string>([\n" +
+    digests.map((value) => "  " + JSON.stringify(value) + ",").join("\n") +
     "\n]);\n"
   );
 }
 
-const source = await loadSource();
-const generated = generatedSource(source);
-const checkOnly = process.argv.includes("--check");
-
-if (checkOnly) {
+async function checkCommittedOutput() {
   const current = await readFile(OUTPUT, "utf8");
-  if (current !== generated) {
+  if (current.includes("passwordpassword") || current.includes("123456789987654321")) {
+    throw new Error("Committed common-password corpus contains forbidden plaintext entries");
+  }
+  const digestMatches = current.match(/"([0-9a-f]{64})",/g) ?? [];
+  if (digestMatches.length !== EFFECTIVE_ENTRY_COUNT) {
     throw new Error(
-      "Committed common-password corpus is stale. Run npm run sec1:passwords:generate.",
+      "Committed common-password digest count mismatch. expected=" +
+        EFFECTIVE_ENTRY_COUNT +
+        " actual=" +
+        digestMatches.length,
     );
+  }
+  if (!current.includes('sourceBlobSha: "' + SOURCE_BLOB_SHA + '"')) {
+    throw new Error("Committed common-password source metadata is stale");
   }
   console.log("SEC1_COMMON_PASSWORDS_CHECK_PASS", {
     output: OUTPUT,
     sourceBlobSha: SOURCE_BLOB_SHA,
+    effectiveEntryCount: EFFECTIVE_ENTRY_COUNT,
   });
+}
+
+if (process.argv.includes("--check")) {
+  await checkCommittedOutput();
 } else {
+  const sourceFile = process.env.SEC1_COMMON_PASSWORD_SOURCE_FILE?.trim();
+  if (!sourceFile) {
+    throw new Error(
+      "SEC1_COMMON_PASSWORD_SOURCE_FILE is required for regeneration. " +
+        "Use the pinned SecLists source documented in security-data/common-passwords/README.md.",
+    );
+  }
+  const source = await readFile(sourceFile);
+  const generated = generatedSource(source);
   await writeFile(OUTPUT, generated, "utf8");
   console.log("SEC1_COMMON_PASSWORDS_GENERATED", {
     output: OUTPUT,
     sourceBlobSha: SOURCE_BLOB_SHA,
+    effectiveEntryCount: EFFECTIVE_ENTRY_COUNT,
   });
 }
