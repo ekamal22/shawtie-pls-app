@@ -27,6 +27,22 @@ test("SEC1 trusted proxy chain resolves the first untrusted client", () => {
   );
 });
 
+test("SEC1 trusted proxy canonicalizes equivalent IPv6 spellings", () => {
+  const policy = createTrustedProxyPolicy("2001:db8:1::/64");
+  assert.equal(
+    resolveClientAddress(
+      "2001:0db8:0001:0000:0000:0000:0000:0002",
+      "2001:0db8:0002:0000:0000:0000:0000:0009",
+      policy,
+    ),
+    "2001:db8:2::9",
+  );
+  assert.equal(
+    resolveClientAddress("::ffff:127.0.0.1", "203.0.113.10", createTrustedProxyPolicy("127.0.0.1")),
+    "203.0.113.10",
+  );
+});
+
 test("SEC1 malformed forwarded chain fails closed to the socket address", () => {
   const policy = createTrustedProxyPolicy("10.0.0.0/8");
   assert.equal(
