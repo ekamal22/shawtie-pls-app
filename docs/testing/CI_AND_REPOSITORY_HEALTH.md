@@ -8,7 +8,7 @@ The repository workspace, TypeScript, linting, formatting, runtime-contract, dep
 
 F1 Repository Foundation and Executable Guardrails is therefore complete.
 
-GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. V1 is currently blocked both by Actions capacity and by the open SEC1 Pre-V1 Security Hardening gate. SEC1 is the higher priority and must be DONE before intentionally spending hosted Actions capacity on the V1 release-verification run. V1 remains required before R2 Public Readiness can be marked DONE.
+GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. V1 is currently blocked both by Actions capacity and by the still-open SEC1 Pre-V1 Security Hardening gate. SEC1 source implementation is complete on its feature branch, but its local closure and evidence have not yet executed, so it is not DONE. SEC1 remains the higher priority and must close before intentionally spending hosted Actions capacity on the V1 release-verification run. V1 remains required before R2 Public Readiness can be marked DONE.
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
