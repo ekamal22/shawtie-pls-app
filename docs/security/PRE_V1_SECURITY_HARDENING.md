@@ -26,13 +26,13 @@ Implemented remediation:
 
 - canonical `PasswordAdmissionService` is the only new-credential admission+hash boundary used by registration and password recovery
 - the pure domain password rule now owns structural bounds only; existing credential verification and login rehash remain independent
-- a pinned MIT-licensed SecLists source corpus with 99,839 entries is committed under `security-data/common-passwords/`; generation is offline, checksum-verified, exact NFC/full-password matching, and emits only structurally reachable server-side entries
+- common-password screening is pinned to a 99,839-entry MIT-licensed SecLists source by repository commit, source path, Git blob SHA, and entry count; the plaintext source is intentionally not committed, while the repository contains only 327 sorted SHA-256 membership digests for entries that can pass Shawtie's structural bounds
 - password recovery verifies the authorized recovery challenge before spending the new Argon2 hash
 - reauthentication consumes PostgreSQL-backed account, session, and network budgets before password verification; success resets account/session budgets but not the network compute budget
 - a separate worker auth-maintenance loop deletes expired incomplete registration intents in bounded `FOR UPDATE SKIP LOCKED` batches without selecting `password_hash`; no new migration or scheduled-action type was introduced
-- `apps/web/server.mjs` is the repository-controlled production static/API/WebSocket serving adapter with canonical-host enforcement and CSP/HSTS/browser-header authority
+- `apps/web/server.mjs` is the repository-controlled production static/API/WebSocket serving adapter with canonical-host enforcement and CSP/HSTS/browser-header authority; `apps/web/proxy-security.mjs` adds explicit IP/CIDR proxy trust, client-address chain resolution, forwarded-header replacement, and hop-by-hop header stripping
 - strict `style-src 'self'` is supported by removing every identified production inline-style writer, including additional Talk, video-call, and View Transition sites discovered during implementation
-- the SEC1 test surface now includes focused admission tests, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, production-header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media smoke, an offline corpus reproducibility gate, a production bundle scan, and one final `npm run test:sec1:closure` wrapper
+- the SEC1 test surface now includes focused admission tests, digest-corpus integrity checks, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, proxy-trust/header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media/offline smoke, a production scan, and one final `npm run test:sec1:closure` wrapper
 
 The remaining work is verification only: run the closure from a clean local checkout, fix any discovered defect, commit `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`, then reconcile final PASS counts before marking SEC1 DONE.
 
@@ -85,17 +85,18 @@ Required remediation:
 
 Severity: Low-Medium.
 
-At the audit baseline, the domain policy included only a ten-entry `COMMON_PASSWORDS` set. The feature branch replaces that set with the pinned server-only corpus described above.
+At the audit baseline, the domain policy included only a ten-entry `COMMON_PASSWORDS` set. The feature branch replaces it with server-only exact membership over a pinned 99,839-entry source universe. Only the 327 source entries that can survive Shawtie's structural password bounds are represented at runtime, and they are committed only as SHA-256 membership digests.
 
 Required remediation:
 
 - keep structural password rules pure and separate from credential verification
 - add one server-side password-admission boundary for all newly created/replaced credentials
 - move the common-password corpus to server-only security data so a large corpus cannot accidentally inflate a browser bundle
-- use a committed, reproducible, offline corpus with source/license/checksum provenance and at least 10,000 entries, preferring 50,000 to 100,000 if repository health remains reasonable
+- pin a materially larger offline source universe with source/license/checksum provenance, commit no plaintext source passwords, and commit only deterministic exact-membership digests for structurally reachable entries
 - avoid any runtime external password-checking provider
 - preserve the product's no-composition-rule approach
 - add deterministic tests for rejected common passwords and accepted strong passphrases
+- verify the committed digest set is sorted, unique, exact-shape, and free of plaintext password sentinels
 
 ## Finding 4: expired registration-intent password-hash cleanup
 
@@ -127,6 +128,7 @@ Required remediation:
 - enforce CSP with script-src 'self' 'wasm-unsafe-eval' so OpenMLS WebAssembly remains usable without general JavaScript unsafe-eval
 - remove every production inline-style writer found by the SEC1 source sweep so production style-src can remain 'self' without unsafe-inline
 - explicitly allow the public WSS origin and approved media-storage origins in connect-src
+- accept forwarded client-address chains only from explicit `WEB_TRUSTED_PROXY` IP/CIDR peers, replace spoofable forwarding metadata before Fastify, and strip fixed plus Connection-nominated hop-by-hop headers
 - enforce HSTS with an initial max-age of 31536000 and do not add includeSubDomains/preload until domain scope is separately reviewed
 - retain restrictive Permissions-Policy and add executable checks for CSP, HSTS, nosniff, referrer policy, and clickjacking protection
 - if no live public commercial environment exists yet, prove the enforced production-mode serving configuration in real Chromium during SEC1 and re-prove the actual public HTTPS origin during R2
