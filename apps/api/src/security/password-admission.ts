@@ -4,8 +4,6 @@ import {
   type AccountRuleDenialCode,
 } from "@shawtie/domain";
 import { COMMON_PASSWORDS } from "./common-passwords.generated.ts";
-import type { PasswordHasher } from "./password-hasher.ts";
-
 export type PasswordAdmissionDecision =
   | { readonly allowed: true; readonly normalizedPassword: string }
   | { readonly allowed: false; readonly reason: AccountRuleDenialCode };
@@ -14,10 +12,14 @@ export type PasswordHashDecision =
   | { readonly allowed: true; readonly passwordHash: string }
   | { readonly allowed: false; readonly reason: AccountRuleDenialCode };
 
-export class PasswordAdmissionService {
-  readonly #passwords: PasswordHasher;
+export interface PasswordHashing {
+  hash(password: string): Promise<string>;
+}
 
-  constructor(passwords: PasswordHasher) {
+export class PasswordAdmissionService {
+  readonly #passwords: PasswordHashing;
+
+  constructor(passwords: PasswordHashing) {
     this.#passwords = passwords;
   }
 
