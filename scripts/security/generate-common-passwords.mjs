@@ -7,6 +7,7 @@ const SOURCE_PATH = "Passwords/Common-Credentials/100k-most-used-passwords-NCSC.
 const SOURCE_BLOB_SHA = "38eb37702244f55fda75cab281eb2145cd7685b6";
 const SOURCE_ENTRY_COUNT = 99_839;
 const EFFECTIVE_ENTRY_COUNT = 327;
+const EFFECTIVE_DIGEST_SET_SHA256 = "2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca";
 const OUTPUT = "apps/api/src/security/common-passwords.generated.ts";
 
 function gitBlobSha(bytes) {
@@ -81,6 +82,17 @@ function generatedSource(rawBytes) {
         digests.length,
     );
   }
+  const digestSetSha256 = createHash("sha256")
+    .update(digests.join("\n") + "\n", "utf8")
+    .digest("hex");
+  if (digestSetSha256 !== EFFECTIVE_DIGEST_SET_SHA256) {
+    throw new Error(
+      "Effective common-password digest set changed. expected=" +
+        EFFECTIVE_DIGEST_SET_SHA256 +
+        " actual=" +
+        digestSetSha256,
+    );
+  }
 
   return (
     "// GENERATED FILE. DO NOT EDIT BY HAND.\n" +
@@ -103,6 +115,9 @@ function generatedSource(rawBytes) {
     "\n" +
     "// Effective entries after Shawtie structural password bounds and case folding: " +
     EFFECTIVE_ENTRY_COUNT +
+    "\n" +
+    "// Effective digest-set SHA-256: " +
+    EFFECTIVE_DIGEST_SET_SHA256 +
     "\n//\n" +
     "// The committed runtime corpus contains only SHA-256 membership digests, never the\n" +
     "// source password strings. SHA-256 is used only as a local exact-set representation;\n" +
@@ -121,6 +136,9 @@ function generatedSource(rawBytes) {
     ",\n" +
     "  effectiveEntryCount: " +
     EFFECTIVE_ENTRY_COUNT +
+    ",\n" +
+    "  digestSetSha256: " +
+    JSON.stringify(EFFECTIVE_DIGEST_SET_SHA256) +
     ",\n" +
     "} as const;\n\n" +
     "export const COMMON_PASSWORD_DIGESTS = new Set<string>([\n" +
@@ -152,6 +170,17 @@ async function checkCommittedOutput() {
   if (new Set(digests).size !== digests.length) {
     throw new Error("Committed common-password digest set contains duplicates");
   }
+  const digestSetSha256 = createHash("sha256")
+    .update(digests.join("\n") + "\n", "utf8")
+    .digest("hex");
+  if (digestSetSha256 !== EFFECTIVE_DIGEST_SET_SHA256) {
+    throw new Error(
+      "Committed common-password digest checksum mismatch. expected=" +
+        EFFECTIVE_DIGEST_SET_SHA256 +
+        " actual=" +
+        digestSetSha256,
+    );
+  }
   const sorted = [...digests].sort();
   if (digests.some((digest, index) => digest !== sorted[index])) {
     throw new Error("Committed common-password digest set is not sorted deterministically");
@@ -165,6 +194,9 @@ async function checkCommittedOutput() {
   }
   if (!current.includes('sourceBlobSha: "' + SOURCE_BLOB_SHA + '"')) {
     throw new Error("Committed common-password source metadata is stale");
+  }
+  if (!current.includes('digestSetSha256: "' + EFFECTIVE_DIGEST_SET_SHA256 + '"')) {
+    throw new Error("Committed common-password digest-set metadata is stale");
   }
   console.log("SEC1_COMMON_PASSWORDS_CHECK_PASS", {
     output: OUTPUT,
