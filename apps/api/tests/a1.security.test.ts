@@ -8,10 +8,52 @@ import { cookieNames, setSessionCookie } from "../src/security/cookies.ts";
 import { normalizeEmail, networkPrefix } from "../src/security/normalization.ts";
 import { installMutationSecurity } from "../src/plugins/request-security.ts";
 import { installErrorHandler } from "../src/plugins/errors.ts";
+import { PasswordAdmissionService } from "../src/security/password-admission.ts";
+import { COMMON_PASSWORD_SOURCE } from "../src/security/common-passwords.generated.ts";
 
 function key(byte: number): Buffer {
   return Buffer.alloc(32, byte);
 }
+
+
+test("SEC1 password admission uses the pinned server-only common-password corpus", async () => {
+  const admission = new PasswordAdmissionService({
+    async hash(password) {
+      return "hashed:" + password;
+    },
+  });
+
+  assert.equal(COMMON_PASSWORD_SOURCE.sourceEntryCount, 99_839);
+  assert.ok(COMMON_PASSWORD_SOURCE.effectiveEntryCount >= 300);
+
+  const common = admission.validateForNewCredential("123456789987654321");
+  assert.deepEqual(common, { allowed: false, reason: "PASSWORD_COMMON" });
+
+  const strong = admission.validateForNewCredential("three uncommon words orbit safely");
+  assert.equal(strong.allowed, true);
+
+  const hashed = await admission.hashNewCredential("three uncommon words orbit safely");
+  assert.deepEqual(hashed, {
+    allowed: true,
+    passwordHash: "hashed:three uncommon words orbit safely",
+  });
+});
+
+test("SEC1 password admission rejects structural failures before hashing", async () => {
+  let hashCalls = 0;
+  const admission = new PasswordAdmissionService({
+    async hash(password) {
+      hashCalls += 1;
+      return "hashed:" + password;
+    },
+  });
+
+  assert.deepEqual(await admission.hashNewCredential("short-password"), {
+    allowed: false,
+    reason: "PASSWORD_TOO_SHORT",
+  });
+  assert.equal(hashCalls, 0);
+});
 
 test("A1 key ring supports active and older verifier versions", () => {
   const ring = new AuthKeyRing({
