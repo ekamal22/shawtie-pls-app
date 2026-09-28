@@ -126,6 +126,11 @@ function safeDistPath(pathname) {
   return candidate;
 }
 
+function requestUsesCanonicalHost(request, appOrigin) {
+  const host = typeof request.headers.host === "string" ? request.headers.host.trim().toLowerCase() : "";
+  return host === new URL(appOrigin).host.toLowerCase();
+}
+
 function cacheControl(pathname) {
   if (pathname === "/" || pathname.endsWith(".html")) return "no-cache";
   if (pathname === "/sw.js" || pathname === "/manifest.webmanifest") return "no-cache";
@@ -195,6 +200,16 @@ export function createProductionWebServer(env = process.env) {
         "cache-control": "no-store",
       });
       reply.end(JSON.stringify({ status: "ok" }));
+      return;
+    }
+
+    if (!requestUsesCanonicalHost(request, appOrigin)) {
+      reply.writeHead(421, {
+        ...securityHeaders,
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+      });
+      reply.end("Misdirected request");
       return;
     }
 
