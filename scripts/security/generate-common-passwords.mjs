@@ -5,6 +5,7 @@ const SOURCE_REPOSITORY = "danielmiessler/SecLists";
 const SOURCE_COMMIT = "2e3e92569043d24297ca6c35070078e5cf41651e";
 const SOURCE_PATH = "Passwords/Common-Credentials/100k-most-used-passwords-NCSC.txt";
 const SOURCE_BLOB_SHA = "38eb37702244f55fda75cab281eb2145cd7685b6";
+const SOURCE_FILE = "security-data/common-passwords/100k-most-used-passwords-NCSC.txt";
 const OUTPUT = "apps/api/src/security/common-passwords.generated.ts";
 
 function gitBlobSha(bytes) {
@@ -34,19 +35,8 @@ function decodeSourceEntry(value) {
 }
 
 async function loadSource() {
-  const local = process.env.SEC1_COMMON_PASSWORD_SOURCE_FILE?.trim();
-  if (local) return readFile(local);
-
-  const url =
-    "https://raw.githubusercontent.com/" +
-    SOURCE_REPOSITORY +
-    "/" +
-    SOURCE_COMMIT +
-    "/" +
-    SOURCE_PATH;
-  const response = await fetch(url, { redirect: "error" });
-  if (!response.ok) throw new Error("Common-password source returned HTTP " + response.status);
-  return Buffer.from(await response.arrayBuffer());
+  const sourceFile = process.env.SEC1_COMMON_PASSWORD_SOURCE_FILE?.trim() || SOURCE_FILE;
+  return readFile(sourceFile);
 }
 
 function generatedSource(rawBytes) {
@@ -69,7 +59,7 @@ function generatedSource(rawBytes) {
       raw
         .map(decodeSourceEntry)
         .filter((value) => value !== null)
-        .map((value) => value.normalize("NFC").toLowerCase())
+        .map((value) => value.normalize("NFC"))
         .filter(structurallyRelevant),
     ),
   ].sort();
