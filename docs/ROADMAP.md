@@ -27,7 +27,7 @@ Completed milestones:
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
-| V1 Hosted CI Verification | BLOCKED | separate track until GitHub Actions capacity returns |
+| V1 Hosted CI Verification | BLOCKED | must wait for SEC1 closure and GitHub Actions capacity |
 
 P3 closure evidence remains:
 
@@ -49,8 +49,9 @@ Build the private two-person product in dependency order:
 3. realtime and offline reliability
 4. media and calling
 5. reviewed end-to-end encryption and cryptographic recovery
-6. public-readiness verification
-7. stable release
+6. pre-V1 security hardening
+7. hosted CI verification and public-readiness verification
+8. stable release
 
 Do not reopen verified foundation or lifecycle boundaries without concrete regression evidence or an approved architecture change.
 
@@ -74,7 +75,9 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
-| 20 R2 Public Readiness | PLANNED | all pre-release epics plus V1 | Yes, final acceptance |
+| 20 SEC1 Pre-V1 Security Hardening | PLANNED, highest remaining priority | merged UX8 and post-UX8 security audit | No, unless a remediation creates a device-specific regression |
+| V1 Hosted CI Verification | BLOCKED until SEC1 and Actions capacity | SEC1 | No |
+| 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
@@ -108,6 +111,14 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       merged main @ a029169
             |
             v
+      SEC1 Pre-V1 Security Hardening
+      known audit findings -> remediation + regressions
+            |
+            v
+      V1 Hosted CI Verification
+      run only after SEC1 closes and Actions capacity is available
+            |
+            v
       R2 Public Readiness
             |
             v
@@ -117,6 +128,8 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
 C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22 on a Xiaomi Redmi Note 9S at executable `ca7cd35`, and fast-forward merged to `main` at merge anchor `9f0bea4`. S1 is also DONE and merged to `main @ 71569cf`. Its final corrective executable is `cde73a1`, where the full automated closure re-passed after device-run changes and the corrected Redmi matrix closed 30/30.
 
 UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 is DONE on `feat/ux8-encrypted-ux-integration` against the frozen design in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`: automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` and the mandatory 25-scenario Redmi Note 9S acceptance in `docs/testing/UX8_ANDROID_ACCEPTANCE.md` closed 25/25, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. It is fast-forward merged to `main` at `a029169`.
+
+SEC1 Pre-V1 Security Hardening is now the highest remaining priority. Its five known audit items must be remediated and locally re-verified before the first intentional V1 hosted Actions run is used as release evidence. The canonical gate is `docs/security/PRE_V1_SECURITY_HARDENING.md`.
 
 ## UX0 through UX8 product-experience program
 
@@ -132,7 +145,9 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Redmi Note 9S 25/25 acceptance is closed, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is DONE and merged to `main` at `a029169`.
-- **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure.
+- **SEC1 Pre-V1 Security Hardening:** remediate the five post-UX8 audit findings and prove focused regressions plus a clean local security baseline before V1.
+- **V1 Hosted CI Verification:** execute the already-configured GitHub-hosted baseline only after SEC1 is DONE and Actions capacity is available.
+- **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure after SEC1 and V1.
 
 UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. UX8 and later work must preserve the accepted UX and S1 authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
 

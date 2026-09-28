@@ -121,7 +121,8 @@ Current epic status:
 
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
-- V1 Hosted CI Verification: BLOCKED while GitHub Actions capacity is unavailable; this is a separate non-blocking verification track and does not prevent F2 or feature development
+- SEC1 Pre-V1 Security Hardening: PLANNED and highest remaining pre-release priority. The post-UX8 audit confirmed Argon2id password hashing but identified five remediation items: password-recovery policy parity, reauthentication rate limiting, stronger common-password screening, expired registration-intent password-hash cleanup, and verified production CSP/HSTS. Canonical scope: `docs/security/PRE_V1_SECURITY_HARDENING.md`.
+- V1 Hosted CI Verification: BLOCKED until SEC1 is DONE and GitHub Actions capacity is available. Do not intentionally spend hosted Actions capacity on V1 before SEC1 closure.
 - F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: DONE on `feat/p3-partnership-lifecycle`. All 22 acceptance gates are closed. The lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Executed evidence covers exact cancellation/restoration boundaries, generation fencing, canonical dissolution, account-deletion precedence and recovery, exact cooldowns, synchronous authorization revocation, deletion manifests, former-partner blocking and privacy, serious notices, race persistence, and A1/P1/P2 regressions. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities.
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
@@ -140,7 +141,7 @@ Current epic status:
 - UX2 through UX7: DONE, physically accepted at executable SHA `ca7cd35` (started at `0ec184d`), and fast-forward merged to `main` at merge anchor `9f0bea4`. Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - S1 E2EE and Cryptographic Recovery: DONE and merged to `main @ 71569cf`. The original non-physical baseline passed at `e254c3c`; final automated closure re-passed at corrective executable `cde73a1`, and mandatory Redmi Note 9S acceptance closed 30/30. See `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - UX8 Encrypted UX Integration: DONE on `feat/ux8-encrypted-ux-integration`. The non-physical baseline passed `npm run test:ux8:closure` at executable `39de742c8ab795137be95ecbaa685131b608e813`, including UX8 model/race checks 27/27, real Chromium/OpenMLS 2/2, retained S1 local closure, production scan, full health, zero high-severity audit findings, and git hygiene. Physical Redmi Note 9S testing then found one real defect: a freshly recovered device could show a premature, destructive "repair" prompt while its S1 group join was still in flight, because the security provider concluded the local group was unusable from a single reconciliation pass instead of one still resolving. Fixed and re-closed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` (UX8 model 28/28, all other closure gates re-passed green). Mandatory Redmi Note 9S acceptance then closed all 25 scenarios, physically re-verifying the fix in place. No new backend authority, API route, schema, or migration was added. Evidence: `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md` and `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. `feat/ux8-encrypted-ux-integration` is fast-forward merged to `main` at `a029169`.
-- R2 Public Readiness: PLANNED after pre-release implementation and V1 hosted verification.
+- R2 Public Readiness: PLANNED after SEC1 Pre-V1 Security Hardening and V1 Hosted CI Verification.
 
 
 ## Accepted product-experience direction
@@ -196,9 +197,10 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. complete V1 Hosted CI Verification when Actions capacity is available
-2. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-3. cut Stable Release only after V1 and R2 are closed
+1. close SEC1 Pre-V1 Security Hardening and its focused regression evidence
+2. complete V1 Hosted CI Verification only after SEC1 is DONE and Actions capacity is available
+3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+4. cut Stable Release only after SEC1, V1, and R2 are closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Merge and documentation-only commits do not change these runtime evidence anchors.
 
@@ -212,7 +214,8 @@ No implementation should begin until real production evidence shows sufficient u
 
 Stable release remains blocked until:
 
-- V1 Hosted CI Verification is complete when Actions capacity is available
+- SEC1 Pre-V1 Security Hardening is DONE with regression evidence
+- V1 Hosted CI Verification is complete after SEC1 and when Actions capacity is available
 - R2 Public Readiness closes final security, accessibility, browser/device, operational, release, and rollback evidence
 
 

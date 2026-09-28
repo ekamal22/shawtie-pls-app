@@ -45,8 +45,6 @@ F0 Governance and Security Baseline
         v
 F1 Repository Foundation
         |
-        +-----------------------> V1 Hosted CI Verification
-        |                          (non-blocking for development)
         v
 F2 Persistence and Worker Foundation
         |
@@ -86,6 +84,12 @@ S1 E2EE and Crypto Recovery
             |
             v
 UX8 Encrypted UX Integration
+            |
+            v
+SEC1 Pre-V1 Security Hardening
+            |
+            v
+V1 Hosted CI Verification
             |
             v
 R2 Public Readiness
@@ -200,19 +204,64 @@ Hosted GitHub Actions execution is tracked separately under V1 and is not an F1 
 - [x] CI workflow uses explicit read-only permissions, a timeout, and SHA-pinned external actions
 - [x] CODEOWNERS and SECURITY.md are present
 
+# SEC1: Pre-V1 Security Hardening
+
+Status: PLANNED
+
+Priority: highest remaining pre-release priority. SEC1 must close before intentionally spending GitHub-hosted Actions capacity on V1.
+
+## Purpose
+
+Remediate the concrete security gaps found by the post-UX8 source audit so the first hosted V1 run validates the hardened tree rather than a tree with known open findings.
+
+Password storage itself is not an SEC1 defect. The current implementation hashes passwords with Argon2id using the repository's explicit policy and does not reversibly encrypt passwords.
+
+Canonical detailed scope:
+
+`docs/security/PRE_V1_SECURITY_HARDENING.md`
+
+## Scope
+
+- enforce the same password policy on password-recovery completion that registration uses
+- add durable abuse throttling around password reauthentication
+- replace the tiny hard-coded common-password set with a maintainable common/compromised-password screening strategy
+- scrub or delete password hashes from expired abandoned registration intents
+- verify and, where necessary, enforce production browser CSP and HSTS on the actual public serving path
+- add focused regressions for each remediation
+- rerun the affected local security/integration surface, full repository health, and the high-severity dependency audit after implementation
+
+## Acceptance gates
+
+- [ ] password recovery rejects passwords that normal registration would reject and accepts policy-compliant passwords
+- [ ] reauthentication has server-authoritative durable rate limits that cannot be bypassed by changing only one obvious subject
+- [ ] reauthentication failures remain generic and do not leak credential validity beyond the authenticated session context
+- [ ] common/compromised-password screening is materially stronger than the current ten-entry set and is regression-tested
+- [ ] expired abandoned registration intents cannot retain password hashes indefinitely
+- [ ] production web responses have an evidence-backed CSP and HSTS policy at the actual serving layer
+- [ ] the existing Argon2id password-hashing policy remains intact unless a separate reviewed change is justified
+- [ ] focused A1/authentication security and integration regressions pass
+- [ ] `npm run health` passes after the remediation code lands
+- [ ] `npm audit --audit-level=high` reports no unresolved high-severity vulnerability
+- [ ] implementation evidence is recorded in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`
+- [ ] repository-wide documentation is reconciled before SEC1 is marked DONE
+
+## V1 ordering rule
+
+V1 is defined separately, but its hosted run is downstream of SEC1. If GitHub Actions capacity returns early, do not use that capacity for the V1 release-verification run until SEC1 is DONE.
+
 # V1: Hosted CI Verification
 
 Status: BLOCKED
 
 ## Purpose
 
-Verify the already-configured baseline CI workflow on GitHub-hosted infrastructure once Actions capacity is available again.
+Verify the already-configured baseline CI workflow on GitHub-hosted infrastructure after SEC1 is DONE and once Actions capacity is available again.
 
-V1 is intentionally separate from F1 and is not a prerequisite for F2, accounts, partnerships, messaging, relationship-space, media, calling, or other implementation work. It must be completed before R2 Public Readiness can be marked DONE.
+V1 is intentionally separate from F1 and was not a prerequisite for completed feature development. It is now a pre-R2 verification gate downstream of SEC1. It must be completed before R2 Public Readiness can be marked DONE.
 
 ## Current blocker
 
-GitHub Actions capacity is unavailable through the remainder of September 2026, so hosted verification is deferred without blocking development.
+V1 is blocked by two conditions: SEC1 is not yet DONE, and GitHub Actions capacity is unavailable through the remainder of September 2026. SEC1 has priority even if Actions capacity returns first.
 
 ## Scope
 
@@ -225,6 +274,7 @@ GitHub Actions capacity is unavailable through the remainder of September 2026, 
 
 ## Acceptance gates
 
+- [ ] SEC1 Pre-V1 Security Hardening is DONE before the V1 release-verification run
 - [ ] at least one GitHub-hosted Baseline CI run completes successfully
 - [ ] hosted `npm ci` succeeds from the committed lockfile
 - [ ] hosted `npm run ci:baseline` succeeds
