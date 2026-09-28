@@ -356,10 +356,6 @@ export class AccountService {
     const usernameDecision = validateUsername(input.username);
     if (!usernameDecision.allowed)
       throw new ApiError(400, usernameDecision.reason ?? "USERNAME_INVALID");
-    const passwordDecision = this.passwordAdmission.validateForNewCredential(input.password);
-    if (!passwordDecision.allowed) {
-      throw new ApiError(400, passwordDecision.reason);
-    }
     let email;
     try {
       email = normalizeEmail(input.email);
@@ -853,10 +849,6 @@ export class AccountService {
       identifier = normalizeLoginIdentifier(input.identifier);
     } catch {
       throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
-    }
-    const passwordDecision = this.passwordAdmission.validateForNewCredential(input.newPassword);
-    if (!passwordDecision.allowed) {
-      throw new ApiError(400, passwordDecision.reason);
     }
     await this.consumeSecurityRateLimit([
       {
