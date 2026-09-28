@@ -46,6 +46,25 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
   expect(apiHeaders.csp).toBe(csp);
   expect(apiHeaders.nosniff).toBe("nosniff");
 
+  const proxyResult = await page.evaluate(async () => {
+    const response = await fetch("/api/v1/sec1/proxy-debug", { cache: "no-store" });
+    return {
+      status: response.status,
+      body: await response.json(),
+      csp: response.headers.get("content-security-policy"),
+      nosniff: response.headers.get("x-content-type-options"),
+    };
+  });
+  expect(proxyResult.status).toBe(200);
+  expect(proxyResult.body).toEqual({
+    forwardedFor: "127.0.0.1",
+    forwardedHost: "127.0.0.1:4180",
+    forwardedProto: "http",
+    host: "127.0.0.1:4190",
+  });
+  expect(proxyResult.csp).toBe(csp);
+  expect(proxyResult.nosniff).toBe("nosniff");
+
   expect(await page.locator("[style]").count()).toBe(0);
   expect(cspViolations).toEqual([]);
 
