@@ -33,7 +33,7 @@ export class PasswordAdmissionService {
     }
 
     const normalizedPassword = normalizePassword(password);
-    if (COMMON_PASSWORDS.has(normalizedPassword.toLowerCase())) {
+    if (COMMON_PASSWORDS.has(normalizedPassword)) {
       return { allowed: false, reason: "PASSWORD_COMMON" };
     }
 
