@@ -20,6 +20,9 @@ for (const path of webSourceFiles) {
   if (/\bstyle\s*=\s*\{/.test(source)) {
     throw new Error("SEC1 inline React style remains: " + path);
   }
+  if (/\.style\s*\./.test(source) || /setAttribute\(\s*["']style["']/.test(source)) {
+    throw new Error("SEC1 direct inline-style write remains: " + path);
+  }
 }
 
 const distFiles = walk("apps/web/dist").filter((path) =>
