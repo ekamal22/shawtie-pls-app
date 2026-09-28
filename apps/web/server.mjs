@@ -127,7 +127,7 @@ function safeDistPath(pathname) {
 }
 
 function cacheControl(pathname) {
-  if (pathname === "/" || pathname.endsWith(".html")) return "no-store";
+  if (pathname === "/" || pathname.endsWith(".html")) return "no-cache";
   if (pathname === "/sw.js" || pathname === "/manifest.webmanifest") return "no-cache";
   if (pathname.startsWith("/assets/")) return "public, max-age=31536000, immutable";
   return "public, max-age=3600";
