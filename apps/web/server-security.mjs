@@ -15,6 +15,9 @@ export function parseConnectOrigins(raw, { allowInsecureLoopback = false } = {})
       if (url.protocol !== "https:" && url.protocol !== "http:") {
         throw new Error("Media connect origins must use http or https");
       }
+      if (url.username || url.password) {
+        throw new Error("Media connect origins must not contain credentials");
+      }
       if (
         url.protocol === "http:" &&
         !(
@@ -37,6 +40,15 @@ export function buildWebSecurityHeaders({
   const app = new URL(appOrigin);
   if (app.protocol !== "https:" && app.protocol !== "http:") {
     throw new Error("APP_ORIGIN must use http or https");
+  }
+  if (
+    app.username ||
+    app.password ||
+    app.pathname !== "/" ||
+    app.search ||
+    app.hash
+  ) {
+    throw new Error("APP_ORIGIN must be a bare origin without credentials, path, query, or fragment");
   }
   if (app.username || app.password || app.pathname !== "/" || app.search || app.hash) {
     throw new Error("APP_ORIGIN must be an origin without credentials, path, query, or fragment");
