@@ -39,6 +39,22 @@ for (const path of distFiles) {
   }
 }
 
+const commonPasswordCorpus = readFileSync(
+  "apps/api/src/security/common-passwords.generated.ts",
+  "utf8",
+);
+for (const forbidden of ["passwordpassword", "123456789987654321"]) {
+  if (commonPasswordCorpus.includes(forbidden)) {
+    throw new Error("SEC1 common-password runtime corpus contains plaintext password data");
+  }
+}
+const digestRows = [
+  ...commonPasswordCorpus.matchAll(/\n\s*"([0-9a-f]{64})",/g),
+].map((match) => match[1]);
+if (digestRows.length !== 327 || new Set(digestRows).size !== 327) {
+  throw new Error("SEC1 common-password runtime digest corpus is malformed");
+}
+
 const serverSecurity = readFileSync("apps/web/server-security.mjs", "utf8");
 for (const required of [
   "'wasm-unsafe-eval'",
