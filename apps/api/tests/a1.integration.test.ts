@@ -298,6 +298,44 @@ test("SEC1 reauthentication blocks repeated guesses with durable account session
   }
 });
 
+test("SEC1 concurrent reauthentication guesses cannot race past the durable limit", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const user = await register(app, database, "reauthrace");
+
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        app.inject({
+          method: "POST",
+          url: "/api/v1/auth/reauthenticate",
+          headers: { ...headers, cookie: user.cookie },
+          payload: { password: "concurrent wrong password " + index },
+        }),
+      ),
+    );
+
+    const statuses = responses.map((response) => response.statusCode).sort((a, b) => a - b);
+    assert.deepEqual(statuses, [401, 401, 401, 401, 401, 429, 429, 429, 429, 429]);
+
+    for (const response of responses) {
+      assert.ok(
+        response.json().error.code === "AUTH_INVALID" ||
+          response.json().error.code === "RATE_LIMITED",
+      );
+    }
+
+    const failures = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM security_events WHERE event_type = 'reauthentication_failed'",
+    );
+    assert.equal(failures.rows[0]?.count, "5");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("SEC1 successful reauthentication resets account and session budgets but not network compute budget", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
