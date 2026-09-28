@@ -59,7 +59,7 @@ function generatedSource(rawBytes) {
       raw
         .map(decodeSourceEntry)
         .filter((value) => value !== null)
-        .map((value) => value.normalize("NFC").toLowerCase())
+        .map((value) => value.normalize("NFC"))
         .filter(structurallyRelevant),
     ),
   ].sort();
