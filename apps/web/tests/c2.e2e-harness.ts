@@ -283,7 +283,7 @@ const api = {
     const video = remoteRig.host.querySelector("video.remote-video") as HTMLVideoElement | null;
     return {
       hasElement: video !== null,
-      hidden: video ? video.style.visibility === "hidden" : null,
+      hidden: video ? video.classList.contains("is-stalled") : null,
       totalFrames: video ? video.getVideoPlaybackQuality().totalVideoFrames : 0,
       placeholderVisible:
         remoteRig.host.textContent?.includes("Waiting for partner video") ?? false,
