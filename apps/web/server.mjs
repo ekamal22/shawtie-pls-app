@@ -8,6 +8,7 @@ import { buildWebSecurityHeaders } from "./server-security.mjs";
 import {
   createTrustedProxyPolicy,
   sanitizedForwardHeaders,
+  sanitizedProxyResponseHeaders,
 } from "./proxy-security.mjs";
 
 const DIST_DIR = fileURLToPath(new URL("./dist/", import.meta.url));
@@ -63,10 +64,7 @@ function proxyHttp(
   });
 
   proxy.on("response", (response) => {
-    const headers = { ...response.headers };
-    for (const [name, value] of Object.entries(securityHeaders)) {
-      headers[name.toLowerCase()] = value;
-    }
+    const headers = sanitizedProxyResponseHeaders(response.headers, securityHeaders);
     reply.writeHead(response.statusCode ?? 502, response.statusMessage, headers);
     response.pipe(reply);
   });
