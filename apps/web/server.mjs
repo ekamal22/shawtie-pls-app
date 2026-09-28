@@ -48,7 +48,7 @@ function backendTransport(target) {
   return target.protocol === "https:" ? httpsRequest : httpRequest;
 }
 
-function proxyHttp(request, reply, backendTarget, appOrigin) {
+function proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders) {
   const target = new URL(request.url ?? "/", backendTarget);
   const proxy = backendTransport(target)({
     protocol: target.protocol,
@@ -60,12 +60,20 @@ function proxyHttp(request, reply, backendTarget, appOrigin) {
   });
 
   proxy.on("response", (response) => {
-    reply.writeHead(response.statusCode ?? 502, response.statusMessage, response.headers);
+    const headers = { ...response.headers };
+    for (const [name, value] of Object.entries(securityHeaders)) {
+      headers[name.toLowerCase()] = value;
+    }
+    reply.writeHead(response.statusCode ?? 502, response.statusMessage, headers);
     response.pipe(reply);
   });
   proxy.on("error", () => {
     if (!reply.headersSent) {
-      reply.writeHead(502, { "content-type": "application/json; charset=utf-8" });
+      reply.writeHead(502, {
+        ...securityHeaders,
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      });
     }
     reply.end(JSON.stringify({ error: { code: "BACKEND_UNAVAILABLE" } }));
   });
@@ -214,7 +222,7 @@ export function createProductionWebServer(env = process.env) {
     }
 
     if (request.url === "/api" || request.url?.startsWith("/api/")) {
-      proxyHttp(request, reply, backendTarget, appOrigin);
+      proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders);
       return;
     }
 
