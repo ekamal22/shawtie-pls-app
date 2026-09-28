@@ -1,6 +1,6 @@
 # UX8 Encrypted UX Integration Design
 
-Status: DESIGN HARDENED AND FROZEN; UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PENDING.
+Status: DESIGN HARDENED AND FROZEN; UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PASS. UX8 IS DONE, NOT YET MERGED TO `main`.
 
 Implementation branch: `feat/ux8-encrypted-ux-integration`.
 
@@ -8,7 +8,7 @@ Implementation baseline: `main @ 2b36c6258f43a39b2661ee1f48994a46945a4929`.
 
 S1 authority: DONE and merged. Final corrective executable `cde73a1a789b0768aa67f95e8f542fe98a8dfc8b`; final evidence merge anchor `71569cf68f785315c9d0f0d052639b46aad9caf9`; Android acceptance 30/30.
 
-UX8 integrates the verified S1 cryptographic states into the accepted Home, Talk, Ours, and Us experience. Automated closure passed at executable `39de742c8ab795137be95ecbaa685131b608e813`, but this document remains the frozen design authority until the separate Redmi 25/25 gate completes. It does not redesign the cryptographic protocol, create new security authority, add persistence, or change product lifecycle semantics.
+UX8 integrates the verified S1 cryptographic states into the accepted Home, Talk, Ours, and Us experience. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` after a physical-run defect fix, and the mandatory Redmi Note 9S 25/25 gate is closed; this document remains the frozen design authority. It does not redesign the cryptographic protocol, create new security authority, add persistence, or change product lifecycle semantics.
 
 ## 1. Authority and inputs
 
@@ -1408,4 +1408,4 @@ UX8 is DONE only when:
 - evidence is committed at the exact final executable SHA
 - repository documentation is reconciled
 
-Automated implementation scope is closed at `39de742c8ab795137be95ecbaa685131b608e813`. UX8 remains IN PROGRESS until the physical gate and final evidence reconciliation complete, even though this design is frozen.
+Automated implementation scope closed at `39de742c8ab795137be95ecbaa685131b608e813` and re-closed after a physical-run fix at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`. The physical gate and final evidence reconciliation are complete; UX8 is DONE, and this design remains frozen.

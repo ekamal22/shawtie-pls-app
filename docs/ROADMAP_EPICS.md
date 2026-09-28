@@ -2304,7 +2304,7 @@ Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers 
 
 # UX8: Encrypted UX Integration
 
-Status: IN PROGRESS. UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PENDING.
+Status: DONE. UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PASS. Not yet merged to `main`.
 
 Canonical design:
 
@@ -2331,12 +2331,12 @@ Implemented on `feat/ux8-encrypted-ux-integration`:
 - stale action/result fencing by account/device/partnership scope
 - UX8 model/static tests, real Chromium/OpenMLS recovery/approval E2E, closure wrapper, and Android preflight harness
 
-Automated closure passed at executable SHA `39de742c8ab795137be95ecbaa685131b608e813`; see `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`.
+Automated closure first passed at executable SHA `39de742c8ab795137be95ecbaa685131b608e813`; see `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Physical testing found one real defect (a freshly recovered device could show a premature, destructive repair prompt while its S1 group join was still in flight); the fix was closed and re-verified at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`.
 
-Not yet verified/closed:
+Closed:
 
-- mandatory Redmi Note 9S 25/25 physical acceptance
-- final physical evidence and DONE documentation reconciliation
+- mandatory Redmi Note 9S 25/25 physical acceptance, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`
+- final physical evidence and documentation reconciliation
 
 Physical procedure: `docs/testing/UX8_ANDROID_ACCEPTANCE.md`.
 
@@ -2393,7 +2393,7 @@ The hardened design freezes one composed `CryptoSecurityViewModel`, deterministi
 - [x] 200 percent text, keyboard access, screen-reader status, touch targets, focus behavior, and reduced motion pass for the automated scope
 - [x] retained S1 automated closure plus relevant A1/P3/M2/M3 regressions remain green
 - [x] full repository health, dependency audit, production scan, RMS leakage scans, and diff hygiene pass
-- [ ] mandatory Redmi Note 9S UX8 physical acceptance passes 25/25 with committed evidence at the exact final executable SHA
+- [x] mandatory Redmi Note 9S UX8 physical acceptance passes 25/25 with committed evidence at the exact final executable SHA
 
 # S1: E2EE and Cryptographic Recovery
 

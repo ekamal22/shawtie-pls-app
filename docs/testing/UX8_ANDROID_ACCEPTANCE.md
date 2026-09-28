@@ -1,8 +1,8 @@
 # UX8 Physical Android Acceptance
 
-Status: REQUIRED, NOT YET EXECUTED.
+Status: EXECUTED, 25/25 PASS. See `UX8_ANDROID_ACCEPTANCE_EVIDENCE.md` for the executed record.
 
-Automated prerequisite: PASS at executable `39de742c8ab795137be95ecbaa685131b608e813`; see `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`.
+Automated prerequisite: PASS at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; see `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`.
 
 Milestone: UX8 Encrypted UX Integration.
 
@@ -86,6 +86,6 @@ The physical runner must record:
 - final rerun evidence after any corrective code change
 - final storage/privacy scan evidence
 
-If physical testing changes runtime code, automated UX8 closure must be rerun at the new executable SHA before UX8 may be marked DONE.
+If physical testing changes runtime code, automated UX8 closure must be rerun at the new executable SHA before UX8 may be marked DONE. Physical testing found one such defect; automated closure was rerun and passed at the corrective final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419` before this run was accepted.
 
-Until the full 25/25 run is complete, UX8 remains IN PROGRESS even if all automated closure gates pass.
+The full 25/25 run is complete; UX8 is DONE. See `UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`.

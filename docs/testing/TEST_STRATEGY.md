@@ -851,7 +851,7 @@ Canonical design and physical procedure:
 - `../design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
 - `UX8_ANDROID_ACCEPTANCE.md`
 
-UX8 automated closure passed on `feat/ux8-encrypted-ux-integration` at executable SHA `39de742c8ab795137be95ecbaa685131b608e813`. Evidence: `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. UX8 remains IN PROGRESS because security-critical presentation work must not be accepted from automated visual/browser tests alone; the physical Android gate is still pending.
+UX8 automated closure passed on `feat/ux8-encrypted-ux-integration`, first at executable SHA `39de742c8ab795137be95ecbaa685131b608e813` and, after a physical-run defect fix (see below), re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Evidence: `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Physical Android acceptance is complete, recorded in `UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`; UX8 is DONE on its branch and not yet merged to `main`.
 
 Automated UX8 coverage must prove:
 
@@ -879,9 +879,9 @@ Automated UX8 coverage must prove:
 - security-sensitive copy preserves the frozen semantic contract
 - recovery-secret lifetime, clipboard, diagnostics, log, URL, storage, cache, and queue boundaries pass executable inspection
 
-Physical Android acceptance is mandatory and contains 25 scenarios. It must cover recovery-key creation and one-time reveal, wrong and correct RMS restoration, trusted-device approval, A1 revocation and rekey, pending/rekey Talk behavior, per-message and per-item history-unavailable states, sealed R1 authority, media unavailable state, deterministic group repair, account-vs-crypto recovery separation, offline/reconnect behavior, realtime revocation/rekey updates, accessibility, and final recovery-secret leakage inspection.
+Physical Android acceptance is mandatory and contains 25 scenarios. It covered recovery-key creation and one-time reveal, wrong and correct RMS restoration, trusted-device approval, A1 revocation and rekey, pending/rekey Talk behavior, per-message and per-item history-unavailable states, sealed R1 authority, media unavailable state, deterministic group repair, account-vs-crypto recovery separation, offline/reconnect behavior, realtime revocation/rekey updates, accessibility, and final recovery-secret leakage inspection. See `UX8_ANDROID_ACCEPTANCE_EVIDENCE.md` for the executed evidence, including the one real defect found (a premature, destructive repair prompt for a device whose S1 group join was merely still in flight) and its fix.
 
-Expected UX8 physical markers:
+UX8 physical markers, achieved:
 
 ```text
 UX8_ANDROID_ACCEPTANCE_PASS scenarios=25/25
@@ -889,7 +889,7 @@ UX8_RECOVERY_SECRET_STORAGE_PASS
 UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 ```
 
-Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8-H1 model/browser closure, UX8-H2 retained security regression, and UX8-H3 repository/privacy closure passed at `39de742c8ab795137be95ecbaa685131b608e813`. UX8 remains incomplete until UX8-H4 all 25 physical Android scenarios and final UX8-H5 evidence/documentation reconciliation pass at the exact final executable SHA.
+Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation have all passed at the final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419`. UX8 is DONE; it has not yet been merged to `main`.
 
 ## Acceptance principle
 

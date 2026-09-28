@@ -187,7 +187,7 @@ UX8 implements a presentation layer that must continue to distinguish:
 - encrypted history unavailable
 - rekey required
 
-The implemented UX8 copy and tests must not say that all history is restored until cryptographic recovery succeeds. Trusted-device approval remains distinct from RMS-backed historical recovery, and account/email recovery remains distinct from both. Automated closure for these boundaries passed at executable `39de742c8ab795137be95ecbaa685131b608e813`; physical Android acceptance remains pending.
+The implemented UX8 copy and tests must not say that all history is restored until cryptographic recovery succeeds. Trusted-device approval remains distinct from RMS-backed historical recovery, and account/email recovery remains distinct from both. Automated closure for these boundaries re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`, and mandatory Redmi Note 9S physical acceptance closed 25/25, physically confirming this exact separation (see `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`).
 
 ## Deletion
 
