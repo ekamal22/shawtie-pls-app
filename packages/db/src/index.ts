@@ -72,6 +72,7 @@ export {
   consumeChallenge,
   consumeRateLimitBuckets,
   correctDateOfBirth,
+  deleteExpiredIncompleteRegistrationIntents,
   createDevice,
   createSession,
   finalizeAccountDeletionState,
