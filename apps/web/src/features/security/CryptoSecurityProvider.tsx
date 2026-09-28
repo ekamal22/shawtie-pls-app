@@ -263,7 +263,8 @@ export function CryptoSecurityProvider({
             attempt += 1
           ) {
             await new Promise((resolve) => setTimeout(resolve, 800));
-            if (!isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current)) break;
+            if (!isCurrentSecurityRefresh(ticket, requestGeneration.current, activeRef.current))
+              break;
             partnershipState = await currentRuntime.partnershipState(partnershipId);
             localGroup = await currentRuntime.localGroupStatus(partnershipId);
           }
