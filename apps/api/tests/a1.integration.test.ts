@@ -267,6 +267,7 @@ test("SEC1 reauthentication blocks repeated guesses with durable account session
     });
     assert.equal(blocked.statusCode, 429, blocked.body);
     assert.equal(blocked.json().error.code, "RATE_LIMITED");
+    assert.ok(Number(blocked.headers["retry-after"]) >= 1);
 
     const buckets = await database.pool.query<{
       scope: string;
