@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createApiApplication } from "../src/application.ts";
 import { AuthKeyRing } from "../src/security/auth-key-ring.ts";
+import { PasswordHasher } from "../src/security/password-hasher.ts";
 import {
   closeDatabasePool,
   createDatabasePool,
@@ -139,6 +140,38 @@ test("A1 rejects underage registration using server time", async () => {
     });
     assert.equal(response.statusCode, 400);
     assert.equal(response.json().error.code, "AGE_INELIGIBLE");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("SEC1 expanded admission policy does not reject an existing credential at login", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const user = await register(app, database, "grandfathered");
+    const grandfatheredPassword = "123456789987654321";
+    const passwordHash = await new PasswordHasher().hash(grandfatheredPassword);
+    await database.pool.query(
+      `UPDATE account_password_credentials
+       SET password_hash = $2, changed_at = clock_timestamp()
+       WHERE account_id = $1`,
+      [user.accountId, passwordHash],
+    );
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      headers,
+      payload: {
+        identifier: user.email,
+        password: grandfatheredPassword,
+      },
+    });
+    assert.equal(login.statusCode, 200, login.body);
+    assert.ok(cookieHeader(login));
   } finally {
     await app.close();
     await closeDatabasePool(database);
