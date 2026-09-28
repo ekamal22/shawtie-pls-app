@@ -415,7 +415,7 @@ Required focused coverage:
 
 - registration and password-recovery completion both use the same server-side password-admission boundary
 - existing credential verification and login rehash remain independent of current new-password admission rules
-- the common-password corpus is server-only, offline, reproducible, provenance-tracked, and materially larger than the historical ten-entry set
+- common-password screening is server-only and pins a 99,839-entry source universe by repository commit/path/blob SHA/count while committing only the complete 327-entry structurally reachable SHA-256 membership set and no plaintext source rows
 - weak, common, overlong, oversized, and valid recovery passwords exercise both contract and service boundaries
 - password reauthentication consumes durable account, session, and network budgets before Argon2 verification
 - successful reauthentication preserves token-generation fencing, resets account/session reauth buckets, and leaves the shared network compute budget intact
@@ -428,6 +428,7 @@ Required focused coverage:
 - every production inline-style writer found by the implementation sweep is removed so style-src can remain self-only
 - explicit WSS and approved media-storage origins are permitted under connect-src without wildcard network sources
 - HSTS, nosniff, referrer policy, clickjacking protection, and Permissions-Policy are asserted against the repository-controlled production serving configuration
+- explicit `WEB_TRUSTED_PROXY` IP/CIDR resolution, spoofed-forwarding rejection, canonical forwarding replacement, and fixed/dynamic hop-by-hop stripping are covered by focused unit tests and the Chromium proxy path
 - a focused real-Chromium harness boots the PWA, initializes OpenMLS WASM, registers the service worker, connects realtime WebSocket, and exercises media connectivity under enforced CSP
 - secure-cookie, CSRF, session-rotation, password-reset session revocation, and Argon2id regression coverage remains green
 
@@ -437,7 +438,7 @@ The focused implementation harnesses are committed. Final closure must run once 
 npm run test:sec1:closure
 ```
 
-That wrapper verifies offline corpus regeneration, SEC1 artifact formatting, focused unit/security tests, disposable PostgreSQL A1/worker integration, production-mode Chromium CSP/OpenMLS/service-worker/WebSocket/media behavior, the SEC1 production scan, full `npm run health`, `npm audit --audit-level=high`, git diff hygiene, branch parity, `[skip ci]` commit hygiene, and the no-em-dash rule. Record the final executable SHA and results in `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+That wrapper verifies hash-only corpus integrity/provenance, SEC1 artifact formatting, focused unit/security/proxy tests, disposable PostgreSQL A1/worker integration, production-mode Chromium CSP/OpenMLS/service-worker/WebSocket/media/offline behavior, the SEC1 production scan, full `npm run health`, `npm audit --audit-level=high`, git diff hygiene, branch parity, `[skip ci]` commit hygiene, and the no-em-dash rule. Full corpus regeneration is intentionally separate because it requires an explicit local copy of the pinned plaintext source that must remain untracked. Record the final executable SHA and results in `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 Physical Xiaomi acceptance is not a default SEC1 gate. Add a focused device check only if implementation creates Android-specific cookie, PWA/service-worker, permission, WebRTC, or header behavior that desktop Chromium cannot adequately prove.
 
