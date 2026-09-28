@@ -36,13 +36,15 @@ function expectedWebsocketOrigin(url) {
 
 function mediaOrigins(raw) {
   if (!raw || !raw.trim()) return [];
-  return [...new Set(
-    raw
-      .split(/[\s,]+/)
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .map((value) => new URL(value).origin),
-  )];
+  return [
+    ...new Set(
+      raw
+        .split(/[\s,]+/)
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => new URL(value).origin),
+    ),
+  ];
 }
 
 export async function assertWebSecurityHeaders(target, options = {}) {
@@ -72,7 +74,9 @@ export async function assertWebSecurityHeaders(target, options = {}) {
   requireSource(directives, "connect-src", "'self'");
   requireSource(directives, "connect-src", expectedWebsocketOrigin(url));
 
-  for (const origin of mediaOrigins(options.mediaConnectSrc ?? process.env.SEC1_MEDIA_CONNECT_SRC)) {
+  for (const origin of mediaOrigins(
+    options.mediaConnectSrc ?? process.env.SEC1_MEDIA_CONNECT_SRC,
+  )) {
     requireSource(directives, "connect-src", origin);
   }
 

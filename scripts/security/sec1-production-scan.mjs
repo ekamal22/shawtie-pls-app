@@ -48,9 +48,9 @@ for (const forbidden of ["passwordpassword", "123456789987654321"]) {
     throw new Error("SEC1 common-password runtime corpus contains plaintext password data");
   }
 }
-const digestRows = [
-  ...commonPasswordCorpus.matchAll(/\n\s*"([0-9a-f]{64})",/g),
-].map((match) => match[1]);
+const digestRows = [...commonPasswordCorpus.matchAll(/\n\s*"([0-9a-f]{64})",/g)].map(
+  (match) => match[1],
+);
 if (digestRows.length !== 327 || new Set(digestRows).size !== 327) {
   throw new Error("SEC1 common-password runtime digest corpus is malformed");
 }

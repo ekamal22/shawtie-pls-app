@@ -7,7 +7,8 @@ const SOURCE_PATH = "Passwords/Common-Credentials/100k-most-used-passwords-NCSC.
 const SOURCE_BLOB_SHA = "38eb37702244f55fda75cab281eb2145cd7685b6";
 const SOURCE_ENTRY_COUNT = 99_839;
 const EFFECTIVE_ENTRY_COUNT = 327;
-const EFFECTIVE_DIGEST_SET_SHA256 = "2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca";
+const EFFECTIVE_DIGEST_SET_SHA256 =
+  "2614e892e747d06fd0861733ffc0c9187b5c242a8aae8e029e938db860a537ca";
 const OUTPUT = "apps/api/src/security/common-passwords.generated.ts";
 
 function gitBlobSha(bytes) {
@@ -47,10 +48,7 @@ function generatedSource(rawBytes) {
     );
   }
 
-  const raw = rawBytes
-    .toString("utf8")
-    .split(/\r?\n/)
-    .filter(Boolean);
+  const raw = rawBytes.toString("utf8").split(/\r?\n/).filter(Boolean);
   if (raw.length !== SOURCE_ENTRY_COUNT) {
     throw new Error(
       "Pinned common-password source entry count mismatch. expected=" +

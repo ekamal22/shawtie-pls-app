@@ -9,10 +9,7 @@ import {
 
 test("SEC1 untrusted socket cannot spoof forwarded client address", () => {
   const policy = createTrustedProxyPolicy("10.0.0.0/8");
-  assert.equal(
-    resolveClientAddress("198.51.100.20", "203.0.113.9", policy),
-    "198.51.100.20",
-  );
+  assert.equal(resolveClientAddress("198.51.100.20", "203.0.113.9", policy), "198.51.100.20");
 });
 
 test("SEC1 trusted proxy chain resolves the first untrusted client", () => {
@@ -21,10 +18,7 @@ test("SEC1 trusted proxy chain resolves the first untrusted client", () => {
     resolveClientAddress("10.0.0.4", "203.0.113.9, 10.0.0.3, 10.0.0.2", policy),
     "203.0.113.9",
   );
-  assert.equal(
-    resolveClientAddress("::ffff:127.0.0.1", "203.0.113.10", policy),
-    "203.0.113.10",
-  );
+  assert.equal(resolveClientAddress("::ffff:127.0.0.1", "203.0.113.10", policy), "203.0.113.10");
 });
 
 test("SEC1 trusted proxy canonicalizes equivalent IPv6 spellings", () => {
@@ -45,10 +39,7 @@ test("SEC1 trusted proxy canonicalizes equivalent IPv6 spellings", () => {
 
 test("SEC1 malformed forwarded chain fails closed to the socket address", () => {
   const policy = createTrustedProxyPolicy("10.0.0.0/8");
-  assert.equal(
-    resolveClientAddress("10.0.0.4", "203.0.113.9, not-an-ip", policy),
-    "10.0.0.4",
-  );
+  assert.equal(resolveClientAddress("10.0.0.4", "203.0.113.9, not-an-ip", policy), "10.0.0.4");
 });
 
 test("SEC1 trusted proxy policy rejects wildcard and hop-count shortcuts", () => {

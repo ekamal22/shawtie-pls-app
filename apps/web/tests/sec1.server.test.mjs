@@ -17,10 +17,7 @@ function baseEnv(overrides = {}) {
 
 test("SEC1 production server rejects path-bearing backend target", () => {
   assert.throws(
-    () =>
-      createProductionWebServer(
-        baseEnv({ BACKEND_PROXY_TARGET: "http://127.0.0.1:4190/api" }),
-      ),
+    () => createProductionWebServer(baseEnv({ BACKEND_PROXY_TARGET: "http://127.0.0.1:4190/api" })),
     /BACKEND_PROXY_TARGET must be a bare origin/,
   );
 });

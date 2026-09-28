@@ -41,14 +41,10 @@ export function buildWebSecurityHeaders({
   if (app.protocol !== "https:" && app.protocol !== "http:") {
     throw new Error("APP_ORIGIN must use http or https");
   }
-  if (
-    app.username ||
-    app.password ||
-    app.pathname !== "/" ||
-    app.search ||
-    app.hash
-  ) {
-    throw new Error("APP_ORIGIN must be a bare origin without credentials, path, query, or fragment");
+  if (app.username || app.password || app.pathname !== "/" || app.search || app.hash) {
+    throw new Error(
+      "APP_ORIGIN must be a bare origin without credentials, path, query, or fragment",
+    );
   }
   if (
     app.protocol === "http:" &&

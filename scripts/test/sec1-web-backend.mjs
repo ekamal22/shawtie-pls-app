@@ -56,7 +56,9 @@ server.on("upgrade", (request, socket) => {
     socket.destroy();
     return;
   }
-  const accept = createHash("sha1").update(key + websocketGuid).digest("base64");
+  const accept = createHash("sha1")
+    .update(key + websocketGuid)
+    .digest("base64");
   const protocolHeader = request.headers["sec-websocket-protocol"];
   const protocol =
     typeof protocolHeader === "string" ? protocolHeader.split(",")[0]?.trim() : undefined;

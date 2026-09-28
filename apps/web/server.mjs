@@ -41,14 +41,7 @@ function backendTransport(target) {
   return target.protocol === "https:" ? httpsRequest : httpRequest;
 }
 
-function proxyHttp(
-  request,
-  reply,
-  backendTarget,
-  appOrigin,
-  securityHeaders,
-  trustedProxyPolicy,
-) {
+function proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders, trustedProxyPolicy) {
   const target = new URL(request.url ?? "/", backendTarget);
   const proxy = backendTransport(target)({
     protocol: target.protocol,
@@ -89,14 +82,7 @@ function writeUpgradeResponse(socket, response) {
   socket.write(head + "\r\n");
 }
 
-function proxyUpgrade(
-  request,
-  socket,
-  head,
-  backendTarget,
-  appOrigin,
-  trustedProxyPolicy,
-) {
+function proxyUpgrade(request, socket, head, backendTarget, appOrigin, trustedProxyPolicy) {
   const target = new URL(request.url ?? "/", backendTarget);
   const proxy = backendTransport(target)({
     protocol: target.protocol,
@@ -148,7 +134,8 @@ function safeDistPath(pathname) {
 }
 
 function requestUsesCanonicalHost(request, appOrigin) {
-  const host = typeof request.headers.host === "string" ? request.headers.host.trim().toLowerCase() : "";
+  const host =
+    typeof request.headers.host === "string" ? request.headers.host.trim().toLowerCase() : "";
   return host === new URL(appOrigin).host.toLowerCase();
 }
 
@@ -247,14 +234,7 @@ export function createProductionWebServer(env = process.env) {
     }
 
     if (request.url === "/api" || request.url?.startsWith("/api/")) {
-      proxyHttp(
-        request,
-        reply,
-        backendTarget,
-        appOrigin,
-        securityHeaders,
-        trustedProxyPolicy,
-      );
+      proxyHttp(request, reply, backendTarget, appOrigin, securityHeaders, trustedProxyPolicy);
       return;
     }
 
@@ -277,14 +257,7 @@ export function createProductionWebServer(env = process.env) {
       return;
     }
     if (request.url === "/api" || request.url?.startsWith("/api/")) {
-      proxyUpgrade(
-        request,
-        socket,
-        head,
-        backendTarget,
-        appOrigin,
-        trustedProxyPolicy,
-      );
+      proxyUpgrade(request, socket, head, backendTarget, appOrigin, trustedProxyPolicy);
       return;
     }
     socket.destroy();
