@@ -120,6 +120,7 @@ The implementation review caught and corrected defects before any SEC1 PASS clai
 - `PasswordAdmissionService` now performs the intended SHA-256 exact-membership lookup over the normalized lowercase candidate
 - network-prefix normalization was hardened so IPv4-mapped IPv6 and equivalent IPv6 text forms cannot split the network abuse budget
 - the final SEC1 web unit command now executes header-policy, proxy-trust, and production-server configuration tests, and SEC1 lint explicitly includes the proxy authority and public header checker
+- API `APP_ORIGIN` now requires a bare HTTP(S) origin and API `TRUSTED_PROXY` now accepts only literal IP/CIDR entries, matching the web-adapter trust model
 - an API regression now proves registration cannot complete at or after the authoritative registration-intent expiry boundary
 
 These corrections are committed source changes. They are not execution evidence. The closure matrix below remains NOT RUN until the local closure actually succeeds.
