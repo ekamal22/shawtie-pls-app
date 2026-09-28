@@ -131,8 +131,23 @@ function generatedSource(rawBytes) {
 
 const source = await loadSource();
 const generated = generatedSource(source);
-await writeFile(OUTPUT, generated, "utf8");
-console.log("SEC1_COMMON_PASSWORDS_GENERATED", {
-  output: OUTPUT,
-  sourceBlobSha: SOURCE_BLOB_SHA,
-});
+const checkOnly = process.argv.includes("--check");
+
+if (checkOnly) {
+  const current = await readFile(OUTPUT, "utf8");
+  if (current !== generated) {
+    throw new Error(
+      "Committed common-password corpus is stale. Run npm run sec1:passwords:generate.",
+    );
+  }
+  console.log("SEC1_COMMON_PASSWORDS_CHECK_PASS", {
+    output: OUTPUT,
+    sourceBlobSha: SOURCE_BLOB_SHA,
+  });
+} else {
+  await writeFile(OUTPUT, generated, "utf8");
+  console.log("SEC1_COMMON_PASSWORDS_GENERATED", {
+    output: OUTPUT,
+    sourceBlobSha: SOURCE_BLOB_SHA,
+  });
+}
