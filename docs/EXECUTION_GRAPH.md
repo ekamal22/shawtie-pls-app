@@ -79,7 +79,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         UX8 Encrypted UX 🟢 DONE, Android 25/25, merged main @ a029169
                 |
                 v
-        SEC1 Pre-V1 Security Hardening ✅ DONE @ 91ca920d
+        SEC1 Pre-V1 Security Hardening ✅ DONE + MERGED @ a2badf7 (executable 91ca920d)
                 |
                 v
         V1 Hosted CI Verification 🔒 awaiting Actions capacity
@@ -181,7 +181,7 @@ S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, mer
    ->
 UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, merged to `main @ a029169`
 
-SEC1 Pre-V1 Security Hardening ✅ DONE, final executable `91ca920d`
+SEC1 Pre-V1 Security Hardening ✅ DONE + MERGED, merge anchor `a2badf7`, final executable `91ca920d`
 
 V1 Hosted CI Verification 🔒 NEXT, blocked by Actions capacity
 ~~~
@@ -312,7 +312,7 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 
 ## Release path
 
-With UX8 merged and SEC1 locally closed, the remaining dependency path to stable release is:
+With UX8 and SEC1 merged, and SEC1 locally closed, the remaining dependency path to stable release is:
 
 ~~~text
 UX8 ✅
@@ -322,4 +322,4 @@ UX8 ✅
  -> Stable Release
 ~~~
 
-SEC1 is DONE at executable `91ca920d`. V1 Hosted CI Verification is the active next milestone when Actions capacity becomes available.
+SEC1 is DONE and merged to `main @ a2badf7`; final executable `91ca920d`. V1 Hosted CI Verification is the active next milestone when Actions capacity becomes available.

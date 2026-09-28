@@ -20,7 +20,7 @@ V1 must not be intentionally run as release evidence before SEC1 is DONE, even i
 
 ## Implementation checkpoint
 
-SEC1 source implementation and complete local closure are complete on `feat/sec1-pre-v1-security-hardening`. The final executable passed focused security 16/16, header/proxy/server 16/16, disposable PostgreSQL/API/worker 36/36, real Chromium 1/1, production scan, full repository health, a zero-vulnerability audit, and Git hygiene. Canonical observed evidence is in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+SEC1 source implementation and complete local closure are complete and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300` from the historical `feat/sec1-pre-v1-security-hardening` branch. The final executable passed focused security 16/16, header/proxy/server 16/16, disposable PostgreSQL/API/worker 36/36, real Chromium 1/1, production scan, full repository health, a zero-vulnerability audit, and Git hygiene. Canonical observed evidence is in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 Implemented remediation:
 
@@ -119,7 +119,7 @@ Required remediation:
 
 Severity: Conditional Medium.
 
-At the audit baseline, the API registered `@fastify/helmet`, secure cookies were enforced in production, and Vite development configuration set a restrictive camera/microphone `Permissions-Policy`, but the repository had no production PWA serving adapter. The feature branch now owns that serving boundary in `apps/web/server.mjs`; actual public-HTTPS re-proof remains an R2 obligation if no live commercial origin exists during SEC1.
+At the audit baseline, the API registered `@fastify/helmet`, secure cookies were enforced in production, and Vite development configuration set a restrictive camera/microphone `Permissions-Policy`, but the repository had no production PWA serving adapter. The repository now owns that serving boundary in `apps/web/server.mjs`; actual public-HTTPS re-proof remains an R2 obligation if no live commercial origin exists during SEC1.
 
 Required remediation:
 

@@ -75,7 +75,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
-| 20 SEC1 Pre-V1 Security Hardening | DONE on feature branch; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
+| 20 SEC1 Pre-V1 Security Hardening | DONE and merged to `main @ a2badf7`; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
 | V1 Hosted CI Verification | NEXT; blocked by Actions capacity | SEC1 DONE | No |
 | 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -129,7 +129,7 @@ C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22
 
 UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 is DONE on `feat/ux8-encrypted-ux-integration` against the frozen design in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`: automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` and the mandatory 25-scenario Redmi Note 9S acceptance in `docs/testing/UX8_ANDROID_ACCEPTANCE.md` closed 25/25, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. It is fast-forward merged to `main` at `a029169`.
 
-SEC1 Pre-V1 Security Hardening is DONE on `feat/sec1-pre-v1-security-hardening`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed focused security 16/16, header/proxy/server 16/16, PostgreSQL/API/worker 36/36, Chromium 1/1, production scan, full health, a zero-vulnerability audit, and Git hygiene. The branch implements one server-side password-admission boundary, a pinned hash-only common-password corpus, layered PostgreSQL reauthentication budgets with canonical IPv4/IPv6 network subjects, bounded `SKIP LOCKED` worker maintenance without a new scheduled-action type or migration, and the repository-controlled production web adapter with strict CSP/HSTS and explicit proxy trust. Evidence is in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed focused security 16/16, header/proxy/server 16/16, PostgreSQL/API/worker 36/36, Chromium 1/1, production scan, full health, a zero-vulnerability audit, and Git hygiene. The merged implementation includes one server-side password-admission boundary, a pinned hash-only common-password corpus, layered PostgreSQL reauthentication budgets with canonical IPv4/IPv6 network subjects, bounded `SKIP LOCKED` worker maintenance without a new scheduled-action type or migration, and the repository-controlled production web adapter with strict CSP/HSTS and explicit proxy trust. Evidence is in `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 ## UX0 through UX8 product-experience program
 
@@ -145,7 +145,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Redmi Note 9S 25/25 acceptance is closed, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is DONE and merged to `main` at `a029169`.
-- **SEC1 Pre-V1 Security Hardening:** DONE on the feature branch at executable `91ca920d`; complete local evidence is recorded.
+- **SEC1 Pre-V1 Security Hardening:** DONE and merged to `main @ a2badf7`; final executable `91ca920d`; complete local evidence is recorded.
 - **V1 Hosted CI Verification:** next milestone; execute the already-configured GitHub-hosted baseline when Actions capacity is available.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure after SEC1 and V1.
 

@@ -8,6 +8,8 @@ Branch: `feat/sec1-pre-v1-security-hardening`.
 
 Branch base: `main @ 61a9a3485b061da4c192481739c52305a29d81d1`.
 
+Fast-forward merge anchor: `a2badf7a357f36c075d44e1378fc2d6c2d20e300`.
+
 Canonical scope: `../security/PRE_V1_SECURITY_HARDENING.md`.
 
 Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
@@ -200,4 +202,4 @@ R2 owns that deployment-layer re-proof. SEC1 owns the repository-controlled serv
 
 ## Closure conclusion
 
-All SEC1 acceptance gates are closed. The repository-controlled production behavior is locally proven; R2 still owns re-proof of browser headers at the actual public HTTPS origin. V1 Hosted CI Verification is the next milestone and remains subject to GitHub Actions capacity.
+All SEC1 acceptance gates are closed. The evidence-bearing branch was fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`. The repository-controlled production behavior is locally proven; R2 still owns re-proof of browser headers at the actual public HTTPS origin. V1 Hosted CI Verification is the next milestone and remains subject to GitHub Actions capacity.

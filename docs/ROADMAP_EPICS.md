@@ -206,9 +206,11 @@ Hosted GitHub Actions execution is tracked separately under V1 and is not an F1 
 
 # SEC1: Pre-V1 Security Hardening
 
-Status: DONE ON FEATURE BRANCH
+Status: DONE AND MERGED TO MAIN
 
 Final executable: `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`.
+
+Fast-forward merge anchor: `a2badf7a357f36c075d44e1378fc2d6c2d20e300`.
 
 ## Purpose
 
@@ -226,7 +228,7 @@ Canonical implementation architecture:
 
 Implementation checkpoint:
 
-- all four SEC1 remediation slices are implemented on `feat/sec1-pre-v1-security-hardening`
+- all four SEC1 remediation slices were implemented on `feat/sec1-pre-v1-security-hardening` and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`
 - the common-password source universe is pinned to 99,839 SecLists entries by repository commit, path, Git blob SHA, source count, and MIT provenance; plaintext source rows are intentionally not committed, and runtime data contains only 327 policy-relevant SHA-256 membership digests
 - no PostgreSQL migration or new scheduled-action type was required
 - the repository now owns the production web serving adapter and CSP/HSTS policy
