@@ -82,7 +82,11 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         SEC1 Pre-V1 Security Hardening ✅ DONE + MERGED @ a2badf7 (executable 91ca920d)
                 |
                 v
-        V1 Hosted CI Verification 🔒 awaiting Actions capacity
+        Pre-V1 follow-up hardening 🔧
+        local S1 purge + HTTP boundary fixes
+             |
+             v
+        V1 Hosted CI Verification 🔒 awaiting fixes, coverage expansion, and Actions capacity
                 |
                 v
         R2 Public Readiness ⚪
@@ -96,7 +100,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 v
         X2 Deferred Heavy Features ⏸
 
-V1 Hosted CI Verification 🔒 remains a separate verification milestone. SEC1 is DONE, so V1 is next when Actions capacity is available and must finish before R2 can close.
+V1 Hosted CI Verification 🔒 remains a separate verification milestone. SEC1 is DONE, but the 2026-09-29 follow-up audit added two mandatory source repairs before V1: account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-client-error handling. After those fixes and hosted security-coverage expansion, V1 can run when Actions capacity is available and must finish before R2 can close.
 ~~~
 
 ## Mermaid dependency view
@@ -183,7 +187,7 @@ UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, 
 
 SEC1 Pre-V1 Security Hardening ✅ DONE + MERGED, merge anchor `a2badf7`, final executable `91ca920d`
 
-V1 Hosted CI Verification 🔒 NEXT, blocked by Actions capacity
+V1 Hosted CI Verification 🔒 NEXT, blocked by follow-up source repairs, hosted security-coverage expansion, and Actions capacity
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -322,4 +326,4 @@ UX8 ✅
  -> Stable Release
 ~~~
 
-SEC1 is DONE and merged to `main @ a2badf7`; final executable `91ca920d`. V1 Hosted CI Verification is the active next milestone when Actions capacity becomes available.
+SEC1 is DONE and merged to `main @ a2badf7`; final executable `91ca920d`. The active next engineering work is the two documented pre-V1 follow-up source repairs. V1 Hosted CI Verification follows those fixes and hosted security-coverage expansion when Actions capacity becomes available.

@@ -6,7 +6,7 @@ FROZEN DESIGN, IMPLEMENTED AND LOCALLY CLOSED ON FEATURE BRANCH.
 
 Implementation and automated local closure are complete and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300` from the historical `feat/sec1-pre-v1-security-hardening` branch. The final executable SHA is `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`; observed evidence is recorded in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
-SEC1 is DONE and merged to `main`. V1 Hosted CI Verification is the next pre-release milestone, subject to GitHub Actions capacity.
+SEC1 is DONE and merged to `main`. A later 2026-09-29 audit found two post-SEC1 source defects outside this frozen SEC1 implementation scope: account-wide S1 local-crypto lifecycle deletion, and S1 HTTP request-size/framework-client-error handling. Those follow-up repairs must close before V1 Hosted CI Verification; V1 also remains subject to hosted security-coverage expansion and GitHub Actions capacity.
 
 ## Baseline
 

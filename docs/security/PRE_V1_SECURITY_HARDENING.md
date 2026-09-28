@@ -34,7 +34,7 @@ Implemented remediation:
 - strict `style-src 'self'` is supported by removing every identified production inline-style writer, including additional Talk, video-call, and View Transition sites discovered during implementation
 - the SEC1 test surface now includes focused admission tests, digest-corpus integrity checks, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, proxy-trust/header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media/offline smoke, a production scan, and one final `npm run test:sec1:closure` wrapper
 
-The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. V1 Hosted CI Verification is now the next milestone, subject to GitHub Actions capacity. R2 retains the public HTTPS header re-proof.
+The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. A later 2026-09-29 audit found two post-SEC1 source defects that must be fixed before V1 release evidence: account-wide S1 local-crypto lifecycle deletion, and S1 HTTP request-size/framework-client-error handling. SEC1 remains DONE. After those follow-up repairs and hosted security-coverage expansion, V1 Hosted CI Verification can run subject to GitHub Actions capacity. R2 retains the public HTTPS header re-proof.
 
 ## Purpose
 
@@ -172,4 +172,4 @@ Physical Android testing is not required by default for SEC1. Add a focused devi
 
 SEC1 is DONE only when every acceptance gate in `docs/ROADMAP_EPICS.md` is closed with committed evidence.
 
-After SEC1 is DONE, V1 Hosted CI Verification becomes the next priority when GitHub Actions capacity is available.
+After SEC1 is DONE, any newly discovered pre-V1 source defect must close before hosted release evidence is collected. The current priority is the two 2026-09-29 follow-up repairs; V1 Hosted CI Verification follows when those fixes, hosted security coverage, and Actions capacity are ready.
