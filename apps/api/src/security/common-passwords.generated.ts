@@ -1,4 +1,5 @@
 // GENERATED FILE. DO NOT EDIT BY HAND.
+// Regenerate: npm run sec1:passwords:generate
 // Source: https://github.com/danielmiessler/SecLists/blob/2e3e92569043d24297ca6c35070078e5cf41651e/Passwords/Common-Credentials/100k-most-used-passwords-NCSC.txt
 // Source repository commit: 2e3e92569043d24297ca6c35070078e5cf41651e
 // Source Git blob SHA: 38eb37702244f55fda75cab281eb2145cd7685b6
