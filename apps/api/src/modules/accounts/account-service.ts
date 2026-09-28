@@ -860,11 +860,6 @@ export class AccountService {
       },
     ]);
     const account = await findAccountByIdentifier(this.database.pool, identifier);
-    const newHashDecision = await this.passwordAdmission.hashNewCredential(input.newPassword);
-    if (!newHashDecision.allowed) {
-      throw new ApiError(400, newHashDecision.reason);
-    }
-    const newHash = newHashDecision.passwordHash;
     if (!account || account.status !== "active") throw new ApiError(409, "EMAIL_CHALLENGE_INVALID");
 
     const decision = await withTransaction(this.database, async (transaction) => {
@@ -885,7 +880,17 @@ export class AccountService {
           code: verification === "expired" ? "EMAIL_CHALLENGE_EXPIRED" : "EMAIL_CHALLENGE_INVALID",
         };
       }
-      await updatePasswordCredential(transaction, account.accountId, newHash, now);
+
+      const newHashDecision = await this.passwordAdmission.hashNewCredential(input.newPassword);
+      if (!newHashDecision.allowed) {
+        throw new ApiError(400, newHashDecision.reason);
+      }
+      await updatePasswordCredential(
+        transaction,
+        account.accountId,
+        newHashDecision.passwordHash,
+        now,
+      );
       await revokeAllSessionsForAccount(transaction, account.accountId, now);
       await consumeChallenge(transaction, challenge.id, now);
       await appendSecurityEvent(transaction, {
