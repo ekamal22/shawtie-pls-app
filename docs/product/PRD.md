@@ -1802,6 +1802,12 @@ The first stable release should not ship until the project has:
 - immediate old-username release behavior
 - server-enforced one-time date-of-birth correction
 - secure authentication
+- password-recovery completion enforces the same password policy as registration
+- durable abuse throttling for password reauthentication
+- materially strong common/compromised-password screening
+- expired abandoned registration intents do not retain password hashes indefinitely
+- production CSP and HSTS verified at the actual public serving layer
+- SEC1 Pre-V1 Security Hardening completed before V1 Hosted CI Verification is used as release evidence
 - database-enforced partnership exclusivity
 - manual relationship start-date support with future-date rejection
 - relationship start-date change notifications
@@ -2083,6 +2089,7 @@ Implemented and verified scope:
 
 ### Phase 8: Public Readiness
 
+- SEC1 pre-V1 security hardening before hosted CI release verification
 - abuse controls
 - privacy documentation
 - account deletion
@@ -2165,7 +2172,7 @@ All examples, fixtures, screenshots, and seeded accounts must use synthetic data
 
 ## 46. Current Product Status
 
-The repository has completed the verified F0, F1, F2, A1, P1, P2, P3, M1, and R1 milestones locally and merged the documentation-closed M1/R1 integration to `main @ d7d95a650a1c0878f210d7da3a73d0c4ac9303d3`. M1 Messaging Core is DONE at 18/18 acceptance gates, and R1 Relationship Space is DONE after exhaustive combined validation at `5db7a94183bca153d142389d7188e3887653a9ec`. M2 Realtime and Offline Reliability is the next implementation milestone.
+The verified implementation has progressed through M2, M3, C1, C2, UX0 through UX8, and S1, with UX8 DONE and merged to `main @ a029169`. The highest remaining pre-release priority is SEC1 Pre-V1 Security Hardening, followed by V1 Hosted CI Verification, R2 Public Readiness, and Stable Release.
 
 Architecture Baseline 1.0 remains frozen and governed through accepted ADRs and architecture change control.
 
@@ -2173,7 +2180,7 @@ The verified A1 surface includes migration 0007, account domain rules and contra
 
 A1 verification is complete: all seven migrations apply from zero, database invariants pass, the disposable PostgreSQL acceptance suite passes 27/27, the A1 security suite passes 16/16, the full repository health regression passes, the high-severity dependency audit reports 0 vulnerabilities, and all 20 A1 acceptance gates are closed.
 
-The prior pure partnership domain state-machine baseline and centralized capability engine are locally validated. P1, P2, and P3 retain their documented closure evidence. M1 runtime closure is anchored at `aa40a2c`, and M1 source head `b29b095` plus R1 source head `9bc9ba4` are integrated at `01fa182`. Exhaustive combined validation at `5db7a94` passes 40/40 gates, including canonical migrations 0001 through 0014 with `reserved=0`, database invariants, F2 39/39, A1 27/27, P1 16/16, P2 27/27, P3 39/39, M1 64/64, R1 69/69, final full health with Domain 60/60, Contracts 29/29, API unit/security 44/44, Worker 4/4, and a 0-vulnerability audit. Baseline CI and repository-health tooling are configured, while GitHub-hosted CI validation remains pending under V1.
+The prior pure partnership domain state-machine baseline and centralized capability engine are locally validated. P1, P2, and P3 retain their documented closure evidence. M1 runtime closure is anchored at `aa40a2c`, and M1 source head `b29b095` plus R1 source head `9bc9ba4` are integrated at `01fa182`. Exhaustive combined validation at `5db7a94` passes 40/40 gates, including canonical migrations 0001 through 0014 with `reserved=0`, database invariants, F2 39/39, A1 27/27, P1 16/16, P2 27/27, P3 39/39, M1 64/64, R1 69/69, final full health with Domain 60/60, Contracts 29/29, API unit/security 44/44, Worker 4/4, and a 0-vulnerability audit. Baseline CI and repository-health tooling are configured. GitHub-hosted CI validation remains pending under V1 and must wait until SEC1 Pre-V1 Security Hardening is DONE.
 
 This PRD defines intended product behavior. It is not the implementation-progress source of truth.
 
