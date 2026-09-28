@@ -627,7 +627,7 @@ Protocol review, protected-content paths, recovery, revocation, plaintext retire
 
 Status: PLANNED.
 
-Depends on all stable-release feature epics and V1 Hosted CI Verification.
+Depends on all stable-release feature epics, SEC1 Pre-V1 Security Hardening, and V1 Hosted CI Verification.
 
 ## Goal
 
@@ -650,7 +650,7 @@ Turn the verified private product into an operationally releasable system.
 
 ## Closure boundary
 
-R2 is DONE only when every stable-release PRD gate, V1, browser acceptance, physical Android acceptance, calling privacy acceptance, E2EE review, deletion recovery, and launch rollback gate is green.
+R2 is DONE only when every stable-release PRD gate, SEC1, V1, browser acceptance, physical Android acceptance, calling privacy acceptance, E2EE review, deletion recovery, and launch rollback gate is green.
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
@@ -671,11 +671,11 @@ Stable release requires:
 
 # Verification Track: V1 Hosted CI
 
-Status: BLOCKED while GitHub Actions capacity is unavailable.
+Status: BLOCKED until SEC1 is DONE and GitHub Actions capacity is available.
 
-V1 does not block feature development, but R2 cannot close without it.
+V1 does not block completed feature development, but its release-evidence run is downstream of SEC1 and R2 cannot close without it.
 
-When capacity returns:
+When SEC1 is DONE and capacity returns:
 
 1. run Baseline CI without a skip marker or manually dispatch it
 2. verify hosted `npm ci`
