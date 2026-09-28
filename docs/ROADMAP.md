@@ -75,7 +75,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 17 UX7 Signature Shawtie Moments | DONE, integrated and physically accepted | UX2 through UX6 | Redmi accepted |
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
-| 20 SEC1 Pre-V1 Security Hardening | PLANNED, highest remaining priority | merged UX8 and post-UX8 security audit | No, unless a remediation creates a device-specific regression |
+| 20 SEC1 Pre-V1 Security Hardening | DESIGN FROZEN, implementation next, highest remaining priority | merged UX8 and post-UX8 security audit | No, unless a remediation creates a device-specific regression |
 | V1 Hosted CI Verification | BLOCKED until SEC1 and Actions capacity | SEC1 | No |
 | 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
@@ -129,7 +129,7 @@ C2 is closed and merged. UX0 through UX7 are complete, physically accepted 22/22
 
 UX2 Home, UX3 Talk, UX4 Ours, UX5 Calls, UX6 Memories, and UX7 Signature Moments are complete and physically accepted. S1 is fully closed and merged. UX8 is DONE on `feat/ux8-encrypted-ux-integration` against the frozen design in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`: automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` and the mandatory 25-scenario Redmi Note 9S acceptance in `docs/testing/UX8_ANDROID_ACCEPTANCE.md` closed 25/25, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. It is fast-forward merged to `main` at `a029169`.
 
-SEC1 Pre-V1 Security Hardening is now the highest remaining priority. Its five known audit items must be remediated and locally re-verified before the first intentional V1 hosted Actions run is used as release evidence. The canonical gate is `docs/security/PRE_V1_SECURITY_HARDENING.md`.
+SEC1 Pre-V1 Security Hardening is now the highest remaining priority. Its implementation architecture is frozen in `docs/architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`. The refined design uses one server-side password-admission boundary, layered PostgreSQL reauthentication budgets, bounded worker maintenance instead of a new scheduled-action type, and CSP that explicitly preserves OpenMLS WebAssembly through `wasm-unsafe-eval` while forbidding general unsafe-eval. The canonical acceptance gate remains `docs/security/PRE_V1_SECURITY_HARDENING.md`.
 
 ## UX0 through UX8 product-experience program
 
@@ -145,7 +145,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **UX7 Signature Shawtie Moments:** the Ribbon, Two Sides, letter opening, Our Year book treatment, pair mark, threshold transition, and memory return. Product extensions remain quarantined.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Redmi Note 9S 25/25 acceptance is closed, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is DONE and merged to `main` at `a029169`.
-- **SEC1 Pre-V1 Security Hardening:** remediate the five post-UX8 audit findings and prove focused regressions plus a clean local security baseline before V1.
+- **SEC1 Pre-V1 Security Hardening:** implement the frozen refined design, remediate the five post-UX8 audit findings, and prove focused A1/worker/browser regressions plus one clean final local security baseline before V1.
 - **V1 Hosted CI Verification:** execute the already-configured GitHub-hosted baseline only after SEC1 is DONE and Actions capacity is available.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure after SEC1 and V1.
 
