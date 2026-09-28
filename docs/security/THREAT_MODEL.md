@@ -1196,6 +1196,10 @@ Depending on final implementation, infrastructure may still observe:
 
 Metadata retention must be minimized and documented.
 
+## Known pre-V1 hardening findings
+
+The post-UX8 source audit opened SEC1 Pre-V1 Security Hardening before V1 Hosted CI Verification. Current known items are password-policy bypass on password-recovery completion, missing explicit durable throttling on password reauthentication, an undersized common-password screening set, missing verified runtime cleanup for password hashes on expired abandoned registration intents, and production CSP/HSTS not yet evidenced at the actual public web serving layer. Password storage itself uses Argon2id and is not treated as a finding. These open items must close with focused regressions and a clean local security baseline before V1. See `PRE_V1_SECURITY_HARDENING.md`.
+
 ## Required pre-stable-release security evidence
 
 Before stable release, the project must have evidence for:
