@@ -330,6 +330,24 @@ test("SEC1 concurrent reauthentication guesses cannot race past the durable limi
       "SELECT count(*)::text AS count FROM security_events WHERE event_type = 'reauthentication_failed'",
     );
     assert.equal(failures.rows[0]?.count, "5");
+
+    const buckets = await database.pool.query<{
+      scope: string;
+      attempt_count: number;
+      blocked_until: Date | null;
+    }>(
+      `SELECT scope, attempt_count, blocked_until
+       FROM security_rate_limit_buckets
+       WHERE scope IN ('reauth_account', 'reauth_session', 'reauth_network')
+       ORDER BY scope`,
+    );
+    const byScope = new Map(buckets.rows.map((row) => [row.scope, row]));
+    assert.equal(byScope.get("reauth_account")?.attempt_count, 6);
+    assert.ok(byScope.get("reauth_account")?.blocked_until);
+    assert.equal(byScope.get("reauth_session")?.attempt_count, 6);
+    assert.ok(byScope.get("reauth_session")?.blocked_until);
+    assert.equal(byScope.get("reauth_network")?.attempt_count, 10);
+    assert.equal(byScope.get("reauth_network")?.blocked_until, null);
   } finally {
     await app.close();
     await closeDatabasePool(database);
