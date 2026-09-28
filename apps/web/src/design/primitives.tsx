@@ -218,14 +218,18 @@ export function PairMark({
   );
 }
 
-export function Avatar({ name, size = 40 }: { readonly name: string; readonly size?: number }) {
+export type AvatarSize = 40 | 44 | 72 | 144;
+
+export function Avatar({
+  name,
+  size = 40,
+}: {
+  readonly name: string;
+  readonly size?: AvatarSize;
+}) {
   const initial = Array.from(name.trim())[0]?.toUpperCase() ?? "?";
   return (
-    <span
-      className="ds-avatar"
-      style={{ width: size, height: size, fontSize: size * 0.42 }}
-      aria-hidden="true"
-    >
+    <span className={cx("ds-avatar", "ds-avatar--" + size)} aria-hidden="true">
       {initial}
     </span>
   );
@@ -322,17 +326,31 @@ export function LifecycleBanner({
   );
 }
 
+export type SkeletonWidth = "35%" | "45%" | "50%" | "55%" | "60%" | "70%";
+
+const SKELETON_WIDTH_CLASS: Record<SkeletonWidth, string> = {
+  "35%": "ds-skeleton--w35",
+  "45%": "ds-skeleton--w45",
+  "50%": "ds-skeleton--w50",
+  "55%": "ds-skeleton--w55",
+  "60%": "ds-skeleton--w60",
+  "70%": "ds-skeleton--w70",
+};
+
 export function Skeleton({
   shape = "line",
   width,
 }: {
   readonly shape?: "line" | "block" | "circle";
-  readonly width?: string;
+  readonly width?: SkeletonWidth;
 }) {
   return (
     <span
-      className={cx("ds-skeleton", "ds-skeleton--" + shape)}
-      style={width ? { width } : undefined}
+      className={cx(
+        "ds-skeleton",
+        "ds-skeleton--" + shape,
+        width ? SKELETON_WIDTH_CLASS[width] : undefined,
+      )}
       aria-hidden="true"
     />
   );
