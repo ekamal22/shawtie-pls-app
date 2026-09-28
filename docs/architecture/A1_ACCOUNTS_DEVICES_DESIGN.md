@@ -289,7 +289,7 @@ PostgreSQL
 Durable worker
    |
    +-- auth email outbox handler
-   +-- auth cleanup scheduled handler
+   +-- bounded auth maintenance cleanup
    +-- account deletion finalizer
    |
    +--> provider-neutral email delivery port
@@ -1587,12 +1587,14 @@ Correctness never depends on immediate cleanup.
 
 Expired state is rejected authoritatively at use time.
 
-A scheduled auth cleanup job may remove:
+A bounded auth maintenance sweep may remove:
 
-- expired registration intents
+- expired incomplete registration intents
 - consumed or superseded old email challenges
 - expired revoked sessions after retention
 - stale rate-limit buckets
+
+SEC1 refines the registration-intent portion of this cleanup: it uses a replica-safe worker maintenance sweep with short PostgreSQL transactions and `FOR UPDATE SKIP LOCKED`, rather than introducing a new scheduled-action type. Registration eligibility still ends synchronously at the authoritative `expires_at` boundary; maintenance only removes no-longer-valid retained data. See `SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
 Cleanup uses bounded retention and must not delete security evidence earlier than the documented security-event retention policy.
 
