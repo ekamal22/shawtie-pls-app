@@ -76,7 +76,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
 | 20 SEC1 Pre-V1 Security Hardening | DONE and merged to `main @ a2badf7`; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
-| V1 Hosted CI Verification | NEXT; blocked by Actions capacity | SEC1 DONE | No |
+| V1 Hosted CI Verification | NEXT; workflow security coverage must be expanded, then hosted run awaits Actions capacity | SEC1 DONE | No |
 | 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
@@ -85,6 +85,12 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 ## Current repository attention items
 
 The 2026-09-29 repository audit adds no new feature milestone, but it makes the following V1/R2 obligations explicit:
+
+- before V1 can count as release evidence, hosted CI must cover the SEC1/S1-focused security gates that are currently outside `npm run health`, including header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format coverage.
+- R2 must replace the fixed service-worker cache lifecycle with release-version rotation or explicit stale-asset pruning and verify update/offline-shell correctness.
+- R2 must normalize media, realtime, and calling network rate-limit subjects to the canonical network prefix and reconcile key-version behavior so IPv6 privacy-address rotation or key rotation cannot fragment the intended network budget.
+- R2 must constrain plaintext `BACKEND_PROXY_TARGET` use to a proven trusted private/loopback network or require HTTPS for an untrusted hop.
+- R2 must add dedicated secret scanning and stable-release provenance through an immutable signed release tag or equivalent signed release record with artifact checksums.
 
 - V1 has zero GitHub-hosted runs on `main` and must execute the configured Baseline CI before hosted CI can be treated as verified.
 - `main` is currently unprotected, required status checks are off, and no repository rulesets exist. R2 must establish protection after V1 identifies the hosted status check that should gate release-relevant changes.

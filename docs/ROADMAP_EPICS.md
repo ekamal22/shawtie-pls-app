@@ -292,6 +292,9 @@ SEC1 is DONE. GitHub reports zero workflow runs on `main`, so V1 remains complet
 ## Scope
 
 - execute Baseline CI on GitHub-hosted Ubuntu
+- expand hosted coverage so a V1 green result also protects the SEC1/S1 security baseline, not only `npm run health`
+- run or separately gate `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, and `sec1:format:check`
+- decide and document how disposable PostgreSQL and real-Chromium security/integration jobs run in hosted release verification without weakening their assertions
 - verify the workflow trigger and permissions behavior
 - verify clean lockfile installation under the hosted runner
 - verify the full repository baseline under the hosted runner
@@ -301,6 +304,8 @@ SEC1 is DONE. GitHub reports zero workflow runs on `main`, so V1 remains complet
 ## Acceptance gates
 
 - [x] SEC1 Pre-V1 Security Hardening is DONE before the V1 release-verification run
+- [ ] the hosted workflow is updated so a passing V1 result cannot omit the SEC1/S1-focused header, proxy, password-corpus, production-scan, lint, and format gates
+- [ ] the hosted release-verification plan explicitly covers the disposable PostgreSQL and real-Chromium security/integration boundary, either in V1 jobs or a separately required release job
 - [ ] at least one GitHub-hosted Baseline CI run completes successfully
 - [ ] hosted `npm ci` succeeds from the committed lockfile
 - [ ] hosted `npm run ci:baseline` succeeds
@@ -2718,6 +2723,11 @@ Status: PLANNED
 - `main` branch protection and required-check enforcement
 - explicit public-repository licensing decision
 - obsolete historical branch and ADR disposition
+- service-worker cache versioning or deterministic stale-asset pruning
+- canonical network-prefix rate limiting for media, realtime, and calling
+- trusted edge-to-backend transport enforcement or verified private-network constraint
+- dedicated secret scanning beyond the repository-health regex sweep
+- signed stable-release provenance and artifact checksums
 - security scanning
 - privacy documentation
 - abuse reporting
@@ -2741,6 +2751,11 @@ Status: PLANNED
 - [ ] the public repository licensing policy is explicitly chosen and recorded
 - [ ] `design/m3-media-voice` and its stranded non-authoritative ADR-012 have an explicit archive, deletion, or historical-only disposition
 - [ ] production provider, deployment, release, rollback, backup/recovery, and operational configuration are implemented and reviewed
+- [ ] service-worker cache rollover cannot retain unbounded obsolete fingerprinted assets and the activated worker cannot leave an incompatible offline shell as the durable fallback
+- [ ] media, realtime, and calling network abuse buckets use canonical network-prefix subjects and reviewed key-version behavior
+- [ ] any plaintext web-to-API backend hop is restricted to and verified as a trusted private/loopback transport boundary, otherwise HTTPS is required
+- [ ] dedicated secret scanning suitable for a public repository is green
+- [ ] the stable release is tied to an immutable signed tag or equivalent signed provenance record with exact source SHA and artifact checksums
 - [ ] no unresolved critical or high security finding blocks release
 - [ ] dependency and secret scanning are green
 - [ ] privacy documentation matches actual implementation

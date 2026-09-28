@@ -187,7 +187,14 @@ Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned ex
 
 ## Repository audit concerns
 
-The 2026-09-29 repository-wide audit found no new implementation or SEC1 security blocker. The following release-governance items need attention and are assigned to V1/R2 rather than reopened feature milestones:
+The 2026-09-29 follow-up repository-wide audit found no new critical authentication, E2EE, cross-partnership authorization, or committed-secret defect. It did identify additional pre-release hardening and assurance work. The following items need attention and are assigned to V1/R2 rather than reopening SEC1 or completed feature milestones:
+
+- V1 CI coverage is currently weaker than the locally closed SEC1/S1 baseline. `npm run ci:baseline` aliases `npm run health`, which does not run `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, or `sec1:format:check`, and the ordinary root lint/format globs do not fully cover the production web `.mjs` serving files. V1 must expand or add a hosted security job before a green hosted run is accepted as release evidence.
+- `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`; old fingerprinted static assets are not pruned inside that cache and an activated worker can initially inherit the previous cached `/` shell until an online navigation replaces it. R2 must add a release-aware cache version or explicit inventory/pruning and regression coverage.
+- authentication and partner-request network abuse limits use canonical `/24` IPv4 and `/64` IPv6 subjects, but media, realtime, and calling network buckets currently use exact `request.ip`. R2 must unify these subjects through canonical network-prefix normalization and align rate-limit key-rotation behavior where applicable.
+- production `BACKEND_PROXY_TARGET` accepts HTTP or HTTPS. HTTP is acceptable only across an explicitly trusted private or loopback transport boundary; R2 must either enforce that restriction in configuration or prove and document the private topology so session-bearing API traffic cannot cross an untrusted plaintext hop.
+- repository-health secret patterns are useful but intentionally narrow. R2 must add dedicated secret scanning suitable for a public release rather than treating `npm audit` or the current regex sweep as complete secret-detection evidence.
+- development commits are currently unsigned. This does not invalidate existing milestone evidence, but the stable release should be anchored to an immutable signed release tag or equivalent signed provenance, with the exact release SHA and artifact checksums recorded.
 
 - `main` is currently unprotected in GitHub. Required status checks are off and the repository has no rulesets. R2 must add protection suitable for the verified fast-forward workflow and prevent force pushes and branch deletion. Once V1 proves the hosted Baseline CI status, release-relevant changes must be gated by the appropriate hosted check.
 - GitHub Actions has zero runs on `main`. V1 remains the first hosted execution and evidence gate.
