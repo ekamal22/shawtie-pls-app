@@ -1,6 +1,14 @@
 # SEC1 Common Password Corpus
 
-This directory vendors the exact source data used to generate Shawtie's server-only common-password admission corpus.
+Shawtie uses a server-only, offline exact-match corpus to reject newly chosen common passwords.
+
+The repository intentionally does **not** vendor the plaintext source password list. The public repository follows a synthetic-data-only rule, so only exact SHA-256 membership digests for structurally relevant entries are committed in:
+
+`apps/api/src/security/common-passwords.generated.ts`
+
+SHA-256 here is only a local set-representation mechanism. Account credentials continue to be stored with Argon2id.
+
+## Pinned source
 
 Source repository: `danielmiessler/SecLists`
 
@@ -18,20 +26,34 @@ Pinned Git blob SHA:
 
 Source entry count: 99,839.
 
-License: MIT, as published by SecLists. The generated TypeScript file also carries the MIT notice.
+Effective entries after Shawtie's 15 to 128 code-point structural policy, NFC normalization, case folding, UTF-8 size bound, decoding of valid `$HEX[...]` rows, and deduplication: 327.
 
-The raw vendored source is not loaded by the application. It exists only to make generation deterministic and reviewable.
+License: MIT, as published by SecLists.
 
-Generation:
+## Regeneration
+
+Obtain the exact pinned source file outside the repository and set:
+
+```text
+SEC1_COMMON_PASSWORD_SOURCE_FILE=<path-to-pinned-source>
+```
+
+Then run:
 
 ```text
 npm run sec1:passwords:generate
 ```
 
-Verification without modifying files:
+The generator verifies the source Git blob SHA and source entry count before writing output. A wrong or modified source fails closed.
+
+The source file must remain untracked.
+
+## Normal closure verification
+
+SEC1 closure does not need the plaintext source file. It runs:
 
 ```text
 npm run sec1:passwords:check
 ```
 
-Generation normalizes each entry to Unicode NFC, folds case for admission comparison, decodes valid `$HEX[...]` UTF-8 entries, removes duplicates, and emits only entries that can survive Shawtie's structural password bounds. Short entries remain represented by the structural minimum-length rule and do not need to occupy runtime memory.
+That check verifies the committed hash-only corpus shape, pinned source metadata, expected digest count, and absence of known plaintext sentinel entries.
