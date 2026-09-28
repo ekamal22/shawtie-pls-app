@@ -8,7 +8,7 @@ The repository workspace, TypeScript, linting, formatting, runtime-contract, dep
 
 F1 Repository Foundation and Executable Guardrails is therefore complete.
 
-GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. V1 is currently blocked by Actions capacity and does not block ongoing implementation work. It remains required before R2 Public Readiness can be marked DONE.
+GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. V1 is currently blocked both by Actions capacity and by the open SEC1 Pre-V1 Security Hardening gate. SEC1 is the higher priority and must be DONE before intentionally spending hosted Actions capacity on the V1 release-verification run. V1 remains required before R2 Public Readiness can be marked DONE.
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
@@ -211,7 +211,7 @@ When GitHub Actions execution is intentionally being avoided, commits may use Gi
 
 A skipped workflow is not evidence that CI passed.
 
-V1 remains deferred while Actions capacity is unavailable. Once Actions execution is available again:
+V1 remains deferred while Actions capacity is unavailable and while SEC1 is open. Once SEC1 is DONE and Actions execution is available again:
 
 1. create or push a commit without a skip marker, or manually dispatch Baseline CI
 2. inspect the workflow result
@@ -223,7 +223,7 @@ V1 remains deferred while Actions capacity is unavailable. Once Actions executio
 
 Local disposable PostgreSQL F2 verification is complete. The Docker-backed path applies all six migrations from zero, runs database invariants, and passes 17/17 F2 integration tests covering races, expired-claim reclaim, fencing, lease ownership, transaction retry and clocks, outbox atomicity and duplicate safety, lifecycle privacy, deletion recovery, queue plans, and worker shutdown.
 
-Baseline CI still contains the intentionally small lockfile, repository-baseline, and dependency-audit job. Hosted GitHub Actions execution remains blocked under V1 while Actions capacity is being conserved.
+Baseline CI still contains the intentionally small lockfile, repository-baseline, and dependency-audit job. Hosted GitHub Actions execution remains blocked under V1 while Actions capacity is being conserved, and SEC1 must close before that hosted run is used as release evidence.
 
 When hosted PostgreSQL CI infrastructure is justified, it can reproduce the already-passing local F2 database matrix. That hosted reproduction is a V1 or later CI-expansion concern and is not required to reopen F2.
 
