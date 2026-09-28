@@ -31,6 +31,21 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
   expect(headers["permissions-policy"]).toContain("camera=(self)");
   expect(headers["permissions-policy"]).toContain("microphone=(self)");
 
+  const apiHeaders = await page.evaluate(async () => {
+    const response = await fetch("/api/v1/auth/session", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    return {
+      status: response.status,
+      csp: response.headers.get("content-security-policy"),
+      nosniff: response.headers.get("x-content-type-options"),
+    };
+  });
+  expect(apiHeaders.status).toBe(401);
+  expect(apiHeaders.csp).toBe(csp);
+  expect(apiHeaders.nosniff).toBe("nosniff");
+
   expect(await page.locator("[style]").count()).toBe(0);
   expect(cspViolations).toEqual([]);
 
