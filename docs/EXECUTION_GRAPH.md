@@ -79,7 +79,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         UX8 Encrypted UX 🟢 DONE, Android 25/25, merged main @ a029169
                 |
                 v
-        SEC1 Pre-V1 Security Hardening ⚪ HIGHEST PRIORITY
+        SEC1 Pre-V1 Security Hardening 🟡 IMPLEMENTED, CLOSURE PENDING
                 |
                 v
         V1 Hosted CI Verification 🔒 after SEC1 + Actions capacity
@@ -142,7 +142,7 @@ flowchart TD
     UX7 --> UX8["UX8 Encrypted UX Integration ✅ DONE @ 43ff9b1, Android 25/25"]
     S1 --> UX8
 
-    UX8 --> SEC1["SEC1 Pre-V1 Security Hardening ⚪"]
+    UX8 --> SEC1["SEC1 Pre-V1 Security Hardening 🟡"]
     SEC1 --> V1["V1 Hosted CI Verification 🔒"]
     V1 --> R2["R2 Public Readiness ⚪"]
 
@@ -182,7 +182,7 @@ S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, mer
    ->
 UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, merged to `main @ a029169`
 
-SEC1 Pre-V1 Security Hardening ⚪ PLANNED, highest remaining priority
+SEC1 Pre-V1 Security Hardening 🟡 PLANNED, highest remaining priority
 
 V1 Hosted CI Verification 🔒 BLOCKED until SEC1 is DONE and Actions capacity is available
 ~~~
