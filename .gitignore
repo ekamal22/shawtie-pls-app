@@ -10,3 +10,5 @@ build/
 Thumbs.db
 apps/web/public/crypto/openmls/
 packages/crypto/openmls-wasm/target/
+# SEC1 local common-password source material (never commit plaintext corpus)
+security-data/common-passwords/*.txt
