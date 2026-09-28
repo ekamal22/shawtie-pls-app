@@ -41,6 +41,24 @@ test("SEC1 connect origins collapse paths and reject insecure remote origins", (
   );
 });
 
+test("SEC1 production header configuration rejects ambiguous origins", () => {
+  assert.throws(
+    () =>
+      buildWebSecurityHeaders({
+        appOrigin: "https://app.example.test/path",
+      }),
+    /APP_ORIGIN must be a bare origin/,
+  );
+  assert.throws(
+    () =>
+      buildWebSecurityHeaders({
+        appOrigin: "https://app.example.test",
+        mediaConnectSrc: "https://user:secret@media.example.test",
+      }),
+    /must not contain credentials/,
+  );
+});
+
 test("SEC1 loopback production-mode harness may use explicit insecure test opt-in", () => {
   const headers = buildWebSecurityHeaders({
     appOrigin: "http://127.0.0.1:4173",
