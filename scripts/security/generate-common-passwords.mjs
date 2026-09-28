@@ -134,14 +134,34 @@ async function checkCommittedOutput() {
   if (current.includes("passwordpassword") || current.includes("123456789987654321")) {
     throw new Error("Committed common-password corpus contains forbidden plaintext entries");
   }
-  const digestMatches = current.match(/"([0-9a-f]{64})",/g) ?? [];
-  if (digestMatches.length !== EFFECTIVE_ENTRY_COUNT) {
+  const setStart = current.indexOf("export const COMMON_PASSWORD_DIGESTS");
+  const setEnd = current.indexOf("]);", setStart);
+  if (setStart < 0 || setEnd < 0) {
+    throw new Error("Committed common-password digest set is missing");
+  }
+  const setBody = current.slice(setStart, setEnd);
+  const digests = [...setBody.matchAll(/\n\s*"([0-9a-f]{64})",/g)].map((match) => match[1]);
+  if (digests.length !== EFFECTIVE_ENTRY_COUNT) {
     throw new Error(
       "Committed common-password digest count mismatch. expected=" +
         EFFECTIVE_ENTRY_COUNT +
         " actual=" +
-        digestMatches.length,
+        digests.length,
     );
+  }
+  if (new Set(digests).size !== digests.length) {
+    throw new Error("Committed common-password digest set contains duplicates");
+  }
+  const sorted = [...digests].sort();
+  if (digests.some((digest, index) => digest !== sorted[index])) {
+    throw new Error("Committed common-password digest set is not sorted deterministically");
+  }
+  const residue = setBody
+    .replace(/export const COMMON_PASSWORD_DIGESTS = new Set<string>\(\[/, "")
+    .replace(/\n\s*"[0-9a-f]{64}",/g, "")
+    .trim();
+  if (residue) {
+    throw new Error("Committed common-password digest set contains non-digest data");
   }
   if (!current.includes('sourceBlobSha: "' + SOURCE_BLOB_SHA + '"')) {
     throw new Error("Committed common-password source metadata is stale");
