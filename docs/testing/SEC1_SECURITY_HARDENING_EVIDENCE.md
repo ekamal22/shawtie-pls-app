@@ -38,12 +38,12 @@ Implemented:
 - existing login verification and opportunistic rehash do not invoke new-password admission
 - password recovery challenge authorization occurs before the replacement-password Argon2 hash
 - common-password screening is server-only and exact after NFC normalization
-- source corpus is committed at `security-data/common-passwords/100k-most-used-passwords-NCSC.txt`
-- source provenance is pinned to SecLists commit `2e3e92569043d24297ca6c35070078e5cf41651e`, Git blob `38eb37702244f55fda75cab281eb2145cd7685b6`
-- source count is 99,839
-- runtime output contains only structurally reachable entries
-- generation is offline and checksum-verified through `npm run sec1:passwords:generate`
-- SecLists MIT license is preserved under `security-data/common-passwords/`
+- plaintext source corpus data is intentionally not committed
+- source provenance is pinned to SecLists commit `2e3e92569043d24297ca6c35070078e5cf41651e`, source path `Passwords/Common-Credentials/100k-most-used-passwords-NCSC.txt`, Git blob `38eb37702244f55fda75cab281eb2145cd7685b6`, and source count 99,839
+- the committed runtime corpus contains 327 sorted unique SHA-256 membership digests for structurally reachable, NFC-normalized, case-folded source entries
+- `npm run sec1:passwords:check` verifies digest count/shape/order/uniqueness, pinned metadata, and absence of plaintext sentinel values without needing the raw source
+- regeneration requires an explicit untracked `SEC1_COMMON_PASSWORD_SOURCE_FILE`; the generator verifies the pinned Git blob SHA and source count before writing output
+- SecLists MIT provenance and license notice are preserved under `security-data/common-passwords/`
 
 ### SEC1-B reauthentication throttling
 
@@ -94,6 +94,8 @@ Implemented production adapter:
 - same-origin HTTP `/api` reverse proxy
 - same-origin WebSocket `/api` reverse proxy
 - canonical Host enforcement
+- explicit `WEB_TRUSTED_PROXY` IP/CIDR trust with spoofed forwarded-header rejection and right-to-left trusted-chain resolution
+- sanitized canonical forwarding metadata to Fastify plus fixed/dynamic hop-by-hop request and response stripping
 - repository-controlled headers on static and proxied HTTP responses
 - service-worker-compatible HTML caching
 - explicit media `connect-src` origin configuration
@@ -110,8 +112,9 @@ The implementation sweep removed every production inline-style writer found in t
 
 | Gate | Command / evidence source | Current status |
 | --- | --- | --- |
-| Offline common-password regeneration and diff | `test:sec1:closure` | NOT RUN |
+| Hash-only common-password corpus integrity and provenance check | `npm run sec1:passwords:check` via closure | NOT RUN |
 | SEC1 artifact formatting | `npm run sec1:format:check` | NOT RUN |
+| Proxy trust/header sanitization unit tests | `npm run test:sec1:headers` | NOT RUN |
 | Focused password/admission/security unit tests | `npm run test:sec1` | NOT RUN |
 | Disposable PostgreSQL A1/API/worker integration | `npm run test:sec1:local` | NOT RUN |
 | Real Chromium production CSP/OpenMLS/SW/WS/media smoke | `npm run test:sec1:browser:e2e` | NOT RUN |
