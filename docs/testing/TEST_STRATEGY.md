@@ -409,21 +409,31 @@ Critical journeys:
 
 ## SEC1 Pre-V1 Security Hardening verification
 
-SEC1 is the highest remaining pre-release priority and must close before V1 Hosted CI Verification is intentionally run as release evidence.
+SEC1 is the highest remaining pre-release priority and must close before V1 Hosted CI Verification is intentionally run as release evidence. Canonical design: `../architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md`.
 
 Required focused coverage:
 
-- password-recovery completion applies the same domain password policy as registration before hashing
+- registration and password-recovery completion both use the same server-side password-admission boundary
+- existing credential verification and login rehash remain independent of current new-password admission rules
+- the common-password corpus is server-only, offline, reproducible, provenance-tracked, and materially larger than the historical ten-entry set
 - weak, common, overlong, oversized, and valid recovery passwords exercise both contract and service boundaries
-- password reauthentication has durable server-authoritative throttling with account/session and network abuse coverage
-- repeated failed reauthentication remains generic and cannot bypass throttling by trivial subject variation
-- common/compromised-password screening is materially stronger than the current ten-entry set
-- expired abandoned registration intents scrub or delete their stored Argon2id hashes
-- successful registration still clears the transient registration-intent password hash
-- production browser delivery proves CSP and HSTS at the actual public serving layer, whether enforced by application config or deployment edge
+- password reauthentication consumes durable account, session, and network budgets before Argon2 verification
+- successful reauthentication preserves token-generation fencing, resets account/session reauth buckets, and leaves the shared network compute budget intact
+- repeated failed reauthentication remains generic and cannot bypass throttling through session rotation or simple request races
+- bounded worker maintenance deletes expired incomplete registration intents without loading password_hash into worker application memory
+- cleanup remains safe with multiple worker replicas through short PostgreSQL transactions and SKIP LOCKED
+- successful registration still clears the transient registration-intent password hash immediately
+- SEC1 adds no PostgreSQL migration unless implementation proves a schema requirement
+- production-mode CSP allows OpenMLS WebAssembly through wasm-unsafe-eval while forbidding unsafe-eval and unsafe-inline script execution
+- the three currently known inline React style sites are removed so style-src can remain self-only
+- explicit WSS and approved media-storage origins are permitted under connect-src without wildcard network sources
+- HSTS, nosniff, referrer policy, clickjacking protection, and Permissions-Policy are asserted against the repository-controlled production serving configuration
+- a focused real-Chromium harness boots the PWA, initializes OpenMLS WASM, registers the service worker, connects realtime WebSocket, and exercises media connectivity under enforced CSP
 - secure-cookie, CSRF, session-rotation, password-reset session revocation, and Argon2id regression coverage remains green
 
-After the SEC1 code changes land, run the smallest focused suites while iterating. Before SEC1 closes, run one coherent final local security baseline including the affected A1/authentication integration surface, `npm run health`, and `npm audit --audit-level=high`. Record the final executable SHA and results in `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+During implementation, run only the smallest affected tests after each slice. Before SEC1 closes, run one coherent final local security baseline including the affected A1/authentication integration surface, worker-maintenance integration, SEC1 browser/header verification, `npm run health`, and `npm audit --audit-level=high`. Record the final executable SHA and results in `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
+
+Physical Xiaomi acceptance is not a default SEC1 gate. Add a focused device check only if implementation creates Android-specific cookie, PWA/service-worker, permission, WebRTC, or header behavior that desktop Chromium cannot adequately prove.
 
 Before stable release, validate:
 
