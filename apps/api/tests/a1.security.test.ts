@@ -88,6 +88,12 @@ test("production config rejects insecure origin and unsafe proxy shortcuts", () 
   };
   assert.throws(() => apiConfigFromEnv({ ...base, APP_ORIGIN: "http://example.com" }));
   assert.throws(() =>
+    apiConfigFromEnv({ ...base, APP_ORIGIN: "https://example.com/path" }),
+  );
+  assert.throws(() =>
+    apiConfigFromEnv({ ...base, APP_ORIGIN: "https://user:secret@example.com" }),
+  );
+  assert.throws(() =>
     apiConfigFromEnv({ ...base, APP_ORIGIN: "https://example.com", TRUSTED_PROXY: "*" }),
   );
   assert.throws(() =>
