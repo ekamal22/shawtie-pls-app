@@ -34,7 +34,10 @@ export class PasswordAdmissionService {
     }
 
     const normalizedPassword = normalizePassword(password);
-    if (COMMON_PASSWORDS.has(normalizedPassword)) {
+    const commonPasswordDigest = createHash("sha256")
+      .update(normalizedPassword.toLowerCase(), "utf8")
+      .digest("hex");
+    if (COMMON_PASSWORD_DIGESTS.has(commonPasswordDigest)) {
       return { allowed: false, reason: "PASSWORD_COMMON" };
     }
 
