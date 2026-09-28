@@ -1,6 +1,6 @@
 # SEC1 Pre-V1 Security Hardening
 
-Status: DESIGN FROZEN, IMPLEMENTATION NOT STARTED
+Status: IMPLEMENTED ON FEATURE BRANCH, AUTOMATED CLOSURE PENDING
 
 Priority: highest remaining pre-release priority.
 
@@ -17,6 +17,24 @@ UX8 DONE
 ```
 
 V1 must not be intentionally run as release evidence before SEC1 is DONE, even if GitHub Actions capacity becomes available first.
+
+## Implementation checkpoint
+
+SEC1 source implementation is complete on `feat/sec1-pre-v1-security-hardening`. This is not yet a DONE claim: the final coherent local closure and evidence commit have not been executed.
+
+Implemented remediation:
+
+- canonical `PasswordAdmissionService` is the only new-credential admission+hash boundary used by registration and password recovery
+- the pure domain password rule now owns structural bounds only; existing credential verification and login rehash remain independent
+- a pinned MIT-licensed SecLists source corpus with 99,839 entries is committed under `security-data/common-passwords/`; generation is offline, checksum-verified, exact NFC/full-password matching, and emits only structurally reachable server-side entries
+- password recovery verifies the authorized recovery challenge before spending the new Argon2 hash
+- reauthentication consumes PostgreSQL-backed account, session, and network budgets before password verification; success resets account/session budgets but not the network compute budget
+- a separate worker auth-maintenance loop deletes expired incomplete registration intents in bounded `FOR UPDATE SKIP LOCKED` batches without selecting `password_hash`; no new migration or scheduled-action type was introduced
+- `apps/web/server.mjs` is the repository-controlled production static/API/WebSocket serving adapter with canonical-host enforcement and CSP/HSTS/browser-header authority
+- strict `style-src 'self'` is supported by removing every identified production inline-style writer, including additional Talk, video-call, and View Transition sites discovered during implementation
+- the SEC1 test surface now includes focused admission tests, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, production-header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media smoke, an offline corpus reproducibility gate, a production bundle scan, and one final `npm run test:sec1:closure` wrapper
+
+The remaining work is verification only: run the closure from a clean local checkout, fix any discovered defect, commit `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`, then reconcile final PASS counts before marking SEC1 DONE.
 
 ## Purpose
 
@@ -40,7 +58,7 @@ The existing password-hashing primitive is therefore a retained baseline, not an
 
 Severity: Medium.
 
-Registration validates the domain password policy before hashing. Password-recovery completion currently accepts the contract-level non-empty password and hashes it without applying `validatePasswordPolicy()`.
+At the audit baseline, registration validated the domain password policy before hashing while password-recovery completion accepted the contract-level non-empty password without the same admission boundary. The feature branch now routes both new-credential paths through the server-side admission service.
 
 Required remediation:
 
@@ -53,7 +71,7 @@ Required remediation:
 
 Severity: Medium.
 
-The normal login path has durable PostgreSQL-backed rate limiting. The authenticated `/api/v1/auth/reauthenticate` path verifies Argon2id credentials but does not currently apply an explicit durable rate limit.
+At the audit baseline, the normal login path had durable PostgreSQL-backed rate limiting while `/api/v1/auth/reauthenticate` had no explicit durable abuse budget. The feature branch now consumes account, session, and network PostgreSQL buckets before Argon2 verification.
 
 Required remediation:
 
@@ -67,7 +85,7 @@ Required remediation:
 
 Severity: Low-Medium.
 
-The current domain policy includes only a ten-entry `COMMON_PASSWORDS` set.
+At the audit baseline, the domain policy included only a ten-entry `COMMON_PASSWORDS` set. The feature branch replaces that set with the pinned server-only corpus described above.
 
 Required remediation:
 
@@ -83,7 +101,7 @@ Required remediation:
 
 Severity: Low-Medium.
 
-Successful registration clears the transient `registration_intents.password_hash` in the same transaction that creates the durable account credential. The accepted A1 design also requires expired abandoned intents to scrub the hash before or while deleting the intent, but the current runtime audit did not find that cleanup path.
+Successful registration already cleared the transient `registration_intents.password_hash` in the account-creation transaction. The audit baseline lacked cleanup for expired abandoned intents; the feature branch now deletes those expired incomplete rows through bounded replica-safe worker maintenance, with existing foreign-key cascade removing their registration challenges.
 
 Required remediation:
 
@@ -100,7 +118,7 @@ Required remediation:
 
 Severity: Conditional Medium.
 
-The API registers `@fastify/helmet`, secure cookies are enforced in production, and the web Vite configuration sets a restrictive camera/microphone `Permissions-Policy`. The audit did not find repository evidence that the actual production web serving path enforces CSP and HSTS.
+At the audit baseline, the API registered `@fastify/helmet`, secure cookies were enforced in production, and Vite development configuration set a restrictive camera/microphone `Permissions-Policy`, but the repository had no production PWA serving adapter. The feature branch now owns that serving boundary in `apps/web/server.mjs`; actual public-HTTPS re-proof remains an R2 obligation if no live commercial origin exists during SEC1.
 
 Required remediation:
 
