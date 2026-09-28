@@ -241,6 +241,139 @@ test("email change rotates current session, revokes other sessions, and queues o
   }
 });
 
+test("SEC1 reauthentication blocks repeated guesses with durable account session and network budgets", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const user = await register(app, database, "reauthlimit");
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/reauthenticate",
+        headers: { ...headers, cookie: user.cookie },
+        payload: { password: "wrong password value " + attempt },
+      });
+      assert.equal(response.statusCode, 401, response.body);
+      assert.equal(response.json().error.code, "AUTH_INVALID");
+    }
+
+    const blocked = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/reauthenticate",
+      headers: { ...headers, cookie: user.cookie },
+      payload: { password: user.password },
+    });
+    assert.equal(blocked.statusCode, 429, blocked.body);
+    assert.equal(blocked.json().error.code, "RATE_LIMITED");
+
+    const buckets = await database.pool.query<{
+      scope: string;
+      attempt_count: number;
+      blocked_until: Date | null;
+    }>(
+      `SELECT scope, attempt_count, blocked_until
+       FROM security_rate_limit_buckets
+       WHERE scope IN ('reauth_account', 'reauth_session', 'reauth_network')
+       ORDER BY scope`,
+    );
+    assert.equal(buckets.rowCount, 3);
+    const byScope = new Map(buckets.rows.map((row) => [row.scope, row]));
+    assert.equal(byScope.get("reauth_account")?.attempt_count, 6);
+    assert.ok(byScope.get("reauth_account")?.blocked_until);
+    assert.equal(byScope.get("reauth_session")?.attempt_count, 6);
+    assert.ok(byScope.get("reauth_session")?.blocked_until);
+    assert.equal(byScope.get("reauth_network")?.attempt_count, 6);
+    assert.equal(byScope.get("reauth_network")?.blocked_until, null);
+
+    const failures = await database.pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM security_events WHERE event_type = 'reauthentication_failed'",
+    );
+    assert.equal(failures.rows[0]?.count, "5");
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
+test("SEC1 successful reauthentication resets account and session budgets but not network compute budget", async () => {
+  const database = requireDisposableDatabase();
+  const app = createApiApplication({ database, config });
+  try {
+    await reset(database);
+    const user = await register(app, database, "reauthreset");
+
+    const failed = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/reauthenticate",
+      headers: { ...headers, cookie: user.cookie },
+      payload: { password: "definitely not the account password" },
+    });
+    assert.equal(failed.statusCode, 401, failed.body);
+
+    const success = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/reauthenticate",
+      headers: { ...headers, cookie: user.cookie },
+      payload: { password: user.password },
+    });
+    assert.equal(success.statusCode, 200, success.body);
+    const rotatedCookie = cookieHeader(success);
+    assert.notEqual(rotatedCookie, user.cookie);
+
+    const buckets = await database.pool.query<{
+      scope: string;
+      attempt_count: number;
+      last_outcome: string | null;
+    }>(
+      `SELECT scope, attempt_count, last_outcome
+       FROM security_rate_limit_buckets
+       WHERE scope IN ('reauth_account', 'reauth_session', 'reauth_network')
+       ORDER BY scope`,
+    );
+    const byScope = new Map(buckets.rows.map((row) => [row.scope, row]));
+    assert.deepEqual(
+      {
+        count: byScope.get("reauth_account")?.attempt_count,
+        outcome: byScope.get("reauth_account")?.last_outcome,
+      },
+      { count: 0, outcome: "reset" },
+    );
+    assert.deepEqual(
+      {
+        count: byScope.get("reauth_session")?.attempt_count,
+        outcome: byScope.get("reauth_session")?.last_outcome,
+      },
+      { count: 0, outcome: "reset" },
+    );
+    assert.deepEqual(
+      {
+        count: byScope.get("reauth_network")?.attempt_count,
+        outcome: byScope.get("reauth_network")?.last_outcome,
+      },
+      { count: 2, outcome: "allowed" },
+    );
+
+    const oldSession = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/session",
+      headers: { cookie: user.cookie },
+    });
+    assert.equal(oldSession.statusCode, 401);
+
+    const currentSession = await app.inject({
+      method: "GET",
+      url: "/api/v1/auth/session",
+      headers: { cookie: rotatedCookie },
+    });
+    assert.equal(currentSession.statusCode, 200, currentSession.body);
+  } finally {
+    await app.close();
+    await closeDatabasePool(database);
+  }
+});
+
 test("password recovery revokes sessions and accepts only the new password", async () => {
   const database = requireDisposableDatabase();
   const app = createApiApplication({ database, config });
