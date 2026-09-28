@@ -29,13 +29,11 @@ export function signatureTransitionActive(): boolean {
 /** Names an element as the shared element of the running transition (no-op otherwise). */
 export function nameSharedElement(element: HTMLElement | null): void {
   if (!element || !signatureTransitionActive()) return;
-  element.style.setProperty("view-transition-name", SHARED_ELEMENT_NAME);
   element.setAttribute(MARK, "");
 }
 
 function clearNames(): void {
   for (const element of document.querySelectorAll<HTMLElement>("[" + MARK + "]")) {
-    element.style.removeProperty("view-transition-name");
     element.removeAttribute(MARK);
   }
   delete document.documentElement.dataset.ux7Transition;
