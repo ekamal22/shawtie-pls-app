@@ -136,7 +136,7 @@
     "test:ux8:closure": "node scripts/ci/test-ux8-closure.mjs",
     "test:ux8:device:prepare": "node scripts/device/ux8-android-acceptance.mjs",
     "test:ux8:device:cleanup": "node scripts/device/ux8-android-acceptance.mjs --cleanup",
-    "test:sec1": "node --test packages/domain/tests/accounts.test.ts apps/api/tests/a1.security.test.ts apps/worker/tests/a1.worker.test.ts && npm run test:sec1:headers",
+    "test:sec1": "npm run build --workspace @shawtie/domain && node --test packages/domain/tests/accounts.test.ts apps/api/tests/a1.security.test.ts apps/worker/tests/a1.worker.test.ts && npm run test:sec1:headers",
     "test:sec1:headers": "npm run test:sec1:headers --workspace @shawtie/web",
     "test:sec1:postgres": "npm run test:a1:postgres",
     "test:sec1:local": "npm run test:a1:local",
