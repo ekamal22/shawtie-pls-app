@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("SEC1 production serving enforces CSP while preserving required browser capabilities", async ({
   page,
+  context,
 }) => {
   const cspViolations: string[] = [];
   page.on("console", (message) => {
@@ -99,6 +100,12 @@ test("SEC1 production serving enforces CSP while preserving required browser cap
     return { status: response.status, body: await response.text() };
   });
   expect(media).toEqual({ status: 200, body: "sec1-ciphertext" });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page).toHaveTitle("Shawtie pls");
+  await context.setOffline(false);
 
   expect(cspViolations).toEqual([]);
 });
