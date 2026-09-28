@@ -109,6 +109,35 @@ export async function completeRegistrationIntent(
   return result.rowCount === 1;
 }
 
+
+export async function deleteExpiredIncompleteRegistrationIntents(
+  executor: QueryExecutor,
+  at: Date,
+  limit: number,
+): Promise<readonly string[]> {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new Error("Registration-intent cleanup limit must be a positive integer");
+  }
+
+  const result = await executor.query<{ id: string }>(
+    `WITH doomed AS (
+       SELECT id
+       FROM registration_intents
+       WHERE completed_at IS NULL
+         AND expires_at <= $1
+       ORDER BY expires_at, id
+       FOR UPDATE SKIP LOCKED
+       LIMIT $2
+     )
+     DELETE FROM registration_intents AS intent
+     USING doomed
+     WHERE intent.id = doomed.id
+     RETURNING intent.id`,
+    [at, limit],
+  );
+  return result.rows.map((row) => row.id);
+}
+
 export interface EmailChallenge {
   readonly id: string;
   readonly accountId: string | null;
