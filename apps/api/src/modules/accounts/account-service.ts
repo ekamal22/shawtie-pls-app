@@ -679,11 +679,59 @@ export class AccountService {
     });
   }
 
-  async reauthenticate(auth: AuthContext, password: string): Promise<{ sessionToken: string }> {
+  async reauthenticate(
+    auth: AuthContext,
+    password: string,
+    networkKey: string,
+  ): Promise<{ sessionToken: string }> {
+    await this.consumeSecurityRateLimit([
+      {
+        scope: "reauth_account",
+        subject: auth.session.accountId,
+        limit: 5,
+        windowMs: 15 * MINUTE,
+        blockMs: 15 * MINUTE,
+      },
+      {
+        scope: "reauth_session",
+        subject: auth.session.sessionId,
+        limit: 5,
+        windowMs: 15 * MINUTE,
+        blockMs: 15 * MINUTE,
+      },
+      {
+        scope: "reauth_network",
+        subject: networkKey,
+        limit: 50,
+        windowMs: 15 * MINUTE,
+        blockMs: 15 * MINUTE,
+      },
+    ]);
+
     const hash = await getPasswordHash(this.database.pool, auth.session.accountId);
     if (!hash || !(await this.passwords.verify(hash, password))) {
+      await withTransaction(this.database, async (transaction) => {
+        const now = await getTransactionTimestamp(transaction);
+        await appendSecurityEvent(transaction, {
+          id: randomUUID(),
+          accountId: auth.session.accountId,
+          deviceId: auth.session.deviceId,
+          eventType: "reauthentication_failed",
+          at: now,
+        });
+      });
       throw new ApiError(401, "AUTH_INVALID");
     }
+
+    const accountRateLimitHashes = this.keys.versions.map((version) => ({
+      version,
+      value: this.keys.verifier("rate-limit-key", auth.session.accountId, version),
+    }));
+    const sessionRateLimitHashes = this.keys.versions.map((version) => ({
+      version,
+      value: this.keys.verifier("rate-limit-key", auth.session.sessionId, version),
+    }));
+
     const token = randomOpaqueToken();
     const verifier = this.keys.activeVerifier("session-verifier", token);
     const rotated = await withTransaction(this.database, async (transaction) => {
@@ -697,6 +745,26 @@ export class AccountService {
         reauthenticatedAt: now,
       });
       if (!generation) return false;
+
+      for (const entry of accountRateLimitHashes) {
+        await resetRateLimitBucket(
+          transaction,
+          "reauth_account",
+          entry.version,
+          entry.value,
+          now,
+        );
+      }
+      for (const entry of sessionRateLimitHashes) {
+        await resetRateLimitBucket(
+          transaction,
+          "reauth_session",
+          entry.version,
+          entry.value,
+          now,
+        );
+      }
+
       await appendSecurityEvent(transaction, {
         id: randomUUID(),
         accountId: auth.session.accountId,
