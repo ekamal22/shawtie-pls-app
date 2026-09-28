@@ -39,7 +39,7 @@ This is the pure domain baseline. The initial database invariant suite has separ
 
 The baseline CI and repository-health policy is defined in `CI_AND_REPOSITORY_HEALTH.md`.
 
-The current hosted workflow is configured but not yet validated by a successful GitHub Actions run.
+The current hosted workflow is configured but not yet validated by a successful GitHub Actions run. The first intentional V1 hosted release-verification run must wait until SEC1 Pre-V1 Security Hardening is DONE.
 
 Local repository health and domain tests remain usable without hosted Actions.
 
@@ -406,6 +406,24 @@ Critical journeys:
 - permanent deletion
 
 ### Physical Android device
+
+## SEC1 Pre-V1 Security Hardening verification
+
+SEC1 is the highest remaining pre-release priority and must close before V1 Hosted CI Verification is intentionally run as release evidence.
+
+Required focused coverage:
+
+- password-recovery completion applies the same domain password policy as registration before hashing
+- weak, common, overlong, oversized, and valid recovery passwords exercise both contract and service boundaries
+- password reauthentication has durable server-authoritative throttling with account/session and network abuse coverage
+- repeated failed reauthentication remains generic and cannot bypass throttling by trivial subject variation
+- common/compromised-password screening is materially stronger than the current ten-entry set
+- expired abandoned registration intents scrub or delete their stored Argon2id hashes
+- successful registration still clears the transient registration-intent password hash
+- production browser delivery proves CSP and HSTS at the actual public serving layer, whether enforced by application config or deployment edge
+- secure-cookie, CSRF, session-rotation, password-reset session revocation, and Argon2id regression coverage remains green
+
+After the SEC1 code changes land, run the smallest focused suites while iterating. Before SEC1 closes, run one coherent final local security baseline including the affected A1/authentication integration surface, `npm run health`, and `npm audit --audit-level=high`. Record the final executable SHA and results in `SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
 Before stable release, validate:
 
