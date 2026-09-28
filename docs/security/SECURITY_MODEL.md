@@ -269,6 +269,10 @@ Apply rate limits to:
 
 ## CI and repository security
 
+### SEC1 pre-V1 security hardening gate
+
+A post-UX8 source audit confirmed that account passwords are hashed, not reversibly encrypted. The implemented password KDF is Argon2id with the explicit repository policy in `apps/api/src/security/password-hasher.ts`. The audit also identified five open hardening items that must close before V1 Hosted CI Verification is intentionally run as release evidence: password-recovery policy parity, durable password-reauthentication throttling, stronger common-password screening, expired registration-intent password-hash cleanup, and verified production CSP/HSTS. Canonical scope and acceptance gates live in `PRE_V1_SECURITY_HARDENING.md`.
+
 Required controls before public stable release:
 
 - dependency scanning
