@@ -90,6 +90,26 @@ test("production config rejects insecure origin and unsafe proxy shortcuts", () 
   assert.throws(() =>
     apiConfigFromEnv({ ...base, APP_ORIGIN: "https://example.com", TRUSTED_PROXY: "*" }),
   );
+  assert.throws(() =>
+    apiConfigFromEnv({
+      ...base,
+      APP_ORIGIN: "https://example.com",
+      TRUSTED_PROXY: "not-an-address",
+    }),
+  );
+  assert.throws(() =>
+    apiConfigFromEnv({
+      ...base,
+      APP_ORIGIN: "https://example.com",
+      TRUSTED_PROXY: "10.0.0.0/33",
+    }),
+  );
+  const trusted = apiConfigFromEnv({
+    ...base,
+    APP_ORIGIN: "https://example.com",
+    TRUSTED_PROXY: "10.0.0.0/24,2001:db8::/64",
+  });
+  assert.deepEqual(trusted.trustedProxy, ["10.0.0.0/24", "2001:db8::/64"]);
 });
 
 test("production session cookie uses __Host prefix and secure attributes", async () => {
