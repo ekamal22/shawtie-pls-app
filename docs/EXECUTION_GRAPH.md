@@ -76,7 +76,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         final closure PASS @ cde73a1, Android 30/30, merged main @ 71569cf
                 |
                 v
-        UX8 Encrypted UX 🟢 DONE, Android 25/25, not yet merged
+        UX8 Encrypted UX 🟢 DONE, Android 25/25, merged main @ a029169
                 |
                 v
         R2 Public Readiness ⚪
@@ -173,7 +173,7 @@ UX0 through UX7 ✅ DONE, Redmi 22/22, merged to `main @ 9f0bea4`
    ->
 S1 E2EE + Crypto Recovery ✅ DONE, final executable `cde73a1`, Redmi 30/30, merged to `main @ 71569cf`
    ->
-UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, not yet merged to `main`
+UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, merged to `main @ a029169`
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
@@ -186,7 +186,7 @@ M1 is DONE at 18/18 gates, with runtime closure anchored at `aa40a2c` and source
 
 Verified historical branch: `feat/s1-e2ee-crypto-recovery`.
 
-S1 is DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`: migrations 0001 through 0021 apply with `reserved=0`, database invariants pass, full automated closure re-passed, and mandatory Redmi Note 9S acceptance closed 30/30. Canonical evidence is in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now also DONE at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` with mandatory Redmi Note 9S 25/25 physical acceptance closed; it has not yet been merged to `main`. See `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`.
+S1 is DONE and merged to `main @ 71569cf`. The final corrective executable is `cde73a1`: migrations 0001 through 0021 apply with `reserved=0`, database invariants pass, full automated closure re-passed, and mandatory Redmi Note 9S acceptance closed 30/30. Canonical evidence is in `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is now also DONE at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` with mandatory Redmi Note 9S 25/25 physical acceptance closed, and is merged to `main @ a029169`. See `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
 ## Earlier completed milestone detail
 

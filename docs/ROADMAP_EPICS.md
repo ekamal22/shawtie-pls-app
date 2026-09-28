@@ -2304,7 +2304,7 @@ Closure evidence: `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md` with markers 
 
 # UX8: Encrypted UX Integration
 
-Status: DONE. UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PASS. Not yet merged to `main`.
+Status: DONE. UX8 AUTOMATED CLOSURE PASS, PHYSICAL ANDROID 25/25 PASS. Fast-forward merged to `main` at `a029169`.
 
 Canonical design:
 

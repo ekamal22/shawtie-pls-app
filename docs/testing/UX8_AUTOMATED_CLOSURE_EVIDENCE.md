@@ -96,4 +96,4 @@ No API route, contract schema, database migration, durable product authority, cr
 
 Mandatory physical Redmi Note 9S acceptance then closed all 25 scenarios at this final executable SHA, including re-verifying the fix live: a fresh device correctly recovering with its RMS no longer shows the false repair prompt, correctly shows an honest "not ready yet" state instead, and correctly converges to full, real decrypted history once its own and its partner's ordinary reconciliation completes. Full evidence: `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 
-UX8 is DONE at final executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`. `feat/ux8-encrypted-ux-integration` has not been merged to `main`.
+UX8 is DONE at final executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`. `feat/ux8-encrypted-ux-integration` is fast-forward merged to `main` at `a029169`.

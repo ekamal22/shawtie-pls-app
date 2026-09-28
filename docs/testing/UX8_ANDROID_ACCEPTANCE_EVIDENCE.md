@@ -182,4 +182,4 @@ UX8_RECOVERY_SECRET_STORAGE_PASS
 UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 ```
 
-`feat/ux8-encrypted-ux-integration` is physically accepted for UX8 Encrypted UX Integration at final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419`. It has not been merged to `main`.
+`feat/ux8-encrypted-ux-integration` is physically accepted for UX8 Encrypted UX Integration at final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419`. It is fast-forward merged to `main` at `a029169`.

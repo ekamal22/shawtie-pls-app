@@ -851,7 +851,7 @@ Canonical design and physical procedure:
 - `../design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`
 - `UX8_ANDROID_ACCEPTANCE.md`
 
-UX8 automated closure passed on `feat/ux8-encrypted-ux-integration`, first at executable SHA `39de742c8ab795137be95ecbaa685131b608e813` and, after a physical-run defect fix (see below), re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Evidence: `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Physical Android acceptance is complete, recorded in `UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`; UX8 is DONE on its branch and not yet merged to `main`.
+UX8 automated closure passed on `feat/ux8-encrypted-ux-integration`, first at executable SHA `39de742c8ab795137be95ecbaa685131b608e813` and, after a physical-run defect fix (see below), re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Evidence: `UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Physical Android acceptance is complete, recorded in `UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`; UX8 is DONE and fast-forward merged to `main` at `a029169`.
 
 Automated UX8 coverage must prove:
 
@@ -889,7 +889,7 @@ UX8_RECOVERY_SECRET_STORAGE_PASS
 UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 ```
 
-Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation have all passed at the final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419`. UX8 is DONE; it has not yet been merged to `main`.
+Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation have all passed at the final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419`. UX8 is DONE and merged to `main` at `a029169`.
 
 ## Acceptance principle
 
