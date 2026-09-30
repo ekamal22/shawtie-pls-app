@@ -84,10 +84,10 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 ## Current repository attention items
 
-The 2026-09-29 repository audits add no new product feature milestone, but the newest pass adds two mandatory source repairs before V1 and retains the following V1/R2 obligations:
+The 2026-09-29 repository audits add no new product feature milestone. The two source repairs discovered in the final pass are DONE on `main @ a1659dc` and passed hosted focused validation run `36773261743` against validated branch SHA `7d07f7b5`.
 
-- pre-V1 follow-up hardening must wire `purgeCryptoAccountData(accountId)` into the correct account/device lifecycle boundaries. Current-device revocation must remove account-wide local S1 secret state after authority is revoked. Account-deletion request must retain recoverability during the seven-day recovery window, while permanent deletion must destroy local recovery/device/group/key state on clients that observe the final state, including an offline-safe durable observation strategy.
-- pre-V1 follow-up hardening must align Fastify HTTP request ceilings with the encoded S1 contract. The current global default parser limit is smaller than some legal base64url/JSON S1 request shapes. Known Fastify parser/client errors must map to stable sanitized 4xx responses instead of falling through to `500 INTERNAL_ERROR`.
+- account-wide S1 local-crypto lifecycle deletion is implemented and verified across current-device revocation, account switching/device replacement, deletion-pending retention, recovery, and permanent-deletion convergence.
+- S1 route-local HTTP body ceilings now match encoded contract maxima, and known Fastify parser/client failures remain sanitized 4xx responses.
 
 - before V1 can count as release evidence, hosted CI must cover the SEC1/S1-focused security gates that are currently outside `npm run health`, including header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format coverage.
 - R2 must replace the fixed service-worker cache lifecycle with release-version rotation or explicit stale-asset pruning and verify update/offline-shell correctness.
@@ -101,7 +101,7 @@ The 2026-09-29 repository audits add no new product feature milestone, but the n
 - `design/m3-media-voice` is obsolete divergent design history with a stranded non-authoritative ADR-012. It must be archived, deleted, or clearly retained as historical-only before R2 closes.
 - production provider configuration and deployment, release, rollback, backup/recovery, and operational automation remain R2 work.
 
-The two new source defects do not reopen SEC1 or S1 historical closure, but they must be fixed before V1. Focused regression evidence is mandatory. A full Redmi rerun is not required by default; add a focused physical check only if the final client-lifecycle implementation cannot be adequately proved in desktop Chromium.
+The two follow-up source defects are closed and do not reopen SEC1 or S1 historical closure. Hosted focused regression evidence is recorded under run `36773261743`; no full Redmi rerun is required for these fixes.
 
 ## Immediate execution sequence
 
@@ -136,12 +136,13 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       final local closure PASS @ 91ca920d
             |
             v
-      Pre-V1 follow-up hardening
-      local S1 purge + HTTP boundary fixes
+      Pre-V1 follow-up hardening ✅
+      main @ a1659dc
+      hosted focused validation PASS
             |
             v
       V1 Hosted CI Verification
-      run after follow-up fixes and when Actions capacity is available
+      expand hosted security coverage, then run
             |
             v
       R2 Public Readiness

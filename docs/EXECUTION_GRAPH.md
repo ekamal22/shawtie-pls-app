@@ -82,11 +82,12 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         SEC1 Pre-V1 Security Hardening ✅ DONE + MERGED @ a2badf7 (executable 91ca920d)
                 |
                 v
-        Pre-V1 follow-up hardening 🔧
-        local S1 purge + HTTP boundary fixes
+        Pre-V1 follow-up hardening ✅
+        main @ a1659dc, hosted focused validation PASS
              |
              v
-        V1 Hosted CI Verification 🔒 awaiting fixes, coverage expansion, and Actions capacity
+        V1 Hosted CI Verification 🟡
+        expand hosted security coverage, then execute
                 |
                 v
         R2 Public Readiness ⚪
@@ -100,7 +101,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 v
         X2 Deferred Heavy Features ⏸
 
-V1 Hosted CI Verification 🔒 remains a separate verification milestone. SEC1 is DONE, but the 2026-09-29 follow-up audit added two mandatory source repairs before V1: account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-client-error handling. After those fixes and hosted security-coverage expansion, V1 can run when Actions capacity is available and must finish before R2 can close.
+V1 Hosted CI Verification 🟡 remains a separate verification milestone. SEC1 is DONE and the two 2026-09-29 follow-up source repairs are also DONE on `main @ a1659dc`, with hosted focused validation PASS in run `36773261743`. GitHub Actions capacity is available again. The remaining V1 work is to expand hosted security coverage and execute the real V1 release-verification workflow before R2 can close.
 ~~~
 
 ## Mermaid dependency view

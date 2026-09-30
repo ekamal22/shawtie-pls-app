@@ -187,10 +187,10 @@ Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned ex
 
 ## Repository audit concerns
 
-The 2026-09-29 follow-up repository-wide audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass did identify two concrete source defects that require implementation before V1 release evidence, plus the previously recorded V1/R2 assurance and governance work. SEC1 remains historically closed; these are post-SEC1 follow-up defects.
+The 2026-09-29 follow-up repository-wide audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The two concrete post-SEC1 source defects found in the final audit pass are now fixed on `main @ a1659dc` and verified by hosted focused validation run `36773261743` against validated branch SHA `7d07f7b5c7f24d46188f79c20b4637a22d7d07c1`.
 
-- S1 local-secret lifecycle cleanup is incomplete at the account boundary. `packages/crypto/src/local-vault.ts` already defines `purgeCryptoAccountData(accountId)`, but no production caller uses it. Current sign-out, observed session revocation, current-device revocation, and account switch close the S1 runtime while account-wide M2/media purge runs, leaving the account-scoped S1 crypto IndexedDB intact. Server-side revocation and future-access denial remain correct, so this is a local secret-retention/privacy defect rather than an authorization bypass. The repair must preserve the seven-day account-deletion recovery window, then destroy account-wide local crypto state when permanent deletion is observed; current-device revocation must also purge the local crypto vault after authority is revoked. Offline clients require a safe durable observation/tombstone strategy so a later reconnect or local startup cannot indefinitely retain secrets that policy says are destroyed.
-- The API HTTP parser boundary does not match the S1 request contract. `createApiApplication()` does not configure `bodyLimit`, so Fastify's 1 MiB default applies, while S1 permits individual binary fields up to 1 MiB before base64url and JSON expansion, and some legal request shapes can contain more than one such field. Legal contract payloads can therefore be rejected before Zod validation. In addition, the custom API error handler maps only Shawtie/domain errors and selected PostgreSQL errors; framework parser/client errors with their own 4xx status can fall through to `500 INTERNAL_ERROR`. The repair must set explicit route-appropriate request ceilings from encoded worst-case sizes, keep ordinary routes conservative, and map known parser/client errors to stable sanitized 4xx responses without exposing framework internals.
+- S1 local-secret lifecycle cleanup is CLOSED. Current-device revocation, account switching, account-device identity replacement, deletion-pending retention, account recovery, and permanent-deletion convergence now wire the account-wide S1 vault lifecycle explicitly. The implementation preserves the seven-day deletion recovery window and uses the device-handle-bound lifecycle probe plus durable local markers to avoid retaining revoked/deleted account crypto state indefinitely.
+- The S1 HTTP parser boundary defect is CLOSED. Contract-owned route-local body ceilings now account for base64url/JSON expansion without widening the global API body limit, and known Fastify parser/client errors map to stable sanitized 4xx responses instead of falling through to `500 INTERNAL_ERROR`.
 
 - V1 CI coverage is currently weaker than the locally closed SEC1/S1 baseline. `npm run ci:baseline` aliases `npm run health`, which does not run `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, or `sec1:format:check`, and the ordinary root lint/format globs do not fully cover the production web `.mjs` serving files. V1 must expand or add a hosted security job before a green hosted run is accepted as release evidence.
 - `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`; old fingerprinted static assets are not pruned inside that cache and an activated worker can initially inherit the previous cached `/` shell until an online navigation replaces it. R2 must add a release-aware cache version or explicit inventory/pruning and regression coverage.
@@ -205,7 +205,7 @@ The 2026-09-29 follow-up repository-wide audits found no new critical authentica
 - `design/m3-media-voice` is a divergent obsolete design branch. Its stranded ADR-012 describes a pre-S1 server-recoverable media-key bridge that was not adopted by current `main`; it is non-authoritative and must not be merged as current architecture.
 - production provider, deployment, release, rollback, backup/recovery, and operational automation remain incomplete or placeholder-only and are already owned by R2.
 
-As of this documentation update, `main` still has no source-code change implementing the two newest fixes. They must be implemented and revalidated before V1. They do not reopen the historical SEC1 or S1 completion records. A full S1 or Redmi matrix is not automatically required; focused browser/integration regression evidence is mandatory, and a focused physical-device check should be added only if the final implementation creates Android/PWA lifecycle behavior that desktop Chromium cannot adequately prove.
+The two follow-up source repairs are implemented on `main @ a1659dc`. Hosted focused validation run `36773261743` passed build, 37/37 focused tests, lint, Prettier, and worktree hygiene against validated branch SHA `7d07f7b5`. The fixes do not reopen the historical SEC1 or S1 completion records, and no full Redmi rerun is required from the current implementation evidence.
 
 ## Progress reporting rule
 
@@ -221,10 +221,10 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. implement and verify the two 2026-09-29 follow-up source repairs: account-wide S1 local-crypto lifecycle purge, plus S1 HTTP request-size and framework-client-error handling
-2. expand V1 hosted security coverage and complete V1 Hosted CI Verification when Actions capacity is available
+1. expand V1 hosted security coverage so the hosted gate includes the focused SEC1/S1 checks already identified by audit
+2. complete V1 Hosted CI Verification; GitHub Actions capacity is available again
 3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-4. cut Stable Release only after the follow-up repairs, V1, and R2 are closed
+4. cut Stable Release only after V1 and R2 are closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Merge and documentation-only commits do not change these runtime evidence anchors.
 
