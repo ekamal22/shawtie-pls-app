@@ -2,7 +2,7 @@
 
 ## Status
 
-Refreshed: 2026-09-29.
+Refreshed: 2026-10-01.
 
 This is the canonical high-level execution roadmap for Shawtie pls.
 
@@ -14,7 +14,7 @@ An epic is DONE only when its required acceptance gates have executed evidence.
 
 ## Verified baseline
 
-The verified mainline now includes completed M2, M3, C1, C2, UX0 through UX8, S1, and SEC1. S1 is merged at `main @ 71569cf`; its final corrective executable is `cde73a1`, where full automated closure re-passed and mandatory Redmi Note 9S acceptance closed 30/30. UX8 Encrypted UX Integration is complete and physically accepted at final corrective executable `43ff9b1`, with mandatory Redmi Note 9S acceptance closed 25/25, and is fast-forward merged to `main` at `a029169`. SEC1 is complete and merged at `main @ a2badf7`; final executable `91ca920d` passed the complete local security closure.
+The verified mainline now includes completed M2, M3, C1, C2, UX0 through UX8, S1, SEC1, and Pre-V1 follow-up hardening. S1 is merged at `main @ 71569cf`; its final corrective executable is `cde73a1`, where full automated closure re-passed and mandatory Redmi Note 9S acceptance closed 30/30. UX8 Encrypted UX Integration is complete and physically accepted at final corrective executable `43ff9b1`, with mandatory Redmi Note 9S acceptance closed 25/25, and is fast-forward merged to `main` at `a029169`. SEC1 is complete and merged at `main @ a2badf7`; final executable `91ca920d` passed the complete local security closure. Pre-V1 follow-up hardening is complete on `main @ a1659dc` and passed hosted focused validation run `36773261743`.
 
 Completed milestones:
 
@@ -27,7 +27,7 @@ Completed milestones:
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
-| V1 Hosted CI Verification | NEXT, BLOCKED | two follow-up source repairs and hosted security-coverage expansion must close first; Actions capacity is also required |
+| V1 Hosted CI Verification | IN_PROGRESS | follow-up hardening DONE; Actions available; hosted security-coverage expansion remains before the real V1 run |
 
 P3 closure evidence remains:
 

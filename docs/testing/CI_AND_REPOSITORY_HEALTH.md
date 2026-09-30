@@ -240,10 +240,11 @@ When GitHub Actions execution is intentionally being avoided, commits may use Gi
 
 A skipped workflow is not evidence that CI passed.
 
-V1 remains deferred while Actions capacity is unavailable. SEC1 is DONE. Once Actions execution is available again:
+GitHub Actions execution is available again. SEC1 and Pre-V1 follow-up hardening are DONE, and hosted focused validation run `36773261743` is green. V1 is now waiting on hosted security-coverage expansion, after which the real release-verification workflow should be dispatched and inspected.
 
-1. create or push a commit without a skip marker, or manually dispatch Baseline CI
-2. inspect the workflow result
+1. expand the hosted workflow so the focused SEC1/S1 gates cannot be omitted
+2. create or push the V1 release-verification commit without a skip marker, or manually dispatch the expanded workflow
+3. inspect the workflow result
 3. fix any repository-health or domain-test failure
 4. record the successful run in PROJECT_STATE
 5. only then treat the GitHub-hosted baseline gate as verified
