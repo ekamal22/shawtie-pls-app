@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
