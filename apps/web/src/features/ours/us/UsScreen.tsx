@@ -416,10 +416,13 @@ export function UsScreen({
         onConfirm={() => {
           setConfirmDeletion(false);
           void run(async () => {
-            const result = await apiRequest<{ recoverUntil: string }>("/api/v1/me/account-deletion", {
-              method: "POST",
-              body: {},
-            });
+            const result = await apiRequest<{ recoverUntil: string }>(
+              "/api/v1/me/account-deletion",
+              {
+                method: "POST",
+                body: {},
+              },
+            );
             if (!me) throw new Error("ACCOUNT_CONTEXT_UNAVAILABLE");
             rememberPendingAccountDeletion(me.accountId, result.recoverUntil);
             await onSignedOut();

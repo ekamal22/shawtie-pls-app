@@ -116,8 +116,6 @@ export function clearPendingAccountDeletion(accountId: string): void {
 export function pendingAccountDeletionExpired(accountId: string, now = Date.now()): boolean {
   const pending = pendingAccountDeletion();
   return Boolean(
-    pending &&
-      pending.accountId === accountId &&
-      now >= Date.parse(pending.recoverUntil),
+    pending && pending.accountId === accountId && now >= Date.parse(pending.recoverUntil),
   );
 }

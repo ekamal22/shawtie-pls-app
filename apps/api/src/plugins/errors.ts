@@ -3,9 +3,10 @@ import { BoundaryValidationError } from "@shawtie/contracts";
 import { POSTGRES_SQLSTATE, postgresSqlState } from "@shawtie/db";
 import { ApiError } from "../lib/api-error.ts";
 
-function fastifyClientError(
-  error: unknown,
-): { readonly statusCode: number; readonly code: "REQUEST_TOO_LARGE" | "VALIDATION_FAILED" } | null {
+function fastifyClientError(error: unknown): {
+  readonly statusCode: number;
+  readonly code: "REQUEST_TOO_LARGE" | "VALIDATION_FAILED";
+} | null {
   if (!error || typeof error !== "object") return null;
   const candidate = error as { readonly statusCode?: unknown; readonly code?: unknown };
   if (
