@@ -78,6 +78,7 @@ export {
   finalizeAccountDeletionState,
   findAccountByIdentifier,
   findActiveDeviceByHandle,
+  findDeviceByHandle,
   findLoginCredential,
   findSessionByVerifier,
   getAccountDeletionGeneration,

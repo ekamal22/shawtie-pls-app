@@ -12,6 +12,7 @@ import {
   createSession,
   findAccountByIdentifier,
   findActiveDeviceByHandle,
+  findDeviceByHandle,
   findLoginCredential,
   getAccountDeletionGeneration,
   getAccountProfile,
@@ -675,6 +676,47 @@ export class AccountService {
     });
   }
 
+  async localDeviceState(
+    deviceId: string,
+    rawDeviceHandle: string | undefined,
+  ): Promise<{
+    recognized: boolean;
+    revoked: boolean;
+    accountId: string | null;
+    accountStatus: "active" | "deletion_pending" | "deleted" | null;
+    recoverUntil: string | null;
+  }> {
+    if (!rawDeviceHandle) {
+      return {
+        recognized: false,
+        revoked: false,
+        accountId: null,
+        accountStatus: null,
+        recoverUntil: null,
+      };
+    }
+    for (const version of this.keys.versions) {
+      const verifier = this.keys.verifier("device-handle-verifier", rawDeviceHandle, version);
+      const device = await findDeviceByHandle(this.database.pool, deviceId, verifier, version);
+      if (device) {
+        return {
+          recognized: true,
+          revoked: device.revokedAt !== null,
+          accountId: device.accountId,
+          accountStatus: device.accountStatus,
+          recoverUntil: device.recoverUntil?.toISOString() ?? null,
+        };
+      }
+    }
+    return {
+      recognized: false,
+      revoked: false,
+      accountId: null,
+      accountStatus: null,
+      recoverUntil: null,
+    };
+  }
+
   async reauthenticate(
     auth: AuthContext,
     password: string,
@@ -1131,13 +1173,13 @@ export class AccountService {
     });
   }
 
-  async requestDeletion(auth: AuthContext): Promise<void> {
+  async requestDeletion(auth: AuthContext): Promise<{ recoverUntil: string }> {
     const initialPartnership = await getCurrentPartnershipForAccount(
       this.database.pool,
       auth.session.accountId,
     );
 
-    await withTransaction(this.database, async (transaction) => {
+    const recoverUntil = await withTransaction(this.database, async (transaction) => {
       const now = await getTransactionTimestamp(transaction);
       const lockIds = initialPartnership
         ? [auth.session.accountId, initialPartnership.otherAccountId]
@@ -1291,7 +1333,9 @@ export class AccountService {
           now,
         );
       }
+      return recoverUntil.toISOString();
     });
+    return { recoverUntil };
   }
 
   async startAccountRecovery(identifierInput: string, networkKey: string): Promise<void> {
@@ -1336,7 +1380,7 @@ export class AccountService {
   async completeAccountRecovery(
     input: AccountRecoveryCompleteInput,
     networkKey: string,
-  ): Promise<void> {
+  ): Promise<{ accountId: string }> {
     let identifier: string;
     try {
       identifier = normalizeLoginIdentifier(input.identifier);
@@ -1454,6 +1498,7 @@ export class AccountService {
       return { ok: true as const };
     });
     if (!decision.ok) throw new ApiError(409, decision.code);
+    return { accountId: account.accountId };
   }
 
   listDevices(accountId: string): Promise<readonly DeviceSummary[]> {

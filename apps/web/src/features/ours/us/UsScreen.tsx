@@ -13,6 +13,7 @@ import {
   SkeletonGroup,
 } from "../../../design/primitives.tsx";
 import { apiRequest } from "../../../lib/api-client.ts";
+import { rememberPendingAccountDeletion } from "../../../lib/offline/account-control.ts";
 import { PartnerRequestsPanel } from "../../partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../../partnership/PartnershipPanel.tsx";
 import { CryptoSecurityPanel } from "../../security/CryptoSecurityPanel.tsx";
@@ -86,7 +87,7 @@ export function UsScreen({
   refreshSession,
 }: {
   readonly reauthenticatedAt: string | null;
-  readonly onSignedOut: () => Promise<void>;
+  readonly onSignedOut: (options?: { readonly purgeCrypto?: boolean }) => Promise<void>;
   readonly refreshSession: () => Promise<void>;
 }) {
   const theme = useTheme();
@@ -375,7 +376,7 @@ export function UsScreen({
                           void run(
                             async () => {
                               await mutate(`/api/v1/me/devices/${device.id}`, undefined, "DELETE");
-                              if (device.isCurrent) await onSignedOut();
+                              if (device.isCurrent) await onSignedOut({ purgeCrypto: true });
                               else await load();
                             },
                             device.isCurrent ? undefined : "Device revoked.",
@@ -415,7 +416,15 @@ export function UsScreen({
         onConfirm={() => {
           setConfirmDeletion(false);
           void run(async () => {
-            await mutate("/api/v1/me/account-deletion", {});
+            const result = await apiRequest<{ recoverUntil: string }>(
+              "/api/v1/me/account-deletion",
+              {
+                method: "POST",
+                body: {},
+              },
+            );
+            if (!me) throw new Error("ACCOUNT_CONTEXT_UNAVAILABLE");
+            rememberPendingAccountDeletion(me.accountId, result.recoverUntil);
             await onSignedOut();
           });
         }}

@@ -111,11 +111,16 @@ export function getActiveS1CryptoRuntime(): S1CryptoRuntime | null {
   return activeS1Runtime;
 }
 
+export function closeActiveS1CryptoRuntime(accountId: string): void {
+  const runtime = activeS1Runtime;
+  if (!runtime || runtime.accountId !== accountId) return;
+  activeS1Runtime = null;
+  runtime.close();
+}
+
 /**
- * S1 has no UX8 device/recovery management screen yet. Physical Android acceptance still
- * needs to exercise the real production runtime (recovery setup, device approval, recovery
- * restoration, group reset) end to end on the device, so a narrow debug surface is exposed
- * here strictly behind an explicit build-time flag that a production build never sets.
+ * The S1 debug hook remains test-only for focused recovery and device-lifecycle verification.
+ * It is exposed strictly behind an explicit build-time flag that a production build never sets.
  * `npm run s1:production:scan` asserts the flag string and this module's debug branch are
  * both absent from the production web bundle; see `scripts/security/s1-production-scan.mjs`.
  */

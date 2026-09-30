@@ -79,6 +79,12 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
     return { accountId: result.accountId };
   });
 
+  app.get("/api/v1/auth/device-local-state", async (request, reply) => {
+    const query = parseAtBoundary(deviceIdParamsSchema, request.query);
+    reply.header("cache-control", "private, no-store");
+    return service.localDeviceState(query.deviceId, deviceHandle(request, config));
+  });
+
   app.post("/api/v1/auth/login", async (request, reply) => {
     const input = parseAtBoundary(loginSchema, request.body);
     const result = await service.login(input, network(request), deviceHandle(request, config));
@@ -134,8 +140,8 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
 
   app.post("/api/v1/auth/account-recovery/complete", async (request) => {
     const input = parseAtBoundary(accountRecoveryCompleteSchema, request.body);
-    await service.completeAccountRecovery(input, network(request));
-    return { ok: true };
+    const result = await service.completeAccountRecovery(input, network(request));
+    return { ok: true, accountId: result.accountId };
   });
 
   app.get("/api/v1/me", async (request) => {
@@ -191,9 +197,9 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
   app.post("/api/v1/me/account-deletion", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
     await requireRecentReauthentication(auth.session, database);
-    await service.requestDeletion(auth);
+    const result = await service.requestDeletion(auth);
     clearSessionCookie(reply, config);
-    return { ok: true };
+    return { ok: true, recoverUntil: result.recoverUntil };
   });
 
   app.get("/api/v1/me/devices", async (request) => {

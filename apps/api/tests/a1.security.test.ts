@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
@@ -150,6 +151,53 @@ test("normalization avoids provider-specific rewriting and network keys are cano
   assert.equal(networkPrefix("2001:db8::1234"), "2001:db8:0:0::/64");
   assert.equal(networkPrefix("2001:0db8:0000:0000:abcd:0000:0000:0001"), "2001:db8:0:0::/64");
   assert.throws(() => networkPrefix("not-an-ip"), /Invalid network address/);
+});
+
+test("pre-V1 local device-state probe is bound to the opaque device handle", async () => {
+  const routes = await readFile(new URL("../src/modules/auth/routes.ts", import.meta.url), "utf8");
+  const service = await readFile(
+    new URL("../src/modules/accounts/account-service.ts", import.meta.url),
+    "utf8",
+  );
+  const repository = await readFile(
+    new URL("../../../packages/db/src/repositories/account-auth.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(routes.includes('"/api/v1/auth/device-local-state"'), true);
+  assert.equal(routes.includes("deviceHandle(request, config)"), true);
+  assert.equal(service.includes('"device-handle-verifier"'), true);
+  assert.equal(service.includes("findDeviceByHandle"), true);
+  assert.equal(repository.includes("handle_verifier = $2"), true);
+  assert.equal(repository.includes("handle_key_version = $3"), true);
+  assert.equal(repository.includes("a.status AS account_status"), true);
+  assert.equal(repository.includes("deletion.recover_until"), true);
+});
+
+test("pre-V1 Fastify parser failures remain sanitized client errors", async () => {
+  const app = Fastify({ bodyLimit: 64 });
+  installErrorHandler(app);
+  app.post("/json", async () => ({ ok: true }));
+
+  const oversized = await app.inject({
+    method: "POST",
+    url: "/json",
+    headers: { "content-type": "application/json" },
+    payload: JSON.stringify({ value: "x".repeat(128) }),
+  });
+  assert.equal(oversized.statusCode, 413, oversized.body);
+  assert.deepEqual(oversized.json(), { error: { code: "REQUEST_TOO_LARGE" } });
+
+  const malformed = await app.inject({
+    method: "POST",
+    url: "/json",
+    headers: { "content-type": "application/json" },
+    payload: '{"value":',
+  });
+  assert.equal(malformed.statusCode, 400, malformed.body);
+  assert.deepEqual(malformed.json(), { error: { code: "VALIDATION_FAILED" } });
+
+  await app.close();
 });
 
 test("local development session cookie uses a separate insecure loopback name", async () => {
