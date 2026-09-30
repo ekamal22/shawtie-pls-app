@@ -87,7 +87,18 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
              |
              v
         V1 Hosted CI Verification 🟡
-        expand hosted security coverage, then execute
+             |
+      +------+------+------+------+
+      |             |             |             |
+      v             v             v             v
+   Baseline      Security      PostgreSQL     Browser
+     job            job        integration    security
+      |             |             |             |
+      +------+------+------+------+
+             |
+             v
+      final all-green V1 run
+      one exact candidate SHA
                 |
                 v
         R2 Public Readiness ⚪
@@ -101,7 +112,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 v
         X2 Deferred Heavy Features ⏸
 
-V1 Hosted CI Verification 🟡 remains a separate verification milestone. SEC1 is DONE and the two 2026-09-29 follow-up source repairs are also DONE on `main @ a1659dc`, with hosted focused validation PASS in run `36773261743`. GitHub Actions capacity is available again. The remaining V1 work is to expand hosted security coverage and execute the real V1 release-verification workflow before R2 can close.
+V1 Hosted CI Verification 🟡 remains a separate verification milestone. SEC1 and Pre-V1 follow-up hardening are DONE, hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available. The active V1 plan requires four hosted verification surfaces: Baseline, Security, PostgreSQL integration, and Browser security. V1 closes only after all required jobs are green for one exact release-candidate SHA. Canonical plan: `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 ~~~
 
 ## Mermaid dependency view

@@ -12,6 +12,8 @@ GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
+The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. V1 must expose four required verification surfaces: Baseline, Security, PostgreSQL integration, and Browser security. The final closure record must identify one exact candidate SHA shared by all required V1 evidence.
+
 ## Repository audit concerns
 
 Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass did find two concrete source defects that must be repaired before V1, alongside the existing release-governance work:
@@ -240,11 +242,15 @@ When GitHub Actions execution is intentionally being avoided, commits may use Gi
 
 A skipped workflow is not evidence that CI passed.
 
-GitHub Actions execution is available again. SEC1 and Pre-V1 follow-up hardening are DONE, and hosted focused validation run `36773261743` is green. V1 is now waiting on hosted security-coverage expansion, after which the real release-verification workflow should be dispatched and inspected.
+GitHub Actions execution is available again. SEC1 and Pre-V1 follow-up hardening are DONE, and hosted focused validation run `36773261743` is green. V1 is now implementing the hosted verification topology defined in `V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 
-1. expand the hosted workflow so the focused SEC1/S1 gates cannot be omitted
-2. create or push the V1 release-verification commit without a skip marker, or manually dispatch the expanded workflow
-3. inspect the workflow result
+1. implement required Baseline, Security, PostgreSQL integration, and Browser security jobs
+2. preserve SHA-pinned Actions, minimal permissions, explicit timeouts, and controlled concurrency
+3. choose and record one exact release-candidate SHA
+4. create or push the V1 release-verification commit without a skip marker, or manually dispatch the expanded workflow against that candidate
+5. inspect every required job result
+6. if any job fails, fix the defect with a regression and rerun the complete required V1 job set on the final candidate
+7. record the final all-green run evidence
 3. fix any repository-health or domain-test failure
 4. record the successful run in PROJECT_STATE
 5. only then treat the GitHub-hosted baseline gate as verified

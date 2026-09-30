@@ -47,6 +47,7 @@ Start with:
 - `docs/README.md` for document authority and navigation
 - `docs/PROJECT_STATE.md` for verified current implementation state
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
+- `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md` for the active V1 hosted verification topology, required jobs, commands, release-candidate SHA rule, and closure evidence contract
 - `docs/design/ROMANTIC_UX_DIRECTION.md` for the implemented UX0 through UX7 direction and presentation boundaries
 - `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md` for the implemented UX8 design authority, composed security state model, recovery/repair rules, race handling, copy constraints, and closure contract
 - `docs/testing/UX8_ANDROID_ACCEPTANCE.md` for the mandatory 25-scenario Redmi Note 9S acceptance procedure, closed 25/25

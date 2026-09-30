@@ -186,6 +186,8 @@ The persistence schema foundation has repeatable disposable PostgreSQL evidence.
 
 Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks. GitHub-hosted execution is available again: the minimal capacity probe passed and focused Pre-V1 hardening validation run `36773261743` passed. The real V1 release-verification workflow has not yet been executed and remains tracked separately under V1. Documentation and non-V1 commits continue to use `[skip ci]` deliberately.
 
+The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. It requires four hosted verification surfaces: Baseline, Security, PostgreSQL integration, and Browser security. The final closure evidence must correspond to one exact release-candidate SHA and all required jobs must be green for that same source state.
+
 ## Repository audit concerns
 
 The 2026-09-29 follow-up repository-wide audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The two concrete post-SEC1 source defects found in the final audit pass are now fixed on `main @ a1659dc` and verified by hosted focused validation run `36773261743` against validated branch SHA `7d07f7b5c7f24d46188f79c20b4637a22d7d07c1`.
@@ -222,10 +224,12 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. expand V1 hosted security coverage so the hosted gate includes the focused SEC1/S1 checks already identified by audit
-2. complete V1 Hosted CI Verification; GitHub Actions capacity is available again
-3. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-4. cut Stable Release only after V1 and R2 are closed
+1. implement the V1 hosted workflow topology defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`: required Baseline, Security, PostgreSQL integration, and Browser security jobs
+2. execute the real V1 release-verification workflow against one exact release-candidate SHA; GitHub Actions capacity is available
+3. fix and regress any defect found by V1, then rerun the complete required V1 job set on the final candidate
+4. record the final all-green hosted evidence and mark V1 DONE
+5. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
+6. cut Stable Release only after V1 and R2 are closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Merge and documentation-only commits do not change these runtime evidence anchors.
 

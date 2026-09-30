@@ -286,25 +286,26 @@ Status: IN_PROGRESS, HOSTED SECURITY-COVERAGE EXPANSION NEXT
 
 Verify the release candidate on GitHub-hosted infrastructure after SEC1 and Pre-V1 follow-up hardening are DONE, with hosted security coverage expanded to protect the focused SEC1/S1 boundaries. GitHub Actions capacity is available again.
 
+Canonical workflow/evidence plan: `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
+
 V1 is intentionally separate from F1 and was not a prerequisite for completed feature development. It is now a pre-R2 verification gate downstream of SEC1. It must be completed before R2 Public Readiness can be marked DONE.
 
 ## Current blocker
 
-SEC1 is DONE. The two follow-up source defects are also DONE on `main @ a1659dc`, hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available. The real V1 release-verification workflow remains unexecuted. The current blocker is the previously recorded hosted security-coverage expansion.
+SEC1 and Pre-V1 follow-up hardening are DONE, hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available. The real V1 release-verification workflow remains unexecuted. The active work is implementation of the required four-surface V1 workflow defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`, followed by one final all-green run on an exact release-candidate SHA.
 
 ## Scope
 
 - retain the closed Pre-V1 follow-up hardening evidence for account-wide local-crypto lifecycle destruction, route-local S1 request ceilings, and sanitized Fastify 4xx parser/client errors
 - retain hosted focused validation evidence from run `36773261743` against validated branch SHA `7d07f7b5`
-- execute Baseline CI on GitHub-hosted Ubuntu
-- expand hosted coverage so a V1 green result also protects the SEC1/S1 security baseline, not only `npm run health`
-- run or separately gate `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, and `sec1:format:check`
-- decide and document how disposable PostgreSQL and real-Chromium security/integration jobs run in hosted release verification without weakening their assertions
-- verify the workflow trigger and permissions behavior
-- verify clean lockfile installation under the hosted runner
-- verify the full repository baseline under the hosted runner
-- verify dependency audit under the hosted runner
-- record hosted-run evidence in project state
+- implement required hosted Baseline job: `npm ci`, `npm run ci:baseline`, and `npm audit --audit-level=high`
+- implement required hosted Security job: `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, `sec1:format:check`, and `test:pre-v1:hardening`
+- implement required hosted PostgreSQL integration job preserving the existing `test:sec1:postgres` and `test:s1:postgres` assertions against disposable PostgreSQL
+- implement required hosted Browser security job using real Chromium and preserving the existing `test:sec1:browser:e2e` and `test:s1:browser:e2e` assertions
+- keep SHA-pinned Actions, minimal permissions, explicit timeouts, controlled concurrency, and non-persisted checkout credentials unless explicitly needed
+- execute the full required V1 job set against one exact release-candidate SHA
+- if V1 finds a defect, fix it with regression evidence and rerun the complete required job set on the final candidate
+- record run ID, attempt, exact candidate SHA, required job conclusions, and any defect/fix references in project state
 
 ## Acceptance gates
 
@@ -315,6 +316,9 @@ SEC1 is DONE. The two follow-up source defects are also DONE on `main @ a1659dc`
 - [x] focused contract/API-security/browser-source regressions for the two follow-up defects pass on the final candidate source; hosted run `36773261743` also passes all touched workspace builds, lint, Prettier, and worktree hygiene
 - [ ] the hosted workflow is updated so a passing V1 result cannot omit the SEC1/S1-focused header, proxy, password-corpus, production-scan, lint, and format gates
 - [ ] the hosted release-verification plan explicitly covers the disposable PostgreSQL and real-Chromium security/integration boundary, either in V1 jobs or a separately required release job
+- [ ] Baseline, Security, PostgreSQL integration, and Browser security are each required V1 job surfaces
+- [ ] the final V1 closure evidence identifies one exact release-candidate SHA and all required jobs correspond to that same source state
+- [ ] any defect found during V1 has a regression and the complete required V1 job set is rerun on the final candidate
 - [ ] at least one GitHub-hosted Baseline CI run completes successfully
 - [ ] hosted `npm ci` succeeds from the committed lockfile
 - [ ] hosted `npm run ci:baseline` succeeds

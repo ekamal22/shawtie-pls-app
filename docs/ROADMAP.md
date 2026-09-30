@@ -9,6 +9,7 @@ This is the canonical high-level execution roadmap for Shawtie pls.
 Verified current implementation state lives in `docs/PROJECT_STATE.md`.
 Detailed epic scope and acceptance gates live in `docs/ROADMAP_EPICS.md`.
 The compact dependency graph lives in `docs/EXECUTION_GRAPH.md`.
+The active V1 hosted workflow and evidence contract lives in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 
 An epic is DONE only when its required acceptance gates have executed evidence.
 
@@ -27,7 +28,7 @@ Completed milestones:
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
-| V1 Hosted CI Verification | IN_PROGRESS | follow-up hardening DONE; Actions available; hosted security-coverage expansion remains before the real V1 run |
+| V1 Hosted CI Verification | IN_PROGRESS | implement four-job hosted verification plan, then execute all required jobs on one exact release-candidate SHA |
 
 P3 closure evidence remains:
 
@@ -141,8 +142,12 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       hosted focused validation PASS
             |
             v
-      V1 Hosted CI Verification
-      expand hosted security coverage, then run
+      V1 Hosted CI Verification 🟡
+      1. Baseline
+      2. Security
+      3. PostgreSQL integration
+      4. Browser security
+      then final all-green run on one exact candidate SHA
             |
             v
       R2 Public Readiness

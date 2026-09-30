@@ -38,12 +38,15 @@ This is the pure domain baseline. The initial database invariant suite has separ
 ## CI baseline
 
 The baseline CI and repository-health policy is defined in `CI_AND_REPOSITORY_HEALTH.md`.
+The active V1 hosted execution plan is defined in `V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 
 The current baseline hosted workflow is configured but the real V1 release-verification run has not yet executed. SEC1 and Pre-V1 follow-up hardening are DONE. Hosted focused validation run `36773261743` confirms Actions execution is available again. Before V1 can count as release evidence, the hosted workflow must still be expanded so it cannot pass while omitting the SEC1/S1-focused header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format gates.
 
 Local repository health and domain tests remain usable without hosted Actions.
 
 V1 release verification must distinguish the fast repository baseline from heavier security/integration evidence. `npm run health` remains the general baseline, but it is not by itself sufficient evidence for production web security or S1 production-bundle invariants. The release plan must explicitly require the focused SEC1/S1 gates and must also account for disposable PostgreSQL and real-Chromium integration coverage, whether those run in the same workflow or in separately required hosted jobs.
+
+The accepted V1 topology is four required hosted surfaces: Baseline, Security, PostgreSQL integration, and Browser security. All four must be green for one exact release-candidate SHA before V1 can close. A partial rerun cannot combine with green jobs from a different source SHA to manufacture V1 closure.
 
 ## Test layers
 
