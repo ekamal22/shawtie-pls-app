@@ -1,0 +1,21 @@
+name: Actions Capacity Probe
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/actions-capacity-probe.yml"
+      - ".github/workflows/ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Hosted runner probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Capacity probe
+        run: echo ACTIONS_CAPACITY_PROBE_PASS

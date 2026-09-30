@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/actions-capacity-probe.yml"
   pull_request:
   workflow_dispatch:
 
