@@ -169,6 +169,8 @@ test("pre-V1 local device-state probe is bound to the opaque device handle", asy
   assert.equal(service.includes("findDeviceByHandle"), true);
   assert.equal(repository.includes("handle_verifier = $2"), true);
   assert.equal(repository.includes("handle_key_version = $3"), true);
+  assert.equal(repository.includes("a.status AS account_status"), true);
+  assert.equal(repository.includes("deletion.recover_until"), true);
 });
 
 test("pre-V1 Fastify parser failures remain sanitized client errors", async () => {

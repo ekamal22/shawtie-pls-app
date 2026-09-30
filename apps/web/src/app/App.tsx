@@ -508,16 +508,31 @@ export function App() {
   }
 
   async function shouldPurgeCryptoAfterUnauthorized(accountId: string): Promise<boolean> {
-    if (pendingAccountDeletionExpired(accountId)) return true;
     const deviceId = rememberedLocalDeviceId(accountId);
-    if (!deviceId) return false;
+    if (!deviceId) return pendingAccountDeletionExpired(accountId);
     try {
       const state = await apiRequest<{
         recognized: boolean;
         revoked: boolean;
         accountId: string | null;
+        accountStatus: "active" | "deletion_pending" | "deleted" | null;
+        recoverUntil: string | null;
       }>("/api/v1/auth/device-local-state?deviceId=" + encodeURIComponent(deviceId));
-      return state.recognized && state.revoked && state.accountId === accountId;
+
+      if (!state.recognized || state.accountId !== accountId) return true;
+      if (state.revoked || state.accountStatus === "deleted") return true;
+      if (state.accountStatus === "active") {
+        clearPendingAccountDeletion(accountId);
+        return false;
+      }
+      if (state.accountStatus === "deletion_pending") {
+        if (state.recoverUntil) {
+          rememberPendingAccountDeletion(accountId, state.recoverUntil);
+          return Date.now() >= Date.parse(state.recoverUntil);
+        }
+        return pendingAccountDeletionExpired(accountId);
+      }
+      return false;
     } catch {
       return false;
     }
@@ -530,6 +545,7 @@ export function App() {
       if (previousAccountId && previousAccountId !== current.accountId) {
         broadcastLocalLogout(previousAccountId);
         await closeActiveM2Runtime(previousAccountId);
+        await purgeCryptoForAccount(previousAccountId);
         await purgeAccountLocalData(previousAccountId);
       }
 

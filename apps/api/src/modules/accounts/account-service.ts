@@ -679,8 +679,22 @@ export class AccountService {
   async localDeviceState(
     deviceId: string,
     rawDeviceHandle: string | undefined,
-  ): Promise<{ recognized: boolean; revoked: boolean; accountId: string | null }> {
-    if (!rawDeviceHandle) return { recognized: false, revoked: false, accountId: null };
+  ): Promise<{
+    recognized: boolean;
+    revoked: boolean;
+    accountId: string | null;
+    accountStatus: "active" | "deletion_pending" | "deleted" | null;
+    recoverUntil: string | null;
+  }> {
+    if (!rawDeviceHandle) {
+      return {
+        recognized: false,
+        revoked: false,
+        accountId: null,
+        accountStatus: null,
+        recoverUntil: null,
+      };
+    }
     for (const version of this.keys.versions) {
       const verifier = this.keys.verifier("device-handle-verifier", rawDeviceHandle, version);
       const device = await findDeviceByHandle(this.database.pool, deviceId, verifier, version);
@@ -689,10 +703,18 @@ export class AccountService {
           recognized: true,
           revoked: device.revokedAt !== null,
           accountId: device.accountId,
+          accountStatus: device.accountStatus,
+          recoverUntil: device.recoverUntil?.toISOString() ?? null,
         };
       }
     }
-    return { recognized: false, revoked: false, accountId: null };
+    return {
+      recognized: false,
+      revoked: false,
+      accountId: null,
+      accountStatus: null,
+      recoverUntil: null,
+    };
   }
 
   async reauthenticate(

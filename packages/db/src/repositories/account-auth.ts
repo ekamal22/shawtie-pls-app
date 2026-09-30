@@ -553,23 +553,46 @@ export async function findDeviceByHandle(
   deviceId: string,
   handleVerifier: Buffer,
   handleKeyVersion: number,
-): Promise<{ id: string; accountId: string; revokedAt: Date | null } | null> {
+): Promise<{
+  id: string;
+  accountId: string;
+  revokedAt: Date | null;
+  accountStatus: AccountStatus;
+  recoverUntil: Date | null;
+} | null> {
   const result = await executor.query<{
     id: string;
     account_id: string;
     revoked_at: Date | null;
+    account_status: AccountStatus;
+    recover_until: Date | null;
   }>(
-    `SELECT id, account_id, revoked_at
-     FROM account_devices
-     WHERE id = $1
-       AND handle_verifier = $2
-       AND handle_key_version = $3
+    `SELECT d.id, d.account_id, d.revoked_at, a.status AS account_status,
+            deletion.recover_until
+     FROM account_devices d
+     JOIN accounts a ON a.id = d.account_id
+     LEFT JOIN LATERAL (
+       SELECT recover_until
+       FROM account_deletion_requests
+       WHERE account_id = d.account_id AND status = 'pending'
+       ORDER BY generation DESC
+       LIMIT 1
+     ) deletion ON TRUE
+     WHERE d.id = $1
+       AND d.handle_verifier = $2
+       AND d.handle_key_version = $3
      LIMIT 1`,
     [deviceId, handleVerifier, handleKeyVersion],
   );
   const row = result.rows[0];
   return row
-    ? { id: row.id, accountId: row.account_id, revokedAt: row.revoked_at }
+    ? {
+        id: row.id,
+        accountId: row.account_id,
+        revokedAt: row.revoked_at,
+        accountStatus: row.account_status,
+        recoverUntil: row.recover_until,
+      }
     : null;
 }
 
