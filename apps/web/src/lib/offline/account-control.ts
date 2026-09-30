@@ -1,5 +1,6 @@
 const CHANNEL_PREFIX = "shawtie-account-control:";
 const DEVICE_KEY_PREFIX = "shawtie:a1-device:";
+const LAST_CRYPTO_ACCOUNT_KEY = "shawtie:last-crypto-account";
 const PENDING_DELETION_KEY = "shawtie:pending-account-deletion";
 
 interface PendingAccountDeletion {
@@ -44,6 +45,32 @@ export function rememberedLocalDeviceId(accountId: string): string | null {
 export function clearRememberedLocalDeviceId(accountId: string): void {
   try {
     localStorage.removeItem(DEVICE_KEY_PREFIX + accountId);
+  } catch {
+    // Best-effort marker cleanup.
+  }
+}
+
+export function rememberLastCryptoAccount(accountId: string): void {
+  try {
+    localStorage.setItem(LAST_CRYPTO_ACCOUNT_KEY, accountId);
+  } catch {
+    // Best-effort lifecycle marker.
+  }
+}
+
+export function rememberedLastCryptoAccount(): string | null {
+  try {
+    return localStorage.getItem(LAST_CRYPTO_ACCOUNT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearLastCryptoAccount(accountId: string): void {
+  try {
+    if (localStorage.getItem(LAST_CRYPTO_ACCOUNT_KEY) === accountId) {
+      localStorage.removeItem(LAST_CRYPTO_ACCOUNT_KEY);
+    }
   } catch {
     // Best-effort marker cleanup.
   }

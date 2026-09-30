@@ -2,11 +2,14 @@ import { type FormEvent, useEffect, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
 import {
   broadcastLocalLogout,
+  clearLastCryptoAccount,
   clearPendingAccountDeletion,
   clearRememberedLocalDeviceId,
   pendingAccountDeletion,
   pendingAccountDeletionExpired,
+  rememberLastCryptoAccount,
   rememberLocalDeviceId,
+  rememberedLastCryptoAccount,
   rememberedLocalDeviceId,
 } from "../lib/offline/account-control.ts";
 import { purgeCryptoAccountData } from "@shawtie/crypto";
@@ -504,6 +507,7 @@ export function App() {
     closeActiveS1CryptoRuntime(accountId);
     await purgeCryptoAccountData(accountId);
     clearRememberedLocalDeviceId(accountId);
+    clearLastCryptoAccount(accountId);
     clearPendingAccountDeletion(accountId);
   }
 
@@ -555,12 +559,14 @@ export function App() {
       }
       clearPendingAccountDeletion(current.accountId);
       rememberLocalAccount(current.accountId);
+      rememberLastCryptoAccount(current.accountId);
       if (current.deviceId) rememberLocalDeviceId(current.accountId, current.deviceId);
       setSession(current);
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {
         const pending = pendingAccountDeletion();
-        const revokedAccountId = rememberedLocalAccount() ?? pending?.accountId ?? null;
+        const revokedAccountId =
+          rememberedLocalAccount() ?? pending?.accountId ?? rememberedLastCryptoAccount();
         if (revokedAccountId) {
           const purgeCrypto = await shouldPurgeCryptoAfterUnauthorized(revokedAccountId);
           broadcastLocalLogout(revokedAccountId);

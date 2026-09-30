@@ -131,6 +131,7 @@
     "test:s1:install-browser": "playwright install chromium",
     "test:s1:device:prepare": "node scripts/device/s1-android-acceptance.mjs",
     "test:s1:device:cleanup": "node scripts/device/s1-android-acceptance.mjs --cleanup",
+    "test:pre-v1:hardening": "npm run build --workspace @shawtie/contracts && npm run build --workspace @shawtie/crypto && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/api && npm run build --workspace @shawtie/web && node --test packages/contracts/tests/s1-crypto.test.ts apps/api/tests/a1.security.test.ts apps/api/tests/s1.security.test.ts apps/web/tests/s1.browser.test.ts",
     "test:ux8": "node --test apps/web/tests/ux8.security.test.ts",
     "test:ux8:browser:e2e": "npm run build --workspace @shawtie/crypto && npm run build:s1-wasm && playwright test --config=playwright.ux8.config.ts",
     "test:ux8:closure": "node scripts/ci/test-ux8-closure.mjs",

@@ -99,6 +99,9 @@ test("pre-V1 account lifecycle wires destructive S1 account purge without wiping
   assert.equal(us.includes("onSignedOut({ purgeCrypto: true })"), true);
   assert.equal(us.includes("rememberPendingAccountDeletion(me.accountId, result.recoverUntil)"), true);
   assert.equal(accountControl.includes("PENDING_DELETION_KEY"), true);
+  assert.equal(accountControl.includes("LAST_CRYPTO_ACCOUNT_KEY"), true);
+  assert.equal(app.includes("rememberedLastCryptoAccount()"), true);
+  assert.equal(app.includes("rememberLastCryptoAccount(current.accountId)"), true);
   assert.equal(cryptoContext.includes("closeActiveS1CryptoRuntime"), true);
 });
 
