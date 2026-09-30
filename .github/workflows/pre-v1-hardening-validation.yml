@@ -1,32 +1,26 @@
-name: Baseline CI
+name: Pre-V1 Hardening Validation
 
 on:
   push:
     branches:
       - main
-    paths-ignore:
+    paths:
       - ".github/workflows/pre-v1-hardening-validation.yml"
       - ".github/workflows/ci.yml"
-  pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: baseline-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  baseline:
-    name: Repository foundation
+  focused:
+    name: Follow-up hardening
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
-      - name: Checkout
+      - name: Checkout hardening branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: feat/pre-v1-follow-up-hardening
           fetch-depth: 1
           persist-credentials: false
 
@@ -36,16 +30,17 @@ jobs:
           node-version: "22.18.0"
           check-latest: false
 
-      - name: Runtime versions
-        run: |
-          node --version
-          npm --version
-
-      - name: Install dependencies from lockfile
+      - name: Install from lockfile
         run: npm ci
 
-      - name: Full repository baseline
-        run: npm run ci:baseline
+      - name: Focused hardening tests
+        run: npm run test:pre-v1:hardening
 
-      - name: Dependency audit
-        run: npm audit --audit-level=high
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Worktree hygiene
+        run: git diff --check
