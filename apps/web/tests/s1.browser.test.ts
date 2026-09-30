@@ -81,35 +81,32 @@ test("S1 crypto namespace revocation purges local crypto state", async () => {
   assert.equal(vault.includes('tx.objectStore("contentKeys").delete'), true);
 });
 
-test(
-  "pre-V1 account lifecycle wires destructive S1 account purge without wiping ordinary logout",
-  async () => {
-    const app = await source("../src/app/App.tsx");
-    const us = await source("../src/features/ours/us/UsScreen.tsx");
-    const accountControl = await source("../src/lib/offline/account-control.ts");
-    const cryptoContext = await source("../src/lib/crypto/runtime-context.tsx");
+test("pre-V1 account lifecycle wires destructive S1 account purge without wiping ordinary logout", async () => {
+  const app = await source("../src/app/App.tsx");
+  const us = await source("../src/features/ours/us/UsScreen.tsx");
+  const accountControl = await source("../src/lib/offline/account-control.ts");
+  const cryptoContext = await source("../src/lib/crypto/runtime-context.tsx");
 
-    assert.equal(app.includes("purgeCryptoAccountData(accountId)"), true);
-    assert.equal(app.includes("closeActiveS1CryptoRuntime(accountId)"), true);
-    assert.equal(app.includes("pendingAccountDeletionExpired(accountId)"), true);
-    assert.equal(app.includes("/api/v1/auth/device-local-state?deviceId="), true);
-    assert.equal(app.includes('state.accountStatus === "active"'), true);
-    assert.equal(app.includes('state.accountStatus === "deletion_pending"'), true);
-    assert.equal(app.includes("!state.recognized || state.accountId !== accountId"), true);
-    assert.equal(app.includes("previousDeviceId !== current.deviceId"), true);
-    assert.equal(app.includes("purgeCryptoForAccount(previousAccountId)"), true);
-    assert.equal(us.includes("onSignedOut({ purgeCrypto: true })"), true);
-    assert.equal(
-      us.includes("rememberPendingAccountDeletion(me.accountId, result.recoverUntil)"),
-      true,
-    );
-    assert.equal(accountControl.includes("PENDING_DELETION_KEY"), true);
-    assert.equal(accountControl.includes("LAST_CRYPTO_ACCOUNT_KEY"), true);
-    assert.equal(app.includes("rememberedLastCryptoAccount()"), true);
-    assert.equal(app.includes("rememberLastCryptoAccount(current.accountId)"), true);
-    assert.equal(cryptoContext.includes("closeActiveS1CryptoRuntime"), true);
-  },
-);
+  assert.equal(app.includes("purgeCryptoAccountData(accountId)"), true);
+  assert.equal(app.includes("closeActiveS1CryptoRuntime(accountId)"), true);
+  assert.equal(app.includes("pendingAccountDeletionExpired(accountId)"), true);
+  assert.equal(app.includes("/api/v1/auth/device-local-state?deviceId="), true);
+  assert.equal(app.includes('state.accountStatus === "active"'), true);
+  assert.equal(app.includes('state.accountStatus === "deletion_pending"'), true);
+  assert.equal(app.includes("!state.recognized || state.accountId !== accountId"), true);
+  assert.equal(app.includes("previousDeviceId !== current.deviceId"), true);
+  assert.equal(app.includes("purgeCryptoForAccount(previousAccountId)"), true);
+  assert.equal(us.includes("onSignedOut({ purgeCrypto: true })"), true);
+  assert.equal(
+    us.includes("rememberPendingAccountDeletion(me.accountId, result.recoverUntil)"),
+    true,
+  );
+  assert.equal(accountControl.includes("PENDING_DELETION_KEY"), true);
+  assert.equal(accountControl.includes("LAST_CRYPTO_ACCOUNT_KEY"), true);
+  assert.equal(app.includes("rememberedLastCryptoAccount()"), true);
+  assert.equal(app.includes("rememberLastCryptoAccount(current.accountId)"), true);
+  assert.equal(cryptoContext.includes("closeActiveS1CryptoRuntime"), true);
+});
 
 test("S1 production media path has no static legacy test-crypto dependency", async () => {
   const runtime = await source("../src/lib/media/media-runtime.ts");
