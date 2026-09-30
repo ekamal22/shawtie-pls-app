@@ -1,6 +1,15 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
-import { broadcastLocalLogout } from "../lib/offline/account-control.ts";
+import {
+  broadcastLocalLogout,
+  clearPendingAccountDeletion,
+  clearRememberedLocalDeviceId,
+  pendingAccountDeletion,
+  pendingAccountDeletionExpired,
+  rememberLocalDeviceId,
+  rememberedLocalDeviceId,
+} from "../lib/offline/account-control.ts";
+import { purgeCryptoAccountData } from "@shawtie/crypto";
 import {
   purgeAccountLocalData,
   rememberLocalAccount,
@@ -22,7 +31,10 @@ import { accountMessageFor } from "./account-errors.ts";
 import { AppShell, RouteView } from "./shell/AppShell.tsx";
 import { useRoute } from "./shell/routes.ts";
 import { useConversationContext } from "./shell/useConversationContext.ts";
-import { S1CryptoRuntimeProvider } from "../lib/crypto/runtime-context.tsx";
+import {
+  closeActiveS1CryptoRuntime,
+  S1CryptoRuntimeProvider,
+} from "../lib/crypto/runtime-context.tsx";
 import { CryptoSecurityProvider } from "../features/security/CryptoSecurityProvider.tsx";
 
 interface Session {
@@ -165,10 +177,14 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
         setMode("login");
         setPassword("");
       } else {
-        await apiRequest("/api/v1/auth/account-recovery/complete", {
-          method: "POST",
-          body: { identifier, code },
-        });
+        const recovered = await apiRequest<{ accountId: string }>(
+          "/api/v1/auth/account-recovery/complete",
+          {
+            method: "POST",
+            body: { identifier, code },
+          },
+        );
+        clearPendingAccountDeletion(recovered.accountId);
         setNotice(
           "Account access recovered. Sign in normally. Protected history still requires a trusted crypto device and, where needed, your recovery key.",
         );
@@ -389,13 +405,17 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
   );
 }
 
+interface LocalSignOutOptions {
+  readonly purgeCrypto?: boolean;
+}
+
 function AccountScreen({
   session,
   onSignedOut,
   refreshSession,
 }: {
   session: Session;
-  onSignedOut: () => Promise<void>;
+  onSignedOut: (options?: LocalSignOutOptions) => Promise<void>;
   refreshSession: () => Promise<void>;
 }) {
   const [route, navigate] = useRoute();
@@ -480,6 +500,29 @@ function AccountScreen({
 export function App() {
   const [session, setSession] = useState<Session | null | undefined | "offline-locked">(undefined);
 
+  async function purgeCryptoForAccount(accountId: string): Promise<void> {
+    closeActiveS1CryptoRuntime(accountId);
+    await purgeCryptoAccountData(accountId);
+    clearRememberedLocalDeviceId(accountId);
+    clearPendingAccountDeletion(accountId);
+  }
+
+  async function shouldPurgeCryptoAfterUnauthorized(accountId: string): Promise<boolean> {
+    if (pendingAccountDeletionExpired(accountId)) return true;
+    const deviceId = rememberedLocalDeviceId(accountId);
+    if (!deviceId) return false;
+    try {
+      const state = await apiRequest<{
+        recognized: boolean;
+        revoked: boolean;
+        accountId: string | null;
+      }>("/api/v1/auth/device-local-state?deviceId=" + encodeURIComponent(deviceId));
+      return state.recognized && state.revoked && state.accountId === accountId;
+    } catch {
+      return false;
+    }
+  }
+
   async function refreshSession() {
     try {
       const current = await apiRequest<Session>("/api/v1/auth/session");
@@ -489,14 +532,26 @@ export function App() {
         await closeActiveM2Runtime(previousAccountId);
         await purgeAccountLocalData(previousAccountId);
       }
+
+      const previousDeviceId = rememberedLocalDeviceId(current.accountId);
+      if (previousDeviceId && current.deviceId && previousDeviceId !== current.deviceId) {
+        await purgeCryptoForAccount(current.accountId);
+      }
+      clearPendingAccountDeletion(current.accountId);
       rememberLocalAccount(current.accountId);
+      if (current.deviceId) rememberLocalDeviceId(current.accountId, current.deviceId);
       setSession(current);
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {
-        const revokedAccountId = rememberedLocalAccount();
+        const pending = pendingAccountDeletion();
+        const revokedAccountId = rememberedLocalAccount() ?? pending?.accountId ?? null;
         if (revokedAccountId) {
+          const purgeCrypto = await shouldPurgeCryptoAfterUnauthorized(revokedAccountId);
           broadcastLocalLogout(revokedAccountId);
           await closeActiveM2Runtime(revokedAccountId);
+          if (purgeCrypto) {
+            await purgeCryptoForAccount(revokedAccountId).catch(() => undefined);
+          }
         }
         setSession(null);
         if (revokedAccountId) {
@@ -567,9 +622,12 @@ export function App() {
       <M2RuntimeProvider accountId={session.accountId}>
         <AccountScreen
           session={session}
-          onSignedOut={async () => {
+          onSignedOut={async (options) => {
             broadcastLocalLogout(signedOutAccountId);
             await closeActiveM2Runtime(signedOutAccountId);
+            if (options?.purgeCrypto) {
+              await purgeCryptoForAccount(signedOutAccountId);
+            }
             await purgeAccountLocalData(signedOutAccountId);
             setSession(null);
           }}

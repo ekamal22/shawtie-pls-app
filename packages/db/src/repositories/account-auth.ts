@@ -548,6 +548,31 @@ export async function findActiveDeviceByHandle(
   return row ? { id: row.id, handleKeyVersion: row.handle_key_version } : null;
 }
 
+export async function findDeviceByHandle(
+  executor: QueryExecutor,
+  deviceId: string,
+  handleVerifier: Buffer,
+  handleKeyVersion: number,
+): Promise<{ id: string; accountId: string; revokedAt: Date | null } | null> {
+  const result = await executor.query<{
+    id: string;
+    account_id: string;
+    revoked_at: Date | null;
+  }>(
+    `SELECT id, account_id, revoked_at
+     FROM account_devices
+     WHERE id = $1
+       AND handle_verifier = $2
+       AND handle_key_version = $3
+     LIMIT 1`,
+    [deviceId, handleVerifier, handleKeyVersion],
+  );
+  const row = result.rows[0];
+  return row
+    ? { id: row.id, accountId: row.account_id, revokedAt: row.revoked_at }
+    : null;
+}
+
 export async function rotateDeviceHandle(
   executor: QueryExecutor,
   deviceId: string,

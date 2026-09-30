@@ -152,6 +152,25 @@ test("normalization avoids provider-specific rewriting and network keys are cano
   assert.throws(() => networkPrefix("not-an-ip"), /Invalid network address/);
 });
 
+test("pre-V1 local device-state probe is bound to the opaque device handle", async () => {
+  const routes = await readFile(new URL("../src/modules/auth/routes.ts", import.meta.url), "utf8");
+  const service = await readFile(
+    new URL("../src/modules/accounts/account-service.ts", import.meta.url),
+    "utf8",
+  );
+  const repository = await readFile(
+    new URL("../../../packages/db/src/repositories/account-auth.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(routes.includes('"/api/v1/auth/device-local-state"'), true);
+  assert.equal(routes.includes("deviceHandle(request, config)"), true);
+  assert.equal(service.includes('"device-handle-verifier"'), true);
+  assert.equal(service.includes("findDeviceByHandle"), true);
+  assert.equal(repository.includes("handle_verifier = $2"), true);
+  assert.equal(repository.includes("handle_key_version = $3"), true);
+});
+
 test("local development session cookie uses a separate insecure loopback name", async () => {
   const config: ApiConfig = {
     environment: "test",
