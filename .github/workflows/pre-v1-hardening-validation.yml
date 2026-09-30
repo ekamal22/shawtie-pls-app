@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Prettier diagnostic
+        run: npx prettier apps/web/tests/s1.browser.test.ts
+
       - name: Format check
         run: npm run format:check
 
