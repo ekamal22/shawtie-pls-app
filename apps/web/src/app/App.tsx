@@ -9,6 +9,7 @@ import {
   pendingAccountDeletionExpired,
   rememberLastCryptoAccount,
   rememberLocalDeviceId,
+  rememberPendingAccountDeletion,
   rememberedLastCryptoAccount,
   rememberedLocalDeviceId,
 } from "../lib/offline/account-control.ts";
