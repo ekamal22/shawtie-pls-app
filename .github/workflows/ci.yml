@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - ".github/workflows/pre-v1-hardening-validation.yml"
-      - ".github/workflows/ci.yml"
   pull_request:
   workflow_dispatch:
 
