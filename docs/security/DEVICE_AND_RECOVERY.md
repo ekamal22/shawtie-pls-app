@@ -202,19 +202,20 @@ Permanent account deletion destroys:
 
 Partnership final dissolution destroys partnership-scoped recovery capsules and protected content through P3 deletion.
 
-### 2026-09-29 follow-up deletion gap
+### 2026-09-29 follow-up deletion closure
 
-A follow-up source audit found that the account-level local deletion requirement above is not fully wired in the browser runtime. `purgeCryptoAccountData(accountId)` exists in `packages/crypto/src/local-vault.ts`, but no production caller currently invokes it. Current-device revocation and observed authentication loss correctly revoke server authority and stop future protected access, while the ordinary account purge removes M2 and media local databases, but the account-scoped S1 crypto IndexedDB remains stored.
+The account-level local deletion gap found by the follow-up audit is CLOSED on `main @ a1659dc`. The browser lifecycle now calls the account-wide crypto purge at the relevant destructive boundaries while preserving ordinary logout semantics and the seven-day deletion-recovery window.
 
-This is a local secret-retention/privacy defect, not a bypass of server authorization or future-message revocation. The repair must preserve these lifecycle distinctions:
+The implemented distinctions are:
 
 - ordinary logout may retain an otherwise valid trusted device identity according to product policy
-- current-device revocation must close the crypto runtime and destroy the revoked account/device's local S1 vault
-- account deletion request must not destroy recovery capability during the seven-day recovery window
-- permanent account deletion must destroy account-wide local recovery/device/group/key state on clients that observe the final state
-- a client that was offline during permanent deletion needs a durable safe observation/tombstone path so obsolete local secrets are not retained indefinitely only because the account can no longer authenticate normally
+- current-device revocation closes the S1 runtime and destroys the revoked account/device's local S1 vault
+- account switching or device-identity replacement does not allow the previous account's S1 vault to remain active
+- account deletion request preserves recovery capability during the seven-day recovery window
+- recovery before the deadline clears stale local deletion state
+- permanent deletion converges to account-wide local recovery/device/group/key destruction through the device-handle-bound lifecycle probe and durable local markers
 
-Focused browser/integration regression evidence is required before V1 release verification. A full S1 physical matrix is not automatically reopened; add a focused device check only if the implementation introduces Android/PWA behavior that desktop Chromium cannot adequately prove.
+Hosted focused validation run `36773261743` passed the focused source/security regression surface. This did not require repeating the full historical S1 physical matrix.
 
 ## Security limitation
 

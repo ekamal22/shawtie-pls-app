@@ -10,17 +10,17 @@ The implementation pins OpenMLS `0.9.0`, `openmls_rust_crypto 0.6.0`, the cipher
 
 ## Post-closure pre-V1 follow-up
 
-S1 remains historically DONE and merged. A 2026-09-29 follow-up audit found two implementation defects outside the original closure matrix that must be repaired before V1 release evidence is collected.
+S1 remains historically DONE and merged. A 2026-09-29 follow-up audit found two implementation defects outside the original S1 closure matrix. Both are now CLOSED on `main @ a1659dc`, with hosted focused validation run `36773261743` PASS against validated branch SHA `7d07f7b5`.
 
 ### Account-wide local crypto deletion
 
-`CryptoLocalVault` already exposes `purgeCryptoAccountData(accountId)`, but the production account/device lifecycle does not currently call it. Current-device revocation and permanent account deletion correctly revoke server authority, but the account-scoped S1 IndexedDB can remain after M2/media local purge. The repair must distinguish ordinary logout from security destruction, preserve local recovery during the seven-day deletion-pending window, purge current-device revocation after authority loss, purge permanent deletion when observed, and make the offline-final-deletion case converge to local secret destruction safely.
+The production lifecycle now wires account-wide S1 vault destruction through the relevant security boundaries. Current-device revocation, account switching, account-device identity replacement, deletion-pending retention, account recovery, and permanent-deletion convergence are handled explicitly. Ordinary logout does not blindly destroy a still-valid trusted-device identity. Deletion-pending preserves recovery capability through the seven-day window, while revoked or permanently deleted account state converges to local S1 vault destruction.
 
 ### HTTP transport boundary
 
-S1 contract maxima are expressed as decoded binary sizes, while HTTP carries base64url strings inside JSON. The API currently relies on Fastify's default 1 MiB body limit. A legal 1 MiB binary S1 field expands beyond that limit when encoded, and some S1 request shapes can contain multiple large fields. Each affected S1 route therefore needs an explicit body ceiling derived from its encoded worst-case request size rather than a global permissive increase. The API error boundary must also translate known Fastify parser/client errors into stable sanitized 4xx responses so oversized or malformed client traffic cannot appear as `500 INTERNAL_ERROR`.
+Affected S1 routes now use contract-owned route-local body ceilings derived from encoded base64url/JSON worst-case sizes instead of widening the global API body limit. Known Fastify parser/client errors are translated to stable sanitized 4xx responses, so malformed or oversized client traffic does not fall through to `500 INTERNAL_ERROR`.
 
-These follow-up repairs must add focused API/browser/integration regressions and must be green before V1. They do not change the pinned cryptographic profile or reopen the original S1 protocol design.
+The hosted follow-up validation built the touched workspaces and passed 37/37 focused contract/API-security/browser-source tests, lint, Prettier, and worktree hygiene. These repairs do not change the pinned cryptographic profile or reopen the original S1 protocol design.
 
 S1 must not invent a custom cryptographic protocol.
 

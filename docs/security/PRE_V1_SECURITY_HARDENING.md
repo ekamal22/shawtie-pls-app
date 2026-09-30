@@ -1,6 +1,6 @@
 # SEC1 Pre-V1 Security Hardening
 
-Status: DONE ON FEATURE BRANCH.
+Status: DONE AND MERGED TO MAIN.
 
 Final executable SHA: `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`.
 
@@ -10,8 +10,9 @@ Ordering:
 
 ```text
 UX8 DONE
-  -> SEC1 Pre-V1 Security Hardening
-  -> V1 Hosted CI Verification
+  -> SEC1 Pre-V1 Security Hardening DONE
+  -> Pre-V1 Follow-up Hardening DONE
+  -> V1 Hosted CI Verification IN_PROGRESS
   -> R2 Public Readiness
   -> Stable Release
 ```
@@ -34,7 +35,7 @@ Implemented remediation:
 - strict `style-src 'self'` is supported by removing every identified production inline-style writer, including additional Talk, video-call, and View Transition sites discovered during implementation
 - the SEC1 test surface now includes focused admission tests, digest-corpus integrity checks, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, proxy-trust/header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media/offline smoke, a production scan, and one final `npm run test:sec1:closure` wrapper
 
-The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. A later 2026-09-29 audit found two post-SEC1 source defects that must be fixed before V1 release evidence: account-wide S1 local-crypto lifecycle deletion, and S1 HTTP request-size/framework-client-error handling. SEC1 remains DONE. After those follow-up repairs and hosted security-coverage expansion, V1 Hosted CI Verification can run subject to GitHub Actions capacity. R2 retains the public HTTPS header re-proof.
+The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. A later 2026-09-29 audit found two post-SEC1 defects outside this milestone's frozen closure scope. Both are now closed on `main @ a1659dc`, with hosted focused validation run `36773261743` green against validated branch SHA `7d07f7b5`. SEC1 remains DONE. GitHub Actions capacity is available again; V1 now waits only on hosted security-coverage expansion before the real release-verification run. R2 retains the public HTTPS header re-proof.
 
 ## Purpose
 

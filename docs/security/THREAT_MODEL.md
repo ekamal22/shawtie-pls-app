@@ -1254,11 +1254,11 @@ The post-UX8 source audit opened SEC1 Pre-V1 Security Hardening before V1 Hosted
 
 ### Post-SEC1 follow-up findings before V1
 
-A later 2026-09-29 audit found two additional implementation defects. They do not invalidate the historical SEC1 or S1 closure results, but they must be fixed before V1 release evidence is accepted.
+A later 2026-09-29 audit found two additional implementation defects. They did not invalidate the historical SEC1 or S1 closure results. Both are now CLOSED on `main @ a1659dc` and passed hosted focused validation run `36773261743`.
 
-**Local S1 secret retention after account/device authority loss.** Server-side current-device revocation and permanent account deletion correctly remove future authorization, but the browser account purge does not invoke the existing `purgeCryptoAccountData(accountId)` helper. Account-scoped device state, recovery private material, MLS group state, pending crypto operations, or cached content keys may therefore remain in IndexedDB after a lifecycle boundary that policy says destroys them. The fix must preserve the recoverable seven-day deletion-pending window, purge current-device revocation after authority is revoked, purge permanent deletion when the final state is observed, and provide a safe path for clients that were offline during final deletion.
+**Local S1 secret retention after account/device authority loss, CLOSED.** Current-device revocation, account/device identity changes, deletion-pending recovery, account recovery, and permanent-deletion convergence now participate in the account-wide local S1 vault lifecycle. The seven-day recoverable deletion-pending window is preserved, while revoked or permanently deleted account state converges to local secret destruction.
 
-**HTTP parser and S1 contract mismatch.** The API does not configure Fastify `bodyLimit`, so the framework's 1 MiB default applies. S1 schemas permit individual binary fields up to 1 MiB before base64url and JSON expansion, and some legal request bodies contain multiple large fields. A contract-valid request can therefore be rejected before S1 boundary validation. The custom error handler also does not currently preserve known framework 4xx parser/client errors, which can misclassify malformed or oversized traffic as `500 INTERNAL_ERROR`. The fix must use explicit route-appropriate ceilings derived from encoded worst-case sizes and stable sanitized 4xx mappings.
+**HTTP parser and S1 contract mismatch, CLOSED.** S1 routes whose legal encoded JSON bodies can exceed Fastify's default ceiling now use contract-owned route-local limits derived from encoded worst-case sizes. Known Fastify parser/client errors map to stable sanitized 4xx responses instead of being misclassified as `500 INTERNAL_ERROR`.
 
 ## Required pre-stable-release security evidence
 

@@ -39,7 +39,7 @@ This is the pure domain baseline. The initial database invariant suite has separ
 
 The baseline CI and repository-health policy is defined in `CI_AND_REPOSITORY_HEALTH.md`.
 
-The current hosted workflow is configured but not yet validated by a successful GitHub Actions run. SEC1 Pre-V1 Security Hardening is DONE locally. Before V1 Hosted CI Verification can count as release evidence, the hosted workflow must be expanded so it cannot pass while omitting the SEC1/S1-focused header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format gates. Actions capacity is still required for the real hosted run.
+The current baseline hosted workflow is configured but the real V1 release-verification run has not yet executed. SEC1 and Pre-V1 follow-up hardening are DONE. Hosted focused validation run `36773261743` confirms Actions execution is available again. Before V1 can count as release evidence, the hosted workflow must still be expanded so it cannot pass while omitting the SEC1/S1-focused header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format gates.
 
 Local repository health and domain tests remain usable without hosted Actions.
 
@@ -643,23 +643,23 @@ The physical matrix must cover:
 - final dissolution and local purge
 - future re-pair cannot decrypt prior partnership
 
-That original S1 closure requirement is satisfied: automated, browser, storage-inspection, and physical-device evidence all passed, final corrective executable `cde73a1` closed the 30/30 Android matrix, and S1 is merged to `main @ 71569cf`. A later follow-up audit does not reopen that historical milestone, but it does add mandatory pre-V1 regression work for two newly discovered source defects.
+That original S1 closure requirement is satisfied: automated, browser, storage-inspection, and physical-device evidence all passed, final corrective executable `cde73a1` closed the 30/30 Android matrix, and S1 is merged to `main @ 71569cf`. The later pre-V1 follow-up audit did not reopen that historical milestone. Its two additional defects are now closed on `main @ a1659dc`.
 
 ### Post-S1 pre-V1 regression additions
 
-Before V1 Hosted CI Verification can count as release evidence, focused tests must prove:
+Hosted focused validation run `36773261743` passed against validated branch SHA `7d07f7b5`. The run built the touched contracts, crypto, DB, API, and web workspaces and passed 37/37 focused contract/API-security/browser-source tests, ESLint, Prettier, and `git diff --check`.
 
-- current-device revocation closes the S1 runtime and removes the account-scoped S1 crypto IndexedDB rather than only M2/media local data
-- deletion-pending retains legitimate local recovery capability throughout the seven-day recovery window
-- account recovery before the deadline preserves the valid local crypto state
-- permanent account deletion destroys account-wide local S1 recovery/device/group/key state on a client that observes final deletion
-- the offline-at-final-deletion path cannot retain obsolete local S1 secrets indefinitely only because normal authentication is gone
-- each S1 HTTP mutation route has an explicit request ceiling large enough for the legal base64url/JSON form of its contract while ordinary routes remain conservative
-- exact-boundary legal S1 payloads are accepted through the HTTP parser and then validated normally
-- payloads above the intentional ceiling return a stable sanitized 4xx response
-- malformed JSON and other known Fastify parser/client errors remain bounded 4xx responses and never fall through to `500 INTERNAL_ERROR`
+The focused regression surface covers:
 
-These are focused follow-up regressions, not a requirement to repeat the entire historical S1 matrix. Add focused physical Android evidence only if the implemented local-deletion path depends on device-specific PWA/storage behavior that desktop Chromium cannot adequately establish.
+- explicit account-wide S1 vault purge wiring for current-device revocation and account/device lifecycle changes
+- deletion-pending recovery retention and recovery-marker reconciliation
+- permanent-deletion convergence and durable local account/device lifecycle markers
+- contract-owned route-local body ceilings for S1 payloads whose encoded JSON form can exceed 1 MiB
+- exact contract/body-limit sizing checks
+- sanitized 413 handling for oversized request bodies
+- sanitized 400 handling for malformed JSON and known Fastify client/parser errors
+
+This follow-up gate did not repeat the full historical PostgreSQL, real-Chromium, or Redmi S1 closure matrices, and it does not claim that it did. No full physical rerun is required by the implemented scope.
 
 ## M3 Media and Voice Messages verification
 

@@ -350,7 +350,7 @@ corrective executable SHA `cde73a1a789b0768aa67f95e8f542fe98a8dfc8b`. It was sub
 
 ### Post-closure audit note
 
-A later 2026-09-29 source audit found an account-wide local-secret deletion gap that this 30-scenario matrix did not prove. Scenario 20 proved server-side device revocation, session denial, crypto-identity revocation, and future-message rekey behavior. Scenario 28 proved partnership-scoped dissolution and local partnership-namespace purge. Neither scenario proved deletion of the entire account-scoped S1 crypto IndexedDB after current-device revocation or permanent account deletion. Current source defines `purgeCryptoAccountData(accountId)` but does not call it in production. This does not invalidate the properties those scenarios actually passed, but the new local-retention defect must be fixed and covered by focused pre-V1 regression evidence.
+A later 2026-09-29 source audit found an account-wide local-secret deletion gap that this 30-scenario matrix did not prove. Scenario 20 proved server-side device revocation, session denial, crypto-identity revocation, and future-message rekey behavior. Scenario 28 proved partnership-scoped dissolution and local partnership-namespace purge. Neither scenario proved deletion of the entire account-scoped S1 crypto IndexedDB after current-device revocation or permanent account deletion. That later gap is now CLOSED on `main @ a1659dc` and passed hosted focused validation run `36773261743`. This does not change or overstate what the original 30-scenario physical matrix itself proved.
 
 ### Remaining physical limitations, disclosed honestly
 

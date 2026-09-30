@@ -312,7 +312,7 @@ SEC1 is DONE. The two follow-up source defects are also DONE on `main @ a1659dc`
 - [x] current-device revocation and permanent account deletion destroy account-wide local S1 secret state at the correct lifecycle points, while deletion-pending recovery remains recoverable
 - [x] S1 legal encoded HTTP request sizes are accepted up to the documented contract ceiling and oversized requests fail with an intentional 4xx response
 - [x] known Fastify parser/client errors are sanitized and preserve an appropriate 4xx status rather than becoming `500 INTERNAL_ERROR`
-- [x] focused browser/API/integration regressions for the two follow-up defects pass on the final candidate source
+- [x] focused contract/API-security/browser-source regressions for the two follow-up defects pass on the final candidate source; hosted run `36773261743` also passes all touched workspace builds, lint, Prettier, and worktree hygiene
 - [ ] the hosted workflow is updated so a passing V1 result cannot omit the SEC1/S1-focused header, proxy, password-corpus, production-scan, lint, and format gates
 - [ ] the hosted release-verification plan explicitly covers the disposable PostgreSQL and real-Chromium security/integration boundary, either in V1 jobs or a separately required release job
 - [ ] at least one GitHub-hosted Baseline CI run completes successfully
