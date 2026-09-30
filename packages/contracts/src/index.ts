@@ -262,13 +262,17 @@ export * from "./calls/signaling-v2.ts";
 export * from "./calls/push.ts";
 
 export {
+  S1_COMMIT_BODY_LIMIT_BYTES,
   S1_CONTROL_PAGE_MAX,
   S1_CRYPTO_PROFILE,
+  S1_DEVICE_ENROLL_BODY_LIMIT_BYTES,
   S1_KEY_PACKAGE_BATCH_MAX,
+  S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES,
   S1_MAX_CONTROL_MESSAGE_BYTES,
   S1_MAX_KEY_PACKAGE_BYTES,
   S1_MAX_RECOVERY_BUNDLE_BYTES,
   S1_MLS_CIPHERSUITE,
+  S1_RECOVERY_SETUP_BODY_LIMIT_BYTES,
   cryptoBootstrapSchema,
   cryptoCommitKindSchema,
   cryptoCommitSchema,

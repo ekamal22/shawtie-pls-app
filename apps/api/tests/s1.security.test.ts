@@ -100,3 +100,18 @@ test("S1 crypto state exposes device public identities but no private recovery m
   assert.equal(service.includes("recoveryHpkePrivateKey"), false);
   assert.equal(service.includes("recoveryAuthPrivateKey"), false);
 });
+
+test("pre-V1 S1 large JSON routes use contract-owned body ceilings without widening the whole API", async () => {
+  const routes = await source("../src/modules/crypto/routes.ts");
+  const application = await source("../src/application.ts");
+
+  for (const name of [
+    "S1_DEVICE_ENROLL_BODY_LIMIT_BYTES",
+    "S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES",
+    "S1_COMMIT_BODY_LIMIT_BYTES",
+    "S1_RECOVERY_SETUP_BODY_LIMIT_BYTES",
+  ]) {
+    assert.equal(routes.includes(`bodyLimit: ${name}`), true);
+  }
+  assert.equal(application.includes("bodyLimit:"), false);
+});

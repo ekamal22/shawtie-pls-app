@@ -171,6 +171,32 @@ test("pre-V1 local device-state probe is bound to the opaque device handle", asy
   assert.equal(repository.includes("handle_key_version = $3"), true);
 });
 
+test("pre-V1 Fastify parser failures remain sanitized client errors", async () => {
+  const app = Fastify({ bodyLimit: 64 });
+  installErrorHandler(app);
+  app.post("/json", async () => ({ ok: true }));
+
+  const oversized = await app.inject({
+    method: "POST",
+    url: "/json",
+    headers: { "content-type": "application/json" },
+    payload: JSON.stringify({ value: "x".repeat(128) }),
+  });
+  assert.equal(oversized.statusCode, 413, oversized.body);
+  assert.deepEqual(oversized.json(), { error: { code: "REQUEST_TOO_LARGE" } });
+
+  const malformed = await app.inject({
+    method: "POST",
+    url: "/json",
+    headers: { "content-type": "application/json" },
+    payload: '{"value":',
+  });
+  assert.equal(malformed.statusCode, 400, malformed.body);
+  assert.deepEqual(malformed.json(), { error: { code: "VALIDATION_FAILED" } });
+
+  await app.close();
+});
+
 test("local development session cookie uses a separate insecure loopback name", async () => {
   const config: ApiConfig = {
     environment: "test",

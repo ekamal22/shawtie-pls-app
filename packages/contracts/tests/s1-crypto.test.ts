@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  S1_COMMIT_BODY_LIMIT_BYTES,
   S1_CRYPTO_PROFILE,
+  S1_DEVICE_ENROLL_BODY_LIMIT_BYTES,
+  S1_KEY_PACKAGE_BATCH_MAX,
+  S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES,
+  S1_MAX_CONTROL_MESSAGE_BYTES,
+  S1_MAX_KEY_PACKAGE_BYTES,
+  S1_MAX_RECOVERY_BUNDLE_BYTES,
   S1_MLS_CIPHERSUITE,
+  S1_RECOVERY_SETUP_BODY_LIMIT_BYTES,
   cryptoBootstrapSchema,
   cryptoCommitSchema,
   cryptoDeviceEnrollSchema,
@@ -13,6 +21,72 @@ import {
 const key = Buffer.alloc(32, 7).toString("base64url");
 const signature = Buffer.alloc(64, 9).toString("base64url");
 const packageBytes = Buffer.from("synthetic-key-package").toString("base64url");
+
+function maxEncoded(maxBytes: number): string {
+  return "A".repeat(Math.ceil((maxBytes * 4) / 3) + 8);
+}
+
+function jsonBytes(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+test("S1 route body ceilings contain every contract-legal encoded maximum", () => {
+  const maxPackages = Array.from({ length: S1_KEY_PACKAGE_BATCH_MAX }, () => ({
+    keyPackageId: crypto.randomUUID(),
+    keyPackage: maxEncoded(S1_MAX_KEY_PACKAGE_BYTES),
+  }));
+  const enrollBytes = jsonBytes({
+    cryptoDeviceId: crypto.randomUUID(),
+    cryptoProfile: S1_CRYPTO_PROFILE,
+    mlsSigningPublicKey: maxEncoded(256),
+    contentSigningPublicKey: maxEncoded(256),
+    identityProofSignature: maxEncoded(512),
+    keyPackages: maxPackages,
+  });
+  const uploadBytes = jsonBytes({ keyPackages: maxPackages });
+  const commitBytes = jsonBytes({
+    expectedGroupGeneration: 1,
+    expectedEpoch: 1,
+    newEpoch: 2,
+    kind: "add",
+    controlMessage: maxEncoded(S1_MAX_CONTROL_MESSAGE_BYTES),
+    welcome: maxEncoded(S1_MAX_CONTROL_MESSAGE_BYTES),
+    targetCryptoDeviceId: crypto.randomUUID(),
+    targetLeafIndex: 1,
+    keyPackageId: crypto.randomUUID(),
+    resetGroupGeneration: null,
+    resetGroupId: null,
+    resetFounderLeafIndex: null,
+    recoveryKeyVersion: null,
+    recoverySignature: null,
+  });
+  const recoveryBytes = jsonBytes({
+    cryptoProfile: S1_CRYPTO_PROFILE,
+    recoveryKeyVersion: 1,
+    recoveryHpkePublicKey: maxEncoded(512),
+    recoveryAuthPublicKey: maxEncoded(512),
+    encryptedBundle: maxEncoded(S1_MAX_RECOVERY_BUNDLE_BYTES),
+  });
+
+  assert.ok(enrollBytes > 1024 * 1024);
+  assert.ok(uploadBytes > 1024 * 1024);
+  assert.ok(commitBytes > 1024 * 1024);
+  assert.ok(recoveryBytes > 1024 * 1024);
+
+  assert.ok(enrollBytes <= S1_DEVICE_ENROLL_BODY_LIMIT_BYTES);
+  assert.ok(uploadBytes <= S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES);
+  assert.ok(commitBytes <= S1_COMMIT_BODY_LIMIT_BYTES);
+  assert.ok(recoveryBytes <= S1_RECOVERY_SETUP_BODY_LIMIT_BYTES);
+
+  for (const limit of [
+    S1_DEVICE_ENROLL_BODY_LIMIT_BYTES,
+    S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES,
+    S1_COMMIT_BODY_LIMIT_BYTES,
+    S1_RECOVERY_SETUP_BODY_LIMIT_BYTES,
+  ]) {
+    assert.ok(limit < 4 * 1024 * 1024);
+  }
+});
 
 test("S1 device enrollment requires independent identity proof and KeyPackages", () => {
   assert.equal(

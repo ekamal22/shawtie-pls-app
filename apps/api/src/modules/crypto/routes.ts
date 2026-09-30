@@ -1,5 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import {
+  S1_COMMIT_BODY_LIMIT_BYTES,
+  S1_DEVICE_ENROLL_BODY_LIMIT_BYTES,
+  S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES,
+  S1_RECOVERY_SETUP_BODY_LIMIT_BYTES,
   cryptoBootstrapSchema,
   cryptoCommitSchema,
   cryptoControlQuerySchema,
@@ -48,21 +52,29 @@ export function registerCryptoRoutes(app: FastifyInstance, deps: CryptoRouteDepe
     return service.devices(auth);
   });
 
-  app.post("/api/v1/crypto/devices/enroll", async (request, reply) => {
-    const auth = await requireAuthentication(request, database, config, keys);
-    await requireRecentReauthentication(auth.session, database);
-    const input = parseAtBoundary(cryptoDeviceEnrollSchema, request.body);
-    privateNoStore(reply);
-    return service.enroll(auth, input);
-  });
+  app.post(
+    "/api/v1/crypto/devices/enroll",
+    { bodyLimit: S1_DEVICE_ENROLL_BODY_LIMIT_BYTES },
+    async (request, reply) => {
+      const auth = await requireAuthentication(request, database, config, keys);
+      await requireRecentReauthentication(auth.session, database);
+      const input = parseAtBoundary(cryptoDeviceEnrollSchema, request.body);
+      privateNoStore(reply);
+      return service.enroll(auth, input);
+    },
+  );
 
-  app.post("/api/v1/crypto/devices/:cryptoDeviceId/key-packages", async (request, reply) => {
-    const auth = await requireAuthentication(request, database, config, keys);
-    const params = parseAtBoundary(cryptoDeviceIdParamsSchema, request.params);
-    const input = parseAtBoundary(cryptoKeyPackageUploadSchema, request.body);
-    privateNoStore(reply);
-    return service.uploadKeyPackages(auth, params.cryptoDeviceId, input);
-  });
+  app.post(
+    "/api/v1/crypto/devices/:cryptoDeviceId/key-packages",
+    { bodyLimit: S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES },
+    async (request, reply) => {
+      const auth = await requireAuthentication(request, database, config, keys);
+      const params = parseAtBoundary(cryptoDeviceIdParamsSchema, request.params);
+      const input = parseAtBoundary(cryptoKeyPackageUploadSchema, request.body);
+      privateNoStore(reply);
+      return service.uploadKeyPackages(auth, params.cryptoDeviceId, input);
+    },
+  );
 
   app.post("/api/v1/crypto/devices/:cryptoDeviceId/approve", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);
@@ -95,21 +107,29 @@ export function registerCryptoRoutes(app: FastifyInstance, deps: CryptoRouteDepe
     return service.bootstrap(auth, params.partnershipId, input);
   });
 
-  app.post("/api/v1/crypto/partnerships/:partnershipId/commits", async (request, reply) => {
-    const auth = await requireAuthentication(request, database, config, keys);
-    const params = parseAtBoundary(cryptoPartnershipIdParamsSchema, request.params);
-    const input = parseAtBoundary(cryptoCommitSchema, request.body);
-    privateNoStore(reply);
-    return service.commit(auth, params.partnershipId, input);
-  });
+  app.post(
+    "/api/v1/crypto/partnerships/:partnershipId/commits",
+    { bodyLimit: S1_COMMIT_BODY_LIMIT_BYTES },
+    async (request, reply) => {
+      const auth = await requireAuthentication(request, database, config, keys);
+      const params = parseAtBoundary(cryptoPartnershipIdParamsSchema, request.params);
+      const input = parseAtBoundary(cryptoCommitSchema, request.body);
+      privateNoStore(reply);
+      return service.commit(auth, params.partnershipId, input);
+    },
+  );
 
-  app.post("/api/v1/crypto/recovery/setup", async (request, reply) => {
-    const auth = await requireAuthentication(request, database, config, keys);
-    await requireRecentReauthentication(auth.session, database);
-    const input = parseAtBoundary(cryptoRecoverySetupSchema, request.body);
-    privateNoStore(reply);
-    return service.setupRecovery(auth, input);
-  });
+  app.post(
+    "/api/v1/crypto/recovery/setup",
+    { bodyLimit: S1_RECOVERY_SETUP_BODY_LIMIT_BYTES },
+    async (request, reply) => {
+      const auth = await requireAuthentication(request, database, config, keys);
+      await requireRecentReauthentication(auth.session, database);
+      const input = parseAtBoundary(cryptoRecoverySetupSchema, request.body);
+      privateNoStore(reply);
+      return service.setupRecovery(auth, input);
+    },
+  );
 
   app.get("/api/v1/crypto/recovery/bundle", async (request, reply) => {
     const auth = await requireAuthentication(request, database, config, keys);

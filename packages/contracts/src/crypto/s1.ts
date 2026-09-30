@@ -8,13 +8,36 @@ export const S1_MAX_RECOVERY_BUNDLE_BYTES = 1024 * 1024;
 export const S1_KEY_PACKAGE_BATCH_MAX = 20;
 export const S1_CONTROL_PAGE_MAX = 100;
 
+const S1_JSON_BODY_OVERHEAD_BYTES = 64 * 1024;
+const S1_KEY_PACKAGE_JSON_OVERHEAD_BYTES = 128;
+
+function maxBase64UrlChars(maxBytes: number): number {
+  return Math.ceil((maxBytes * 4) / 3) + 8;
+}
+
+export const S1_DEVICE_ENROLL_BODY_LIMIT_BYTES =
+  S1_JSON_BODY_OVERHEAD_BYTES +
+  S1_KEY_PACKAGE_BATCH_MAX *
+    (maxBase64UrlChars(S1_MAX_KEY_PACKAGE_BYTES) + S1_KEY_PACKAGE_JSON_OVERHEAD_BYTES);
+
+export const S1_KEY_PACKAGE_UPLOAD_BODY_LIMIT_BYTES =
+  S1_JSON_BODY_OVERHEAD_BYTES +
+  S1_KEY_PACKAGE_BATCH_MAX *
+    (maxBase64UrlChars(S1_MAX_KEY_PACKAGE_BYTES) + S1_KEY_PACKAGE_JSON_OVERHEAD_BYTES);
+
+export const S1_COMMIT_BODY_LIMIT_BYTES =
+  S1_JSON_BODY_OVERHEAD_BYTES + 2 * maxBase64UrlChars(S1_MAX_CONTROL_MESSAGE_BYTES);
+
+export const S1_RECOVERY_SETUP_BODY_LIMIT_BYTES =
+  S1_JSON_BODY_OVERHEAD_BYTES + maxBase64UrlChars(S1_MAX_RECOVERY_BUNDLE_BYTES);
+
 const base64Url = z
   .string()
   .min(1)
   .regex(/^[A-Za-z0-9_-]+$/u);
 
 function boundedBase64(maxBytes: number) {
-  return base64Url.max(Math.ceil((maxBytes * 4) / 3) + 8);
+  return base64Url.max(maxBase64UrlChars(maxBytes));
 }
 
 export const s1CryptoProfileSchema = z.literal(S1_CRYPTO_PROFILE);
