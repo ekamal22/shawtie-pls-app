@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { validateGithubAutomationFile } from "./workflow-policy.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -277,7 +278,9 @@ for (const file of files) {
   }
 
   checkDomainImports(file.relative, content);
-  checkWorkflowPolicy(file.relative, content);
+  for (const failure of validateGithubAutomationFile(file.relative, content)) {
+    fail(failure);
+  }
 }
 
 try {
