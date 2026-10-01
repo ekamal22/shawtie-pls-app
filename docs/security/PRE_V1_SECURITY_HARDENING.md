@@ -173,4 +173,4 @@ Physical Android testing is not required by default for SEC1. Add a focused devi
 
 SEC1 is DONE only when every acceptance gate in `docs/ROADMAP_EPICS.md` is closed with committed evidence.
 
-After SEC1 is DONE, any newly discovered pre-V1 source defect must close before hosted release evidence is collected. The current priority is the two 2026-09-29 follow-up repairs; V1 Hosted CI Verification follows when those fixes, hosted security coverage, and Actions capacity are ready.
+After SEC1 is DONE, any newly discovered pre-V1 source defect must close before hosted release evidence is collected. The two 2026-09-29 follow-up repairs are closed on `main @ a1659dc`, hosted focused validation run `36773261743` is green, and V1 Hosted CI Verification subsequently closed at executable candidate `d28668b5` with release run `36801613394` and normal Baseline CI run `36801613306` passing. R2 Public Readiness is next.
