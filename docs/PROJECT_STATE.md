@@ -122,7 +122,7 @@ Current epic status:
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
 - SEC1 Pre-V1 Security Hardening: DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed focused security 16/16, header/proxy/server 16/16, PostgreSQL/API/worker 36/36 with migrations 0001 through 0021 and `reserved=0`, real Chromium 1/1, production scan, full repository health, a zero-vulnerability audit, commit policy, no-new-em-dash, Git hygiene, and local/remote executable parity. No migration or scheduled-action type was added. Closure found only formatting drift, corrected by `487517c` and `91ca920`; no production or test behavior changed. Evidence: `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
-- V1 Hosted CI Verification: IN_PROGRESS. The two follow-up source repairs are closed on `main @ a1659dc`, hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available. The remaining V1 work is hosted security-coverage expansion followed by the real release-verification run.
+- V1 Hosted CI Verification: DONE. Final executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3` passed V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306`. Candidate, Baseline, Dependency audit, Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL with plaintext assertion, Browser security, and V1 gate all passed. Durable evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. R2 Public Readiness is now the next active release milestone.
 - F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: DONE on `feat/p3-partnership-lifecycle`. All 22 acceptance gates are closed. The lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Executed evidence covers exact cancellation/restoration boundaries, generation fencing, canonical dissolution, account-deletion precedence and recovery, exact cooldowns, synchronous authorization revocation, deletion manifests, former-partner blocking and privacy, serious notices, race persistence, and A1/P1/P2 regressions. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities.
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
@@ -162,7 +162,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/m1-messaging-core` -> M1 runtime closure `aa40a2cc74e8efb08bcefdbe3ae40e306cabe288`, documentation-reconciled source head `b29b095`
 - `feat/r1-relationship-space` -> R1 source head `9bc9ba4`, isolated closure history preserved
 - `integration/m1-r1` -> completed historical integration branch, source merge `01fa182`, exhaustive technical validation anchor `5db7a94183bca153d142389d7188e3887653a9ec`, documentation closure `d7d95a6`
-- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, UX0 through UX8, S1, SEC1, and Pre-V1 follow-up hardening; UX merge anchor `9f0bea4`, UX8 merge anchor `a029169`, S1 merge anchor `71569cf`, SEC1 merge anchor `a2badf7`, Pre-V1 hardening source anchor `a1659dc`
+- `main` -> current verified mainline containing completed M1/R1, M2, M3, C1, C2, UX0 through UX8, S1, SEC1, Pre-V1 follow-up hardening, and V1 Hosted CI Verification; UX merge anchor `9f0bea4`, UX8 merge anchor `a029169`, S1 merge anchor `71569cf`, SEC1 merge anchor `a2badf7`, Pre-V1 hardening source anchor `a1659dc`, V1 executable closure anchor `d28668b5`
 - `feat/m2-realtime-offline` -> M2 automated/local closure anchor `4bbffdf`; DONE with physical Android acceptance 14/14 at final SHA `b83102f`; fast-forward merged to `main @ b6183158`
 - `feat/m3-media-voice` -> completed M3 milestone history; automated closure green, physical Android 20/20 at final code SHA `ee59850`; fast-forward merged to `main @ 1d3535f`
 - `feat/c1-voice-calling` -> historical completed branch; C1 merged to `main @ d44c595`; final executable baseline `b29aaa1`; all physical evidence complete
@@ -175,6 +175,7 @@ Milestone history is preserved with durable branch refs at genuine closure commi
 - `feat/s1-e2ee-crypto-recovery` -> DONE S1 branch; final corrective executable `cde73a1`; 30/30 physical Android acceptance; merged to `main @ 71569cf`
 - `feat/sec1-pre-v1-security-hardening` -> DONE from `main @ 61a9a3485b061da4c192481739c52305a29d81d1`; final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`; complete local closure PASS; fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`
 - `feat/pre-v1-follow-up-hardening` -> DONE follow-up branch; validated branch SHA `7d07f7b5c7f24d46188f79c20b4637a22d7d07c1`; hosted focused validation run `36773261743` PASS; validated source integrated to `main @ a1659dc`
+- `feat/v1-hosted-ci-verification` -> completed V1 workflow implementation and hosted shakedown history; successful shakedowns at `c864c97` and `81e01436`; final executable closure passed on `main @ d28668b5`
 
 P3 was fast-forward merged to `main` after all 22 acceptance gates closed. The completed `feat/p3-partnership-lifecycle` branch is preserved as milestone history. Dependent work must branch from the latest `main` containing the verified P3 baseline.
 
@@ -184,9 +185,9 @@ From P2 onward, each milestone uses its own branch created from the latest verif
 
 The persistence schema foundation has repeatable disposable PostgreSQL evidence. Earlier schema verification covered migration rerun idempotency, checksum drift, catalog inspection, occupied-slot contention, scheduled-action claim contention, and deterministic account-lock ordering. F2 then applied all six migrations from zero and passed 17/17 runtime integration tests covering transaction policy, retries, PostgreSQL clocks, stale generations, durable payload versions, rollback, outbox atomicity and duplicate safety, claim fencing and reclaim, lifecycle privacy, deletion recovery, queue plans, and graceful worker shutdown. Product-specific API and lifecycle integration remain work for later epics.
 
-Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks. GitHub-hosted execution is available again: the minimal capacity probe passed and focused Pre-V1 hardening validation run `36773261743` passed. The real V1 release-verification workflow has not yet been executed and remains tracked separately under V1. Documentation and non-V1 commits continue to use `[skip ci]` deliberately.
+Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions, repository-health checks, and PR-only cancellation. V1 now adds a separate `.github/workflows/release-verification.yml` with Candidate, six parallel verification jobs, and V1 gate. Final V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed against executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. Documentation and non-runtime reconciliation commits continue to use `[skip ci]` deliberately.
 
-The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. It keeps normal CI separate from a dedicated release-verification workflow. The release workflow uses Candidate, six parallel verification jobs (Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security), and V1 gate. Closure requires one exact `github.sha` across every required job.
+The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`; durable closure evidence is `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. Exact-SHA integrity, dependency advisory coverage, isolated PostgreSQL verification, Chromium/OpenMLS verification, and final gate behavior are all hosted and verified.
 
 ## Repository audit concerns
 
@@ -195,7 +196,7 @@ The 2026-09-29 follow-up repository-wide audits found no new critical authentica
 - S1 local-secret lifecycle cleanup is CLOSED. Current-device revocation, account switching, account-device identity replacement, deletion-pending retention, account recovery, and permanent-deletion convergence now wire the account-wide S1 vault lifecycle explicitly. The implementation preserves the seven-day deletion recovery window and uses the device-handle-bound lifecycle probe plus durable local markers to avoid retaining revoked/deleted account crypto state indefinitely.
 - The S1 HTTP parser boundary defect is CLOSED. Contract-owned route-local body ceilings now account for base64url/JSON expansion without widening the global API body limit, and known Fastify parser/client errors map to stable sanitized 4xx responses instead of falling through to `500 INTERNAL_ERROR`.
 
-- V1 CI coverage is currently weaker than the locally closed SEC1/S1 baseline. `npm run ci:baseline` aliases `npm run health`, which does not run `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, or `sec1:format:check`, and the ordinary root lint/format globs do not fully cover the production web `.mjs` serving files. V1 must expand or add a hosted security job before a green hosted run is accepted as release evidence.
+- V1 hosted coverage is CLOSED. The dedicated Security job explicitly runs the SEC1/S1 header, password-corpus, lint, format, hardening-regression, and production-scan gates that are not part of the ordinary baseline.
 - `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`; old fingerprinted static assets are not pruned inside that cache and an activated worker can initially inherit the previous cached `/` shell until an online navigation replaces it. R2 must add a release-aware cache version or explicit inventory/pruning and regression coverage.
 - authentication and partner-request network abuse limits use canonical `/24` IPv4 and `/64` IPv6 subjects, but media, realtime, and calling network buckets currently use exact `request.ip`. R2 must unify these subjects through canonical network-prefix normalization and align rate-limit key-rotation behavior where applicable.
 - production `BACKEND_PROXY_TARGET` accepts HTTP or HTTPS. HTTP is acceptable only across an explicitly trusted private or loopback transport boundary; R2 must either enforce that restriction in configuration or prove and document the private topology so session-bearing API traffic cannot cross an untrusted plaintext hop.
@@ -203,7 +204,7 @@ The 2026-09-29 follow-up repository-wide audits found no new critical authentica
 - development commits are currently unsigned. This does not invalidate existing milestone evidence, but the stable release should be anchored to an immutable signed release tag or equivalent signed provenance, with the exact release SHA and artifact checksums recorded.
 
 - `main` is currently unprotected in GitHub. Required status checks are off and the repository has no rulesets. R2 must add protection suitable for the verified fast-forward workflow and prevent force pushes and branch deletion. Once V1 proves the hosted Baseline CI status, release-relevant changes must be gated by the appropriate hosted check.
-- GitHub Actions capacity is available and hosted probe/focused runs exist, but the dedicated V1 release-verification workflow has not yet executed. V1 remains the first full hosted release-verification evidence gate.
+- V1 hosted release verification is CLOSED. Release run `36801613394` and normal Baseline CI run `36801613306` passed on `d28668b5`; R2 now owns the remaining public-readiness concerns.
 - The repository is public and has no project-level license. R2 must record an explicit licensing decision before public readiness.
 - `design/m3-media-voice` is a divergent obsolete design branch. Its stranded ADR-012 describes a pre-S1 server-recoverable media-key bridge that was not adopted by current `main`; it is non-authoritative and must not be merged as current architecture.
 - production provider, deployment, release, rollback, backup/recovery, and operational automation remain incomplete or placeholder-only and are already owned by R2.
@@ -224,12 +225,10 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. implement the V1 hosted workflow topology defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`: separate release workflow with Candidate, Baseline, Dependency audit, Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL, Browser security, and V1 gate
-2. execute the real V1 release-verification workflow against one exact release-candidate SHA; GitHub Actions capacity is available
-3. fix and regress any defect found by V1, then rerun the complete required V1 job set on the final candidate
-4. record the final all-green hosted evidence and mark V1 DONE
-5. close R2 Public Readiness with final security, accessibility, browser/device, operational, release, and rollback evidence
-6. cut Stable Release only after V1 and R2 are closed
+1. close R2 Public Readiness with final security, accessibility, browser/device, operational, deployment, release, and rollback evidence
+2. establish release-appropriate branch protection, dedicated secret scanning, licensing policy, trusted backend transport rules, signed provenance, and release-aware service-worker cache behavior
+3. review the transitive dependency path for the V1 maintenance warning `RUSTSEC-2026-0173`
+4. cut Stable Release only after R2 is closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Merge and documentation-only commits do not change these runtime evidence anchors.
 
@@ -243,8 +242,9 @@ No implementation should begin until real production evidence shows sufficient u
 
 Stable release remains blocked until:
 
-- V1 Hosted CI Verification is complete after SEC1 and when Actions capacity is available
 - R2 Public Readiness closes final security, accessibility, browser/device, operational, release, and rollback evidence
+
+V1 Hosted CI Verification is already complete at executable anchor `d28668b5`.
 
 
 ## Documentation freshness
