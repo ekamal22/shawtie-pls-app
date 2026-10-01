@@ -1,0 +1,373 @@
+name: V1 Release Verification
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches:
+      - feat/v1-hosted-ci-verification
+    paths:
+      - ".github/workflows/release-verification.yml"
+      - ".github/actions/setup-workspace/**"
+      - ".github/workflows/ci.yml"
+      - "scripts/ci/**"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-release-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    name: Candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.candidate.outputs.sha }}
+    steps:
+      - name: Validate candidate ref and SHA
+        id: candidate
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+          CANDIDATE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          case "$CANDIDATE_REF" in
+            refs/heads/main|refs/heads/feat/v1-hosted-ci-verification) ;;
+            *)
+              echo "Unsupported V1 candidate ref: $CANDIDATE_REF" >&2
+              exit 1
+              ;;
+          esac
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$CANDIDATE_SHA"
+          echo "candidate_ref=$CANDIDATE_REF"
+
+  baseline:
+    name: Baseline
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Repository baseline
+        run: npm run ci:baseline
+
+  dependency_audit:
+    name: Dependency audit
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: npm high severity audit
+        run: npm audit --audit-level=high
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.91.0 --profile minimal --no-self-update
+          rustup default 1.91.0
+          rustc --version
+          cargo --version
+      - name: Install pinned cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      - name: Rust advisory audit
+        run: |
+          cargo audit --version
+          cargo audit --file packages/crypto/openmls-wasm/Cargo.lock
+
+  security:
+    name: Security
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: SEC1 headers
+        run: npm run test:sec1:headers
+      - name: Password corpus integrity
+        run: npm run sec1:passwords:check
+      - name: SEC1 lint
+        run: npm run sec1:lint
+      - name: SEC1 format
+        run: npm run sec1:format:check
+      - name: Pre-V1 hardening regressions
+        run: npm run test:pre-v1:hardening
+      - name: SEC1 production scan
+        run: npm run sec1:production:scan
+      - name: S1 production scan
+        run: npm run s1:production:scan
+
+  postgres_sec1:
+    name: PostgreSQL integration (SEC1/A1)
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+      migration_count: ${{ steps.migrations.outputs.count }}
+    env:
+      DATABASE_URL: postgresql://shawtie_test:shawtie_test@127.0.0.1:5432/shawtie_a1_test
+      DB_TEST_CONFIRM: "1"
+      NODE_ENV: test
+      APP_ORIGIN: http://127.0.0.1:4173
+      ALLOW_INSECURE_LOOPBACK_COOKIES: "1"
+      AUTH_HMAC_ACTIVE_VERSION: "1"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: shawtie_test
+          POSTGRES_PASSWORD: shawtie_test
+          POSTGRES_DB: shawtie_a1_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shawtie_test -d shawtie_a1_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Assert empty database
+        run: node scripts/ci/v1-db-evidence.mjs assert-empty
+      - name: SEC1 A1 PostgreSQL integration
+        shell: bash
+        run: |
+          export AUTH_HMAC_KEYS="1:$(node -e 'process.stdout.write(Buffer.alloc(32, 7).toString("base64"))')"
+          npm run test:sec1:postgres
+      - name: Record migration count
+        id: migrations
+        run: node scripts/ci/v1-db-evidence.mjs migration-count
+
+  postgres_s1:
+    name: PostgreSQL integration (S1)
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+      migration_count: ${{ steps.migrations.outputs.count }}
+    env:
+      DATABASE_URL: postgresql://shawtie_test:shawtie_test@127.0.0.1:5432/shawtie_s1_test
+      DB_TEST_CONFIRM: "1"
+      NODE_ENV: test
+      APP_ORIGIN: http://127.0.0.1:4173
+      ALLOW_INSECURE_LOOPBACK_COOKIES: "1"
+      AUTH_HMAC_ACTIVE_VERSION: "1"
+      PARTNER_REQUEST_MODE: paired
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: shawtie_test
+          POSTGRES_PASSWORD: shawtie_test
+          POSTGRES_DB: shawtie_s1_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shawtie_test -d shawtie_s1_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Assert empty database
+        run: node scripts/ci/v1-db-evidence.mjs assert-empty
+      - name: S1 PostgreSQL integration
+        shell: bash
+        run: |
+          export AUTH_HMAC_KEYS="1:$(node -e 'process.stdout.write(Buffer.alloc(32, 7).toString("base64"))')"
+          npm run test:s1:postgres
+      - name: S1 plaintext assertion
+        run: npm run s1:plaintext:assert-clean
+      - name: Record migration count
+        id: migrations
+        run: node scripts/ci/v1-db-evidence.mjs migration-count
+
+  browser_security:
+    name: Browser security
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Install pinned Rust and WASM toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.91.0 --profile minimal --no-self-update
+          rustup default 1.91.0
+          rustup target add wasm32-unknown-unknown
+          rustc --version
+          cargo --version
+          cargo install wasm-pack --version 0.15.0 --locked
+          wasm-pack --version
+      - name: Cold OpenMLS WASM build
+        run: |
+          npm run build --workspace @shawtie/crypto
+          npm run build:s1-wasm
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: SEC1 Chromium security
+        run: npm run test:sec1:browser:e2e
+      - name: S1 Chromium cryptographic harness
+        run: npm run test:s1:browser:e2e
+      - name: Production scans after browser build
+        run: |
+          npm run sec1:production:scan
+          npm run s1:production:scan
+      - name: Upload SEC1 failure traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v1-sec1-playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: node_modules/.cache/shawtie-sec1-playwright
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload S1 failure traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v1-s1-playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: node_modules/.cache/shawtie-s1-playwright
+          if-no-files-found: ignore
+          retention-days: 14
+
+  v1_gate:
+    name: V1 gate
+    if: always()
+    needs:
+      - candidate
+      - baseline
+      - dependency_audit
+      - security
+      - postgres_sec1
+      - postgres_s1
+      - browser_security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every V1 surface
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+          CANDIDATE_RESULT: ${{ needs.candidate.result }}
+          CANDIDATE_SHA: ${{ needs.candidate.outputs.sha }}
+          BASELINE_RESULT: ${{ needs.baseline.result }}
+          BASELINE_SHA: ${{ needs.baseline.outputs.sha }}
+          DEPENDENCY_RESULT: ${{ needs.dependency_audit.result }}
+          DEPENDENCY_SHA: ${{ needs.dependency_audit.outputs.sha }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+          SECURITY_SHA: ${{ needs.security.outputs.sha }}
+          POSTGRES_SEC1_RESULT: ${{ needs.postgres_sec1.result }}
+          POSTGRES_SEC1_SHA: ${{ needs.postgres_sec1.outputs.sha }}
+          POSTGRES_SEC1_MIGRATIONS: ${{ needs.postgres_sec1.outputs.migration_count }}
+          POSTGRES_S1_RESULT: ${{ needs.postgres_s1.result }}
+          POSTGRES_S1_SHA: ${{ needs.postgres_s1.outputs.sha }}
+          POSTGRES_S1_MIGRATIONS: ${{ needs.postgres_s1.outputs.migration_count }}
+          BROWSER_RESULT: ${{ needs.browser_security.result }}
+          BROWSER_SHA: ${{ needs.browser_security.outputs.sha }}
+        run: |
+          set -euo pipefail
+          failed=0
+          check_job() {
+            local label="$1"
+            local result="$2"
+            local sha="$3"
+            printf '%s result=%s sha=%s\n' "$label" "$result" "$sha"
+            if [[ "$result" != "success" || "$sha" != "$EXPECTED_SHA" ]]; then
+              failed=1
+            fi
+          }
+          check_job "Candidate" "$CANDIDATE_RESULT" "$CANDIDATE_SHA"
+          check_job "Baseline" "$BASELINE_RESULT" "$BASELINE_SHA"
+          check_job "Dependency audit" "$DEPENDENCY_RESULT" "$DEPENDENCY_SHA"
+          check_job "Security" "$SECURITY_RESULT" "$SECURITY_SHA"
+          check_job "PostgreSQL SEC1/A1" "$POSTGRES_SEC1_RESULT" "$POSTGRES_SEC1_SHA"
+          check_job "PostgreSQL S1" "$POSTGRES_S1_RESULT" "$POSTGRES_S1_SHA"
+          check_job "Browser security" "$BROWSER_RESULT" "$BROWSER_SHA"
+          {
+            echo "## V1 release verification"
+            echo
+            echo "- candidate SHA: `$EXPECTED_SHA`"
+            echo "- run ID: `$GITHUB_RUN_ID`"
+            echo "- run attempt: `$GITHUB_RUN_ATTEMPT`"
+            echo "- workflow ref: `$GITHUB_REF`"
+            echo "- SEC1/A1 migration count: `${POSTGRES_SEC1_MIGRATIONS:-unknown}`"
+            echo "- S1 migration count: `${POSTGRES_S1_MIGRATIONS:-unknown}`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$failed" -ne 0 ]]; then
+            echo "V1_GATE_FAIL" >&2
+            exit 1
+          fi
+          echo "V1_GATE_PASS"
