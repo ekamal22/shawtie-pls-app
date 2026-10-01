@@ -77,7 +77,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 18 S1 E2EE and Cryptographic Recovery | DONE, merged to `main @ 71569cf`; final corrective executable `cde73a1`; Android 30/30 | merged UX0 through UX7 plus M1/R1/M2/M3/C1/C2 | Yes, complete |
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
 | 20 SEC1 Pre-V1 Security Hardening | DONE and merged to `main @ a2badf7`; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
-| V1 Hosted CI Verification | NEXT; first close follow-up local-crypto and HTTP-boundary defects, then expand hosted security coverage and run when Actions capacity is available | SEC1 DONE plus follow-up hardening | No by default; focused device check only if implementation proves Android-specific |
+| V1 Hosted CI Verification | DONE; executable `d28668b5`; release run `36801613394` PASS; normal Baseline CI `36801613306` PASS | SEC1 DONE plus follow-up hardening | No physical rerun required |
 | 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
@@ -90,7 +90,7 @@ The 2026-09-29 repository audits add no new product feature milestone. The two s
 - account-wide S1 local-crypto lifecycle deletion is implemented and verified across current-device revocation, account switching/device replacement, deletion-pending retention, recovery, and permanent-deletion convergence.
 - S1 route-local HTTP body ceilings now match encoded contract maxima, and known Fastify parser/client failures remain sanitized 4xx responses.
 
-- before V1 can count as release evidence, hosted CI must cover the SEC1/S1-focused security gates that are currently outside `npm run health`, including header/proxy/server checks, common-password corpus integrity, production scans, and dedicated SEC1 lint/format coverage.
+- V1 hosted release evidence is complete. The dedicated release workflow covers the SEC1/S1-focused security gates outside normal `npm run health`, plus isolated PostgreSQL, S1 plaintext inspection, Rust/Cargo advisory review, and Chromium/OpenMLS verification.
 - R2 must replace the fixed service-worker cache lifecycle with release-version rotation or explicit stale-asset pruning and verify update/offline-shell correctness.
 - R2 must normalize media, realtime, and calling network rate-limit subjects to the canonical network prefix and reconcile key-version behavior so IPv6 privacy-address rotation or key rotation cannot fragment the intended network budget.
 - R2 must constrain plaintext `BACKEND_PROXY_TARGET` use to a proven trusted private/loopback network or require HTTPS for an untrusted hop.
