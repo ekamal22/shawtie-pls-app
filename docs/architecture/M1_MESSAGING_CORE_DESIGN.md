@@ -1152,6 +1152,6 @@ Implementation evidence must prove every one of them:
 
 All 18 canonical gates are supported by executed evidence, so M1 is DONE. Source reintegration with R1 is complete, exhaustively validated, and merged to `main @ d7d95a6`.
 
-No hosted GitHub Actions run is required for M1 closure while V1 remains separately blocked, but every M1 commit continues to use `[skip ci]` until that policy changes.
+No hosted GitHub Actions run was required for M1 closure because hosted verification was tracked separately under V1 at the time. V1 later closed successfully at executable candidate `d28668b5`.
 
 Physical Redmi testing begins at M2 and is not required for M1 core closure.
