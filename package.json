@@ -24,7 +24,7 @@
     "test:worker": "node --test apps/worker/tests/runtime.test.ts apps/worker/tests/a1.worker.test.ts apps/worker/tests/m2.realtime.test.ts apps/worker/tests/c1.worker.test.ts",
     "test:f2:postgres": "npm run db:test:invariants && npm run build --workspace @shawtie/db && npm run build --workspace @shawtie/testkit && npm run build --workspace @shawtie/worker && node --test --test-concurrency=1 packages/testkit/tests/*.integration.test.ts apps/worker/tests/*.integration.test.ts",
     "test:f2:local": "node scripts/db/test-f2-local.mjs",
-    "health:repo": "node scripts/ci/repository-health.mjs",
+    "health:repo": "node scripts/ci/repository-health.mjs && node --test scripts/ci/workflow-policy.test.mjs",
     "health": "npm run health:repo && npm run db:migrations:check && npm run typecheck && npm run build && npm run lint && npm run format:check && npm run deps:check && npm test",
     "ci:baseline": "npm run health",
     "db:migrations:check": "node scripts/db/check-migrations.mjs",
