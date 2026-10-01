@@ -12,12 +12,12 @@ Ordering:
 UX8 DONE
   -> SEC1 Pre-V1 Security Hardening DONE
   -> Pre-V1 Follow-up Hardening DONE
-  -> V1 Hosted CI Verification IN_PROGRESS
-  -> R2 Public Readiness
+  -> V1 Hosted CI Verification DONE
+  -> R2 Public Readiness NEXT
   -> Stable Release
 ```
 
-V1 must not be intentionally run as release evidence before SEC1 is DONE, even if GitHub Actions capacity becomes available first.
+V1 was executed only after SEC1 and the Pre-V1 follow-up hardening were closed. V1 subsequently passed at executable candidate `d28668b5`, release run `36801613394`.
 
 ## Implementation checkpoint
 
@@ -35,7 +35,7 @@ Implemented remediation:
 - strict `style-src 'self'` is supported by removing every identified production inline-style writer, including additional Talk, video-call, and View Transition sites discovered during implementation
 - the SEC1 test surface now includes focused admission tests, digest-corpus integrity checks, reauthentication concurrency/integration coverage, multi-worker cleanup coverage, proxy-trust/header tests, a real Chromium OpenMLS/WASM/service-worker/WebSocket/media/offline smoke, a production scan, and one final `npm run test:sec1:closure` wrapper
 
-The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. A later 2026-09-29 audit found two post-SEC1 defects outside this milestone's frozen closure scope. Both are now closed on `main @ a1659dc`, with hosted focused validation run `36773261743` green against validated branch SHA `7d07f7b5`. SEC1 remains DONE. GitHub Actions capacity is available again; V1 now proceeds through the dedicated release-verification architecture defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md` before the real closure run. R2 retains the public HTTPS header re-proof.
+The closure found only committed formatting drift, repaired in `487517c` and `91ca920`; no runtime or security behavior changed. A later 2026-09-29 audit found two post-SEC1 defects outside this milestone's frozen closure scope. Both are now closed on `main @ a1659dc`, with hosted focused validation run `36773261743` green against validated branch SHA `7d07f7b5`. SEC1 remains DONE. V1 subsequently closed at executable candidate `d28668b5` with release run `36801613394` and normal Baseline CI run `36801613306` green. R2 Public Readiness is next. R2 retains the public HTTPS header re-proof.
 
 ## Purpose
 
