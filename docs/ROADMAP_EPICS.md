@@ -521,7 +521,7 @@ Hosted execution remains a separate V1 concern and is not an F2 local completion
 - [x] complete F2 local integration and failure-recovery suite passes
 - [x] full repository health regression remains green
 
-F2 local completion does not close V1 Hosted CI Verification. V1 remains a separate prerequisite for R2 Public Readiness.
+F2 local completion did not close V1 Hosted CI Verification. V1 remained a separate prerequisite for R2 Public Readiness and subsequently closed on hosted infrastructure at executable candidate `d28668b5`.
 
 # A1: Accounts and Devices
 
@@ -2773,7 +2773,7 @@ Status: PLANNED
 ## Acceptance gates
 
 - [x] SEC1 Pre-V1 Security Hardening is DONE
-- [ ] V1 Hosted CI Verification is DONE
+- [x] V1 Hosted CI Verification is DONE
 - [ ] all stable-release PRD gates are satisfied
 - [ ] required CI checks are green
 - [ ] `main` branch protection or equivalent repository rules prevent force pushes and deletion and enforce the appropriate hosted CI check for release-relevant changes
