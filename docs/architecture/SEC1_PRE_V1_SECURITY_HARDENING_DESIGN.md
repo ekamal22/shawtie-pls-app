@@ -6,7 +6,7 @@ FROZEN DESIGN, IMPLEMENTED, CLOSED, AND MERGED.
 
 Implementation and automated local closure are complete and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300` from the historical `feat/sec1-pre-v1-security-hardening` branch. The final executable SHA is `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`; observed evidence is recorded in `../testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
 
-SEC1 is DONE and merged to `main`. A later 2026-09-29 audit found two post-SEC1 defects outside this frozen SEC1 implementation scope: account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-client-error handling. Both follow-up repairs are now closed on `main @ a1659dc` and passed hosted focused validation run `36773261743`. V1 remains subject to the dedicated release-verification implementation and shakedown defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`; GitHub Actions capacity is available.
+SEC1 is DONE and merged to `main`. A later 2026-09-29 audit found two post-SEC1 defects outside this frozen SEC1 implementation scope: account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-client-error handling. Both follow-up repairs are closed on `main @ a1659dc` and passed hosted focused validation run `36773261743`. V1 subsequently closed at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`; release run `36801613394` and normal Baseline CI run `36801613306` passed. SEC1 remains historically closed and R2 Public Readiness is next.
 
 ## Baseline
 
