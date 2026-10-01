@@ -50,7 +50,7 @@ Branch rules:
 
 Historical reconstruction must never rewrite commits merely to manufacture old merge commits. When earlier work was developed linearly, preserve genuine milestone closure commits with branch refs and fast-forward `main` to the latest verified closure where ancestry permits.
 
-Repository protection note: the 2026-09-29 audit found `main` unprotected, with required status checks disabled and no repository rulesets. R2 must add protection before public readiness. Protection must prevent force pushes and branch deletion and, after V1 establishes the hosted Baseline CI status, require the appropriate check for release-relevant changes. Configure the rule deliberately so it does not accidentally invalidate the repository's accepted fast-forward milestone workflow.
+Repository protection note: the 2026-09-29 audit found `main` unprotected, with required status checks disabled and no repository rulesets. R2 must add protection before public readiness. Protection must prevent force pushes and branch deletion and, now that V1 has established the hosted Baseline CI status, require the appropriate check for release-relevant changes. Configure the rule deliberately so it does not accidentally invalidate the repository's accepted fast-forward milestone workflow.
 
 The legacy branch `feat/m1-executable-foundation` refers to an earlier executable-foundation naming scheme. It is not the future M1 Messaging Core branch and must not be reused for M1 Messaging work.
 
@@ -73,7 +73,7 @@ Before starting implementation work, identify the roadmap epic in `../ROADMAP_EP
 
 Acceptance gates are part of the implementation contract.
 
-For V1 Hosted CI Verification, the canonical execution contract is `../testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. Normal CI remains separate from the release gate. V1 uses one exact `github.sha` and requires Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate to succeed for that source state. If V1 finds a deterministic defect, fix it with regression evidence and rerun the complete required set on the new candidate.
+For V1 Hosted CI Verification, the canonical execution contract is `../testing/V1_HOSTED_CI_VERIFICATION_PLAN.md` and the completed evidence is `../testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. Normal CI remains separate from the release gate. V1 uses one exact `github.sha` and requires Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate to succeed for that source state. If V1 finds a deterministic defect, fix it with regression evidence and rerun the complete required set on the new candidate.
 
 A pull request may satisfy only some gates. That is valid, but the epic remains IN_PROGRESS until all required gates are verified.
 
