@@ -86,7 +86,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         main @ a1659dc, hosted focused validation PASS
              |
              v
-        V1 Hosted CI Verification 🟡
+        V1 Hosted CI Verification ✅
                     |
                     v
                 Candidate
@@ -203,7 +203,7 @@ UX8 Encrypted UX Integration ✅ DONE, final executable `43ff9b1`, Redmi 25/25, 
 
 SEC1 Pre-V1 Security Hardening ✅ DONE + MERGED, merge anchor `a2badf7`, final executable `91ca920d`
 
-V1 Hosted CI Verification 🔒 NEXT, blocked by follow-up source repairs, hosted security-coverage expansion, and Actions capacity
+V1 Hosted CI Verification ✅ DONE, executable `d28668b5`, release run `36801613394` PASS, normal Baseline CI `36801613306` PASS
 ~~~
 
 P3 is locally closed at 22/22 gates and its verified code baseline `9820801` is merged into `main`. Its lifecycle domain/contracts suite passes 28/28, security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker integration matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Full repository health and the high-severity dependency audit pass.
