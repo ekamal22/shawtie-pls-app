@@ -276,38 +276,45 @@ Implementation checkpoint:
 
 ## V1 ordering rule
 
-V1 is defined separately and remains downstream of SEC1. SEC1 and the later Pre-V1 follow-up hardening are DONE, and GitHub Actions capacity is available again. Hosted capacity should now be used only after the V1 security-coverage expansion is committed.
+V1 is defined separately and remains downstream of SEC1. SEC1 and the later Pre-V1 follow-up hardening are DONE. V1 subsequently closed on hosted infrastructure at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. R2 Public Readiness is now the next release milestone.
 
 # V1: Hosted CI Verification
 
-Status: IN_PROGRESS, HOSTED SECURITY-COVERAGE EXPANSION NEXT
+Status: DONE
 
 ## Purpose
 
-Verify the release candidate on GitHub-hosted infrastructure after SEC1 and Pre-V1 follow-up hardening are DONE. Keep fast PR/main CI separate from a dedicated release-verification workflow. The release workflow must use one exact candidate SHA, separate dependency advisory and security gates, isolated SEC1/A1 and S1 PostgreSQL jobs, explicit Rust/WASM plus Chromium verification, and a final V1 gate.
+Verify one exact release candidate on GitHub-hosted infrastructure after SEC1 and Pre-V1 follow-up hardening, with fast normal CI kept separate from a dedicated release-verification workflow.
 
-Canonical workflow/evidence plan: `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
+Canonical implementation plan: `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 
-V1 is intentionally separate from F1 and was not a prerequisite for completed feature development. It is now a pre-R2 verification gate downstream of SEC1. It must be completed before R2 Public Readiness can be marked DONE.
+Canonical closure evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-## Current blocker
+## Closure evidence
 
-SEC1 and Pre-V1 follow-up hardening are DONE, hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available. The real V1 release-verification workflow remains unexecuted. The active work is implementation of Candidate, six parallel verification jobs, and V1 gate as defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`, followed by one final all-green run on the exact `github.sha` selected by manual dispatch against `main`.
+V1 closed on 2026-10-01 at executable candidate:
 
-## Scope
+`d28668b5a7d021bc12b7a3dccbd69193074af9d3`
 
-- retain the closed Pre-V1 follow-up hardening evidence and hosted focused validation run `36773261743`
-- keep `ci.yml` as fast PR/main feedback, with cancellation restricted to superseded PR work
-- add a dedicated `release-verification.yml` using `workflow_dispatch` and `workflow_call`
-- add local composite workspace setup with Node 22.18.0, `npm ci --ignore-scripts`, and exact-SHA assertion
-- extend repository-health SHA-pin enforcement to external actions referenced from `.github/actions`
-- implement Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate
-- run `s1:plaintext:assert-clean` after S1 PostgreSQL integration
-- include npm and Rust/Cargo advisory review
-- explicitly set up Rust, wasm32, pinned wasm-pack, and Chromium in Browser security
-- keep release evidence concurrency non-cancelling and keyed by candidate SHA
-- execute the complete V1 set against one exact `github.sha`
-- record run ID, attempts, candidate SHA, versions, job conclusions, migration evidence, advisory results, and scope/non-scope
+Final hosted evidence:
+
+- V1 Release Verification run `36801613394`: PASS
+- normal Baseline CI run `36801613306`: PASS
+- Candidate: PASS
+- Baseline: PASS
+- Dependency audit: PASS
+- Security: PASS
+- PostgreSQL integration (SEC1/A1): PASS from an empty database, final migration count 21
+- PostgreSQL integration (S1): PASS from a separate empty database, final migration count 21
+- S1 plaintext inventory assertion: `S1_PLAINTEXT_INVENTORY_CLEAN`
+- Browser security: SEC1 Chromium 1/1 PASS and S1 Chromium/OpenMLS 4/4 PASS
+- production scans: `SEC1_PRODUCTION_SCAN_PASS` and `S1_PRODUCTION_BUNDLE_SCAN_PASS`
+- V1 gate: `V1_GATE_PASS`
+- normal CI and release verification both passed against the exact same executable candidate SHA
+
+The Rust advisory gate passed without a vulnerability failure and reported one non-vulnerability maintenance warning, `RUSTSEC-2026-0173` for transitive `proc-macro-error2 2.0.1`. V1 accepts that warning for closure and R2 owns dependency-path review.
+
+V1 shakedown also found and repaired a real CI guardrail defect: the external-action pin scanner could miss normal YAML `- uses:` list syntax. Commit `c864c97ef5bc93cda073d03e597c2a4e1cb4bd49` fixed it and added regression coverage.
 
 ## Acceptance gates
 
@@ -315,23 +322,25 @@ SEC1 and Pre-V1 follow-up hardening are DONE, hosted focused validation run `367
 - [x] current-device revocation and permanent account deletion destroy account-wide local S1 secret state at the correct lifecycle points, while deletion-pending recovery remains recoverable
 - [x] S1 legal encoded HTTP request sizes are accepted up to the documented contract ceiling and oversized requests fail with an intentional 4xx response
 - [x] known Fastify parser/client errors are sanitized and preserve an appropriate 4xx status rather than becoming `500 INTERNAL_ERROR`
-- [x] focused contract/API-security/browser-source regressions for the two follow-up defects pass on the final candidate source; hosted run `36773261743` also passes all touched workspace builds, lint, Prettier, and worktree hygiene
-- [ ] the hosted workflow is updated so a passing V1 result cannot omit the SEC1/S1-focused header, proxy, password-corpus, production-scan, lint, and format gates
-- [ ] the hosted release-verification plan explicitly covers the disposable PostgreSQL and real-Chromium security/integration boundary, either in V1 jobs or a separately required release job
-- [ ] Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate are implemented with stable job names
-- [ ] the final V1 closure evidence identifies one exact release-candidate SHA and all required jobs correspond to that same source state
-- [ ] S1 PostgreSQL verification includes `s1:plaintext:assert-clean`
-- [ ] Browser security explicitly installs and verifies the Rust/WASM toolchain before Chromium execution
-- [ ] dependency advisory coverage includes npm and the Rust/OpenMLS Cargo dependency graph
-- [ ] V1 gate rejects any skipped/failed job or SHA mismatch
-- [ ] final V1 evidence states the hosted scope and which historical PostgreSQL/MinIO/Playwright/Redmi suites were not rerun
-- [ ] any defect found during V1 has a regression and the complete required V1 job set is rerun on the final candidate
-- [ ] at least one GitHub-hosted Baseline CI run completes successfully
-- [ ] hosted `npm ci` succeeds from the committed lockfile
-- [ ] hosted `npm run ci:baseline` succeeds
-- [ ] hosted `npm audit --audit-level=high` succeeds
-- [ ] workflow permissions, pinned actions, timeout, and trigger behavior are confirmed in a real run
-- [ ] successful run evidence is recorded in `docs/PROJECT_STATE.md`
+- [x] focused contract/API-security/browser-source regressions for the two follow-up defects pass
+- [x] the hosted workflow cannot omit the SEC1/S1-focused header, proxy, password-corpus, production-scan, lint, and format gates
+- [x] disposable PostgreSQL and real-Chromium security/integration boundaries are required V1 surfaces
+- [x] Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate are implemented with stable job names
+- [x] final V1 evidence identifies one exact release-candidate SHA and every required job corresponds to that source state
+- [x] S1 PostgreSQL verification includes `s1:plaintext:assert-clean`
+- [x] Browser security explicitly installs and verifies the pinned Rust/WASM toolchain before Chromium execution
+- [x] dependency advisory coverage includes npm and the Rust/OpenMLS Cargo dependency graph
+- [x] V1 gate rejects any skipped or failed required job or SHA mismatch
+- [x] final V1 evidence states hosted scope and historical suites not rerun
+- [x] the V1-discovered workflow-policy defect has regression coverage and the complete required V1 set was rerun
+- [x] GitHub-hosted Baseline CI completes successfully
+- [x] hosted clean dependency installation succeeds from the committed lockfile
+- [x] hosted `npm run ci:baseline` succeeds
+- [x] hosted `npm audit --audit-level=high` succeeds
+- [x] workflow permissions, pinned actions, timeouts, concurrency, service-image digest, and trigger behavior are confirmed in real hosted runs
+- [x] durable evidence is recorded in `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`
+
+R2 Public Readiness is unblocked and becomes the next active release milestone.
 
 # F2: Persistence and Worker Foundation
 
