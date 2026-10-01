@@ -116,7 +116,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
                 v
         X2 Deferred Heavy Features ⏸
 
-V1 Hosted CI Verification 🟡 remains a separate verification milestone. SEC1 and Pre-V1 follow-up hardening are DONE, hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available. The active V1 design uses Candidate, six parallel verification jobs, and V1 gate. Closure requires every required job to report the same exact `github.sha`. Canonical plan: `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
+V1 Hosted CI Verification ✅ is DONE at executable candidate `d28668b5`. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact source state, and the final gate emitted `V1_GATE_PASS`. Canonical evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 ~~~
 
 ## Mermaid dependency view
@@ -161,8 +161,8 @@ flowchart TD
     UX7 --> UX8["UX8 Encrypted UX Integration ✅ DONE @ 43ff9b1, Android 25/25"]
     S1 --> UX8
 
-    UX8 --> SEC1["SEC1 Pre-V1 Security Hardening 🟡"]
-    SEC1 --> V1["V1 Hosted CI Verification 🔒"]
+    UX8 --> SEC1["SEC1 Pre-V1 Security Hardening ✅"]
+    SEC1 --> V1["V1 Hosted CI Verification ✅"]
     V1 --> R2["R2 Public Readiness ⚪"]
 
     R2 --> RELEASE["Stable Release 🔒"]
