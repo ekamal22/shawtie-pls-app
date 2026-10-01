@@ -9,7 +9,7 @@ This is the canonical high-level execution roadmap for Shawtie pls.
 Verified current implementation state lives in `docs/PROJECT_STATE.md`.
 Detailed epic scope and acceptance gates live in `docs/ROADMAP_EPICS.md`.
 The compact dependency graph lives in `docs/EXECUTION_GRAPH.md`.
-The active V1 hosted workflow and evidence contract lives in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`.
+The completed V1 hosted workflow contract lives in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`, with durable closure evidence in `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 An epic is DONE only when its required acceptance gates have executed evidence.
 
@@ -96,7 +96,6 @@ The 2026-09-29 repository audits add no new product feature milestone. The two s
 - R2 must constrain plaintext `BACKEND_PROXY_TARGET` use to a proven trusted private/loopback network or require HTTPS for an untrusted hop.
 - R2 must add dedicated secret scanning and stable-release provenance through an immutable signed release tag or equivalent signed release record with artifact checksums.
 
-- V1 has zero GitHub-hosted runs on `main` and must execute the configured Baseline CI before hosted CI can be treated as verified.
 - `main` is currently unprotected, required status checks are off, and no repository rulesets exist. R2 must establish protection after V1 identifies the hosted status check that should gate release-relevant changes.
 - the public repository has no project-level license. R2 must record the owner's explicit licensing policy before public readiness.
 - `design/m3-media-voice` is obsolete divergent design history with a stranded non-authoritative ADR-012. It must be archived, deleted, or clearly retained as historical-only before R2 closes.
@@ -142,21 +141,11 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
       hosted focused validation PASS
             |
             v
-      V1 Hosted CI Verification 🟡
-      Candidate
-          |
-      +---+---+---+---+---+---+
-      |   |   |   |   |   |
-      v   v   v   v   v   v
-     BL Audit Sec PG-A1 PG-S1 Browser
-      |   |   |   |   |   |
-      +---+---+---+---+---+
-              |
-              v
-           V1 gate
-              |
-              v
-      one exact candidate SHA
+      V1 Hosted CI Verification ✅
+      executable @ d28668b5
+      release run 36801613394 PASS
+      Baseline CI 36801613306 PASS
+      V1 gate PASS
             |
             v
       R2 Public Readiness
@@ -186,11 +175,11 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **S1 E2EE and Cryptographic Recovery:** RFC 9420 MLS architecture with OpenMLS WASM baseline, per-content encryption, device enrollment/revocation, and Recovery Master Secret based historical recovery. No UX copy may claim verified E2EE before runtime closure.
 - **UX8 Encrypted UX Integration:** design frozen in `docs/design/UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`. Implementation integrates device trust, recovery setup/restoration, revocation/rekey, per-content unavailable-history and integrity states, group repair, and precise privacy language into Home, Talk, Ours, and Us without changing S1 authority. Automated closure re-passed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419`; evidence is in `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md`. Redmi Note 9S 25/25 acceptance is closed, recorded in `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. UX8 is DONE and merged to `main` at `a029169`.
 - **SEC1 Pre-V1 Security Hardening:** DONE and merged to `main @ a2badf7`; final executable `91ca920d`; complete local evidence is recorded.
-- **Pre-V1 follow-up hardening:** implement the two 2026-09-29 source repairs for account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-error handling, with focused regression evidence.
-- **V1 Hosted CI Verification:** execute only after those source repairs are closed and hosted security coverage is expanded; then run when Actions capacity is available.
+- **Pre-V1 follow-up hardening:** DONE on `main @ a1659dc`; account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-error handling are closed with hosted focused regression evidence.
+- **V1 Hosted CI Verification:** DONE at executable candidate `d28668b5`; release run `36801613394`, normal Baseline CI run `36801613306`, and `V1_GATE_PASS` are recorded.
 - **R2 Public Readiness:** final security, accessibility, device, browser, release, rollback, monitoring, and hosted-verification closure after SEC1 and V1.
 
-UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. UX8 and later work must preserve the accepted UX and S1 authority boundaries, use `[skip ci]` while Actions capacity is constrained, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
+UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. Later work must preserve the accepted UX and S1 authority boundaries, follow the current CI policy, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
 
 # Milestone 5A: M1 Messaging Core
 
@@ -715,18 +704,19 @@ Stable release requires:
 
 # Verification Track: V1 Hosted CI
 
-Status: NEXT, BLOCKED by GitHub Actions capacity.
+Status: DONE.
 
-V1 does not block completed feature development. SEC1 is DONE, but R2 cannot close without hosted V1 evidence.
+V1 closed on 2026-10-01 at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-When capacity returns:
+Verified hosted evidence:
 
-1. run Baseline CI without a skip marker or manually dispatch it
-2. verify hosted `npm ci`
-3. verify hosted `npm run ci:baseline`
-4. verify hosted dependency audit
-5. record workflow evidence in `PROJECT_STATE.md`
-6. close every V1 gate in `ROADMAP_EPICS.md`
+1. V1 Release Verification run `36801613394`: PASS
+2. normal Baseline CI run `36801613306`: PASS
+3. Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate: PASS
+4. every required release-verification job reported the same candidate SHA
+5. durable evidence is recorded in `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`
+
+R2 Public Readiness is the next release milestone.
 
 # Post-stable: X1 Maturity
 
