@@ -2,11 +2,15 @@
 
 ## Status
 
-IN_PROGRESS.
+DONE.
 
-Pre-V1 follow-up hardening is DONE on `main @ a1659dc`. Hosted focused validation run `36773261743` is green, and GitHub Actions capacity is available.
+V1 closed on 2026-10-01 at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-The approved V1 architecture keeps normal CI separate from a dedicated release-verification workflow.
+Final V1 Release Verification run `36801613394` passed, normal Baseline CI run `36801613306` passed on the same SHA, and `V1_GATE_PASS` closed the release-verification graph.
+
+Durable evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
+
+The implemented V1 architecture keeps normal CI separate from a dedicated release-verification workflow.
 
 ## Purpose
 
@@ -29,6 +33,7 @@ superseded PR runs may cancel
 
 release-verification.yml
 workflow_dispatch + workflow_call
++ narrow main push for V1/CI control-plane paths
         |
         v
      Candidate
@@ -71,16 +76,17 @@ Normal CI is not V1 closure evidence.
 
 ## Release verification triggers
 
-Create `.github/workflows/release-verification.yml`.
+`.github/workflows/release-verification.yml` is implemented.
 
 Final triggers:
 
 - `workflow_dispatch`
 - `workflow_call`
+- a narrow `push` trigger on `main` limited to V1 and CI control-plane paths
 
-Do not run the heavy release workflow automatically on every pull request or main push.
+The heavy release workflow does not run on pull requests or ordinary product-code pushes. The narrow main trigger exists so a CI-control-plane release candidate can obtain hosted closure evidence even when a manual workflow-dispatch action is unavailable to the automation client.
 
-During feature-branch implementation only, a temporary branch-specific push trigger may be used for hosted shakedown. Remove it before merge to `main`.
+The temporary feature-branch push trigger used during shakedown was removed before merge to `main`.
 
 ## Common workspace setup
 
@@ -142,7 +148,7 @@ Rules:
 5. reruns reuse the same workflow-run SHA
 6. any repository edit creates a new candidate and requires the complete V1 set again
 
-For V1 closure, manually dispatch against `main`.
+For V1 closure, the final candidate was triggered by the narrow `main` push path at `d28668b5`. Manual dispatch remains supported for future release verification.
 
 The Candidate job rejects an unintended ref before expensive jobs begin.
 
@@ -527,23 +533,47 @@ Add Rust advisory/toolchain setup and Browser security. Measure cold WASM build 
 
 ### V1-06
 
-Finalize normal CI concurrency, release triggers, pins, timeouts, service-image digest, artifacts, and remove the temporary branch trigger.
+DONE.
 
-Require two consecutive green shakedown runs on the same unchanged implementation SHA before merge.
+Normal CI concurrency, release triggers, pins, timeouts, service-image digest, and failure artifacts were finalized. The temporary feature-branch trigger was removed before merge.
 
-Merge the V1 workflow implementation to `main`.
+Hosted shakedowns:
+
+- run `36800865766` at `c864c97ef5bc93cda073d03e597c2a4e1cb4bd49`: PASS after fixing the action-pin scanner regression
+- run `36801177675` at `81e0143648a2949efa675a21d2fded83ff110391`: PASS after pinning the PostgreSQL service image digest
+
+The original planning text asked for two green runs on one unchanged SHA. Execution instead used successive control-plane candidates because the service-image digest was deliberately hardened between shakedowns. The finalized digest-pinned state then passed again on `main` at `d28668b5`, providing a third complete green execution before closure.
 
 ### V1-07
 
-Manually dispatch `V1 Release Verification` against `main`.
+DONE.
 
-The candidate commit may contain `[skip ci]`; the release gate is manually dispatched.
+Final V1 Release Verification run `36801613394` executed on `main` at exact candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-V1 closure requires `V1 gate` success.
+`V1 gate`: PASS.
+
+Normal Baseline CI run `36801613306` independently passed on the same exact SHA.
 
 ### V1-08
 
-Create durable V1 evidence and reconcile status docs.
+DONE.
+
+Durable evidence is committed in `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`, and repository status documentation is reconciled to V1 DONE.
+
+## Closure result
+
+The completion contract above is satisfied by final executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
+
+- V1 Release Verification run `36801613394`: PASS
+- Baseline CI run `36801613306`: PASS
+- final migration counts: 21 for SEC1/A1 and 21 for S1
+- S1 plaintext assertion: PASS
+- SEC1 Chromium: 1/1 PASS
+- S1 Chromium/OpenMLS: 4/4 PASS
+- production scans: PASS
+- npm audit: 0 vulnerabilities
+- Cargo audit: no vulnerability failure; one accepted maintenance warning `RUSTSEC-2026-0173`
+- V1 gate: PASS
 
 ## Completion contract
 
@@ -567,4 +597,4 @@ V1 is DONE only when:
 - deterministic failures are fixed with regression evidence and the full set is rerun on the new candidate
 - durable evidence records the final scope and non-scope
 
-After V1 closes, R2 Public Readiness becomes active.
+All V1 completion-contract conditions are satisfied. R2 Public Readiness is active.
