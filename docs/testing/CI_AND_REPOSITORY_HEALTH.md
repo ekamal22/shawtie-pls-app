@@ -14,7 +14,7 @@ The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. D
 
 ## Repository audit concerns
 
-Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass did find two concrete source defects that must be repaired before V1, alongside the existing release-governance work:
+Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass found two concrete source defects that were repaired before V1, alongside the existing release-governance work:
 
 - CLOSED: account-wide S1 local crypto lifecycle cleanup is implemented on `main @ a1659dc` and verified by hosted focused validation run `36773261743`.
 - CLOSED: route-local S1 encoded request ceilings and sanitized Fastify 4xx parser/client error mapping are implemented on `main @ a1659dc` and verified by the same hosted run.
@@ -242,27 +242,17 @@ When GitHub Actions execution is intentionally being avoided, commits may use Gi
 
 A skipped workflow is not evidence that CI passed.
 
-GitHub Actions execution is available again. SEC1 and Pre-V1 follow-up hardening are DONE, and hosted focused validation run `36773261743` is green. V1 is now implementing the hosted verification topology defined in `V1_HOSTED_CI_VERIFICATION_PLAN.md`.
+GitHub Actions execution is available. SEC1, Pre-V1 follow-up hardening, and V1 Hosted CI Verification are DONE. V1 closed on executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-1. create the dedicated release-verification workflow plus pinned local workspace setup action
-2. extend repository-health pin scanning to local composite actions
-3. implement Candidate, Baseline, Dependency audit, Security, isolated PostgreSQL SEC1/A1, isolated PostgreSQL S1, Browser security, and V1 gate
-4. shakedown on a feature branch using a temporary branch-only push trigger, then remove it before merge
-5. manually dispatch the final release workflow against `main`; candidate equals `github.sha`
-6. inspect every required job and SHA result
-7. fix deterministic failures with regression evidence and rerun the complete set on a new candidate
-8. record final all-green evidence plus explicit hosted scope/non-scope
-3. fix any repository-health or domain-test failure
-4. record the successful run in PROJECT_STATE
-5. only then treat the GitHub-hosted baseline gate as verified
+The completed V1 topology includes Candidate, Baseline, Dependency audit, Security, isolated PostgreSQL SEC1/A1, isolated PostgreSQL S1, Browser security, and V1 gate. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on the same exact candidate SHA. Durable scope and non-scope evidence is recorded in `V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Future gate expansion
 
 Local disposable PostgreSQL F2 verification is complete. The Docker-backed path applies all six migrations from zero, runs database invariants, and passes 17/17 F2 integration tests covering races, expired-claim reclaim, fencing, lease ownership, transaction retry and clocks, outbox atomicity and duplicate safety, lifecycle privacy, deletion recovery, queue plans, and worker shutdown.
 
-Baseline CI still contains the intentionally small lockfile, repository-baseline, and dependency-audit job. Hosted GitHub Actions execution remains blocked under V1 while Actions capacity is being conserved. SEC1 has already closed locally.
+Baseline CI remains intentionally smaller than the V1 release workflow. V1 hosted verification is complete, and the heavier release surfaces remain separated from normal fast CI.
 
-When hosted PostgreSQL CI infrastructure is justified, it can reproduce the already-passing local F2 database matrix. That hosted reproduction is a V1 or later CI-expansion concern and is not required to reopen F2.
+The completed V1 workflow now provides hosted PostgreSQL coverage for the SEC1/A1 and S1 release boundaries. Full historical F2 reproduction remains unnecessary unless a later CI expansion specifically chooses to add it, and F2 does not reopen.
 
 A1 now commits:
 
@@ -316,8 +306,8 @@ npm run test:m3:device:cleanup
 
 `test:m3:local` provisions disposable PostgreSQL and private MinIO, then runs the M3 PostgreSQL/API/worker, real object-store, and real Chromium layers. `test:m3:closure` additionally enforces branch/SHA parity, `[skip ci]` history, no introduced Unicode em dash, full repository health, high-severity dependency audit, diff hygiene, and clean-worktree status.
 
-`npm run test:m3:closure` was executed and passed at `305891f` (`M3_AUTOMATED_CLOSURE_PASS`: migration plan `count=16 reserved=0`, database invariants, PostgreSQL/API/worker, MinIO storage integration, real Chromium 4/4, full health, `npm audit --audit-level=high` with 0 vulnerabilities, `git diff --check`). After the physical fixes every step passed again. Physical Android acceptance then passed 20/20 (see `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Hosted GitHub Actions verification remains separate under V1 and was not used.
+`npm run test:m3:closure` was executed and passed at `305891f` (`M3_AUTOMATED_CLOSURE_PASS`: migration plan `count=16 reserved=0`, database invariants, PostgreSQL/API/worker, MinIO storage integration, real Chromium 4/4, full health, `npm audit --audit-level=high` with 0 vulnerabilities, `git diff --check`). After the physical fixes every step passed again. Physical Android acceptance then passed 20/20 (see `M3_ANDROID_ACCEPTANCE_EVIDENCE.md`). Hosted GitHub Actions verification was separate under V1 and was not used for the historical M3 closure.
 
 ## S1 local closure and privacy inspection
 
-`npm run test:s1:privacy` and the original `npm run test:s1:closure` passed at `e254c3c`. The privacy gate used disposable PostgreSQL and MinIO, unique protected sentinels, populated protected message/edit/reaction/nickname/R1/media fixtures, a raw 65-table scan, raw `pg_dump`, raw image/voice/file object reads, captured log scan, real Chromium durable-store inspection, and content-free realtime/push tests. After physical-run source changes, full `npm run test:s1:closure` re-passed at final corrective executable `cde73a1`: migrations 0001 through 0021 with `reserved=0`, `DATABASE_INVARIANTS_PASS`, S1 contracts 9/9, browser 9/9, security 7/7, PostgreSQL integration 4/4, real Chromium 4/4, plaintext inventory clean, production scan PASS, full repository health, 0 audit vulnerabilities, and clean diff hygiene. Mandatory Android acceptance is also complete 30/30. Hosted GitHub Actions remains separate under V1.
+`npm run test:s1:privacy` and the original `npm run test:s1:closure` passed at `e254c3c`. The privacy gate used disposable PostgreSQL and MinIO, unique protected sentinels, populated protected message/edit/reaction/nickname/R1/media fixtures, a raw 65-table scan, raw `pg_dump`, raw image/voice/file object reads, captured log scan, real Chromium durable-store inspection, and content-free realtime/push tests. After physical-run source changes, full `npm run test:s1:closure` re-passed at final corrective executable `cde73a1`: migrations 0001 through 0021 with `reserved=0`, `DATABASE_INVARIANTS_PASS`, S1 contracts 9/9, browser 9/9, security 7/7, PostgreSQL integration 4/4, real Chromium 4/4, plaintext inventory clean, production scan PASS, full repository health, 0 audit vulnerabilities, and clean diff hygiene. Mandatory Android acceptance is also complete 30/30. Hosted GitHub Actions verification was separate under V1 for the historical S1 closure; V1 itself later closed on `d28668b5`.
