@@ -27,7 +27,7 @@ export function validateGithubAutomationFile(relative, content) {
     }
   }
 
-  for (const match of content.matchAll(/^\s*uses:\s*([^\s#]+)(?:\s+#.*)?$/gm)) {
+  for (const match of content.matchAll(/^\s*(?:-\s*)?uses:\s*([^\s#]+)(?:\s+#.*)?$/gm)) {
     const reference = match[1];
 
     if (reference.startsWith("./")) continue;
