@@ -180,9 +180,11 @@ Objects are never public by default.
 
 ### Boundary 7: Email provider
 
-The email provider receives destination email addresses and minimal security or lifecycle email content.
+The configured authentication-email provider receives destination email addresses and the short-lived verification credential required for delivery.
 
-It must never receive message plaintext or relationship content.
+The current R2 adapter is Brevo and is invoked only by the durable backend worker through the provider-neutral email port. Its API credential is a server-side secret and must not enter browser code, PostgreSQL, outbox payloads, logs, or repository history.
+
+The current Brevo wiring is limited to authentication challenges. It must never receive message plaintext, relationship-space content, partner identity, breakup state, Recovery Master Secret material, passwords, or session tokens.
 
 ### Boundary 8: Push provider
 

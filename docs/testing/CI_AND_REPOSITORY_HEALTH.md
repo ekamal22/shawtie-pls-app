@@ -12,6 +12,10 @@ V1 Hosted CI Verification is DONE. Final executable candidate `d28668b5a7d021bc1
 
 The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. Durable closure evidence is `V1_HOSTED_VERIFICATION_EVIDENCE.md`. Normal CI stays separate from the heavy release workflow. R2 Public Readiness is now the active release milestone.
 
+The R2 Brevo authentication-email slice adds focused worker tests to the normal `test:worker` command. Real Brevo delivery is deliberately excluded from normal CI. The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration and is intended only for manual provider acceptance.
+
+Focused branch verification for the provider adapter passed 8/8 tests under Node 22 and an isolated strict TypeScript check passed for the provider, port, and worker error types. A pre-refinement Baseline CI run exposed one `exactOptionalPropertyTypes` defect in the initial worker wiring; that concrete defect was fixed on the branch. No later hosted CI run is used as closure evidence for this slice because R2 development commits preserve the repository's `[skip ci]` policy. Full final `npm run health` remains a local pre-merge gate and is not claimed as executed by this evidence.
+
 ## Repository audit concerns
 
 Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass found two concrete source defects that were repaired before V1, alongside the existing release-governance work:

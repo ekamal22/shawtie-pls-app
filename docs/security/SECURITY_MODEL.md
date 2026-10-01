@@ -121,6 +121,8 @@ Store a keyed verifier such as an HMAC, not a raw code and not a plain unsalted 
 
 A1 additionally stores a random challenge nonce and derives the short-lived delivery code only when needed by the durable email worker. The raw code is not stored in PostgreSQL or outbox JSON.
 
+R2 keeps provider delivery behind the same worker boundary. With Brevo enabled, the API key exists only in worker-side environment configuration, the worker sends only the destination plus minimal authentication content, and the raw code exists only transiently during derivation, rendering, provider delivery, and user submission. The Brevo delivery ID is opaque and contains no authentication secret.
+
 Enforce:
 
 - short expiry

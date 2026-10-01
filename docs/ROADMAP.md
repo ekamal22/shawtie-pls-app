@@ -655,6 +655,9 @@ Protocol review, protected-content paths, recovery, revocation, plaintext retire
 
 # Milestone 11: R2 Public Readiness
 
+Current R2 provider progress: authentication challenge delivery is implemented on `feat/r2-brevo-auth-email` through the existing durable outbox and `EmailDeliveryPort`. It covers registration, resend, password recovery, account recovery, and email-change challenge delivery. No migration is required. Real Brevo sender/domain verification and end-to-end provider acceptance remain open, so R2 remains in progress.
+
+
 Status: PLANNED.
 
 Depends on all stable-release feature epics, SEC1 Pre-V1 Security Hardening, and V1 Hosted CI Verification.

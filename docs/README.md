@@ -106,6 +106,7 @@ The selected architecture is:
 - `architecture/ARCHITECTURE_BASELINE.md`
 - `architecture/ARCHITECTURE_GOVERNANCE.md`
 - `security/SECURITY_MODEL.md`
+- `operations/TRANSACTIONAL_EMAIL.md` for the R2 provider-neutral Brevo authentication-email path, configuration, retry behavior, and real-send procedure
 - `architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md` - frozen SEC1 implementation architecture
 - `security/PRE_V1_SECURITY_HARDENING.md` - current SEC1 implementation/closure scope and acceptance gates
 - `operations/PRODUCTION_WEB_SERVING.md` - production web adapter, environment, proxy, CSP/HSTS, and deployment verification contract

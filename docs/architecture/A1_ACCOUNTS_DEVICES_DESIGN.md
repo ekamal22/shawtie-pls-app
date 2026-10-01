@@ -972,6 +972,8 @@ A1 integration tests use an in-memory fake.
 
 Production provider selection and provider credentials remain deployment work and must not change the account-domain contract.
 
+R2 provider implementation note: `feat/r2-brevo-auth-email` supplies `BrevoEmailDelivery` behind this existing port and registers the auth-challenge worker handler when `EMAIL_PROVIDER=brevo`. Brevo is not called from API request handlers. The provider adapter is intentionally isolated from A1 domain rules so another transactional provider can replace it without changing challenge creation or verification semantics. The current R2 wiring is limited to `auth.email_challenge`; the separate non-challenge `auth.security_email` family is not externalized by this slice.
+
 Email providers receive only:
 
 - destination email

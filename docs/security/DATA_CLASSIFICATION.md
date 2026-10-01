@@ -109,7 +109,7 @@ Examples:
 | Verified email | SENSITIVE | Yes | No | Never log full address in routine app logs | Account backup with restricted access | Email provider necessarily receives destination | Permanent account deletion |
 | Password plaintext | SECRET | Only transiently during verification | No | Never | Never | No provider exposure | Immediately after authentication operation |
 | Password hash | HIGHLY_SENSITIVE | Yes | No | Never log | Restricted account backup | No ordinary third-party exposure | Permanent account deletion |
-| Email verification code plaintext | SECRET | Only transiently before send and verification | No | Never | Never | Email provider receives delivered code | Expiry or successful consumption |
+| Email verification code plaintext | SECRET | Only transiently during worker derivation, provider send, and verification | No | Never | Never | Configured auth-email provider receives delivered code; current R2 adapter is Brevo | Expiry or successful consumption |
 | Verification code keyed verifier | HIGHLY_SENSITIVE | Yes | No | Never log | No long-term backup need | No | Expiry or consumption |
 | Session token or cookie value | SECRET | Server validates | No | Never | Prefer no backup requirement | Browser receives own token only | Logout, expiry, revocation, sensitive security event |
 | Session metadata | SENSITIVE | Yes | No | Minimal security logs allowed | Short bounded retention | No ordinary provider exposure | Expiry plus bounded security retention |

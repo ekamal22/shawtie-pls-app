@@ -8,6 +8,12 @@ The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video C
 
 **V1 Hosted CI Verification is DONE.** The verified executable candidate is `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact SHA. The hosted release graph closed Candidate, Baseline, npm/Rust dependency audit, focused Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL with plaintext assertion, SEC1 Chromium 1/1, S1 Chromium/OpenMLS 4/4, production scans, and `V1_GATE_PASS`. Durable evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
+## R2 transactional authentication email
+
+R2 now has a provider-neutral Brevo authentication-email slice on `feat/r2-brevo-auth-email`. Registration verification, registration resend, password recovery, account recovery, and email-change challenges remain transactionally queued through the durable outbox and are delivered asynchronously by the worker through the existing `EmailDeliveryPort`. No raw verification code is stored in PostgreSQL or outbox JSON, and Brevo credentials remain worker-side environment configuration only.
+
+Operational setup, failure semantics, and the opt-in real-send procedure are documented in `docs/operations/TRANSACTIONAL_EMAIL.md`. This branch work does not close R2 until the remaining public-readiness gates, including real sender/domain configuration and final production verification, are complete.
+
 ## Pre-release attention
 
 The 2026-09-29 follow-up audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The two concrete follow-up source defects are fixed on `main @ a1659dc` and passed hosted focused validation run `36773261743`: account-wide S1 local-crypto lifecycle cleanup and the S1 Fastify request-size/client-error boundary. V1 hosted SEC1/S1 coverage is now closed. Remaining R2 concerns include service-worker cache rollover, canonical network-prefix rate limiting, trusted backend transport, dedicated secret scanning, signed release provenance, branch protection, licensing, obsolete divergent M3 design history, production operations, and review of the transitive `RUSTSEC-2026-0173` maintenance warning. Canonical tracking is in `docs/PROJECT_STATE.md`, `docs/ROADMAP.md`, `docs/ROADMAP_EPICS.md`, and `docs/testing/CI_AND_REPOSITORY_HEALTH.md`.

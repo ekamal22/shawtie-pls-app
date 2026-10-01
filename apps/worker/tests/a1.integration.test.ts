@@ -104,6 +104,9 @@ test("A1 auth email outbox derives code without storing raw code", async () => {
     });
     assert.equal(fake.messages.length, 1);
     assert.equal(fake.messages[0]?.parameters.code, code);
+    assert.equal(fake.messages[0]?.parameters.purpose, "password_recovery");
+    assert.equal(typeof fake.messages[0]?.parameters.expiresAt, "string");
+    assert.ok(Number(fake.messages[0]?.parameters.expiresInMinutes) >= 1);
 
     const outboxPayload = await database.pool.query<{ payload: unknown }>(
       "SELECT payload FROM outbox_events WHERE aggregate_id = $1 AND event_type = 'auth.email_challenge' LIMIT 1",

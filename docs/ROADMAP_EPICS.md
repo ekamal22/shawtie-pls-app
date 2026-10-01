@@ -2744,7 +2744,9 @@ Implement:
 
 # R2: Public Readiness
 
-Status: PLANNED
+Status: IN PROGRESS
+
+Current slice: provider-neutral Brevo delivery for authentication challenges is implemented on `feat/r2-brevo-auth-email`. It preserves the A1 durable outbox boundary and covers registration, resend, password recovery, account recovery, and email-change challenges. Real sender/domain configuration and real provider acceptance remain open, so no production-provider acceptance gate is closed yet.
 
 ## Scope
 

@@ -1,5 +1,15 @@
 # Project State
 
+## R2 transactional authentication email slice
+
+R2 Public Readiness is active. On branch `feat/r2-brevo-auth-email`, the existing A1 provider-neutral `EmailDeliveryPort` is now wired to a Brevo Transactional Email adapter for authentication challenges only. The flow remains API transaction -> `auth.email_challenge` outbox -> durable worker -> provider. Supported challenge purposes are registration, email change, password recovery, and account recovery. Registration resend and email-change resend use the same challenge family.
+
+The slice preserves the existing 10-minute challenge expiry, 5-attempt maximum, consume-once behavior, resend superseding, durable rate limits, generic recovery-start responses, and HMAC-verifier-only storage. Brevo configuration is server-side only and production worker startup fails closed without an explicit provider. No migration is added.
+
+Focused provider verification passes 8/8 under Node 22, and an isolated strict TypeScript check passes for the provider boundary. The earlier pre-refinement hosted baseline found one exact-optional-property wiring defect, which is fixed on the branch. Full final repository health is still a local pre-merge gate and is not claimed as completed here.
+
+This slice is not yet an R2 closure claim. Real sender/domain verification, a real Brevo smoke send, a real end-to-end registration-email test, broader operational observability, and the remaining R2 gates are still open. Canonical operations document: `docs/operations/TRANSACTIONAL_EMAIL.md`.
+
 ## Status
 
 Architecture Baseline 1.0 is accepted and frozen.
