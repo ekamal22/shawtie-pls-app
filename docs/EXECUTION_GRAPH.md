@@ -332,14 +332,15 @@ Physical Android validation begins at M2 and becomes mandatory for the device-se
 
 ## Release path
 
-With UX8 and SEC1 merged, and SEC1 locally closed, the remaining dependency path to stable release is:
+With UX8, SEC1, Pre-V1 follow-up hardening, and V1 closed, the remaining dependency path to stable release is:
 
 ~~~text
 UX8 ✅
  -> SEC1 Pre-V1 Security Hardening ✅
- -> V1 Hosted CI Verification
+ -> Pre-V1 Follow-up Hardening ✅
+ -> V1 Hosted CI Verification ✅
  -> R2 Public Readiness
  -> Stable Release
 ~~~
 
-SEC1 is DONE and merged to `main @ a2badf7`; final executable `91ca920d`. The active next engineering work is the two documented pre-V1 follow-up source repairs. V1 Hosted CI Verification follows those fixes and hosted security-coverage expansion when Actions capacity becomes available.
+V1 is DONE at executable candidate `d28668b5`. V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed. R2 Public Readiness is the active next engineering milestone.
