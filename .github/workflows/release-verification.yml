@@ -5,7 +5,7 @@ on:
   workflow_call:
   push:
     branches:
-      - feat/v1-hosted-ci-verification
+      - main
     paths:
       - ".github/workflows/release-verification.yml"
       - ".github/actions/setup-workspace/**"
@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$CANDIDATE_REF" in
-            refs/heads/main|refs/heads/feat/v1-hosted-ci-verification) ;;
+            refs/heads/main) ;;
             *)
               echo "Unsupported V1 candidate ref: $CANDIDATE_REF" >&2
               exit 1
