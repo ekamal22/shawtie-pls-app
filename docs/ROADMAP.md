@@ -28,7 +28,7 @@ Completed milestones:
 | 4 P3 Partnership Lifecycle | DONE | 22/22 gates |
 | 5A M1 Messaging Core | DONE, merged to main | 18/18 gates; combined anchor `5db7a94` |
 | 6 M2 Realtime and Offline Reliability | DONE, merged to main @ `b6183158` | automated/local closure `4bbffdf`; physical Android 14/14 at `b83102f` |
-| V1 Hosted CI Verification | IN_PROGRESS | implement four-job hosted verification plan, then execute all required jobs on one exact release-candidate SHA |
+| V1 Hosted CI Verification | IN_PROGRESS | implement Candidate + six verification jobs + V1 gate, then execute the complete set on one exact candidate SHA |
 
 P3 closure evidence remains:
 
@@ -143,11 +143,20 @@ runtime accepted at `ca7cd35`; UX merge anchor `9f0bea4`
             |
             v
       V1 Hosted CI Verification 🟡
-      1. Baseline
-      2. Security
-      3. PostgreSQL integration
-      4. Browser security
-      then final all-green run on one exact candidate SHA
+      Candidate
+          |
+      +---+---+---+---+---+---+
+      |   |   |   |   |   |
+      v   v   v   v   v   v
+     BL Audit Sec PG-A1 PG-S1 Browser
+      |   |   |   |   |   |
+      +---+---+---+---+---+
+              |
+              v
+           V1 gate
+              |
+              v
+      one exact candidate SHA
             |
             v
       R2 Public Readiness

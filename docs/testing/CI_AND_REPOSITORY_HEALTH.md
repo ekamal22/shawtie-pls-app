@@ -12,7 +12,7 @@ GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1
 
 Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
 
-The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. V1 must expose four required verification surfaces: Baseline, Security, PostgreSQL integration, and Browser security. The final closure record must identify one exact candidate SHA shared by all required V1 evidence.
+The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. Normal CI stays separate from the heavy release workflow. Release verification uses Candidate, six parallel verification jobs (Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security), and V1 gate. The final closure record must identify one exact `github.sha` shared by all required evidence.
 
 ## Repository audit concerns
 
@@ -73,6 +73,8 @@ npm run health
 ```
 
 For the SEC1/S1 security surface, `npm run health` is not a substitute for the focused closure gates. Relevant local commands include:
+
+V1 additionally requires S1 plaintext database inspection, Rust/Cargo advisory review, explicit Rust/WASM setup for hosted Chromium, and separate empty-database SEC1/A1 and S1 PostgreSQL jobs. See `V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 
 ```text
 npm run test:sec1:headers
@@ -244,13 +246,14 @@ A skipped workflow is not evidence that CI passed.
 
 GitHub Actions execution is available again. SEC1 and Pre-V1 follow-up hardening are DONE, and hosted focused validation run `36773261743` is green. V1 is now implementing the hosted verification topology defined in `V1_HOSTED_CI_VERIFICATION_PLAN.md`.
 
-1. implement required Baseline, Security, PostgreSQL integration, and Browser security jobs
-2. preserve SHA-pinned Actions, minimal permissions, explicit timeouts, and controlled concurrency
-3. choose and record one exact release-candidate SHA
-4. create or push the V1 release-verification commit without a skip marker, or manually dispatch the expanded workflow against that candidate
-5. inspect every required job result
-6. if any job fails, fix the defect with a regression and rerun the complete required V1 job set on the final candidate
-7. record the final all-green run evidence
+1. create the dedicated release-verification workflow plus pinned local workspace setup action
+2. extend repository-health pin scanning to local composite actions
+3. implement Candidate, Baseline, Dependency audit, Security, isolated PostgreSQL SEC1/A1, isolated PostgreSQL S1, Browser security, and V1 gate
+4. shakedown on a feature branch using a temporary branch-only push trigger, then remove it before merge
+5. manually dispatch the final release workflow against `main`; candidate equals `github.sha`
+6. inspect every required job and SHA result
+7. fix deterministic failures with regression evidence and rerun the complete set on a new candidate
+8. record final all-green evidence plus explicit hosted scope/non-scope
 3. fix any repository-health or domain-test failure
 4. record the successful run in PROJECT_STATE
 5. only then treat the GitHub-hosted baseline gate as verified

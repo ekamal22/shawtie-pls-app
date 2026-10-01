@@ -46,7 +46,9 @@ Local repository health and domain tests remain usable without hosted Actions.
 
 V1 release verification must distinguish the fast repository baseline from heavier security/integration evidence. `npm run health` remains the general baseline, but it is not by itself sufficient evidence for production web security or S1 production-bundle invariants. The release plan must explicitly require the focused SEC1/S1 gates and must also account for disposable PostgreSQL and real-Chromium integration coverage, whether those run in the same workflow or in separately required hosted jobs.
 
-The accepted V1 topology is four required hosted surfaces: Baseline, Security, PostgreSQL integration, and Browser security. All four must be green for one exact release-candidate SHA before V1 can close. A partial rerun cannot combine with green jobs from a different source SHA to manufacture V1 closure.
+The accepted V1 topology keeps normal CI separate from release verification. Release verification uses Candidate, six parallel verification jobs (Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security), and V1 gate. All required jobs must be green for the same exact `github.sha`. A partial rerun cannot combine with jobs from a different source SHA to manufacture closure.
+
+V1 PostgreSQL scope is intentionally SEC1/A1 plus S1, with `s1:plaintext:assert-clean` after S1. Browser scope is the existing SEC1 production-server Chromium suite plus the S1 Vite harness Chromium suite. Other historical PostgreSQL, MinIO, Playwright, and Redmi matrices are not silently claimed as re-executed by V1.
 
 ## Test layers
 

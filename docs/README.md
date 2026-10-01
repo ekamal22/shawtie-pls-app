@@ -35,7 +35,7 @@ The 2026-09-29 follow-up audits found no new critical authentication bypass, cro
 
 Governance:
 
-- `testing/V1_HOSTED_CI_VERIFICATION_PLAN.md` for the active V1 workflow design and completion contract
+- `testing/V1_HOSTED_CI_VERIFICATION_PLAN.md` for the active V1 release workflow design, exact-SHA integrity model, hosted job topology, failure policy, scope, and completion contract
 - `architecture/ARCHITECTURE_BASELINE.md`
 - `architecture/ARCHITECTURE_GOVERNANCE.md`
 - `adr/ADR-011-architecture-freeze-and-change-control.md`

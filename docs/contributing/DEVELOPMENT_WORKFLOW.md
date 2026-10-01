@@ -73,7 +73,7 @@ Before starting implementation work, identify the roadmap epic in `../ROADMAP_EP
 
 Acceptance gates are part of the implementation contract.
 
-For V1 Hosted CI Verification, the canonical execution contract is `../testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. V1 uses one exact release-candidate SHA and requires all hosted Baseline, Security, PostgreSQL integration, and Browser security surfaces to be green for that source state. If V1 finds a defect, fix it with a regression and rerun the complete required V1 job set on the final candidate.
+For V1 Hosted CI Verification, the canonical execution contract is `../testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. Normal CI remains separate from the release gate. V1 uses one exact `github.sha` and requires Candidate, Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security, and V1 gate to succeed for that source state. If V1 finds a deterministic defect, fix it with regression evidence and rerun the complete required set on the new candidate.
 
 A pull request may satisfy only some gates. That is valid, but the epic remains IN_PROGRESS until all required gates are verified.
 

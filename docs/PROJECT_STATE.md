@@ -186,7 +186,7 @@ The persistence schema foundation has repeatable disposable PostgreSQL evidence.
 
 Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned external Actions and repository-health checks. GitHub-hosted execution is available again: the minimal capacity probe passed and focused Pre-V1 hardening validation run `36773261743` passed. The real V1 release-verification workflow has not yet been executed and remains tracked separately under V1. Documentation and non-V1 commits continue to use `[skip ci]` deliberately.
 
-The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. It requires four hosted verification surfaces: Baseline, Security, PostgreSQL integration, and Browser security. The final closure evidence must correspond to one exact release-candidate SHA and all required jobs must be green for that same source state.
+The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`. It keeps normal CI separate from a dedicated release-verification workflow. The release workflow uses Candidate, six parallel verification jobs (Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security), and V1 gate. Closure requires one exact `github.sha` across every required job.
 
 ## Repository audit concerns
 
@@ -203,7 +203,7 @@ The 2026-09-29 follow-up repository-wide audits found no new critical authentica
 - development commits are currently unsigned. This does not invalidate existing milestone evidence, but the stable release should be anchored to an immutable signed release tag or equivalent signed provenance, with the exact release SHA and artifact checksums recorded.
 
 - `main` is currently unprotected in GitHub. Required status checks are off and the repository has no rulesets. R2 must add protection suitable for the verified fast-forward workflow and prevent force pushes and branch deletion. Once V1 proves the hosted Baseline CI status, release-relevant changes must be gated by the appropriate hosted check.
-- GitHub Actions has zero runs on `main`. V1 remains the first hosted execution and evidence gate.
+- GitHub Actions capacity is available and hosted probe/focused runs exist, but the dedicated V1 release-verification workflow has not yet executed. V1 remains the first full hosted release-verification evidence gate.
 - The repository is public and has no project-level license. R2 must record an explicit licensing decision before public readiness.
 - `design/m3-media-voice` is a divergent obsolete design branch. Its stranded ADR-012 describes a pre-S1 server-recoverable media-key bridge that was not adopted by current `main`; it is non-authoritative and must not be merged as current architecture.
 - production provider, deployment, release, rollback, backup/recovery, and operational automation remain incomplete or placeholder-only and are already owned by R2.
@@ -224,7 +224,7 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. implement the V1 hosted workflow topology defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`: required Baseline, Security, PostgreSQL integration, and Browser security jobs
+1. implement the V1 hosted workflow topology defined in `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`: separate release workflow with Candidate, Baseline, Dependency audit, Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL, Browser security, and V1 gate
 2. execute the real V1 release-verification workflow against one exact release-candidate SHA; GitHub Actions capacity is available
 3. fix and regress any defect found by V1, then rerun the complete required V1 job set on the final candidate
 4. record the final all-green hosted evidence and mark V1 DONE
