@@ -8,11 +8,9 @@ The repository workspace, TypeScript, linting, formatting, runtime-contract, dep
 
 F1 Repository Foundation and Executable Guardrails is therefore complete.
 
-GitHub-hosted execution is tracked separately as V1 Hosted CI Verification. SEC1 Pre-V1 Security Hardening is DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`; final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5`, where focused security, PostgreSQL, Chromium, production scan, full health, audit, and Git hygiene passed. V1 remains required before R2 Public Readiness can be marked DONE. The two source defects found by the later 2026-09-29 audit are fixed on `main @ a1659dc` and passed hosted focused validation run `36773261743`. GitHub Actions capacity is available again. The remaining V1 blocker is hosted security-coverage expansion followed by the real release-verification run.
+V1 Hosted CI Verification is DONE. Final executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3` passed V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306`. Candidate, Baseline, Dependency audit, Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL with plaintext assertion, Browser security, and V1 gate all passed on the same exact SHA.
 
-Do not describe the GitHub Actions gate as verified until a real workflow run completes successfully.
-
-The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. Normal CI stays separate from the heavy release workflow. Release verification uses Candidate, six parallel verification jobs (Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security), and V1 gate. The final closure record must identify one exact `github.sha` shared by all required evidence.
+The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. Durable closure evidence is `V1_HOSTED_VERIFICATION_EVIDENCE.md`. Normal CI stays separate from the heavy release workflow. R2 Public Readiness is now the active release milestone.
 
 ## Repository audit concerns
 
@@ -22,8 +20,8 @@ Repository-wide audits on 2026-09-29 found no new critical authentication bypass
 - CLOSED: route-local S1 encoded request ceilings and sanitized Fastify 4xx parser/client error mapping are implemented on `main @ a1659dc` and verified by the same hosted run.
 
 - GitHub reports `main` as unprotected, with required status checks disabled and no repository rulesets. R2 must establish protection that prevents force pushes and branch deletion and, after V1 establishes the hosted check, requires the appropriate CI status for release-relevant changes. The protection design must preserve the repository's verified fast-forward milestone history rather than silently changing merge semantics.
-- GitHub Actions capacity has been re-confirmed by a successful minimal hosted probe and the successful focused hardening validation run. The real V1 release-verification workflow itself has not yet been executed.
-- The current V1 workflow runs `npm run ci:baseline`, which aliases `npm run health`. `health` does not execute the dedicated SEC1/S1 security gates `test:sec1:headers`, `sec1:passwords:check`, `sec1:production:scan`, `s1:production:scan`, `sec1:lint`, or `sec1:format:check`. The root lint/format globs also do not fully cover the production web `.mjs` serving files. A hosted green result is therefore not yet sufficient security-regression evidence until V1 expands or adds the required job surface.
+- V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed on executable candidate `d28668b5`. Hosted V1 evidence is complete.
+- V1 hosted coverage now explicitly includes the dedicated SEC1/S1 header, password-corpus, lint, format, hardening-regression, production-scan, PostgreSQL, plaintext, Rust/Cargo advisory, and Chromium/OpenMLS surfaces. The normal baseline is intentionally smaller and is not treated as a substitute for release verification.
 - The public repository has no project-level license. Before public readiness, the owner must explicitly choose and record a licensing policy, including the intentional choice to remain unlicensed if that is preferred.
 - `design/m3-media-voice` is a divergent historical design branch and contains `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`, which is not present on current `main` and does not describe the final production architecture. It must not be merged as current architecture. R2 should record an explicit archive, deletion, or non-authoritative disposition.
 - `infra/cloudflare`, `infra/docker`, `infra/local`, and `scripts/release` remain placeholder-only surfaces. Production provider configuration, deployment, release, rollback, backup/recovery, and operational evidence remain R2 work.
@@ -44,17 +42,17 @@ It is designed to run on:
 
 The workflow uses one small job to reduce GitHub Actions consumption.
 
-Current steps are:
+Current normal-CI steps are:
 
 1. checkout with persisted credentials disabled
-2. use Node 22.18.0
-3. install exactly from the committed lockfile with `npm ci`
-4. run the complete repository baseline through `npm run ci:baseline`
-5. run `npm audit --audit-level=high` as a hard dependency gate
+2. run the local composite workspace setup with Node 22.18.0
+3. install exactly from the committed lockfile with `npm ci --ignore-scripts`
+4. assert the checked-out SHA equals `github.sha`
+5. run the complete repository baseline through `npm run ci:baseline`
 
-Follow-up audit note: these five steps are necessary but not sufficient for V1 release verification. Before V1 is executed for evidence, the workflow must also run or require the SEC1/S1-focused header/proxy/server tests, password-corpus integrity check, SEC1 and S1 production scans, and dedicated SEC1 lint/format checks. The heavier disposable PostgreSQL and real-Chromium security/integration jobs may be separate hosted jobs, but they must be explicitly required by the release-verification plan rather than silently omitted.
+Dependency audit and the focused SEC1/S1 release surfaces live in the separate V1 release workflow rather than the fast normal-CI job.
 
-The workflow uses read-only repository permissions, a job timeout, concurrency cancellation, and full commit-SHA pinning for external GitHub Actions.
+Normal CI uses read-only repository permissions, an explicit timeout, PR-only cancellation of superseded work, and full commit-SHA pinning for external GitHub Actions. The release workflow uses non-cancelling SHA-keyed concurrency.
 
 ## Local equivalent
 
@@ -74,7 +72,7 @@ npm run health
 
 For the SEC1/S1 security surface, `npm run health` is not a substitute for the focused closure gates. Relevant local commands include:
 
-V1 additionally requires S1 plaintext database inspection, Rust/Cargo advisory review, explicit Rust/WASM setup for hosted Chromium, and separate empty-database SEC1/A1 and S1 PostgreSQL jobs. See `V1_HOSTED_CI_VERIFICATION_PLAN.md`.
+V1 closure includes S1 plaintext database inspection, Rust/Cargo advisory review, explicit Rust/WASM setup for hosted Chromium, and separate empty-database SEC1/A1 and S1 PostgreSQL jobs. See `V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ```text
 npm run test:sec1:headers
