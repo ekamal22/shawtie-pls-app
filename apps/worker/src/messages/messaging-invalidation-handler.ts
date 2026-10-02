@@ -2,10 +2,17 @@ import {
   M2_REALTIME_PROTOCOL_VERSION,
   type M2InternalRealtimeNotification,
 } from "@shawtie/contracts";
-import type { OutboxEvent } from "@shawtie/db";
+import {
+  loadConversationParticipants,
+  loadMessageProjection,
+  type DatabasePool,
+  type OutboxEvent,
+} from "@shawtie/db";
 import type { RealtimeInvalidationPublisher } from "../realtime/realtime-publisher.ts";
 import { PermanentWorkerError } from "../runtime/errors.ts";
 import type { OutboxHandler } from "../outbox/outbox-handler.ts";
+import { deliverAccountPush } from "../notifications/generic-push-handler.ts";
+import type { WebPushConfig } from "../calls/web-push.ts";
 
 const M1_EVENT_TYPES = [
   "message.created",
@@ -118,21 +125,44 @@ function toNotification(
 export function createMessagingInvalidationHandler(
   eventType: M1EventType,
   publisher?: RealtimeInvalidationPublisher,
+  database?: DatabasePool,
+  pushConfig: WebPushConfig | null = null,
 ): OutboxHandler {
   return {
     eventType,
     payloadVersion: 1,
-    async deliver({ event }): Promise<void> {
+    async deliver({ event, signal }): Promise<void> {
       assertContentFreeInvalidation(event);
       if (publisher) await publisher.publish(toNotification(event));
+
+      if (event.eventType !== "message.created" || !database || !pushConfig) return;
+      const conversationId = String(event.payload.conversationId);
+      const messageId = String(event.payload.messageId);
+      const [participants, message] = await Promise.all([
+        loadConversationParticipants(database.pool, conversationId),
+        loadMessageProjection(database.pool, conversationId, messageId),
+      ]);
+      if (!participants || !message) return;
+      const recipients = participants.memberIds.filter(
+        (accountId) => accountId !== message.senderAccountId,
+      );
+      await deliverAccountPush(
+        database,
+        pushConfig,
+        recipients,
+        { v: 1, type: "message_changed" },
+        signal,
+      );
     },
   };
 }
 
 export function createM1MessagingInvalidationHandlers(
   publisher?: RealtimeInvalidationPublisher,
+  database?: DatabasePool,
+  pushConfig: WebPushConfig | null = null,
 ): readonly OutboxHandler[] {
   return M1_EVENT_TYPES.map((eventType) =>
-    createMessagingInvalidationHandler(eventType, publisher),
+    createMessagingInvalidationHandler(eventType, publisher, database, pushConfig),
   );
 }
