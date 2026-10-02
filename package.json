@@ -151,7 +151,7 @@
     "sec1:passwords:check": "node scripts/security/generate-common-passwords.mjs --check",
     "sec1:lint": "eslint \"apps/web/server*.mjs\" \"apps/web/proxy-security.mjs\" \"apps/web/tests/sec1*.mjs\" \"scripts/ci/test-sec1-closure.mjs\" \"scripts/security/*sec1*.mjs\" \"scripts/security/generate-common-passwords.mjs\" \"scripts/security/check-web-security-headers.mjs\" \"scripts/test/sec1-*.mjs\" \"playwright.sec1.config.ts\" \"tests/e2e/sec1-security.spec.ts\" --max-warnings=0",
     "secret:scan": "node scripts/security/secret-scan.mjs",
-    "test:r2:security": "node --test apps/api/tests/r2.security.test.ts apps/web/tests/r2.public-readiness.test.ts apps/web/tests/r2.accessibility.test.ts",
+    "test:r2:security": "node --test apps/api/tests/r2.security.test.ts apps/web/tests/r2.public-readiness.test.ts apps/web/tests/r2.accessibility.test.ts && npm run test:r2:control-plane",
     "test:r2:performance": "node scripts/performance/web-budget.mjs",
     "test:r2:automated": "npm run build --workspace @shawtie/web && npm run test:r2:security && npm run secret:scan && npm run test:r2:performance",
     "test:r2:closure": "node scripts/ci/r2-closure.mjs",
@@ -166,7 +166,8 @@
     "release:r2:governance": "node scripts/release/configure-github-governance.mjs",
     "release:r2:public-origin": "node scripts/release/verify-public-origin.mjs",
     "ops:r2:support": "node scripts/operations/support-reports.mjs",
-    "release:r2:production-contract": "node scripts/release/verify-production-contract.mjs"
+    "release:r2:production-contract": "node scripts/release/verify-production-contract.mjs",
+    "test:r2:control-plane": "node --test scripts/ci/r2-control-plane.test.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
