@@ -1331,6 +1331,7 @@ export class AccountService {
           profile.email,
           "account_deletion_requested",
           now,
+          { deadline: recoverUntil.toISOString() },
         );
       }
       return recoverUntil.toISOString();
