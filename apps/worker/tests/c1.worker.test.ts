@@ -35,4 +35,5 @@ test("C1 outbox sends content-free realtime and generic push only", async () => 
   assert.equal(push.includes("WEB_PUSH_REQUEST_TIMEOUT_MS = 10_000"), true);
   assert.equal(push.includes("new AbortController()"), true);
   assert.equal(defaults.includes("createC1CallOutboxHandlers"), true);
+  assert.equal(defaults.includes("createSecurityEmailOutboxHandler"), true);
 });
