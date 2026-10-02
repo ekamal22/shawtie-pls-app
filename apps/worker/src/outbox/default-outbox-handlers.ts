@@ -11,6 +11,7 @@ import { createM2RealtimeOutboxHandlers } from "../realtime/realtime-outbox-hand
 import { OutboxHandlerRegistry } from "./outbox-handler-registry.ts";
 import { createC1CallOutboxHandlers } from "../calls/call-outbox-handler.ts";
 import { webPushConfigFromEnv } from "../calls/web-push.ts";
+import { createGenericPushHandlers } from "../notifications/generic-push-handler.ts";
 
 export interface DefaultOutboxHandlerOptions {
   readonly email?: EmailDeliveryPort;
@@ -27,7 +28,8 @@ export function createDefaultOutboxHandlers(
 
   const registry = new OutboxHandlerRegistry();
   const publisher = database ? new PostgresRealtimeInvalidationPublisher(database) : undefined;
-  for (const handler of createM1MessagingInvalidationHandlers(publisher)) {
+  const pushConfig = webPushConfigFromEnv();
+  for (const handler of createM1MessagingInvalidationHandlers(publisher, database, pushConfig)) {
     registry.register(handler);
   }
   for (const handler of createM2RealtimeOutboxHandlers(publisher)) {
@@ -37,8 +39,13 @@ export function createDefaultOutboxHandlers(
     registry.register(createEmailChallengeOutboxHandler(database, options.email, options.authKeys));
     registry.register(createSecurityEmailOutboxHandler(database, options.email));
   }
+  if (database) {
+    for (const handler of createGenericPushHandlers(database, pushConfig)) {
+      registry.register(handler);
+    }
+  }
   if (database && publisher) {
-    for (const handler of createC1CallOutboxHandlers(database, publisher, webPushConfigFromEnv())) {
+    for (const handler of createC1CallOutboxHandlers(database, publisher, pushConfig)) {
       registry.register(handler);
     }
   }
