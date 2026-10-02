@@ -58,6 +58,10 @@ export const usernameChangeSchema = z.object({ username });
 export const dateOfBirthCorrectionSchema = z.object({ dateOfBirth: isoDate });
 export const deviceRenameSchema = z.object({ displayName: z.string().trim().min(1).max(80) });
 export const deviceIdParamsSchema = z.object({ deviceId: uuid });
+export const notificationPreferencesUpdateSchema = z.object({
+  messagePreviewEnabled: z.boolean(),
+});
+
 
 export type RegistrationStartInput = z.infer<typeof registrationStartSchema>;
 export type RegistrationVerifyInput = z.infer<typeof registrationVerifySchema>;
@@ -73,3 +77,5 @@ export type EmailChangeCompleteInput = z.infer<typeof emailChangeCompleteSchema>
 export type UsernameChangeInput = z.infer<typeof usernameChangeSchema>;
 export type DateOfBirthCorrectionInput = z.infer<typeof dateOfBirthCorrectionSchema>;
 export type DeviceRenameInput = z.infer<typeof deviceRenameSchema>;
+
+export type NotificationPreferencesUpdateInput = z.infer<typeof notificationPreferencesUpdateSchema>;
