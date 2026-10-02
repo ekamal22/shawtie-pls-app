@@ -8,7 +8,8 @@ test("R2 service worker cache is release scoped and does not globally match old 
   assert.equal(source.includes('"shawtie-shell-" + safeReleaseId'), true);
   assert.equal(source.includes('const cached = await caches.match("/")'), false);
   assert.equal(source.includes("await cache.match(request)"), true);
-  assert.equal(source.includes('requestUrl.pathname.startsWith("/api/")'), true);
+  assert.equal(source.includes('url.pathname.startsWith("/api/")'), true);
+  assert.equal(source.includes("isPrivateApi(url)"), true);
 });
 
 test("R2 generic push payload display never reads message plaintext", async () => {
