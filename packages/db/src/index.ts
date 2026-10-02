@@ -65,7 +65,10 @@ export type { QueryExecutor } from "./types/query-executor.ts";
 export {
   insertAccountPolicyAcceptance,
   insertAbuseReport,
+  insertErasureTombstone,
+  listErasureTombstones,
   type AbuseReportCategory,
+  type ErasureTombstone,
 } from "./repositories/public-readiness.ts";
 
 export const databaseFoundationStatus = "f2-runtime-implemented" as const;
