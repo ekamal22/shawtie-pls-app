@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE registration_intents
   ADD COLUMN policy_version text,
   ADD COLUMN policy_accepted_at timestamptz;
@@ -46,5 +44,3 @@ CREATE INDEX abuse_reports_reporter_created_idx
 
 CREATE INDEX abuse_reports_status_created_idx
   ON abuse_reports (status, created_at ASC);
-
-COMMIT;
