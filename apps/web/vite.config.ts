@@ -5,7 +5,16 @@ const callingPermissionHeaders = {
   "Permissions-Policy": "camera=(self), microphone=(self)",
 };
 
-export default defineConfig({
+export default defineConfig(() => {
+  const releaseId =
+    process.env.SHAWTIE_RELEASE_ID?.trim() ||
+    process.env.GITHUB_SHA?.trim() ||
+    "unversioned";
+
+  return {
+  define: {
+    __SHAWTIE_RELEASE_ID__: JSON.stringify(releaseId),
+  },
   plugins: [react()],
   server: {
     headers: callingPermissionHeaders,
@@ -20,4 +29,5 @@ export default defineConfig({
   preview: {
     headers: callingPermissionHeaders,
   },
+  };
 });
