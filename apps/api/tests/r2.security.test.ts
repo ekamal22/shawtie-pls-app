@@ -39,6 +39,7 @@ test("R2 account deletion scrubs new preference and support text", async () => {
     "utf8",
   );
   assert.equal(source.includes("DELETE FROM account_notification_preferences"), true);
+  assert.equal(source.includes("DELETE FROM account_policy_acceptances"), true);
   assert.equal(source.includes("DELETE FROM abuse_reports WHERE reporter_account_id"), true);
   assert.equal(source.includes("UPDATE abuse_reports SET target_account_id = NULL"), true);
 });
