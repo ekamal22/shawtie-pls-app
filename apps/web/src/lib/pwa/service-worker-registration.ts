@@ -12,7 +12,8 @@ function announceWaiting(registration: ServiceWorkerRegistration): void {
 export async function registerM2ServiceWorker(): Promise<void> {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
 
-  const registration = await navigator.serviceWorker.register("/sw.js", {
+  const releaseId = encodeURIComponent(__SHAWTIE_RELEASE_ID__ || "unversioned");
+  const registration = await navigator.serviceWorker.register(`/sw.js?release=${releaseId}`, {
     scope: "/",
     updateViaCache: "none",
   });
