@@ -33,6 +33,7 @@ import {
   isUsernameAvailable,
   isVerifiedEmailAvailable,
   listDevices,
+  loadNotificationPreferences,
   lockAccountForProfileMutation,
   lockAuthenticatedSession,
   lockAccounts,
@@ -59,6 +60,7 @@ import {
   terminalizeCurrentCallForPartnership,
   loadCallParticipants,
   updateDisplayName,
+  upsertNotificationPreferences,
   updatePasswordCredential,
   wakePendingRelationshipReleaseActionsForPartnership,
   withTransaction,
@@ -82,6 +84,7 @@ import type {
   DateOfBirthCorrectionInput,
   EmailChangeStartInput,
   LoginInput,
+  NotificationPreferencesUpdateInput,
   PasswordRecoveryCompleteInput,
   ProfileUpdateInput,
   RegistrationStartInput,
@@ -808,6 +811,36 @@ export class AccountService {
     const profile = await getAccountProfile(this.database.pool, accountId);
     if (!profile) throw new ApiError(404, "AUTH_REQUIRED");
     return profile;
+  }
+
+  async getNotificationPreferences(accountId: string) {
+    const profile = await getAccountProfile(this.database.pool, accountId);
+    if (!profile) throw new ApiError(404, "AUTH_REQUIRED");
+    const preference = await loadNotificationPreferences(this.database.pool, accountId);
+    return {
+      messagePreviewEnabled: preference.messagePreviewEnabled,
+      updatedAt: preference.updatedAt?.toISOString() ?? null,
+    };
+  }
+
+  async updateNotificationPreferences(
+    auth: AuthContext,
+    input: NotificationPreferencesUpdateInput,
+  ) {
+    return withTransaction(this.database, async (transaction) => {
+      const now = await getTransactionTimestamp(transaction);
+      await lockAccounts(transaction, [auth.session.accountId]);
+      await this.#assertSession(transaction, auth);
+      const preference = await upsertNotificationPreferences(transaction, {
+        accountId: auth.session.accountId,
+        messagePreviewEnabled: input.messagePreviewEnabled,
+        updatedAt: now,
+      });
+      return {
+        messagePreviewEnabled: preference.messagePreviewEnabled,
+        updatedAt: preference.updatedAt?.toISOString() ?? now.toISOString(),
+      };
+    });
   }
 
   async updateProfile(auth: AuthContext, input: ProfileUpdateInput): Promise<void> {
