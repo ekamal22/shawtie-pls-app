@@ -105,7 +105,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
           one exact candidate SHA
                 |
                 v
-        R2 Public Readiness ⚪
+        R2 Public Readiness 🟡 IN PROGRESS
                 |
                 v
           STABLE RELEASE 🔒
@@ -117,6 +117,8 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         X2 Deferred Heavy Features ⏸
 
 V1 Hosted CI Verification ✅ is DONE at executable candidate `d28668b5`. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact source state, and the final gate emitted `V1_GATE_PASS`. Canonical evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
+
+R2 is active on `feat/r2-brevo-auth-email`. The current branch implements provider-neutral Brevo authentication-challenge delivery, but real provider acceptance and full-repository health are still open. Repo-wide audit blockers include serious-event email delivery, broader Web Push and preview privacy, service-worker cache rollover, canonical network abuse subjects, trusted backend transport enforcement, abuse/support and privacy/terms readiness, production infrastructure/backup/observability/release tooling, repository governance, accessibility/performance closure, and final release acceptance. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 ~~~
 
 ## Mermaid dependency view
@@ -163,7 +165,7 @@ flowchart TD
 
     UX8 --> SEC1["SEC1 Pre-V1 Security Hardening ✅"]
     SEC1 --> V1["V1 Hosted CI Verification ✅"]
-    V1 --> R2["R2 Public Readiness ⚪"]
+    V1 --> R2["R2 Public Readiness 🟡 IN PROGRESS"]
 
     R2 --> RELEASE["Stable Release 🔒"]
     RELEASE --> X1["X1 Post-stable Maturity ⚪"]
