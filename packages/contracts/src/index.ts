@@ -7,6 +7,7 @@ export {
 } from "./runtime/schema.ts";
 
 export {
+  CURRENT_LEGAL_POLICY_VERSION,
   accountRecoveryCompleteSchema,
   dateOfBirthCorrectionSchema,
   deviceIdParamsSchema,
