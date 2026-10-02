@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BrevoEmailDelivery, renderSecurityEmail } from "../src/auth/brevo-email-delivery.ts";
+import {
+  BrevoEmailDelivery,
+  renderEmailMessage,
+  renderSecurityEmail,
+} from "../src/auth/brevo-email-delivery.ts";
 import { PermanentWorkerError, RetryableWorkerError } from "../src/runtime/errors.ts";
 
 const message = {
@@ -32,6 +36,29 @@ test("verification template renders code and expiry in HTML and text", () => {
   assert.match(rendered.htmlContent, /12345678/);
   assert.match(rendered.htmlContent, /expires in 10 minutes/);
   assert.doesNotMatch(rendered.htmlContent, /person@example\.test/);
+});
+
+test("serious security templates stay minimal and render reviewed deadline context", () => {
+  const rendered = renderEmailMessage({
+    deliveryId: "security-1",
+    destination: "person@example.test",
+    template: "breakup_started",
+    parameters: { deadline: "2026-10-10T12:00:00.000Z" },
+  });
+  assert.equal(rendered.subject, "A Shawtie pls breakup process started");
+  assert.match(rendered.textContent, /2026-10-10T12:00:00.000Z/);
+  assert.doesNotMatch(rendered.textContent, /message|photo|nickname|partner name/i);
+  assert.doesNotMatch(rendered.htmlContent, /person@example\.test/);
+
+  assert.equal(
+    renderEmailMessage({
+      deliveryId: "security-2",
+      destination: "old@example.test",
+      template: "email_changed_old_address",
+      parameters: {},
+    }).subject,
+    "Your Shawtie pls email was changed",
+  );
 });
 
 test("verification template rejects unsupported or malformed input", () => {
