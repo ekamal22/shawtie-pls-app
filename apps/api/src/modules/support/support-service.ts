@@ -60,6 +60,7 @@ export class SupportService {
         id: reportId,
         reporterAccountId: auth.session.accountId,
         targetAccountId: input.targetAccountId ?? null,
+        subjectReference: input.subjectReference?.trim() || null,
         category: input.category,
         details: input.details?.trim() || null,
         createdAt: now,
