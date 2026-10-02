@@ -30,6 +30,7 @@ export async function insertAbuseReport(
     readonly id: string;
     readonly reporterAccountId: string;
     readonly targetAccountId?: string | null;
+    readonly subjectReference?: string | null;
     readonly category: AbuseReportCategory;
     readonly details?: string | null;
     readonly createdAt: Date;
@@ -37,12 +38,14 @@ export async function insertAbuseReport(
 ): Promise<void> {
   await executor.query(
     `INSERT INTO abuse_reports (
-       id, reporter_account_id, target_account_id, category, details, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6)`,
+       id, reporter_account_id, target_account_id, subject_reference,
+       category, details, created_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
     [
       input.id,
       input.reporterAccountId,
       input.targetAccountId ?? null,
+      input.subjectReference ?? null,
       input.category,
       input.details ?? null,
       input.createdAt,
