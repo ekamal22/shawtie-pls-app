@@ -7,6 +7,7 @@ import {
   emailChangeCompleteSchema,
   emailChangeStartSchema,
   loginSchema,
+  notificationPreferencesUpdateSchema,
   parseAtBoundary,
   passwordRecoveryCompleteSchema,
   profileUpdateSchema,
@@ -154,6 +155,19 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
     const input = parseAtBoundary(profileUpdateSchema, request.body);
     await service.updateProfile(auth, input);
     return { ok: true };
+  });
+
+  app.get("/api/v1/me/notification-preferences", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    reply.header("cache-control", "private, no-store");
+    return service.getNotificationPreferences(auth.session.accountId);
+  });
+
+  app.patch("/api/v1/me/notification-preferences", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    const input = parseAtBoundary(notificationPreferencesUpdateSchema, request.body);
+    reply.header("cache-control", "private, no-store");
+    return service.updateNotificationPreferences(auth, input);
   });
 
   app.post("/api/v1/me/email-change/start", async (request) => {
