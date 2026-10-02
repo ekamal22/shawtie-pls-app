@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const CURRENT_LEGAL_POLICY_VERSION = "2026-10-03" as const;
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const password = z.string().min(1).max(1024);
 const email = z.string().trim().min(3).max(254);
@@ -13,6 +15,9 @@ export const registrationStartSchema = z.object({
   dateOfBirth: isoDate,
   email,
   password,
+  policyVersion: z.string().min(1).max(64).optional(),
+  termsAccepted: z.boolean().optional(),
+  privacyAccepted: z.boolean().optional(),
 });
 
 export const registrationVerifySchema = z.object({
