@@ -12,6 +12,7 @@ export const abuseReportCategorySchema = z.enum([
 export const abuseReportCreateSchema = z.object({
   category: abuseReportCategorySchema,
   targetAccountId: z.string().uuid().nullable().optional(),
+  subjectReference: z.string().trim().min(1).max(120).nullable().optional(),
   details: z.string().trim().min(1).max(2000).nullable().optional(),
 });
 
