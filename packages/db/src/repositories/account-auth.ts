@@ -96,7 +96,7 @@ export async function lockRegistrationIntent(
   const result = await executor.query<RegistrationIntentDbRow>(
     `SELECT id, username_normalized, username_display, display_name,
             date_of_birth::text, email_normalized, email_display, password_hash,
-            expires_at, completed_at
+            policy_version, policy_accepted_at, expires_at, completed_at
      FROM registration_intents
      WHERE id = $1
      FOR UPDATE`,
