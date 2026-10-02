@@ -14,6 +14,10 @@ import {
 } from "../../../design/primitives.tsx";
 import { apiRequest } from "../../../lib/api-client.ts";
 import { rememberPendingAccountDeletion } from "../../../lib/offline/account-control.ts";
+import {
+  readNotificationPreviewPreference,
+  setNotificationPreviewPreference,
+} from "../../../lib/pwa/notification-preferences.ts";
 import { PartnerRequestsPanel } from "../../partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../../partnership/PartnershipPanel.tsx";
 import { CryptoSecurityPanel } from "../../security/CryptoSecurityPanel.tsx";
@@ -97,6 +101,9 @@ export function UsScreen({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [notificationPreview, setNotificationPreviewState] = useState(
+    readNotificationPreviewPreference,
+  );
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -204,6 +211,26 @@ export function UsScreen({
               options={THEME_OPTIONS}
               onChange={theme.setPreference}
             />
+          </section>
+
+          <section className="us-block">
+            <h2>Notification privacy</h2>
+            <p className="hint">
+              Notification previews are hidden on this device by default. Even when enabled,
+              protected message content is never sent to the push provider.
+            </p>
+            <label className="security-confirm">
+              <input
+                type="checkbox"
+                checked={notificationPreview}
+                onChange={(event) => {
+                  const enabled = event.target.checked;
+                  setNotificationPreviewState(enabled);
+                  void setNotificationPreviewPreference(enabled);
+                }}
+              />
+              <span>Show notification type details on this device</span>
+            </label>
           </section>
 
           <section className="us-block">
