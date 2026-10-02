@@ -38,7 +38,13 @@ function placeholderContext(line) {
 }
 
 function scan(label, text) {
-  const findings = [];
+  const shallow = command(["rev-parse", "--is-shallow-repository"]).trim() === "true";
+if (process.env.SECRET_SCAN_REQUIRE_FULL_HISTORY === "1" && shallow) {
+  console.error("SECRET_SCAN_FAIL repository_is_shallow=true");
+  process.exit(1);
+}
+
+const findings = [];
   const lines = text.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
@@ -98,4 +104,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log("SECRET_SCAN_PASS tracked=" + tracked.length + " history=all");
+console.log("SECRET_SCAN_PASS tracked=" + tracked.length + " history=" + (shallow ? "shallow" : "full"));
