@@ -12,22 +12,22 @@ export default defineConfig(() => {
     "unversioned";
 
   return {
-  define: {
-    __SHAWTIE_RELEASE_ID__: JSON.stringify(releaseId),
-  },
-  plugins: [react()],
-  server: {
-    headers: callingPermissionHeaders,
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: false,
-        ws: true,
+    define: {
+      __SHAWTIE_RELEASE_ID__: JSON.stringify(releaseId),
+    },
+    plugins: [react()],
+    server: {
+      headers: callingPermissionHeaders,
+      proxy: {
+        "/api": {
+          target: "http://127.0.0.1:3000",
+          changeOrigin: false,
+          ws: true,
+        },
       },
     },
-  },
-  preview: {
-    headers: callingPermissionHeaders,
-  },
+    preview: {
+      headers: callingPermissionHeaders,
+    },
   };
 });
