@@ -30,6 +30,7 @@ export {
   BrevoEmailDelivery,
   brevoEmailConfigFromEnv,
   emailDeliveryFromEnv,
+  renderEmailMessage,
   renderSecurityEmail,
   type BrevoEmailConfig,
 } from "./auth/brevo-email-delivery.ts";
