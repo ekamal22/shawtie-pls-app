@@ -23,7 +23,8 @@ await client.connect();
 try {
   if (command === "list") {
     const result = await client.query(
-      `SELECT id, reporter_account_id, target_account_id, category, details, status, created_at
+      `SELECT id, reporter_account_id, target_account_id, subject_reference,
+              category, details, status, created_at
        FROM abuse_reports
        WHERE status = 'open'
        ORDER BY created_at ASC
@@ -37,6 +38,7 @@ try {
             id: row.id,
             reporterAccountId: row.reporter_account_id,
             targetAccountId: row.target_account_id,
+            subjectReference: row.subject_reference,
             category: row.category,
             details: row.details,
             status: row.status,
