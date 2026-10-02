@@ -18,6 +18,18 @@ Focused branch verification for the provider adapter passed 8/8 tests under Node
 
 ## Repository audit concerns
 
+Canonical current R2 inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
+The 2026-10-03 repo-wide R2 audit adds several release blockers beyond the earlier SEC1/V1 follow-up list:
+
+- the current Brevo worker wiring covers `auth.email_challenge` only; the pre-existing serious-event `auth.security_email` family is not yet registered in the default provider path
+- general Web Push remains call-focused; required broader notification delivery and configurable message-preview privacy remain open
+- service-worker release cache rollover, canonical network-prefix abuse subjects, and backend-transport enforcement remain source-level R2 fixes
+- abuse/support reporting and privacy-policy/terms launch readiness remain incomplete
+- production deployment, backup/restore, observability, migration/release/rollback automation, branch protection, dedicated secret scanning, licensing, signed provenance, accessibility/performance closure, and final release acceptance remain open
+- the final Brevo branch still needs real provider acceptance and final full `npm run health` before merge
+
+
 Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass found two concrete source defects that were repaired before V1, alongside the existing release-governance work:
 
 - CLOSED: account-wide S1 local crypto lifecycle cleanup is implemented on `main @ a1659dc` and verified by hosted focused validation run `36773261743`.
