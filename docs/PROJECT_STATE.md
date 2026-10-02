@@ -10,6 +10,24 @@ Focused provider verification passes 8/8 under Node 22, and an isolated strict T
 
 This slice is not yet an R2 closure claim. Real sender/domain verification, a real Brevo smoke send, a real end-to-end registration-email test, broader operational observability, and the remaining R2 gates are still open. Canonical operations document: `docs/operations/TRANSACTIONAL_EMAIL.md`.
 
+## R2 repo-wide audit status
+
+A repo-wide R2 audit against `feat/r2-brevo-auth-email @ a165c9a29d1535943a3f107531bb843c229bdc8a` found no evidence of a new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext regression, or committed production secret.
+
+The audit identified concrete release blockers that now belong to R2:
+
+- the current Brevo worker wiring delivers authentication challenges only; the durable `auth.security_email` family is not registered in the default provider path, so serious password/account/partnership emails are not yet externally delivered
+- general Web Push remains focused on generic call-state reconciliation; message/partner-request notification transport and configurable message-preview privacy remain open
+- the service worker still uses fixed `shawtie-shell-v1` cache identity and needs release-version rollover or deterministic stale-asset pruning
+- media/realtime/calling network abuse buckets still need canonical network-prefix subjects and reviewed HMAC-key-version behavior
+- plaintext `BACKEND_PROXY_TARGET` policy is documented but not mechanically restricted to trusted private/loopback transport
+- abuse/support reporting, privacy policy/terms, backup/restore safety, observability, production deployment, release/rollback automation, branch protection, dedicated secret scanning, licensing, signed provenance, accessibility/performance closure, and final release acceptance remain open
+- the transitive `RUSTSEC-2026-0173` unmaintained-dependency warning and obsolete `design/m3-media-voice` branch still need explicit disposition
+
+Canonical issue inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
+These findings do not reopen completed SEC1, S1, UX8, or V1 evidence. R2 remains IN PROGRESS and Stable Release remains blocked.
+
 ## Status
 
 Architecture Baseline 1.0 is accepted and frozen.
