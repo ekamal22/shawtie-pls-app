@@ -33,6 +33,16 @@ test("R2 support reports are authenticated and network limited", async () => {
   assert.equal(service.includes("insertAbuseReport"), true);
 });
 
+test("R2 account deletion scrubs new preference and support text", async () => {
+  const source = await readFile(
+    new URL("../../../packages/db/src/repositories/account-auth.ts", import.meta.url),
+    "utf8",
+  );
+  assert.equal(source.includes("DELETE FROM account_notification_preferences"), true);
+  assert.equal(source.includes("DELETE FROM abuse_reports WHERE reporter_account_id"), true);
+  assert.equal(source.includes("UPDATE abuse_reports SET target_account_id = NULL"), true);
+});
+
 test("R2 browser and API sources do not contain provider credentials", async () => {
   const browser = await readFile(new URL("../../web/src/lib/pwa/notification-preferences.ts", import.meta.url), "utf8");
   const support = await readFile(new URL("../src/modules/support/routes.ts", import.meta.url), "utf8");
