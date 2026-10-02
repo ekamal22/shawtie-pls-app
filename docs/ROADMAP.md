@@ -78,7 +78,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
 | 20 SEC1 Pre-V1 Security Hardening | DONE and merged to `main @ a2badf7`; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
 | V1 Hosted CI Verification | DONE; executable `d28668b5`; release run `36801613394` PASS; normal Baseline CI `36801613306` PASS | SEC1 DONE plus follow-up hardening | No physical rerun required |
-| 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
+| 21 R2 Public Readiness | IN PROGRESS | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
@@ -96,10 +96,18 @@ The 2026-09-29 repository audits add no new product feature milestone. The two s
 - R2 must constrain plaintext `BACKEND_PROXY_TARGET` use to a proven trusted private/loopback network or require HTTPS for an untrusted hop.
 - R2 must add dedicated secret scanning and stable-release provenance through an immutable signed release tag or equivalent signed release record with artifact checksums.
 
+- R2 must complete the Brevo authentication-email slice with real sender/domain verification, a real provider smoke send, a real registration/resend acceptance flow, final full repository health, and merge of PR #1 only after those gates are green.
+- R2 must implement privacy-reviewed delivery for the pre-existing serious-event `auth.security_email` family. The current Brevo slice intentionally covers authentication challenges only, so password-reset completion, old-email-change, account-deletion, breakup, restoration, and dissolution emails are not yet delivered by the default provider path.
+- R2 must implement the broader Web Push notification surface required by the PRD, including partner-request/message delivery where applicable and the user-controlled message-preview privacy setting, while preserving S1 plaintext boundaries.
+- R2 must implement the abuse/support reporting workflow and complete the privacy-policy/terms launch package and any required acceptance/versioning flow.
+- R2 must close accessibility and performance release gates against representative final screens and mid-range mobile behavior.
+
 - `main` is currently unprotected, required status checks are off, and no repository rulesets exist. R2 must establish protection after V1 identifies the hosted status check that should gate release-relevant changes.
 - the public repository has no project-level license. R2 must record the owner's explicit licensing policy before public readiness.
 - `design/m3-media-voice` is obsolete divergent design history with a stranded non-authoritative ADR-012. It must be archived, deleted, or clearly retained as historical-only before R2 closes.
 - production provider configuration and deployment, release, rollback, backup/recovery, and operational automation remain R2 work.
+- production observability remains incomplete for API, worker, outbox, deletion, media, realtime, call, push, and email failure classes.
+- canonical repo-wide R2 issue inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 The two follow-up source defects are closed and do not reopen SEC1 or S1 historical closure. Hosted focused regression evidence is recorded under run `36773261743`; no full Redmi rerun is required for these fixes.
 
