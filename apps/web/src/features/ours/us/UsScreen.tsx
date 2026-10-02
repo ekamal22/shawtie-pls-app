@@ -99,6 +99,8 @@ export function UsScreen({
   const [busy, setBusy] = useState(false);
   const [confirmDeletion, setConfirmDeletion] = useState(false);
   const [notificationPreview, setNotificationPreviewState] = useState(false);
+  const [reportCategory, setReportCategory] = useState("other");
+  const [reportDetails, setReportDetails] = useState("");
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -426,6 +428,64 @@ export function UsScreen({
             {currentDevice ? <p className="hint">Current device ID: {currentDevice.id}</p> : null}
           </section>
         </div>
+      ) : null}
+
+      {me ? (
+        <section className="us-block">
+          <h2>Report or get support</h2>
+          <p className="hint">
+            Reports are reviewed using the metadata and text you submit. Do not paste private
+            message content, media, passwords, verification codes, or your recovery key.
+          </p>
+          <div className="stack">
+            <label className="field">
+              <span>Category</span>
+              <select
+                value={reportCategory}
+                onChange={(event) => setReportCategory(event.target.value)}
+              >
+                <option value="abusive_username">Abusive username</option>
+                <option value="impersonation">Impersonation</option>
+                <option value="partner_request_harassment">Partner request harassment</option>
+                <option value="account_compromise">Account compromise</option>
+                <option value="illegal_content">Suspected illegal use</option>
+                <option value="other">Other support issue</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>What happened?</span>
+              <textarea
+                value={reportDetails}
+                onChange={(event) => setReportDetails(event.target.value)}
+                maxLength={2000}
+                rows={5}
+                required
+              />
+            </label>
+            <Button
+              disabled={busy || reportDetails.trim().length === 0}
+              onClick={() =>
+                void run(async () => {
+                  const result = await apiRequest<{ reportId: string }>(
+                    "/api/v1/support/reports",
+                    {
+                      method: "POST",
+                      body: {
+                        category: reportCategory,
+                        details: reportDetails.trim(),
+                      },
+                    },
+                  );
+                  setReportDetails("");
+                  setReportCategory("other");
+                  setNotice(`Report received. Reference: ${result.reportId}`);
+                })
+              }
+            >
+              Submit report
+            </Button>
+          </div>
+        </section>
       ) : null}
 
       {me ? (
