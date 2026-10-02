@@ -21,6 +21,7 @@ import {
   getPasswordHash,
   insertAccount,
   insertAccountNotification,
+  insertAccountPolicyAcceptance,
   insertAccountProfile,
   insertCurrentEmail,
   insertEmailChallenge,
@@ -419,6 +420,12 @@ export class AccountService {
         emailNormalized: email.normalized,
         emailDisplay: email.display,
         passwordHash,
+        policyVersion:
+          input.termsAccepted === true && input.privacyAccepted === true
+            ? (input.policyVersion ?? null)
+            : null,
+        policyAcceptedAt:
+          input.termsAccepted === true && input.privacyAccepted === true ? now : null,
         expiresAt: intentExpiresAt,
       });
       await this.#createChallenge({
@@ -542,6 +549,13 @@ export class AccountService {
         emailDisplay: intent.emailDisplay,
         at: now,
       });
+      if (intent.policyVersion && intent.policyAcceptedAt) {
+        await insertAccountPolicyAcceptance(transaction, {
+          accountId,
+          policyVersion: intent.policyVersion,
+          acceptedAt: intent.policyAcceptedAt,
+        });
+      }
       const session = await this.#issueSession(
         transaction,
         accountId,
