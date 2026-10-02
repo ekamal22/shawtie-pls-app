@@ -204,6 +204,24 @@ The public repository and CI system are part of the software supply chain.
 
 They must not contain production secrets, real user content, or private cryptographic material.
 
+## R2 release-review status
+
+The 2026-10-03 repo-wide audit did not identify evidence of a new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext regression, or committed production secret.
+
+Open R2 threat-control work includes:
+
+- minimize and explicitly review serious-event email-provider exposure before external delivery
+- keep broader push delivery content-minimized and compatible with notification-preview privacy
+- replace fixed service-worker cache identity with release-aware rollover or deterministic pruning
+- unify media, realtime, and calling network abuse subjects and key-rotation behavior
+- enforce trusted private transport for plaintext web-to-API hops or require HTTPS
+- prove production backup restore cannot re-expose deleted user-facing data
+- add operational observability without collecting protected content
+- define abuse/support procedures that respect E2EE inspection limits
+- close release provenance, secret scanning, branch protection, and production deployment gates
+
+Canonical issue inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
 ## Threat actors
 
 ### Unauthenticated internet attacker
