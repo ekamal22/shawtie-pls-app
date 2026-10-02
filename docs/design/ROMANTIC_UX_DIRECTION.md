@@ -281,7 +281,7 @@ Design is frozen in `UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; automated closure 
 
 ### R2 Public Readiness
 
-Final accessibility, security, browser, device, operational, hosted verification, release, and rollback closure.
+R2 is IN PROGRESS. Final accessibility, security, browser, device, operational, provider, release, and rollback closure remains before Stable Release. The current repo-wide blocker inventory, including notification/provider, deployment, backup, observability, governance, and final acceptance work, is maintained in `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Parallel-agent implementation model
 
