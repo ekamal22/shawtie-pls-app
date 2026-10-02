@@ -320,3 +320,10 @@ export {
   type ProtectedContentEnvelopeProjection,
   type RecoveryCapsuleInput,
 } from "./crypto/protected-content.ts";
+
+export {
+  abuseReportCategorySchema,
+  abuseReportCreateSchema,
+  type AbuseReportCategory,
+  type AbuseReportCreateInput,
+} from "./support/reports.ts";
