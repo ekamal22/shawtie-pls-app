@@ -75,6 +75,44 @@ function purposeTitle(purpose: string): string {
   }
 }
 
+function optionalDeadline(message: SecurityEmailMessage): string | null {
+  const raw = message.parameters.deadline;
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "string") {
+    throw new PermanentWorkerError("EMAIL_TEMPLATE_PARAMETER_INVALID");
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new PermanentWorkerError("EMAIL_TEMPLATE_PARAMETER_INVALID");
+  }
+  return parsed.toISOString();
+}
+
+function simpleSecurityEmail(
+  subject: string,
+  body: string,
+  deadline: string | null = null,
+): RenderedSecurityEmail {
+  const deadlineText = deadline ? "\n\nRelevant deadline: " + deadline : "";
+  const deadlineHtml = deadline
+    ? '<p style="line-height:1.6;"><strong>Relevant deadline:</strong> ' +
+      escapeHtml(deadline) +
+      "</p>"
+    : "";
+  return {
+    subject,
+    textContent: body + deadlineText + "\n\nIf this was not expected, review your Shawtie pls account and security settings.",
+    htmlContent: emailShell(
+      subject,
+      '<p style="line-height:1.6;">' +
+        escapeHtml(body) +
+        "</p>" +
+        deadlineHtml +
+        '<p style="line-height:1.6;">If this was not expected, review your Shawtie pls account and security settings.</p>',
+    ),
+  };
+}
+
 export function renderSecurityEmail(message: SecurityEmailMessage): RenderedSecurityEmail {
   if (message.template !== "verification_code") {
     throw new PermanentWorkerError("EMAIL_TEMPLATE_UNSUPPORTED");
@@ -121,6 +159,78 @@ export function renderSecurityEmail(message: SecurityEmailMessage): RenderedSecu
   return { subject: title, textContent, htmlContent };
 }
 
+export function renderEmailMessage(message: SecurityEmailMessage): RenderedSecurityEmail {
+  if (message.template === "verification_code") return renderSecurityEmail(message);
+
+  switch (message.template) {
+    case "password_reset_completed":
+      return simpleSecurityEmail(
+        "Your Shawtie pls password was reset",
+        "The password for your Shawtie pls account was changed successfully.",
+      );
+    case "email_changed_old_address":
+      return simpleSecurityEmail(
+        "Your Shawtie pls email was changed",
+        "The verified email address on your Shawtie pls account was changed. This notice was sent to the previous address.",
+      );
+    case "account_deletion_requested":
+      return simpleSecurityEmail(
+        "Shawtie pls account deletion requested",
+        "Account deletion was requested and account access is now suspended during the recovery window.",
+        optionalDeadline(message),
+      );
+    case "partner_account_deletion_started":
+      return simpleSecurityEmail(
+        "A partner account deletion process started",
+        "The account paired with your Shawtie pls partnership entered its deletion recovery window. Shared access follows the in-app lifecycle rules.",
+        optionalDeadline(message),
+      );
+    case "account_permanently_deleted":
+      return simpleSecurityEmail(
+        "Your Shawtie pls account was permanently deleted",
+        "The account deletion recovery period ended and the account was permanently deleted.",
+        optionalDeadline(message),
+      );
+    case "breakup_started":
+      return simpleSecurityEmail(
+        "A Shawtie pls breakup process started",
+        "Your partnership entered the breakup-pending state. Open Shawtie pls for the current authoritative status and available actions.",
+        optionalDeadline(message),
+      );
+    case "restoration_requested":
+      return simpleSecurityEmail(
+        "Partnership restoration was requested",
+        "A restoration request was submitted for your Shawtie pls partnership. Open the app for the current authoritative status.",
+        optionalDeadline(message),
+      );
+    case "partnership_restored":
+      return simpleSecurityEmail(
+        "Your Shawtie pls partnership was restored",
+        "The partnership is active again.",
+      );
+    case "breakup_deadline_reminder":
+      return simpleSecurityEmail(
+        "Shawtie pls breakup deadline reminder",
+        "Your partnership remains in breakup-pending state and its destructive deadline is approaching.",
+        optionalDeadline(message),
+      );
+    case "partnership_dissolved":
+      return simpleSecurityEmail(
+        "Your Shawtie pls partnership ended",
+        "The partnership reached final dissolution. Shared partnership data follows the product deletion rules.",
+        optionalDeadline(message),
+      );
+    case "partner_account_deleted":
+      return simpleSecurityEmail(
+        "Your former partner account was deleted",
+        "The other account in your Shawtie pls partnership was permanently deleted and the partnership ended.",
+        optionalDeadline(message),
+      );
+    default:
+      throw new PermanentWorkerError("EMAIL_TEMPLATE_UNSUPPORTED");
+  }
+}
+
 async function brevoErrorCode(response: Response): Promise<string | null> {
   try {
     const body = (await response.json()) as { code?: unknown };
@@ -140,7 +250,7 @@ export class BrevoEmailDelivery implements EmailDeliveryPort {
   }
 
   async sendSecurityEmail(message: SecurityEmailMessage, signal: AbortSignal): Promise<void> {
-    const rendered = renderSecurityEmail(message);
+    const rendered = renderEmailMessage(message);
     const timeoutSignal = AbortSignal.timeout(this.#config.timeoutMs);
     const requestSignal = AbortSignal.any([signal, timeoutSignal]);
 
@@ -161,7 +271,7 @@ export class BrevoEmailDelivery implements EmailDeliveryPort {
           to: [{ email: message.destination }],
           subject: rendered.subject,
           htmlContent: rendered.htmlContent,
-          tags: ["shawtie-auth"],
+          tags: [message.template === "verification_code" ? "shawtie-auth" : "shawtie-security"],
           headers: {
             idempotencyKey: message.deliveryId,
             "X-Shawtie-Delivery-ID": message.deliveryId,
