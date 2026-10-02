@@ -6,6 +6,7 @@ import {
   getAccountDeletionGeneration,
   getAccountProfile,
   getCurrentPartnershipForAccount,
+  insertErasureTombstone,
   lockAccounts,
   lockPartnershipLifecycle,
   lockPendingAccountDeletion,
@@ -91,6 +92,12 @@ export const accountDeletionFinalizeHandler: ScheduledActionHandler = {
     }
 
     await finalizeAccountDeletionState(transaction, action.aggregateId, deletion.id, now);
+    await insertErasureTombstone(transaction, {
+      subjectType: "account",
+      subjectId: action.aggregateId,
+      erasedAt: deletion.recoverUntil,
+      reason: "account_permanently_deleted",
+    });
     await appendSecurityEvent(transaction, {
       id: randomUUID(),
       accountId: action.aggregateId,
