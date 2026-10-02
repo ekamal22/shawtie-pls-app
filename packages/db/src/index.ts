@@ -178,6 +178,12 @@ export {
 } from "./repositories/partnerships.ts";
 
 export {
+  loadNotificationPreferences,
+  upsertNotificationPreferences,
+  type NotificationPreferences,
+} from "./repositories/notification-preferences.ts";
+
+export {
   insertAccountNotification,
   listAccountNotifications,
   markAccountNotificationRead,
