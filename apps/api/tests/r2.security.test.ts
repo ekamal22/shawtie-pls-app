@@ -31,6 +31,7 @@ test("R2 support reports are authenticated and network limited", async () => {
   assert.equal(service.includes("support_report_account"), true);
   assert.equal(service.includes("support_report_network"), true);
   assert.equal(service.includes("insertAbuseReport"), true);
+  assert.equal(service.includes("subjectReference"), true);
 });
 
 test("R2 account deletion scrubs new preference and support text", async () => {
