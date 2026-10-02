@@ -14,6 +14,7 @@ CREATE TABLE abuse_reports (
   id uuid PRIMARY KEY,
   reporter_account_id uuid NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   target_account_id uuid REFERENCES accounts(id) ON DELETE SET NULL,
+  subject_reference text,
   category text NOT NULL,
   details text,
   status text NOT NULL DEFAULT 'open',
@@ -30,6 +31,9 @@ CREATE TABLE abuse_reports (
     )
   ),
   CONSTRAINT abuse_report_status_check CHECK (status IN ('open','resolved')),
+  CONSTRAINT abuse_report_subject_reference_length CHECK (
+    subject_reference IS NULL OR char_length(subject_reference) BETWEEN 1 AND 120
+  ),
   CONSTRAINT abuse_report_details_length CHECK (
     details IS NULL OR char_length(details) BETWEEN 1 AND 2000
   ),
