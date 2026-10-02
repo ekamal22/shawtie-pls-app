@@ -8,6 +8,7 @@ import {
   findCompletedPartnerRequestIdempotency,
   findDiscoverableAccountByUsername,
   getTransactionTimestamp,
+  insertOutboxEvent,
   insertPartnerRequest,
   insertScheduledAction,
   latestDeclinedPartnerRequestAt,
@@ -508,6 +509,15 @@ export class PartnerRequestService {
           executeAt: expiresAt,
           deduplicationKey: `partner-request-expire:${requestId}`,
           payload: {},
+          payloadVersion: 1,
+        });
+        await insertOutboxEvent(transaction, {
+          id: randomUUID(),
+          eventType: "partner_request.push",
+          aggregateType: "account",
+          aggregateId: input.recipientAccountId,
+          deduplicationKey: "partner-request-push:" + requestId,
+          payload: { accountId: input.recipientAccountId },
           payloadVersion: 1,
         });
 
