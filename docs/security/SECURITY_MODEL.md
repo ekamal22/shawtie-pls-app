@@ -131,6 +131,21 @@ Enforce:
 - consume-once behavior
 - replay rejection
 
+## R2 notification-provider boundary
+
+The current Brevo integration covers authentication challenges only. The separate serious-event email family and the broader Web Push surface remain R2 work.
+
+Before Stable Release:
+
+- serious account and partnership email templates require individual privacy review
+- provider messages must carry only the minimum event, deadline, and context required by the PRD
+- protected message, media, relationship-object, and cryptographic content must not enter email or push payloads
+- hidden notification-preview mode must use generic text
+- revoked devices and dissolved partnerships must not continue receiving authorized push delivery
+- provider failures must not corrupt authoritative account or partnership state
+
+Canonical current release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
 ## Sessions and sensitive changes
 
 Verified email change requires recent strong reauthentication.
