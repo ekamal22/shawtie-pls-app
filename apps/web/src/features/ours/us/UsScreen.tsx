@@ -14,10 +14,7 @@ import {
 } from "../../../design/primitives.tsx";
 import { apiRequest } from "../../../lib/api-client.ts";
 import { rememberPendingAccountDeletion } from "../../../lib/offline/account-control.ts";
-import {
-  readNotificationPreviewPreference,
-  setNotificationPreviewPreference,
-} from "../../../lib/pwa/notification-preferences.ts";
+import { setNotificationPreviewPreference } from "../../../lib/pwa/notification-preferences.ts";
 import { PartnerRequestsPanel } from "../../partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../../partnership/PartnershipPanel.tsx";
 import { CryptoSecurityPanel } from "../../security/CryptoSecurityPanel.tsx";
@@ -101,9 +98,7 @@ export function UsScreen({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDeletion, setConfirmDeletion] = useState(false);
-  const [notificationPreview, setNotificationPreviewState] = useState(
-    readNotificationPreviewPreference,
-  );
+  const [notificationPreview, setNotificationPreviewState] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -115,15 +110,20 @@ export function UsScreen({
   const currentDevice = devices.find((device) => device.isCurrent) ?? null;
 
   async function load() {
-    const [profile, deviceResult] = await Promise.all([
+    const [profile, deviceResult, notificationPreferences] = await Promise.all([
       apiRequest<Me>("/api/v1/me"),
       apiRequest<{ devices: Device[] }>("/api/v1/me/devices"),
+      apiRequest<{ messagePreviewEnabled: boolean }>(
+        "/api/v1/me/notification-preferences",
+      ),
     ]);
     setMe(profile);
     setDisplayName(profile.displayName);
     setUsername(profile.username);
     setDateOfBirth(profile.dateOfBirth);
     setDevices(deviceResult.devices);
+    setNotificationPreviewState(notificationPreferences.messagePreviewEnabled);
+    await setNotificationPreviewPreference(notificationPreferences.messagePreviewEnabled);
   }
 
   useEffect(() => {
@@ -225,8 +225,14 @@ export function UsScreen({
                 checked={notificationPreview}
                 onChange={(event) => {
                   const enabled = event.target.checked;
-                  setNotificationPreviewState(enabled);
-                  void setNotificationPreviewPreference(enabled);
+                  void run(async () => {
+                    await apiRequest("/api/v1/me/notification-preferences", {
+                      method: "PATCH",
+                      body: { messagePreviewEnabled: enabled },
+                    });
+                    setNotificationPreviewState(enabled);
+                    await setNotificationPreviewPreference(enabled);
+                  }, enabled ? "Notification details enabled." : "Notification previews hidden.");
                 }}
               />
               <span>Show notification type details on this device</span>
