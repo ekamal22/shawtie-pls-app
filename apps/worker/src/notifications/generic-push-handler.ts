@@ -33,29 +33,21 @@ function accountId(event: OutboxEvent): string {
   return event.aggregateId;
 }
 
-async function deliverGenericPush(
+export async function deliverAccountPush(
   database: DatabasePool,
   pushConfig: WebPushConfig | null,
-  event: OutboxEvent,
+  accountIds: readonly string[],
+  payload: Readonly<Record<string, string | number | boolean | null>>,
   signal: AbortSignal,
 ): Promise<void> {
-  const recipientAccountId = accountId(event);
-  if (!pushConfig) return;
-
-  const subscriptions = await listActivePushSubscriptionsForAccounts(database.pool, [
-    recipientAccountId,
-  ]);
+  if (!pushConfig || accountIds.length === 0) return;
+  const recipients = [...new Set(accountIds)].sort();
+  const subscriptions = await listActivePushSubscriptionsForAccounts(database.pool, recipients);
   const now = await getClockTimestamp(database.pool);
 
   for (const subscription of subscriptions) {
     try {
-      const result = await sendWebPush(
-        subscription,
-        { v: 1, type: "notification_changed" },
-        pushConfig,
-        signal,
-        now,
-      );
+      const result = await sendWebPush(subscription, payload, pushConfig, signal, now);
       if (result.gone) {
         await markPushDeliveryFailure(database.pool, subscription.deviceId, now, true);
       } else if (result.delivered) {
@@ -66,6 +58,22 @@ async function deliverGenericPush(
       throw error;
     }
   }
+}
+
+async function deliverGenericPush(
+  database: DatabasePool,
+  pushConfig: WebPushConfig | null,
+  event: OutboxEvent,
+  signal: AbortSignal,
+): Promise<void> {
+  const recipientAccountId = accountId(event);
+  await deliverAccountPush(
+    database,
+    pushConfig,
+    [recipientAccountId],
+    { v: 1, type: "notification_changed" },
+    signal,
+  );
 }
 
 export function createGenericPushHandlers(
