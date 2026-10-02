@@ -218,6 +218,8 @@ jobs:
         run: npm run test:r2:performance
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: R2 service-worker upgrade Chromium acceptance
+        run: npm run test:r2:browser:e2e
       - name: Retained SEC1 browser security
         run: npm run test:sec1:browser:e2e
       - name: Retained S1 cryptographic browser harness
