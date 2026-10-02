@@ -55,7 +55,7 @@ function emailShell(title: string, bodyHtml: string): string {
     '<h1 style="font-size:22px;margin:0 0 16px;">' + escapeHtml(title) + "</h1>",
     bodyHtml,
     "</div>",
-    '<p style="font-size:12px;color:#b9aebb;margin-top:18px;">This is an automated authentication email from Shawtie pls.</p>',
+    '<p style="font-size:12px;color:#b9aebb;margin-top:18px;">This is an automated security email from Shawtie pls.</p>',
     "</div></body></html>",
   ].join("");
 }
