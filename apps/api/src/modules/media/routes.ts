@@ -17,6 +17,7 @@ import type { ApiConfig } from "../../config.ts";
 import { ApiError } from "../../lib/api-error.ts";
 import { requireAuthentication, type AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import { networkPrefix } from "../../security/normalization.ts";
 import type { MediaService } from "./media-service.ts";
 
 interface MediaRouteDependencies {
@@ -50,7 +51,7 @@ async function consumeMediaRateLimit(
     const subjects = [
       { scope: "m3.media." + kind + ".account", subject: "account\0" + auth.session.accountId },
       { scope: "m3.media." + kind + ".device", subject: "device\0" + auth.session.deviceId },
-      { scope: "m3.media." + kind + ".network", subject: "network\0" + request.ip },
+      { scope: "m3.media." + kind + ".network", subject: "network\0" + networkPrefix(request.ip) },
     ];
     return consumeRateLimitBuckets(
       transaction,
