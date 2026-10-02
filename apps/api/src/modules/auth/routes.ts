@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
+  CURRENT_LEGAL_POLICY_VERSION,
   accountRecoveryCompleteSchema,
   dateOfBirthCorrectionSchema,
   deviceIdParamsSchema,
@@ -34,6 +35,7 @@ import {
 } from "../../security/cookies.ts";
 import { networkPrefix } from "../../security/normalization.ts";
 import type { AccountService } from "../accounts/account-service.ts";
+import { ApiError } from "../../lib/api-error.ts";
 
 interface RouteDependencies {
   readonly database: DatabasePool;
@@ -65,6 +67,14 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
 
   app.post("/api/v1/auth/registration/start", async (request) => {
     const input = parseAtBoundary(registrationStartSchema, request.body);
+    if (
+      config.environment === "production" &&
+      (input.policyVersion !== CURRENT_LEGAL_POLICY_VERSION ||
+        input.termsAccepted !== true ||
+        input.privacyAccepted !== true)
+    ) {
+      throw new ApiError(400, "POLICY_ACCEPTANCE_REQUIRED");
+    }
     return service.startRegistration(input, network(request));
   });
 
