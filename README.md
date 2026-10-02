@@ -16,7 +16,7 @@ Operational setup, failure semantics, and the opt-in real-send procedure are doc
 
 ## Pre-release attention
 
-The 2026-09-29 follow-up audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The two concrete follow-up source defects are fixed on `main @ a1659dc` and passed hosted focused validation run `36773261743`: account-wide S1 local-crypto lifecycle cleanup and the S1 Fastify request-size/client-error boundary. V1 hosted SEC1/S1 coverage is now closed. Remaining R2 concerns include service-worker cache rollover, canonical network-prefix rate limiting, trusted backend transport, dedicated secret scanning, signed release provenance, branch protection, licensing, obsolete divergent M3 design history, production operations, and review of the transitive `RUSTSEC-2026-0173` maintenance warning. Canonical tracking is in `docs/PROJECT_STATE.md`, `docs/ROADMAP.md`, `docs/ROADMAP_EPICS.md`, and `docs/testing/CI_AND_REPOSITORY_HEALTH.md`.
+The latest repo-wide R2 audit found no evidence of a new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext regression, or committed production secret. R2 is nevertheless not release-ready. Open blockers include completion and live acceptance of the Brevo auth-email slice, production delivery of serious-event emails, broader Web Push plus message-preview privacy, service-worker cache rollover, canonical network-prefix rate limiting, trusted backend transport enforcement, abuse/support reporting, privacy policy/terms, dedicated secret scanning, signed release provenance, branch protection, licensing, obsolete divergent M3 design history, production deployment/backup/observability/release automation, accessibility/performance closure, and final browser/device/calling/E2EE/public-origin acceptance. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Product direction
 
@@ -54,6 +54,7 @@ Start with:
 
 - `docs/README.md` for document authority and navigation
 - `docs/PROJECT_STATE.md` for verified current implementation state
+- `docs/operations/R2_PUBLIC_READINESS_AUDIT.md` for the canonical current R2 release-blocker inventory
 - `docs/ROADMAP.md` for the regenerated milestone-by-milestone execution sequence
 - `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md` for the implemented V1 release-verification architecture and execution history
 - `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md` for the final V1 hosted closure at executable `d28668b5`, release run `36801613394`, and normal Baseline CI run `36801613306`
