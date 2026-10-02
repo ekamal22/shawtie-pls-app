@@ -949,6 +949,33 @@ UX8_PHYSICAL_REDMINOTE9S_ACCEPTANCE_PASS
 
 Implemented UX8 command surface includes `npm run test:ux8`, `npm run test:ux8:browser:e2e`, `npm run test:ux8:closure`, `npm run test:ux8:device:prepare`, and `npm run test:ux8:device:cleanup`. UX8-H1 model/browser closure, UX8-H2 retained security regression, UX8-H3 repository/privacy closure, UX8-H4 all 25 physical Android scenarios, and UX8-H5 evidence/documentation reconciliation have all passed at the final executable SHA `43ff9b1ec319703f3d9270ae8053ab196ca54419`. UX8 is DONE and merged to `main` at `a029169`.
 
+## R2 Public Readiness verification
+
+Canonical release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
+R2 closure must add or execute evidence for the release-only surfaces that earlier milestone suites intentionally did not own.
+
+Required R2 verification includes:
+
+- real transactional email provider acceptance for registration and resend/supersede
+- serious-event email provider tests that prove minimal content and no protected plaintext
+- broader Web Push delivery tests, including revoked-device and dissolved-partnership denial
+- notification-preview privacy tests proving hidden-preview mode never exposes message plaintext to the push provider
+- service-worker upgrade tests covering cache rotation/pruning, waiting/activation, stale offline shell replacement, and private-API non-caching
+- canonical IPv4/IPv6 network-prefix abuse tests across media, realtime, and calling, including HMAC key rotation
+- production backend-transport validation proving plaintext is private/loopback-only or otherwise requiring HTTPS
+- dedicated secret scanning across the release source/history scope
+- privacy/terms and abuse/support workflow acceptance
+- backup/restore tests proving deleted user-facing content cannot reappear after restore
+- operational smoke tests for API, worker, outbox, deletion, media, realtime, call, push, and email failure visibility
+- release/migration/staged-launch/rollback rehearsal against one exact candidate SHA
+- accessibility acceptance covering keyboard, focus, names, validation, status announcements, reduced motion, representative screen-reader behavior, and physical-device checks
+- representative performance budgets on mid-range mobile and constrained-network conditions
+- public-origin CSP/HSTS/proxy/header verification after the real ingress/TLS layer exists
+- final physical Android, voice/video privacy, and E2EE release review
+
+No gate may be marked passed from design intent alone. Provider, backup, deployment, accessibility, and rollback gates require executed evidence.
+
 ## Acceptance principle
 
 A feature is not complete merely because UI automation passes.
