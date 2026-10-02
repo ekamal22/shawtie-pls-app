@@ -30,6 +30,10 @@ test("R2 registration links the published privacy and terms surfaces", async () 
   assert.equal(app.includes("CURRENT_LEGAL_POLICY_VERSION"), true);
   assert.equal(privacy.includes("2026-10-03"), true);
   assert.equal(terms.includes("2026-10-03"), true);
+  assert.equal(privacy.includes("<style>"), false);
+  assert.equal(terms.includes("<style>"), false);
+  assert.equal(privacy.includes('href="/legal.css"'), true);
+  assert.equal(terms.includes('href="/legal.css"'), true);
 });
 
 test("R2 notification preview defaults to hidden and stays content free", async () => {
