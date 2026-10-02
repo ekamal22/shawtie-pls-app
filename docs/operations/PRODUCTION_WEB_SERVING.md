@@ -137,6 +137,17 @@ The CSP keeps:
 
 Private API caching remains owned by the Fastify endpoint contracts and is preserved through the proxy.
 
+## R2 production-serving blockers
+
+The 2026-10-03 repo-wide audit keeps two web-serving concerns open for R2:
+
+1. `BACKEND_PROXY_TARGET` currently accepts any bare `http:` or `https:` origin. The documented rule that plaintext HTTP is private/loopback-only is not yet mechanically enforced. Stable Release must either enforce trusted-private/loopback HTTP or require HTTPS.
+2. `apps/web/public/sw.js` still uses fixed `shawtie-shell-v1` cache identity. R2 must add release-aware cache rotation or deterministic stale-asset pruning and prove the activated worker cannot retain an incompatible old offline shell as the durable fallback.
+
+The deployed public origin must also re-prove CSP, HSTS, Host enforcement, trusted-proxy behavior, WebSocket proxying, and media connectivity after the actual ingress/CDN/TLS layer is present.
+
+Canonical R2 inventory: `R2_PUBLIC_READINESS_AUDIT.md`.
+
 ## Verification
 
 Focused SEC1 commands:
