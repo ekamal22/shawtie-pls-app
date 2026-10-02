@@ -166,7 +166,12 @@ export function webPushConfigFromEnv(env: NodeJS.ProcessEnv = process.env): WebP
   const subject = env.C1_PUSH_VAPID_SUBJECT;
   const publicKey = env.C1_PUSH_VAPID_PUBLIC_KEY;
   const privateKey = env.C1_PUSH_VAPID_PRIVATE_KEY;
-  if (!subject && !publicKey && !privateKey) return null;
+  if (!subject && !publicKey && !privateKey) {
+    if (env.NODE_ENV === "production") {
+      throw new Error("Web Push configuration is required in production");
+    }
+    return null;
+  }
   if (!subject || !publicKey || !privateKey) {
     throw new Error(
       "C1 push requires C1_PUSH_VAPID_SUBJECT, C1_PUSH_VAPID_PUBLIC_KEY, and C1_PUSH_VAPID_PRIVATE_KEY",
