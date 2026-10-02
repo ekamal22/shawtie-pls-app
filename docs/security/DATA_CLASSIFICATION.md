@@ -184,6 +184,21 @@ Examples:
 
 The deletion triggers in the matrix above remain the required policy. The 2026-09-29 local S1 secret-retention finding is CLOSED on `main @ a1659dc`. Current-device revocation and permanent-deletion convergence now include account-wide S1 local-vault destruction, while deletion-pending accounts retain recovery capability through the seven-day recovery window. Hosted focused validation run `36773261743` covers the follow-up source/security regression surface.
 
+## R2 provider and operations status
+
+The matrix above defines required handling. It does not imply that every production provider path is already live.
+
+Current R2 state:
+
+- Brevo authentication-challenge delivery exposes destination email plus the short-lived verification credential and minimal authentication copy
+- the separate serious-event `auth.security_email` family is not yet wired to the default provider path and requires template-by-template privacy review before external delivery
+- general Web Push beyond the existing call-state path is not yet complete; future message and partner-request payloads must remain minimal and honor notification-preview privacy
+- production logging and observability providers are not yet finalized; any future provider must receive only approved structured metadata and scrubbed error data
+- production backup provider/configuration is not yet finalized; backup retention and restore must preserve product deletion obligations
+- privacy policy and applicable terms must be reconciled with the final provider list and actual data flows before Stable Release
+
+Canonical release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
 ## Repository data policy
 
 The public repository may contain:
