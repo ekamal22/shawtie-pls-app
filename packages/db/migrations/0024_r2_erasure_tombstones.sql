@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE erasure_tombstones (
   subject_type text NOT NULL,
   subject_id uuid NOT NULL,
@@ -16,5 +14,3 @@ CREATE TABLE erasure_tombstones (
 
 CREATE INDEX erasure_tombstones_erased_at
   ON erasure_tombstones (erased_at, subject_type, subject_id);
-
-COMMIT;
