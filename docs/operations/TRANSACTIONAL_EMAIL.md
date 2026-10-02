@@ -319,7 +319,9 @@ Still open:
 - perform one real registration end-to-end email test
 - decide whether provider delivery/bounce webhooks are needed for operational observability
 - monitor failed authentication-email outbox events in production
-- decide the production treatment of the pre-existing non-challenge `auth.security_email` notification family
+- implement and privacy-review the production treatment of the pre-existing non-challenge `auth.security_email` notification family; this is a Stable Release blocker because the PRD requires serious account and partnership event emails
 - finish the rest of R2 Public Readiness
 
 The non-challenge `auth.security_email` family remains outside this Brevo auth-challenge slice. In particular, this integration does not externalize partnership or breakup lifecycle information.
+
+Repo-wide audit result: this deliberate privacy boundary also means serious password/account/partnership notices are not yet delivered by the default production provider path. R2 must add a separately reviewed minimal-template path before Stable Release. Canonical tracking: `R2_PUBLIC_READINESS_AUDIT.md`.
