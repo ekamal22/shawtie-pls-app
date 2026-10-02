@@ -1,5 +1,8 @@
 import type { DatabasePool } from "@shawtie/db";
-import { createEmailChallengeOutboxHandler } from "../auth/auth-email-handlers.ts";
+import {
+  createEmailChallengeOutboxHandler,
+  createSecurityEmailOutboxHandler,
+} from "../auth/auth-email-handlers.ts";
 import type { EmailDeliveryPort } from "../auth/email-delivery-port.ts";
 import type { WorkerAuthKeyRing } from "../auth/worker-auth-key-ring.ts";
 import { createM1MessagingInvalidationHandlers } from "../messages/messaging-invalidation-handler.ts";
@@ -32,6 +35,7 @@ export function createDefaultOutboxHandlers(
   }
   if (database && options.email && options.authKeys) {
     registry.register(createEmailChallengeOutboxHandler(database, options.email, options.authKeys));
+    registry.register(createSecurityEmailOutboxHandler(database, options.email));
   }
   if (database && publisher) {
     for (const handler of createC1CallOutboxHandlers(database, publisher, webPushConfigFromEnv())) {
