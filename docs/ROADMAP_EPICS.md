@@ -2748,6 +2748,8 @@ Status: IN PROGRESS
 
 Current slice: provider-neutral Brevo delivery for authentication challenges is implemented on `feat/r2-brevo-auth-email`. It preserves the A1 durable outbox boundary and covers registration, resend, password recovery, account recovery, and email-change challenges. Real sender/domain configuration and real provider acceptance remain open, so no production-provider acceptance gate is closed yet.
 
+Canonical repo-wide issue inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`. The audit also confirms that the current Brevo slice does not register the pre-existing `auth.security_email` family, general Web Push remains call-focused, and production deployment/backup/observability/release surfaces remain incomplete.
+
 ## Scope
 
 - CI completion
@@ -2766,6 +2768,10 @@ Current slice: provider-neutral Brevo delivery for authentication challenges is 
 - deletion verification
 - operational observability
 - provider configuration
+- authentication and serious-event transactional email
+- general Web Push and notification-preview privacy
+- abuse/support reporting workflow
+- privacy policy, terms, and launch acceptance/versioning
 - release process
 - browser acceptance
 - physical-device acceptance
@@ -2782,6 +2788,11 @@ Current slice: provider-neutral Brevo delivery for authentication challenges is 
 - [ ] the public repository licensing policy is explicitly chosen and recorded
 - [ ] `design/m3-media-voice` and its stranded non-authoritative ADR-012 have an explicit archive, deletion, or historical-only disposition
 - [ ] production provider, deployment, release, rollback, backup/recovery, and operational configuration are implemented and reviewed
+- [ ] Brevo authentication email passes real sender/domain, provider smoke, registration, resend/supersede, and final repository-health acceptance
+- [ ] approved serious-event account/partnership email templates are privacy-reviewed and delivered through the durable provider path
+- [ ] required general Web Push notification flows are implemented and notification-preview privacy is user configurable as required by the PRD
+- [ ] abuse/support reporting procedures and the minimum launch workflow are implemented
+- [ ] privacy policy and applicable terms match the deployed system and any required acceptance/versioning flow is implemented
 - [ ] service-worker cache rollover cannot retain unbounded obsolete fingerprinted assets and the activated worker cannot leave an incompatible offline shell as the durable fallback
 - [ ] media, realtime, and calling network abuse buckets use canonical network-prefix subjects and reviewed key-version behavior
 - [ ] any plaintext web-to-API backend hop is restricted to and verified as a trusted private/loopback transport boundary, otherwise HTTPS is required
@@ -2797,6 +2808,8 @@ Current slice: provider-neutral Brevo delivery for authentication challenges is 
 - [ ] monitoring covers critical API, worker, outbox, deletion, media, realtime, call, and email failure classes
 - [ ] release and migration runbook is tested
 - [ ] supported browser E2E suite passes
+- [ ] final accessibility acceptance passes across keyboard, focus, semantic naming, validation, reduced motion, status announcements, and representative screen-reader checks
+- [ ] representative release performance budgets are defined and pass on mid-range mobile/constrained-network scenarios
 - [ ] physical Android acceptance passes
 - [ ] voice and video privacy acceptance passes
 - [ ] E2EE release review passes
