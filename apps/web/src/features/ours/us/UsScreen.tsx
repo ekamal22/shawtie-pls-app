@@ -100,6 +100,7 @@ export function UsScreen({
   const [confirmDeletion, setConfirmDeletion] = useState(false);
   const [notificationPreview, setNotificationPreviewState] = useState(false);
   const [reportCategory, setReportCategory] = useState("other");
+  const [reportSubjectReference, setReportSubjectReference] = useState("");
   const [reportDetails, setReportDetails] = useState("");
 
   const [displayName, setDisplayName] = useState("");
@@ -453,6 +454,15 @@ export function UsScreen({
               </select>
             </label>
             <label className="field">
+              <span>Username or account reference (optional)</span>
+              <input
+                value={reportSubjectReference}
+                onChange={(event) => setReportSubjectReference(event.target.value)}
+                maxLength={120}
+                autoComplete="off"
+              />
+            </label>
+            <label className="field">
               <span>What happened?</span>
               <textarea
                 value={reportDetails}
@@ -472,11 +482,13 @@ export function UsScreen({
                       method: "POST",
                       body: {
                         category: reportCategory,
+                        subjectReference: reportSubjectReference.trim() || null,
                         details: reportDetails.trim(),
                       },
                     },
                   );
                   setReportDetails("");
+                  setReportSubjectReference("");
                   setReportCategory("other");
                   setNotice(`Report received. Reference: ${result.reportId}`);
                 })
