@@ -2777,7 +2777,7 @@ R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd
 - release/migration/rollback procedure
 - browser and accessibility acceptance
 - physical-device and performance acceptance
-- calling/E2EE release review
+- calling privacy and E2EE release review
 - staged launch
 
 ## Repository implementation gates
@@ -2821,8 +2821,8 @@ R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd
 - [x] final production API/worker/web container builds pass
 - [ ] `main` protection/rules prevent force pushes and branch deletion and enforce the chosen hosted status check
 - [ ] owner/legal review accepts the repository license
-- [ ] real Brevo sender/domain/DNS authentication is complete
-- [ ] real Brevo smoke, registration, resend/supersede, and representative serious-event delivery pass
+- [ ] real Brevo sender/domain/DNS authentication is complete. Evidence procedure: `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`.
+- [ ] real Brevo smoke, registration, resend/supersede, and representative serious-event delivery pass. Evidence procedure: `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`.
 - [ ] real production Web Push acceptance passes
 - [ ] the actual deployment has reviewed PostgreSQL, private object storage, TURN, VAPID, Brevo, TLS, DNS, ingress, and secret injection
 - [ ] public HTTPS origin passes CSP/HSTS/proxy/header and release-surface verification
