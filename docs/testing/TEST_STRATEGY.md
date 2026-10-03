@@ -44,6 +44,10 @@ V1 Hosted CI Verification is DONE. Final release run `36801613394` and normal Ba
 
 Local repository health and domain tests remain usable without hosted Actions.
 
+R2 Public Readiness adds a separate hosted workflow, `.github/workflows/r2-verification.yml`. Its automated scope is intentionally release-specific: full-history secret scanning, dependency audits, all current migrations, retained S1 PostgreSQL/plaintext verification, R2 security/accessibility regressions, release-aware web performance budgets, real Chromium service-worker upgrade behavior, retained SEC1/S1 browser security, production scans, and production-container builds. The automated R2 gate requires one exact candidate SHA and currently expects 24 migrations.
+
+R2 manual/live gates remain separate and are enumerated in `R2_MANUAL_ACCEPTANCE_EVIDENCE.json`. The closure harness fails while any required live/manual gate remains false.
+
 V1 release verification must distinguish the fast repository baseline from heavier security/integration evidence. `npm run health` remains the general baseline, but it is not by itself sufficient evidence for production web security or S1 production-bundle invariants. The release workflow explicitly requires the focused SEC1/S1 gates plus disposable PostgreSQL and real-Chromium integration coverage.
 
 The accepted V1 topology keeps normal CI separate from release verification. Release verification uses Candidate, six parallel verification jobs (Baseline, Dependency audit, Security, PostgreSQL SEC1/A1, PostgreSQL S1, Browser security), and V1 gate. All required jobs must be green for the same exact `github.sha`. A partial rerun cannot combine with jobs from a different source SHA to manufacture closure.
