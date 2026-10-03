@@ -1,13 +1,6 @@
-const STORAGE_KEY = "shawtie:notification-preview:v1";
-const MESSAGE_TYPE = "R2_NOTIFICATION_PREVIEW";
+import { apiRequest } from "../api-client.ts";
 
-export function readNotificationPreviewPreference(): boolean {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+const MESSAGE_TYPE = "R2_NOTIFICATION_PREVIEW";
 
 async function postPreference(enabled: boolean): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
@@ -22,14 +15,20 @@ async function postPreference(enabled: boolean): Promise<void> {
 }
 
 export async function setNotificationPreviewPreference(enabled: boolean): Promise<void> {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0");
-  } catch {
-    // A storage failure must fail privacy-safe. The service worker defaults to hidden previews.
-  }
   await postPreference(enabled);
 }
 
 export async function syncNotificationPreviewPreference(): Promise<void> {
-  await postPreference(readNotificationPreviewPreference());
+  // Fail privacy-safe across logout, account switching, startup, and network failure.
+  await postPreference(false);
+  try {
+    const preference = await apiRequest<{ messagePreviewEnabled: boolean }>(
+      "/api/v1/me/notification-preferences",
+    );
+    if (preference.messagePreviewEnabled) {
+      await postPreference(true);
+    }
+  } catch {
+    // Hidden preview remains authoritative until the account preference can be loaded.
+  }
 }
