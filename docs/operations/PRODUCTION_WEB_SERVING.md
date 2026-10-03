@@ -64,7 +64,7 @@ The legacy `VITE_S3_CONNECT_SRC` value is accepted only as a compatibility fallb
 
 The externally visible origin must be HTTPS. `APP_ORIGIN` describes that public origin even when the internal hop from the TLS terminator to the Node process is HTTP.
 
-The follow-up repository audit also makes the internal backend hop an explicit R2 deployment gate. R2 must either enforce a private/loopback-only rule for plaintext `BACKEND_PROXY_TARGET` values or provide deployment evidence that the configured HTTP route is isolated inside the trusted platform network. HTTPS is required for any backend hop that crosses an untrusted or externally routed network boundary.
+The follow-up repository audit made the internal backend hop an explicit R2 deployment gate. The merged R2 implementation now rejects untrusted plaintext `BACKEND_PROXY_TARGET` values and permits HTTP only for loopback/private addressing or the explicit reviewed private-host mode. HTTPS remains required for any backend hop that crosses an untrusted or externally routed network boundary. Final deployed-topology verification remains a live/manual R2 gate.
 
 SEC1 proves the repository-controlled header behavior and real Chromium compatibility. R2 must re-check the actual deployed HTTPS response after the ingress/CDN/load-balancer layer is present.
 
