@@ -2,7 +2,7 @@
 
 Status: ACTIVE TRACKING DOCUMENT
 
-Current implementation branch: `feat/r2-public-readiness`
+Repository implementation: merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`
 
 This document is the canonical R2 issue inventory. It distinguishes repository implementation from hosted verification and from live/manual release acceptance. R2 is not DONE until every required acceptance gate has executed against one final candidate.
 
