@@ -32,7 +32,7 @@ Real Brevo sends, production Web Push, public-origin verification, backup/restor
 
 The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration. It is never treated as a normal CI step.
 
-R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1/S1 browser gates, production scans, production-container builds, and the exact-SHA automated gate. Canonical evidence: `R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`. Main run `37122211679` passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1/S1 browser gates, production scans, production-container builds, and the exact-SHA automated gate. Canonical evidence: `R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Repository audit concerns
 
@@ -216,7 +216,7 @@ No secret scanner should be described as exhaustive. Credential rotation remains
 
 The repository commits `package-lock.json`.
 
-Baseline CI installs with `npm ci` and runs `npm audit --audit-level=high` as an unconditional hard gate. V1 hosted verification already closed the npm audit gate, and R2 shakedowns also run npm audit plus pinned `cargo-audit 0.22.2` against the committed OpenMLS lockfile. The exact-main R2 dependency-audit job passed on candidate `2ca1a4dd` in run `37108925171`; the reviewed `RUSTSEC-2026-0173` maintenance warning did not become a vulnerability failure.
+Baseline CI installs with `npm ci` and runs `npm audit --audit-level=high` as an unconditional hard gate. V1 hosted verification already closed the npm audit gate, and R2 shakedowns also run npm audit plus pinned `cargo-audit 0.22.2` against the committed OpenMLS lockfile. The exact-main R2 dependency-audit job passed on candidate `03bf9bfd` in run `37122211679`; the reviewed `RUSTSEC-2026-0173` maintenance warning did not become a vulnerability failure.
 
 ## CODEOWNERS
 
