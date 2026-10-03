@@ -1,5 +1,7 @@
 name: R2 Public Readiness Verification
 
+# Final R2 merge-candidate verification trigger.
+
 on:
   workflow_dispatch:
   push:
