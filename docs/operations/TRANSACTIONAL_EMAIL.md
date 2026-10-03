@@ -2,17 +2,34 @@
 
 ## Status
 
-R2 implements real transactional authentication email delivery through the existing provider-neutral `EmailDeliveryPort`.
+R2 implements real transactional email delivery through the existing provider-neutral `EmailDeliveryPort`.
 
-The current provider adapter is Brevo. This R2 slice is deliberately limited to authentication challenges:
+The Brevo adapter now serves two reviewed families:
 
-- registration verification
-- registration resend
+Authentication challenges:
+
+- registration verification and resend
 - password recovery
 - account recovery
 - email-change verification and resend
 
-It does not turn partnership, breakup, messaging, relationship-space, or other private product events into provider email.
+Minimal serious security/lifecycle notices:
+
+- password reset completed
+- old-address notice after email change
+- account deletion requested
+- partner account deletion started
+- account permanently deleted
+- breakup started
+- restoration requested
+- partnership restored
+- breakup deadline reminder
+- partnership dissolved
+- partner account deleted
+
+`breakup_cancelled` remains intentionally in-app only.
+
+Serious-event email does not include message/media/relationship-object plaintext, partner names, recovery secrets, or cryptographic material. Live provider acceptance remains an R2 release gate.
 
 ## Architecture
 
@@ -43,7 +60,7 @@ Challenge creation and the outbox insert happen inside the same PostgreSQL trans
 
 The outbox payload contains only the challenge ID. Immediately before delivery, the worker reloads authoritative challenge state, verifies that the challenge is still active, derives the current short-lived code, renders the email, and calls the provider.
 
-No migration is required for this integration.
+Authentication challenge delivery reuses the existing A1 persistence. R2 adds no provider-specific email table. Other R2 migrations serve notification preferences, public-readiness/support state, and erasure safety rather than Brevo itself.
 
 ## Challenge security
 
