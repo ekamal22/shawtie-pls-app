@@ -110,7 +110,7 @@ R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd
 
 Remaining blockers are evidence/topology gates, not hidden feature-scope expansion:
 
-- real Brevo sender/domain/DNS and provider flows
+- real Brevo sender/domain/DNS and provider flows, governed by `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`
 - real production Web Push
 - actual production deployment, TLS/DNS, private database/object storage, TURN, and secret injection
 - applied `main` branch protection
