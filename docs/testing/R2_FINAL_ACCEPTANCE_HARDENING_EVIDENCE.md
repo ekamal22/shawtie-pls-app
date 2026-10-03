@@ -25,3 +25,22 @@ This shakedown adds executable evidence for repository-owned Milestone 21 accept
 - all existing R2 baseline, secret, dependency, browser, performance, and container gates
 
 No pass is claimed until the GitHub-hosted run completes on the trigger commit.
+
+
+## Shakedown 1
+
+Run: `37116208379`
+
+Candidate: `ecbf481f10737b5c45e4e491a3582b0c2fa959b1`
+
+Verified before the rerun:
+
+- repository baseline: PASS
+- full-history secret scan: PASS
+- `R2_E2EE_DIFF_REVIEW_PASS` with 127 changed files and zero protected cryptographic path changes
+- dependency audit: PASS
+- synthetic support workflow drill: PASS
+
+The PostgreSQL job then failed before the restore drill could execute because the standalone drill imported `@shawtie/worker`, whose workspace package intentionally has no root runtime export. The workflow had already built the worker successfully. The drill now imports the actual built `apps/worker/dist/index.js` export surface.
+
+No restore safety assertion was weakened.
