@@ -14,7 +14,6 @@ import {
 } from "../../../design/primitives.tsx";
 import { apiRequest } from "../../../lib/api-client.ts";
 import { rememberPendingAccountDeletion } from "../../../lib/offline/account-control.ts";
-import { setNotificationPreviewPreference } from "../../../lib/pwa/notification-preferences.ts";
 import { PartnerRequestsPanel } from "../../partner-requests/PartnerRequestsPanel.tsx";
 import { PartnershipPanel } from "../../partnership/PartnershipPanel.tsx";
 import { CryptoSecurityPanel } from "../../security/CryptoSecurityPanel.tsx";
@@ -126,7 +125,6 @@ export function UsScreen({
     setDateOfBirth(profile.dateOfBirth);
     setDevices(deviceResult.devices);
     setNotificationPreviewState(notificationPreferences.messagePreviewEnabled);
-    await setNotificationPreviewPreference(notificationPreferences.messagePreviewEnabled);
   }
 
   useEffect(() => {
@@ -219,8 +217,8 @@ export function UsScreen({
           <section className="us-block">
             <h2>Notification privacy</h2>
             <p className="hint">
-              Notification previews are hidden on this device by default. Even when enabled,
-              protected message content is never sent to the push provider.
+              Message notification details are hidden by default for your account. Even when
+              enabled, protected message content is never sent to the push provider.
             </p>
             <label className="security-confirm">
               <input
@@ -234,11 +232,10 @@ export function UsScreen({
                       body: { messagePreviewEnabled: enabled },
                     });
                     setNotificationPreviewState(enabled);
-                    await setNotificationPreviewPreference(enabled);
                   }, enabled ? "Notification details enabled." : "Notification previews hidden.");
                 }}
               />
-              <span>Show notification type details on this device</span>
+              <span>Show message notification type details</span>
             </label>
           </section>
 
