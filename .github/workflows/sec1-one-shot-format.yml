@@ -1,0 +1,45 @@
+name: SEC1 One Shot Format
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sec1-one-shot-format.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.18.0
+          cache: npm
+      - name: Install exact workspace
+        run: npm ci --ignore-scripts
+      - name: Format SEC1 scoped files
+        run: npx prettier --write apps/web/server.mjs apps/web/tests/sec1.server.test.mjs
+      - name: Commit formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "SEC1_FORMAT_ALREADY_CLEAN"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- apps/web/server.mjs apps/web/tests/sec1.server.test.mjs
+          git commit -m "style: format SEC1 R2 integration [skip ci]"
+          git push origin HEAD:main
