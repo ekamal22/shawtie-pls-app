@@ -1,6 +1,6 @@
 # R2 Hosted Verification Evidence
 
-Status: AUTOMATED HOSTED VERIFICATION PASS
+Status: AUTOMATED HOSTED VERIFICATION PASS ON MAIN
 
 Milestone: 21 R2 Public Readiness
 
@@ -119,6 +119,42 @@ Aggregate implementation pull request: #2
 A final non-skip evidence commit is used only to trigger the normal PR Baseline CI and the R2 hosted workflow on the exact aggregate PR head before merge to `main`.
 
 Result: PENDING
+
+## Main integration and exact-main verification
+
+Aggregate R2 implementation PR #2 was merged to `main` at `8a73b62194680e226cb372f7a5cee59eabb6416e`.
+
+Pull-request integration verification on head `b692d04eb85bc4ad9f40b13133a7046ec6743d1c` passed:
+
+- normal Baseline CI run `37108154293`
+- R2 Public Readiness Verification run `37108152002`
+
+After merge, the R2 release workflow was enabled on `main`. A SEC1-scoped formatting drift found by the legacy V1 workflow was corrected without production behavior changes.
+
+Exact-main R2 closure candidate:
+
+`2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`
+
+Exact-main R2 run:
+
+`37108925171`
+
+Result: PASS.
+
+Every R2 job passed on that exact main SHA:
+
+- R2 candidate
+- R2 baseline
+- R2 full history secret scan
+- R2 dependency audit
+- R2 PostgreSQL and retained S1
+- R2 browser security and performance
+- R2 production containers
+- R2 automated gate
+
+The final gate emitted `R2_AUTOMATED_GATE_PASS` with migration count 24.
+
+Normal Baseline CI on the same exact main candidate also passed in run `37108925156`.
 
 ## Closure boundary
 
