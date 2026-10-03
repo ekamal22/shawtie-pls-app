@@ -44,7 +44,7 @@ V1 Hosted CI Verification is DONE. Final release run `36801613394` and normal Ba
 
 Local repository health and domain tests remain usable without hosted Actions.
 
-R2 Public Readiness adds a separate hosted workflow, `.github/workflows/r2-verification.yml`. Its automated scope is intentionally release-specific: full-history secret scanning, dependency audits, all current migrations, retained S1 PostgreSQL/plaintext verification, R2 security/accessibility regressions, release-aware web performance budgets, real Chromium service-worker upgrade behavior, retained SEC1/S1 browser security, production scans, and production-container builds. The automated R2 gate requires one exact candidate SHA and 24 migrations. Exact-main hosted run `37108925171` passed on candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d` and emitted `R2_AUTOMATED_GATE_PASS`.
+R2 Public Readiness adds a separate hosted workflow, `.github/workflows/r2-verification.yml`. Its automated scope is intentionally release-specific: full-history secret scanning, dependency audits, all current migrations, retained S1 PostgreSQL/plaintext verification, R2 security/accessibility regressions, release-aware web performance budgets, real Chromium service-worker upgrade behavior, retained SEC1/S1 browser security, production scans, and production-container builds. The automated R2 gate requires one exact candidate SHA and 24 migrations. Exact-main R2 run `37109590242` passed on `44fe73e7dbed79ebf985f66f6c1237536014121f`; normal Baseline CI `37109590248` and V1 Release Verification `37109590249` also passed on that same SHA.
 
 R2 manual/live gates remain separate and are enumerated in `R2_MANUAL_ACCEPTANCE_EVIDENCE.json`. The closure harness fails while any required live/manual gate remains false.
 
