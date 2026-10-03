@@ -1,0 +1,49 @@
+name: R2 Format Repair
+
+on:
+  push:
+    branches:
+      - feat/r2-public-readiness
+    paths:
+      - ".github/workflows/r2-format-repair.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r2-format-repair
+  cancel-in-progress: false
+
+jobs:
+  format:
+    name: R2 format repair
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.18.0
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Apply repository formatter
+        run: npm run format
+      - name: Commit formatting repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No format changes required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "style: format R2 implementation [skip ci]"
+          git push origin HEAD:feat/r2-public-readiness
