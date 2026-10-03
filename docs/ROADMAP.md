@@ -106,7 +106,7 @@ The aggregate R2 repository implementation is merged to `main @ 8a73b62194680e22
 - R2 accessibility regressions and production web artifact budgets
 - documented disposition of the transitive Rust maintenance warning
 
-R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 Remaining blockers are evidence/topology gates, not hidden feature-scope expansion:
 
@@ -676,7 +676,7 @@ Protocol review, protected-content paths, recovery, revocation, plaintext retire
 
 # Milestone 21: R2 Public Readiness
 
-Repository-owned R2 implementation and hosted automated verification are complete on `feat/r2-public-readiness`. Automated evidence is anchored at `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`.
+Repository-owned R2 implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`. Hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`, run `37108925171`.
 
 R2 remains IN PROGRESS because live provider, production topology, repository governance, public-origin, restore/alert, manual accessibility/device/calling/E2EE, rollback, legal review, and signed-provenance gates still require executed evidence.
 
