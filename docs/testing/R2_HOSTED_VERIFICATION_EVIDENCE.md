@@ -106,7 +106,11 @@ Candidate: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
 
 Run: `37083243469`
 
-Result: FINAL AUTOMATED PASS.
+Started: 2026-10-03T00:43:21Z
+
+Completed: 2026-10-03T00:48:17Z
+
+Result: FINAL FEATURE-BRANCH AUTOMATED PASS.
 
 ## Pull request integration verification
 
