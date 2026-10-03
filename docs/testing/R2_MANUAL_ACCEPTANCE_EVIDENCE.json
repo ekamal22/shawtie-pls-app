@@ -3,22 +3,93 @@
   "candidateSha": null,
   "recordedAt": null,
   "gates": {
-    "brevoSenderDomainVerified": { "passed": false, "evidence": null },
-    "brevoSmokeSendPassed": { "passed": false, "evidence": null },
-    "brevoRegistrationAndResendPassed": { "passed": false, "evidence": null },
-    "publicHttpsHeadersPassed": { "passed": false, "evidence": null },
-    "productionWebPushPassed": { "passed": false, "evidence": null },
-    "backupRestoreDeletionDrillPassed": { "passed": false, "evidence": null },
-    "operationalAlertReceived": { "passed": false, "evidence": null },
-    "repositoryProtectionApplied": { "passed": false, "evidence": null },
-    "licenseReviewed": { "passed": false, "evidence": null },
-    "signedReleaseProvenancePassed": { "passed": false, "evidence": null },
-    "accessibilityManualPassed": { "passed": false, "evidence": null },
-    "performanceDevicePassed": { "passed": false, "evidence": null },
-    "physicalAndroidPassed": { "passed": false, "evidence": null },
-    "voiceVideoPrivacyPassed": { "passed": false, "evidence": null },
-    "e2eeReleaseReviewPassed": { "passed": false, "evidence": null },
-    "stagedRollbackPassed": { "passed": false, "evidence": null },
-    "privacyTermsOwnerReviewPassed": { "passed": false, "evidence": null }
+    "brevoSenderDomainVerified": {
+      "passed": false,
+      "evidence": null
+    },
+    "brevoSmokeSendPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "brevoRegistrationAndResendPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "publicHttpsHeadersPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "productionWebPushPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "backupRestoreDeletionDrillPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "operationalAlertReceived": {
+      "passed": false,
+      "evidence": null
+    },
+    "repositoryProtectionApplied": {
+      "passed": false,
+      "evidence": null
+    },
+    "licenseReviewed": {
+      "passed": false,
+      "evidence": null
+    },
+    "signedReleaseProvenancePassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "accessibilityManualPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "performanceDevicePassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "physicalAndroidPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "voiceVideoPrivacyPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "e2eeReleaseReviewPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "stagedRollbackPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "privacyTermsOwnerReviewPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "hostedAutomatedGatePassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "brevoSeriousEventPassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "productionTopologyReviewed": {
+      "passed": false,
+      "evidence": null
+    },
+    "productionDeploymentSmokePassed": {
+      "passed": false,
+      "evidence": null
+    },
+    "supportWorkflowPassed": {
+      "passed": false,
+      "evidence": null
+    }
   }
 }
