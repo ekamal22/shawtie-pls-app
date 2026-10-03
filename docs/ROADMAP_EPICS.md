@@ -2833,7 +2833,7 @@ R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd
 - [ ] final performance acceptance passes on mid-range Android and constrained-network scenarios
 - [ ] final physical Android acceptance passes
 - [ ] voice/video privacy acceptance passes
-- [ ] final E2EE release review passes
+- [x] final E2EE release review passes. Evidence: `docs/testing/R2_E2EE_RELEASE_REVIEW_EVIDENCE.md`; exact candidate `03bf9bfd`, R2 run `37122211679`.
 - [ ] staged launch and rollback rehearsal passes
 - [ ] the Stable Release is tied to one immutable signed tag or equivalent signed provenance record with exact source SHA and artifact checksums
 
