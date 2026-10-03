@@ -28,7 +28,7 @@ The R2 hosted workflow verifies one exact candidate SHA through:
 - release artifact checksums
 - final exact-SHA automated gate
 
-Real Brevo sends, production Web Push, public-origin verification, backup/restore drill, alert delivery, branch-protection application, legal review, physical-device/accessibility/performance, calling/E2EE review, rollback, and signed release provenance remain outside ordinary CI because they require live external state or manual acceptance.
+Real Brevo sends, production Web Push, public-origin verification, backup/restore drill, alert delivery, branch-protection application, legal review, physical-device/accessibility/performance, voice/video privacy review, rollback, and signed release provenance remain outside ordinary CI because they require live external state or manual acceptance.
 
 The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration. It is never treated as a normal CI step.
 
