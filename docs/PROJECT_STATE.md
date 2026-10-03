@@ -8,9 +8,9 @@ The earlier Brevo authentication-email slice is now integrated into the merged R
 
 The provider boundary remains API transaction -> durable outbox -> worker -> provider. Authentication challenges preserve the existing challenge expiry, attempt, consume-once, resend-supersede, durable rate-limit, generic recovery-start, and verifier-only storage rules. Serious-event email is a separate durable family and does not carry protected application plaintext.
 
-R2 hosted automated verification is CLOSED on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1 and S1 browser verification, production-container builds, and the exact-SHA automated gate. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is CLOSED on exact `main` candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`. Main run `37122211679` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1 and S1 browser verification, production-container builds, and the exact-SHA automated gate. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-R2 is not a closure claim yet. Real sender/domain/provider acceptance, production deployment, public-origin verification, applied branch protection, restore/alert drills, final accessibility/device/calling/E2EE acceptance, rollback rehearsal, and signed release provenance remain evidence gates. Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+R2 is not a closure claim yet. Real sender/domain/provider acceptance, production deployment, public-origin verification, applied branch protection, restore/alert drills, final accessibility/device/voice-video privacy acceptance, rollback rehearsal, and signed release provenance remain evidence gates. Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Status
 
@@ -222,9 +222,9 @@ R2 is IN PROGRESS on `main`; repository implementation is merged, while live/man
 - repository-level licensing decision and historical-branch authority
 - accessibility regressions, web artifact performance budgets, and Rust maintenance-warning review
 
-R2 hosted automated acceptance is complete on `main` at `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Run `37108925171` ended with `R2_AUTOMATED_GATE_PASS` and migration count 24. Earlier shakedown and feature-branch passes remain historical evidence in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated acceptance is complete on `main` at `03bf9bfd1d137ec6cae42a66a450a846aad5e397`. Run `37122211679` ended with `R2_AUTOMATED_GATE_PASS` and migration count 24. Earlier shakedown and feature-branch passes remain historical evidence in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-Stable Release remains blocked on executed evidence for the live production/provider/manual gates recorded in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, including Brevo/DNS, production Web Push, deployment/TLS/DNS, applied `main` protection, public-origin checks, backup/restore drill, alert receipt, owner/legal review, accessibility/device performance, physical Android, call privacy, E2EE review, rollback rehearsal, and final signed provenance.
+Stable Release remains blocked on executed evidence for the live production/provider/manual gates recorded in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, including Brevo/DNS, production Web Push, deployment/TLS/DNS, applied `main` protection, public-origin checks, backup/restore drill, alert receipt, owner/legal review, accessibility/device performance, physical Android, call privacy, rollback rehearsal, and final signed provenance.
 
 `design/m3-media-voice` is explicitly historical-only and non-authoritative per `docs/architecture/HISTORICAL_BRANCHES.md`.
 
@@ -242,10 +242,11 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. close R2 Public Readiness with final security, accessibility, browser/device, operational, deployment, release, and rollback evidence
-2. establish release-appropriate branch protection, dedicated secret scanning, licensing policy, trusted backend transport rules, signed provenance, and release-aware service-worker cache behavior
-3. review the transitive dependency path for the V1 maintenance warning `RUSTSEC-2026-0173`
-4. cut Stable Release only after R2 is closed
+1. configure and verify the real Brevo, Web Push, production deployment, public-origin, backup/restore, monitoring, and support environments
+2. apply and verify release-appropriate `main` branch protection
+3. complete owner/legal, manual accessibility, physical-device/performance, voice/video privacy, and rollback acceptance
+4. create and verify signed release provenance after pre-provenance acceptance, then run the final R2 release gate
+5. cut Stable Release only after R2 is closed
 
 The accepted UX0 through UX7 executable remains `ca7cd35`; S1's final corrective executable is `cde73a1`; UX8's final corrective executable is `43ff9b1ec319703f3d9270ae8053ab196ca54419`. Merge and documentation-only commits do not change these runtime evidence anchors.
 
