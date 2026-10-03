@@ -8,7 +8,7 @@ The earlier Brevo authentication-email slice is now integrated into the aggregat
 
 The provider boundary remains API transaction -> durable outbox -> worker -> provider. Authentication challenges preserve the existing challenge expiry, attempt, consume-once, resend-supersede, durable rate-limit, generic recovery-start, and verifier-only storage rules. Serious-event email is a separate durable family and does not carry protected application plaintext.
 
-The first hosted R2 shakedown on `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4` found concrete migration/scanner/static-test integration defects. They are fixed. The second hosted shakedown is running on exact candidate `7cddd477bd074de3c52e630a1f88e0af3d4e30b0`.
+R2 automated hosted verification is CLOSED on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1 and S1 browser verification, production-container builds, and the exact-SHA automated gate. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 R2 is not a closure claim yet. Real sender/domain/provider acceptance, production deployment, public-origin verification, applied branch protection, restore/alert drills, final accessibility/device/calling/E2EE acceptance, rollback rehearsal, and signed release provenance remain evidence gates. Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
@@ -222,7 +222,7 @@ R2 is IN PROGRESS on `feat/r2-public-readiness`. The repository-owned implementa
 - repository-level licensing decision and historical-branch authority
 - accessibility regressions, web artifact performance budgets, and Rust maintenance-warning review
 
-The first hosted R2 shakedown on `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4` passed the dependency-audit and production-container jobs. It found migration transaction-control, secret-scanner scope, and stale browser-test defects. Those defects are fixed on the active branch. This does not constitute final R2 automated acceptance because a fresh hosted run on the final branch state is still required.
+R2 hosted automated acceptance is complete at `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Run `37083243469` ended with `R2_AUTOMATED_GATE_PASS` and migration count 24. Earlier shakedown defects are retained only as historical evidence in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 Stable Release remains blocked on executed evidence for the live production/provider/manual gates recorded in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, including Brevo/DNS, production Web Push, deployment/TLS/DNS, applied `main` protection, public-origin checks, backup/restore drill, alert receipt, owner/legal review, accessibility/device performance, physical Android, call privacy, E2EE review, rollback rehearsal, and final signed provenance.
 
