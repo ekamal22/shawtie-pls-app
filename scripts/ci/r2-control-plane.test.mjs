@@ -12,7 +12,7 @@ function run(script, args = [], env = {}) {
 test("R2 default manual evidence ledger blocks closure", () => {
   const result = run("scripts/ci/r2-manual-evidence.mjs");
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /R2_MANUAL_EVIDENCE_INCOMPLETE/);
+  assert.match(result.stderr, /R2_MANUAL_EVIDENCE_INVALID candidateSha/);
 });
 
 test("R2 production API contract accepts the complete stable product configuration", () => {
