@@ -133,16 +133,20 @@ Enforce:
 
 ## R2 notification-provider boundary
 
-The current Brevo integration covers authentication challenges only. The separate serious-event email family and the broader Web Push surface remain R2 work.
+R2 implements both authentication email and the approved serious-event email family through the provider-neutral durable worker boundary.
 
-Before Stable Release:
+General Web Push is also implemented for account/lifecycle notifications, partner requests, new messages, and calls. Provider payloads remain content-minimized:
 
-- serious account and partnership email templates require individual privacy review
-- provider messages must carry only the minimum event, deadline, and context required by the PRD
-- protected message, media, relationship-object, and cryptographic content must not enter email or push payloads
-- hidden notification-preview mode must use generic text
-- revoked devices and dissolved partnerships must not continue receiving authorized push delivery
-- provider failures must not corrupt authoritative account or partnership state
+- serious email carries only the destination, event meaning, and authoritative deadline where required
+- protected message, media, relationship-object, partner identity, recovery, and cryptographic content do not enter general push payloads
+- generic notification text is the default
+- the account-backed detail setting may expose notification type only, not protected message plaintext
+- runtime start first forces preview details hidden and then loads the authenticated account preference; runtime stop hides details again
+- revoked devices lose their push subscription
+- final dissolution synchronously releases partnership membership, so stale message events cannot derive current recipients
+- provider failures occur outside authoritative account/partnership transactions through durable outbox retry
+
+Live provider acceptance remains a Stable Release gate.
 
 Canonical current release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
