@@ -144,7 +144,15 @@ test("provider timeout becomes a retryable worker failure", async () => {
     return new Promise<Response>((_resolve, reject) => {
       const signal = init?.signal;
       if (!signal) return reject(new Error("missing signal"));
-      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+      const guard = setTimeout(() => reject(new Error("fake fetch did not observe timeout")), 250);
+      signal.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(guard);
+          reject(signal.reason);
+        },
+        { once: true },
+      );
     });
   });
   await assert.rejects(
