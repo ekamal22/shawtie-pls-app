@@ -8,9 +8,9 @@ This document is the canonical R2 issue inventory. It distinguishes repository i
 
 ## Current conclusion
 
-The R2 repository implementation is substantially complete. The branch now contains the release-specific security, notification, privacy, support, operations, deployment, backup, observability, provenance, accessibility, and performance control plane that the original audit found missing.
+The R2 repository implementation is substantially complete and merged. The mainline now contains the release-specific security, notification, privacy, support, operations, deployment, backup, observability, provenance, accessibility, and performance control plane that the original audit found missing.
 
-R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations plus retained S1 PostgreSQL/plaintext verification, browser security/performance, production-container builds, and the exact-SHA automated gate.
+R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations plus retained S1 PostgreSQL/plaintext verification, browser security/performance, production-container builds, and the exact-SHA automated gate.
 
 Earlier shakedowns found and corrected migration transaction-control, secret-scanner scope, stale-test, formatting, Node TypeScript-loader, Brevo timeout-test, and R2 Playwright workspace-preparation defects. Their evidence is retained in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
@@ -72,9 +72,10 @@ Repository implementation: IMPLEMENTED
 - private `/api/*` responses remain excluded
 - a real Chromium R2 upgrade test covers release A to release B, old-cache pruning, offline navigation, and private-API exclusion
 
+Automated acceptance: COMPLETE on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`, including the real Chromium release-A to release-B upgrade/offline gate.
+
 Still required:
 
-- fresh hosted Chromium pass on the final candidate
 - physical mobile update/offline evidence in final acceptance
 
 ### R2-05 Network abuse subjects
@@ -83,10 +84,9 @@ Repository implementation: IMPLEMENTED
 
 Media, realtime, and calling now use the canonical network prefix helper. Calling uses all configured HMAC key versions for rate-limit continuity.
 
-Still required:
+Automated hosted regression: COMPLETE on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`.
 
-- final hosted regression pass
-- production abuse-control observation after launch is X1 work
+Post-launch production abuse-control observation remains X1 work and is not an open R2 source or hosted-automation gate.
 
 ### R2-06 Web-to-API backend transport
 
@@ -215,7 +215,7 @@ Repository implementation: IMPLEMENTED
 - explicit shallow/full history reporting
 - hosted R2 job requires a full-history checkout
 
-Automated acceptance: COMPLETE on `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`.
+Automated acceptance: COMPLETE on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`, run `37108925171`.
 
 ### R2-15 Stable-release provenance
 
@@ -256,7 +256,7 @@ Repository implementation: BUDGETS IMPLEMENTED
 
 Production artifact budgets cover total web output, JavaScript, CSS, and WASM.
 
-Automated hosted artifact budget: COMPLETE on run `37083243469`.
+Automated hosted artifact budget: COMPLETE on exact-main run `37108925171`.
 
 Still required:
 
@@ -270,7 +270,7 @@ The current path is documented as `hax-lib 0.3.7 -> hax-lib-macros 0.3.7 -> proc
 
 The warning is maintenance-only, not a vulnerability finding. R2 does not perform an unreviewed cryptographic-stack upgrade merely to remove the warning. Any future dependency-family change requires a fresh E2EE review.
 
-Final-candidate hosted `cargo audit`: COMPLETE on run `37083243469` with no vulnerability failure.
+Exact-main hosted `cargo audit`: COMPLETE on run `37108925171` with no vulnerability failure.
 
 ### R2-20 Obsolete M3 design branch
 
@@ -306,13 +306,10 @@ The source of truth for those live/manual gates is `docs/testing/R2_MANUAL_ACCEP
 ## Current execution order
 
 ~~~text
-repository implementation
+repository implementation merged to main
         |
         v
-hosted R2 automated verification PASS
-        |
-        v
-merge accepted R2 implementation to main
+exact-main hosted R2 automated verification PASS
         |
         v
 configure live providers and production topology
