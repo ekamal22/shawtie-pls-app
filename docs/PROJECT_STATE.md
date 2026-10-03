@@ -242,7 +242,7 @@ UX0 through UX7 are complete, physically accepted, documented, and merged to `ma
 
 The remaining pre-release sequence is:
 
-1. configure and verify the real Brevo, Web Push, production deployment, public-origin, backup/restore, monitoring, and support environments
+1. close the four Brevo-specific live gates using `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`, then configure and verify Web Push, production deployment, public-origin, backup/restore, monitoring, and support environments
 2. apply and verify release-appropriate `main` branch protection
 3. complete owner/legal, manual accessibility, physical-device/performance, voice/video privacy, and rollback acceptance
 4. create and verify signed release provenance after pre-provenance acceptance, then run the final R2 release gate
