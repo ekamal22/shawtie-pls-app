@@ -2,25 +2,27 @@
 
 ## Stable-release principle
 
-A release is one exact source SHA. Build, database migration, deployment, acceptance evidence, tag, checksums, and rollback evidence must all identify that same candidate.
+A release is one exact executable source SHA. Build, database migration, deployment, live acceptance, tag, checksums, and rollback evidence must all identify that candidate. Evidence-only documentation commits may follow the executable candidate, but the closure tooling rejects any intervening change to release-impacting source, workflows, scripts, infrastructure, tests, lockfiles, or license.
 
 ## Candidate preparation
 
-Set:
+First freeze and verify the executable candidate:
 
 ```text
-R2_CANDIDATE_SHA=<exact HEAD SHA>
+R2_CANDIDATE_SHA=<exact executable candidate SHA>
 SHAWTIE_RELEASE_ID=<same exact SHA>
+node scripts/release/verify-candidate.mjs
 ```
 
-Then run:
+Record that SHA in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`. Evidence-only documentation commits may then be added while acceptance proceeds. The manual-evidence checker requires the recorded candidate to remain an ancestor of the evidence commit and rejects release-impacting drift after the candidate.
+
+After every pre-provenance live/manual gate is evidenced, run:
 
 ```text
-node scripts/release/verify-candidate.mjs
 npm run test:r2:closure
 ```
 
-`test:r2:closure` intentionally fails until the manual acceptance evidence file records every required live gate.
+`test:r2:closure` intentionally fails until every required pre-provenance gate is recorded. Signed provenance is deliberately finalized after that acceptance step so the release process has no circular tag dependency.
 
 ## Database migrations
 
@@ -53,23 +55,22 @@ This creates `SHA256SUMS`.
 
 ## Signed provenance
 
-Create an annotated signed tag only after R2 candidate acceptance:
+Create an annotated signed tag only after the pre-provenance R2 acceptance gate passes:
 
 ```text
 git tag -s vX.Y.Z <candidate-sha>
 git push origin vX.Y.Z
 ```
 
-Then verify:
+Then verify and finalize:
 
 ```text
 R2_RELEASE_TAG=vX.Y.Z
-R2_CANDIDATE_SHA=<candidate-sha>
 R2_ARTIFACT_DIR=<artifact-directory>
-node scripts/release/verify-provenance.mjs
+npm run release:r2:finalize
 ```
 
-The verifier rejects an unsigned/unverifiable tag, a tag pointing at another SHA, or an artifact checksum mismatch.
+The finalizer rechecks every pre-provenance manual gate, requires `signedReleaseProvenancePassed` to carry an evidence reference, and independently verifies the signed tag plus artifact checksums against the candidate SHA recorded in the manual-evidence ledger. The verifier rejects an unsigned or unverifiable tag, a tag pointing at another SHA, or an artifact checksum mismatch.
 
 ## Staged rollout
 
@@ -121,9 +122,9 @@ The administrative token must never be committed or pasted into logs.
 
 ## Manual evidence
 
-`docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json` starts with all gates false.
+`docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json` starts with all gates false. Its `candidateSha` records the executable candidate, not the later evidence-document commit SHA.
 
-Set a gate to passed only after the named procedure actually executes against the final candidate or final production topology and record a concise evidence reference. Do not use planning documents as evidence.
+Set a gate to passed only after the named procedure actually executes against the candidate or final production topology and record a concise evidence reference. Do not use planning documents as evidence. `signedReleaseProvenancePassed` is recorded only after the signed tag and checksum verification execute, then `npm run release:r2:finalize` is the final release gate.
 
 ## Rollback rehearsal
 
