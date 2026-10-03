@@ -36,13 +36,23 @@ test("R2 registration links the published privacy and terms surfaces", async () 
   assert.equal(terms.includes('href="/legal.css"'), true);
 });
 
-test("R2 notification preview defaults to hidden and stays content free", async () => {
+test("R2 notification preview defaults hidden across account switches and stays content free", async () => {
   const prefs = await readFile(
     new URL("../src/lib/pwa/notification-preferences.ts", import.meta.url),
     "utf8",
   );
+  const runtime = await readFile(
+    new URL("../src/lib/realtime/runtime-context.tsx", import.meta.url),
+    "utf8",
+  );
   const us = await readFile(new URL("../src/features/ours/us/UsScreen.tsx", import.meta.url), "utf8");
-  assert.equal(prefs.includes('=== "1"'), true);
+  assert.equal(prefs.includes("localStorage"), false);
+  assert.equal(
+    prefs.indexOf("await postPreference(false)") <
+      prefs.indexOf('apiRequest<{ messagePreviewEnabled: boolean }>'),
+    true,
+  );
+  assert.equal(runtime.includes("setNotificationPreviewPreference(false)"), true);
   assert.equal(us.includes("messagePreviewEnabled"), true);
   assert.equal(us.includes("protected message content is never sent"), true);
 });
