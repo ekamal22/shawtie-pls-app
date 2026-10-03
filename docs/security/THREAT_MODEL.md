@@ -180,11 +180,11 @@ Objects are never public by default.
 
 ### Boundary 7: Email provider
 
-The configured authentication-email provider receives destination email addresses and the short-lived verification credential required for delivery.
+The configured email provider receives destination email addresses plus the minimum rendered content required for authentication or an approved serious security/lifecycle notice.
 
-The current R2 adapter is Brevo and is invoked only by the durable backend worker through the provider-neutral email port. Its API credential is a server-side secret and must not enter browser code, PostgreSQL, outbox payloads, logs, or repository history.
+The current R2 adapter is Brevo and is invoked only by the durable backend worker through the provider-neutral email port. Its API credential is a server-side secret and must not enter browser code, PostgreSQL outbox payloads, logs, or repository history.
 
-The current Brevo wiring is limited to authentication challenges. It must never receive message plaintext, relationship-space content, partner identity, breakup state, Recovery Master Secret material, passwords, or session tokens.
+Authentication challenges may contain the short-lived verification credential. Serious-event mail may contain only event meaning and an authoritative deadline where required. Email must not contain message/media/relationship-object plaintext, partner names, Recovery Master Secret material, passwords, session tokens, or cryptographic keys.
 
 ### Boundary 8: Push provider
 
@@ -206,19 +206,11 @@ They must not contain production secrets, real user content, or private cryptogr
 
 ## R2 release-review status
 
-The 2026-10-03 repo-wide audit did not identify evidence of a new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext regression, or committed production secret.
+The repo-wide R2 audit did not identify evidence of a new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext regression, or committed production secret.
 
-Open R2 threat-control work includes:
+Repository-owned R2 threat controls are now implemented for serious-event provider minimization, content-free general push, fail-hidden preview preference, service-worker release cache rotation, canonical abuse subjects, backend transport enforcement, restore-safe erasure replay, privacy-safe operational status, abuse/support workflow, secret scanning, provenance, deployment contracts, and historical branch authority.
 
-- minimize and explicitly review serious-event email-provider exposure before external delivery
-- keep broader push delivery content-minimized and compatible with notification-preview privacy
-- replace fixed service-worker cache identity with release-aware rollover or deterministic pruning
-- unify media, realtime, and calling network abuse subjects and key-rotation behavior
-- enforce trusted private transport for plaintext web-to-API hops or require HTTPS
-- prove production backup restore cannot re-expose deleted user-facing data
-- add operational observability without collecting protected content
-- define abuse/support procedures that respect E2EE inspection limits
-- close release provenance, secret scanning, branch protection, and production deployment gates
+Live release evidence remains open for provider configuration, deployed topology, backup/restore drill, external monitoring, applied branch protection, manual accessibility/device/calling/E2EE review, rollback, and final signed provenance.
 
 Canonical issue inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
@@ -1212,7 +1204,7 @@ Verification:
 - interrupted update tests
 - stale-client tests
 
-Follow-up audit finding: the current service worker uses the fixed cache name `shawtie-shell-v1`. Old fingerprinted assets are not pruned within that cache, and a newly activated worker can initially inherit the previous cached `/` navigation shell until a successful online navigation replaces it. R2 must introduce release-aware cache rotation or deterministic stale-asset pruning and test the activated-worker offline fallback across upgrades.
+R2 status: the service worker now derives its shell cache from the exact release identity, activation deletes earlier `shawtie-shell-*` release caches, private API responses remain excluded, and a real Chromium release-A to release-B test covers upgrade activation, stale-cache pruning, and offline navigation. Final hosted and physical-device release acceptance remain required.
 
 ### T35: Call-recording consent bypass after deferred post-stable implementation
 
