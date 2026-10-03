@@ -173,7 +173,8 @@
     "test:r2:scripts": "node scripts/ci/r2-script-syntax.mjs",
     "release:r2:governance:verify": "node scripts/release/verify-github-governance.mjs",
     "test:r2:support:postgres": "node scripts/test/r2-support-workflow-drill.mjs",
-    "test:r2:restore:postgres": "node scripts/test/r2-backup-restore-drill.mjs"
+    "test:r2:restore:postgres": "node scripts/test/r2-backup-restore-drill.mjs",
+    "test:r2:e2ee-review": "node scripts/security/r2-e2ee-diff-review.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
