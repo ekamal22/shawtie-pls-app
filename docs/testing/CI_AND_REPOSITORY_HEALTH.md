@@ -208,15 +208,15 @@ The executable repository foundation additionally defines strict TypeScript conf
 
 The baseline repository scanner detects several high-risk secret patterns and forbidden secret-bearing file types.
 
-It does not claim exhaustive secret detection.
+R2 adds `scripts/security/secret-scan.mjs` as a dedicated source/history release gate. The hosted R2 workflow checks out full Git history, requires the repository to be non-shallow, scans tracked source plus Git patch history, and fails on the supported high-confidence provider/token/private-key patterns. This is repository-owned release evidence; GitHub-native secret scanning remains a separate repository-setting control when available.
 
-Before public stable release, repository settings or CI should also provide dedicated secret scanning and dependency security tooling.
+No secret scanner should be described as exhaustive. Credential rotation remains mandatory if a real secret is ever committed.
 
 ## Dependency scanning
 
 The repository commits `package-lock.json`.
 
-Baseline CI installs with `npm ci` and then runs `npm audit --audit-level=high` as an unconditional hard gate. The local dependency installation that generated the committed lockfile reported 0 vulnerabilities. Hosted execution of the audit gate is still pending.
+Baseline CI installs with `npm ci` and runs `npm audit --audit-level=high` as an unconditional hard gate. V1 hosted verification already closed the npm audit gate, and R2 shakedowns also run npm audit plus pinned `cargo-audit 0.22.2` against the committed OpenMLS lockfile. The R2 dependency-audit job passed in the first three hosted shakedowns. Final-candidate dependency evidence still requires the final R2 hosted run.
 
 ## CODEOWNERS
 
