@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 function run(script, args = [], env = {}) {
@@ -13,6 +16,79 @@ test("R2 default manual evidence ledger blocks closure", () => {
   const result = run("scripts/ci/r2-manual-evidence.mjs");
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /R2_MANUAL_EVIDENCE_INVALID candidateSha/);
+});
+
+
+function completePreProvenanceEvidence(candidateSha) {
+  const gates = {
+    brevoSenderDomainVerified: true,
+    brevoSmokeSendPassed: true,
+    brevoRegistrationAndResendPassed: true,
+    publicHttpsHeadersPassed: true,
+    productionWebPushPassed: true,
+    backupRestoreDeletionDrillPassed: true,
+    operationalAlertReceived: true,
+    repositoryProtectionApplied: true,
+    licenseReviewed: true,
+    signedReleaseProvenancePassed: false,
+    accessibilityManualPassed: true,
+    performanceDevicePassed: true,
+    physicalAndroidPassed: true,
+    voiceVideoPrivacyPassed: true,
+    e2eeReleaseReviewPassed: true,
+    stagedRollbackPassed: true,
+    privacyTermsOwnerReviewPassed: true,
+    hostedAutomatedGatePassed: true,
+    brevoSeriousEventPassed: true,
+    productionTopologyReviewed: true,
+    productionDeploymentSmokePassed: true,
+    supportWorkflowPassed: true,
+  };
+  return {
+    schemaVersion: 2,
+    candidateSha,
+    recordedAt: "2026-10-03T12:00:00.000Z",
+    gates: Object.fromEntries(
+      Object.entries(gates).map(([key, passed]) => [
+        key,
+        { passed, evidence: passed ? "synthetic control-plane test" : null },
+      ]),
+    ),
+  };
+}
+
+test("R2 manual evidence allows evidence-only descendants and defers signed provenance", () => {
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const dir = mkdtempSync(path.join(tmpdir(), "shawtie-r2-evidence-"));
+  const evidencePath = path.join(dir, "evidence.json");
+  try {
+    writeFileSync(evidencePath, JSON.stringify(completePreProvenanceEvidence(head)));
+    const result = run("scripts/ci/r2-manual-evidence.mjs", [], {
+      R2_MANUAL_EVIDENCE_FILE: evidencePath,
+      R2_EVIDENCE_HEAD_SHA: head,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /R2_MANUAL_EVIDENCE_PASS/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("R2 final release gate still requires recorded signed provenance", () => {
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const dir = mkdtempSync(path.join(tmpdir(), "shawtie-r2-finalize-"));
+  const evidencePath = path.join(dir, "evidence.json");
+  try {
+    writeFileSync(evidencePath, JSON.stringify(completePreProvenanceEvidence(head)));
+    const result = run("scripts/release/finalize-r2-release.mjs", [], {
+      R2_MANUAL_EVIDENCE_FILE: evidencePath,
+      R2_EVIDENCE_HEAD_SHA: head,
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /signedReleaseProvenancePassed is not recorded/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("R2 restore tooling rejects a non PostgreSQL target before execution", () => {
