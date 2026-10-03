@@ -173,11 +173,22 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           expected-sha: ${{ github.sha }}
+      - name: Install PostgreSQL client tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
       - name: R2 migrations and retained S1 integration
         shell: bash
         run: |
           export AUTH_HMAC_KEYS="1:$(node -e 'process.stdout.write(Buffer.alloc(32, 7).toString("base64"))')"
           npm run test:s1:postgres
+          npm run build --workspace @shawtie/worker
+      - name: R2 support workflow PostgreSQL drill
+        run: npm run test:r2:support:postgres
+      - name: R2 backup restore deletion drill
+        run: npm run test:r2:restore:postgres
       - name: S1 plaintext assertion
         run: npm run s1:plaintext:assert-clean
       - name: Record migration count
