@@ -106,11 +106,10 @@ The aggregate R2 implementation is active on `feat/r2-public-readiness`. Reposit
 - R2 accessibility regressions and production web artifact budgets
 - documented disposition of the transitive Rust maintenance warning
 
-The first hosted R2 shakedown used candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4`. Its dependency-audit and production-container jobs passed. It also found concrete migration transaction-control, secret-scanner scope, and stale browser-test defects. Those defects are fixed on the active branch. Fresh hosted verification is required on the final branch state before the R2 automated gate is closed.
+R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 Remaining blockers are evidence/topology gates, not hidden feature-scope expansion:
 
-- clean final hosted R2 automated run
 - real Brevo sender/domain/DNS and provider flows
 - real production Web Push
 - actual production deployment, TLS/DNS, private database/object storage, TURN, and secret injection
@@ -675,12 +674,13 @@ Protocol review, protected-content paths, recovery, revocation, plaintext retire
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
-# Milestone 11: R2 Public Readiness
+# Milestone 21: R2 Public Readiness
 
-Current R2 provider progress: authentication challenge delivery is implemented on `feat/r2-brevo-auth-email` through the existing durable outbox and `EmailDeliveryPort`. It covers registration, resend, password recovery, account recovery, and email-change challenge delivery. No migration is required. Real Brevo sender/domain verification and end-to-end provider acceptance remain open, so R2 remains in progress.
+Repository-owned R2 implementation and hosted automated verification are complete on `feat/r2-public-readiness`. Automated evidence is anchored at `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`.
 
+R2 remains IN PROGRESS because live provider, production topology, repository governance, public-origin, restore/alert, manual accessibility/device/calling/E2EE, rollback, legal review, and signed-provenance gates still require executed evidence.
 
-Status: PLANNED.
+Status: IN PROGRESS.
 
 Depends on all stable-release feature epics, SEC1 Pre-V1 Security Hardening, and V1 Hosted CI Verification.
 
