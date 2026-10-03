@@ -33,14 +33,15 @@ Required order:
 1. set the isolated restore database as `DATABASE_URL`
 2. set `R2_RESTORE_CONFIRM=RESTORE`
 3. set `R2_RESTORE_ISOLATED=1`
-4. restore the PostgreSQL snapshot
-5. run current forward migrations
-6. replay the latest erasure journal
-7. start the current worker with access to the restored private object store
-8. wait until replay-created deletion manifests complete
-9. run `scripts/operations/verify-erasure-restore.mjs`
-10. run the normal health and operational checks
-11. only then may the restored database become eligible for production traffic
+4. set `R2_RESTORE_TARGET_DATABASE` to the exact isolated database name in `DATABASE_URL`
+5. restore the PostgreSQL snapshot
+6. run current forward migrations
+7. replay the latest erasure journal
+8. start the current worker with access to the restored private object store
+9. wait until replay-created deletion manifests complete
+10. run `scripts/operations/verify-erasure-restore.mjs`
+11. run the normal health and operational checks
+12. only then may the restored database become eligible for production traffic
 
 The repository helper performs steps 4 through 6:
 
