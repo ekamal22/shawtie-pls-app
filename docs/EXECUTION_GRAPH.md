@@ -118,7 +118,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
 
 V1 Hosted CI Verification ✅ is DONE at executable candidate `d28668b5`. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact source state, and the final gate emitted `V1_GATE_PASS`. Canonical evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-R2 is active on `feat/r2-public-readiness`. Repository-owned implementation now covers serious-event and authentication email delivery, content-minimized general Web Push and preview privacy, release-aware service-worker caching, canonical abuse subjects, trusted backend transport, support/abuse, versioned Privacy/Terms acceptance, deployment containers and environment validation, restore-safe erasure replay, observability, release/provenance/governance tooling, dedicated secret scanning, licensing, accessibility regressions, performance budgets, Rust dependency review, and historical-branch disposition. The first hosted shakedown found concrete integration defects that are fixed; fresh final-state hosted verification and the live/manual provider, deployment, restore, alerting, branch-protection, legal, device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+R2 is active on `feat/r2-public-readiness`. Repository-owned implementation and hosted automated verification are complete. Executable evidence is anchored at `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`, which ended with `R2_AUTOMATED_GATE_PASS` and 24 migrations. Live/manual provider, production-topology, restore, alerting, branch-protection, legal, accessibility/device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 ~~~
 
 ## Mermaid dependency view
@@ -345,4 +345,4 @@ UX8 ✅
  -> Stable Release
 ~~~
 
-V1 is DONE at executable candidate `d28668b5`. V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed. R2 Public Readiness is the active next engineering milestone.
+V1 is DONE at executable candidate `d28668b5`. R2 repository implementation and hosted automated verification are complete at executable candidate `1efdd580`; R2 remains IN PROGRESS until its live/manual evidence ledger closes.
