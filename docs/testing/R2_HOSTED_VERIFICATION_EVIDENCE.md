@@ -44,19 +44,47 @@ Corrections:
 - SupportService rewritten to explicit properties for Node 22 strip-only TypeScript compatibility
 - R2 accessibility assertion reconciled with final notification privacy copy
 - R2 worker-source test path corrected
-- the one-time formatter workflow was neutralized to read-only manual format checking
 
 ## Third hosted shakedown
 
-Candidate at trigger time: `54564d5b264d52508d77ee5d1eaaf77b75364d26`
+Candidate: `67a00151a8b37189e2bbd98906f4b095ec48ced8`
+
+Run: `37082393985`
+
+Observed:
+
+- R2 candidate: PASS
+- full-history secret scan: PASS
+- dependency audit: PASS
+- PostgreSQL plus retained S1: PASS
+- production containers: PASS
+- migrations 0001 through 0024: PASS
+- repository formatting: PASS
+- static R2 security/accessibility/control-plane/worker tests: PASS
+- R2 web artifact performance budget: PASS
+- baseline: FAILED only because the Brevo timeout fake transport allowed Node's event loop to exit before the unref timeout signal fired
+- browser job: reached the real R2 Playwright stage and failed because the dev-server command had not prepared the `@shawtie/contracts` workspace artifact
+
+Corrections:
+
+- Brevo timeout fake transport now uses a bounded ref-counted guard while proving the real timeout signal
+- R2 browser command now builds contracts, crypto, and S1 WASM before Playwright
+- final manual-evidence ledger is now bound to the exact candidate SHA and requires an evidence string for every live/manual gate
+- explicit gates were added for hosted automated success, serious-event email, production topology/deployment, and support workflow acceptance
+- R2 closure now verifies the exact release candidate, full-history secret scan, performance budget, and candidate-bound manual evidence
+- current repository remains Prettier-clean after a final pinned-format check
+
+## Fourth hosted shakedown
+
+Candidate at trigger time: `b24e80f5dd2af8cf8e8094f8ad03eb8fdac3dcc4`
 
 Purpose:
 
-- prove full repository baseline after exact project formatting
+- prove the complete repository baseline including Brevo timeout handling
 - prove all 24 migrations and retained S1 PostgreSQL/plaintext boundaries
 - prove full-history secret scan and npm/Rust advisory gates
 - run R2 browser/accessibility/control-plane/worker regressions
-- execute real Chromium service-worker upgrade/offline acceptance
+- execute real Chromium service-worker release upgrade/offline acceptance
 - retain SEC1 browser and S1 OpenMLS browser verification
 - build all production containers
 - emit the exact-SHA R2 automated gate
