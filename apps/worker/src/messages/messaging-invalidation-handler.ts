@@ -5,6 +5,7 @@ import {
 import {
   loadConversationParticipants,
   loadMessageProjection,
+  loadNotificationPreferences,
   type DatabasePool,
   type OutboxEvent,
 } from "@shawtie/db";
@@ -146,11 +147,21 @@ export function createMessagingInvalidationHandler(
       const recipients = participants.memberIds.filter(
         (accountId) => accountId !== message.senderAccountId,
       );
+      const previewByAccount = new Map<string, boolean>();
+      await Promise.all(
+        recipients.map(async (accountId) => {
+          const preference = await loadNotificationPreferences(database.pool, accountId);
+          previewByAccount.set(accountId, preference.messagePreviewEnabled);
+        }),
+      );
       await deliverAccountPush(
         database,
         pushConfig,
         recipients,
-        { v: 1, type: "message_changed" },
+        (accountId) => ({
+          v: 1,
+          type: previewByAccount.get(accountId) ? "message_changed" : "notification_changed",
+        }),
         signal,
       );
     },
