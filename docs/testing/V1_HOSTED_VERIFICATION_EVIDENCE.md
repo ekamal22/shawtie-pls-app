@@ -229,4 +229,4 @@ The executable closure anchor is:
 
 `d28668b5a7d021bc12b7a3dccbd69193074af9d3`
 
-R2 Public Readiness is the active release milestone. Its repository implementation has since merged to `main @ 8a73b621`, and exact-main hosted automated verification passed at `2ca1a4dd`, run `37108925171`; live/manual R2 gates remain open.
+R2 Public Readiness is the active release milestone. Its repository implementation has since merged to `main @ 8a73b621`, and exact-main hosted automated verification passed at `03bf9bfd`, run `37122211679`; live/manual R2 gates remain open.
