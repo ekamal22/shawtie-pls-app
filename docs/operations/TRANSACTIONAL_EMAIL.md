@@ -1,4 +1,4 @@
-# Transactional Authentication Email
+# Transactional Email
 
 ## Status
 
@@ -36,29 +36,34 @@ Serious-event email does not include message/media/relationship-object plaintext
 The repository already had the correct durable boundary before Brevo was selected.
 
 ~~~text
-Auth service
-    |
-    v
-email_verifications + auth.email_challenge outbox event
-    |
-    v
-durable worker
-    |
-    v
-EmailDeliveryPort
-    |
-    v
-BrevoEmailDelivery
-    |
-    v
-Brevo Transactional Email API
+Auth challenge service                  Account / partnership lifecycle
+        |                                         |
+        v                                         v
+email_verifications                     security_email_deliveries
++ auth.email_challenge outbox            + auth.security_email outbox
+        |                                         |
+        +-------------------+---------------------+
+                            |
+                            v
+                      durable worker
+                            |
+                            v
+                    EmailDeliveryPort
+                            |
+                            v
+                    BrevoEmailDelivery
+                            |
+                            v
+                Brevo Transactional Email API
 ~~~
 
 The API never calls Brevo synchronously.
 
 Challenge creation and the outbox insert happen inside the same PostgreSQL transaction. A provider outage therefore cannot partially commit account state or roll back a successfully created challenge.
 
-The outbox payload contains only the challenge ID. Immediately before delivery, the worker reloads authoritative challenge state, verifies that the challenge is still active, derives the current short-lived code, renders the email, and calls the provider.
+Authentication outbox payloads contain only the challenge ID. Immediately before challenge delivery, the worker reloads authoritative challenge state, verifies that the challenge is still active, derives the current short-lived code, renders the email, and calls the provider.
+
+Serious-event outbox payloads contain only the durable delivery ID. The worker reloads the corresponding `security_email_deliveries` row, renders the approved template from its bounded event parameters, and sends it through the same provider-neutral port.
 
 Authentication challenge delivery reuses the existing A1 persistence. R2 adds no provider-specific email table. Other R2 migrations serve notification preferences, public-readiness/support state, and erasure safety rather than Brevo itself.
 
@@ -184,12 +189,12 @@ POST https://api.brevo.com/v3/smtp/email
 
 The provider API key is carried only in the server-side `api-key` header.
 
-The body contains only the information required for that authentication message:
+The body contains only the information required for the approved transactional message:
 
 - configured sender identity
 - destination email
-- rendered authentication subject and body
-- a non-secret `shawtie-auth` tag
+- rendered authentication or minimal serious-event subject/body
+- a non-secret `shawtie-auth` or `shawtie-security` tag
 - the opaque Shawtie delivery ID
 
 The browser never sees the Brevo API key.
@@ -325,20 +330,20 @@ Existing A1 integration and acceptance coverage continues to own:
 - verified-email uniqueness
 - account/session security behavior
 
-## Remaining R2 work
+## Remaining R2 provider work
 
-This slice does not close all production provider work.
+Repository delivery wiring for both authentication challenges and approved serious-event templates is implemented.
 
-Still open:
+Still open before Stable Release:
 
 - verify the real Brevo sender and project-owned sending domain
-- perform one real provider smoke test
-- perform one real registration end-to-end email test
-- decide whether provider delivery/bounce webhooks are needed for operational observability
-- monitor failed authentication-email outbox events in production
-- implement and privacy-review the production treatment of the pre-existing non-challenge `auth.security_email` notification family; this is a Stable Release blocker because the PRD requires serious account and partnership event emails
-- finish the rest of R2 Public Readiness
+- complete provider-generated DNS authentication
+- perform a real provider smoke test
+- perform real registration and resend/supersede acceptance
+- deliver representative serious-event templates through the real provider path
+- verify provider failures and retries in the deployed worker
+- configure provider/worker observability and prove a failure alert reaches an operator
+- review whether delivery/bounce webhooks are necessary for the chosen production operations model
+- complete final owner/legal/privacy review of the deployed provider disclosures
 
-The non-challenge `auth.security_email` family remains outside this Brevo auth-challenge slice. In particular, this integration does not externalize partnership or breakup lifecycle information.
-
-Repo-wide audit result: this deliberate privacy boundary also means serious password/account/partnership notices are not yet delivered by the default production provider path. R2 must add a separately reviewed minimal-template path before Stable Release. Canonical tracking: `R2_PUBLIC_READINESS_AUDIT.md`.
+Canonical tracking: `R2_PUBLIC_READINESS_AUDIT.md`.
