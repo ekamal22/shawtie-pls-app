@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "candidateSha": null,
-  "recordedAt": null,
+  "candidateSha": "03bf9bfd1d137ec6cae42a66a450a846aad5e397",
+  "recordedAt": "2026-10-03T12:18:30Z",
   "gates": {
     "brevoSenderDomainVerified": {
       "passed": false,
@@ -60,8 +60,8 @@
       "evidence": null
     },
     "e2eeReleaseReviewPassed": {
-      "passed": false,
-      "evidence": null
+      "passed": true,
+      "evidence": "docs/testing/R2_E2EE_RELEASE_REVIEW_EVIDENCE.md: packages/crypto unchanged from accepted S1 baseline; crypto-adjacent changes reviewed; retained S1 PostgreSQL/plaintext/OpenMLS browser and production scans passed in R2 run 37122211679."
     },
     "stagedRollbackPassed": {
       "passed": false,
@@ -72,8 +72,8 @@
       "evidence": null
     },
     "hostedAutomatedGatePassed": {
-      "passed": false,
-      "evidence": null
+      "passed": true,
+      "evidence": "R2 Public Readiness Verification run 37122211679 on candidate 03bf9bfd1d137ec6cae42a66a450a846aad5e397: all required jobs passed and R2 automated gate succeeded with 24 migrations; Baseline CI run 37122211697 and V1 Release Verification run 37122211730 also passed."
     },
     "brevoSeriousEventPassed": {
       "passed": false,
