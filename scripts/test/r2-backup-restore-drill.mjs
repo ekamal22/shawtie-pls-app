@@ -23,7 +23,7 @@ import {
   createDefaultDeletionHandlers,
   defaultRetryPolicy,
   runDeletionBatch,
-} from "@shawtie/worker";
+} from "../../apps/worker/dist/index.js";
 
 if (process.env.DB_TEST_CONFIRM !== "1") {
   throw new Error("DB_TEST_CONFIRM=1 is required");
