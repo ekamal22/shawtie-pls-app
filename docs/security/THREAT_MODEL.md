@@ -210,7 +210,7 @@ The repo-wide R2 audit did not identify evidence of a new critical authenticatio
 
 Repository-owned R2 threat controls are now implemented for serious-event provider minimization, content-free general push, fail-hidden preview preference, service-worker release cache rotation, canonical abuse subjects, backend transport enforcement, restore-safe erasure replay, privacy-safe operational status, abuse/support workflow, secret scanning, provenance, deployment contracts, and historical branch authority.
 
-Live release evidence remains open for provider configuration, deployed topology, backup/restore drill, external monitoring, applied branch protection, manual accessibility/device/calling/E2EE review, rollback, and final signed provenance.
+Live release evidence remains open for provider configuration, deployed topology, backup/restore drill, external monitoring, applied branch protection, manual accessibility/device/voice-video privacy review, rollback, and final signed provenance.
 
 Canonical issue inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
