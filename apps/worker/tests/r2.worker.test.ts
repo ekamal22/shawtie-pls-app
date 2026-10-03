@@ -24,6 +24,13 @@ test("R2 default worker registers serious email and generic push handlers", asyn
   assert.equal(defaults.includes("createM1MessagingInvalidationHandlers(publisher, database, pushConfig)"), true);
 });
 
+test("R2 message push recipient lookup fails closed after partnership release", async () => {
+  const messagingRepo = await source("../../../packages/db/src/repositories/messaging.ts");
+  const handler = await source("../src/messages/messaging-invalidation-handler.ts");
+  assert.equal(messagingRepo.includes("member.released_at IS NULL"), true);
+  assert.equal(handler.includes("if (!participants || !message) return;"), true);
+});
+
 test("R2 production worker refuses missing Web Push configuration", () => {
   assert.throws(
     () => webPushConfigFromEnv({ NODE_ENV: "production" }),
