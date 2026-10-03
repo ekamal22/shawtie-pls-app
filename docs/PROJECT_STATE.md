@@ -217,27 +217,32 @@ Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned ex
 
 The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`; durable closure evidence is `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. Exact-SHA integrity, dependency advisory coverage, isolated PostgreSQL verification, Chromium/OpenMLS verification, and final gate behavior are all hosted and verified.
 
-## Repository audit concerns
+## R2 Public Readiness state
 
-The 2026-09-29 follow-up repository-wide audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The two concrete post-SEC1 source defects found in the final audit pass are now fixed on `main @ a1659dc` and verified by hosted focused validation run `36773261743` against validated branch SHA `7d07f7b5c7f24d46188f79c20b4637a22d7d07c1`.
+V1 hosted release verification remains CLOSED at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-- S1 local-secret lifecycle cleanup is CLOSED. Current-device revocation, account switching, account-device identity replacement, deletion-pending retention, account recovery, and permanent-deletion convergence now wire the account-wide S1 vault lifecycle explicitly. The implementation preserves the seven-day deletion recovery window and uses the device-handle-bound lifecycle probe plus durable local markers to avoid retaining revoked/deleted account crypto state indefinitely.
-- The S1 HTTP parser boundary defect is CLOSED. Contract-owned route-local body ceilings now account for base64url/JSON expansion without widening the global API body limit, and known Fastify parser/client errors map to stable sanitized 4xx responses instead of falling through to `500 INTERNAL_ERROR`.
+R2 is IN PROGRESS on `feat/r2-public-readiness`. The repository-owned implementation now includes the public-readiness control plane described in `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`:
 
-- V1 hosted coverage is CLOSED. The dedicated Security job explicitly runs the SEC1/S1 header, password-corpus, lint, format, hardening-regression, and production-scan gates that are not part of the ordinary baseline.
-- `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`; old fingerprinted static assets are not pruned inside that cache and an activated worker can initially inherit the previous cached `/` shell until an online navigation replaces it. R2 must add a release-aware cache version or explicit inventory/pruning and regression coverage.
-- authentication and partner-request network abuse limits use canonical `/24` IPv4 and `/64` IPv6 subjects, but media, realtime, and calling network buckets currently use exact `request.ip`. R2 must unify these subjects through canonical network-prefix normalization and align rate-limit key-rotation behavior where applicable.
-- production `BACKEND_PROXY_TARGET` accepts HTTP or HTTPS. HTTP is acceptable only across an explicitly trusted private or loopback transport boundary; R2 must either enforce that restriction in configuration or prove and document the private topology so session-bearing API traffic cannot cross an untrusted plaintext hop.
-- repository-health secret patterns are useful but intentionally narrow. R2 must add dedicated secret scanning suitable for a public release rather than treating `npm audit` or the current regex sweep as complete secret-detection evidence.
-- development commits are currently unsigned. This does not invalidate existing milestone evidence, but the stable release should be anchored to an immutable signed release tag or equivalent signed provenance, with the exact release SHA and artifact checksums recorded.
+- authentication and serious-event Brevo delivery through the durable worker boundary
+- content-minimized message, partner-request, and lifecycle Web Push with fail-hidden preview privacy
+- release-aware service-worker cache rollover and Chromium upgrade acceptance
+- canonical network-prefix abuse limits and calling key-version continuity
+- enforced trusted web-to-API transport and fail-closed production email, push, and media storage
+- versioned Privacy/Terms acceptance
+- abuse/support reporting plus private operator tooling
+- production containers, health/readiness, and environment validation
+- backup/restore with separate erasure tombstone replay and restore verification
+- aggregate privacy-safe operational health
+- release candidate, checksum, signed-provenance, public-origin, migration, rollback, and repository-governance tooling
+- full-history secret scanning
+- repository-level licensing decision and historical-branch authority
+- accessibility regressions, web artifact performance budgets, and Rust maintenance-warning review
 
-- `main` is currently unprotected in GitHub. Required status checks are off and the repository has no rulesets. R2 must add protection suitable for the verified fast-forward workflow and prevent force pushes and branch deletion. Once V1 proves the hosted Baseline CI status, release-relevant changes must be gated by the appropriate hosted check.
-- V1 hosted release verification is CLOSED. Release run `36801613394` and normal Baseline CI run `36801613306` passed on `d28668b5`; R2 now owns the remaining public-readiness concerns.
-- The repository is public and has no project-level license. R2 must record an explicit licensing decision before public readiness.
-- `design/m3-media-voice` is a divergent obsolete design branch. Its stranded ADR-012 describes a pre-S1 server-recoverable media-key bridge that was not adopted by current `main`; it is non-authoritative and must not be merged as current architecture.
-- production provider, deployment, release, rollback, backup/recovery, and operational automation remain incomplete or placeholder-only and are already owned by R2.
+The first hosted R2 shakedown on `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4` passed the dependency-audit and production-container jobs. It found migration transaction-control, secret-scanner scope, and stale browser-test defects. Those defects are fixed on the active branch. This does not constitute final R2 automated acceptance because a fresh hosted run on the final branch state is still required.
 
-The two follow-up source repairs are implemented on `main @ a1659dc`. Hosted focused validation run `36773261743` passed build, 37/37 focused tests, lint, Prettier, and worktree hygiene against validated branch SHA `7d07f7b5`. The fixes do not reopen the historical SEC1 or S1 completion records, and no full Redmi rerun is required from the current implementation evidence.
+Stable Release remains blocked on executed evidence for the live production/provider/manual gates recorded in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, including Brevo/DNS, production Web Push, deployment/TLS/DNS, applied `main` protection, public-origin checks, backup/restore drill, alert receipt, owner/legal review, accessibility/device performance, physical Android, call privacy, E2EE review, rollback rehearsal, and final signed provenance.
+
+`design/m3-media-voice` is explicitly historical-only and non-authoritative per `docs/architecture/HISTORICAL_BRANCHES.md`.
 
 ## Progress reporting rule
 
