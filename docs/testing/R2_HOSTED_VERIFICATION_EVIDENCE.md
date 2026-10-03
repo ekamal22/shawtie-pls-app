@@ -182,4 +182,4 @@ R2 itself remains IN PROGRESS until the candidate-bound live/manual evidence led
 - staged rollback rehearsal
 - signed release provenance
 
-Those gates remain explicit in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, which is bound to the exact final release candidate and intentionally fails closure until every required gate has executed and carries an evidence reference.
+Those gates remain explicit in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`. The ledger is bound to the exact executable candidate while allowing later evidence-only documentation commits; release-impacting drift after the candidate is rejected. Pre-provenance closure waits for every required live/manual gate except signed provenance, which is verified afterward by the dedicated final release gate.
