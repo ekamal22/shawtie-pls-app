@@ -2752,7 +2752,7 @@ The aggregate R2 branch now contains the repository-owned public-readiness imple
 
 Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-The first hosted R2 shakedown on candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4` proved the dependency-audit and production-container jobs and found concrete migration/scanner/test integration defects. Those defects are fixed on the active branch. A fresh hosted verification on the final repository state remains mandatory.
+R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. The shakedown history and corrective defects are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Scope
 
@@ -2812,13 +2812,13 @@ The first hosted R2 shakedown on candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e2
 ## Final acceptance gates
 
 - [ ] all Stable Release PRD gates are satisfied
-- [ ] the final candidate passes the complete hosted R2 automated gate
-- [ ] full repository health is green on the final candidate
-- [ ] full-history dedicated secret scan is clean on the final candidate
-- [ ] npm and Rust dependency audits are green on the final candidate with no vulnerability blocker
-- [ ] all 24 migrations apply from zero and retained S1 PostgreSQL/plaintext verification passes
-- [ ] R2 Chromium upgrade, retained SEC1 browser security, and retained S1 OpenMLS browser verification pass
-- [ ] final production API/worker/web container builds pass
+- [x] the final candidate passes the complete hosted R2 automated gate
+- [x] full repository health is green on the final candidate
+- [x] full-history dedicated secret scan is clean on the final candidate
+- [x] npm and Rust dependency audits are green on the final candidate with no vulnerability blocker
+- [x] all 24 migrations apply from zero and retained S1 PostgreSQL/plaintext verification passes
+- [x] R2 Chromium upgrade, retained SEC1 browser security, and retained S1 OpenMLS browser verification pass
+- [x] final production API/worker/web container builds pass
 - [ ] `main` protection/rules prevent force pushes and branch deletion and enforce the chosen hosted status check
 - [ ] owner/legal review accepts the repository license
 - [ ] real Brevo sender/domain/DNS authentication is complete
