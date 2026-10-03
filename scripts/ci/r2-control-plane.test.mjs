@@ -15,6 +15,16 @@ test("R2 default manual evidence ledger blocks closure", () => {
   assert.match(result.stderr, /R2_MANUAL_EVIDENCE_INVALID candidateSha/);
 });
 
+test("R2 restore tooling rejects a non PostgreSQL target before execution", () => {
+  const result = run("scripts/operations/postgres-restore.mjs", ["fake.dump", "fake-journal.json"], {
+    DATABASE_URL: "https://example.test/not-a-database",
+    R2_RESTORE_CONFIRM: "RESTORE",
+    R2_RESTORE_ISOLATED: "1",
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /DATABASE_URL must use PostgreSQL/);
+});
+
 test("R2 production API contract accepts the complete stable product configuration", () => {
   const result = run("scripts/release/verify-production-contract.mjs", ["api"], {
     NODE_ENV: "production",
