@@ -33,11 +33,13 @@ function accountId(event: OutboxEvent): string {
   return event.aggregateId;
 }
 
+type AccountPushPayload = Readonly<Record<string, string | number | boolean | null>>;
+
 export async function deliverAccountPush(
   database: DatabasePool,
   pushConfig: WebPushConfig | null,
   accountIds: readonly string[],
-  payload: Readonly<Record<string, string | number | boolean | null>>,
+  payload: AccountPushPayload | ((accountId: string) => AccountPushPayload),
   signal: AbortSignal,
 ): Promise<void> {
   if (!pushConfig || accountIds.length === 0) return;
@@ -47,7 +49,9 @@ export async function deliverAccountPush(
 
   for (const subscription of subscriptions) {
     try {
-      const result = await sendWebPush(subscription, payload, pushConfig, signal, now);
+      const resolvedPayload =
+        typeof payload === "function" ? payload(subscription.accountId) : payload;
+      const result = await sendWebPush(subscription, resolvedPayload, pushConfig, signal, now);
       if (result.gone) {
         await markPushDeliveryFailure(database.pool, subscription.deviceId, now, true);
       } else if (result.delivered) {
