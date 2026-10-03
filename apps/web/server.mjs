@@ -58,10 +58,7 @@ function privateIpv4(hostname) {
 function privateIpv6(hostname) {
   const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (value === "::1") return true;
-  return (
-    /^f[cd][0-9a-f]:/.test(value) ||
-    /^fe[89ab][0-9a-f]:/.test(value)
-  );
+  return /^f[cd][0-9a-f]:/.test(value) || /^fe[89ab][0-9a-f]:/.test(value);
 }
 
 function privateBackendHostname(hostname) {

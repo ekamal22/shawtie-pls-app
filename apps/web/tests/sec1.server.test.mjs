@@ -21,10 +21,7 @@ test("SEC1 production server rejects path-bearing backend target", () => {
     /BACKEND_PROXY_TARGET must be a bare origin/,
   );
   assert.throws(
-    () =>
-      createProductionWebServer(
-        baseEnv({ BACKEND_PROXY_TARGET: "http://203.0.113.10:4190" }),
-      ),
+    () => createProductionWebServer(baseEnv({ BACKEND_PROXY_TARGET: "http://203.0.113.10:4190" })),
     /Plaintext BACKEND_PROXY_TARGET requires loopback\/private IP/,
   );
   assert.doesNotThrow(() =>
@@ -36,9 +33,7 @@ test("SEC1 production server rejects path-bearing backend target", () => {
     ),
   );
   assert.doesNotThrow(() =>
-    createProductionWebServer(
-      baseEnv({ BACKEND_PROXY_TARGET: "https://api.example.test" }),
-    ),
+    createProductionWebServer(baseEnv({ BACKEND_PROXY_TARGET: "https://api.example.test" })),
   );
 });
 
