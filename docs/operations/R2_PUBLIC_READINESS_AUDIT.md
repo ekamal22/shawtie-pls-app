@@ -33,6 +33,8 @@ Still required:
 - live Brevo delivery for representative serious-event templates
 - final provider/privacy acceptance on the release candidate
 
+Canonical live procedure: `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`.
+
 ### R2-02 Brevo authentication email
 
 Repository implementation: IMPLEMENTED
@@ -44,6 +46,8 @@ Still required live evidence:
 - smoke send
 - real registration and resend/supersede
 - final-candidate provider acceptance
+
+Canonical live procedure: `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`.
 
 ### R2-03 General Web Push and preview privacy
 
