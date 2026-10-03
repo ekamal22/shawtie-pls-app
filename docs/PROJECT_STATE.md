@@ -2,13 +2,13 @@
 
 ## R2 implementation status
 
-R2 Public Readiness is active on `feat/r2-public-readiness`.
+R2 Public Readiness repository implementation is integrated on `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`.
 
 The earlier Brevo authentication-email slice is now integrated into the aggregate R2 branch together with serious-event email delivery, content-minimized general Web Push, server-authoritative notification preview privacy, release-aware service-worker caching, canonical network abuse subjects, production transport/storage/provider requirements, privacy/terms acceptance, abuse/support workflow, production containers/environment contracts, restore-safe deletion replay, operational status, dedicated secret scanning, release/provenance tooling, accessibility regressions, performance budgets, licensing, Rust dependency review, and historical-branch governance.
 
 The provider boundary remains API transaction -> durable outbox -> worker -> provider. Authentication challenges preserve the existing challenge expiry, attempt, consume-once, resend-supersede, durable rate-limit, generic recovery-start, and verifier-only storage rules. Serious-event email is a separate durable family and does not carry protected application plaintext.
 
-R2 automated hosted verification is CLOSED on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1 and S1 browser verification, production-container builds, and the exact-SHA automated gate. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is CLOSED on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1 and S1 browser verification, production-container builds, and the exact-SHA automated gate. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 R2 is not a closure claim yet. Real sender/domain/provider acceptance, production deployment, public-origin verification, applied branch protection, restore/alert drills, final accessibility/device/calling/E2EE acceptance, rollback rehearsal, and signed release provenance remain evidence gates. Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
@@ -205,7 +205,7 @@ The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_P
 
 V1 hosted release verification remains CLOSED at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-R2 is IN PROGRESS on `feat/r2-public-readiness`. The repository-owned implementation now includes the public-readiness control plane described in `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`:
+R2 is IN PROGRESS on `main`; repository implementation is merged, while live/manual release acceptance remains open. The repository-owned implementation now includes the public-readiness control plane described in `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`:
 
 - authentication and serious-event Brevo delivery through the durable worker boundary
 - content-minimized message, partner-request, and lifecycle Web Push with fail-hidden preview privacy
@@ -222,7 +222,7 @@ R2 is IN PROGRESS on `feat/r2-public-readiness`. The repository-owned implementa
 - repository-level licensing decision and historical-branch authority
 - accessibility regressions, web artifact performance budgets, and Rust maintenance-warning review
 
-R2 hosted automated acceptance is complete at `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Run `37083243469` ended with `R2_AUTOMATED_GATE_PASS` and migration count 24. Earlier shakedown defects are retained only as historical evidence in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated acceptance is complete on `main` at `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Run `37108925171` ended with `R2_AUTOMATED_GATE_PASS` and migration count 24. Earlier shakedown and feature-branch passes remain historical evidence in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 Stable Release remains blocked on executed evidence for the live production/provider/manual gates recorded in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, including Brevo/DNS, production Web Push, deployment/TLS/DNS, applied `main` protection, public-origin checks, backup/restore drill, alert receipt, owner/legal review, accessibility/device performance, physical Android, call privacy, E2EE review, rollback rehearsal, and final signed provenance.
 
