@@ -12,37 +12,33 @@ V1 Hosted CI Verification is DONE. Final executable candidate `d28668b5a7d021bc1
 
 The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. Durable closure evidence is `V1_HOSTED_VERIFICATION_EVIDENCE.md`. Normal CI stays separate from the heavy release workflow. R2 Public Readiness is now the active release milestone.
 
-The R2 Brevo authentication-email slice adds focused worker tests to the normal `test:worker` command. Real Brevo delivery is deliberately excluded from normal CI. The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration and is intended only for manual provider acceptance.
+R2 adds a dedicated `.github/workflows/r2-verification.yml` workflow while keeping normal Baseline CI separate.
 
-Focused branch verification for the provider adapter passed 8/8 tests under Node 22 and an isolated strict TypeScript check passed for the provider, port, and worker error types. A pre-refinement Baseline CI run exposed one `exactOptionalPropertyTypes` defect in the initial worker wiring; that concrete defect was fixed on the branch. No later hosted CI run is used as closure evidence for this slice because R2 development commits preserve the repository's `[skip ci]` policy. Full final `npm run health` remains a local pre-merge gate and is not claimed as executed by this evidence.
+The R2 hosted workflow verifies one exact candidate SHA through:
+
+- repository baseline
+- full-history dedicated secret scan
+- npm and Rust advisory audit
+- PostgreSQL migrations plus retained S1 integration/plaintext assertion
+- release-aware web build
+- R2 accessibility/security regressions
+- R2 service-worker upgrade Chromium acceptance
+- retained SEC1 and S1 browser security
+- production API/worker/web container builds
+- release artifact checksums
+- final exact-SHA automated gate
+
+Real Brevo sends, production Web Push, public-origin verification, backup/restore drill, alert delivery, branch-protection application, legal review, physical-device/accessibility/performance, calling/E2EE review, rollback, and signed release provenance remain outside ordinary CI because they require live external state or manual acceptance.
+
+The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration. It is never treated as a normal CI step.
+
+The first R2 hosted shakedown ran on candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4`. Dependency audit and production-container builds passed. Baseline/PostgreSQL exposed forbidden migration-owned transaction control, full-history scanning exposed a scanner scope defect, and the browser job exposed a stale test assertion. Those defects are fixed on the active branch. A new hosted run on the final branch state is required before R2 automated closure.
 
 ## Repository audit concerns
 
 Canonical current R2 inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-The 2026-10-03 repo-wide R2 audit adds several release blockers beyond the earlier SEC1/V1 follow-up list:
-
-- the current Brevo worker wiring covers `auth.email_challenge` only; the pre-existing serious-event `auth.security_email` family is not yet registered in the default provider path
-- general Web Push remains call-focused; required broader notification delivery and configurable message-preview privacy remain open
-- service-worker release cache rollover, canonical network-prefix abuse subjects, and backend-transport enforcement remain source-level R2 fixes
-- abuse/support reporting and privacy-policy/terms launch readiness remain incomplete
-- production deployment, backup/restore, observability, migration/release/rollback automation, branch protection, dedicated secret scanning, licensing, signed provenance, accessibility/performance closure, and final release acceptance remain open
-- the final Brevo branch still needs real provider acceptance and final full `npm run health` before merge
-
-
-Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass found two concrete source defects that were repaired before V1, alongside the existing release-governance work:
-
-- CLOSED: account-wide S1 local crypto lifecycle cleanup is implemented on `main @ a1659dc` and verified by hosted focused validation run `36773261743`.
-- CLOSED: route-local S1 encoded request ceilings and sanitized Fastify 4xx parser/client error mapping are implemented on `main @ a1659dc` and verified by the same hosted run.
-
-- GitHub reports `main` as unprotected, with required status checks disabled and no repository rulesets. R2 must establish protection that prevents force pushes and branch deletion and, after V1 establishes the hosted check, requires the appropriate CI status for release-relevant changes. The protection design must preserve the repository's verified fast-forward milestone history rather than silently changing merge semantics.
-- V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed on executable candidate `d28668b5`. Hosted V1 evidence is complete.
-- V1 hosted coverage now explicitly includes the dedicated SEC1/S1 header, password-corpus, lint, format, hardening-regression, production-scan, PostgreSQL, plaintext, Rust/Cargo advisory, and Chromium/OpenMLS surfaces. The normal baseline is intentionally smaller and is not treated as a substitute for release verification.
-- The public repository has no project-level license. Before public readiness, the owner must explicitly choose and record a licensing policy, including the intentional choice to remain unlicensed if that is preferred.
-- `design/m3-media-voice` is a divergent historical design branch and contains `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`, which is not present on current `main` and does not describe the final production architecture. It must not be merged as current architecture. R2 should record an explicit archive, deletion, or non-authoritative disposition.
-- `infra/cloudflare`, `infra/docker`, `infra/local`, and `scripts/release` remain placeholder-only surfaces. Production provider configuration, deployment, release, rollback, backup/recovery, and operational evidence remain R2 work.
-
-These findings do not reopen the historical SEC1 or S1 completion records. The two follow-up fixes are now implemented on `main @ a1659dc` and have hosted focused regression evidence under run `36773261743`.
+Repository-owned implementation concerns from the original audit are now represented by executable code, tests, or runbooks. Remaining blockers are final hosted verification plus live provider/deployment/manual evidence. No R2 source implementation should be called Stable Release evidence unless its corresponding gate has actually executed.
 
 ## Baseline workflow
 
