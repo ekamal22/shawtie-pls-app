@@ -118,7 +118,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
 
 V1 Hosted CI Verification ✅ is DONE at executable candidate `d28668b5`. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact source state, and the final gate emitted `V1_GATE_PASS`. Canonical evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-R2 repository implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`, and exact-main hosted automated verification is complete at `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`, run `37108925171`, with `R2_AUTOMATED_GATE_PASS` and 24 migrations. Live/manual provider, production-topology, restore, alerting, branch-protection, legal, accessibility/device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+R2 repository implementation is merged to `main`, and exact-main hosted automated verification is complete at `44fe73e7dbed79ebf985f66f6c1237536014121f`. Baseline CI `37109590248`, V1 Release Verification `37109590249`, and R2 Public Readiness Verification `37109590242` all passed on that exact source state. Live/manual provider, production-topology, restore, alerting, branch-protection, legal, accessibility/device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 ~~~
 
 ## Mermaid dependency view
