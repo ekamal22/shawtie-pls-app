@@ -87,7 +87,7 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 
 V1 hosted release evidence is complete at executable `d28668b5`. R2 Public Readiness is the only remaining pre-release milestone.
 
-The aggregate R2 implementation is active on `feat/r2-public-readiness`. Repository-owned engineering now includes:
+The aggregate R2 repository implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`. Repository-owned engineering now includes:
 
 - durable Brevo delivery for authentication challenges and approved serious account/partnership events
 - content-minimized message, partner-request, and account/lifecycle Web Push with account-backed preview privacy
