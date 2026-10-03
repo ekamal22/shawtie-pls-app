@@ -1,27 +1,6 @@
 const releaseId = new URL(self.location.href).searchParams.get("release") || "unversioned";
 const safeReleaseId = releaseId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 96);
 const CACHE_NAME = "shawtie-shell-" + safeReleaseId;
-const SETTINGS_CACHE_NAME = "shawtie-settings-v1";
-const NOTIFICATION_PREVIEW_KEY = "/__shawtie/settings/notification-preview";
-
-async function setNotificationPreview(enabled) {
-  const cache = await caches.open(SETTINGS_CACHE_NAME);
-  await cache.put(
-    NOTIFICATION_PREVIEW_KEY,
-    new Response(JSON.stringify({ enabled: enabled === true }), {
-      headers: { "content-type": "application/json" },
-    }),
-  );
-}
-
-async function notificationPreviewEnabled() {
-  const cache = await caches.open(SETTINGS_CACHE_NAME);
-  const response = await cache.match(NOTIFICATION_PREVIEW_KEY);
-  if (!response) return false;
-  const value = await response.json().catch(() => null);
-  return value?.enabled === true;
-}
-
 function isPrivateApi(url) {
   return url.pathname === "/api" || url.pathname.startsWith("/api/");
 }
@@ -54,12 +33,6 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "M2_ACTIVATE_UPDATE") {
     event.waitUntil(self.skipWaiting());
     return;
-  }
-  if (
-    event.data?.type === "R2_NOTIFICATION_PREVIEW" &&
-    typeof event.data.enabled === "boolean"
-  ) {
-    event.waitUntil(setNotificationPreview(event.data.enabled));
   }
 });
 
@@ -176,15 +149,9 @@ self.addEventListener("pushsubscriptionchange", (event) => {
 });
 
 async function showGenericNotification(type) {
-  const detailed = await notificationPreviewEnabled();
   const message = type === "message_changed";
-  const title = detailed && message ? "New message" : "Shawtie pls";
-  const body =
-    detailed && message
-      ? "Open Shawtie pls to read it."
-      : detailed
-        ? "Open Shawtie pls to see the update."
-        : "You have a new notification.";
+  const title = message ? "New message" : "Shawtie pls";
+  const body = message ? "Open Shawtie pls to read it." : "You have a new notification.";
   await self.registration.showNotification(title, {
     body,
     tag: message ? "shawtie-message" : "shawtie-notification",
