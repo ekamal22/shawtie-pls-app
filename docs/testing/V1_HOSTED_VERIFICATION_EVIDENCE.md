@@ -92,7 +92,7 @@ The Rust audit used `cargo-audit 0.22.2` against `packages/crypto/openmls-wasm/C
 - crate: `proc-macro-error2 2.0.1`
 - classification: unmaintained
 
-V1 accepts this as a non-vulnerability dependency-maintenance warning for closure. It does not weaken the successful vulnerability gate. R2 subsequently completed the transitive dependency review and retained the warning as maintenance-only under `docs/security/R2_RUST_DEPENDENCY_REVIEW.md`; exact-main hosted `cargo audit` remained green in run `37108925171`.
+V1 accepts this as a non-vulnerability dependency-maintenance warning for closure. It does not weaken the successful vulnerability gate. R2 subsequently completed the transitive dependency review and retained the warning as maintenance-only under `docs/security/R2_RUST_DEPENDENCY_REVIEW.md`; the final R2 executable candidate `03bf9bfd` also passed the hosted npm/Rust dependency audit in run `37122211679`.
 
 ## Security evidence
 
