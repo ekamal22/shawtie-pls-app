@@ -346,4 +346,4 @@ Still open before Stable Release:
 - review whether delivery/bounce webhooks are necessary for the chosen production operations model
 - complete final owner/legal/privacy review of the deployed provider disclosures
 
-Canonical tracking: `R2_PUBLIC_READINESS_AUDIT.md`.
+Canonical tracking: `R2_PUBLIC_READINESS_AUDIT.md`. Exact live-provider acceptance procedure and evidence requirements: `../testing/R2_BREVO_LIVE_ACCEPTANCE.md`.
