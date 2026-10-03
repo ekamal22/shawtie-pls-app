@@ -16,6 +16,7 @@ import {
   registerM2ServiceWorker,
   subscribeM2UpdateWaiting,
 } from "../pwa/service-worker-registration.ts";
+import { setNotificationPreviewPreference } from "../pwa/notification-preferences.ts";
 import {
   SyncCoordinator,
   type Synchronizer,
@@ -68,6 +69,7 @@ export class M2Runtime {
   }
 
   async stop(): Promise<void> {
+    await setNotificationPreviewPreference(false).catch(() => undefined);
     this.realtime.stop();
     this.replay.dispose();
     await this.coordinator.stop();
