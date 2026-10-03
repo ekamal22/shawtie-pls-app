@@ -75,6 +75,7 @@ const requiredPaths = [
   "infra/docker/Dockerfile.web",
   "scripts/ci/r2-closure.mjs",
   "scripts/security/secret-scan.mjs",
+  "scripts/security/r2-e2ee-diff-review.mjs",
   "scripts/release/verify-production-contract.mjs",
   "scripts/test/r2-support-workflow-drill.mjs",
   "scripts/test/r2-backup-restore-drill.mjs",
