@@ -2746,13 +2746,13 @@ Implement:
 
 Status: IN PROGRESS
 
-Active implementation branch: `feat/r2-public-readiness`.
+Repository implementation merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`.
 
-The aggregate R2 branch now contains the repository-owned public-readiness implementation that the original audit identified as missing: serious-event email delivery, content-minimized general Web Push and preview privacy, release-aware service-worker caching, canonical network abuse subjects, backend transport enforcement, abuse/support workflows, versioned Privacy/Terms acceptance, production containers and environment contracts, restore-safe erasure replay, operational status tooling, release/rollback/provenance automation, dedicated secret scanning, licensing, accessibility regressions, performance budgets, Rust dependency review, and historical-branch disposition.
+The integrated `main` line contains the repository-owned public-readiness implementation that the original audit identified as missing: serious-event email delivery, content-minimized general Web Push and preview privacy, release-aware service-worker caching, canonical network abuse subjects, backend transport enforcement, abuse/support workflows, versioned Privacy/Terms acceptance, production containers and environment contracts, restore-safe erasure replay, operational status tooling, release/rollback/provenance automation, dedicated secret scanning, licensing, accessibility regressions, performance budgets, Rust dependency review, and historical-branch disposition.
 
 Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. The shakedown history and corrective defects are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. The shakedown history, feature-branch merge-candidate pass, and main closure are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Scope
 
