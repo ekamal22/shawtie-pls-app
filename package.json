@@ -163,6 +163,7 @@
     "release:r2:candidate": "node scripts/release/verify-candidate.mjs",
     "release:r2:checksums": "node scripts/release/artifact-checksums.mjs",
     "release:r2:provenance": "node scripts/release/verify-provenance.mjs",
+    "release:r2:finalize": "node scripts/release/finalize-r2-release.mjs",
     "release:r2:governance": "node scripts/release/configure-github-governance.mjs",
     "release:r2:public-origin": "node scripts/release/verify-public-origin.mjs",
     "ops:r2:support": "node scripts/operations/support-reports.mjs",
