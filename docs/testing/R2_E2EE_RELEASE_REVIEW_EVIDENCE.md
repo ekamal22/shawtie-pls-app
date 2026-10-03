@@ -1,6 +1,6 @@
 # R2 Final E2EE Release Review Evidence
 
-Status: REVIEW COMPLETE, HOSTED CANDIDATE VERIFICATION PENDING
+Status: PASS
 
 Executable candidate: `03bf9bfd1d137ec6cae42a66a450a846aad5e397`
 
@@ -39,4 +39,4 @@ The final gate remains contingent on the exact executable candidate passing the 
 - production scan
 - repository baseline and dependency audit
 
-When run `37122211679` completes successfully, this document may be updated to PASS and the `e2eeReleaseReviewPassed` ledger gate may be marked true for candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`.
+Run `37122211679` completed successfully on the exact executable candidate. R2 PostgreSQL with retained S1, the plaintext assertion, retained S1 OpenMLS browser verification, production scans, the dependency audit, and the aggregate R2 automated gate all passed. The final E2EE release review is therefore PASS for candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`.
