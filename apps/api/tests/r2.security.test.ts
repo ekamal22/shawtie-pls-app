@@ -34,6 +34,14 @@ test("R2 support reports are authenticated and network limited", async () => {
   assert.equal(service.includes("subjectReference"), true);
 });
 
+test("R2 production runtime exposes dependency-aware readiness and private-network binding", async () => {
+  const application = await readFile(new URL("../src/application.ts", import.meta.url), "utf8");
+  const main = await readFile(new URL("../src/main.ts", import.meta.url), "utf8");
+  assert.equal(application.includes('app.get("/ready"'), true);
+  assert.equal(application.includes('database.pool.query("SELECT 1")'), true);
+  assert.equal(main.includes('process.env.NODE_ENV === "production" ? "0.0.0.0"'), true);
+});
+
 test("R2 account deletion scrubs new preference and support text", async () => {
   const source = await readFile(
     new URL("../../../packages/db/src/repositories/account-auth.ts", import.meta.url),
