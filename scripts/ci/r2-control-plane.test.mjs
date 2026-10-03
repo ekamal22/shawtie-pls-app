@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 function run(script, args = [], env = {}) {
@@ -9,10 +10,26 @@ function run(script, args = [], env = {}) {
   });
 }
 
-test("R2 default manual evidence ledger blocks closure", () => {
-  const result = run("scripts/ci/r2-manual-evidence.mjs");
+test("R2 default manual evidence ledger blocks closure while live gates are incomplete", () => {
+  const evidence = JSON.parse(
+    readFileSync("docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json", "utf8"),
+  );
+  assert.match(evidence.candidateSha, /^[0-9a-f]{40}$/);
+  const result = run("scripts/ci/r2-manual-evidence.mjs", [], {
+    R2_CANDIDATE_SHA: evidence.candidateSha,
+  });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /R2_MANUAL_EVIDENCE_INVALID candidateSha/);
+  assert.match(result.stderr, /R2_MANUAL_EVIDENCE_INCOMPLETE/);
+});
+
+test("R2 restore tooling requires exact target database confirmation", () => {
+  const result = run("scripts/operations/postgres-restore.mjs", ["fake.dump", "fake.json"], {
+    DATABASE_URL: "postgresql://user:pass@127.0.0.1:5432/restore_target",
+    R2_RESTORE_CONFIRM: "RESTORE",
+    R2_RESTORE_ISOLATED: "1",
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /R2_RESTORE_TARGET_DATABASE is required/);
 });
 
 test("R2 restore tooling rejects a non PostgreSQL target before execution", () => {
