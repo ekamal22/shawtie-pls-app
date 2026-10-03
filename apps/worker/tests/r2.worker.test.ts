@@ -11,10 +11,18 @@ test("R2 generic push payloads contain routing type only", async () => {
   const generic = await source("../src/notifications/generic-push-handler.ts");
   const messaging = await source("../src/messages/messaging-invalidation-handler.ts");
   assert.equal(generic.includes('{ v: 1, type: "notification_changed" }'), true);
-  assert.equal(messaging.includes('{ v: 1, type: "message_changed" }'), true);
+  assert.equal(messaging.includes("loadNotificationPreferences"), true);
+  assert.equal(messaging.includes('"message_changed" : "notification_changed"'), true);
   for (const privateField of ["body", "ciphertext", "displayName", "username", "media"]) {
     assert.equal(generic.includes("payload." + privateField), false);
   }
+});
+
+test("R2 message preview routing is account-backed and defaults hidden", async () => {
+  const preferences = await source("../../../packages/db/src/repositories/notification-preferences.ts");
+  const messaging = await source("../src/messages/messaging-invalidation-handler.ts");
+  assert.equal(preferences.includes(": { messagePreviewEnabled: false, updatedAt: null }"), true);
+  assert.equal(messaging.includes("previewByAccount.get(accountId)"), true);
 });
 
 test("R2 default worker registers serious email and generic push handlers", async () => {
