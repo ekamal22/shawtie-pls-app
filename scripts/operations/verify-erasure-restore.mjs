@@ -32,7 +32,15 @@ try {
                 (SELECT count(*)::int FROM account_sessions WHERE account_id = $1) AS sessions,
                 (SELECT count(*)::int FROM account_emails WHERE account_id = $1) AS emails,
                 (SELECT count(*)::int FROM account_devices WHERE account_id = $1) AS devices,
-                (SELECT count(*)::int FROM account_profiles WHERE account_id = $1) AS profiles
+                (SELECT count(*)::int FROM account_profiles WHERE account_id = $1) AS profiles,
+                (SELECT count(*)::int FROM account_notification_preferences
+                 WHERE account_id = $1) AS notification_preferences,
+                (SELECT count(*)::int FROM account_policy_acceptances
+                 WHERE account_id = $1) AS policy_acceptances,
+                (SELECT count(*)::int FROM abuse_reports
+                 WHERE reporter_account_id = $1) AS reporter_reports,
+                (SELECT count(*)::int FROM abuse_reports
+                 WHERE target_account_id = $1) AS target_reports
          FROM accounts account WHERE account.id = $1`,
         [entry.subjectId],
       );
@@ -43,7 +51,11 @@ try {
           row.sessions !== 0 ||
           row.emails !== 0 ||
           row.devices !== 0 ||
-          row.profiles !== 0)
+          row.profiles !== 0 ||
+          row.notification_preferences !== 0 ||
+          row.policy_acceptances !== 0 ||
+          row.reporter_reports !== 0 ||
+          row.target_reports !== 0)
       ) {
         throw new Error("Deleted account became accessible after restore: " + entry.subjectId);
       }
