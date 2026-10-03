@@ -10,14 +10,9 @@ This document is the canonical R2 issue inventory. It distinguishes repository i
 
 The R2 repository implementation is substantially complete. The branch now contains the release-specific security, notification, privacy, support, operations, deployment, backup, observability, provenance, accessibility, and performance control plane that the original audit found missing.
 
-A first GitHub-hosted R2 shakedown ran on candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4`. It proved the dependency-audit and production-container jobs, and it found three concrete integration defects plus one stale test assertion:
+R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations plus retained S1 PostgreSQL/plaintext verification, browser security/performance, production-container builds, and the exact-SHA automated gate.
 
-- R2 migrations incorrectly contained transaction control owned by the migration runner
-- the full-history secret scanner referenced its history-depth variable from the wrong scope
-- the service-worker R2 static test asserted an obsolete internal variable name
-- the hosted baseline and PostgreSQL jobs therefore could not proceed past migration validation
-
-Those defects are fixed on the active branch. A fresh hosted run is still required on the final repository state before any automated R2 gate is considered closed.
+Earlier shakedowns found and corrected migration transaction-control, secret-scanner scope, stale-test, formatting, Node TypeScript-loader, Brevo timeout-test, and R2 Playwright workspace-preparation defects. Their evidence is retained in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 No current source audit evidence identifies a new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext regression, or committed production credential.
 
@@ -220,9 +215,7 @@ Repository implementation: IMPLEMENTED
 - explicit shallow/full history reporting
 - hosted R2 job requires a full-history checkout
 
-Still required:
-
-- clean final-candidate hosted scan
+Automated acceptance: COMPLETE on `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`.
 
 ### R2-15 Stable-release provenance
 
@@ -263,9 +256,10 @@ Repository implementation: BUDGETS IMPLEMENTED
 
 Production artifact budgets cover total web output, JavaScript, CSS, and WASM.
 
+Automated hosted artifact budget: COMPLETE on run `37083243469`.
+
 Still required:
 
-- final hosted budget pass
 - mid-range Android and constrained-network measurements
 
 ### R2-19 Rust transitive maintenance warning
@@ -276,9 +270,7 @@ The current path is documented as `hax-lib 0.3.7 -> hax-lib-macros 0.3.7 -> proc
 
 The warning is maintenance-only, not a vulnerability finding. R2 does not perform an unreviewed cryptographic-stack upgrade merely to remove the warning. Any future dependency-family change requires a fresh E2EE review.
 
-Still required:
-
-- final-candidate `cargo audit` with no vulnerability failure
+Final-candidate hosted `cargo audit`: COMPLETE on run `37083243469` with no vulnerability failure.
 
 ### R2-20 Obsolete M3 design branch
 
@@ -290,14 +282,10 @@ Repository disposition: COMPLETE
 
 Status: OPEN
 
-The final candidate must still provide executed evidence for:
+Hosted automated evidence is complete for full repository health, full-history secret scan, npm/Rust audit, all 24 migrations with retained S1, R2 plus retained browser security/E2EE suites, performance budget, and production-container builds.
 
-- full repository health
-- full-history secret scan
-- npm and Rust dependency audit
-- R2 PostgreSQL migrations/integration and retained S1 plaintext boundary
-- R2 and retained browser security/E2EE suites
-- production-container builds
+The remaining executed evidence is live/manual:
+
 - real Brevo provider acceptance
 - real production Web Push
 - public HTTPS/header verification
@@ -321,7 +309,7 @@ The source of truth for those live/manual gates is `docs/testing/R2_MANUAL_ACCEP
 repository implementation
         |
         v
-fresh hosted R2 automated verification
+hosted R2 automated verification PASS
         |
         v
 merge accepted R2 implementation to main
