@@ -25,7 +25,7 @@ test("R2 registration policy controls remain explicitly labelled", async () => {
 test("R2 notification privacy and support controls retain programmatic labels", async () => {
   const us = await source("../src/features/ours/us/UsScreen.tsx");
   assert.equal(us.includes("<label"), true);
-  assert.equal(us.includes("Show notification type details on this device"), true);
+  assert.equal(us.includes("Show message notification type details"), true);
   assert.equal(us.includes("<select"), true);
   assert.equal(us.includes("<textarea"), true);
   assert.equal(us.includes("Report or get support"), true);
