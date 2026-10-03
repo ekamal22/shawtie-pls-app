@@ -67,6 +67,7 @@ const requiredPaths = [
   "docs/operations/SUPPORT_AND_ABUSE.md",
   "docs/architecture/HISTORICAL_BRANCHES.md",
   "docs/security/R2_RUST_DEPENDENCY_REVIEW.md",
+  "docs/security/R2_E2EE_RELEASE_REVIEW.md",
   "docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json",
   "infra/deployment/production.env.example",
   "infra/docker/Dockerfile.api",
@@ -75,6 +76,8 @@ const requiredPaths = [
   "scripts/ci/r2-closure.mjs",
   "scripts/security/secret-scan.mjs",
   "scripts/release/verify-production-contract.mjs",
+  "scripts/test/r2-support-workflow-drill.mjs",
+  "scripts/test/r2-backup-restore-drill.mjs",
 ];
 
 const forbiddenSecretFileNames = new Set([
