@@ -1,6 +1,4 @@
 import type { SyncCoordinator } from "../realtime/sync-coordinator.ts";
-import { syncNotificationPreviewPreference } from "./notification-preferences.ts";
-
 const UPDATE_EVENT = "shawtie:update-waiting";
 let waitingRegistration: ServiceWorkerRegistration | null = null;
 let controllerListenerInstalled = false;
@@ -42,7 +40,6 @@ export async function registerM2ServiceWorker(): Promise<void> {
     });
   });
 
-  await syncNotificationPreviewPreference().catch(() => undefined);
   await registration.update().catch(() => undefined);
 }
 
