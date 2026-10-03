@@ -14,6 +14,8 @@ on:
       - "infra/**"
       - "docs/testing/R2_*"
       - "docs/operations/**"
+      - "playwright.r2.config.ts"
+      - "tests/e2e/r2-public-readiness.spec.ts"
       - "package.json"
       - "package-lock.json"
       - "LICENSE"
@@ -42,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$CANDIDATE_REF" in
-            refs/heads/feat/r2-public-readiness) ;;
+            refs/heads/feat/r2-public-readiness|refs/heads/main) ;;
             *)
               echo "Unsupported R2 candidate ref: $CANDIDATE_REF" >&2
               exit 1
