@@ -2746,74 +2746,96 @@ Implement:
 
 Status: IN PROGRESS
 
-Current slice: provider-neutral Brevo delivery for authentication challenges is implemented on `feat/r2-brevo-auth-email`. It preserves the A1 durable outbox boundary and covers registration, resend, password recovery, account recovery, and email-change challenges. Real sender/domain configuration and real provider acceptance remain open, so no production-provider acceptance gate is closed yet.
+Active implementation branch: `feat/r2-public-readiness`.
 
-Canonical repo-wide issue inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`. The audit also confirms that the current Brevo slice does not register the pre-existing `auth.security_email` family, general Web Push remains call-focused, and production deployment/backup/observability/release surfaces remain incomplete.
+The aggregate R2 branch now contains the repository-owned public-readiness implementation that the original audit identified as missing: serious-event email delivery, content-minimized general Web Push and preview privacy, release-aware service-worker caching, canonical network abuse subjects, backend transport enforcement, abuse/support workflows, versioned Privacy/Terms acceptance, production containers and environment contracts, restore-safe erasure replay, operational status tooling, release/rollback/provenance automation, dedicated secret scanning, licensing, accessibility regressions, performance budgets, Rust dependency review, and historical-branch disposition.
+
+Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
+The first hosted R2 shakedown on candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4` proved the dependency-audit and production-container jobs and found concrete migration/scanner/test integration defects. Those defects are fixed on the active branch. A fresh hosted verification on the final repository state remains mandatory.
 
 ## Scope
 
-- CI completion
+- hosted automated release verification
 - `main` branch protection and required-check enforcement
-- explicit public-repository licensing decision
-- obsolete historical branch and ADR disposition
-- service-worker cache versioning or deterministic stale-asset pruning
-- canonical network-prefix rate limiting for media, realtime, and calling
-- trusted edge-to-backend transport enforcement or verified private-network constraint
-- dedicated secret scanning beyond the repository-health regex sweep
+- explicit public-repository licensing policy
+- historical branch/ADR authority
+- release-aware service-worker cache lifecycle
+- canonical network-prefix abuse controls
+- trusted edge-to-backend transport enforcement
+- full-history secret scanning
 - signed stable-release provenance and artifact checksums
-- security scanning
-- privacy documentation
-- abuse reporting
-- backup and restore
-- deletion verification
-- operational observability
+- security/dependency scanning
+- privacy documentation and versioned acceptance
+- abuse/support reporting and operator workflow
+- backup/restore with deletion resurrection protection
+- operational observability and alerting
 - provider configuration
 - authentication and serious-event transactional email
 - general Web Push and notification-preview privacy
-- abuse/support reporting workflow
-- privacy policy, terms, and launch acceptance/versioning
-- release process
-- browser acceptance
-- physical-device acceptance
-- security review
+- production deployment and environment validation
+- release/migration/rollback procedure
+- browser and accessibility acceptance
+- physical-device and performance acceptance
+- calling/E2EE release review
 - staged launch
 
-## Acceptance gates
+## Repository implementation gates
 
 - [x] SEC1 Pre-V1 Security Hardening is DONE
 - [x] V1 Hosted CI Verification is DONE
-- [ ] all stable-release PRD gates are satisfied
-- [ ] required CI checks are green
-- [ ] `main` branch protection or equivalent repository rules prevent force pushes and deletion and enforce the appropriate hosted CI check for release-relevant changes
-- [ ] the public repository licensing policy is explicitly chosen and recorded
-- [ ] `design/m3-media-voice` and its stranded non-authoritative ADR-012 have an explicit archive, deletion, or historical-only disposition
-- [ ] production provider, deployment, release, rollback, backup/recovery, and operational configuration are implemented and reviewed
-- [ ] Brevo authentication email passes real sender/domain, provider smoke, registration, resend/supersede, and final repository-health acceptance
-- [ ] approved serious-event account/partnership email templates are privacy-reviewed and delivered through the durable provider path
-- [ ] required general Web Push notification flows are implemented and notification-preview privacy is user configurable as required by the PRD
-- [ ] abuse/support reporting procedures and the minimum launch workflow are implemented
-- [ ] privacy policy and applicable terms match the deployed system and any required acceptance/versioning flow is implemented
-- [ ] service-worker cache rollover cannot retain unbounded obsolete fingerprinted assets and the activated worker cannot leave an incompatible offline shell as the durable fallback
-- [ ] media, realtime, and calling network abuse buckets use canonical network-prefix subjects and reviewed key-version behavior
-- [ ] any plaintext web-to-API backend hop is restricted to and verified as a trusted private/loopback transport boundary, otherwise HTTPS is required
-- [ ] dedicated secret scanning suitable for a public repository is green
-- [ ] the stable release is tied to an immutable signed tag or equivalent signed provenance record with exact source SHA and artifact checksums
-- [ ] no unresolved critical or high security finding blocks release
-- [ ] dependency and secret scanning are green
-- [ ] privacy documentation matches actual implementation
-- [ ] threat model matches actual deployed architecture
-- [ ] data-classification matrix matches actual storage and providers
-- [ ] deletion manifest failure and resume behavior is tested
-- [ ] backup restore cannot resurrect deleted user-facing access
-- [ ] monitoring covers critical API, worker, outbox, deletion, media, realtime, call, and email failure classes
-- [ ] release and migration runbook is tested
-- [ ] supported browser E2E suite passes
-- [ ] final accessibility acceptance passes across keyboard, focus, semantic naming, validation, reduced motion, status announcements, and representative screen-reader checks
-- [ ] representative release performance budgets are defined and pass on mid-range mobile/constrained-network scenarios
-- [ ] physical Android acceptance passes
-- [ ] voice and video privacy acceptance passes
-- [ ] E2EE release review passes
-- [ ] staged launch rollback path is documented and tested
+- [x] serious-event account/partnership email templates are privacy-minimized and registered through the durable provider path
+- [x] general partner-request/account/message Web Push is implemented with content-minimized provider payloads
+- [x] notification-preview privacy is account-backed and hidden by default
+- [x] production worker refuses absent transactional email and Web Push configuration
+- [x] production media storage is required at runtime
+- [x] service-worker shell caches are release-scoped and old release-shell caches are pruned on activation
+- [x] private API responses remain excluded from service-worker caches
+- [x] media, realtime, and calling network abuse subjects use canonical network-prefix identity
+- [x] calling abuse buckets cover all configured HMAC key versions
+- [x] untrusted plaintext web-to-API backend transport is mechanically rejected
+- [x] authenticated rate-limited abuse/support reporting and operator queue tooling exist
+- [x] Privacy Notice and Terms surfaces exist and production registration requires the current accepted policy version
+- [x] notification preferences, policy acceptance, and reporter-owned support text are removed at permanent account deletion
+- [x] production API/worker/web container definitions and service-role environment validation exist
+- [x] PostgreSQL backup, separate erasure journal, isolated restore replay, and post-restore deletion verification tooling exist
+- [x] aggregate privacy-safe operational status tooling exists
+- [x] release candidate, checksums, signed-tag verification, public-origin verification, migration/rollback runbook, and manual-evidence closure harness exist
+- [x] dedicated tracked-source and full-history secret scanning exists
+- [x] repository-level proprietary source-visible licensing decision is recorded
+- [x] `design/m3-media-voice` is explicitly recorded as historical-only and non-authoritative
+- [x] the `RUSTSEC-2026-0173` transitive maintenance-warning path and R2 disposition are documented
+- [x] R2 accessibility regressions and production web artifact budgets are defined
+- [x] real Chromium service-worker upgrade/offline acceptance is implemented
+- [x] a dedicated hosted `R2 Public Readiness Verification` workflow exists
+
+## Final acceptance gates
+
+- [ ] all Stable Release PRD gates are satisfied
+- [ ] the final candidate passes the complete hosted R2 automated gate
+- [ ] full repository health is green on the final candidate
+- [ ] full-history dedicated secret scan is clean on the final candidate
+- [ ] npm and Rust dependency audits are green on the final candidate with no vulnerability blocker
+- [ ] all 24 migrations apply from zero and retained S1 PostgreSQL/plaintext verification passes
+- [ ] R2 Chromium upgrade, retained SEC1 browser security, and retained S1 OpenMLS browser verification pass
+- [ ] final production API/worker/web container builds pass
+- [ ] `main` protection/rules prevent force pushes and branch deletion and enforce the chosen hosted status check
+- [ ] owner/legal review accepts the repository license
+- [ ] real Brevo sender/domain/DNS authentication is complete
+- [ ] real Brevo smoke, registration, resend/supersede, and representative serious-event delivery pass
+- [ ] real production Web Push acceptance passes
+- [ ] the actual deployment has reviewed PostgreSQL, private object storage, TURN, VAPID, Brevo, TLS, DNS, ingress, and secret injection
+- [ ] public HTTPS origin passes CSP/HSTS/proxy/header and release-surface verification
+- [ ] backup/restore drill proves deleted account/partnership access cannot resurrect
+- [ ] external operational monitors and alert routing are configured and a test alert is received
+- [ ] privacy/terms wording receives owner/legal review against the final provider topology
+- [ ] final accessibility acceptance passes keyboard, focus, names, validation, status announcements, reduced motion, and representative screen-reader checks
+- [ ] final performance acceptance passes on mid-range Android and constrained-network scenarios
+- [ ] final physical Android acceptance passes
+- [ ] voice/video privacy acceptance passes
+- [ ] final E2EE release review passes
+- [ ] staged launch and rollback rehearsal passes
+- [ ] the Stable Release is tied to one immutable signed tag or equivalent signed provenance record with exact source SHA and artifact checksums
 
 # X1: Post-stable Maturity
 
