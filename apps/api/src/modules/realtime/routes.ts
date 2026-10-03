@@ -15,6 +15,7 @@ import { ApiError } from "../../lib/api-error.ts";
 import type { MessagingService } from "../messages/messaging-service.ts";
 import { requireAuthentication, type AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import { networkPrefix } from "../../security/normalization.ts";
 import type {
   RealtimeClientFrameHandler,
   RealtimeConnectionContext,
@@ -42,7 +43,7 @@ async function consumeRealtimeConnectionRateLimit(
       },
       {
         scope: "m2.realtime.connect.network",
-        subject: "network\0" + request.ip,
+        subject: "network\0" + networkPrefix(request.ip),
       },
     ];
     return consumeRateLimitBuckets(

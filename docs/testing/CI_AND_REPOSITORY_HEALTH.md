@@ -12,21 +12,33 @@ V1 Hosted CI Verification is DONE. Final executable candidate `d28668b5a7d021bc1
 
 The accepted V1 hosted workflow design is `V1_HOSTED_CI_VERIFICATION_PLAN.md`. Durable closure evidence is `V1_HOSTED_VERIFICATION_EVIDENCE.md`. Normal CI stays separate from the heavy release workflow. R2 Public Readiness is now the active release milestone.
 
+R2 adds a dedicated `.github/workflows/r2-verification.yml` workflow while keeping normal Baseline CI separate.
+
+The R2 hosted workflow verifies one exact candidate SHA through:
+
+- repository baseline
+- full-history dedicated secret scan
+- npm and Rust advisory audit
+- PostgreSQL migrations plus retained S1 integration/plaintext assertion
+- release-aware web build
+- R2 accessibility/security regressions
+- R2 service-worker upgrade Chromium acceptance
+- retained SEC1 and S1 browser security
+- production API/worker/web container builds
+- release artifact checksums
+- final exact-SHA automated gate
+
+Real Brevo sends, production Web Push, public-origin verification, backup/restore drill, alert delivery, branch-protection application, legal review, physical-device/accessibility/performance, calling/E2EE review, rollback, and signed release provenance remain outside ordinary CI because they require live external state or manual acceptance.
+
+The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration. It is never treated as a normal CI step.
+
+R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1/S1 browser gates, production scans, production-container builds, and the exact-SHA automated gate. Canonical evidence: `R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+
 ## Repository audit concerns
 
-Repository-wide audits on 2026-09-29 found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The newest pass found two concrete source defects that were repaired before V1, alongside the existing release-governance work:
+Canonical current R2 inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-- CLOSED: account-wide S1 local crypto lifecycle cleanup is implemented on `main @ a1659dc` and verified by hosted focused validation run `36773261743`.
-- CLOSED: route-local S1 encoded request ceilings and sanitized Fastify 4xx parser/client error mapping are implemented on `main @ a1659dc` and verified by the same hosted run.
-
-- GitHub reports `main` as unprotected, with required status checks disabled and no repository rulesets. R2 must establish protection that prevents force pushes and branch deletion and, after V1 establishes the hosted check, requires the appropriate CI status for release-relevant changes. The protection design must preserve the repository's verified fast-forward milestone history rather than silently changing merge semantics.
-- V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed on executable candidate `d28668b5`. Hosted V1 evidence is complete.
-- V1 hosted coverage now explicitly includes the dedicated SEC1/S1 header, password-corpus, lint, format, hardening-regression, production-scan, PostgreSQL, plaintext, Rust/Cargo advisory, and Chromium/OpenMLS surfaces. The normal baseline is intentionally smaller and is not treated as a substitute for release verification.
-- The public repository has no project-level license. Before public readiness, the owner must explicitly choose and record a licensing policy, including the intentional choice to remain unlicensed if that is preferred.
-- `design/m3-media-voice` is a divergent historical design branch and contains `docs/adr/ADR-012-pre-s1-media-encryption-bridge.md`, which is not present on current `main` and does not describe the final production architecture. It must not be merged as current architecture. R2 should record an explicit archive, deletion, or non-authoritative disposition.
-- `infra/cloudflare`, `infra/docker`, `infra/local`, and `scripts/release` remain placeholder-only surfaces. Production provider configuration, deployment, release, rollback, backup/recovery, and operational evidence remain R2 work.
-
-These findings do not reopen the historical SEC1 or S1 completion records. The two follow-up fixes are now implemented on `main @ a1659dc` and have hosted focused regression evidence under run `36773261743`.
+Repository-owned implementation concerns from the original audit are represented by executable code, tests, or runbooks, and the hosted automated gate is green. Remaining blockers are live provider/deployment/manual evidence. No R2 source implementation should be called Stable Release evidence unless its corresponding live/manual gate has actually executed.
 
 ## Baseline workflow
 
@@ -196,15 +208,15 @@ The executable repository foundation additionally defines strict TypeScript conf
 
 The baseline repository scanner detects several high-risk secret patterns and forbidden secret-bearing file types.
 
-It does not claim exhaustive secret detection.
+R2 adds `scripts/security/secret-scan.mjs` as a dedicated source/history release gate. The hosted R2 workflow checks out full Git history, requires the repository to be non-shallow, scans tracked source plus Git patch history, and fails on the supported high-confidence provider/token/private-key patterns. This is repository-owned release evidence; GitHub-native secret scanning remains a separate repository-setting control when available.
 
-Before public stable release, repository settings or CI should also provide dedicated secret scanning and dependency security tooling.
+No secret scanner should be described as exhaustive. Credential rotation remains mandatory if a real secret is ever committed.
 
 ## Dependency scanning
 
 The repository commits `package-lock.json`.
 
-Baseline CI installs with `npm ci` and then runs `npm audit --audit-level=high` as an unconditional hard gate. The local dependency installation that generated the committed lockfile reported 0 vulnerabilities. Hosted execution of the audit gate is still pending.
+Baseline CI installs with `npm ci` and runs `npm audit --audit-level=high` as an unconditional hard gate. V1 hosted verification already closed the npm audit gate, and R2 shakedowns also run npm audit plus pinned `cargo-audit 0.22.2` against the committed OpenMLS lockfile. The R2 dependency-audit job passed in the first three hosted shakedowns. Final-candidate dependency evidence still requires the final R2 hosted run.
 
 ## CODEOWNERS
 

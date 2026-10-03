@@ -109,7 +109,7 @@ Examples:
 | Verified email | SENSITIVE | Yes | No | Never log full address in routine app logs | Account backup with restricted access | Email provider necessarily receives destination | Permanent account deletion |
 | Password plaintext | SECRET | Only transiently during verification | No | Never | Never | No provider exposure | Immediately after authentication operation |
 | Password hash | HIGHLY_SENSITIVE | Yes | No | Never log | Restricted account backup | No ordinary third-party exposure | Permanent account deletion |
-| Email verification code plaintext | SECRET | Only transiently before send and verification | No | Never | Never | Email provider receives delivered code | Expiry or successful consumption |
+| Email verification code plaintext | SECRET | Only transiently during worker derivation, provider send, and verification | No | Never | Never | Configured auth-email provider receives delivered code; current R2 adapter is Brevo | Expiry or successful consumption |
 | Verification code keyed verifier | HIGHLY_SENSITIVE | Yes | No | Never log | No long-term backup need | No | Expiry or consumption |
 | Session token or cookie value | SECRET | Server validates | No | Never | Prefer no backup requirement | Browser receives own token only | Logout, expiry, revocation, sensitive security event |
 | Session metadata | SENSITIVE | Yes | No | Minimal security logs allowed | Short bounded retention | No ordinary provider exposure | Expiry plus bounded security retention |
@@ -123,7 +123,11 @@ Examples:
 | Partnership ID | SENSITIVE | Yes | No | Opaque ID may appear in structured logs | Operational backup | Push or realtime systems may receive opaque ID where required | Final dissolution subject to bounded audit retention |
 | Partnership membership | SENSITIVE | Yes | No | Minimal audit only | Operational backup | No unnecessary provider exposure | Final dissolution subject to bounded lifecycle-event retention |
 | Relationship start date | SENSITIVE | Yes unless later encrypted by design | Optional | Never routine log | Partnership backup before deletion | No unnecessary provider exposure | Final dissolution |
-| Account notification event/routing metadata | SENSITIVE | Yes | No | Avoid routine log; event ID only where needed | Operational backup | Future push may receive only minimal opaque routing/event data | Product notification retention or partnership/account deletion policy |
+| Account notification event/routing metadata | SENSITIVE | Yes | No | Avoid routine log; event ID only where needed | Operational backup | Push provider receives only generic/type-level routing data where delivery is required | Product notification retention or partnership/account deletion policy |
+| Notification preview preference | SENSITIVE | Yes | No | Never routine log | Account backup while account exists | No provider receives the preference value; it only controls local presentation | Permanent account deletion |
+| Policy acceptance record | SENSITIVE | Yes | No | Event/version only if operationally required | Account backup while account exists | No ordinary provider exposure | Permanent account deletion |
+| Abuse/support report details | HIGHLY_SENSITIVE | Yes, because the reporter deliberately submits the text | No | Never routine log or public issue tracker | Restricted support backup while retained | No ordinary provider exposure; external disclosure requires reviewed legal/support handling | Reporter permanent account deletion or future bounded support-retention policy |
+| Serious-event email content | SENSITIVE | Yes during durable delivery | No protected content allowed | Event type/status only | Short operational backup while delivery record exists | Email provider receives destination plus minimal event/deadline content | Delivery/expiry plus bounded operational retention |
 | Breakup initiator and timestamps | SENSITIVE | Yes | No | Security/lifecycle audit allowed | Bounded lifecycle backup | Minimal email/push event may reveal event occurrence | Final dissolution plus bounded audit retention |
 | Restore intent timestamps | SENSITIVE | Yes | No | Lifecycle audit allowed | Bounded lifecycle backup | Minimal notification event | Final dissolution plus bounded audit retention |
 | Cooldown timestamp | SENSITIVE | Yes | No | May log opaque state transition | Operational backup | No | Cooldown expiry plus bounded lifecycle retention |
@@ -149,7 +153,7 @@ Examples:
 | Call start/end/duration | SENSITIVE | Yes | Metadata | Minimal | Partnership-scoped backup until deletion | TURN may infer network timing | Final dissolution |
 | TURN username/credential | SECRET | Issued transiently | No | Never log credential | No backup | TURN receives credential | Short expiry |
 | Push token | SENSITIVE | Yes | No | Never log full token | Restricted operational backup | Push provider receives token | Token invalidation, device revocation, account deletion |
-| Push payload | SENSITIVE | Yes during send | No content plaintext | Log event type only | No payload backup | Push provider receives payload | Delivery completion |
+| Push payload | SENSITIVE | Yes during send | No protected-content plaintext | Log event type only | No payload backup | Push provider receives generic or notification-type payload only | Delivery completion |
 | R1 development preview plaintext | HIGHLY_SENSITIVE | Yes before S1 only | Yes, preview envelope after S1 | Never | Development-only restricted backup policy | Never provider plaintext | Item deletion, final dissolution, or S1 migration/wipe |
 | R1 development main plaintext | HIGHLY_SENSITIVE | Yes before S1 only | Yes, sealed envelope after S1 | Never | Development-only restricted backup policy | Never provider plaintext | Item deletion, final dissolution, or S1 migration/wipe |
 | Memory plaintext | HIGHLY_SENSITIVE | No after E2EE | Yes | Never | Never server plaintext backup | Never provider plaintext | Item deletion or final dissolution |
@@ -164,6 +168,7 @@ Examples:
 | Outbox event | INTERNAL or SENSITIVE | Yes | No | Event type and status only | Short operational backup | Provider receives only its intended minimal projection | Successful delivery plus bounded retention |
 | Scheduled action | INTERNAL or SENSITIVE | Yes | No | Type, ID, timing, status | Operational backup | No | Completion plus bounded retention |
 | Deletion manifest | SENSITIVE | Yes | No | IDs, state, error codes only | Keep until deletion proof and bounded audit period | No | Completion plus bounded audit retention |
+| Erasure tombstone/journal entry | SENSITIVE | Yes | No | Opaque subject ID, timestamp, and bounded reason only | Replicate separately from ordinary backups through the backup horizon | Backup/DR provider may hold the protected journal copy | After no retained backup can reintroduce the erased subject, subject to reviewed audit retention |
 | Security log | SENSITIVE | Yes | No | Content must be allowlisted | Bounded security retention | Logging provider only if approved | Security retention expiry |
 | Application error trace | INTERNAL or SENSITIVE | Yes | No | Must be scrubbed of secrets and private content | Bounded operational retention | Error provider only if approved | Operational retention expiry |
 | CI secret | SECRET | Only CI runtime | No | Never | Secret store only | CI provider necessarily holds encrypted secret | Rotation or removal |
@@ -183,6 +188,21 @@ Examples:
 ### Closed local-deletion follow-up
 
 The deletion triggers in the matrix above remain the required policy. The 2026-09-29 local S1 secret-retention finding is CLOSED on `main @ a1659dc`. Current-device revocation and permanent-deletion convergence now include account-wide S1 local-vault destruction, while deletion-pending accounts retain recovery capability through the seven-day recovery window. Hosted focused validation run `36773261743` covers the follow-up source/security regression surface.
+
+## R2 provider and operations status
+
+The matrix above defines required handling. It does not imply that every production provider path is already live.
+
+Current R2 state:
+
+- Brevo authentication-challenge delivery exposes destination email plus the short-lived verification credential and minimal authentication copy
+- the separate serious-event `auth.security_email` family is not yet wired to the default provider path and requires template-by-template privacy review before external delivery
+- general Web Push beyond the existing call-state path is not yet complete; future message and partner-request payloads must remain minimal and honor notification-preview privacy
+- production logging and observability providers are not yet finalized; any future provider must receive only approved structured metadata and scrubbed error data
+- production backup provider/configuration is not yet finalized; backup retention and restore must preserve product deletion obligations
+- privacy policy and applicable terms must be reconciled with the final provider list and actual data flows before Stable Release
+
+Canonical release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Repository data policy
 

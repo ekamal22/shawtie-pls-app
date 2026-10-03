@@ -1,4 +1,5 @@
 import type { QueryExecutor } from "../types/query-executor.ts";
+import { insertOutboxEvent } from "./outbox-events.ts";
 
 export type AccountNotificationEventType =
   | "partnership_formed"
@@ -57,12 +58,13 @@ export async function insertAccountNotification(
     readonly createdAt: Date;
   },
 ): Promise<void> {
-  await executor.query(
+  const inserted = await executor.query<{ id: string }>(
     `INSERT INTO account_notifications (
        id, recipient_account_id, actor_account_id, partnership_id,
        event_type, deduplication_key, created_at
      ) VALUES ($1,$2,$3,$4,$5,$6,$7)
-     ON CONFLICT (deduplication_key) DO NOTHING`,
+     ON CONFLICT (deduplication_key) DO NOTHING
+     RETURNING id`,
     [
       input.id,
       input.recipientAccountId,
@@ -73,6 +75,17 @@ export async function insertAccountNotification(
       input.createdAt,
     ],
   );
+  if (inserted.rowCount === 0) return;
+
+  await insertOutboxEvent(executor, {
+    id: input.id,
+    eventType: "account.notification.push",
+    aggregateType: "account",
+    aggregateId: input.recipientAccountId,
+    deduplicationKey: "account-notification-push:" + input.id,
+    payload: { accountId: input.recipientAccountId },
+    payloadVersion: 1,
+  });
 }
 
 export async function listAccountNotifications(

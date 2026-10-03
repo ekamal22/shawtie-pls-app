@@ -58,6 +58,8 @@ import { PartnershipService } from "./modules/partnerships/partnership-service.t
 import { registerPartnershipRoutes } from "./modules/partnerships/routes.ts";
 import { RelationshipSpaceService } from "./modules/relationship-space/relationship-space-service.ts";
 import { registerRelationshipSpaceRoutes } from "./modules/relationship-space/routes.ts";
+import { SupportService } from "./modules/support/support-service.ts";
+import { registerSupportRoutes } from "./modules/support/routes.ts";
 import { installErrorHandler } from "./plugins/errors.ts";
 import { installM2Compatibility, installMutationSecurity } from "./plugins/request-security.ts";
 import { AuthKeyRing } from "./security/auth-key-ring.ts";
@@ -76,8 +78,17 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     trustProxy: dependencies?.config.trustedProxy ?? false,
   });
 
-  app.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", async (_request, reply) => {
+    reply.header("cache-control", "no-store");
+    return { status: "ok" };
+  });
   if (!dependencies) return app;
+
+  app.get("/ready", async (_request, reply) => {
+    await dependencies.database.pool.query("SELECT 1");
+    reply.header("cache-control", "no-store");
+    return { status: "ready" };
+  });
 
   app.register(cookie);
   app.register(websocket, {
@@ -112,6 +123,14 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     config: dependencies.config,
     keys,
     service,
+  });
+
+  const supportService = new SupportService(dependencies.database, service);
+  registerSupportRoutes(app, {
+    database: dependencies.database,
+    config: dependencies.config,
+    keys,
+    service: supportService,
   });
 
   const cryptoService = new CryptoService(dependencies.database);

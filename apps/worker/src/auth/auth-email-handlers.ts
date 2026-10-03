@@ -7,7 +7,7 @@ import {
 } from "@shawtie/db";
 import { PermanentWorkerError } from "../runtime/errors.ts";
 import type { OutboxHandler } from "../outbox/outbox-handler.ts";
-import type { EmailDeliveryPort } from "./email-delivery-port.ts";
+import type { EmailDeliveryPort, VerificationCodeEmailMessage } from "./email-delivery-port.ts";
 import type { WorkerAuthKeyRing } from "./worker-auth-key-ring.ts";
 
 function objectPayload(payload: unknown): Record<string, unknown> {
@@ -58,15 +58,22 @@ export function createEmailChallengeOutboxHandler(
         throw new PermanentWorkerError("AUTH_KEY_VERSION_UNAVAILABLE");
       }
 
-      await email.sendSecurityEmail(
-        {
-          deliveryId: challenge.id,
-          destination: challenge.emailDisplay ?? challenge.emailNormalized,
-          template: "verification_code",
-          parameters: { code, purpose: challenge.purpose },
-        },
-        signal,
+      const expiresInMinutes = Math.max(
+        1,
+        Math.ceil((challenge.expiresAt.getTime() - now.getTime()) / 60_000),
       );
+      const message: VerificationCodeEmailMessage = {
+        deliveryId: challenge.id,
+        destination: challenge.emailDisplay ?? challenge.emailNormalized,
+        template: "verification_code",
+        parameters: {
+          code,
+          purpose: challenge.purpose,
+          expiresAt: challenge.expiresAt.toISOString(),
+          expiresInMinutes,
+        },
+      };
+      await email.sendSecurityEmail(message, signal);
     },
   };
 }

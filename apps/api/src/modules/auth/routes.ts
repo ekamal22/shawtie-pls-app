@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
+  CURRENT_LEGAL_POLICY_VERSION,
   accountRecoveryCompleteSchema,
   dateOfBirthCorrectionSchema,
   deviceIdParamsSchema,
@@ -7,6 +8,7 @@ import {
   emailChangeCompleteSchema,
   emailChangeStartSchema,
   loginSchema,
+  notificationPreferencesUpdateSchema,
   parseAtBoundary,
   passwordRecoveryCompleteSchema,
   profileUpdateSchema,
@@ -33,6 +35,7 @@ import {
 } from "../../security/cookies.ts";
 import { networkPrefix } from "../../security/normalization.ts";
 import type { AccountService } from "../accounts/account-service.ts";
+import { ApiError } from "../../lib/api-error.ts";
 
 interface RouteDependencies {
   readonly database: DatabasePool;
@@ -64,6 +67,14 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
 
   app.post("/api/v1/auth/registration/start", async (request) => {
     const input = parseAtBoundary(registrationStartSchema, request.body);
+    if (
+      config.environment === "production" &&
+      (input.policyVersion !== CURRENT_LEGAL_POLICY_VERSION ||
+        input.termsAccepted !== true ||
+        input.privacyAccepted !== true)
+    ) {
+      throw new ApiError(400, "POLICY_ACCEPTANCE_REQUIRED");
+    }
     return service.startRegistration(input, network(request));
   });
 
@@ -154,6 +165,19 @@ export function registerAccountRoutes(app: FastifyInstance, deps: RouteDependenc
     const input = parseAtBoundary(profileUpdateSchema, request.body);
     await service.updateProfile(auth, input);
     return { ok: true };
+  });
+
+  app.get("/api/v1/me/notification-preferences", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    reply.header("cache-control", "private, no-store");
+    return service.getNotificationPreferences(auth.session.accountId);
+  });
+
+  app.patch("/api/v1/me/notification-preferences", async (request, reply) => {
+    const auth = await requireAuthentication(request, database, config, keys);
+    const input = parseAtBoundary(notificationPreferencesUpdateSchema, request.body);
+    reply.header("cache-control", "private, no-store");
+    return service.updateNotificationPreferences(auth, input);
   });
 
   app.post("/api/v1/me/email-change/start", async (request) => {

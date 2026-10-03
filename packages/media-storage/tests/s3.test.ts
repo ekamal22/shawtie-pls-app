@@ -30,6 +30,10 @@ test("M3 S3 upload grants are short-lived create-only opaque ciphertext PUTs", a
 
 test("M3 storage config rejects partial and insecure remote configuration", () => {
   assert.equal(mediaStorageConfigFromEnv({}), null);
+  assert.throws(
+    () => mediaStorageConfigFromEnv({ NODE_ENV: "production" }),
+    /MEDIA_S3_\* configuration is required in production/,
+  );
   assert.throws(() =>
     mediaStorageConfigFromEnv({
       MEDIA_S3_ENDPOINT: "https://objects.example.test",

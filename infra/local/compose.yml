@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shawtie
+      POSTGRES_PASSWORD: shawtie
+      POSTGRES_DB: shawtie
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shawtie -d shawtie"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - shawtie-postgres:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: shawtie-local
+      MINIO_ROOT_PASSWORD: shawtie-local-change-me
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - shawtie-minio:/data
+
+volumes:
+  shawtie-postgres:
+  shawtie-minio:

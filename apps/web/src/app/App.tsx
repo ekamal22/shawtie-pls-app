@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
+import { CURRENT_LEGAL_POLICY_VERSION } from "@shawtie/contracts";
 import { ApiClientError, apiRequest } from "../lib/api-client.ts";
 import {
   broadcastLocalLogout,
@@ -99,6 +100,8 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [email, setEmail] = useState("");
   const [registrationIntentId, setRegistrationIntentId] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   async function run(task: () => Promise<void>) {
     setBusy(true);
@@ -131,7 +134,16 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
         "/api/v1/auth/registration/start",
         {
           method: "POST",
-          body: { username, displayName, dateOfBirth, email, password },
+          body: {
+            username,
+            displayName,
+            dateOfBirth,
+            email,
+            password,
+            policyVersion: CURRENT_LEGAL_POLICY_VERSION,
+            termsAccepted,
+            privacyAccepted,
+          },
         },
       );
       setRegistrationIntentId(result.registrationIntentId);
@@ -296,7 +308,37 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
               autoComplete="new-password"
             />
             <p className="hint">Use at least 15 characters. No forced symbol or uppercase rules.</p>
-            <button className="primary" disabled={busy}>
+            <label className="security-confirm">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(event) => setTermsAccepted(event.target.checked)}
+                required
+              />
+              <span>
+                I agree to the{" "}
+                <a href="/terms.html" target="_blank" rel="noreferrer">
+                  Terms of Service
+                </a>
+                .
+              </span>
+            </label>
+            <label className="security-confirm">
+              <input
+                type="checkbox"
+                checked={privacyAccepted}
+                onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                required
+              />
+              <span>
+                I have read the{" "}
+                <a href="/privacy.html" target="_blank" rel="noreferrer">
+                  Privacy Notice
+                </a>
+                .
+              </span>
+            </label>
+            <button className="primary" disabled={busy || !termsAccepted || !privacyAccepted}>
               Send verification code
             </button>
           </form>

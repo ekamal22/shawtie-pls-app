@@ -37,6 +37,66 @@ function positivePort(raw) {
   return value;
 }
 
+function privateIpv4(hostname) {
+  const parts = hostname.split(".").map((part) => Number.parseInt(part, 10));
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
+    return false;
+  }
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
+}
+
+function privateIpv6(hostname) {
+  const value = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (value === "::1") return true;
+  return (
+    /^f[cd][0-9a-f]:/.test(value) ||
+    /^fe[89ab][0-9a-f]:/.test(value)
+  );
+}
+
+function privateBackendHostname(hostname) {
+  const value = hostname.toLowerCase();
+  if (value === "localhost" || value.endsWith(".localhost")) return true;
+  if (privateIpv4(value) || privateIpv6(value)) return true;
+  return false;
+}
+
+function explicitlyPrivateBackendHostname(hostname) {
+  const value = hostname.toLowerCase();
+  if (!/^[a-z0-9.-]+$/.test(value)) return false;
+  return (
+    !value.includes(".") ||
+    value.endsWith(".internal") ||
+    value.endsWith(".local") ||
+    value.endsWith(".svc") ||
+    value.endsWith(".cluster.local")
+  );
+}
+
+function assertBackendTransportPolicy(backendTarget, env) {
+  if (backendTarget.protocol === "https:") return;
+  if (privateBackendHostname(backendTarget.hostname)) return;
+  if (
+    env.WEB_ALLOW_PRIVATE_BACKEND_HTTP === "1" &&
+    explicitlyPrivateBackendHostname(backendTarget.hostname)
+  ) {
+    return;
+  }
+  throw new Error(
+    "Plaintext BACKEND_PROXY_TARGET requires loopback/private IP or WEB_ALLOW_PRIVATE_BACKEND_HTTP=1 with an internal hostname",
+  );
+}
+
 function backendTransport(target) {
   return target.protocol === "https:" ? httpsRequest : httpRequest;
 }
@@ -202,6 +262,7 @@ export function createProductionWebServer(env = process.env) {
       "BACKEND_PROXY_TARGET must be a bare origin without credentials, path, query, or fragment",
     );
   }
+  assertBackendTransportPolicy(backendTarget, env);
   const trustedProxyPolicy = createTrustedProxyPolicy(env.WEB_TRUSTED_PROXY);
 
   const allowInsecureLoopback =

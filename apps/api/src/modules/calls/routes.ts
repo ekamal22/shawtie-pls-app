@@ -25,6 +25,7 @@ import { resolveCallingConfig, type ApiConfig } from "../../config.ts";
 import { ApiError } from "../../lib/api-error.ts";
 import { requireAuthentication, type AuthContext } from "../../plugins/authentication.ts";
 import type { AuthKeyRing } from "../../security/auth-key-ring.ts";
+import { networkPrefix } from "../../security/normalization.ts";
 import type { CallingService } from "./calling-service.ts";
 import type { CallSignalingHub } from "./signaling-hub.ts";
 
@@ -63,50 +64,40 @@ async function rateLimit(
 ): Promise<void> {
   const decision = await withTransaction(deps.database, async (transaction) => {
     const now = await getTransactionTimestamp(transaction);
-    const buckets = [
+    const subjects: Array<{ scope: string; subject: string; limit: number }> = [
       {
         scope: `c1.${scope}.account`,
-        keyVersion: deps.keys.activeVersion,
-        keyHash: deps.keys.verifier(
-          "rate-limit-key",
-          `account\0${auth.session.accountId}`,
-          deps.keys.activeVersion,
-        ),
-        windowMs: 60_000,
+        subject: `account\0${auth.session.accountId}`,
         limit,
-        blockMs: 60_000,
       },
       {
         scope: `c1.${scope}.network`,
-        keyVersion: deps.keys.activeVersion,
-        keyHash: deps.keys.verifier(
-          "rate-limit-key",
-          `network\0${request.ip}`,
-          deps.keys.activeVersion,
-        ),
-        windowMs: 60_000,
+        subject: `network\0${networkPrefix(request.ip)}`,
         limit: limit * 2,
-        blockMs: 60_000,
       },
     ];
 
     if (includePartnership) {
       const current = await getCurrentPartnershipForAccount(transaction, auth.session.accountId);
       if (current) {
-        buckets.push({
+        subjects.push({
           scope: `c1.${scope}.partnership`,
-          keyVersion: deps.keys.activeVersion,
-          keyHash: deps.keys.verifier(
-            "rate-limit-key",
-            `partnership\0${current.partnershipId}`,
-            deps.keys.activeVersion,
-          ),
-          windowMs: 60_000,
+          subject: `partnership\0${current.partnershipId}`,
           limit,
-          blockMs: 60_000,
         });
       }
     }
+
+    const buckets = subjects.flatMap((item) =>
+      deps.keys.versions.map((version) => ({
+        scope: item.scope,
+        keyVersion: version,
+        keyHash: deps.keys.verifier("rate-limit-key", item.subject, version),
+        windowMs: 60_000,
+        limit: item.limit,
+        blockMs: 60_000,
+      })),
+    );
 
     return consumeRateLimitBuckets(transaction, buckets, now);
   });

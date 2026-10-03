@@ -20,7 +20,20 @@ export {
   createEmailChallengeOutboxHandler,
   createSecurityEmailOutboxHandler,
 } from "./auth/auth-email-handlers.ts";
-export type { EmailDeliveryPort, SecurityEmailMessage } from "./auth/email-delivery-port.ts";
+export type {
+  AuthVerificationPurpose,
+  EmailDeliveryPort,
+  SecurityEmailMessage,
+  VerificationCodeEmailMessage,
+} from "./auth/email-delivery-port.ts";
+export {
+  BrevoEmailDelivery,
+  brevoEmailConfigFromEnv,
+  emailDeliveryFromEnv,
+  renderEmailMessage,
+  renderSecurityEmail,
+  type BrevoEmailConfig,
+} from "./auth/brevo-email-delivery.ts";
 export {
   WorkerAuthKeyRing,
   workerAuthKeyConfigFromEnv,

@@ -1,0 +1,339 @@
+name: R2 Public Readiness Verification
+
+# Final R2 merge-candidate verification trigger.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/r2-public-readiness
+    paths:
+      - ".github/workflows/r2-verification.yml"
+      - ".github/actions/setup-workspace/**"
+      - "apps/**"
+      - "packages/**"
+      - "scripts/**"
+      - "infra/**"
+      - "docs/testing/R2_*"
+      - "docs/operations/**"
+      - "playwright.r2.config.ts"
+      - "tests/e2e/r2-public-readiness.spec.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "LICENSE"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r2-public-readiness-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    name: R2 candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.candidate.outputs.sha }}
+    steps:
+      - name: Validate candidate
+        id: candidate
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+          CANDIDATE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          case "$CANDIDATE_REF" in
+            refs/heads/feat/r2-public-readiness|refs/heads/main) ;;
+            *)
+              echo "Unsupported R2 candidate ref: $CANDIDATE_REF" >&2
+              exit 1
+              ;;
+          esac
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$CANDIDATE_SHA" >> "$GITHUB_OUTPUT"
+          echo "r2_candidate_sha=$CANDIDATE_SHA"
+
+  baseline:
+    name: R2 baseline
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Repository baseline
+        run: npm run ci:baseline
+
+  secret_scan:
+    name: R2 full history secret scan
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Dedicated source and history secret scan
+        env:
+          SECRET_SCAN_REQUIRE_FULL_HISTORY: "1"
+        run: npm run secret:scan
+
+  dependency_audit:
+    name: R2 dependency audit
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: npm high severity audit
+        run: npm audit --audit-level=high
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.91.0 --profile minimal --no-self-update
+          rustup default 1.91.0
+      - name: Install pinned cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      - name: Rust advisory audit
+        run: cargo audit --file packages/crypto/openmls-wasm/Cargo.lock
+
+  postgres:
+    name: R2 PostgreSQL and retained S1
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+      migration_count: ${{ steps.migrations.outputs.count }}
+    env:
+      DATABASE_URL: postgresql://shawtie_test:shawtie_test@127.0.0.1:5432/shawtie_r2_test
+      DB_TEST_CONFIRM: "1"
+      NODE_ENV: test
+      APP_ORIGIN: http://127.0.0.1:4173
+      ALLOW_INSECURE_LOOPBACK_COOKIES: "1"
+      AUTH_HMAC_ACTIVE_VERSION: "1"
+      PARTNER_REQUEST_MODE: paired
+    services:
+      postgres:
+        image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+        env:
+          POSTGRES_USER: shawtie_test
+          POSTGRES_PASSWORD: shawtie_test
+          POSTGRES_DB: shawtie_r2_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shawtie_test -d shawtie_r2_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: R2 migrations and retained S1 integration
+        shell: bash
+        run: |
+          export AUTH_HMAC_KEYS="1:$(node -e 'process.stdout.write(Buffer.alloc(32, 7).toString("base64"))')"
+          npm run test:s1:postgres
+      - name: S1 plaintext assertion
+        run: npm run s1:plaintext:assert-clean
+      - name: Record migration count
+        id: migrations
+        run: node scripts/ci/v1-db-evidence.mjs migration-count
+
+  browser:
+    name: R2 browser security and performance
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Install pinned Rust and WASM toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.91.0 --profile minimal --no-self-update
+          rustup default 1.91.0
+          rustup target add wasm32-unknown-unknown
+          cargo install wasm-pack --version 0.15.0 --locked
+      - name: Build OpenMLS WASM and release web artifact
+        env:
+          SHAWTIE_RELEASE_ID: ${{ github.sha }}
+        run: |
+          npm run build --workspace @shawtie/crypto
+          npm run build:s1-wasm
+          npm run build --workspace @shawtie/web
+      - name: R2 browser and accessibility regressions
+        run: npm run test:r2:security
+      - name: R2 web artifact budget
+        run: npm run test:r2:performance
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: R2 service-worker upgrade Chromium acceptance
+        run: npm run test:r2:browser:e2e
+      - name: Retained SEC1 browser security
+        run: npm run test:sec1:browser:e2e
+      - name: Retained S1 cryptographic browser harness
+        run: npm run test:s1:browser:e2e
+      - name: Production scans
+        run: |
+          npm run sec1:production:scan
+          npm run s1:production:scan
+
+  containers:
+    name: R2 production containers
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      sha: ${{ steps.workspace.outputs.sha }}
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup workspace
+        id: workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          expected-sha: ${{ github.sha }}
+      - name: Install pinned Rust and WASM toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.91.0 --profile minimal --no-self-update
+          rustup default 1.91.0
+          rustup target add wasm32-unknown-unknown
+          cargo install wasm-pack --version 0.15.0 --locked
+      - name: Build web release artifact
+        env:
+          SHAWTIE_RELEASE_ID: ${{ github.sha }}
+        run: |
+          npm run build --workspace @shawtie/crypto
+          npm run build:s1-wasm
+          npm run build --workspace @shawtie/web
+      - name: Build API image
+        run: docker build --file infra/docker/Dockerfile.api --tag shawtie-api:r2 .
+      - name: Build worker image
+        run: docker build --file infra/docker/Dockerfile.worker --tag shawtie-worker:r2 .
+      - name: Build web runtime image
+        run: docker build --file infra/docker/Dockerfile.web --tag shawtie-web:r2 .
+      - name: Generate release artifact checksums
+        run: node scripts/release/artifact-checksums.mjs apps/web/dist
+      - name: Record container image identities
+        env:
+          R2_CANDIDATE_SHA: ${{ github.sha }}
+        run: >-
+          node scripts/release/container-image-ids.mjs
+          shawtie-api:r2 shawtie-worker:r2 shawtie-web:r2
+      - name: Upload R2 container evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r2-container-evidence-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            apps/web/dist/SHA256SUMS
+            r2-container-image-ids.json
+
+  r2_automated_gate:
+    name: R2 automated gate
+    if: always()
+    needs:
+      - candidate
+      - baseline
+      - secret_scan
+      - dependency_audit
+      - postgres
+      - browser
+      - containers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Assert exact candidate and all automated gates
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ needs.candidate.outputs.sha }}
+          BASELINE_SHA: ${{ needs.baseline.outputs.sha }}
+          SECRET_SHA: ${{ needs.secret_scan.outputs.sha }}
+          AUDIT_SHA: ${{ needs.dependency_audit.outputs.sha }}
+          POSTGRES_SHA: ${{ needs.postgres.outputs.sha }}
+          BROWSER_SHA: ${{ needs.browser.outputs.sha }}
+          CONTAINERS_SHA: ${{ needs.containers.outputs.sha }}
+          BASELINE_RESULT: ${{ needs.baseline.result }}
+          SECRET_RESULT: ${{ needs.secret_scan.result }}
+          AUDIT_RESULT: ${{ needs.dependency_audit.result }}
+          POSTGRES_RESULT: ${{ needs.postgres.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+          CONTAINERS_RESULT: ${{ needs.containers.result }}
+          MIGRATION_COUNT: ${{ needs.postgres.outputs.migration_count }}
+        run: |
+          set -euo pipefail
+          test "$BASELINE_RESULT" = "success"
+          test "$SECRET_RESULT" = "success"
+          test "$AUDIT_RESULT" = "success"
+          test "$POSTGRES_RESULT" = "success"
+          test "$BROWSER_RESULT" = "success"
+          test "$CONTAINERS_RESULT" = "success"
+          test "$CANDIDATE_SHA" = "$BASELINE_SHA"
+          test "$CANDIDATE_SHA" = "$SECRET_SHA"
+          test "$CANDIDATE_SHA" = "$AUDIT_SHA"
+          test "$CANDIDATE_SHA" = "$POSTGRES_SHA"
+          test "$CANDIDATE_SHA" = "$BROWSER_SHA"
+          test "$CANDIDATE_SHA" = "$CONTAINERS_SHA"
+          test "$MIGRATION_COUNT" = "24"
+          echo "R2_AUTOMATED_GATE_PASS sha=$CANDIDATE_SHA migrations=$MIGRATION_COUNT"

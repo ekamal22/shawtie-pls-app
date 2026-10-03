@@ -105,7 +105,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
           one exact candidate SHA
                 |
                 v
-        R2 Public Readiness ⚪
+        R2 Public Readiness 🟡 IN PROGRESS
                 |
                 v
           STABLE RELEASE 🔒
@@ -117,6 +117,8 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
         X2 Deferred Heavy Features ⏸
 
 V1 Hosted CI Verification ✅ is DONE at executable candidate `d28668b5`. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact source state, and the final gate emitted `V1_GATE_PASS`. Canonical evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
+
+R2 is active on `feat/r2-public-readiness`. Repository-owned implementation and hosted automated verification are complete. Executable evidence is anchored at `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`, which ended with `R2_AUTOMATED_GATE_PASS` and 24 migrations. Live/manual provider, production-topology, restore, alerting, branch-protection, legal, accessibility/device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 ~~~
 
 ## Mermaid dependency view
@@ -163,7 +165,7 @@ flowchart TD
 
     UX8 --> SEC1["SEC1 Pre-V1 Security Hardening ✅"]
     SEC1 --> V1["V1 Hosted CI Verification ✅"]
-    V1 --> R2["R2 Public Readiness ⚪"]
+    V1 --> R2["R2 Public Readiness 🟡 IN PROGRESS"]
 
     R2 --> RELEASE["Stable Release 🔒"]
     RELEASE --> X1["X1 Post-stable Maturity ⚪"]
@@ -343,4 +345,4 @@ UX8 ✅
  -> Stable Release
 ~~~
 
-V1 is DONE at executable candidate `d28668b5`. V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306` both passed. R2 Public Readiness is the active next engineering milestone.
+V1 is DONE at executable candidate `d28668b5`. R2 repository implementation and hosted automated verification are complete at executable candidate `1efdd580`; R2 remains IN PROGRESS until its live/manual evidence ledger closes.

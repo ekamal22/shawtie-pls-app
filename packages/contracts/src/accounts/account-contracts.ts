@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const CURRENT_LEGAL_POLICY_VERSION = "2026-10-03" as const;
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const password = z.string().min(1).max(1024);
 const email = z.string().trim().min(3).max(254);
@@ -13,6 +15,9 @@ export const registrationStartSchema = z.object({
   dateOfBirth: isoDate,
   email,
   password,
+  policyVersion: z.string().min(1).max(64).optional(),
+  termsAccepted: z.boolean().optional(),
+  privacyAccepted: z.boolean().optional(),
 });
 
 export const registrationVerifySchema = z.object({
@@ -58,6 +63,9 @@ export const usernameChangeSchema = z.object({ username });
 export const dateOfBirthCorrectionSchema = z.object({ dateOfBirth: isoDate });
 export const deviceRenameSchema = z.object({ displayName: z.string().trim().min(1).max(80) });
 export const deviceIdParamsSchema = z.object({ deviceId: uuid });
+export const notificationPreferencesUpdateSchema = z.object({
+  messagePreviewEnabled: z.boolean(),
+});
 
 export type RegistrationStartInput = z.infer<typeof registrationStartSchema>;
 export type RegistrationVerifyInput = z.infer<typeof registrationVerifySchema>;
@@ -73,3 +81,7 @@ export type EmailChangeCompleteInput = z.infer<typeof emailChangeCompleteSchema>
 export type UsernameChangeInput = z.infer<typeof usernameChangeSchema>;
 export type DateOfBirthCorrectionInput = z.infer<typeof dateOfBirthCorrectionSchema>;
 export type DeviceRenameInput = z.infer<typeof deviceRenameSchema>;
+
+export type NotificationPreferencesUpdateInput = z.infer<
+  typeof notificationPreferencesUpdateSchema
+>;

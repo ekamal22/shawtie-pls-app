@@ -98,7 +98,9 @@ button:disabled {
   font-size: 14px;
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--line);

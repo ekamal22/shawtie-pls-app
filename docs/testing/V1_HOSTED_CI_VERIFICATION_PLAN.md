@@ -598,3 +598,5 @@ V1 is DONE only when:
 - durable evidence records the final scope and non-scope
 
 All V1 completion-contract conditions are satisfied. R2 Public Readiness is active.
+
+Post-V1 note: transactional authentication-email provider integration, including the Brevo adapter on `feat/r2-brevo-auth-email`, is R2 production-provider work. It does not alter or reopen the V1 hosted-verification closure.

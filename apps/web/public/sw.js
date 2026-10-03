@@ -1,5 +1,6 @@
-const CACHE_NAME = "shawtie-shell-v1";
-
+const releaseId = new URL(self.location.href).searchParams.get("release") || "unversioned";
+const safeReleaseId = releaseId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 96);
+const CACHE_NAME = "shawtie-shell-" + safeReleaseId;
 function isPrivateApi(url) {
   return url.pathname === "/api" || url.pathname.startsWith("/api/");
 }
@@ -31,6 +32,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data?.type === "M2_ACTIVATE_UPDATE") {
     event.waitUntil(self.skipWaiting());
+    return;
   }
 });
 
@@ -52,7 +54,8 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         } catch (error) {
-          const cached = await caches.match("/");
+          const cache = await caches.open(CACHE_NAME);
+          const cached = await cache.match("/");
           if (cached) return cached;
           throw error;
         }
@@ -66,12 +69,12 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     (async () => {
-      const cached = await caches.match(request);
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
       if (cached) return cached;
 
       const response = await fetch(request);
       if (cacheableResponse(response)) {
-        const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
       }
       return response;
@@ -145,6 +148,18 @@ self.addEventListener("pushsubscriptionchange", (event) => {
   );
 });
 
+async function showGenericNotification(type) {
+  const message = type === "message_changed";
+  const title = message ? "New message" : "Shawtie pls";
+  const body = message ? "Open Shawtie pls to read it." : "You have a new notification.";
+  await self.registration.showNotification(title, {
+    body,
+    tag: message ? "shawtie-message" : "shawtie-notification",
+    renotify: true,
+    data: { type: "r2-general" },
+  });
+}
+
 self.addEventListener("push", (event) => {
   let payload = null;
   try {
@@ -152,12 +167,19 @@ self.addEventListener("push", (event) => {
   } catch {
     payload = null;
   }
-  if (payload?.v !== 1 || payload?.type !== "call_state_changed") return;
-  event.waitUntil(reconcileCallNotification());
+  if (payload?.v !== 1) return;
+  if (payload.type === "call_state_changed") {
+    event.waitUntil(reconcileCallNotification());
+    return;
+  }
+  if (payload.type === "message_changed" || payload.type === "notification_changed") {
+    event.waitUntil(showGenericNotification(payload.type));
+  }
 });
 
 self.addEventListener("notificationclick", (event) => {
-  if (event.notification?.data?.type !== "c1-call") return;
+  const type = event.notification?.data?.type;
+  if (type !== "c1-call" && type !== "r2-general") return;
   event.notification.close();
   event.waitUntil(
     (async () => {
@@ -171,7 +193,9 @@ self.addEventListener("notificationclick", (event) => {
       } else {
         target = await self.clients.openWindow("/");
       }
-      target?.postMessage({ type: "C1_CALL_NOTIFICATION_CLICK" });
+      target?.postMessage({
+        type: type === "c1-call" ? "C1_CALL_NOTIFICATION_CLICK" : "R2_NOTIFICATION_CLICK",
+      });
     })(),
   );
 });

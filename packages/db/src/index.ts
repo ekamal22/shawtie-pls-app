@@ -62,6 +62,15 @@ export {
 export type { DurableClaim } from "./types/claim.ts";
 export type { QueryExecutor } from "./types/query-executor.ts";
 
+export {
+  insertAccountPolicyAcceptance,
+  insertAbuseReport,
+  insertErasureTombstone,
+  listErasureTombstones,
+  type AbuseReportCategory,
+  type ErasureTombstone,
+} from "./repositories/public-readiness.ts";
+
 export const databaseFoundationStatus = "f2-runtime-implemented" as const;
 
 export {
@@ -176,6 +185,12 @@ export {
   type LockedPartnershipMetadata,
   type PartnershipReadModel,
 } from "./repositories/partnerships.ts";
+
+export {
+  loadNotificationPreferences,
+  upsertNotificationPreferences,
+  type NotificationPreferences,
+} from "./repositories/notification-preferences.ts";
 
 export {
   insertAccountNotification,

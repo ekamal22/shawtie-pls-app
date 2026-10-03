@@ -97,6 +97,10 @@ export function UsScreen({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [notificationPreview, setNotificationPreviewState] = useState(false);
+  const [reportCategory, setReportCategory] = useState("other");
+  const [reportSubjectReference, setReportSubjectReference] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -108,15 +112,17 @@ export function UsScreen({
   const currentDevice = devices.find((device) => device.isCurrent) ?? null;
 
   async function load() {
-    const [profile, deviceResult] = await Promise.all([
+    const [profile, deviceResult, notificationPreferences] = await Promise.all([
       apiRequest<Me>("/api/v1/me"),
       apiRequest<{ devices: Device[] }>("/api/v1/me/devices"),
+      apiRequest<{ messagePreviewEnabled: boolean }>("/api/v1/me/notification-preferences"),
     ]);
     setMe(profile);
     setDisplayName(profile.displayName);
     setUsername(profile.username);
     setDateOfBirth(profile.dateOfBirth);
     setDevices(deviceResult.devices);
+    setNotificationPreviewState(notificationPreferences.messagePreviewEnabled);
   }
 
   useEffect(() => {
@@ -204,6 +210,34 @@ export function UsScreen({
               options={THEME_OPTIONS}
               onChange={theme.setPreference}
             />
+          </section>
+
+          <section className="us-block">
+            <h2>Notification privacy</h2>
+            <p className="hint">
+              Message notification details are hidden by default for your account. Even when
+              enabled, protected message content is never sent to the push provider.
+            </p>
+            <label className="security-confirm">
+              <input
+                type="checkbox"
+                checked={notificationPreview}
+                onChange={(event) => {
+                  const enabled = event.target.checked;
+                  void run(
+                    async () => {
+                      await apiRequest("/api/v1/me/notification-preferences", {
+                        method: "PATCH",
+                        body: { messagePreviewEnabled: enabled },
+                      });
+                      setNotificationPreviewState(enabled);
+                    },
+                    enabled ? "Notification details enabled." : "Notification previews hidden.",
+                  );
+                }}
+              />
+              <span>Show message notification type details</span>
+            </label>
           </section>
 
           <section className="us-block">
@@ -393,6 +427,72 @@ export function UsScreen({
             {currentDevice ? <p className="hint">Current device ID: {currentDevice.id}</p> : null}
           </section>
         </div>
+      ) : null}
+
+      {me ? (
+        <section className="us-block">
+          <h2>Report or get support</h2>
+          <p className="hint">
+            Reports are reviewed using the metadata and text you submit. Do not paste private
+            message content, media, passwords, verification codes, or your recovery key.
+          </p>
+          <div className="stack">
+            <label className="field">
+              <span>Category</span>
+              <select
+                value={reportCategory}
+                onChange={(event) => setReportCategory(event.target.value)}
+              >
+                <option value="abusive_username">Abusive username</option>
+                <option value="impersonation">Impersonation</option>
+                <option value="partner_request_harassment">Partner request harassment</option>
+                <option value="account_compromise">Account compromise</option>
+                <option value="illegal_content">Suspected illegal use</option>
+                <option value="other">Other support issue</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Username or account reference (optional)</span>
+              <input
+                value={reportSubjectReference}
+                onChange={(event) => setReportSubjectReference(event.target.value)}
+                maxLength={120}
+                autoComplete="off"
+              />
+            </label>
+            <label className="field">
+              <span>What happened?</span>
+              <textarea
+                value={reportDetails}
+                onChange={(event) => setReportDetails(event.target.value)}
+                maxLength={2000}
+                rows={5}
+                required
+              />
+            </label>
+            <Button
+              disabled={busy || reportDetails.trim().length === 0}
+              onClick={() =>
+                void run(async () => {
+                  const result = await apiRequest<{ reportId: string }>("/api/v1/support/reports", {
+                    method: "POST",
+                    body: {
+                      category: reportCategory,
+                      subjectReference: reportSubjectReference.trim() || null,
+                      details: reportDetails.trim(),
+                    },
+                  });
+                  setReportDetails("");
+                  setReportSubjectReference("");
+                  setReportCategory("other");
+                  setNotice(`Report received. Reference: ${result.reportId}`);
+                })
+              }
+            >
+              Submit report
+            </Button>
+          </div>
+        </section>
       ) : null}
 
       {me ? (

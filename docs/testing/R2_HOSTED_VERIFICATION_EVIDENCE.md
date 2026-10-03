@@ -1,0 +1,146 @@
+# R2 Hosted Verification Evidence
+
+Status: AUTOMATED HOSTED VERIFICATION PASS
+
+Milestone: 21 R2 Public Readiness
+
+Automated evidence anchor: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
+
+Final hosted run: `37083243469`
+
+Run number: 5
+
+Started: 2026-10-03T00:43:21Z
+
+Completed: 2026-10-03T00:48:17Z
+
+Final gate:
+
+```text
+R2_AUTOMATED_GATE_PASS sha=1efdd5804201ee8174275f663ab1a910cb2c6d48 migrations=24
+```
+
+## Final merge-candidate result
+
+Every required hosted job passed on the same exact candidate SHA:
+
+- R2 candidate: PASS
+- R2 baseline: PASS
+- R2 full history secret scan: PASS
+- R2 dependency audit: PASS
+- R2 PostgreSQL and retained S1: PASS
+- R2 browser security and performance: PASS
+- R2 production containers: PASS
+- R2 automated gate: PASS
+
+The PostgreSQL job applied migrations 0001 through 0024 from zero and retained the S1 PostgreSQL/plaintext verification boundary.
+
+The browser job passed:
+
+- R2 static security/accessibility/control-plane/worker regressions
+- R2 web artifact performance budget
+- real Chromium release-A to release-B service-worker upgrade and offline acceptance
+- retained SEC1 browser security
+- retained S1 OpenMLS browser verification
+- production scans
+
+The container job built the production API, worker, and web runtime images.
+
+The full-history secret-scan job used a non-shallow checkout.
+
+The dependency job passed npm high-severity audit and the pinned Rust advisory audit. The reviewed maintenance-only `RUSTSEC-2026-0173` warning remains governed by `docs/security/R2_RUST_DEPENDENCY_REVIEW.md`; it did not become a vulnerability failure.
+
+## Shakedown history
+
+### Run 1
+
+Candidate: `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4`
+
+Run: `37079449060`
+
+Found and corrected:
+
+- migration files incorrectly contained transaction control owned by the migration runner
+- secret-scan history-depth variable was scoped incorrectly
+- one service-worker static assertion was stale
+
+Dependency audit and production-container builds already passed.
+
+### Run 2
+
+Candidate: `7cddd477bd074de3c52e630a1f88e0af3d4e30b0`
+
+Run: `37081972759`
+
+Found and corrected:
+
+- R2 Prettier drift
+- unsupported TypeScript constructor parameter property in the new SupportService under Node 22 strip-only loading
+- stale accessibility copy assertion
+- incorrect worker-source relative path in a static R2 test
+
+The full-history secret scan, dependency audit, production containers, and all 24 migrations passed.
+
+### Run 3
+
+Candidate: `67a00151a8b37189e2bbd98906f4b095ec48ced8`
+
+Run: `37082393985`
+
+Found and corrected:
+
+- Brevo timeout fake transport allowed Node's event loop to end before the unref timeout signal fired
+- R2 Playwright command had not prepared workspace package artifacts before starting the Vite dev server
+
+PostgreSQL/S1, secret scan, dependency audit, production containers, formatting, static R2 tests, and the web artifact budget passed.
+
+### Run 4
+
+Candidate: `e5eb92064464b40a942bacc00c3e54874c5e9165`
+
+Run: `37082859480`
+
+Result: PASS across the complete hosted matrix.
+
+After that run started, a release-operations audit added fail-closed PostgreSQL restore-target scheme validation plus a control-plane regression, so one final exact-state run was required.
+
+### Run 5
+
+Candidate: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
+
+Run: `37083243469`
+
+Result: FINAL AUTOMATED PASS.
+
+## Pull request integration verification
+
+Aggregate implementation pull request: #2
+
+A final non-skip evidence commit is used only to trigger the normal PR Baseline CI and the R2 hosted workflow on the exact aggregate PR head before merge to `main`.
+
+Result: PENDING
+
+## Closure boundary
+
+This evidence closes the repository-owned hosted R2 automated gate only.
+
+R2 itself remains IN PROGRESS until the candidate-bound live/manual evidence ledger is complete. The following are not claimed by this hosted run:
+
+- real Brevo sender/domain/DNS acceptance
+- real authentication and serious-event provider delivery
+- real production Web Push
+- actual production provider topology/deployment
+- applied GitHub `main` protection
+- public HTTPS origin verification
+- backup/restore deletion drill
+- external monitoring and received alert
+- owner/legal Privacy, Terms, and license review
+- representative manual accessibility
+- constrained-network and mid-range device performance
+- final physical Android acceptance
+- voice/video privacy acceptance
+- final E2EE release review
+- staged rollback rehearsal
+- signed release provenance
+
+Those gates remain explicit in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, which is bound to the exact final release candidate and intentionally fails closure until every required gate has executed and carries an evidence reference.

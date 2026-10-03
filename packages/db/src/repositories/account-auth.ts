@@ -13,6 +13,8 @@ export interface RegistrationIntentRow {
   readonly emailNormalized: string;
   readonly emailDisplay: string;
   readonly passwordHash: string | null;
+  readonly policyVersion: string | null;
+  readonly policyAcceptedAt: Date | null;
   readonly expiresAt: Date;
   readonly completedAt: Date | null;
 }
@@ -26,6 +28,8 @@ interface RegistrationIntentDbRow {
   email_normalized: string;
   email_display: string;
   password_hash: string | null;
+  policy_version: string | null;
+  policy_accepted_at: Date | null;
   expires_at: Date;
   completed_at: Date | null;
 }
@@ -40,6 +44,8 @@ function mapRegistrationIntent(row: RegistrationIntentDbRow): RegistrationIntent
     emailNormalized: row.email_normalized,
     emailDisplay: row.email_display,
     passwordHash: row.password_hash,
+    policyVersion: row.policy_version,
+    policyAcceptedAt: row.policy_accepted_at,
     expiresAt: row.expires_at,
     completedAt: row.completed_at,
   };
@@ -56,14 +62,17 @@ export async function insertRegistrationIntent(
     emailNormalized: string;
     emailDisplay: string;
     passwordHash: string;
+    policyVersion?: string | null;
+    policyAcceptedAt?: Date | null;
     expiresAt: Date;
   },
 ): Promise<void> {
   await executor.query(
     `INSERT INTO registration_intents (
        id, username_normalized, username_display, display_name, date_of_birth,
-       email_normalized, email_display, password_hash, expires_at
-     ) VALUES ($1,$2,$3,$4,$5::date,$6,$7,$8,$9)`,
+       email_normalized, email_display, password_hash,
+       policy_version, policy_accepted_at, expires_at
+     ) VALUES ($1,$2,$3,$4,$5::date,$6,$7,$8,$9,$10,$11)`,
     [
       input.id,
       input.usernameNormalized,
@@ -73,6 +82,8 @@ export async function insertRegistrationIntent(
       input.emailNormalized,
       input.emailDisplay,
       input.passwordHash,
+      input.policyVersion ?? null,
+      input.policyAcceptedAt ?? null,
       input.expiresAt,
     ],
   );
@@ -85,7 +96,7 @@ export async function lockRegistrationIntent(
   const result = await executor.query<RegistrationIntentDbRow>(
     `SELECT id, username_normalized, username_display, display_name,
             date_of_birth::text, email_normalized, email_display, password_hash,
-            expires_at, completed_at
+            policy_version, policy_accepted_at, expires_at, completed_at
      FROM registration_intents
      WHERE id = $1
      FOR UPDATE`,
@@ -1444,6 +1455,15 @@ export async function scrubAccountAuthenticationData(
   executor: QueryExecutor,
   accountId: string,
 ): Promise<void> {
+  await executor.query("DELETE FROM account_notification_preferences WHERE account_id = $1", [
+    accountId,
+  ]);
+  await executor.query("DELETE FROM account_policy_acceptances WHERE account_id = $1", [accountId]);
+  await executor.query("DELETE FROM abuse_reports WHERE reporter_account_id = $1", [accountId]);
+  await executor.query(
+    "UPDATE abuse_reports SET target_account_id = NULL WHERE target_account_id = $1",
+    [accountId],
+  );
   await executor.query("DELETE FROM account_presence WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM email_verifications WHERE account_id = $1", [accountId]);
   await executor.query("DELETE FROM account_sessions WHERE account_id = $1", [accountId]);

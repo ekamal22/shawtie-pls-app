@@ -1,5 +1,17 @@
 # Project State
 
+## R2 implementation status
+
+R2 Public Readiness is active on `feat/r2-public-readiness`.
+
+The earlier Brevo authentication-email slice is now integrated into the aggregate R2 branch together with serious-event email delivery, content-minimized general Web Push, server-authoritative notification preview privacy, release-aware service-worker caching, canonical network abuse subjects, production transport/storage/provider requirements, privacy/terms acceptance, abuse/support workflow, production containers/environment contracts, restore-safe deletion replay, operational status, dedicated secret scanning, release/provenance tooling, accessibility regressions, performance budgets, licensing, Rust dependency review, and historical-branch governance.
+
+The provider boundary remains API transaction -> durable outbox -> worker -> provider. Authentication challenges preserve the existing challenge expiry, attempt, consume-once, resend-supersede, durable rate-limit, generic recovery-start, and verifier-only storage rules. Serious-event email is a separate durable family and does not carry protected application plaintext.
+
+R2 automated hosted verification is CLOSED on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1 and S1 browser verification, production-container builds, and the exact-SHA automated gate. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+
+R2 is not a closure claim yet. Real sender/domain/provider acceptance, production deployment, public-origin verification, applied branch protection, restore/alert drills, final accessibility/device/calling/E2EE acceptance, rollback rehearsal, and signed release provenance remain evidence gates. Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+
 ## Status
 
 Architecture Baseline 1.0 is accepted and frozen.
@@ -122,7 +134,7 @@ Current epic status:
 - F0 Governance and Security Baseline: DONE
 - F1 Repository Foundation and Executable Guardrails: DONE based on committed lockfile bootstrap, full local health validation, dependency and circular checks, runtime-contract tests, and repository guardrails
 - SEC1 Pre-V1 Security Hardening: DONE and fast-forward merged to `main @ a2badf7a357f36c075d44e1378fc2d6c2d20e300`. Final executable `91ca920d9a7cdfc4268f8c57425ed8dd7ef726d5` passed focused security 16/16, header/proxy/server 16/16, PostgreSQL/API/worker 36/36 with migrations 0001 through 0021 and `reserved=0`, real Chromium 1/1, production scan, full repository health, a zero-vulnerability audit, commit policy, no-new-em-dash, Git hygiene, and local/remote executable parity. No migration or scheduled-action type was added. Closure found only formatting drift, corrected by `487517c` and `91ca920`; no production or test behavior changed. Evidence: `docs/testing/SEC1_SECURITY_HARDENING_EVIDENCE.md`.
-- V1 Hosted CI Verification: DONE. Final executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3` passed V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306`. Candidate, Baseline, Dependency audit, Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL with plaintext assertion, Browser security, and V1 gate all passed. Durable evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. R2 Public Readiness is now the next active release milestone.
+- V1 Hosted CI Verification: DONE. Final executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3` passed V1 Release Verification run `36801613394` and normal Baseline CI run `36801613306`. Candidate, Baseline, Dependency audit, Security, isolated SEC1/A1 PostgreSQL, isolated S1 PostgreSQL with plaintext assertion, Browser security, and V1 gate all passed. Durable evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. R2 Public Readiness is now the active release milestone.
 - F2 Persistence and Worker Foundation: DONE. The database runtime, migration 0006, fencing-aware durable repositories, bounded worker consumers, transactional outbox runtime, lifecycle-event repository, deletion runtime, Docker-backed disposable PostgreSQL harness, and F2 integration matrix are implemented and locally verified. The F2 PostgreSQL suite passes 17/17 after applying all six migrations from zero, and the final full `npm run health` regression passes from the committed lockfile
 - P3 Partnership Lifecycle, Breakup, Deletion, and Cooldowns: DONE on `feat/p3-partnership-lifecycle`. All 22 acceptance gates are closed. The lifecycle domain/contracts suite passes 28/28, P3 security passes 6/6, all ten migrations apply from zero with database invariants green, and the disposable PostgreSQL/API/worker matrix passes 39/39 with `P3_LOCAL_POSTGRES_PASS`. Executed evidence covers exact cancellation/restoration boundaries, generation fencing, canonical dissolution, account-deletion precedence and recovery, exact cooldowns, synchronous authorization revocation, deletion manifests, former-partner blocking and privacy, serious notices, race persistence, and A1/P1/P2 regressions. Full repository health passes with Domain 48/48, Contracts 17/17, API unit/security 22/22, Worker 4/4, and all static/build checks green. `npm audit --audit-level=high` reports 0 vulnerabilities.
 - X1 Post-stable Maturity: PLANNED after the first stable release and focused on operational evidence, cost measurement, and stabilization
@@ -141,7 +153,7 @@ Current epic status:
 - UX2 through UX7: DONE, physically accepted at executable SHA `ca7cd35` (started at `0ec184d`), and fast-forward merged to `main` at merge anchor `9f0bea4`. Home, Talk (read receipts gated to the active Talk view, Ribbon, Memory Return), Ours with Then, Now and Next, Us, full-screen call presentation, memory and letter views, and the signature moments are implemented over unchanged product semantics. The visual and accessibility reviews produced repairs (contrast, sealed-item neutrality, touch targets, 200 percent text, dialog focus, outlined destructive entry points). Automated closure at that SHA: full health, node suites, Chromium UX1 to UX7 and cross-surface, retained M2, M3, C1 and C2 suites, and PostgreSQL local matrices for M1, R1, M2, M3, C1 and C2. The accepted scheduled-release visibility rule (a recipient may see the authorized scheduled time, nothing else about hidden items) is recorded in `docs/design/UX0_IMPLEMENTATION_SPEC.md` section 11. Physical Redmi Note 9S acceptance is defined in `docs/testing/UX_ANDROID_ACCEPTANCE.md` and passed 22 of 22 on 2026-09-26, see `docs/testing/UX_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - S1 E2EE and Cryptographic Recovery: DONE and merged to `main @ 71569cf`. The original non-physical baseline passed at `e254c3c`; final automated closure re-passed at corrective executable `cde73a1`, and mandatory Redmi Note 9S acceptance closed 30/30. See `docs/testing/S1_ANDROID_ACCEPTANCE_EVIDENCE.md`.
 - UX8 Encrypted UX Integration: DONE on `feat/ux8-encrypted-ux-integration`. The non-physical baseline passed `npm run test:ux8:closure` at executable `39de742c8ab795137be95ecbaa685131b608e813`, including UX8 model/race checks 27/27, real Chromium/OpenMLS 2/2, retained S1 local closure, production scan, full health, zero high-severity audit findings, and git hygiene. Physical Redmi Note 9S testing then found one real defect: a freshly recovered device could show a premature, destructive "repair" prompt while its S1 group join was still in flight, because the security provider concluded the local group was unusable from a single reconciliation pass instead of one still resolving. Fixed and re-closed at final corrective executable `43ff9b1ec319703f3d9270ae8053ab196ca54419` (UX8 model 28/28, all other closure gates re-passed green). Mandatory Redmi Note 9S acceptance then closed all 25 scenarios, physically re-verifying the fix in place. No new backend authority, API route, schema, or migration was added. Evidence: `docs/testing/UX8_AUTOMATED_CLOSURE_EVIDENCE.md` and `docs/testing/UX8_ANDROID_ACCEPTANCE_EVIDENCE.md`. `feat/ux8-encrypted-ux-integration` is fast-forward merged to `main` at `a029169`.
-- R2 Public Readiness: PLANNED after SEC1 Pre-V1 Security Hardening and V1 Hosted CI Verification.
+- R2 Public Readiness: IN PROGRESS. Current blockers and closure order are tracked in `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`; Stable Release remains blocked.
 
 
 ## Accepted product-experience direction
@@ -189,27 +201,32 @@ Baseline CI is configured in `.github/workflows/ci.yml`, including SHA-pinned ex
 
 The accepted V1 implementation plan is `docs/testing/V1_HOSTED_CI_VERIFICATION_PLAN.md`; durable closure evidence is `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`. Exact-SHA integrity, dependency advisory coverage, isolated PostgreSQL verification, Chromium/OpenMLS verification, and final gate behavior are all hosted and verified.
 
-## Repository audit concerns
+## R2 Public Readiness state
 
-The 2026-09-29 follow-up repository-wide audits found no new critical authentication bypass, cross-partnership authorization leak, E2EE plaintext exposure, or committed-secret defect. The two concrete post-SEC1 source defects found in the final audit pass are now fixed on `main @ a1659dc` and verified by hosted focused validation run `36773261743` against validated branch SHA `7d07f7b5c7f24d46188f79c20b4637a22d7d07c1`.
+V1 hosted release verification remains CLOSED at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`.
 
-- S1 local-secret lifecycle cleanup is CLOSED. Current-device revocation, account switching, account-device identity replacement, deletion-pending retention, account recovery, and permanent-deletion convergence now wire the account-wide S1 vault lifecycle explicitly. The implementation preserves the seven-day deletion recovery window and uses the device-handle-bound lifecycle probe plus durable local markers to avoid retaining revoked/deleted account crypto state indefinitely.
-- The S1 HTTP parser boundary defect is CLOSED. Contract-owned route-local body ceilings now account for base64url/JSON expansion without widening the global API body limit, and known Fastify parser/client errors map to stable sanitized 4xx responses instead of falling through to `500 INTERNAL_ERROR`.
+R2 is IN PROGRESS on `feat/r2-public-readiness`. The repository-owned implementation now includes the public-readiness control plane described in `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`:
 
-- V1 hosted coverage is CLOSED. The dedicated Security job explicitly runs the SEC1/S1 header, password-corpus, lint, format, hardening-regression, and production-scan gates that are not part of the ordinary baseline.
-- `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`; old fingerprinted static assets are not pruned inside that cache and an activated worker can initially inherit the previous cached `/` shell until an online navigation replaces it. R2 must add a release-aware cache version or explicit inventory/pruning and regression coverage.
-- authentication and partner-request network abuse limits use canonical `/24` IPv4 and `/64` IPv6 subjects, but media, realtime, and calling network buckets currently use exact `request.ip`. R2 must unify these subjects through canonical network-prefix normalization and align rate-limit key-rotation behavior where applicable.
-- production `BACKEND_PROXY_TARGET` accepts HTTP or HTTPS. HTTP is acceptable only across an explicitly trusted private or loopback transport boundary; R2 must either enforce that restriction in configuration or prove and document the private topology so session-bearing API traffic cannot cross an untrusted plaintext hop.
-- repository-health secret patterns are useful but intentionally narrow. R2 must add dedicated secret scanning suitable for a public release rather than treating `npm audit` or the current regex sweep as complete secret-detection evidence.
-- development commits are currently unsigned. This does not invalidate existing milestone evidence, but the stable release should be anchored to an immutable signed release tag or equivalent signed provenance, with the exact release SHA and artifact checksums recorded.
+- authentication and serious-event Brevo delivery through the durable worker boundary
+- content-minimized message, partner-request, and lifecycle Web Push with fail-hidden preview privacy
+- release-aware service-worker cache rollover and Chromium upgrade acceptance
+- canonical network-prefix abuse limits and calling key-version continuity
+- enforced trusted web-to-API transport and fail-closed production email, push, and media storage
+- versioned Privacy/Terms acceptance
+- abuse/support reporting plus private operator tooling
+- production containers, health/readiness, and environment validation
+- backup/restore with separate erasure tombstone replay and restore verification
+- aggregate privacy-safe operational health
+- release candidate, checksum, signed-provenance, public-origin, migration, rollback, and repository-governance tooling
+- full-history secret scanning
+- repository-level licensing decision and historical-branch authority
+- accessibility regressions, web artifact performance budgets, and Rust maintenance-warning review
 
-- `main` is currently unprotected in GitHub. Required status checks are off and the repository has no rulesets. R2 must add protection suitable for the verified fast-forward workflow and prevent force pushes and branch deletion. Once V1 proves the hosted Baseline CI status, release-relevant changes must be gated by the appropriate hosted check.
-- V1 hosted release verification is CLOSED. Release run `36801613394` and normal Baseline CI run `36801613306` passed on `d28668b5`; R2 now owns the remaining public-readiness concerns.
-- The repository is public and has no project-level license. R2 must record an explicit licensing decision before public readiness.
-- `design/m3-media-voice` is a divergent obsolete design branch. Its stranded ADR-012 describes a pre-S1 server-recoverable media-key bridge that was not adopted by current `main`; it is non-authoritative and must not be merged as current architecture.
-- production provider, deployment, release, rollback, backup/recovery, and operational automation remain incomplete or placeholder-only and are already owned by R2.
+R2 hosted automated acceptance is complete at `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Run `37083243469` ended with `R2_AUTOMATED_GATE_PASS` and migration count 24. Earlier shakedown defects are retained only as historical evidence in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-The two follow-up source repairs are implemented on `main @ a1659dc`. Hosted focused validation run `36773261743` passed build, 37/37 focused tests, lint, Prettier, and worktree hygiene against validated branch SHA `7d07f7b5`. The fixes do not reopen the historical SEC1 or S1 completion records, and no full Redmi rerun is required from the current implementation evidence.
+Stable Release remains blocked on executed evidence for the live production/provider/manual gates recorded in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, including Brevo/DNS, production Web Push, deployment/TLS/DNS, applied `main` protection, public-origin checks, backup/restore drill, alert receipt, owner/legal review, accessibility/device performance, physical Android, call privacy, E2EE review, rollback rehearsal, and final signed provenance.
+
+`design/m3-media-voice` is explicitly historical-only and non-authoritative per `docs/architecture/HISTORICAL_BRANCHES.md`.
 
 ## Progress reporting rule
 

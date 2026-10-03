@@ -78,30 +78,51 @@ Do not reopen verified foundation or lifecycle boundaries without concrete regre
 | 19 UX8 Encrypted UX Integration | DONE; final corrective executable `43ff9b1`; Android 25/25; merged to `main @ a029169` | merged S1 + redesigned UX surfaces | Yes, complete |
 | 20 SEC1 Pre-V1 Security Hardening | DONE and merged to `main @ a2badf7`; executable `91ca920d` | merged UX8 and post-UX8 security audit | No; desktop Chromium closure passed 1/1 |
 | V1 Hosted CI Verification | DONE; executable `d28668b5`; release run `36801613394` PASS; normal Baseline CI `36801613306` PASS | SEC1 DONE plus follow-up hardening | No physical rerun required |
-| 21 R2 Public Readiness | PLANNED | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
+| 21 R2 Public Readiness | IN PROGRESS | SEC1 + V1 + all completed pre-release epics | Yes, final acceptance |
 | Stable Release | BLOCKED | R2 | Yes |
 | X1 Post-stable Maturity | PLANNED | Stable Release | As needed |
 | X2 Deferred Heavy Features | DEFERRED | production evidence | As required |
 
 ## Current repository attention items
 
-The 2026-09-29 repository audits add no new product feature milestone. The two source repairs discovered in the final pass are DONE on `main @ a1659dc` and passed hosted focused validation run `36773261743` against validated branch SHA `7d07f7b5`.
+V1 hosted release evidence is complete at executable `d28668b5`. R2 Public Readiness is the only remaining pre-release milestone.
 
-- account-wide S1 local-crypto lifecycle deletion is implemented and verified across current-device revocation, account switching/device replacement, deletion-pending retention, recovery, and permanent-deletion convergence.
-- S1 route-local HTTP body ceilings now match encoded contract maxima, and known Fastify parser/client failures remain sanitized 4xx responses.
+The aggregate R2 implementation is active on `feat/r2-public-readiness`. Repository-owned engineering now includes:
 
-- V1 hosted release evidence is complete. The dedicated release workflow covers the SEC1/S1-focused security gates outside normal `npm run health`, plus isolated PostgreSQL, S1 plaintext inspection, Rust/Cargo advisory review, and Chromium/OpenMLS verification.
-- R2 must replace the fixed service-worker cache lifecycle with release-version rotation or explicit stale-asset pruning and verify update/offline-shell correctness.
-- R2 must normalize media, realtime, and calling network rate-limit subjects to the canonical network prefix and reconcile key-version behavior so IPv6 privacy-address rotation or key rotation cannot fragment the intended network budget.
-- R2 must constrain plaintext `BACKEND_PROXY_TARGET` use to a proven trusted private/loopback network or require HTTPS for an untrusted hop.
-- R2 must add dedicated secret scanning and stable-release provenance through an immutable signed release tag or equivalent signed release record with artifact checksums.
+- durable Brevo delivery for authentication challenges and approved serious account/partnership events
+- content-minimized message, partner-request, and account/lifecycle Web Push with account-backed preview privacy
+- release-aware service-worker shell cache rotation and a real Chromium upgrade/offline test
+- canonical network-prefix abuse subjects for media, realtime, and calling, with key-version continuity for calling
+- production enforcement of trusted web-to-API transport, transactional email, Web Push, and private media storage
+- versioned Privacy/Terms acceptance
+- authenticated abuse/support reporting plus operator queue tooling
+- production API/worker/web container definitions and production environment validation
+- restore-safe erasure tombstone journal, backup/restore tooling, and post-restore deletion verification
+- privacy-safe aggregate operational status tooling
+- release candidate, checksums, signed-tag verification, public-origin verification, migration/rollback, and staged-release procedures
+- dedicated full-history secret scanning
+- repository-level proprietary source-visible licensing decision
+- explicit historical-only disposition for `design/m3-media-voice`
+- R2 accessibility regressions and production web artifact budgets
+- documented disposition of the transitive Rust maintenance warning
 
-- `main` is currently unprotected, required status checks are off, and no repository rulesets exist. R2 must establish protection after V1 identifies the hosted status check that should gate release-relevant changes.
-- the public repository has no project-level license. R2 must record the owner's explicit licensing policy before public readiness.
-- `design/m3-media-voice` is obsolete divergent design history with a stranded non-authoritative ADR-012. It must be archived, deleted, or clearly retained as historical-only before R2 closes.
-- production provider configuration and deployment, release, rollback, backup/recovery, and operational automation remain R2 work.
+R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-The two follow-up source defects are closed and do not reopen SEC1 or S1 historical closure. Hosted focused regression evidence is recorded under run `36773261743`; no full Redmi rerun is required for these fixes.
+Remaining blockers are evidence/topology gates, not hidden feature-scope expansion:
+
+- real Brevo sender/domain/DNS and provider flows
+- real production Web Push
+- actual production deployment, TLS/DNS, private database/object storage, TURN, and secret injection
+- applied `main` branch protection
+- public-origin verification
+- backup/restore deletion drill
+- external monitoring and received alert test
+- owner/legal review of Privacy/Terms/license
+- final accessibility, mid-range performance, physical Android, calling privacy, and E2EE review
+- staged rollback rehearsal
+- signed final release provenance
+
+Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Immediate execution sequence
 
@@ -653,9 +674,13 @@ Protocol review, protected-content paths, recovery, revocation, plaintext retire
 
 **REDMI PHONE REQUIRED: YES, MANDATORY.**
 
-# Milestone 11: R2 Public Readiness
+# Milestone 21: R2 Public Readiness
 
-Status: PLANNED.
+Repository-owned R2 implementation and hosted automated verification are complete on `feat/r2-public-readiness`. Automated evidence is anchored at `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`.
+
+R2 remains IN PROGRESS because live provider, production topology, repository governance, public-origin, restore/alert, manual accessibility/device/calling/E2EE, rollback, legal review, and signed-provenance gates still require executed evidence.
+
+Status: IN PROGRESS.
 
 Depends on all stable-release feature epics, SEC1 Pre-V1 Security Hardening, and V1 Hosted CI Verification.
 

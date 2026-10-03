@@ -12,7 +12,7 @@ const app = createApiApplication({
 });
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
-const host = process.env.HOST ?? "127.0.0.1";
+const host = process.env.HOST ?? (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
 
 let stopping = false;
 async function stop(signal: string): Promise<void> {

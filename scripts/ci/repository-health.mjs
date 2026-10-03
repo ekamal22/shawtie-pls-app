@@ -58,6 +58,23 @@ const requiredPaths = [
   "packages/db/README.md",
   ".github/PULL_REQUEST_TEMPLATE.md",
   ".github/CODEOWNERS",
+  ".github/workflows/r2-verification.yml",
+  "LICENSE",
+  "docs/operations/BACKUP_AND_RESTORE.md",
+  "docs/operations/OBSERVABILITY.md",
+  "docs/operations/PRODUCTION_ENVIRONMENT.md",
+  "docs/operations/RELEASE_AND_ROLLBACK.md",
+  "docs/operations/SUPPORT_AND_ABUSE.md",
+  "docs/architecture/HISTORICAL_BRANCHES.md",
+  "docs/security/R2_RUST_DEPENDENCY_REVIEW.md",
+  "docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json",
+  "infra/deployment/production.env.example",
+  "infra/docker/Dockerfile.api",
+  "infra/docker/Dockerfile.worker",
+  "infra/docker/Dockerfile.web",
+  "scripts/ci/r2-closure.mjs",
+  "scripts/security/secret-scan.mjs",
+  "scripts/release/verify-production-contract.mjs",
 ];
 
 const forbiddenSecretFileNames = new Set([

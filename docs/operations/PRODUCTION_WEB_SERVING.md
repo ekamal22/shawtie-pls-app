@@ -137,6 +137,19 @@ The CSP keeps:
 
 Private API caching remains owned by the Fastify endpoint contracts and is preserved through the proxy.
 
+## R2 production-serving state
+
+The original two repository-level web-serving blockers are implemented:
+
+1. plaintext `BACKEND_PROXY_TARGET` is mechanically limited to loopback/private addressing or an explicit reviewed private-host mode; untrusted hops require HTTPS
+2. the service worker receives the exact release identity, uses release-scoped shell caches, and removes earlier release-shell caches on activation while keeping private API responses out of Cache API
+
+R2 also adds a real Chromium release-A to release-B upgrade/offline test and `scripts/release/verify-public-origin.mjs` for the deployed public origin.
+
+The remaining web-serving gate is live evidence after the actual ingress/CDN/TLS layer exists. The deployed origin must re-prove CSP, HSTS, Host enforcement, trusted-proxy behavior, WebSocket proxying, legal surfaces, service-worker release behavior, and media connectivity.
+
+Canonical R2 inventory: `R2_PUBLIC_READINESS_AUDIT.md`.
+
 ## Verification
 
 Focused SEC1 commands:

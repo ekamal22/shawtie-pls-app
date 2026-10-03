@@ -5,6 +5,7 @@ import {
   cancelPendingScheduledActionsForAggregate,
   createPartnershipDeletionManifestIfAbsent,
   insertOutboxEvent,
+  insertErasureTombstone,
   insertPartnerCooldown,
   markBreakupDissolved,
   markOpenBreakupSuperseded,
@@ -147,6 +148,13 @@ export async function dissolvePartnership(input: DissolutionInput): Promise<Diss
     lifecycle.partnershipId,
     input.observedAt,
   );
+
+  await insertErasureTombstone(transaction, {
+    subjectType: "partnership",
+    subjectId: lifecycle.partnershipId,
+    erasedAt: input.effectiveAt,
+    reason: input.reason,
+  });
 
   await createPartnershipDeletionManifestIfAbsent(transaction, {
     id: randomUUID(),

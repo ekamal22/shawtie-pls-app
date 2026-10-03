@@ -7,6 +7,7 @@ export {
 } from "./runtime/schema.ts";
 
 export {
+  CURRENT_LEGAL_POLICY_VERSION,
   accountRecoveryCompleteSchema,
   dateOfBirthCorrectionSchema,
   deviceIdParamsSchema,
@@ -14,6 +15,7 @@ export {
   emailChangeCompleteSchema,
   emailChangeStartSchema,
   loginSchema,
+  notificationPreferencesUpdateSchema,
   passwordRecoveryCompleteSchema,
   profileUpdateSchema,
   reauthenticateSchema,
@@ -28,6 +30,7 @@ export {
   type EmailChangeCompleteInput,
   type EmailChangeStartInput,
   type LoginInput,
+  type NotificationPreferencesUpdateInput,
   type PasswordRecoveryCompleteInput,
   type ProfileUpdateInput,
   type ReauthenticateInput,
@@ -317,3 +320,10 @@ export {
   type ProtectedContentEnvelopeProjection,
   type RecoveryCapsuleInput,
 } from "./crypto/protected-content.ts";
+
+export {
+  abuseReportCategorySchema,
+  abuseReportCreateSchema,
+  type AbuseReportCategory,
+  type AbuseReportCreateInput,
+} from "./support/reports.ts";

@@ -42,7 +42,12 @@ export function mediaStorageConfigFromEnv(
   const accessKeyId = env.MEDIA_S3_ACCESS_KEY_ID?.trim();
   const secretAccessKey = env.MEDIA_S3_SECRET_ACCESS_KEY?.trim();
   const values = [endpoint, bucket, region, accessKeyId, secretAccessKey];
-  if (values.every((value) => !value)) return null;
+  if (values.every((value) => !value)) {
+    if (env.NODE_ENV === "production") {
+      throw new Error("MEDIA_S3_* configuration is required in production");
+    }
+    return null;
+  }
   if (values.some((value) => !value)) {
     throw new Error("MEDIA_S3_* configuration must be supplied completely");
   }

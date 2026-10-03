@@ -121,6 +121,8 @@ Store a keyed verifier such as an HMAC, not a raw code and not a plain unsalted 
 
 A1 additionally stores a random challenge nonce and derives the short-lived delivery code only when needed by the durable email worker. The raw code is not stored in PostgreSQL or outbox JSON.
 
+R2 keeps provider delivery behind the same worker boundary. With Brevo enabled, the API key exists only in worker-side environment configuration, the worker sends only the destination plus minimal authentication content, and the raw code exists only transiently during derivation, rendering, provider delivery, and user submission. The Brevo delivery ID is opaque and contains no authentication secret.
+
 Enforce:
 
 - short expiry
@@ -128,6 +130,25 @@ Enforce:
 - resend rate limit
 - consume-once behavior
 - replay rejection
+
+## R2 notification-provider boundary
+
+R2 implements both authentication email and the approved serious-event email family through the provider-neutral durable worker boundary.
+
+General Web Push is also implemented for account/lifecycle notifications, partner requests, new messages, and calls. Provider payloads remain content-minimized:
+
+- serious email carries only the destination, event meaning, and authoritative deadline where required
+- protected message, media, relationship-object, partner identity, recovery, and cryptographic content do not enter general push payloads
+- generic notification text is the default
+- the account-backed detail setting may expose notification type only, not protected message plaintext
+- runtime start first forces preview details hidden and then loads the authenticated account preference; runtime stop hides details again
+- revoked devices lose their push subscription
+- final dissolution synchronously releases partnership membership, so stale message events cannot derive current recipients
+- provider failures occur outside authoritative account/partnership transactions through durable outbox retry
+
+Live provider acceptance remains a Stable Release gate.
+
+Canonical current release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Sessions and sensitive changes
 
