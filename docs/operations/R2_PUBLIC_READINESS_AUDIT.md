@@ -322,7 +322,7 @@ configure live providers and production topology
 apply repository protection
         |
         v
-execute provider/public-origin/restore/alert/device/accessibility/calling/E2EE/rollback acceptance
+execute provider/public-origin/restore/alert/device/accessibility/voice-video/rollback acceptance
         |
         v
 pre-provenance R2 acceptance PASS
