@@ -1,4 +1,4 @@
-FROM node:22.18.0-bookworm-slim AS build
+FROM node:22.18.0-bookworm-slim@sha256:752ea8a2f758c34002a0461bd9f1cee4f9a3c36d48494586f60ffce1fc708e0e AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
@@ -15,7 +15,7 @@ RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build --workspace @shawtie/domain  && npm run build --workspace @shawtie/contracts  && npm run build --workspace @shawtie/db  && npm run build --workspace @shawtie/media-storage  && npm run build --workspace @shawtie/api  && npm prune --omit=dev
 
-FROM node:22.18.0-bookworm-slim AS runtime
+FROM node:22.18.0-bookworm-slim@sha256:752ea8a2f758c34002a0461bd9f1cee4f9a3c36d48494586f60ffce1fc708e0e AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app/package.json /app/package-lock.json ./
