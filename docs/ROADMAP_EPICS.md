@@ -2752,7 +2752,7 @@ The integrated `main` line contains the repository-owned public-readiness implem
 
 Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. The shakedown history, feature-branch merge-candidate pass, and main closure are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main @ 44fe73e7dbed79ebf985f66f6c1237536014121f`. Baseline CI `37109590248`, V1 Release Verification `37109590249`, and R2 Public Readiness Verification `37109590242` all passed on that exact SHA. The shakedown history and final-main closure are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Scope
 
