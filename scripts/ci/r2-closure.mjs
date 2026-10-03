@@ -24,6 +24,6 @@ run("npm", ["run", "test:r2:performance"]);
 run("npm", ["run", "secret:scan"], { SECRET_SCAN_REQUIRE_FULL_HISTORY: "1" });
 run("npm", ["audit", "--audit-level=high"]);
 run("git", ["diff", "--check"]);
-run("node", ["scripts/ci/r2-manual-evidence.mjs"], { R2_CANDIDATE_SHA: head });
+run("node", ["scripts/ci/r2-manual-evidence.mjs"], { R2_EVIDENCE_HEAD_SHA: head });
 
-console.log("R2_AUTOMATED_AND_MANUAL_GATE_PASS sha=" + head);
+console.log("R2_PRE_PROVENANCE_ACCEPTANCE_PASS evidenceHead=" + head);
