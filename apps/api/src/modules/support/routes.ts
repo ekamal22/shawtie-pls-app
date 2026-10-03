@@ -14,17 +14,9 @@ interface SupportRouteDependencies {
   readonly service: SupportService;
 }
 
-export function registerSupportRoutes(
-  app: FastifyInstance,
-  deps: SupportRouteDependencies,
-): void {
+export function registerSupportRoutes(app: FastifyInstance, deps: SupportRouteDependencies): void {
   app.post("/api/v1/support/reports", async (request, reply) => {
-    const auth = await requireAuthentication(
-      request,
-      deps.database,
-      deps.config,
-      deps.keys,
-    );
+    const auth = await requireAuthentication(request, deps.database, deps.config, deps.keys);
     const input = parseAtBoundary(abuseReportCreateSchema, request.body);
     const result = await deps.service.createReport(auth, input, networkPrefix(request.ip));
     void reply.status(201);

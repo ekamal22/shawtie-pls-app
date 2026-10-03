@@ -67,7 +67,6 @@ export const notificationPreferencesUpdateSchema = z.object({
   messagePreviewEnabled: z.boolean(),
 });
 
-
 export type RegistrationStartInput = z.infer<typeof registrationStartSchema>;
 export type RegistrationVerifyInput = z.infer<typeof registrationVerifySchema>;
 export type RegistrationResendInput = z.infer<typeof registrationResendSchema>;
@@ -83,4 +82,6 @@ export type UsernameChangeInput = z.infer<typeof usernameChangeSchema>;
 export type DateOfBirthCorrectionInput = z.infer<typeof dateOfBirthCorrectionSchema>;
 export type DeviceRenameInput = z.infer<typeof deviceRenameSchema>;
 
-export type NotificationPreferencesUpdateInput = z.infer<typeof notificationPreferencesUpdateSchema>;
+export type NotificationPreferencesUpdateInput = z.infer<
+  typeof notificationPreferencesUpdateSchema
+>;

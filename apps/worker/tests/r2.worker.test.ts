@@ -19,7 +19,9 @@ test("R2 generic push payloads contain routing type only", async () => {
 });
 
 test("R2 message preview routing is account-backed and defaults hidden", async () => {
-  const preferences = await source("../../../packages/db/src/repositories/notification-preferences.ts");
+  const preferences = await source(
+    "../../../packages/db/src/repositories/notification-preferences.ts",
+  );
   const messaging = await source("../src/messages/messaging-invalidation-handler.ts");
   assert.equal(preferences.includes(": { messagePreviewEnabled: false, updatedAt: null }"), true);
   assert.equal(messaging.includes("previewByAccount.get(accountId)"), true);
@@ -29,7 +31,10 @@ test("R2 default worker registers serious email and generic push handlers", asyn
   const defaults = await source("../src/outbox/default-outbox-handlers.ts");
   assert.equal(defaults.includes("createSecurityEmailOutboxHandler"), true);
   assert.equal(defaults.includes("createGenericPushHandlers"), true);
-  assert.equal(defaults.includes("createM1MessagingInvalidationHandlers(publisher, database, pushConfig)"), true);
+  assert.equal(
+    defaults.includes("createM1MessagingInvalidationHandlers(publisher, database, pushConfig)"),
+    true,
+  );
 });
 
 test("R2 message push recipient lookup fails closed after partnership release", async () => {

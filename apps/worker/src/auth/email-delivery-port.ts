@@ -6,10 +6,7 @@ export interface SecurityEmailMessage {
 }
 
 export type AuthVerificationPurpose =
-  | "registration"
-  | "email_change"
-  | "password_recovery"
-  | "account_recovery";
+  "registration" | "email_change" | "password_recovery" | "account_recovery";
 
 export interface VerificationCodeEmailMessage extends SecurityEmailMessage {
   readonly template: "verification_code";

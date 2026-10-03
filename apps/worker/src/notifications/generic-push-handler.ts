@@ -84,13 +84,11 @@ export function createGenericPushHandlers(
   database: DatabasePool,
   pushConfig: WebPushConfig | null,
 ): readonly OutboxHandler[] {
-  return GENERIC_PUSH_TYPES.map(
-    (eventType: GenericPushEventType): OutboxHandler => ({
-      eventType,
-      payloadVersion: 1,
-      async deliver({ event, signal }) {
-        await deliverGenericPush(database, pushConfig, event, signal);
-      },
-    }),
-  );
+  return GENERIC_PUSH_TYPES.map((eventType: GenericPushEventType): OutboxHandler => ({
+    eventType,
+    payloadVersion: 1,
+    async deliver({ event, signal }) {
+      await deliverGenericPush(database, pushConfig, event, signal);
+    },
+  }));
 }

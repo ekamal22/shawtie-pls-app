@@ -115,9 +115,7 @@ export function UsScreen({
     const [profile, deviceResult, notificationPreferences] = await Promise.all([
       apiRequest<Me>("/api/v1/me"),
       apiRequest<{ devices: Device[] }>("/api/v1/me/devices"),
-      apiRequest<{ messagePreviewEnabled: boolean }>(
-        "/api/v1/me/notification-preferences",
-      ),
+      apiRequest<{ messagePreviewEnabled: boolean }>("/api/v1/me/notification-preferences"),
     ]);
     setMe(profile);
     setDisplayName(profile.displayName);
@@ -226,13 +224,16 @@ export function UsScreen({
                 checked={notificationPreview}
                 onChange={(event) => {
                   const enabled = event.target.checked;
-                  void run(async () => {
-                    await apiRequest("/api/v1/me/notification-preferences", {
-                      method: "PATCH",
-                      body: { messagePreviewEnabled: enabled },
-                    });
-                    setNotificationPreviewState(enabled);
-                  }, enabled ? "Notification details enabled." : "Notification previews hidden.");
+                  void run(
+                    async () => {
+                      await apiRequest("/api/v1/me/notification-preferences", {
+                        method: "PATCH",
+                        body: { messagePreviewEnabled: enabled },
+                      });
+                      setNotificationPreviewState(enabled);
+                    },
+                    enabled ? "Notification details enabled." : "Notification previews hidden.",
+                  );
                 }}
               />
               <span>Show message notification type details</span>
@@ -473,17 +474,14 @@ export function UsScreen({
               disabled={busy || reportDetails.trim().length === 0}
               onClick={() =>
                 void run(async () => {
-                  const result = await apiRequest<{ reportId: string }>(
-                    "/api/v1/support/reports",
-                    {
-                      method: "POST",
-                      body: {
-                        category: reportCategory,
-                        subjectReference: reportSubjectReference.trim() || null,
-                        details: reportDetails.trim(),
-                      },
+                  const result = await apiRequest<{ reportId: string }>("/api/v1/support/reports", {
+                    method: "POST",
+                    body: {
+                      category: reportCategory,
+                      subjectReference: reportSubjectReference.trim() || null,
+                      details: reportDetails.trim(),
                     },
-                  );
+                  });
                   setReportDetails("");
                   setReportSubjectReference("");
                   setReportCategory("other");

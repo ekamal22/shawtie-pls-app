@@ -40,8 +40,5 @@ test("Brevo provider configuration validates required fields and timeout", () =>
     () => brevoEmailConfigFromEnv({ ...valid, BREVO_TIMEOUT_MS: "999" }),
     /BREVO_TIMEOUT_MS/,
   );
-  assert.equal(
-    brevoEmailConfigFromEnv({ ...valid, BREVO_TIMEOUT_MS: "15000" })?.timeoutMs,
-    15_000,
-  );
+  assert.equal(brevoEmailConfigFromEnv({ ...valid, BREVO_TIMEOUT_MS: "15000" })?.timeoutMs, 15_000);
 });

@@ -7,9 +7,7 @@ const callingPermissionHeaders = {
 
 export default defineConfig(() => {
   const releaseId =
-    process.env.SHAWTIE_RELEASE_ID?.trim() ||
-    process.env.GITHUB_SHA?.trim() ||
-    "unversioned";
+    process.env.SHAWTIE_RELEASE_ID?.trim() || process.env.GITHUB_SHA?.trim() || "unversioned";
 
   return {
     define: {

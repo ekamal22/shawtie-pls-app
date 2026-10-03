@@ -38,7 +38,10 @@ test("R2 registration links the published privacy and terms surfaces", async () 
 });
 
 test("R2 notification preview remains server-authoritative and content free", async () => {
-  const us = await readFile(new URL("../src/features/ours/us/UsScreen.tsx", import.meta.url), "utf8");
+  const us = await readFile(
+    new URL("../src/features/ours/us/UsScreen.tsx", import.meta.url),
+    "utf8",
+  );
   const worker = await readFile(
     new URL("../../../worker/src/messages/messaging-invalidation-handler.ts", import.meta.url),
     "utf8",

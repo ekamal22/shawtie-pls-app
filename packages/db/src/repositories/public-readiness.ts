@@ -53,7 +53,6 @@ export async function insertAbuseReport(
   );
 }
 
-
 export interface ErasureTombstone {
   readonly subjectType: "account" | "partnership";
   readonly subjectId: string;

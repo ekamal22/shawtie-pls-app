@@ -101,7 +101,10 @@ function simpleSecurityEmail(
     : "";
   return {
     subject,
-    textContent: body + deadlineText + "\n\nIf this was not expected, review your Shawtie pls account and security settings.",
+    textContent:
+      body +
+      deadlineText +
+      "\n\nIf this was not expected, review your Shawtie pls account and security settings.",
     htmlContent: emailShell(
       subject,
       '<p style="line-height:1.6;">' +
@@ -301,7 +304,12 @@ export class BrevoEmailDelivery implements EmailDeliveryPort {
 function configuredTimeout(raw: string | undefined): number {
   if (raw === undefined) return DEFAULT_TIMEOUT_MS;
   const value = Number.parseInt(raw, 10);
-  if (!Number.isInteger(value) || String(value) !== raw || value < 1_000 || value > MAX_TIMEOUT_MS) {
+  if (
+    !Number.isInteger(value) ||
+    String(value) !== raw ||
+    value < 1_000 ||
+    value > MAX_TIMEOUT_MS
+  ) {
     throw new Error("BREVO_TIMEOUT_MS must be an integer from 1000 to 30000");
   }
   return value;

@@ -316,7 +316,11 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
                 required
               />
               <span>
-                I agree to the <a href="/terms.html" target="_blank" rel="noreferrer">Terms of Service</a>.
+                I agree to the{" "}
+                <a href="/terms.html" target="_blank" rel="noreferrer">
+                  Terms of Service
+                </a>
+                .
               </span>
             </label>
             <label className="security-confirm">
@@ -327,7 +331,11 @@ function AuthScreen({ onAuthenticated }: { onAuthenticated: () => Promise<void> 
                 required
               />
               <span>
-                I have read the <a href="/privacy.html" target="_blank" rel="noreferrer">Privacy Notice</a>.
+                I have read the{" "}
+                <a href="/privacy.html" target="_blank" rel="noreferrer">
+                  Privacy Notice
+                </a>
+                .
               </span>
             </label>
             <button className="primary" disabled={busy || !termsAccepted || !privacyAccepted}>
