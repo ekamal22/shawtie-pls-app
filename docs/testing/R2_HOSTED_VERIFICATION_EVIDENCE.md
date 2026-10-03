@@ -4,9 +4,9 @@ Status: AUTOMATED HOSTED VERIFICATION PASS ON MAIN
 
 Milestone: 21 R2 Public Readiness
 
-Automated evidence anchor: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
+Automated merge-candidate anchor: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
 
-Final hosted run: `37083243469`
+Final merge-candidate hosted run: `37083243469`
 
 Run number: 5
 
@@ -180,3 +180,31 @@ R2 itself remains IN PROGRESS until the candidate-bound live/manual evidence led
 - signed release provenance
 
 Those gates remain explicit in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, which is bound to the exact final release candidate and intentionally fails closure until every required gate has executed and carries an evidence reference.
+
+
+## Final authoritative main-state verification
+
+Final authoritative main SHA:
+
+`44fe73e7dbed79ebf985f66f6c1237536014121f`
+
+Exact-main hosted runs on that same source state:
+
+- Baseline CI `37109590248`: PASS
+- V1 Release Verification `37109590249`: PASS
+- R2 Public Readiness Verification `37109590242`: PASS
+
+Every R2 job passed on `44fe73e7dbed79ebf985f66f6c1237536014121f`:
+
+- R2 candidate
+- R2 baseline
+- R2 full history secret scan
+- R2 dependency audit
+- R2 PostgreSQL and retained S1
+- R2 browser security and performance
+- R2 production containers
+- R2 automated gate
+
+The R2 automated gate job was `111165479101`.
+
+This is the current repository-owned automated evidence anchor for Milestone 21. Later documentation-only commits do not turn live/manual gates green; the final Stable Release candidate must still bind its manual evidence ledger to its own exact SHA and re-run any candidate-sensitive release checks required by the closure procedure.
