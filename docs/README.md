@@ -108,6 +108,7 @@ The selected architecture is:
 - `security/SECURITY_MODEL.md`
 - `operations/R2_PUBLIC_READINESS_AUDIT.md` - canonical repo-wide R2 release-blocker inventory and closure order
 - `operations/TRANSACTIONAL_EMAIL.md` for the R2 provider-neutral Brevo authentication-email path, configuration, retry behavior, and real-send procedure
+- `testing/R2_BREVO_LIVE_ACCEPTANCE.md` for the four Brevo-specific live acceptance gates and evidence rules
 - `architecture/SEC1_PRE_V1_SECURITY_HARDENING_DESIGN.md` - frozen SEC1 implementation architecture
 - `security/PRE_V1_SECURITY_HARDENING.md` - current SEC1 implementation/closure scope and acceptance gates
 - `operations/PRODUCTION_WEB_SERVING.md` - production web adapter, environment, proxy, CSP/HSTS, and deployment verification contract
