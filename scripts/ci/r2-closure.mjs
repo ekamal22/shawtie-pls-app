@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 
-// Stable automated freeze trigger: V1 and R2 must both remain green on this exact main state.
+// Stable automated freeze trigger: V1 and R2 must both remain green on this exact main state. Manual evidence sequencing is candidate-safe.
 
 function run(command, args, extraEnv = {}) {
   const result = spawnSync(command, args, {
