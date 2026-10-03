@@ -92,7 +92,7 @@ The Rust audit used `cargo-audit 0.22.2` against `packages/crypto/openmls-wasm/C
 - crate: `proc-macro-error2 2.0.1`
 - classification: unmaintained
 
-V1 accepts this as a non-vulnerability dependency-maintenance warning for closure. It does not weaken the successful vulnerability gate. R2 should review the transitive dependency path and available replacement or upgrade options before public readiness.
+V1 accepts this as a non-vulnerability dependency-maintenance warning for closure. It does not weaken the successful vulnerability gate. R2 subsequently completed the transitive dependency review and retained the warning as maintenance-only under `docs/security/R2_RUST_DEPENDENCY_REVIEW.md`; exact-main hosted `cargo audit` remained green in run `37108925171`.
 
 ## Security evidence
 
@@ -229,4 +229,4 @@ The executable closure anchor is:
 
 `d28668b5a7d021bc12b7a3dccbd69193074af9d3`
 
-R2 Public Readiness is the next active release milestone.
+R2 Public Readiness is the active release milestone. Its repository implementation has since merged to `main @ 8a73b621`, and exact-main hosted automated verification passed at `2ca1a4dd`, run `37108925171`; live/manual R2 gates remain open.
