@@ -39,9 +39,8 @@ await request("PUT", "/branches/main/protection", {
 });
 
 if (process.env.R2_DELETE_OBSOLETE_M3_BRANCH === "1") {
-  const ref = encodeURIComponent("heads/design/m3-media-voice");
   const response = await fetch(
-    "https://api.github.com/repos/" + repository + "/git/refs/" + ref,
+    "https://api.github.com/repos/" + repository + "/git/refs/heads/design/m3-media-voice",
     { method: "DELETE", headers },
   );
   if (!response.ok && response.status !== 404) {
