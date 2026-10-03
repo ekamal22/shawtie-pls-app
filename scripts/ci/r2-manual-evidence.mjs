@@ -52,28 +52,20 @@ if (ancestor === undefined) {
   // execFileSync returns undefined on success with ignored stdio.
 }
 
-const releaseImpactPaths = [
-  ".github/actions",
-  ".github/workflows/r2-verification.yml",
-  "apps",
-  "packages",
-  "scripts",
-  "infra",
-  "tests",
-  "playwright.r2.config.ts",
-  "package.json",
-  "package-lock.json",
-  "LICENSE",
-];
-const drift = git(["diff", "--name-only", candidateSha + ".." + head, "--", ...releaseImpactPaths]);
-if (drift) {
+const changedFiles = git(["diff", "--name-only", candidateSha + ".." + head])
+  .split(/\r?\n/)
+  .filter(Boolean);
+const releaseDrift = changedFiles.filter(
+  (file) => file !== "README.md" && !file.startsWith("docs/"),
+);
+if (releaseDrift.length > 0) {
   console.error(
     "R2_MANUAL_EVIDENCE_RELEASE_DRIFT candidate=" +
       candidateSha +
       " head=" +
       head +
       " files=" +
-      drift.split(/\r?\n/).join(","),
+      releaseDrift.join(","),
   );
   process.exit(1);
 }
