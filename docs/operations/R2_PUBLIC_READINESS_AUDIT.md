@@ -188,11 +188,14 @@ Repository implementation: IMPLEMENTED
 - artifact checksum generation
 - public-origin verification
 - staged launch/rollback runbook
-- closure harness that refuses missing manual evidence
+- pre-provenance closure harness that refuses missing manual evidence and rejects release-impacting drift after the executable candidate
+- separate final release gate that verifies signed provenance after candidate acceptance
 
 Still required:
 
 - executed staged deployment and rollback rehearsal
+
+Release-control correction: COMPLETE. The original manual-evidence design required a committed ledger to contain its own commit SHA and required signed provenance before the tag could legally be created. The repaired model binds evidence to an executable candidate ancestor, rejects release-impacting drift after that candidate, runs pre-provenance acceptance first, and verifies the signed tag in a separate final release gate.
 
 ### R2-13 Main branch protection
 
@@ -227,7 +230,7 @@ Repository implementation: IMPLEMENTED
 
 Still required:
 
-- create and verify the signed release tag only after final R2 acceptance
+- create and verify the signed release tag after pre-provenance R2 acceptance, record the provenance evidence, and run `npm run release:r2:finalize`
 
 ### R2-16 Licensing
 
@@ -301,7 +304,7 @@ The remaining executed evidence is live/manual:
 - final E2EE release review
 - staged rollback rehearsal
 
-The source of truth for those live/manual gates is `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`. It intentionally starts with all gates false and the closure script fails until they are explicitly evidenced.
+The source of truth for those live/manual gates is `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`. The ledger binds evidence to the executable candidate SHA while allowing later evidence-only documentation commits. `test:r2:closure` requires all pre-provenance gates. Signed provenance is then verified by `release:r2:finalize` so the tag sequencing is satisfiable.
 
 ## Current execution order
 
@@ -321,10 +324,13 @@ apply repository protection
 execute provider/public-origin/restore/alert/device/accessibility/calling/E2EE/rollback acceptance
         |
         v
-signed stable-release provenance
+pre-provenance R2 acceptance PASS
         |
         v
-R2 DONE
+create and verify signed stable-release provenance
+        |
+        v
+R2 final release gate PASS
         |
         v
 Stable Release
