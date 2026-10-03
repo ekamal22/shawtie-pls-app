@@ -1,94 +1,138 @@
 # R2 Hosted Verification Evidence
 
-Status: SHAKEDOWN IN PROGRESS
+Status: AUTOMATED HOSTED VERIFICATION PASS
 
 Milestone: 21 R2 Public Readiness
 
-## First hosted shakedown
+Automated evidence anchor: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
+
+Final hosted run: `37083243469`
+
+Run number: 5
+
+Started: 2026-10-03T00:43:21Z
+
+Completed: 2026-10-03T00:48:17Z
+
+Final gate:
+
+```text
+R2_AUTOMATED_GATE_PASS sha=1efdd5804201ee8174275f663ab1a910cb2c6d48 migrations=24
+```
+
+## Final merge-candidate result
+
+Every required hosted job passed on the same exact candidate SHA:
+
+- R2 candidate: PASS
+- R2 baseline: PASS
+- R2 full history secret scan: PASS
+- R2 dependency audit: PASS
+- R2 PostgreSQL and retained S1: PASS
+- R2 browser security and performance: PASS
+- R2 production containers: PASS
+- R2 automated gate: PASS
+
+The PostgreSQL job applied migrations 0001 through 0024 from zero and retained the S1 PostgreSQL/plaintext verification boundary.
+
+The browser job passed:
+
+- R2 static security/accessibility/control-plane/worker regressions
+- R2 web artifact performance budget
+- real Chromium release-A to release-B service-worker upgrade and offline acceptance
+- retained SEC1 browser security
+- retained S1 OpenMLS browser verification
+- production scans
+
+The container job built the production API, worker, and web runtime images.
+
+The full-history secret-scan job used a non-shallow checkout.
+
+The dependency job passed npm high-severity audit and the pinned Rust advisory audit. The reviewed maintenance-only `RUSTSEC-2026-0173` warning remains governed by `docs/security/R2_RUST_DEPENDENCY_REVIEW.md`; it did not become a vulnerability failure.
+
+## Shakedown history
+
+### Run 1
 
 Candidate: `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4`
 
 Run: `37079449060`
 
-Observed:
+Found and corrected:
 
-- R2 dependency audit: PASS
-- R2 production containers: PASS
-- baseline: FAILED on R2 migration-owned transaction control
-- PostgreSQL/S1: FAILED on the same migration validation defect
-- full-history secret scan: FAILED because the history-depth variable was scoped incorrectly
-- browser: FAILED on a stale static assertion
+- migration files incorrectly contained transaction control owned by the migration runner
+- secret-scan history-depth variable was scoped incorrectly
+- one service-worker static assertion was stale
 
-All identified defects were corrected.
+Dependency audit and production-container builds already passed.
 
-## Second hosted shakedown
+### Run 2
 
 Candidate: `7cddd477bd074de3c52e630a1f88e0af3d4e30b0`
 
 Run: `37081972759`
 
-Observed:
+Found and corrected:
 
-- R2 candidate: PASS
-- full-history secret scan: PASS
-- dependency audit: PASS
-- production containers: PASS
-- migrations 0001 through 0024: PASS
-- baseline: reached format verification and found 16 R2 Prettier drifts
-- PostgreSQL/S1: reached real S1 integration and exposed one unsupported TypeScript constructor parameter-property in the new SupportService
-- browser static R2 suite: exposed one stale accessibility copy assertion and one incorrect worker-source relative path
+- R2 Prettier drift
+- unsupported TypeScript constructor parameter property in the new SupportService under Node 22 strip-only loading
+- stale accessibility copy assertion
+- incorrect worker-source relative path in a static R2 test
 
-Corrections:
+The full-history secret scan, dependency audit, production containers, and all 24 migrations passed.
 
-- repository formatter applied with pinned Prettier 3.9.8, commit `83428547942a5456bc5667efe1239e2d40bd99f7`
-- SupportService rewritten to explicit properties for Node 22 strip-only TypeScript compatibility
-- R2 accessibility assertion reconciled with final notification privacy copy
-- R2 worker-source test path corrected
-
-## Third hosted shakedown
+### Run 3
 
 Candidate: `67a00151a8b37189e2bbd98906f4b095ec48ced8`
 
 Run: `37082393985`
 
-Observed:
+Found and corrected:
 
-- R2 candidate: PASS
-- full-history secret scan: PASS
-- dependency audit: PASS
-- PostgreSQL plus retained S1: PASS
-- production containers: PASS
-- migrations 0001 through 0024: PASS
-- repository formatting: PASS
-- static R2 security/accessibility/control-plane/worker tests: PASS
-- R2 web artifact performance budget: PASS
-- baseline: FAILED only because the Brevo timeout fake transport allowed Node's event loop to exit before the unref timeout signal fired
-- browser job: reached the real R2 Playwright stage and failed because the dev-server command had not prepared the `@shawtie/contracts` workspace artifact
+- Brevo timeout fake transport allowed Node's event loop to end before the unref timeout signal fired
+- R2 Playwright command had not prepared workspace package artifacts before starting the Vite dev server
 
-Corrections:
+PostgreSQL/S1, secret scan, dependency audit, production containers, formatting, static R2 tests, and the web artifact budget passed.
 
-- Brevo timeout fake transport now uses a bounded ref-counted guard while proving the real timeout signal
-- R2 browser command now builds contracts, crypto, and S1 WASM before Playwright
-- final manual-evidence ledger is now bound to the exact candidate SHA and requires an evidence string for every live/manual gate
-- explicit gates were added for hosted automated success, serious-event email, production topology/deployment, and support workflow acceptance
-- R2 closure now verifies the exact release candidate, full-history secret scan, performance budget, and candidate-bound manual evidence
-- current repository remains Prettier-clean after a final pinned-format check
+### Run 4
 
-## Fourth hosted shakedown
+Candidate: `e5eb92064464b40a942bacc00c3e54874c5e9165`
 
-Candidate at trigger time: `b24e80f5dd2af8cf8e8094f8ad03eb8fdac3dcc4`
+Run: `37082859480`
 
-Purpose:
+Result: PASS across the complete hosted matrix.
 
-- prove the complete repository baseline including Brevo timeout handling
-- prove all 24 migrations and retained S1 PostgreSQL/plaintext boundaries
-- prove full-history secret scan and npm/Rust advisory gates
-- run R2 browser/accessibility/control-plane/worker regressions
-- execute real Chromium service-worker release upgrade/offline acceptance
-- retain SEC1 browser and S1 OpenMLS browser verification
-- build all production containers
-- emit the exact-SHA R2 automated gate
+After that run started, a release-operations audit added fail-closed PostgreSQL restore-target scheme validation plus a control-plane regression, so one final exact-state run was required.
 
-Final result: PENDING
+### Run 5
 
-This document must not be changed to PASS until the corresponding GitHub-hosted run completes successfully on this exact candidate.
+Candidate: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
+
+Run: `37083243469`
+
+Result: FINAL AUTOMATED PASS.
+
+## Closure boundary
+
+This evidence closes the repository-owned hosted R2 automated gate only.
+
+R2 itself remains IN PROGRESS until the candidate-bound live/manual evidence ledger is complete. The following are not claimed by this hosted run:
+
+- real Brevo sender/domain/DNS acceptance
+- real authentication and serious-event provider delivery
+- real production Web Push
+- actual production provider topology/deployment
+- applied GitHub `main` protection
+- public HTTPS origin verification
+- backup/restore deletion drill
+- external monitoring and received alert
+- owner/legal Privacy, Terms, and license review
+- representative manual accessibility
+- constrained-network and mid-range device performance
+- final physical Android acceptance
+- voice/video privacy acceptance
+- final E2EE release review
+- staged rollback rehearsal
+- signed release provenance
+
+Those gates remain explicit in `docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json`, which is bound to the exact final release candidate and intentionally fails closure until every required gate has executed and carries an evidence reference.
