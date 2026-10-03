@@ -18,7 +18,7 @@ Explicit logout, account switch, or observed revocation closes the active M2 run
 
 The 2026-09-29 follow-up audit found a release-lifecycle weakness in the current Cache API strategy. `apps/web/public/sw.js` uses the fixed cache name `shawtie-shell-v1`. Activation deletes differently named `shawtie-shell-*` caches, but normal releases continue to reuse that same name, so obsolete fingerprinted assets can accumulate inside the cache. The cached `/` navigation shell is also inherited by a newly activated worker until a successful online navigation rewrites it.
 
-This does not reopen M2 acceptance and is not a protected-content caching failure; private `/api` responses remain excluded. R2 must nevertheless introduce release-aware cache rotation or deterministic stale-asset pruning, preserve the controlled update/replay barrier, and add upgrade/offline regressions proving that the durable fallback shell is compatible with the active worker/client protocol.
+This does not reopen M2 acceptance and is not a protected-content caching failure; private `/api` responses remain excluded. R2 subsequently implemented release-aware cache rotation and stale-cache pruning while preserving the controlled update/replay barrier. The real Chromium release-A to release-B upgrade/offline regression passed in the exact-main R2 hosted gate at `2ca1a4dd`, run `37108925171`; physical mobile update/offline acceptance remains a live/manual R2 gate.
 
 ## Goals
 
