@@ -185,6 +185,7 @@ try {
     DATABASE_URL: restoreUrl,
     R2_RESTORE_CONFIRM: "RESTORE",
     R2_RESTORE_ISOLATED: "1",
+    R2_RESTORE_TARGET_DATABASE: restoreDbName,
   });
 
   restoreDatabase = createDatabasePool({
