@@ -8,6 +8,7 @@ const roots = [
   "scripts/performance",
   "scripts/release",
   "scripts/security",
+  "scripts/test",
 ];
 
 async function collect(directory) {
