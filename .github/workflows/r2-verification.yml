@@ -272,6 +272,21 @@ jobs:
         run: docker build --file infra/docker/Dockerfile.web --tag shawtie-web:r2 .
       - name: Generate release artifact checksums
         run: node scripts/release/artifact-checksums.mjs apps/web/dist
+      - name: Record container image identities
+        env:
+          R2_CANDIDATE_SHA: ${{ github.sha }}
+        run: >-
+          node scripts/release/container-image-ids.mjs
+          shawtie-api:r2 shawtie-worker:r2 shawtie-web:r2
+      - name: Upload R2 container evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r2-container-evidence-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            apps/web/dist/SHA256SUMS
+            r2-container-image-ids.json
 
   r2_automated_gate:
     name: R2 automated gate
