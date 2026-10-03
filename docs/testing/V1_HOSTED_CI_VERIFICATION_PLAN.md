@@ -169,7 +169,7 @@ For V1 closure, accepted ref:
 refs/heads/main
 ```
 
-Future R2/stable tag support can be added deliberately later.
+R2 release and provenance support was subsequently implemented under Milestone 21. This V1 workflow remains scoped to the V1 closure contract.
 
 Timeout: 5 minutes.
 
@@ -599,4 +599,4 @@ V1 is DONE only when:
 
 All V1 completion-contract conditions are satisfied. R2 Public Readiness is active.
 
-Post-V1 note: transactional authentication-email provider integration, including the Brevo adapter on `feat/r2-brevo-auth-email`, is R2 production-provider work. It does not alter or reopen the V1 hosted-verification closure.
+Post-V1 note: transactional authentication-email provider integration, including the Brevo adapter, was implemented under R2 and is now part of the merged mainline. This later R2 work does not alter or reopen the V1 hosted-verification closure.
