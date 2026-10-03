@@ -78,8 +78,17 @@ export function createApiApplication(dependencies?: ApiApplicationDependencies):
     trustProxy: dependencies?.config.trustedProxy ?? false,
   });
 
-  app.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", async (_request, reply) => {
+    reply.header("cache-control", "no-store");
+    return { status: "ok" };
+  });
   if (!dependencies) return app;
+
+  app.get("/ready", async (_request, reply) => {
+    await dependencies.database.pool.query("SELECT 1");
+    reply.header("cache-control", "no-store");
+    return { status: "ready" };
+  });
 
   app.register(cookie);
   app.register(websocket, {
