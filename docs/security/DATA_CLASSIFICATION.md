@@ -195,14 +195,14 @@ The matrix above defines required handling. It does not imply that every product
 
 Current R2 state:
 
-- Brevo authentication-challenge delivery exposes destination email plus the short-lived verification credential and minimal authentication copy
-- the separate serious-event `auth.security_email` family is not yet wired to the default provider path and requires template-by-template privacy review before external delivery
-- general Web Push beyond the existing call-state path is not yet complete; future message and partner-request payloads must remain minimal and honor notification-preview privacy
+- Brevo authentication-challenge delivery is implemented behind the durable worker boundary and exposes destination email plus the short-lived verification credential and minimal authentication copy; live provider acceptance remains open
+- the separate serious-event `auth.security_email` family is wired through the same provider-neutral worker path with privacy-minimized templates; representative live Brevo delivery remains an R2 acceptance gate
+- general partner-request, account, and message Web Push is implemented with content-minimized state-change payloads and server-authoritative preview privacy; real production Web Push acceptance remains open
 - production logging and observability providers are not yet finalized; any future provider must receive only approved structured metadata and scrubbed error data
 - production backup provider/configuration is not yet finalized; backup retention and restore must preserve product deletion obligations
 - privacy policy and applicable terms must be reconciled with the final provider list and actual data flows before Stable Release
 
-Canonical release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+Canonical release-blocker inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`. Brevo-specific live evidence is governed by `../testing/R2_BREVO_LIVE_ACCEPTANCE.md`.
 
 ## Repository data policy
 
