@@ -976,11 +976,13 @@ Notifications may include:
 - relationship start-date changes
 - selected memory events
 
-Message previews are shown by default.
+For the first stable release, notification previews are privacy-preserving by default.
 
-Users must have a setting to hide message content in notification previews.
+Protected message plaintext must never be sent to the push provider. The default notification therefore uses generic Shawtie pls text.
 
-When previews are hidden, notifications should use privacy-preserving generic text instead of message content.
+Users may enable notification-type details for their account. When enabled, the client may identify a notification category such as a new message, but protected message text, media content, relationship-object content, partner identity, recovery data, and cryptographic material remain excluded from the push payload.
+
+This R2 rule reconciles notification UX with the accepted S1 E2EE boundary. Rich message-content previews would require a separately reviewed client-side decrypt/render design and are not part of the first stable release.
 
 Serious account and partnership events must also generate email notifications. This includes at minimum:
 
@@ -1747,7 +1749,7 @@ The MVP is successful when two independent eligible adult test accounts can:
 20. Reconnect after losing network access.
 21. Exchange supported images, videos, files, and voice messages within configured limits.
 22. Make and receive voice and video calls and maintain call history.
-23. Receive notifications with previews shown by default and optionally hidden.
+23. Receive privacy-preserving generic notifications by default, with optional notification-type detail and no protected message plaintext in push-provider payloads.
 24. Receive minimal email notifications for serious breakup, account, and email-change events.
 25. Use the full relationship-space feature set defined in this PRD.
 26. Allow either partner to initiate breakup and clearly identify the initiator.
