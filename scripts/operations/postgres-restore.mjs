@@ -14,6 +14,21 @@ if (process.env.R2_RESTORE_ISOLATED !== "1") {
   throw new Error("Restore must run with R2_RESTORE_ISOLATED=1");
 }
 
+const parsedTarget = new URL(databaseUrl);
+if (parsedTarget.protocol !== "postgres:" && parsedTarget.protocol !== "postgresql:") {
+  throw new Error("DATABASE_URL must use PostgreSQL");
+}
+const targetDatabase = decodeURIComponent(parsedTarget.pathname.replace(/^\//, ""));
+const confirmedTarget = process.env.R2_RESTORE_TARGET_DATABASE?.trim();
+if (!confirmedTarget) {
+  throw new Error("R2_RESTORE_TARGET_DATABASE is required");
+}
+if (targetDatabase !== confirmedTarget) {
+  throw new Error(
+    "R2_RESTORE_TARGET_DATABASE does not match DATABASE_URL database: " + targetDatabase,
+  );
+}
+
 function pgEnv(raw) {
   const url = new URL(raw);
   if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
