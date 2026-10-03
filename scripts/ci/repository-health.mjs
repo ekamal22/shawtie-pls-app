@@ -64,6 +64,8 @@ const requiredPaths = [
   "docs/operations/OBSERVABILITY.md",
   "docs/operations/PRODUCTION_ENVIRONMENT.md",
   "docs/operations/RELEASE_AND_ROLLBACK.md",
+  "docs/operations/SUPPORT_AND_ABUSE.md",
+  "docs/architecture/HISTORICAL_BRANCHES.md",
   "docs/security/R2_RUST_DEPENDENCY_REVIEW.md",
   "docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json",
   "infra/deployment/production.env.example",
