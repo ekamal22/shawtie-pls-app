@@ -101,6 +101,8 @@ jobs:
         env:
           SECRET_SCAN_REQUIRE_FULL_HISTORY: "1"
         run: npm run secret:scan
+      - name: R2 E2EE source-boundary diff review
+        run: npm run test:r2:e2ee-review
 
   dependency_audit:
     name: R2 dependency audit
