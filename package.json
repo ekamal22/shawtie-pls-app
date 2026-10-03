@@ -167,9 +167,10 @@
     "release:r2:public-origin": "node scripts/release/verify-public-origin.mjs",
     "ops:r2:support": "node scripts/operations/support-reports.mjs",
     "release:r2:production-contract": "node scripts/release/verify-production-contract.mjs",
-    "test:r2:control-plane": "node --test scripts/ci/r2-control-plane.test.mjs",
+    "test:r2:control-plane": "npm run test:r2:scripts && node --test scripts/ci/r2-control-plane.test.mjs",
     "test:r2:browser:e2e": "playwright test --config=playwright.r2.config.ts",
-    "test:r2:install-browser": "playwright install chromium"
+    "test:r2:install-browser": "playwright install chromium",
+    "test:r2:scripts": "node scripts/ci/r2-script-syntax.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.3",
