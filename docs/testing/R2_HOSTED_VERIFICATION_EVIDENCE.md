@@ -4,16 +4,16 @@ Status: AUTOMATED HOSTED VERIFICATION PASS ON MAIN
 
 Milestone: 21 R2 Public Readiness
 
-Automated evidence anchor: `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`
+Automated evidence anchor: `03bf9bfd1d137ec6cae42a66a450a846aad5e397`
 
-Final hosted run: `37108925171`
+Final hosted run: `37122211679`
 
 Evidence level: exact-main closure
 
 Final gate:
 
 ```text
-R2_AUTOMATED_GATE_PASS sha=2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d migrations=24
+R2_AUTOMATED_GATE_PASS sha=03bf9bfd1d137ec6cae42a66a450a846aad5e397 migrations=24
 ```
 
 ## Final exact-main result
@@ -159,6 +159,32 @@ The final gate emitted `R2_AUTOMATED_GATE_PASS` with migration count 24.
 
 Normal Baseline CI on the same exact main candidate also passed in run `37108925156`.
 
+## Final closure-control candidate verification
+
+After the original exact-main R2 pass, a release-control audit found two closure-sequencing defects: the manual-evidence ledger required a committed file to contain its own commit SHA, and signed provenance was required before the runbook allowed creation of the signed tag.
+
+The control plane was repaired so the ledger binds to an executable candidate ancestor, later evidence commits are limited to documentation, pre-provenance acceptance runs before tag creation, and signed provenance is verified by a separate final release gate.
+
+Final executable candidate:
+
+`03bf9bfd1d137ec6cae42a66a450a846aad5e397`
+
+Final R2 run:
+
+`37122211679`
+
+Companion verification:
+
+- Baseline CI run `37122211697`: PASS
+- V1 Release Verification run `37122211730`: PASS
+- R2 Public Readiness Verification run `37122211679`: PASS
+- R2 automated gate: PASS
+- migration count: 24
+
+The final R2 run passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all migrations with retained S1 PostgreSQL/plaintext verification, browser security/performance including retained S1 OpenMLS verification, production scans, production-container builds, and the exact-SHA aggregate gate.
+
+The final E2EE release review also closed on this candidate. See `docs/testing/R2_E2EE_RELEASE_REVIEW_EVIDENCE.md`.
+
 ## Closure boundary
 
 This evidence closes the repository-owned hosted R2 automated gate only.
@@ -178,7 +204,6 @@ R2 itself remains IN PROGRESS until the candidate-bound live/manual evidence led
 - constrained-network and mid-range device performance
 - final physical Android acceptance
 - voice/video privacy acceptance
-- final E2EE release review
 - staged rollback rehearsal
 - signed release provenance
 
