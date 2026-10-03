@@ -106,7 +106,7 @@ The aggregate R2 repository implementation is merged to `main @ 8a73b62194680e22
 - R2 accessibility regressions and production web artifact budgets
 - documented disposition of the transitive Rust maintenance warning
 
-R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`. Main run `37122211679` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. Canonical evidence: `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 Remaining blockers are evidence/topology gates, not hidden feature-scope expansion:
 
@@ -198,7 +198,7 @@ Canonical direction: `docs/design/ROMANTIC_UX_DIRECTION.md`.
 - **SEC1 Pre-V1 Security Hardening:** DONE and merged to `main @ a2badf7`; final executable `91ca920d`; complete local evidence is recorded.
 - **Pre-V1 follow-up hardening:** DONE on `main @ a1659dc`; account-wide S1 local-crypto lifecycle deletion and S1 HTTP request-size/framework-error handling are closed with hosted focused regression evidence.
 - **V1 Hosted CI Verification:** DONE at executable candidate `d28668b5`; release run `36801613394`, normal Baseline CI run `36801613306`, and `V1_GATE_PASS` are recorded.
-- **R2 Public Readiness:** IN PROGRESS. Repository implementation is merged to `main @ 8a73b621`, exact-main hosted automated verification passed at `2ca1a4dd` in run `37108925171`, and the remaining blockers are live/manual provider, deployment, governance, public-origin, restore/alert, accessibility/device/calling/E2EE, rollback, legal, and signed-provenance evidence.
+- **R2 Public Readiness:** IN PROGRESS. Repository implementation is merged to `main @ 8a73b621`, exact-main hosted automated verification passed at `03bf9bfd` in run `37122211679`, and the remaining blockers are live/manual provider, deployment, governance, public-origin, restore/alert, accessibility/device/calling/E2EE, rollback, legal, and signed-provenance evidence.
 
 UX0 through UX7 used isolated branches/worktrees with one design lead/integrator and read-only QA review. That implementation phase is closed, and S1 is also closed. Later work must preserve the accepted UX and S1 authority boundaries, follow the current CI policy, avoid Unicode em dash in new repo text, and stop rather than invent semantics outside the owning milestone.
 
@@ -676,9 +676,9 @@ Protocol review, protected-content paths, recovery, revocation, plaintext retire
 
 # Milestone 21: R2 Public Readiness
 
-Repository-owned R2 implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`. Hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`, run `37108925171`.
+Repository-owned R2 implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`. Hosted automated verification is complete on exact `main` candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`, run `37122211679`.
 
-R2 remains IN PROGRESS because live provider, production topology, repository governance, public-origin, restore/alert, manual accessibility/device/calling/E2EE, rollback, legal review, and signed-provenance gates still require executed evidence.
+R2 remains IN PROGRESS because live provider, production topology, repository governance, public-origin, restore/alert, manual accessibility/device/voice-video privacy, rollback, legal review, and signed-provenance gates still require executed evidence.
 
 Status: IN PROGRESS.
 
