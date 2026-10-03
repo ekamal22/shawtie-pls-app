@@ -14,10 +14,13 @@ import type { AccountService } from "../accounts/account-service.ts";
 const DAY = 24 * 60 * 60_000;
 
 export class SupportService {
-  constructor(
-    readonly database: DatabasePool,
-    readonly accountService: AccountService,
-  ) {}
+  readonly database: DatabasePool;
+  readonly accountService: AccountService;
+
+  constructor(database: DatabasePool, accountService: AccountService) {
+    this.database = database;
+    this.accountService = accountService;
+  }
 
   async createReport(
     auth: AuthContext,
