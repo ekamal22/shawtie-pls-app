@@ -4,23 +4,19 @@ Status: AUTOMATED HOSTED VERIFICATION PASS ON MAIN
 
 Milestone: 21 R2 Public Readiness
 
-Automated evidence anchor: `1efdd5804201ee8174275f663ab1a910cb2c6d48`
+Automated evidence anchor: `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`
 
-Final hosted run: `37083243469`
+Final hosted run: `37108925171`
 
-Run number: 5
-
-Started: 2026-10-03T00:43:21Z
-
-Completed: 2026-10-03T00:48:17Z
+Evidence level: exact-main closure
 
 Final gate:
 
 ```text
-R2_AUTOMATED_GATE_PASS sha=1efdd5804201ee8174275f663ab1a910cb2c6d48 migrations=24
+R2_AUTOMATED_GATE_PASS sha=2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d migrations=24
 ```
 
-## Final merge-candidate result
+## Final exact-main result
 
 Every required hosted job passed on the same exact candidate SHA:
 
@@ -116,9 +112,12 @@ Result: FINAL AUTOMATED PASS.
 
 Aggregate implementation pull request: #2
 
-A final non-skip evidence commit is used only to trigger the normal PR Baseline CI and the R2 hosted workflow on the exact aggregate PR head before merge to `main`.
+A final non-skip evidence commit triggered the normal PR Baseline CI and the R2 hosted workflow on the exact aggregate PR head before merge to `main`.
 
-Result: PENDING
+Result: PASS.
+
+- normal Baseline CI run `37108154293`
+- R2 Public Readiness Verification run `37108152002`
 
 ## Main integration and exact-main verification
 
