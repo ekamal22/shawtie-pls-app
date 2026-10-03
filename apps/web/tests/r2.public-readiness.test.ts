@@ -43,7 +43,7 @@ test("R2 notification preview remains server-authoritative and content free", as
     "utf8",
   );
   const worker = await readFile(
-    new URL("../../../worker/src/messages/messaging-invalidation-handler.ts", import.meta.url),
+    new URL("../../worker/src/messages/messaging-invalidation-handler.ts", import.meta.url),
     "utf8",
   );
   assert.equal(us.includes("messagePreviewEnabled"), true);
