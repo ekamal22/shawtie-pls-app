@@ -32,13 +32,13 @@ Real Brevo sends, production Web Push, public-origin verification, backup/restor
 
 The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration. It is never treated as a normal CI step.
 
-The first R2 hosted shakedown ran on candidate `782d3c0c0ecfa3cc6894827b99b4a9e9a4e269e4`. Dependency audit and production-container builds passed. Baseline/PostgreSQL exposed forbidden migration-owned transaction control, full-history scanning exposed a scanner scope defect, and the browser job exposed a stale test assertion. Those defects are fixed on the active branch. A new hosted run on the final branch state is required before R2 automated closure.
+R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1/S1 browser gates, production scans, production-container builds, and the exact-SHA automated gate. Canonical evidence: `R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Repository audit concerns
 
 Canonical current R2 inventory: `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-Repository-owned implementation concerns from the original audit are now represented by executable code, tests, or runbooks. Remaining blockers are final hosted verification plus live provider/deployment/manual evidence. No R2 source implementation should be called Stable Release evidence unless its corresponding gate has actually executed.
+Repository-owned implementation concerns from the original audit are represented by executable code, tests, or runbooks, and the hosted automated gate is green. Remaining blockers are live provider/deployment/manual evidence. No R2 source implementation should be called Stable Release evidence unless its corresponding live/manual gate has actually executed.
 
 ## Baseline workflow
 
