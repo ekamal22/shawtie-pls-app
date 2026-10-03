@@ -118,7 +118,7 @@ M3 status: DONE and fast-forward merged to `main @ 1d3535f`: automated closure g
 
 V1 Hosted CI Verification ✅ is DONE at executable candidate `d28668b5`. Release run `36801613394` and normal Baseline CI run `36801613306` both passed on that exact source state, and the final gate emitted `V1_GATE_PASS`. Canonical evidence: `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`.
 
-R2 is active on `feat/r2-public-readiness`. Repository-owned implementation and hosted automated verification are complete. Executable evidence is anchored at `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`, which ended with `R2_AUTOMATED_GATE_PASS` and 24 migrations. Live/manual provider, production-topology, restore, alerting, branch-protection, legal, accessibility/device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
+R2 repository implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`, and exact-main hosted automated verification is complete at `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`, run `37108925171`, with `R2_AUTOMATED_GATE_PASS` and 24 migrations. Live/manual provider, production-topology, restore, alerting, branch-protection, legal, accessibility/device, calling/E2EE, rollback, and signed-release gates remain open. Canonical inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 ~~~
 
 ## Mermaid dependency view
@@ -345,4 +345,4 @@ UX8 ✅
  -> Stable Release
 ~~~
 
-V1 is DONE at executable candidate `d28668b5`. R2 repository implementation and hosted automated verification are complete at executable candidate `1efdd580`; R2 remains IN PROGRESS until its live/manual evidence ledger closes.
+V1 is DONE at executable candidate `d28668b5`. R2 repository implementation is integrated on `main` and hosted automated verification is complete at exact-main candidate `2ca1a4dd`; R2 remains IN PROGRESS until its live/manual evidence ledger closes.
