@@ -10,7 +10,7 @@ This document is the canonical R2 issue inventory. It distinguishes repository i
 
 The R2 repository implementation is substantially complete. The branch now contains the release-specific security, notification, privacy, support, operations, deployment, backup, observability, provenance, accessibility, and performance control plane that the original audit found missing.
 
-R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed Baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations plus retained S1 PostgreSQL/plaintext verification, browser security/performance, production-container builds, and the exact-SHA automated gate.
+R2 hosted automated verification is complete on authoritative `main @ 44fe73e7dbed79ebf985f66f6c1237536014121f`. Baseline CI `37109590248`, V1 Release Verification `37109590249`, and R2 Public Readiness Verification `37109590242` all passed on that exact SHA. The R2 run passed the full-history secret scan, npm/Rust dependency audit, all 24 migrations plus retained S1 PostgreSQL/plaintext verification, browser security/performance, production-container builds, and the exact-SHA automated gate.
 
 Earlier shakedowns found and corrected migration transaction-control, secret-scanner scope, stale-test, formatting, Node TypeScript-loader, Brevo timeout-test, and R2 Playwright workspace-preparation defects. Their evidence is retained in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
@@ -68,7 +68,7 @@ Repository implementation: IMPLEMENTED
 - the web build injects one release identity
 - worker URL and shell cache are release-scoped
 - activation prunes prior release shell caches
-- persistent notification privacy settings use a separate cache
+- message notification preview privacy is server-authoritative; the worker resolves the current account preference before choosing a content-free generic or message-type push
 - private `/api/*` responses remain excluded
 - a real Chromium R2 upgrade test covers release A to release B, old-cache pruning, offline navigation, and private-API exclusion
 
@@ -215,7 +215,7 @@ Repository implementation: IMPLEMENTED
 - explicit shallow/full history reporting
 - hosted R2 job requires a full-history checkout
 
-Automated acceptance: COMPLETE on `1efdd5804201ee8174275f663ab1a910cb2c6d48`, run `37083243469`.
+Automated acceptance: COMPLETE on `44fe73e7dbed79ebf985f66f6c1237536014121f`, run `37109590242`.
 
 ### R2-15 Stable-release provenance
 
@@ -256,7 +256,7 @@ Repository implementation: BUDGETS IMPLEMENTED
 
 Production artifact budgets cover total web output, JavaScript, CSS, and WASM.
 
-Automated hosted artifact budget: COMPLETE on run `37083243469`.
+Automated hosted artifact budget: COMPLETE on run `37109590242`.
 
 Still required:
 
@@ -270,7 +270,7 @@ The current path is documented as `hax-lib 0.3.7 -> hax-lib-macros 0.3.7 -> proc
 
 The warning is maintenance-only, not a vulnerability finding. R2 does not perform an unreviewed cryptographic-stack upgrade merely to remove the warning. Any future dependency-family change requires a fresh E2EE review.
 
-Final-candidate hosted `cargo audit`: COMPLETE on run `37083243469` with no vulnerability failure.
+Final-candidate hosted `cargo audit`: COMPLETE on run `37109590242` with no vulnerability failure.
 
 ### R2-20 Obsolete M3 design branch
 
