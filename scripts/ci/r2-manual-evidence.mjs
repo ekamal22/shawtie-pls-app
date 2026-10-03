@@ -9,9 +9,13 @@ const path =
   process.env.R2_MANUAL_EVIDENCE_FILE || "docs/testing/R2_MANUAL_ACCEPTANCE_EVIDENCE.json";
 const evidence = JSON.parse(await readFile(path, "utf8"));
 const required = [
+  "hostedAutomatedGatePassed",
   "brevoSenderDomainVerified",
   "brevoSmokeSendPassed",
   "brevoRegistrationAndResendPassed",
+  "brevoSeriousEventPassed",
+  "productionTopologyReviewed",
+  "productionDeploymentSmokePassed",
   "publicHttpsHeadersPassed",
   "productionWebPushPassed",
   "backupRestoreDeletionDrillPassed",
@@ -25,6 +29,7 @@ const required = [
   "voiceVideoPrivacyPassed",
   "e2eeReleaseReviewPassed",
   "stagedRollbackPassed",
+  "supportWorkflowPassed",
   "privacyTermsOwnerReviewPassed",
 ];
 
