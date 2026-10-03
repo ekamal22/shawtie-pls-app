@@ -1,4 +1,5 @@
 name: R2 One Shot Format
+# One-shot formatting helper. Remove after it commits a clean branch.
 
 on:
   push:
