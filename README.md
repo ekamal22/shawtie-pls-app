@@ -12,7 +12,7 @@ The verified mainline includes M2, M3, C1, and C2 as DONE and merged. C2 Video C
 
 R2 includes provider-neutral Brevo authentication-email delivery on the merged mainline. Registration verification, registration resend, password recovery, account recovery, and email-change challenges remain transactionally queued through the durable outbox and are delivered asynchronously by the worker through the existing `EmailDeliveryPort`. No raw verification code is stored in PostgreSQL or outbox JSON, and Brevo credentials remain worker-side environment configuration only.
 
-Operational setup, failure semantics, and the opt-in real-send procedure are documented in `docs/operations/TRANSACTIONAL_EMAIL.md`. The aggregate R2 repository implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`, and exact-main hosted automated verification passed at `03bf9bfd1d137ec6cae42a66a450a846aad5e397` in run `37122211679`. R2 remains open until the live/manual public-readiness evidence gates are complete.
+Operational setup, failure semantics, and the opt-in real-send procedure are documented in `docs/operations/TRANSACTIONAL_EMAIL.md`. The four Brevo-specific live R2 gates and their evidence rules are tracked in `docs/testing/R2_BREVO_LIVE_ACCEPTANCE.md`. The aggregate R2 repository implementation is merged to `main @ 8a73b62194680e226cb372f7a5cee59eabb6416e`, and exact-main hosted automated verification passed at `03bf9bfd1d137ec6cae42a66a450a846aad5e397` in run `37122211679`. R2 remains open until the live/manual public-readiness evidence gates are complete.
 
 ## Pre-release attention
 
