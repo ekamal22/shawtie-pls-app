@@ -13,11 +13,11 @@ UX8 DONE
   -> SEC1 Pre-V1 Security Hardening DONE
   -> Pre-V1 Follow-up Hardening DONE
   -> V1 Hosted CI Verification DONE
-  -> R2 Public Readiness NEXT
+  -> R2 Public Readiness ACTIVE
   -> Stable Release
 ```
 
-V1 was executed only after SEC1 and the Pre-V1 follow-up hardening were closed. V1 subsequently passed at executable candidate `d28668b5`, release run `36801613394`.
+V1 was executed only after SEC1 and the Pre-V1 follow-up hardening were closed. V1 subsequently passed at executable candidate `d28668b5`, release run `36801613394`. R2 is now active with repository implementation, hosted automation, and final E2EE release review complete; live/manual acceptance remains open.
 
 ## Implementation checkpoint
 
