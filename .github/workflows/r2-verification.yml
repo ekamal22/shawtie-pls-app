@@ -1,6 +1,6 @@
 name: R2 Public Readiness Verification
 
-# Final R2 merge-candidate verification trigger.
+# Final R2 main release-path verification trigger.
 
 on:
   workflow_dispatch:
