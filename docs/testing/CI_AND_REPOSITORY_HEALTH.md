@@ -32,7 +32,7 @@ Real Brevo sends, production Web Push, public-origin verification, backup/restor
 
 The opt-in `npm run test:brevo:smoke` command requires explicit send confirmation plus provider environment configuration. It is never treated as a normal CI step.
 
-R2 hosted automated verification is complete on executable candidate `1efdd5804201ee8174275f663ab1a910cb2c6d48`. Final run `37083243469` passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1/S1 browser gates, production scans, production-container builds, and the exact-SHA automated gate. Canonical evidence: `R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed the repository baseline, full-history secret scan, npm/Rust dependency audit, all 24 migrations with retained S1 PostgreSQL/plaintext verification, R2 browser/security/performance, retained SEC1/S1 browser gates, production scans, production-container builds, and the exact-SHA automated gate. Canonical evidence: `R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Repository audit concerns
 
