@@ -112,6 +112,14 @@ Run: `37083243469`
 
 Result: FINAL AUTOMATED PASS.
 
+## Pull request integration verification
+
+Aggregate implementation pull request: #2
+
+A final non-skip evidence commit is used only to trigger the normal PR Baseline CI and the R2 hosted workflow on the exact aggregate PR head before merge to `main`.
+
+Result: PENDING
+
 ## Closure boundary
 
 This evidence closes the repository-owned hosted R2 automated gate only.
