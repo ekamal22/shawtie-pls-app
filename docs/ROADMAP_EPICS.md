@@ -276,7 +276,7 @@ Implementation checkpoint:
 
 ## V1 ordering rule
 
-V1 is defined separately and remains downstream of SEC1. SEC1 and the later Pre-V1 follow-up hardening are DONE. V1 subsequently closed on hosted infrastructure at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. R2 Public Readiness is the active release milestone. Repository implementation is merged to `main @ 8a73b621`, exact-main hosted automated verification passed at `2ca1a4dd`, and live/manual acceptance remains open.
+V1 is defined separately and remains downstream of SEC1. SEC1 and the later Pre-V1 follow-up hardening are DONE. V1 subsequently closed on hosted infrastructure at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. R2 Public Readiness is the active release milestone. Repository implementation is merged to `main @ 8a73b621`, exact-main hosted automated verification passed at `03bf9bfd`, and live/manual acceptance remains open.
 
 # V1: Hosted CI Verification
 
@@ -340,7 +340,7 @@ V1 shakedown also found and repaired a real CI guardrail defect: the external-ac
 - [x] workflow permissions, pinned actions, timeouts, concurrency, service-image digest, and trigger behavior are confirmed in real hosted runs
 - [x] durable evidence is recorded in `docs/testing/V1_HOSTED_VERIFICATION_EVIDENCE.md`
 
-R2 Public Readiness is unblocked and becomes the next active release milestone.
+R2 Public Readiness is the active release milestone. Repository implementation and hosted automation are complete; live/manual acceptance remains open.
 
 # F2: Persistence and Worker Foundation
 
@@ -2752,7 +2752,7 @@ The integrated `main` line contains the repository-owned public-readiness implem
 
 Canonical current-state inventory: `docs/operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
-R2 hosted automated verification is complete on exact `main` candidate `2ca1a4ddb13e2bf7195efede5dc4b3f3b616524d`. Main run `37108925171` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. The shakedown history, feature-branch merge-candidate pass, and main closure are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
+R2 hosted automated verification is complete on exact `main` candidate `03bf9bfd1d137ec6cae42a66a450a846aad5e397`. Main run `37122211679` passed every required job and emitted `R2_AUTOMATED_GATE_PASS` with 24 migrations. The shakedown history, feature-branch merge-candidate pass, and main closure are recorded in `docs/testing/R2_HOSTED_VERIFICATION_EVIDENCE.md`.
 
 ## Scope
 
