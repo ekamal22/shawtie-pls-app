@@ -312,7 +312,7 @@ Final hosted evidence:
 - V1 gate: `V1_GATE_PASS`
 - normal CI and release verification both passed against the exact same executable candidate SHA
 
-The Rust advisory gate passed without a vulnerability failure and reported one non-vulnerability maintenance warning, `RUSTSEC-2026-0173` for transitive `proc-macro-error2 2.0.1`. V1 accepts that warning for closure and R2 owns dependency-path review.
+The Rust advisory gate passed without a vulnerability failure and reported one non-vulnerability maintenance warning, `RUSTSEC-2026-0173` for transitive `proc-macro-error2 2.0.1`. V1 accepts that warning for closure. R2 subsequently completed the dependency-path review, documented the maintenance-only disposition in `docs/security/R2_RUST_DEPENDENCY_REVIEW.md`, and retained a green exact-main hosted `cargo audit`.
 
 V1 shakedown also found and repaired a real CI guardrail defect: the external-action pin scanner could miss normal YAML `- uses:` list syntax. Commit `c864c97ef5bc93cda073d03e597c2a4e1cb4bd49` fixed it and added regression coverage.
 
