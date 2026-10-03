@@ -16,6 +16,12 @@ if (process.env.R2_RESTORE_ISOLATED !== "1") {
 
 function pgEnv(raw) {
   const url = new URL(raw);
+  if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
+    throw new Error("DATABASE_URL must use PostgreSQL");
+  }
+  if (!url.hostname || !url.pathname || url.pathname === "/") {
+    throw new Error("DATABASE_URL must identify a database");
+  }
   return {
     ...process.env,
     PGHOST: url.hostname,
