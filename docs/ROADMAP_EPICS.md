@@ -276,7 +276,7 @@ Implementation checkpoint:
 
 ## V1 ordering rule
 
-V1 is defined separately and remains downstream of SEC1. SEC1 and the later Pre-V1 follow-up hardening are DONE. V1 subsequently closed on hosted infrastructure at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. R2 Public Readiness is now the next release milestone.
+V1 is defined separately and remains downstream of SEC1. SEC1 and the later Pre-V1 follow-up hardening are DONE. V1 subsequently closed on hosted infrastructure at executable candidate `d28668b5a7d021bc12b7a3dccbd69193074af9d3`. R2 Public Readiness is the active release milestone. Repository implementation is merged to `main @ 8a73b621`, exact-main hosted automated verification passed at `2ca1a4dd`, and live/manual acceptance remains open.
 
 # V1: Hosted CI Verification
 
