@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "candidateSha": null,
-  "recordedAt": null,
+  "candidateSha": "44fe73e7dbed79ebf985f66f6c1237536014121f",
+  "recordedAt": "2026-10-03T08:04:00Z",
   "gates": {
     "brevoSenderDomainVerified": {
       "passed": false,
@@ -72,8 +72,8 @@
       "evidence": null
     },
     "hostedAutomatedGatePassed": {
-      "passed": false,
-      "evidence": null
+      "passed": true,
+      "evidence": "main @ 44fe73e7dbed79ebf985f66f6c1237536014121f: Baseline CI 37109590248 PASS, V1 Release Verification 37109590249 PASS, R2 Public Readiness Verification 37109590242 PASS; R2 automated gate job 111165479101 PASS"
     },
     "brevoSeriousEventPassed": {
       "passed": false,
