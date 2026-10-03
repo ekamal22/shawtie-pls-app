@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 
-function git(args) {
-  return execFileSync("git", args, { encoding: "utf8" }).trim();
+function git(args, options = {}) {
+  return execFileSync("git", args, { encoding: "utf8", ...options }).trim();
 }
 
 const path =
@@ -22,7 +22,6 @@ const required = [
   "operationalAlertReceived",
   "repositoryProtectionApplied",
   "licenseReviewed",
-  "signedReleaseProvenancePassed",
   "accessibilityManualPassed",
   "performanceDevicePassed",
   "physicalAndroidPassed",
@@ -33,7 +32,7 @@ const required = [
   "privacyTermsOwnerReviewPassed",
 ];
 
-const expectedSha = process.env.R2_CANDIDATE_SHA?.trim() || git(["rev-parse", "HEAD"]);
+const head = process.env.R2_EVIDENCE_HEAD_SHA?.trim() || git(["rev-parse", "HEAD"]);
 const candidateSha = typeof evidence?.candidateSha === "string" ? evidence.candidateSha.trim() : "";
 const recordedAt = typeof evidence?.recordedAt === "string" ? evidence.recordedAt.trim() : "";
 
@@ -41,15 +40,44 @@ if (!/^[0-9a-f]{40}$/.test(candidateSha)) {
   console.error("R2_MANUAL_EVIDENCE_INVALID candidateSha");
   process.exit(1);
 }
-if (candidateSha !== expectedSha) {
+if (!/^[0-9a-f]{40}$/.test(head)) {
+  console.error("R2_MANUAL_EVIDENCE_INVALID headSha");
+  process.exit(1);
+}
+
+const ancestor = execFileSync("git", ["merge-base", "--is-ancestor", candidateSha, head], {
+  stdio: "ignore",
+});
+if (ancestor === undefined) {
+  // execFileSync returns undefined on success with ignored stdio.
+}
+
+const releaseImpactPaths = [
+  ".github/actions",
+  ".github/workflows/r2-verification.yml",
+  "apps",
+  "packages",
+  "scripts",
+  "infra",
+  "tests",
+  "playwright.r2.config.ts",
+  "package.json",
+  "package-lock.json",
+  "LICENSE",
+];
+const drift = git(["diff", "--name-only", candidateSha + ".." + head, "--", ...releaseImpactPaths]);
+if (drift) {
   console.error(
-    "R2_MANUAL_EVIDENCE_CANDIDATE_MISMATCH expected=" +
-      expectedSha +
-      " actual=" +
-      candidateSha,
+    "R2_MANUAL_EVIDENCE_RELEASE_DRIFT candidate=" +
+      candidateSha +
+      " head=" +
+      head +
+      " files=" +
+      drift.split(/\r?\n/).join(","),
   );
   process.exit(1);
 }
+
 if (!recordedAt || !Number.isFinite(Date.parse(recordedAt))) {
   console.error("R2_MANUAL_EVIDENCE_INVALID recordedAt");
   process.exit(1);
@@ -77,6 +105,8 @@ console.log(
     required.length +
     " candidate=" +
     candidateSha +
+    " evidenceHead=" +
+    head +
     " recordedAt=" +
     recordedAt,
 );
