@@ -281,7 +281,7 @@ Design is frozen in `UX8_ENCRYPTED_UX_INTEGRATION_DESIGN.md`; automated closure 
 
 ### R2 Public Readiness
 
-R2 is IN PROGRESS. Repository implementation and exact-main hosted automation are complete. Stable Release remains blocked on live/manual provider delivery, deployed topology and public-origin verification, backup/restore and alert drills, repository governance, legal review, representative accessibility/device/performance, calling/E2EE acceptance, rollback rehearsal, and signed provenance. The canonical inventory is maintained in `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
+R2 is IN PROGRESS. Repository implementation and exact-main hosted automation are complete. Stable Release remains blocked on live/manual provider delivery, deployed topology and public-origin verification, backup/restore and alert drills, repository governance, legal review, representative accessibility/device/performance, voice/video privacy acceptance, rollback rehearsal, and signed provenance. The canonical inventory is maintained in `../operations/R2_PUBLIC_READINESS_AUDIT.md`.
 
 ## Parallel-agent implementation model
 
